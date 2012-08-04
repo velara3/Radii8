@@ -21,6 +21,8 @@ Home page:
  - you can create a plugin based on what exists now (see the components in the views package) 
 
  What needs to be done:
+ - conforming this document to https://github.com/infochimps-labs/style_guide/blob/master/style-guide-for-readme-files.md
+ - conforming to Git project file and folders structure https://github.com/infochimps-labs/style_guide/blob/master/style-guide-for-repo-organization.md 
  - documentation on getting started
  - needs an application framework
  - needs full plugin API defined. for example for plugins we need things like:
