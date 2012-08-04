@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true">
+	
+	<fx:Script>
+		<![CDATA[
+			import data.Item;
+			
+			import mx.core.mx_internal;
+			
+			use namespace mx_internal;
+			
+			public var item:Item;
+			
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				item = value as Item;
+				
+				if (value) {
+					module.url = item.url;
+					nameLabel.text = item.name;
+				}
+				else {
+					nameLabel.text = "item is null";
+				}
+			}
+			
+			override public function getMinBoundsHeight(postLayoutTransform:Boolean=true):Number {
+				return super.getMinBoundsHeight(postLayoutTransform);
+			}
+			
+			override public function getPreferredBoundsHeight(postLayoutTransform:Boolean=true):Number {
+				return super.getPreferredBoundsHeight(postLayoutTransform);
+			}
+			
+			/* override mx_internal function getUnscaledHeight():Number {
+				return super.mx_internal::getUnscaledHeight();
+			} */
+			
+			override public function get measuredHeight():Number {
+				return super.measuredHeight;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Label id="nameLabel" />
+	
+	<s:ModuleLoader id="module" width="100%" height="100%">
+		
+	</s:ModuleLoader>
+</s:ItemRenderer>

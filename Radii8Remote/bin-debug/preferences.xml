@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<items>
+		<item name="Properties" url="panel.swf">
+			<content>Shows the properties of the selected target</content>
+		</item>
+		<item name="Properties Example" url="modules/PropertiesExample.swf">
+			<content>Example that shows the properties of the selected target</content>
+		</item>
+		<item name="Outline Example" url="modules/OutlineExample.swf">
+			<content>Example that shows the outline of the selected target</content>
+		</item>
+		<item name="Styles" url="panel2.swf">
+			<content>Shows available styles of the selected target</content>
+		</item>
+		<item name="Constraints" url="panel2.swf">
+			<content>Shows the constraint properties of top, bottom, left, right, vertical center and horizontal center</content>
+		</item>
+		<item name="History" url="panel2.swf">
+			<content>Shows a list of the history of changes with undo and redo support</content>
+		</item>
+		<item name="Outline" url="panel2.swf">
+			<content>Shows an tree outline of components. Allows you to select components and set their visibility. This is the component tree not the display list</content>
+		</item>
+	</items>
+</root>

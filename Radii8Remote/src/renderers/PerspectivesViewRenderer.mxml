@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true"
+				width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import data.Item;
+			import data.Perspective;
+			
+			public var item:Perspective;
+			
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				item = value as Perspective;
+				
+				if (!value) {
+					enabledCheckbox.selected = false;
+				}
+				else {
+					enabledCheckbox.selected = item.enabled;
+					nameLabel.text = item.name;
+					//descriptionLabel.text = item.description;
+				}
+				
+			}
+			
+			protected function loadButton_clickHandler(event:MouseEvent):void {
+				dispatchEvent(new Event("loadView", true));
+			}
+			
+			protected function enabledCheckbox_changeHandler(event:Event):void {
+				item.enabled = enabledCheckbox.selected;
+				dispatchEvent(new Event("settingChange", true));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	
+	<!--<s:layout>
+		<s:HorizontalLayout verticalAlign="middle" 
+							
+							paddingBottom="2" paddingLeft="2" paddingRight="2" paddingTop="2"/>
+	</s:layout>
+	-->
+	
+	<s:VGroup width="100%" right="22"
+			  gap="0"
+			  paddingTop="2" paddingBottom="2">
+		<s:Label id="nameLabel" paddingTop="2" width="100%"
+				 fontWeight="bold"
+				 />
+		
+		<s:Label id="descriptionLabel" 
+				 paddingTop="2" 
+				 width="100%"
+				 />
+		
+	</s:VGroup>
+	
+	
+	<!--<s:Spacer width="100%" />-->
+	
+	<s:CheckBox id="enabledCheckbox" change="enabledCheckbox_changeHandler(event)"
+				verticalCenter="0"
+				right="4"/>
+	<!--<s:Button id="loadButton" label="Load" click="loadButton_clickHandler(event)"/>-->
+	
+</s:ItemRenderer>

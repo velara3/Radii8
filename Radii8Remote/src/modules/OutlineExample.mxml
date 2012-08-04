@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Module xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  xmlns:views="com.flexcapacitor.views.*"
+		  
+		  width="400" height="300" 
+		  
+		  >
+	
+	
+	<!--<s:Group width="100%" height="100%">
+		
+		<s:Rect width="100%" height="100%">
+			<s:stroke>
+				<s:SolidColorStroke color="#00ff00" weight="2"/>
+			</s:stroke>
+		</s:Rect>
+	</s:Group>
+	-->
+	
+	<views:DisplayList width="100%" height="100%"/>
+	
+</s:Module>
