@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:local="*"
+		 width="400" height="300"
+		 show="group1_showHandler(event)"
+		 creationComplete="initApp()" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.DragDropEvent;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.DragManagerUtil;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import flash.utils.setTimeout;
+			
+			import mx.core.FlexGlobals;
+			import mx.core.IUIComponent;
+			import mx.events.FlexEvent;
+			import mx.events.PropertyChangeEvent;
+			import mx.events.ResizeEvent;
+			import mx.logging.LogEvent;
+			import mx.logging.LogEventLevel;
+			import mx.utils.NameUtil;
+			
+			import spark.components.Application;
+			import spark.components.List;
+			
+			public static const SELECT_MODE:String = "select";
+			
+			public static const MOVE_MODE:String = "move";
+			
+			/**
+			 * The document / application
+			 * */
+			public var targetApplication:Object;
+			
+			private var _url:String = "assets/452/application.swf";
+			
+			public var autoLoad:Boolean = true;
+			
+			private var dragManagerInstance:DragManagerUtil;
+			
+			private var radiate:Radiate = Radiate.instance;
+			
+			/**
+			 * Document mode
+			 * */
+			public var mode:String = SELECT_MODE;
+			
+			/**
+			 * Set to false. 
+			 * */
+			private var loadForCompatibility:Boolean;
+			
+			/**
+			 * Maintains the aspect ratio
+			 * */
+			private var maintainAspectRatio:Boolean = true;
+			
+			/**
+			 * Set to false to prevent application from scaling to fit (vs resizing)
+			 * */
+			private var scaleContent:Boolean;
+			
+			/**
+			 * Set to false for loading local file? And true for loading remote swf.
+			 * */
+			private var trustContent:Boolean;
+			private var manager:DisplayObject;
+			
+			public var applicationGroups:Dictionary;
+			
+			/**
+			 * 
+			 * */
+			[Bindable]
+			public function get url():String {
+				return _url;
+			}
+
+			public function set url(value:String):void {
+				_url = value;
+				load();
+			}
+
+			/**
+			 * When this is added to the display list then we
+			 * load in a blank application.
+			 * 
+			 * We do this so that at some point we can sandbox 
+			 * the application.
+			 * We also do this so we can load in remote applications.
+			 * */
+			private function initApp():void {
+				systemManager.allowDomain("*");
+				
+				var context:LoaderContext = new LoaderContext();
+				
+				/* Specify the current application's security domain. */
+				context.securityDomain = SecurityDomain.currentDomain;
+				
+				/* Specify a new ApplicationDomain, which loads the sub-app into a 
+				peer ApplicationDomain. */
+				context.applicationDomain = new ApplicationDomain();
+				
+				projectLoader.trustContent = trustContent;
+				projectLoader.loadForCompatibility = loadForCompatibility;
+				projectLoader.maintainAspectRatio = maintainAspectRatio;
+				projectLoader.scaleContent = scaleContent;
+				
+				// if not on server context throws errors
+				if (Security.sandboxType == Security.REMOTE) {
+					//projectLoader.loaderContext = context;
+					projectLoader.trustContent = !trustContent;
+				}
+				
+				projectLoader.source = url;//URL.text; // "http://yourdomain.com/SubApp3.swf";
+				
+				//projectLoader.autoLoad = autoLoad;
+				load();
+				
+				stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+			}
+			
+			/**
+			 * Load URL
+			 * */
+			public function load():void {
+				
+				removeErrorMessages();
+				
+				showBusyIndicators();
+				
+				if (url) {
+					try {
+						//projectLoader.trustContent = trustContent;
+						projectLoader.loaderContext = null;
+						projectLoader.source = "";
+						projectLoader.source = url;
+						projectLoader.load();
+					}
+					catch (error:Error) {
+						trace(error);
+						hideBusyIndicators();
+					}
+				}
+				else {
+					hideBusyIndicators();
+				}
+			}
+			
+			/**
+			 * Load URL
+			 * */
+			public function loadRemote(url:String, trustContent:Boolean = true, loadForCompatibility:Boolean = false):void {
+				
+				systemManager.allowDomain("*");
+				showBusyIndicators();
+				
+				if (url) {
+					try {
+						// if not on server context throws errors
+						//if (Security.sandboxType == Security.REMOTE) {
+							//projectLoader.loaderContext = context;
+						projectLoader.trustContent = trustContent;
+						//}
+							
+						var context:LoaderContext = new LoaderContext();
+							
+						/* Specify the current application's security domain. */
+						//context.securityDomain = SecurityDomain.currentDomain;
+						//projectLoader.loaderContext = context;
+						projectLoader.loadForCompatibility = loadForCompatibility;
+						projectLoader.source = "";
+						projectLoader.source = url;
+						projectLoader.load();
+					}
+					catch (error:Error) {
+						trace(error);
+						hideBusyIndicators();
+					}
+				}
+				else {
+					hideBusyIndicators();
+				}
+			}
+			
+			protected function allowDomainHandler(event:MouseEvent):void {
+				systemManager.allowDomain("*");
+			}
+			
+			private function uncaughtErrorHandler(event:UncaughtErrorEvent):void {
+				event.preventDefault();
+				
+				//to capture the error message
+				var errorMessage:String = new String();
+				
+				if (event.error is Error) {
+					errorMessage = Error( event.error ).message;
+				}
+				else if (event.error is ErrorEvent) {
+					errorMessage = ErrorEvent( event.error ).text;
+				}
+				else {
+					errorMessage = event.error.toString();
+				}
+				
+				//Radiate.logTarget.logEvent(new LogEvent("Uncaught Error", LogEventLevel.ERROR));
+				Radiate.log.error(errorMessage);
+				trace("Uncaught error", event);
+				
+				hideBusyIndicators();
+			}
+			
+			protected function project_completeHandler(event:Event):void {
+				var loader:SWFLoader = event.currentTarget as SWFLoader;
+				/*
+				SecurityDomain 'http://www.radii8.com/demo2/RadiateExample.html?debug=true' tried to access incompatible context 'http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf'
+				SecurityError: Error #2121: Security sandbox violation: Loader.content: http://www.radii8.com/demo2/RadiateExample.swf/[[DYNAMIC]]/3 cannot access http://www.flexcapacitor.com/apps/urlcodec/URLCodec.swf. This may be worked around by calling Security.allowDomain.
+
+				*/
+				var loaderClassName:String = NameUtil.getUnqualifiedClassName(loader.content);
+				
+				projectLoader.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				
+				if (loader.content is DisplayObject) {
+					//parentAllowsChild.selected = b.parentAllowsChild;
+					//childAllowsParent.selected = b.childAllowsParent;
+					manager = loader.content;
+					
+					manager.addEventListener(FlexEvent.APPLICATION_COMPLETE, applicationComplete);
+					//LoaderInfo(targetApplication.loaderInfo).uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				}
+				
+				hideBusyIndicators();
+				
+				
+				Radiate.log.info("SWF Loaded");
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function applicationComplete(event:Event):void {
+				var loader:Object = event.currentTarget;
+				var radiate:Radiate = Radiate.instance;
+				//parentAllowsChild.selected = b.parentAllowsChild;
+				//childAllowsParent.selected = b.childAllowsParent;
+				
+				targetApplication = loader.application;
+				
+				//radiate.document = targetApplication as IEventDispatcher;
+				radiate.setDocument (targetApplication as IEventDispatcher);
+				radiate.setTarget(targetApplication);
+				
+				//Application(targetApplication).systemManager.deployMouseShields(true);
+				
+				targetApplication.width = 800;
+				targetApplication.height = 600;
+				
+				validateNow();
+				
+				updateAppScrollPosition();
+				
+				setTimeout(updateAppScrollPosition, 10);
+				setTimeout(updateAppScrollPosition, 100);
+				setTimeout(updateAppScrollPosition, 500);
+				
+				/* if (swfContentHeight.text=="") {
+					swfContentHeight.text = String(targetApplication.height);
+					swfContentWidth.text = String(targetApplication.width);
+					swfContentDividerText.text = "x";
+					swfContentSize.text = "Size:";
+				} */
+				
+				hideBusyIndicators();
+				
+				Radiate.log.info("Application Complete");
+			}
+			
+			/**
+			 * 
+			 * */
+			private function borderContainer_resizeHandler(event:ResizeEvent):void {
+				//updateAppSize();
+			}
+			
+			/**
+			 * Update the size of the target application
+			 * */
+			private function updateAppScrollPosition():void {
+				//var padding:int = int(projectContainer.left) * 2;
+				
+				if (targetApplication is DisplayObject) {
+					/* 
+					if (swfContentHeight.text=="") {
+						swfContentHeight.text = String(targetApplication.height);
+						swfContentWidth.text = String(targetApplication.width);
+						swfContentDividerText.text = "x";
+						swfContentSize.text = "Size:";
+					} */
+					//targetApplication.width = borderContainer.width - padding;
+					//targetApplication.height = borderContainer.height - padding;
+					
+					canvasBackground.width = targetApplication.width * 2.5;
+					canvasBackground.height = targetApplication.height * 2.5;
+					
+					centerApplication();
+					
+					//projectLoader.width = targetApplication.width;
+				}
+			}
+			
+			protected function project_ioErrorHandler(event:IOErrorEvent):void {
+				//trace("ioerror");
+				Radiate.log.error(event.text);
+				hideBusyIndicators();
+			}
+			
+			protected function project_securityErrorHandler(event:SecurityErrorEvent):void
+			{
+				//trace("security error");
+				Radiate.log.error(event.text);
+				hideBusyIndicators();
+			}
+			
+			protected function project_initHandler(event:Event):void
+			{
+				//trace("init");
+			}
+			
+			protected function project_progressHandler(event:ProgressEvent):void
+			{
+				//trace("PROGRESS");
+			}
+			
+			protected function project_unloadHandler(event:Event):void
+			{
+				//trace("unload");
+				Radiate.log.info("SWF unloaded");
+				hideBusyIndicators();
+			}
+			
+			protected function project_openHandler(event:Event):void
+			{
+				//trace("open");
+				showBusyIndicators();
+			}
+			
+			protected function project_httpStatusHandler(event:HTTPStatusEvent):void {
+				//trace("http status");				
+			}
+			
+			protected function mainApplicationComplete(event:Event):void {
+				parentApplication.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				hideBusyIndicators();
+			}
+			
+			public function showBusyIndicators():void {
+				//fadeOutBusy.end();
+				//fadeInBusy.play();
+			}
+			
+			public function hideBusyIndicators():void {
+				//fadeOutBusy.play();
+			}
+			
+			protected function mouseDownHandler(event:MouseEvent):void {
+				var point:Point = new Point(event.stageX, event.stageY);
+				var targetsUnderPoint:Array = FlexGlobals.topLevelApplication.getObjectsUnderPoint(point);
+				var componentTree:ComponentDescription;
+				var description:ComponentDescription;
+				var target:Object = event.target;
+				var items:Array = [];
+				var length:int;
+				
+				// test url for remote image: 
+				// http://www.google.com/intl/en_com/images/srpr/logo3w.png
+				// file:///Users/monkeypunch/Documents/Adobe%20Flash%20Builder%2045/Radii8/src/assets/images/eye.png
+				
+				// clicked outside of this container. is there a way to prevent hearing
+				// events from everywhere? stage sandboxroot?
+				if (!targetApplication || !Object(targetApplication).contains(target)) {
+					//trace("does not contain");
+					return;
+				}
+				
+				// clicked on background area
+				if (target==canvasBackground || target==canvasBackgroundParent) {
+					radiate.setTarget(targetApplication, true);
+					return;
+				}
+				
+				
+				// check if target is loader
+				if (target is Loader) {
+					//Error: Request for resource at http://www.google.com/intl/en_com/images/srpr/logo3w.png by requestor from http://www.radii8.com/debug-build/RadiateExample.swf is denied due to lack of policy file permissions.
+					
+					//*** Security Sandbox Violation ***
+					//	Connection to http://www.google.com/intl/en_com/images/srpr/logo3w.png halted - not permitted from http://www.radii8.com/debug-build/RadiateExample.swf
+					targetsUnderPoint.push(target);
+				}
+				
+				length = targetsUnderPoint.length;
+				targetsUnderPoint = targetsUnderPoint.reverse();
+				
+				// loop through items under point until we find one on the *component* tree
+				componentTree = Radiate.getComponentDisplayList();
+				
+				componentTreeLoop:
+				for (var i:int;i<length;i++) {
+					target = targetsUnderPoint[i];
+					
+					if (!targetApplication.contains(DisplayObject(target))) {
+						continue;
+					}
+					
+					description = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
+					
+					if (description) {
+						target = description.instance;
+						break;
+					}
+				}
+				
+				
+				if (target) {
+					// select target on mouse up or drag drop whichever comes first
+					target.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+					
+					if (target!=targetApplication) {
+						
+						// listen for drag
+						if (!dragManagerInstance) {
+							dragManagerInstance = new DragManagerUtil();
+						}
+						
+						//target.visible = false;
+						dragManagerInstance.listenForDragBehavior(target as IUIComponent, radiate.document as Application, event);
+						dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+					}
+				}
+				
+			}
+			
+			protected function handleDragDrop(event:DragDropEvent):void {
+				// select target
+				//radiate.target = event.draggedItem;
+			}
+			
+			protected function mouseUpHandler(event:MouseEvent):void {
+				var target:Object = event.currentTarget;
+				
+				if (target is List) {
+					target.dragEnabled = true; // restore drag and drop if it was enabled
+				}
+				
+				target.visible = true;
+				
+				// select target
+				if (radiate.target!=target) {
+					radiate.setTarget(target, true);
+				}
+				
+				// clean up
+				target.removeEventListener(MouseEvent.MOUSE_UP, arguments.callee);
+				
+			}
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				if (radiate.document!=targetApplication) {
+					radiate.setDocument(targetApplication, true);
+				}
+				
+				Radiate.log.info("Document SHOW event");
+			}
+			
+			/**
+			 * Reload blank app
+			 * */
+			public function reload():void {
+				initApp();
+			}
+			
+			protected function scroller_creationCompleteHandler(event:FlexEvent):void {
+				
+				// spark Scroller: listen on the viewport property
+				canvasBackgroundParent.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handle, false, 0, true);
+			
+			}
+			
+			/**
+			 * Handle scroll position changes
+			 */
+			private function handle(e:PropertyChangeEvent):void {
+				 if (e.source == e.target && e.property == "verticalScrollPosition") {
+					//trace(e.property, "changed to", e.newValue);
+					Radiate.drawSelection(null);
+				}
+				if (e.source == e.target && e.property == "horizontalScrollPosition") {
+					//trace(e.property, "changed to", e.newValue);
+					Radiate.drawSelection(null);
+				} 
+			}
+			
+			private function removeErrorMessages():void {
+				
+			}
+			
+			protected function centerApplication(event:MouseEvent = null):void {
+				
+				if (scroller.height < scroller.viewport.contentHeight) {
+					scroller.viewport.verticalScrollPosition = (scroller.viewport.contentHeight - scroller.height) / 2;
+					//scroller.viewport.verticalScrollPosition = 20;
+				}
+				if (scroller.width < scroller.viewport.contentWidth) {
+					scroller.viewport.horizontalScrollPosition = (scroller.viewport.contentWidth - scroller.width) / 2;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!--<s:Fade id="fadeInBusy" 
+				alphaTo="1" 
+				target="{busyIndicator}"
+				effectStart="busyIndicator.visible=true"
+				effectEnd="busyIndicator.visible=true"/>
+		<s:Fade id="fadeOutBusy" 
+				alphaTo="0" 
+				target="{busyIndicator}" 
+				effectStart="busyIndicator.visible=true"
+				effectEnd="busyIndicator.visible=false"/>-->
+	</fx:Declarations>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="#666666"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Rect width="20" height="20">
+		<s:fill>
+			<s:SolidColor color="#FFFFFF"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Group width="16" height="16" right="0" bottom="0"
+			 click="centerApplication(event)">
+		<s:Rect width="100%"
+				height="100%"
+				visible="{scroller.verticalScrollBar.visible &amp;&amp; scroller.horizontalScrollBar.visible}"
+				>
+			<s:fill>
+				<s:SolidColor color="#FFFFFF"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	
+	<s:Scroller id="scroller" left="20" right="0" top="20" bottom="0" creationComplete="scroller_creationCompleteHandler(event)" >
+		
+		<!--- why two containers around this -->
+		<s:Group id="canvasBackgroundParent" resize="borderContainer_resizeHandler(event)" >
+			
+			<s:Group id="canvasBackground" 
+					 resize="borderContainer_resizeHandler(event)">
+				
+				<!--- border container is to mask application content -->
+				<s:BorderContainer id="borderContainer" 
+								   verticalCenter="0"
+								   horizontalCenter="0"
+								   resize="borderContainer_resizeHandler(event)">
+					
+						
+						<s:SWFLoader id="projectLoader" 
+									 resize="borderContainer_resizeHandler(event)"
+									 complete="project_completeHandler(event)"
+									 httpStatus="project_httpStatusHandler(event)"
+									 init="project_initHandler(event)"
+									 ioError="project_ioErrorHandler(event)"
+									 open="project_openHandler(event)"
+									 progress="project_progressHandler(event)"
+									 securityError="project_securityErrorHandler(event)"
+									 unload="project_unloadHandler(event)"/>
+					
+					
+					
+				</s:BorderContainer>
+				
+				
+			</s:Group>
+			
+		</s:Group>
+		
+	</s:Scroller>
+	
+	
+	<local:Ruler left="20" width="100%" height="20"/>
+	
+	<local:Ruler top="20" width="20" height="100%" direction="vertical"/>
+	
+	<!--<s:BusyIndicator id="busyIndicator" right="20" top="10" symbolColor="white"/>-->
+	
+	
+</s:Group>

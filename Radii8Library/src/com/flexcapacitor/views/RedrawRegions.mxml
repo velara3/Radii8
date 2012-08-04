@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 minWidth="22" minHeight="22"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:debugging="com.flexcapacitor.effects.debugging.*" 
+		 xmlns:core="com.flexcapacitor.effects.core.*" xmlns:filters="com.flexcapacitor.filters.*">
+	
+	
+	<fx:Declarations>
+		<handlers:EventHandler eventName="click" 
+							   target="{redrawButton}">
+			<core:ToggleEffects >
+				<core:effects>
+					<s:Sequence>
+						<core:SetAction target="{fill}" property="filters"
+										value="{selectFiltersOn}"/>
+						<debugging:ShowRedrawRegions />
+					</s:Sequence>
+					<s:Sequence>
+						<debugging:HideRedrawRegions />
+						<core:SetAction target="{fill}" property="filters"
+										value="{selectFiltersOff}"/>
+					</s:Sequence>
+				</core:effects>
+			</core:ToggleEffects>
+		</handlers:EventHandler>
+		
+			<fx:Array id="selectFiltersOn">
+				<s:DropShadowFilter distance="1" blurX="2" blurY="2" strength=".8" inner="true" knockout="false"/>
+			</fx:Array>
+			<fx:Array id="selectFiltersOff">
+				<filters:BlackAndWhiteFilter />
+			</fx:Array>
+	</fx:Declarations>
+	
+	<s:Group id="redrawButton" minHeight="16" minWidth="16" height="100%" width="100%">
+		<s:Rect id="fill" width="100%" height="100%" filters="{selectFiltersOff}" verticalCenter="0">
+			<s:fill>
+				<s:SolidColor color="#ff0000"/>
+			</s:fill>
+		</s:Rect>
+		<s:Rect id="stroke" top="2" left="2" right="2" bottom="2">
+			<s:stroke>
+				<s:SolidColorStroke color="#FFFFFF" />
+			</s:stroke>
+		</s:Rect>
+	</s:Group>
+</s:Group>

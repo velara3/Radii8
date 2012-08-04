@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:display="com.flexcapacitor.effects.display.*" 
+		 xmlns:bitmap="com.flexcapacitor.effects.bitmap.*" 
+		 xmlns:file="com.flexcapacitor.effects.file.*" 
+		 xmlns:core="com.flexcapacitor.effects.core.*"
+		 xmlns:status="com.flexcapacitor.effects.status.*"
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 width="400" 
+		 height="300" xmlns:popup="com.flexcapacitor.effects.popup.*" xmlns:controls="com.flexcapacitor.controls.*"  >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			
+			import mx.events.FlexEvent;
+			public var radiate:Radiate = Radiate.instance;
+			
+			private var _target:DisplayObject;
+
+			[Bindable]
+			public function get target():DisplayObject {
+				return _target;
+			}
+
+			public function set target(value:DisplayObject):void {
+				_target = value as DisplayObject;
+				
+				if (rasterize.bitmapData) {
+					rasterize.bitmapData.dispose();
+					rasterize.bitmapData = null;
+				}
+				
+			}
+
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+			}
+			
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem as DisplayObject;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!-- TAKE SNAPSHOT -->
+		<handlers:EventHandler eventName="click" 
+							   target="{snapshotLabel}">
+			
+			<display:Rasterize id="rasterize" target="{target}" absoluteBounds="true">
+				<display:invalidTargetEffect>
+					<status:ShowStatusMessage message="Select a target"/>
+				</display:invalidTargetEffect>
+			</display:Rasterize>
+			
+		</handlers:EventHandler>
+		
+		
+		<!-- EXPORT SNAPSHOT -->
+		<handlers:EventHandler eventName="click" 
+							   target="{exportLabel}">
+			
+			<bitmap:EncodeToPNG 		data="{rasterize.bitmapData}" />
+			
+			<core:CopyPreviousToNext 	sourcePropertyName="byteArray" />
+			
+			<file:PromptSaveAs 			fileName="screenshot" 
+										fileExtension="png"
+										targetAncestor="{this}"/>
+			
+		</handlers:EventHandler>
+		
+		<!-- PREVIEW -->
+		<popup:OpenPopUp id="openPopUp" 
+						 showDropShadow="true"
+						 popUpType="{ImagePreview}"
+						 closeOnMouseDownInside="true"
+						 options="{{data:rasterize.bitmapData}}"/>
+		
+		
+		<fx:Component className="ImagePreview">
+			<s:ItemRenderer autoDrawBackground="false">
+				<s:Rect width="100%" height="100%">
+					<s:fill>
+						<s:SolidColor color="#ffffff"/>
+					</s:fill>
+				</s:Rect>
+				<s:Image source="{data}" top="5" right="5" left="5" bottom="5" />
+			</s:ItemRenderer>
+		</fx:Component>
+	</fx:Declarations>
+	<s:HGroup width="100%" typographicCase="uppercase" left="4" right="4">
+		<s:Label id="snapshotLabel" 
+				 text="Capture Image" 
+				 fontSize="10" 
+				 buttonMode="true"
+				 textAlign="center"
+				 fontWeight="bold"
+				 minWidth="{snapshotLabel.height}"
+				 backgroundColor="#484848" 
+				 color="#eeeeee" 
+				 paddingBottom="4" paddingLeft="4"
+				 paddingRight="4" paddingTop="4"/>
+		
+		<s:Label id="exportLabel" 
+				 text="Export"
+				 buttonMode="true"
+				 fontSize="10" 
+				 fontWeight="bold"
+				 textAlign="center"
+				 backgroundColor="#484848" 
+				 color="#eeeeee" 
+				 paddingBottom="4" paddingLeft="4"
+				 paddingRight="4" paddingTop="4"
+				 includeInLayout="{Boolean(rasterize.bitmapData)}"
+				 visible="{Boolean(rasterize.bitmapData)}"
+				 minWidth="{exportLabel.height}"
+				 />
+		
+		<s:Spacer width="100%" />
+		
+		
+		<controls:ImageButton id="preview" 
+							  source="assets/images/components/Image.png"
+							  mouseUpEffect="{openPopUp}"
+							  includeInLayout="{Boolean(rasterize.bitmapData)}"
+							  visible="{Boolean(rasterize.bitmapData)}"
+							  />
+		
+	</s:HGroup>
+	
+</s:Group>

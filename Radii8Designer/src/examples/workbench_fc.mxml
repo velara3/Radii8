@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workbench progressCount="20" version="2.0">
+	<workbenchAdvisor/>
+	<window height="978" width="1680" x="0" y="22">
+		<fastViewData/>
+		<perspectiveBar/>
+		<coolbarLayout locked="0">
+			<coolItem id="org.eclipse.ui.edit.text.actionSet.annotationNavigation" itemType="typeToolBarContribution" x="0" y="22"/>
+			<coolItem id="org.eclipse.ui.edit.text.actionSet.navigation" itemType="typeToolBarContribution" x="32" y="22"/>
+			<coolItem id="group.editor" itemType="typeGroupMarker"/>
+			<coolItem id="com.adobe.flexide.mxml.editor.Editor" itemType="typePlaceholder" x="-1" y="-1"/>
+		</coolbarLayout>
+		<page aggregateWorkingSetId="Aggregate for window 1316581681333" focus="true" label="Workspace - DesignWorkspace">
+			<editors>
+				<editorArea activeWorkbook="DefaultEditorWorkbook">
+					<info part="DefaultEditorWorkbook">
+						<folder appearance="1" expanded="2">
+							<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI" thermo_isCollapsed="false"/>
+						</folder>
+					</info>
+				</editorArea>
+			</editors>
+			<views>
+				<view id="com.adobe.thermo.interactions.Interactions" partName="INTERACTIONS">
+					<viewState/>
+				</view>
+				<view id="com.adobe.thermo.library.Library" partName="PROJECT LIBRARY"/>
+				<view id="com.adobe.thermo.artboard.ArtBoardPart" partName="ArtBoard">
+					<viewState/>
+				</view>
+				<view id="com.adobe.thermo.componentlibrary.ComponentLibrary" partName="COMMON LIBRARY">
+					<viewState/>
+				</view>
+				<view id="com.adobe.thermo.layers.Layers" partName="LAYERS">
+					<viewState/>
+				</view>
+				<view id="com.adobe.thermo.tools.Tools" partName="TOOLS">
+					<viewState/>
+				</view>
+				<view id="com.adobe.thermo.propertiespanel.Properties" partName="PROPERTIES">
+					<viewState/>
+				</view>
+				<view id="com.adobe.thermo.timeline.Timeline" partName="TIMELINES">
+					<viewState/>
+				</view>
+				<view id="com.adobe.thermo.views.WelcomePanel" partName="Welcome">
+					<viewState/>
+				</view>
+				<view id="org.eclipse.ui.thermo.navigator.view" partName="PROJECT NAVIGATOR">
+					<viewState CommonNavigator.LINKING_ENABLED="0" org.eclipse.ui.navigator.resources.workingSets.showTopLevelWorkingSets="0"/>
+				</view>
+				<view id="com.adobe.thermo.datacollections.DataCollections" partName="DESIGN-TIME DATA">
+					<viewState/>
+				</view>
+				<view id="org.eclipse.ui.views.ProblemView" partName="Problems">
+					<viewState PRIMARY_SORT_FIELD="org.eclipse.ui.ide.severityAndDescriptionField" categoryGroup="org.eclipse.ui.ide.severity" markerContentGenerator="org.eclipse.ui.ide.problemsGenerator" partName="Problems">
+						<columnWidths org.eclipse.ui.ide.locationField="84" org.eclipse.ui.ide.markerType="114" org.eclipse.ui.ide.pathField="144" org.eclipse.ui.ide.resourceField="114" org.eclipse.ui.ide.severityAndDescriptionField="324"/>
+						<visible IMemento.internal.id="org.eclipse.ui.ide.severityAndDescriptionField"/>
+						<visible IMemento.internal.id="org.eclipse.ui.ide.resourceField"/>
+						<visible IMemento.internal.id="org.eclipse.ui.ide.pathField"/>
+						<visible IMemento.internal.id="org.eclipse.ui.ide.locationField"/>
+						<visible IMemento.internal.id="org.eclipse.ui.ide.markerType"/>
+					</viewState>
+				</view>
+				<view id="com.adobe.thermo.states.States" partName="STATES">
+					<viewState/>
+				</view>
+				<view id="com.adobe.thermo.align.Align" partName="ALIGN">
+					<viewState/>
+				</view>
+			</views>
+			<perspectives activePart="com.adobe.thermo.artboard.ArtBoardPart" activePerspective="com.adobe.thermo.core.workspace.DesignWorkspace">
+				<perspective editorAreaTrimState="2" editorAreaVisible="0" fixed="0" version="0.016">
+					<descriptor class="com.adobe.thermo.workspace.WelcomeWorkspace" id="com.adobe.thermo.core.workspace.WelcomeWorkspace" label="WelcomeWorkspace"/>
+					<alwaysOnActionSet id="com.adobe.thermo.projects.actionSet"/>
+					<view id="com.adobe.thermo.views.WelcomePanel"/>
+					<viewLayoutRec id="com.adobe.thermo.views.WelcomePanel" showTitle="false" standalone="true"/>
+					<layout>
+						<mainWindow>
+							<info folder="true" part="org.eclipse.ui.internal.ViewStack@13b087c">
+								<folder activePageID="com.adobe.thermo.views.WelcomePanel" appearance="4" expanded="2">
+									<page content="com.adobe.thermo.views.WelcomePanel" label="Welcome"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI"/>
+								</folder>
+							</info>
+							<info folder="true" part="stickyFolderRight" ratio="0.75" ratioLeft="1260" ratioRight="420" relationship="2" relative="org.eclipse.ui.internal.ViewStack@13b087c">
+								<folder appearance="2" expanded="2">
+									<page content="org.eclipse.ui.internal.introview" label="LabelNotFound"/>
+								</folder>
+							</info>
+							<info part="org.eclipse.ui.editorss" ratio="0.95" ratioLeft="1596" ratioRight="84" relationship="2" relative="org.eclipse.ui.internal.ViewStack@13b087c"/>
+						</mainWindow>
+					</layout>
+				</perspective>
+				<perspective editorAreaTrimState="2" editorAreaVisible="0" fixed="0" version="0.016">
+					<descriptor class="com.adobe.thermo.workspace.DesignWorkspace" id="com.adobe.thermo.core.workspace.DesignWorkspace" label="DesignWorkspace"/>
+					<alwaysOnActionSet id="com.adobe.thermo.projects.actionSet"/>
+					<view id="com.adobe.thermo.tools.Tools"/>
+					<view id="com.adobe.thermo.layers.Layers"/>
+					<view id="com.adobe.thermo.library.Library"/>
+					<view id="com.adobe.thermo.interactions.Interactions"/>
+					<view id="com.adobe.thermo.align.Align"/>
+					<view id="com.adobe.thermo.propertiespanel.Properties"/>
+					<view id="com.adobe.thermo.states.States"/>
+					<view id="com.adobe.thermo.timeline.Timeline"/>
+					<view id="com.adobe.thermo.datacollections.DataCollections"/>
+					<view id="com.adobe.thermo.componentlibrary.ComponentLibrary"/>
+					<view id="com.adobe.thermo.artboard.ArtBoardPart"/>
+					<viewLayoutRec id="com.adobe.thermo.artboard.ArtBoardPart" showTitle="false" standalone="true"/>
+					<viewLayoutRec id="com.adobe.thermo.tools.Tools" showTitle="false" standalone="true"/>
+					<layout>
+						<mainWindow>
+							<info folder="true" part="org.eclipse.ui.internal.ViewStack@1eaf203">
+								<folder activePageID="com.adobe.thermo.states.States" appearance="2" expanded="2">
+									<page content="com.adobe.thermo.states.States" label="STATES"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI" thermo_isCollapsed="false"/>
+								</folder>
+							</info>
+							<info folder="true" part="stickyFolderRight" ratio="0.75" ratioLeft="1260" ratioRight="420" relationship="2" relative="org.eclipse.ui.internal.ViewStack@1eaf203">
+								<folder appearance="2" expanded="2">
+									<page content="org.eclipse.ui.internal.introview" label="LabelNotFound"/>
+								</folder>
+							</info>
+							<info folder="true" part="org.eclipse.ui.internal.ViewStack@231214" ratio="0.95" ratioLeft="1596" ratioRight="84" relationship="2" relative="org.eclipse.ui.internal.ViewStack@1eaf203">
+								<folder activePageID="com.adobe.thermo.tools.Tools" appearance="4" expanded="2">
+									<page content="com.adobe.thermo.tools.Tools" label="TOOLS"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI"/>
+								</folder>
+							</info>
+							<info folder="true" part="trees" ratio="0.24918033" ratioLeft="228" ratioRight="687" relationship="4" relative="org.eclipse.ui.internal.ViewStack@231214">
+								<folder activePageID="com.adobe.thermo.layers.Layers" appearance="2" expanded="2">
+									<page content="com.adobe.thermo.layers.Layers" label="LAYERS"/>
+									<page content="com.adobe.thermo.library.Library" label="PROJECT LIBRARY"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI" thermo_isCollapsed="false"/>
+								</folder>
+							</info>
+							<info folder="true" part="midRightShelf" ratio="0.29985443" ratioLeft="206" ratioRight="481" relationship="4" relative="trees">
+								<folder activePageID="com.adobe.thermo.interactions.Interactions" appearance="2" expanded="2">
+									<page content="com.adobe.thermo.interactions.Interactions" label="INTERACTIONS"/>
+									<page content="com.adobe.thermo.align.Align" label="ALIGN"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI" thermo_isCollapsed="false"/>
+								</folder>
+							</info>
+							<info folder="true" part="propsComponents" ratio="0.2889813" ratioLeft="139" ratioRight="342" relationship="4" relative="midRightShelf">
+								<folder activePageID="com.adobe.thermo.propertiespanel.Properties" appearance="2" expanded="2">
+									<page content="com.adobe.thermo.propertiespanel.Properties" label="PROPERTIES"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI" thermo_isCollapsed="false"/>
+								</folder>
+							</info>
+							<info folder="true" part="org.eclipse.ui.internal.ViewStack@1dfde20" ratio="0.1136612" ratioLeft="104" ratioRight="811" relationship="4" relative="org.eclipse.ui.internal.ViewStack@1eaf203">
+								<folder activePageID="com.adobe.thermo.artboard.ArtBoardPart" appearance="4" expanded="2">
+									<page content="com.adobe.thermo.artboard.ArtBoardPart" label="ArtBoard"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI"/>
+								</folder>
+							</info>
+							<info folder="true" part="bottomComponents" ratio="0.649815" ratioLeft="527" ratioRight="284" relationship="4" relative="org.eclipse.ui.internal.ViewStack@1dfde20">
+								<folder activePageID="com.adobe.thermo.timeline.Timeline" appearance="2" expanded="2">
+									<page content="com.adobe.thermo.timeline.Timeline" label="TIMELINES"/>
+									<page content="com.adobe.thermo.datacollections.DataCollections" label="DESIGN-TIME DATA"/>
+									<page content="com.adobe.thermo.componentlibrary.ComponentLibrary" label="COMMON LIBRARY"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI" thermo_isCollapsed="true"/>
+								</folder>
+							</info>
+							<info part="org.eclipse.ui.editorss" ratio="0.7593985" ratioLeft="1212" ratioRight="384" relationship="2" relative="org.eclipse.ui.internal.ViewStack@1dfde20"/>
+						</mainWindow>
+					</layout>
+				</perspective>
+				<perspective editorAreaTrimState="2" editorAreaVisible="1" fixed="0" version="0.016">
+					<descriptor class="com.adobe.thermo.workspace.CodeWorkspace" id="com.adobe.thermo.core.workspace.CodeWorkspace" label="CodeWorkspace"/>
+					<alwaysOnActionSet id="com.adobe.thermo.projects.actionSet"/>
+					<alwaysOnActionSet id="org.eclipse.ui.edit.text.actionSet.annotationNavigation"/>
+					<alwaysOnActionSet id="org.eclipse.ui.edit.text.actionSet.navigation"/>
+					<view id="org.eclipse.ui.thermo.navigator.view"/>
+					<view id="org.eclipse.ui.views.ProblemView"/>
+					<layout>
+						<mainWindow>
+							<info part="org.eclipse.ui.editorss"/>
+							<info folder="true" part="stickyFolderRight" ratio="0.75" ratioLeft="1260" ratioRight="420" relationship="2" relative="org.eclipse.ui.editorss">
+								<folder appearance="2" expanded="2">
+									<page content="org.eclipse.ui.internal.introview" label="LabelNotFound"/>
+								</folder>
+							</info>
+							<info folder="true" part="org.eclipse.ui.internal.ViewStack@1345b80" ratio="0.7595238" ratioLeft="1276" ratioRight="404" relationship="2" relative="org.eclipse.ui.editorss">
+								<folder activePageID="org.eclipse.ui.thermo.navigator.view" appearance="2" expanded="2">
+									<page content="org.eclipse.ui.thermo.navigator.view" label="PROJECT NAVIGATOR"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI" thermo_isCollapsed="false"/>
+								</folder>
+							</info>
+							<info folder="true" part="org.eclipse.ui.internal.ViewStack@635f47" ratio="0.69945353" ratioLeft="640" ratioRight="275" relationship="4" relative="org.eclipse.ui.editorss">
+								<folder activePageID="org.eclipse.ui.views.ProblemView" appearance="2" expanded="2">
+									<page content="org.eclipse.ui.views.ProblemView" label="Problems"/>
+									<presentation id="com.adobe.thermo.chrome.ThermoWorkbenchUI" thermo_isCollapsed="false"/>
+								</folder>
+							</info>
+						</mainWindow>
+					</layout>
+				</perspective>
+			</perspectives>
+			<workingSets/>
+			<navigationHistory/>
+			<input factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/" type="8"/>
+		</page>
+		<workbenchWindowAdvisor/>
+		<actionBarAdvisor/>
+	</window>
+	<mruList>
+		<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="com.adobe.flexide.mxml.editor.Editor" name="PrivateData.mxml" tooltip="Project/src/PrivateData.mxml">
+			<persistable path="/Project/src/PrivateData.mxml"/>
+		</file>
+		<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="com.adobe.flexide.mxml.editor.Editor" name="Main.mxml" tooltip="Project/src/Main.mxml">
+			<persistable path="/Project/src/Main.mxml"/>
+		</file>
+	</mruList>
+</workbench>

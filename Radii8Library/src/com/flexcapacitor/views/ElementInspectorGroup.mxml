@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						   xmlns:s="library://ns.adobe.com/flex/spark" 
+						   xmlns:mx="library://ns.adobe.com/flex/mx" 
+						   width="400" height="400" 
+						   xmlns:inspectors="com.flexcapacitor.inspectors.*"
+						   styleName="myStyle" xmlns:views="com.flexcapacitor.views.*">
+
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace inspectors "com.flexcapacitor.inspectors.*";
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.utils.InspectorUtils;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.DragEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			import mx.managers.PopUpManager;
+
+			public function close():void {
+				PopUpManager.removePopUp(this);
+				InspectorUtils.clearSelection(target, systemManager);
+			}
+
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				
+				// EVENTS we need to implement or handle
+				// selection events - when an item is selected then we assign a new target
+				// highlight events - when an item is highlighted / show border we do not set target
+				// close - teardown event when window is removed from the screen
+				// targetPropertyChange - when a property is changed on the target
+				// - the event would have is property bindable so listeners can check if the property is bindable
+				// and ignore or respond accordingly. also old values and new values
+				// show or hide event - when a panel is hidden or shown let windows know 
+				// (tab navigator does not dispatch hide or show when the tab is selected or deselected)
+				
+				// Nick recommended using ItemRenderers 
+				// the advantage is that as targets change the data property is set
+				// dataProvider keeps an array of items
+				// the disadvantage is item renders are not thought of as group containers
+				
+				// Create a undo history panel to keep track of changes
+				// create a components panel
+				// add icons for the outline view
+				// create a styles panel
+				// register panels in the manager
+				
+				target = FlexGlobals.topLevelApplication;
+			}
+			
+			
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<fx:Object id="target"/>
+	</fx:Declarations>
+
+	<views:Description target="{target}" left="10" right="10" top="10"/>
+	
+	<s:Group bottom="10" left="10" right="10" top="30">
+		
+		<!--<s:View height="100%" label="Selection" width="100%">-->
+			<s:Scroller height="100%" width="100%">
+				<s:Group>
+					<s:layout>
+						<s:VerticalLayout/>
+					</s:layout>
+					<views:Selection height="100%" width="100%"/>
+				</s:Group>
+			</s:Scroller>
+		<!--</s:View>-->
+		
+		<!--<s:View height="100%" label="Outline" width="100%">-->
+			<s:Scroller height="100%" width="100%">
+				<s:Group>
+					<s:layout>
+						<s:VerticalLayout/>
+					</s:layout>
+					<!--<inspectors:Outline id="outline" height="100%" width="100%"
+										change="{target = event.targetItem}"
+										target="{target}"/>-->
+				</s:Group>
+			</s:Scroller>
+		<!--</s:View>-->
+		
+		<!--<s:View height="100%" label="Layout" width="100%">-->
+			<s:Scroller height="100%" width="100%">
+				<s:Group>
+					<s:layout>
+						<s:VerticalLayout/>
+					</s:layout>
+					<views:Constraints id="constraints" height="100%" width="100%"
+											target="{target}"/>
+				</s:Group>
+			</s:Scroller>
+		<!--</s:View>-->
+
+		<!--<s:View height="100%" label="Properties" width="100%">-->
+			<s:Scroller height="100%" width="100%">
+				<s:Group>
+					<s:layout>
+						<s:VerticalLayout/>
+					</s:layout>
+					<views:Property height="100%" width="100%"/>
+				</s:Group>
+			</s:Scroller>
+		<!--</s:View>-->
+		
+		<!--<s:View height="100%" label="Statistics" width="100%">-->
+			<s:Scroller height="100%" width="100%">
+				<s:Group>
+					<s:layout>
+						<s:VerticalLayout/>
+					</s:layout>
+					<views:Statistics height="100%" width="100%"
+										   target="{target}"/>
+				</s:Group>
+			</s:Scroller>
+		<!--</s:View>-->
+
+	</s:Group>
+</s:Group>

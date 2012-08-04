@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<project name="Update Verson" default="main" basedir=".">
+
+  <!--<target name="build" >
+    <mkdir dir="build"/>
+    <javac srcdir="src" destdir="build"/>
+  </target>
+
+  <target name="declare" depends="build">
+    <taskdef name="mytask"
+        classname="com.mydomain.MyVeryOwnTask"
+        classpath="build"/>
+  </target>
+
+  <target name="main" depends="declare">
+    <mytask message="Hello World! MyVeryOwnTask works!"/>
+  </target>-->
+  
+	<!--- Updating build Date and Version -->
+	<target name="main">
+	
+		<propertyset id="tdate"></propertyset>
+		
+		<tstamp>
+			<format property="tdate" pattern="yyyyMMdd"/>
+		</tstamp>
+		
+		<buildnumber file="build.number"/>
+		
+		<echo>Updating version to current datetime: ${tdate}</echo>
+		
+		<replaceregexp byline="true">
+			<regexp pattern="public static const BUILD_DATE: String = \'([0-9]+)'"/>
+			<substitution expression="public static const BUILD_DATE: String = '${tdate}'"/>
+			<fileset dir="src">
+				<include name="build.as"/>
+			</fileset>
+		</replaceregexp>
+		
+		<replaceregexp byline="true">
+			<regexp pattern="public static const BUILD_NUMBER: String = \'([0-9\.]+)'"/>
+			<substitution expression="public static const BUILD_NUMBER: String = '${build.number}'"/>
+			<fileset dir="src">
+				<include name="build.as"/>
+			</fileset>
+		</replaceregexp>
+	</target>
+</project>

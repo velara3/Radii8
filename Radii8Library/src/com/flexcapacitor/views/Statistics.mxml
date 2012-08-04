@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:controls="com.flexcapacitor.controls.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 width="100%"
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 >
+
+	<!-- Width and height should be 100% -->
+
+	<!--- If you change the current target then dispatch a selection event with the new target assigned to it -->
+	<fx:Metadata>
+		[Event(name="change", type="com.flexcapacitor.events.InspectorEvent")]
+	</fx:Metadata>
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.events.InspectorEvent;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			
+
+			private var _target:Object;
+
+			public function get target():Object {
+				return _target;
+			}
+
+			/**
+			 * This is set automatically when a new target is selected
+			 * This can be any type. You must disable this component if the
+			 * type is not what you can process.
+			 * */
+			[Bindable]
+			public function set target(value:Object):void {
+
+				// the target 
+				if (value == null) {
+					_target = null;
+					enabled = false;
+					return;
+				}
+				else {
+					enabled = true;
+				}
+
+				_target = value;
+			}
+
+			/**
+			 * Notify host components when we change the target
+			 * */
+			public function changeTarget(newTarget:Object):void {
+				var selectionChangeEvent:InspectorEvent = new InspectorEvent(InspectorEvent.CHANGE);
+				selectionChangeEvent.targetItem = newTarget;
+				dispatchEvent(selectionChangeEvent);
+			}
+
+
+			protected function group1_showHandler(event:FlexEvent):void {
+				trace("statistics panel. type = " + event.type);
+			}
+
+
+			//public var stats:Stats;
+			public var stats:Stats;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				stats = new Stats();
+				stats.width = container.width;
+				stats.height = container.height;
+				container.addChild(stats);
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				
+				stats.WIDTH = unscaledWidth;
+				stats.HEIGHT = unscaledHeight;
+			}
+			
+			
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+
+	<mx:UIComponent id="container"
+					height="100%" width="100%"/>
+
+
+</s:Group>

@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:handlers="com.flexcapacitor.handlers.*"
+		 xmlns:status="com.flexcapacitor.effects.status.*"
+		 xmlns:core="com.flexcapacitor.effects.core.*"
+		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*"
+		 xmlns:file="com.flexcapacitor.effects.file.*"
+		 xmlns:popup="com.flexcapacitor.effects.popup.*"
+		 width="400" height="300" 
+		 xmlns:controls="com.flexcapacitor.controls.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.HistoryEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.XMLUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.XMLListCollection;
+			import mx.core.IVisualElement;
+			import mx.effects.effectClasses.PropertyChanges;
+			import mx.states.AddItems;
+			
+			public var radiate:Radiate = Radiate.instance;
+			
+			/**
+			 * List of changes
+			 * */
+			[Bindable]
+			public var xml:XML;
+			
+			/**
+			 * List of changes in XML as a string
+			 * Contains the same value as if calling xml.toXMLString();
+			 * */
+			[Bindable]
+			public var changesText:String;
+			
+			/**
+			 * Removes duplicate changes. 
+			 * If checkbox1 height is set to 20 and then later set to 30
+			 * then the first entry is removed. 
+			 * */
+			public var removeDuplicates:Boolean = true;
+			
+			/**
+			 * Removes the search pattern for finding in eclipse
+			 * */
+			private var includeExpression:Boolean;
+			private var reversePathOrder:Object;
+			
+			public function getHistory():String {
+				var history:ArrayCollection = Radiate.history;
+				var totalHistoryLength:int = history.length;
+				var currentHistoryIndex:int = Radiate.historyIndex;
+				var changesDictionary:Dictionary = Radiate.historyEventsDictionary;
+				var items:XMLListCollection = new XMLListCollection();
+				var propertyChange:PropertyChanges;
+				var setStartValues:Boolean = true;
+				var changesCollection:XMLListCollection;
+				var genericCollection:XMLListCollection;
+				var documentModel:ComponentDescription;
+				var historyEvent:HistoryEvent;
+				var propertiesList:XMLList;
+				var targetsList:XMLList;
+				var historyArray:Array;
+				var changesLength:int;
+				var properties:Array;
+				var targetCount:uint;
+				var propertyItem:XML;
+				var addItem:AddItems;
+				var property:String;
+				var changeItem:XML;
+				var targetItem:XML;
+				var changes:Array;
+				var change:Object;
+				var targets:Array;
+				var target:Object;
+				var item:XML;
+				
+				
+				if (currentHistoryIndex==-1) {
+					return "No changes";
+				}
+				
+				// get current changes
+				historyArray = history.length ? history.getItemAt(currentHistoryIndex) as Array : null;
+				change = historyArray && historyArray.length ? historyArray[0] as PropertyChanges: null;
+				
+				// get property change description object
+				historyEvent = Radiate.historyEventsDictionary[change];
+				
+				// create default xml
+				xml = <root><items/></root>;
+				
+				// get document tree for getting path names later
+				documentModel = DisplayObjectUtils.getDisplayList(radiate.document);
+				
+				
+				// loop through changes and create change items
+				for (var i:int;i<totalHistoryLength;i++) {
+					item = <item/>;
+					
+					// get changes
+					changes = history.getItemAt(i) as Array;
+					changesLength = changes.length;
+					
+					// reset changes
+					changesCollection = new XMLListCollection();
+					
+					// reset properties and targets
+					genericCollection = new XMLListCollection();
+					
+					for (var j:int=0;j<changesLength;j++) {
+						changeItem = <change/>;
+						change = changes[j];
+						historyEvent = changesDictionary[change];
+						
+						// create item
+						changeItem.@target = ""; // set it later but define it so it is listed first
+						changeItem.@description = historyEvent.description;
+						changeItem.@type = ClassUtils.getClassName(change);
+						
+						///////////////////////////////////////
+						// PROPERTY CHANGES
+						///////////////////////////////////////
+						if (change is PropertyChanges) {
+							propertyChange = change as PropertyChanges;
+							
+							// add properties
+							properties = historyEvent.properties;
+							
+							genericCollection = new XMLListCollection();
+							
+							changeItem.properties = <properties/>;
+							
+							for each (property in properties) {
+								propertyItem = <property/>;
+								propertyItem.@name = property;
+							
+								propertyItem.startValue = String(change.start[property]);
+								propertyItem.endValue = String(change.end[property]);
+								
+								genericCollection.addItem(propertyItem);
+							}
+							
+							propertiesList = genericCollection.source;
+							
+							changeItem.properties.appendChild(propertiesList);
+							
+						}
+						else if (change is AddItems) {
+							addItem = change as AddItems;
+							changeItem.destinationClass = ClassUtils.getClassName(addItem.destination);
+							changeItem.destination = DisplayObjectUtils.getVisualElementPath(addItem.destination as IVisualElement, documentModel, reversePathOrder);
+							changeItem.position = addItem.position;
+							changeItem.propertyName = addItem.propertyName;
+							changeItem.relativeTo = DisplayObjectUtils.getVisualElementPath(addItem.relativeTo as IVisualElement, documentModel, reversePathOrder);
+							changeItem.isArray = addItem.isArray;
+						}
+						
+						
+						///////////////////////////////////////
+						// ADD TARGETS
+						///////////////////////////////////////
+						changeItem.targets = <targets/>;
+						
+						targetsList = changeItem.child("targets");
+						targets = historyEvent.targets;
+						targetCount = targets.length;
+						
+						// store targets
+						genericCollection = new XMLListCollection();
+						
+						for each (target in targets) {
+							targetItem = <target/>;
+							changeItem.@target = changeItem.@target!="" ? ", " + ClassUtils.getClassName(target) : ClassUtils.getClassName(target);
+							targetItem.className = ClassUtils.getClassName(target);
+							targetItem.id = ClassUtils.getIdentifier(target) || "";
+							
+							
+							if (target is DisplayObject && includeExpression && targetItem.id) {
+								targetItem.expression = <expression/>;
+								targetItem.expression.content = XMLUtils.encloseInCDATA(ClassUtils.getRegExpSearchPattern(DisplayObject(target)));
+							}
+							
+							// if getting unique location find in and describe from within component tree 
+							//targetItem.uniqueIdentity = Object(target).toString();
+							targetItem.path = DisplayObjectUtils.getVisualElementPath(target as IVisualElement, documentModel, reversePathOrder);
+							
+							genericCollection.addItem(targetItem);
+						}
+						
+						targetsList = genericCollection.source;
+						
+						// add targets property change
+						changeItem.targets.appendChild(targetsList);
+						
+						// add changes to change collection
+						changesCollection.addItem(changeItem);
+					}
+					
+					// add changes to item
+					item.appendChild(changesCollection.source);
+					
+					// add item to items collection
+					items.addItem(item);
+				}
+				
+				
+				if (removeDuplicates) {
+					items.source = removeDuplicateItems(items.source);
+				}
+				
+				// add all item nodes to items node
+				xml.items.appendChild(items.source);
+				
+				// add xml header
+				changesText = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + "\n" + xml.toXMLString();
+				
+				
+				return changesText;
+			}
+			
+			/**
+			 * Removes duplicate items from the change history
+			 * */
+			public function removeDuplicateItems(changes:XMLList):XMLList {
+				var changesCollection:XMLListCollection = new XMLListCollection(changes);
+				var length:uint = changesCollection.length;
+				var targetsCollection:XMLListCollection;
+				var duplicateChanges:XMLList;
+				var removeArray:Array = [];
+				var uniqueIdentity:String;
+				var propertyName:String;
+				var targetsList:XMLList;
+				var removeLength:uint;
+				var targetLength:uint;
+				var changeCount:uint;
+				var changeItem:XML;
+				var targets:Object;
+				var change:XML;
+				
+				// loop through changes
+				for (var i:uint;i<length;i++) {
+					change = changesCollection.getItemAt(i) as XML;
+					propertyName = change.@property;
+					targetsList = change.child("targets");
+					targetsCollection = new XMLListCollection(targetsList);
+					targetLength = targetsList.length();
+					
+					// loop through targets
+					for (var j:uint=0;j<targetLength;j++) {
+						targets = targetsCollection.getItemAt(j);
+						uniqueIdentity = targets.target.uniqueIdentity;
+						
+						// check if same property is set again
+						// get all items that contain current target and property
+						duplicateChanges = changes.(targets.target.uniqueIdentity==uniqueIdentity && @property==propertyName);
+						
+						changeCount = duplicateChanges.length();
+						
+						if (changeCount>1) {
+							for (var k:uint=0;k<changeCount-1;k++) {
+								removeArray.push(duplicateChanges[k]);
+							}
+						}
+					}
+				}
+				
+				removeLength = removeArray.length;
+				
+				while (removeLength--) {
+					if (removeArray.indexOf(changesCollection.getItemAt(removeLength)) > -1) {
+						changesCollection.removeItemAt(removeLength);
+					}
+				}
+				
+				return changesCollection.source;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- GET HISTORY -->
+		<handlers:EventHandler eventName="click" target="{generateLabel}">
+			
+			<core:CallMethod methodName="getHistory" target="{this}"/>
+			
+			<core:CopyPreviousToNext />
+			
+			<popup:OpenPopUp popUpType="{popUp}" 
+							 width="{parentApplication.width*.8}" 
+							 height="{parentApplication.height*.8}"/>
+		</handlers:EventHandler>
+		
+		<!-- COPY TO THE CLIPBOARD -->
+		<handlers:EventHandler eventName="click" target="{copyIcon}">
+			
+			<clipboard:CopyToClipboard data="{changesText}" targetAncestor="{this}"/>
+			
+			<status:ShowStatusMessage message="Changes copied to the clipboard"/>
+			
+		</handlers:EventHandler>
+		
+		
+		<!-- EXPORT SNAPSHOT -->
+		<handlers:EventHandler eventName="click" target="{exportLabel}">
+			
+			
+			<file:PromptSaveAs data="{changesText}" fileExtension="xml" fileName="changes"
+							   targetAncestor="{this}"/>
+			
+		</handlers:EventHandler>
+		
+		<fx:Component className="popUp">
+			<s:Panel >
+				<fx:Declarations>
+					<fx:Object id="data"/>
+				</fx:Declarations>
+				<s:TextArea id="popUpTextArea" width="100%" height="100%" text="{data}">
+					
+				</s:TextArea>
+			</s:Panel>
+		</fx:Component>
+	</fx:Declarations>
+	
+	<s:HGroup width="100%" 
+			  left="5" right="5"
+			  verticalAlign="middle" 
+			  typographicCase="lowercaseToSmallCaps">
+		
+		<s:Label id="generateLabel" 
+				 text="Show Changes" 
+				 textAlign="center"
+				 buttonMode="true"
+				 backgroundColor="#484848"
+				 color="#eeeeee" 
+				 fontWeight="bold"
+				 fontSize="10"
+				 paddingBottom="4" paddingLeft="4"
+				 paddingRight="4" paddingTop="4" 
+				 minWidth="{generateLabel.height}" />
+		
+		<s:Label id="exportLabel" 
+				 text="Export" 
+				 textAlign="center"
+				 buttonMode="true"
+				 backgroundColor="#484848" 
+				 color="#eeeeee" 
+				 fontWeight="bold"
+				 fontSize="10"
+				 paddingLeft="4" 
+				 paddingBottom="4" 
+				 paddingRight="4"
+				 paddingTop="4" 
+				 minWidth="{exportLabel.height}"
+				 visible="{Boolean(xml)}" 
+				 includeInLayout="{Boolean(xml)}" 
+				 />
+		
+		<s:Spacer width="100%"/>
+		
+		<s:Image id="copyIcon" 
+				 source="{Radii8LibraryAssets.copy}" 
+				 toolTip="Copy the changes to the Clipboard"/>
+		
+	</s:HGroup>
+	
+</s:Group>

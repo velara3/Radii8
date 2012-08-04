@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300"
+		 creationComplete="creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.DragDropEvent;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.DragManagerUtil;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.core.IFlexDisplayObject;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Application;
+			import spark.components.List;
+			import spark.components.supportClasses.GroupBase;
+			
+			private var target:Object;
+			private var radiate:Radiate = Radiate.instance;
+			private var dragManagerInstance:DragManagerUtil;
+			
+			/**
+			 *  Get list of component classes from XML and check for definitions
+			 * */
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				var length:uint;
+				var items:XMLList;
+				var className:String;
+				var hasDefinition:Boolean;
+				var classType:Object;
+				var includeItem:Boolean;
+				var attributes:XMLList;
+				var attributesLength:int;
+				var item:XML;
+				var defaults:Object;
+				var propertyName:String;
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemHandler);
+				
+				// get list of component classes 
+				items = XML(Radii8LibrarySparkAssets.sparkManifestDefaults).component;
+				
+				length = items.length();
+				
+				for (var i:int;i<length;i++) {
+					item = items[i];
+					
+					var name:String = String(item.id);
+					className = item.attribute("class");
+					
+					includeItem = item.attribute("include")=="false" ? false : true;
+					
+					if (!includeItem) continue;
+					
+					
+					// check that definitions exist in domain
+					// skip any support classes
+					if (className.indexOf("mediaClasses")==-1 && 
+						className.indexOf("gridClasses")==-1 &&
+						className.indexOf("windowClasses")==-1 &&
+						className.indexOf("supportClasses")==-1) {
+						
+						hasDefinition = ApplicationDomain.currentDomain.hasDefinition(className);
+						
+						if (hasDefinition) {
+							classType = ApplicationDomain.currentDomain.getDefinition(className);
+							
+							if (item.defaults) {
+								attributes = item.defaults.attributes();
+								attributesLength = attributes.length();
+								defaults = {};
+								
+								for each (var value:Object in attributes) {
+									propertyName = String(value.name());
+									
+									if (propertyName=="dataProvider") {
+										defaults[propertyName] = new ArrayCollection(String(value).split(","));
+									}
+									else {
+										defaults[propertyName] = String(value);
+									}
+								}
+							}
+							
+							Radiate.addComponentType(item.@id, className, classType, null, defaults);
+						}
+						
+					}
+					else {
+						delete items[i];
+						length--;
+					}
+					
+					
+				}
+				
+				components = Radiate.componentDescriptions;
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void
+			{
+				target = event.selectedItem;
+			}
+			
+			/**
+			 * Listen for drag movement and start dragging if drag tolerance is met
+			 * */
+			public function rowGroupMouseDownHandler(event:MouseEvent, data:Object, itemIndex:int):void {
+				var classFactory:ClassFactory;
+				var item:ComponentDescription;
+				var application:Application;
+				var component:Object;
+				var rowGroup:Group;
+				
+				item = ComponentDescription(data);
+				
+				rowGroup = event.currentTarget as Group;
+				rowGroup.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+				
+				event.stopImmediatePropagation();
+				list.dragEnabled = false;
+				
+				application = radiate.document as Application || parentApplication as Application;
+				
+				// Create component to drag
+				classFactory = new ClassFactory(item.classType as Class);
+				classFactory.properties = item.defaultProperties;
+				component = classFactory.newInstance();
+				
+				
+				if (component is IFlexDisplayObject) {
+					//component.width = IFlexDisplayObject(component).measuredWidth;
+					//component.height = IFlexDisplayObject(component).measuredHeight;
+				}
+				
+				if (component is GroupBase) {
+					DisplayObjectUtils.addGroupMouseSupport(component as GroupBase);
+				}
+				
+				if (!dragManagerInstance) {
+					dragManagerInstance = new DragManagerUtil();
+				}
+				
+				dragManagerInstance.listenForDragBehavior(rowGroup, application, event, component);
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				
+			}
+			
+			
+			protected function mouseUpHandler(event:MouseEvent):void
+			{
+				list.dragEnabled = true;
+				event.currentTarget.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				
+			}
+			
+			protected function handleDragDrop(event:DragDropEvent):void
+			{
+			}
+			
+			protected function addItemHandler(event:RadiateEvent):void {
+				//trace("item addedd");
+				
+				//radiate.target = event.eventTarget;
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:ArrayCollection id="components"/>
+	</fx:Declarations>
+	
+	
+	<s:List id="list" 
+			width="100%" 
+			height="100%"
+			labelField="name" 
+			dragEnabled="true"
+			borderVisible="false"
+			interactionMode="mouse"
+			dataProvider="{components}"
+			>
+		<s:itemRenderer>
+			<fx:Component>
+				<s:ItemRenderer width="100%" height="100%" minHeight="22" >
+					<fx:Script>
+						<![CDATA[
+							import com.flexcapacitor.controller.Radiate;
+							import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+							
+							override public function set data(value:Object):void {
+								super.data = value;
+								var definition:ComponentDescription = value as ComponentDescription;
+								var path:String;
+								
+								
+								if (definition) {
+									if (definition.icon) {
+										iconImage.source = definition.icon;
+									}
+									else {
+										path = "assets/images/components/" + definition.name + ".png";
+										iconImage.source = path;
+									}
+								}
+							}
+							
+							protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
+								iconImage.source = "assets/images/components/BorderContainer.png";
+							}
+							
+							protected function groupMouseDownHandler(event:MouseEvent):void
+							{
+								outerDocument.rowGroupMouseDownHandler(event, data, itemIndex);
+							}
+							
+						]]>
+					</fx:Script>
+					<s:HGroup id="rowGroup" 
+							  width="100%" 
+							  height="100%" 
+							  verticalAlign="middle"
+							  paddingLeft="5" 
+							  mouseDown="groupMouseDownHandler(event)">
+						<s:Image id="iconImage"
+								 contentLoader="{Radiate.contentCache}"
+								 ioError="iconImage_ioErrorHandler(event)"
+								 width="16" height="16"/>
+						<s:Label id="labelDisplay" 
+								 fontSize="11"
+								 typographicCase="lowercaseToSmallCaps"/>
+					</s:HGroup>
+					
+				</s:ItemRenderer>
+			</fx:Component>
+			
+		</s:itemRenderer>
+	</s:List>
+</s:Group>

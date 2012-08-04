@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" 
+		xmlns:handlers="com.flexcapacitor.handlers.*" 
+		xmlns:status="com.flexcapacitor.effect.status.*" 
+		xmlns:inspectors="com.flexcapacitor.inspectors.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.performance.PerformanceMeter;
+			import com.flexcapacitor.performance.ProfileTest;
+			import com.flexcapacitor.utils.VectorUtils;
+			
+			
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				var vector:Vector.<int> = new Vector.<int>(1000000); 
+				var usePush:Boolean = false;
+				var result:Array = [];
+				var length:uint = vector.length;
+				
+				PerformanceMeter.start("Test1");
+				var time:int = getTimer();
+				
+				for(var i:int = 0; i < length; i++){
+					result[i] = vector[i];
+				}
+				
+				time = getTimer() - time;
+				PerformanceMeter.stop("Test1");
+				var profileTest:ProfileTest = PerformanceMeter.getTest("Test1");
+				timestamps.source = profileTest.timestampsArray;
+				timestamps.refresh();
+				trace("time = ", time);
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				//timestamps.source = showMessage.profileData;
+			}
+			
+			protected function showMessage_profileDataUpdateHandler(event:Event):void
+			{
+				trace(event.currentTarget.profileData);
+			}
+			
+			public function profileData(testName:String):Array {
+				var test:ProfileTest = PerformanceMeter.getTest(testName);
+				
+				if (test && test.timestamps.length) {
+					var array:Array = test.timestamps as Array;
+					return VectorUtils.vectorToArray(test.timestamps);
+				}
+				return [];
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<fx:Declarations>
+		<!--<handlers:EventHandler eventName="click" target="{button1}" >
+			<status:ShowStatusMessage id="showMessage" profileToConsole="true" message="Performance testing" profile="true"/>
+		</handlers:EventHandler>-->
+		
+		<s:ArrayCollection id="timestamps"/>
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	<!--<s:Button id="button1" label="Test"  click="button1_clickHandler(event)"/>-->
+	
+	<mx:CartesianChart width="100%" height="100%" >
+		
+		<mx:series>
+			<mx:AreaSeries dataProvider="{timestamps}" xField="startTime" yField="duration" displayName="Display Name"/>
+		</mx:series>
+	</mx:CartesianChart>
+	
+	
+</s:Group>

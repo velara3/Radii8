@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" 
+		 xmlns:controls="com.flexcapacitor.controls.*" 
+		 creationComplete="group2_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.InspectorEvent;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.InspectorUtils;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			public var showIcon:Boolean = true;
+			
+			[Bindable]
+			public var showCopyIcon:Boolean;
+			
+			[Bindable]
+			public var showDescriptionLabel:Boolean = true;
+			
+			public var describedType:XML;
+			
+			[Bindable]
+			public var selectedItemClass:String;
+			
+			[Bindable]
+			public var selectedItemQualifiedClass:String;
+			
+			[Bindable]
+			public var selectedItemDescription:String;
+			
+			[Bindable]
+			public var selectedItemPackage:String;
+			
+			[Bindable]
+			public var selectedItemName:String;
+			
+			[Bindable]
+			public var selectedItemID:String;
+			
+			[Bindable]
+			public var selectedItemSuperClass:String;
+			
+			[Bindable]
+			public var selectedItemSuperClassPackage:String;
+			
+			[Bindable]
+			public var selectedItemDocument:String;
+			
+			[Bindable]
+			public var selectedItemParentDocument:String;
+			
+			/**
+			 * A list of attributes that can be displayed and their order. 
+			 * Items are "normal", "id", "name", "class", "superClass", "document", "package", "parentDocument"
+			 * */
+			[Bindable]
+			public var includedItems:Array = ["normal","id","name","class","superClass","document","package","parentDocument"];
+			
+			private var _target:Object;
+			
+			public function get target():Object {
+				if (_target==null) return "";
+				return _target;
+			}
+			
+			/**
+			 * This is set automatically when a new target is selected
+			 * This can be any type. You must disable this component if the 
+			 * type is not what you can process.
+			 * */
+			[Bindable]
+			public function set target(value:Object):void {
+				
+				// the target 
+				if (value==null) {
+					_target = null;
+					selectedItemDescription = "No Selection";
+					enabled = false;
+					return;
+				}
+				else {
+					enabled = true;
+				}
+				
+				_target = value;
+				
+				var parentName:String = target is UIComponent ? InspectorUtils.getClassName(UIComponent(target).parentDocument) : "";
+				
+				// description of target  
+				selectedItemQualifiedClass 			= InspectorUtils.getQualifiedClassName(target);
+				selectedItemClass 					= InspectorUtils.getClassName(target);
+				selectedItemName 					= InspectorUtils.getName(target);
+				selectedItemID 						= InspectorUtils.getIdentifier(target) || "";
+				selectedItemSuperClass 				= InspectorUtils.getSuperClassName(target);
+				selectedItemSuperClassPackage 		= InspectorUtils.getSuperClassPackage(target);
+				selectedItemPackage 				= InspectorUtils.getPackageName(target);
+				selectedItemParentDocument			= InspectorUtils.getParentDocumentName(target) || "";
+				selectedItemDocument 				= InspectorUtils.getDocumentName(target) || "";
+				
+				// example, if ID exists, "myButtonID:Button in MyComponent"
+				// if ID isn't set, "Button0 in MyComponent"
+				selectedItemDescription = target ? (selectedItemID ? selectedItemClass + "." + selectedItemID : selectedItemClass) + " in " + selectedItemDocument : "";
+				
+				if (selectedItemDescription.indexOf("null")!=-1) {
+					selectedItemDescription = selectedItemClass ? selectedItemClass : "";
+				}
+			}
+			
+			/**
+			 * Notify host components when we change the target
+			 * */
+			public function changeTarget(newTarget:Object):void {
+				var selectionChangeEvent:InspectorEvent = new InspectorEvent(InspectorEvent.CHANGE);
+				selectionChangeEvent.targetItem = newTarget;
+				dispatchEvent(selectionChangeEvent);
+			}
+			
+			/**
+			 * Go to the next state
+			 * */
+			protected function group1_clickHandler(event:MouseEvent):void {
+				var selectedStateIndex:int = includedItems.indexOf(currentState);
+				
+				if (selectedStateIndex==-1 || selectedStateIndex + 1==includedItems.length) {
+					currentState = includedItems.length>0 ? includedItems[0] : "";
+				}
+				else {
+					currentState = includedItems[selectedStateIndex+1];
+				}
+
+			}
+			
+			/**
+			 * Copies the value displayed to the clipboard
+			 * */
+			public function copySelectedValue():void {
+				InspectorUtils.copyToClipboard(descriptionTextValue.text);
+			}
+			
+			public var radiate:Radiate = Radiate.instance;
+			
+			protected function group2_creationCompleteHandler(event:FlexEvent):void {
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="class"/>
+		<s:State name="qualifiedClass"/>
+		<s:State name="id"/>
+		<s:State name="name"/>
+		<s:State name="superClass"/>
+		<s:State name="document"/>
+		<s:State name="package"/>
+		<s:State name="parentDocument"/>
+	</s:states>
+	
+	<s:HGroup width="100%" verticalAlign="middle">
+		<s:Image source="{Radii8LibraryAssets.component}" 
+				 height="16" 
+				 width="16"
+				 source.document="{Radii8LibraryAssets.component}" 
+				 includeInLayout="{showIcon}"
+				 source.package="{Radii8LibraryAssets.packageIcon}" 
+				 visible="{showIcon}"
+				 useHandCursor="true" 
+				 mouseChildren="false" 
+				 buttonMode="true"
+				 toolTip="The document that contains this item"/>
+		
+		<s:Label id="descriptionTextName" paddingTop="4"
+				 minWidth="50"
+				 color="#2F3030" fontWeight="bold"
+				 includeInLayout="{showDescriptionLabel}"
+				 visible="{showDescriptionLabel}"
+				 text.normal=""
+				 text.class="Class:"
+				 text.id="ID:   "
+				 text.name="Name:"
+				 text.document="Document:"
+				 text.package="Package:"
+				 text.parentDocument="Parent Document:"
+				 text.superClass="Super Class:"
+				 useHandCursor="true" 
+				 mouseChildren="false" 
+				 buttonMode="true"
+				 click="group1_clickHandler(event)"/>
+		
+		<s:RichText id="descriptionTextValue" 
+					width="100%" 
+					paddingTop="4"
+					maxDisplayedLines="1"
+					color="#2F3030" fontWeight="normal"
+					text.normal="{selectedItemDescription}" 
+					text.class="{selectedItemClass}"
+					text.id="{selectedItemID}"
+					text.name="{selectedItemName}"
+					text.superClass="{selectedItemSuperClass}"
+					text.document="{selectedItemDocument}"
+					text.package="{selectedItemPackage}"
+					text.parentDocument="{selectedItemParentDocument}"
+					/>
+		<mx:UIComponent width="100%"
+						includeInLayout="{showCopyIcon}"
+						visible="{showCopyIcon}"/>
+		<s:Image source="{Radii8LibraryAssets.copy}" height="16" width="16"
+				 includeInLayout="{showCopyIcon}"
+				 visible="{showCopyIcon}"
+				 useHandCursor="true" mouseChildren="false" buttonMode="true"
+				 click="copySelectedValue()"
+				 toolTip="Copy the text to the clipboard"/>
+		
+	</s:HGroup>
+	
+	<s:Group width="100%" height="100%" 
+			 click="group1_clickHandler(event)" >
+		<s:Rect width="100%" height="100%" >
+			<s:fill>
+				<s:SolidColor color="0" alpha="0"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+</s:Group>

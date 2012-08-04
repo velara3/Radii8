@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fc="com.flexcapacitor.controls.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:utils="com.flexcapacitor.utils.*" 
+		 xmlns:handlers="com.flexcapacitor.handlers.*"
+		 xmlns:supportClasses="com.flexcapacitor.effects.supportClasses.*"
+		 xmlns:local="*"
+		 width="100%" 
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			private var radiate:Radiate = Radiate.getInstance();
+			private var _target:Object;
+			private static const BLEND_MODE:String = "blendMode";
+			
+			public function get target():Object {
+				return _target;
+			}
+
+			public function set target(value:Object):void {
+				if (_target == value) return;
+				
+				if (!(value is DisplayObject)) {
+					_target = null;
+					blendModeCombo.selectedIndex = -1;
+				}
+				else {
+					_target = value;
+					updateSelectedBlendMode();
+				}
+			}
+
+			protected function applyPropertiesToTargetHandler(event:IndexChangeEvent = null):void {
+				
+				if (target) {
+					Radiate.setProperty(target, BLEND_MODE, blendModeCombo.selectedItem.value);
+				}
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChangeHandler);
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem;
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				var displayObject:DisplayObject = event.selectedItem as DisplayObject;
+				var currentBlendMode:String;
+				var currentIndex:int;
+				
+				var properties:Array = event.properties;
+				
+				for (var i:int;i<length;i++) {
+					if (properties[i]==BLEND_MODE) {
+						updateSelectedBlendMode();
+						break;
+					}
+				}
+			}
+			
+			/**
+			 * Updates the list to reflect the current blend mode of the target
+			 * */
+			private function updateSelectedBlendMode():void {
+				var displayObject:DisplayObject = target as DisplayObject;
+				var currentBlendMode:String;
+				var currentIndex:int;
+				
+				if (displayObject) {
+					currentBlendMode = displayObject.blendMode;
+					currentIndex = getItemIndexByKeys(blendModes, {value:currentBlendMode});
+					blendModeCombo.selectedIndex = currentIndex;
+				}
+			}
+			
+			/**
+			 * Modified code from CASALIBRARY
+			 * @modified true 9/10/2011
+			 * */
+			
+			/**
+			 * Returns the index of the first item that match the key values of all 
+			 * properties of the object <code>keyValues</code>.
+			 
+			 @param inArray: Array to search for an element with every key value in the object <code>keyValues</code>.
+			 @param keyValues: An object with key value pairs.
+			 @return Returns the first matched item; otherwise <code>null</code>.
+			 @example
+			 <code>
+			 var people:Array  = new Array({name: "Aaron", sex: "Male", hair: "Brown"}, {name: "Linda", sex: "Female", hair: "Blonde"}, {name: "Katie", sex: "Female", hair: "Brown"}, {name: "Nikki", sex: "Female", hair: "Blonde"});
+			 var person:Object = ArrayUtil.getItemByKeys(people, {sex: "Female", hair: "Brown"});
+			 
+			 trace(person.name); // Traces "Katie"
+			 </code>
+			 */
+			public static function getItemIndexByKeys(array:Array, keyValues:Object):int {
+				var i:int = -1;
+				var item:*;
+				var hasKeys:Boolean;
+				
+				while (++i < array.length) {
+					item    = array[i];
+					hasKeys = true;
+					
+					for (var j:String in keyValues) {
+						if (!(j in item) || item[j] != keyValues[j]) {
+							hasKeys = false;
+						}
+					}
+					
+					if (hasKeys) {
+						return i;
+					}
+				}
+				
+				return -1;
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--
+		
+		// If one of the non-native Flash blendModes is set, 
+		// record the new value and set the appropriate 
+		// blendShader on the display object.
+		
+		value =="colordodge" 
+		value =="colorburn" 
+		value =="exclusion" 
+		value =="softlight" 
+		value =="hue"
+		value =="saturation" 
+		value =="color"
+		value =="luminosity"
+		-->
+		
+		<fx:Array id="blendModes">
+			<fx:Object label="Auto" value="auto"/>
+			<fx:Object label="Add" value="add"/>
+			<fx:Object label="Alpha" value="alpha"/>
+			<fx:Object label="Color" value="color"/>
+			<fx:Object label="Color Burn" value="colorburn"/>
+			<fx:Object label="Color Dodge" value="colordodge"/>
+			<fx:Object label="Darken" value="darken"/>
+			<fx:Object label="Difference" value="difference"/>
+			<fx:Object label="Erase" value="erase"/>
+			<fx:Object label="Exclusion" value="exclusion"/>
+			<fx:Object label="Hardlight" value="hardlight"/>
+			<fx:Object label="Hue" value="hue"/>
+			<fx:Object label="Invert" value="invert"/>
+			<fx:Object label="Layer" value="layer"/>
+			<fx:Object label="Lighten" value="lighten"/>
+			<fx:Object label="Luminosity" value="luminosity"/>
+			<fx:Object label="Multiply" value="multiply"/>
+			<fx:Object label="Normal" value="normal"/>
+			<fx:Object label="Overlay" value="overlay"/>
+			<fx:Object label="Saturation" value="saturation"/>
+			<fx:Object label="Screen" value="screen"/>
+			<fx:Object label="Softlight" value="softlight"/>
+			<fx:Object label="Subtract" value="subtract"/>
+			<fx:Object label="Normal" value="normal"/>
+		</fx:Array>
+		
+		<s:ArrayCollection id="blendModesCollection" source="{blendModes}"/>
+	</fx:Declarations>
+
+	<s:DropDownList id="blendModeCombo"
+					interactionMode="mouse"
+					width="100%"
+					change="applyPropertiesToTargetHandler(event)"
+					focusOut="applyPropertiesToTargetHandler()"
+					dataProvider="{blendModesCollection}">
+	</s:DropDownList>
+
+</s:Group>

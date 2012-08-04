@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" 
+		 minHeight="20"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	<!-- Width and height should be 100% -->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			
+			import mx.events.FlexEvent;
+			
+			private var _target:*;
+			
+			public function get target():* {
+				return _target;
+			}
+			
+			/**
+			 * This is set automatically when a new target is selected
+			 * This can be any type. You must disable this component if the 
+			 * type is not what you can process.
+			 * */
+			[Bindable]
+			public function set target(value:*):void {
+				
+				// For example, if we only want to handle DisplayObjects we check for them here
+				if (!(value is DisplayObject)) {
+					_target = null;
+					enabled = false;
+					return;
+				}
+				else {
+					enabled = true;
+				}
+				
+				_target = DisplayObject(value);
+			}
+			
+			private var radiate:Radiate = Radiate.instance;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:Label text="Hello world! The target is {target}" horizontalCenter="0" verticalCenter="0"/>
+</s:Group>

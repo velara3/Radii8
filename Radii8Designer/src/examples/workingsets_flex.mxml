@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workingSetManager>
+	<workingSet editPageId="org.eclipse.ui.resourceWorkingSetPage" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1315939991634_2" label="MegatronicSpectrascope" name="MegatronicSpectrascope">
+		<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/MobileSparkLibrary" type="4"/>
+		<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/ReflextionsMobile" type="4"/>
+		<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/InternalLibrary" type="4"/>
+		<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/MainLibrary" type="4"/>
+		<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/CasaLibrary" type="4"/>
+		<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/NBFlexLib4" type="4"/>
+	</workingSet>
+	<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1315922901304_0" label="Window Working Set" name="Aggregate for window 1315922901302"/>
+	<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1315939933488_1" label="Window Working Set" name="Aggregate for window 1315939933488"/>
+	<mruList name="MegatronicSpectrascope"/>
+</workingSetManager>

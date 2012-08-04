@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 minWidth="40" minHeight="20"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:debugging="com.flexcapacitor.effects.debugging.*" 
+		 xmlns:core="com.flexcapacitor.effects.core.*">
+	
+	<!-- 
+	
+	Sortof a marquee type of tool. Select this tool and 
+	then you can draw a box around something and it shows the dimensions
+	
+	-->
+	
+	<fx:Declarations>
+		<handlers:EventHandler eventName="click" target="{redrawButton}">
+			<core:ToggleProperty target="{redrawButton}" 
+								 targetPropertyName="selected" 
+								 updateTargetProperty="false"
+								 toggleValues="{[true, false]}">
+				<core:effects>
+					<debugging:ShowRedrawRegions />
+					<debugging:HideRedrawRegions />
+				</core:effects>
+			</core:ToggleProperty>
+		</handlers:EventHandler>
+	</fx:Declarations>
+	
+	<s:ToggleButton id="redrawButton" label="Show Redraw Regions"  />
+</s:Group>

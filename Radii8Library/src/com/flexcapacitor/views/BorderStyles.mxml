@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="300" xmlns:local="*">
+	
+	<fx:Script>
+		<![CDATA[
+			
+			private var _target:DisplayObject;
+			public function get target():DisplayObject {
+				return _target;
+			}
+			
+			[Bindable]
+			public function set target(value:DisplayObject):void {
+				_target = value;
+				
+				if (value) {
+					//updateTargetDimensions(value);
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--<local:HandlerInjector 
+							   targets="{[verticalCenterText, bottomText, rightText, 
+							   horizontalCenterText, leftText, widthText, heightText,
+							   widthText, heightText, xText, yText]}"/>-->
+	</fx:Declarations>
+	<!--<mx:Image x="58" y="-258" source="borderstyles.png" visible="false"/>-->
+	
+	<s:Line left="20" right="20" y="20">
+		<s:stroke>
+			<s:SolidColorStroke />
+		</s:stroke>
+	</s:Line>
+	<s:Line left="20" right="20" y="135">
+		<s:stroke>
+			<s:SolidColorStroke />
+		</s:stroke>
+	</s:Line>
+	<s:RichEditableText horizontalCenter="0"
+						text="Padding" y="130"
+						tabFocusEnabled="false" backgroundColor="#FFFFFF"/>
+	<s:RichEditableText horizontalCenter="0"
+						text="Border" y="15"
+						tabFocusEnabled="false" backgroundColor="#FFFFFF" editable="false"/>
+	<s:CheckBox x="29" y="33" label="Border Visible" id="visibleCheckbox"/>
+	<s:Group y="158" horizontalCenter="0">
+		<s:RichEditableText x="121" y="7" text="Right:"/>
+		<s:TextInput id="rightPaddingText"
+					 width="50" x="166" y="0"
+					 name="x:Number"/>
+		<s:RichEditableText x="110" y="41" text="Bottom:"/>
+		<s:TextInput id="bottomPaddingText"
+					 width="50" x="166" y="34"
+					 name="x:Number"/>
+		<s:RichEditableText x="11" y="41" text="Top:"/>
+		<s:TextInput id="topPaddingText"
+					 width="50" x="40" y="34"
+					 name="x:Number"/>
+		<s:RichEditableText x="10" y="6" text="Left:"/>
+		<s:TextInput id="leftPaddingText"
+					 width="50" x="40" y="0"
+					 name="x:Number"/>
+	</s:Group>
+	<s:Group y="60" horizontalCenter="0">
+		<s:RichEditableText x="16" y="7" text="Color:"/>
+		<s:RichEditableText x="141" y="6" text="Alpha:"/>
+		<s:RichEditableText x="135" y="41" text="Radius:"/>
+		<s:TextInput id="borderRadiusText"
+					 width="50" x="183" y="34"
+					 name="x:Number"/>
+		<s:RichEditableText x="11" y="42" text="Weight:"/>
+		<s:TextInput id="borderWeightText"
+					 width="50" x="57" y="34"
+					 name="x:Number"/>
+		<!--<mx:ColorPicker x="57" y="0" id="borderColorPicker"/>-->
+		
+		<s:TextInput id="alphaText"
+					 width="50" x="183" y="0"
+					 name="x:Number"/>
+	</s:Group>
+	
+</s:Group>

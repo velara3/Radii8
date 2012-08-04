@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.utils.getTimer;
+			
+			import mx.events.FlexEvent;
+			
+			// THESE VALUES ARE DIFFERENT FOR FLASH PLAYER IN THE BROWSER VS AIR
+			// TODO: Update descriptions
+			
+			/**
+			 * TODO: How often to update the display
+			 * */
+			private var updateInterval:int;
+			private var message:String;
+			
+			/**
+			 * I don't know what this is really telling me
+			 * */
+			public var showAvailablePlayerMemory:Boolean;
+			
+			/**
+			 * I don't know what this is really telling me
+			 * */
+			public var showCurrentlyUsedPlayerMemory:Boolean;
+			
+			/**
+			 * I don't know what this is really telling me
+			 * */
+			public var showTotalAllocatedMemoryOfAIRApplication:Boolean;
+
+			/**
+			 * I don't know what this is really telling me
+			 * */
+			public var showTotalAllocatedMemoryOfAllFlashInstancesRunningInTheBrowser:Boolean = true;
+			
+			/**
+			 * Not sure if this is accurate
+			 * */
+			public var showTotalAllocatedPlayerMemory:Boolean;
+
+			private var _wrapCharacter:String = "\n";
+			private var wrapCharacter:String = "";
+			private var _wrap:Boolean;
+			
+			/**
+			 * With multiple values indicates to wrap to next line.
+			 * */
+			public function set wrap(value:Boolean):void {
+				wrapCharacter = value ? _wrapCharacter : "";
+				_wrap =	value;
+			}
+			
+			public function get wrap():Boolean {
+				return _wrap;
+			}
+			
+			protected function enterFrameHandler(event:TimerEvent):void {
+				
+				// add update interval support
+				
+				
+				message = showTotalAllocatedPlayerMemory ? " " + getTotalAllocatedPlayerMemory() + wrapCharacter : "";
+				message += showAvailablePlayerMemory ? getSystemFreeMemory()  + wrapCharacter : "";
+				message += showCurrentlyUsedPlayerMemory ? " " + getCurrentlyUsedPlayerMemory() + wrapCharacter : "";
+				message += showTotalAllocatedMemoryOfAIRApplication ? " " + getTotalAllocatedApplicationMemory() + wrapCharacter : "";
+				message += showTotalAllocatedMemoryOfAllFlashInstancesRunningInTheBrowser ? " " + getTotalAllocatedMemoryOfAllFlashInstancesRunningInTheBrowser() + wrapCharacter : "";
+				statistic.text = message;
+			}
+			
+			/**
+			 * The amount of memory (in bytes) that is allocated to Adobe® Flash® Player 
+			 * or Adobe® AIR® and that is not in use. This unused portion of allocated 
+			 * memory (System.totalMemory) fluctuates as garbage collection takes place. 
+			 * Use this property to monitor garbage collection.
+			 * 
+			 * getAvailablePlayerMemory
+			 * */
+			protected function getSystemFreeMemory():String {
+				return getPrecision(System.freeMemory);
+			}
+			
+			/**
+			 * The amount of memory (in bytes) currently in use that has been directly 
+			 * allocated by Flash Player or AIR. This property does not return all memory 
+			 * used by an Adobe AIR application or by the application (such as a browser) 
+			 * containing Flash Player content. The browser or operating system may consume 
+			 * other memory. The System.privateMemory property reflects all memory used by 
+			 * an application.
+			 * */
+			protected function getCurrentlyUsedPlayerMemory():String {
+				return getPrecision(System.totalMemoryNumber);
+			}
+			
+			/**
+			 * The entire amount of memory (in bytes) used by an application. This is the 
+			 * amount of resident private memory for the entire process. AIR developers should 
+			 * use this property to determine the entire memory consumption of an application.
+			 * 
+			 * Results of this value for Flash Player in the browser are vague. Use alternative method
+			 * */
+			protected function getTotalAllocatedApplicationMemory():String {
+				return getPrecision(System.privateMemory);
+			}
+			
+			/**
+			 * The entire amount of memory (in bytes) used by a Flash application including the memory 
+			 * used by a container application, such as the web browser.
+			 * */
+			protected function getTotalAllocatedMemoryOfAllFlashInstancesRunningInTheBrowser():String {
+				
+				return getPrecision(System.privateMemory);
+			}
+			
+			/**
+			 * Total Allocated Player Memory. Not accurate??
+			 * */
+			protected function getTotalAllocatedPlayerMemory():String {
+				
+				// this can't be right
+				return getPrecision(System.freeMemory + System.totalMemoryNumber);
+			}
+			
+			
+			private function getPrecision(memory:Number, format:String = "MB"):String {
+				return Number(memory / 1000000).toPrecision(3) + format;
+			}
+			
+			private var timer:Timer;
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				
+				timer = new Timer(5000);
+				timer.addEventListener(TimerEvent.TIMER, enterFrameHandler, false, 0, true);
+				timer.start();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Label id="statistic" width="100%"/>
+
+</s:Group>

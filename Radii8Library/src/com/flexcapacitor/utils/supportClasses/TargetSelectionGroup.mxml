@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				autoDrawBackground="false"
+				mouseChildren="false"
+				mouseEnabled="false"
+				buttonMode="false"
+				mouseEnabledWhereTransparent="false"
+				width="20" height="20"
+				>
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			
+			import mx.core.mx_internal;
+			import mx.events.DragEvent;
+			import mx.utils.NameUtil;
+			
+			use namespace mx_internal;
+			
+			
+			override public function get data():Object {
+				return super.data;
+			}
+			
+			override public function set data(value:Object):void {
+				// TODO Auto Generated method stub
+				super.data = value;
+				
+				// check if target is component and is not skin
+				// should not be a skin
+				labelDisplay.text = NameUtil.getUnqualifiedClassName(value);
+				
+				// hide or show background fill
+				if (Radiate.showSelectionBackground) {
+					selectionFill.visible = true;
+					
+					if (Radiate.instance.document == value && !Radiate.showSelectionBackgroundOnDocument) {
+						selectionFill.visible = false;
+					}
+				}
+				else {
+					selectionFill.visible = false;
+				}
+				
+				// hide or show label
+				labelDisplay.visible = Radiate.showSelectionLabel;
+				
+				if (Radiate.instance.document == value && !Radiate.showSelectionLabelOnDocument) {
+					labelDisplay.visible = false;
+				}
+			}
+			
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				// TODO Auto Generated method stub
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				
+				graphics.clear();
+			}
+			
+			
+			
+			protected function itemrenderer1_mouseMoveHandler(event:MouseEvent):void
+			{
+				trace("selection group is getting mouse events");
+				dispatchEvent(event.clone());
+			}
+			
+			protected function itemrenderer1_dragOverHandler(event:DragEvent):void
+			{
+				trace("selection group is getting drag events");
+				dispatchEvent(event.clone());
+			}
+			
+			[Bindable]
+			public var showSelectionBackground:Boolean = true;
+			
+			[Bindable]
+			public var showSelectionBackgroundOnDocument:Boolean = true;
+			
+			[Bindable]
+			public var showSelectionLabel:Boolean = true;
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:Rect id="selectionFill" width="{width}" height="{height}" >
+		<s:fill>
+			<s:SolidColor color="0x2da6e9" alpha=".08" />
+		</s:fill>
+	</s:Rect>
+	
+	<s:Rect id="selectionStroke" width="{width}" height="{height}" >
+		<s:stroke>
+			<s:SolidColorStroke color="0x2da6e9" weight="0" alpha=".5"/>
+		</s:stroke>
+	</s:Rect>
+	
+	<s:Label id="labelDisplay" 
+			 top="-14"
+			 fontSize="9"
+			 typographicCase="uppercase"
+			 text="Group"
+			 textAlign="center"
+			 verticalAlign="middle"
+			 height="14" 
+			 paddingLeft="5" 
+			 paddingRight="5"
+			 fontWeight="bold"
+			 color="0xffffff" 
+			 backgroundColor="0x2da6e9"
+			 backgroundAlpha=".9" 
+			 mouseChildren="false"
+			 mouseEnabled="false"
+			 />
+</s:ItemRenderer>

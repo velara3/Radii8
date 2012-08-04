@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 creationComplete="creationComplete(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.radiate.Radiate;
+			import com.flexcapacitor.radiate.events.RadiateEvent;
+			
+			import mx.events.FlexEvent;
+			import mx.utils.NameUtil;
+			private var radiate:Radiate;
+			private var _target:Object;
+			public var targetApplication:Object;
+
+			public function get target():Object
+			{
+				return _target;
+			}
+
+			public function set target(value:Object):void
+			{
+				_target = value;
+			}
+
+			protected function creationComplete(event:FlexEvent):void
+			{
+				radiate = Radiate.instance;
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				
+				var context:LoaderContext = new LoaderContext();
+				
+				/* Specify the current application's security domain. */
+				context.securityDomain = SecurityDomain.currentDomain;
+				
+				/* Specify a new ApplicationDomain, which loads the sub-app into a 
+				peer ApplicationDomain. */
+				context.applicationDomain = new ApplicationDomain();
+				
+				project.loaderContext = context;                 
+				project.source = URL.text; // "http://yourdomain.com/SubApp3.swf";
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void
+			{
+				target = event.target;
+			}
+			
+			/**
+			 * Load URL
+			 * */
+			protected function loadURL(event:MouseEvent=null):void {
+				var path:String = URL.text;
+				swfContentWidth.text = "";
+				swfContentHeight.text = "";
+				swfContentDividerText.text = "";
+				swfContentSize.text = "";
+				
+				
+				showBusyIndicators();
+				
+				if (path) {
+					try {
+						project.source = ""; // reload
+						project.source = path;
+						project.load();
+					}
+					catch (error:Error) {
+						hideBusyIndicators();
+					}
+				}
+				else {
+					hideBusyIndicators();
+				}
+			}
+			
+			protected function allowDomainHandler(event:MouseEvent):void {
+				systemManager.allowDomain(domain.text);
+			}
+			
+			private function uncaughtErrorHandler(event:UncaughtErrorEvent):void {
+				trace("Uncaught error", event);
+				
+				if (event.error is Error) {
+					var error:Error = event.error as Error;
+					// do something with the error
+				}
+				else if (event.error is ErrorEvent) {
+					var errorEvent:ErrorEvent = event.error as ErrorEvent;
+					// do something with the error
+				}
+				else {
+					// a non-Error, non-ErrorEvent type was thrown and uncaught
+				}
+				
+				hideBusyIndicators();
+				event.preventDefault();
+			}
+			
+			protected function project_completeHandler(event:Event):void {
+				trace("complete");
+				var b:SWFLoader = event.currentTarget as SWFLoader;
+				var s:String = NameUtil.getUnqualifiedClassName(b.content);
+				project.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				
+				if (b.content is DisplayObject) {
+					parentAllowsChild.selected = b.parentAllowsChild;
+					childAllowsParent.selected = b.childAllowsParent;
+					targetApplication = b.content;
+					
+					targetApplication.addEventListener(FlexEvent.APPLICATION_COMPLETE, applicationComplete);
+					LoaderInfo(targetApplication.loaderInfo).uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				}
+				
+				hideBusyIndicators();
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				systemManager.allowDomain(domain.text);
+				parentApplication.addEventListener(FlexEvent.APPLICATION_COMPLETE, mainApplicationComplete);
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function applicationComplete(event:Event):void {
+				var b:Object = event.currentTarget;
+				parentAllowsChild.selected = b.parentAllowsChild;
+				childAllowsParent.selected = b.childAllowsParent;
+				
+				targetApplication = b.application;
+				
+				updateAppSize();
+				
+				if (swfContentHeight.text=="") {
+					swfContentHeight.text = String(targetApplication.height);
+					swfContentWidth.text = String(targetApplication.width);
+					swfContentDividerText.text = "x";
+					swfContentSize.text = "Size:";
+				}
+				
+				hideBusyIndicators();
+			}
+			
+			/**
+			 * 
+			 * */
+			private function borderContainer_resizeHandler(event:ResizeEvent):void {
+				updateAppSize();
+			}
+			
+			/**
+			 * Update the size of the target application
+			 * */
+			private function updateAppSize():void {
+				var padding:int = int(projectContainer.left) * 2;
+				
+				if (targetApplication is DisplayObject) {
+					
+					if (swfContentHeight.text=="") {
+						swfContentHeight.text = String(targetApplication.height);
+						swfContentWidth.text = String(targetApplication.width);
+						swfContentDividerText.text = "x";
+						swfContentSize.text = "Size:";
+					}
+					
+					targetApplication.width = borderContainer.width - padding;
+					targetApplication.height = borderContainer.height - padding;
+					
+				}
+			}
+			
+			protected function project_ioErrorHandler(event:IOErrorEvent):void {
+				trace("ioerror");
+				hideBusyIndicators();
+			}
+			
+			protected function project_securityErrorHandler(event:SecurityErrorEvent):void
+			{
+				trace("security error");
+				hideBusyIndicators();
+			}
+			
+			protected function project_initHandler(event:Event):void
+			{
+				trace("init");
+			}
+			
+			protected function project_progressHandler(event:ProgressEvent):void
+			{
+				trace("PROGRESS");
+			}
+			
+			protected function project_unloadHandler(event:Event):void
+			{
+				trace("unload");
+				hideBusyIndicators();
+			}
+			
+			protected function project_openHandler(event:Event):void
+			{
+				trace("open");
+				showBusyIndicators();
+			}
+			
+			protected function project_httpStatusHandler(event:HTTPStatusEvent):void {
+				trace("http status");				
+			}
+			
+			protected function mainApplicationComplete(event:Event):void {
+				parentApplication.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				hideBusyIndicators();
+			}
+			
+			public function showBusyIndicators():void {
+				progressBar.percentWidth = 0;
+				progressBar.visible = true;
+				progressBar.includeInLayout = true;
+				fadeOutBusy.end();
+				fadeInBusy.play();
+			}
+			
+			public function hideBusyIndicators():void {
+				progressBar.percentWidth = 0;
+				progressBar.visible = false;
+				progressBar.includeInLayout = false;
+				fadeOutBusy.play();
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup width="100%" height="100%" >
+		
+		<s:Group width="100%" height="2">
+			<s:Rect id="progressBar" 
+					percentWidth="{project.percentLoaded}" 
+					height="2">
+				<s:fill>
+					<s:SolidColor color="#0000ff"/>
+				</s:fill>
+			</s:Rect>
+		</s:Group>
+		
+		<s:HGroup width="100%">
+			
+			<s:TextInput id="URL" width="100%"
+						 prompt="Enter path to SWF, JPG, GIF or PNG"
+						 text="http://www.judahfrangipane.com/utils/aboutyou/AboutYou.swf" 
+						 enter="loadURL()"/>
+			
+			<s:Button label="Load" bottom="40" right="40" 
+					  click="loadURL(event)"/>
+			
+			<s:BusyIndicator id="busyIndicator"/>
+			
+			<s:TextInput id="domain" 
+						 width="20%" 
+						 text="*" 
+						 visible="false"
+						 includeInLayout="false"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%">
+			<s:CheckBox id="trustContent" 
+						label="Trust Content" 
+						selected="true"/>
+			
+			<s:CheckBox id="loadForCompatibility" 
+						label="Load for Compatibility" 
+						selected="false"/>
+			
+			<s:CheckBox id="maintainAspectRatio" 
+						label="Maintain Aspect Ratio" 
+						selected="true"/>
+			
+			<s:CheckBox id="scaleContent" 
+						label="Scale Content" 
+						selected="false"/>
+			
+			<s:CheckBox id="childAllowsParent" 
+						enabled="false"
+						label="Child Allows Parent" 
+						selected="false"/>
+			
+			<s:CheckBox id="parentAllowsChild" 
+						enabled="false"
+						label="Parent Allows Child" 
+						selected="false"/>
+			
+			<s:Spacer width="100%"/>
+			
+			<s:HGroup id="dimensions" enabled="false" color="#444444">
+				<s:Label id="swfContentSize" />
+				<s:Label id="swfContentWidth" />
+				<s:Label id="swfContentDividerText" />
+				<s:Label id="swfContentHeight" />
+			</s:HGroup>
+			
+		</s:HGroup>
+		
+		
+		<s:BorderContainer id="borderContainer" 
+						   resize="borderContainer_resizeHandler(event)"
+						   width="100%" 
+						   height="100%" 
+						   borderColor="#666666"
+						   backgroundColor="#666666">
+			
+			<s:Group id="projectContainer" 
+					 top="10" left="10" 
+					 right="10" bottom="10">
+				
+				<s:SWFLoader id="project" 
+							 autoLoad="false"
+							 httpStatus="project_httpStatusHandler(event)"
+							 open="project_openHandler(event)"
+							 unload="project_unloadHandler(event)"
+							 init="project_initHandler(event)"
+							 securityError="project_securityErrorHandler(event)"
+							 ioError="project_ioErrorHandler(event)"
+							 loadForCompatibility="{loadForCompatibility.selected}"
+							 trustContent="{trustContent.selected}"
+							 maintainAspectRatio="{maintainAspectRatio.selected}"
+							 scaleContent="{scaleContent.selected}"
+							 complete="project_completeHandler(event)"
+							 progress="project_progressHandler(event)"
+							 width="100%" 
+							 height="100%" />
+				
+			</s:Group>
+			
+		</s:BorderContainer>
+		
+	</s:VGroup>
+	
+</s:Group>

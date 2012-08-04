@@ -1,0 +1,940 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:controls="com.flexcapacitor.controls.*"
+		 
+		 width="400" 
+		 height="200" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.core.mx_internal;
+			
+			use namespace mx_internal;
+			
+			[Bindable]
+			public var openAllBranchesAtStart:Boolean = true;
+			
+			
+			public function set targets(value:Array):void {
+				
+				effectsCollection.source = value;
+				effectsCollection.refresh();
+				
+				if (openAllBranchesAtStart) {
+					callLater(openAllBranches);
+				}
+			
+			}
+			
+			public function openAllBranches():void {
+				var items:Array = effectsCollection.toArray();
+				
+				effectsTree.validateNow();
+				effectsTree.collectionLength;
+				
+				if (items) {
+					var length:int = items.length;
+					
+					for (var i:int; i < length; i++) {
+						effectsTree.expandItem(items[i], true);
+						// effectsTree.expandChildrenOf(items[i], true);
+						effectsTree.validateNow();
+					}
+				}
+			}
+			
+			protected function effectsTree_enterFrameHandler(event:Event):void {
+				var newTreeHeight:int = effectsTree.collectionLength*effectsTree.rowHeight;
+				newTreeHeight = Math.max(newTreeHeight, effectsTree.minHeight);
+				//trace("new tree height=" + newTreeHeight);
+				
+				if (newTreeHeight!=treeHeight) {
+					treeHeight = Math.max(newTreeHeight, effectsTree.minHeight);
+					trace("updating tree height");
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	
+	<fx:Declarations>
+		<s:ArrayCollection id="effectsCollection"/>
+		<fx:int id="treeHeight">200</fx:int>
+	</fx:Declarations>
+	
+	
+	<s:VGroup width="100%" height="100%">
+		
+		<!--<s:HGroup verticalAlign="middle" width="100%">
+			<s:Spacer width="100%"/>
+			<s:Label text="Total ({effectsCollection.length})"/>
+		</s:HGroup>-->
+		
+		<mx:Tree id="effectsTree" 
+				 width="100%" 
+				 minHeight="100"
+				 height="{treeHeight}"
+				 borderVisible="false"
+				 borderColor="#CCCCCC"
+				 dataProvider="{effectsCollection}"
+				 rollOverColor="#FFFFFF88"
+				 selectionColor="#FFFFFFaa"
+				 enterFrame="effectsTree_enterFrameHandler(event)"
+				 rowHeight="30">
+			
+			<mx:itemRenderer>
+				<fx:Component>
+					<s:MXTreeItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+										  xmlns:s="library://ns.adobe.com/flex/spark" 
+										  xmlns:mx="library://ns.adobe.com/flex/mx"
+										  autoDrawBackground="false"
+										  >
+						
+						<fx:Script>
+							<![CDATA[
+								import com.flexcapacitor.utils.ClassUtils;
+								import com.flexcapacitor.utils.StringUtils;
+								
+								import mx.controls.listClasses.ListBase;
+								import mx.controls.treeClasses.TreeListData;
+								import mx.core.mx_internal;
+								import mx.effects.CompositeEffect;
+								import mx.effects.Effect;
+								import mx.effects.IEffect;
+								import mx.effects.Pause;
+								import mx.effects.Sequence;
+								import mx.events.EffectEvent;
+								import mx.utils.StringUtil;
+								
+								import spark.effects.Move;
+								
+								use namespace mx_internal;
+								
+								/**
+								 * 
+								 * */
+								[Bindable]
+								private var item:Effect;
+								
+								/**
+								 * 
+								 * */
+								[Bindable]
+								private var compositeEffect:CompositeEffect;
+								
+								/**
+								 * 
+								 * */
+								[Bindable]
+								private var sequenceEffect:Sequence;
+								
+								/**
+								 * 
+								 * */
+								[Bindable]
+								private var isPaused:Boolean;
+								
+								/**
+								 * 
+								 * */
+								private var effectStartCount:int;
+								
+								/**
+								 * 
+								 * */
+								private var effectUpdateCount:int;
+								
+								/**
+								 * 
+								 * */
+								private var effectStopCount:int;
+								
+								/**
+								 * 
+								 * */
+								private var effectRepeatCount:int;
+								
+								/**
+								 * 
+								 * */
+								private var effectEndCount:int;
+								
+								/**
+								 * 
+								 * */
+								private var effectEnabledAlpha:int = 1;
+								
+								/**
+								 * 
+								 * */
+								private var effectDisabledAlpha:int = .9;
+								
+								/**
+								 * 
+								 * */
+								public var playedOnceCharacter:String = " ";
+								
+								/**
+								 * 
+								 * */
+								public var eventPlayedColor:Number = 0x00FF00;
+								
+								/**
+								 * 
+								 * */
+								public var eventColor:Number = 0x888888;
+								
+								/**
+								 * Show playhead time label
+								 * */
+								public var showPlayheadTimeLabel:Boolean = true;
+								
+								/**
+								 * Show duration time label
+								 * */
+								public var showDurationTimeLabel:Boolean = true;
+								
+								/**
+								 * 
+								 * */
+								override public function set data(value:Object):void {
+ 									super.data = value;
+									
+									
+									// remove previous listeners
+									if (item) {
+										removeListeners(item);
+										compositeEffect = null;
+										sequenceEffect = null;
+										item = null;
+									}
+									
+									if (value==null) {
+										return;
+									}
+									
+									if (value is Effect) {
+										item = value as Effect;
+									}
+									
+									if (value is CompositeEffect) {
+										compositeEffect = value as CompositeEffect;
+									}
+									
+									if (value is Sequence) {
+										sequenceEffect = value as Sequence;
+									}
+									
+									nameLabel.text = item.className;
+									
+									try {
+										var idname:String = item["id"];
+										if (idname) {
+											nameLabel.text = item.className + "." + idname;
+										}
+										trace("************found id=" + idname);
+									}
+									catch (e:*) {
+										
+									}
+									
+									resetEffectEvents();
+									
+									// remove these at some point
+									addListeners(item);
+									
+									updateEffectStatus();
+								}
+								
+								/**
+								 * Updates the controls as the effect or effect parent is playing
+								 * */
+								private function updateEffectStatus(event:EffectEvent=null):void {
+									var type:String = event ? event.type : "";
+									var duration:int = compositeEffect ? compositeEffect.compositeDuration : item.duration;
+									var playheadTime:int = item.playheadTime;
+									var itemPlaying:Boolean = item.isPlaying;
+									var ancestorPlaying:Boolean = isAncestorPlaying(item);
+									var ancesterRoot:Effect = getItemRoot(item);
+									
+									//playingLabel.text = "";
+									
+									updateEffectEventCount(type);
+									
+									
+									// if composite or pause listen for start and end of child effects
+									if (compositeEffect || item is Pause) {
+										
+										if (type==EffectEvent.EFFECT_START) {
+											addEventListener(Event.ENTER_FRAME, enterFrameHandler, false, 0, true);
+										}
+										
+										if (type==EffectEvent.EFFECT_END) {
+											removeEventListener(Event.ENTER_FRAME, enterFrameHandler);
+										}
+									}
+									else if (type==EffectEvent.EFFECT_START) {
+										if (item.parentCompositeEffect && 
+											item.parentCompositeEffect.isPlaying) {
+											//resetEffectEvents();
+										}
+									}
+									
+									
+									
+									// get position in time
+									playheadTimeLabel.text = sanitizeTime(playheadTime);
+									durationLabel.text = sanitizeTime(duration, "seconds", 1);
+									
+									
+									// show or hide playhead time label
+									if (showPlayheadTimeLabel) {
+										if (itemPlaying) {
+											playheadTimeLabel.visible = true;
+										}
+										else {
+											playheadTimeLabel.visible = false;
+										}
+									}
+									else {
+										playheadTimeLabel.visible = false;
+									}
+									
+									
+									// show or hide duration time label
+									if (showDurationTimeLabel) {
+										if (duration==0) {
+											durationLabel.visible = false;
+										}
+										else {
+											durationLabel.visible = true;
+										}
+									}
+									else {
+										durationLabel.visible = false;
+									}
+									
+									
+									// update divider position
+									if (itemPlaying) {
+										var position:int = (effectDurationRect.width*item.playheadTime)/duration;
+										
+										if (isNaN(position)) {
+											position = 0;
+										}
+										
+										divider.x = position - divider.width/2;
+										divider.visible = true;
+									}
+									else {
+										divider.visible = false;
+									}
+									
+									
+									// check if need to show playing indicator
+									if (itemPlaying) {
+										playingIndicator.visible = true;
+										
+										if (isPaused) {
+											//playingLabel.text = "Paused";
+											playImage.enableBlink = true;
+										}
+										else {
+											//playingLabel.text = "Playing";
+											playImage.enableBlink = false;
+										}
+										
+										// if part of a composite effect that is also playing then disable controls
+										if (ancestorPlaying) {
+											
+											if (playImage.source != Radii8LibraryEffectsAssets.pause) {
+												playImage.source = Radii8LibraryEffectsAssets.pause;
+											}
+											
+											//playingLabel.text += " (parent playing)";
+											playImage.enabled = false;
+											reverseImage.enabled = false;
+											stopImage.enabled = false;
+											endImage.enabled = false;
+										}
+										else {
+											
+											if (playImage.source != Radii8LibraryEffectsAssets.pause) {
+												playImage.source = Radii8LibraryEffectsAssets.pause;
+											}
+											
+											playImage.enabled = true;
+											reverseImage.enabled = true;
+											stopImage.enabled = true;
+											endImage.enabled = true;
+										}
+										
+										// select list item?
+										//ListBase(treeListData.owner).selectedItem = data;
+									}
+									
+									// effect is not playing
+									else {
+										
+										playingIndicator.visible = false;
+										
+										// if part of a composite effect that is playing then disable controls
+										if (ancestorPlaying) {
+											
+											if (playImage.source != Radii8LibraryEffectsAssets.play) {
+												playImage.source = Radii8LibraryEffectsAssets.play;
+											}
+											
+											//playingLabel.text += "(parent playing)";
+											
+											stopImage.enabled = false;
+											endImage.enabled = false;
+											playImage.enableBlink = false;
+											playImage.enabled = false;
+											reverseImage.enabled = false;
+										}
+										// no parent effect or parent effect is not playing
+										else {
+											
+											if (playImage.source != Radii8LibraryEffectsAssets.play) {
+												playImage.source = Radii8LibraryEffectsAssets.play;
+											}
+											
+											//playingLabel.text += "Idle";
+											stopImage.enabled = false;
+											endImage.enabled = false;
+											playImage.enableBlink = false;
+											playImage.enabled = true;
+											reverseImage.enabled = true;
+										}
+									}
+									
+									
+									
+									// effect ended - enable controls or wait and then enable controls
+									if (event && event.type==EffectEvent.EFFECT_END) {
+										//trace("effect type=" + item.className);
+										//trace("effect end");
+										
+										if (sequenceEffect && sequenceEffect.children.length>4) {
+											//trace("more than one");
+										}
+										
+										// set back to play icon
+										if (playImage.source != Radii8LibraryEffectsAssets.play) {
+											playImage.source = Radii8LibraryEffectsAssets.play;
+										}
+										
+										isPaused = false;
+										playImage.enableBlink = false;
+										playingIndicator.visible = false;
+										
+										// if part of a composite effect that is also playing then disable controls until it's done
+										if (ancestorPlaying) {
+											
+											// add listeners to ancestor effects to know when to enable controls again
+											if (item.parentCompositeEffect.isPlaying) {
+												item.parentCompositeEffect.addEventListener(EffectEvent.EFFECT_END, enterFrameHandler);
+												//playImage.enabled = true;
+											}
+											else {
+												item.parentCompositeEffect.removeEventListener(EffectEvent.EFFECT_END, enterFrameHandler);
+												playImage.enabled = true;
+												reverseImage.enabled = true;
+											}
+										}
+										
+										// no ancestor playing enable controls
+										else {
+											playImage.enabled = true;
+											reverseImage.enabled = true;
+										}
+										
+									}
+									
+									//playingLabel.text += " " + type;
+								}
+								
+								/**
+								 * 
+								 * */
+								protected function playImage_clickHandler(event:MouseEvent):void {
+									if (item.parentCompositeEffect) {
+										//item.pause();
+									}
+									
+									if (item.isPlaying) {
+										
+										if (!isPaused) {
+											item.pause();
+											isPaused = true;
+										}
+										else {
+											item.resume();
+											isPaused = false;
+										}
+									}
+									else {
+										resetEffectEvents();
+										item.play();
+									}
+									
+								}
+								
+								/**
+								 * 
+								 * */
+								protected function stopImage_clickHandler(event:MouseEvent):void {
+									item.stop();
+								}
+								
+								/**
+								 * 
+								 * */
+								protected function endImage_clickHandler(event:MouseEvent):void {
+									item.end();
+								}
+								
+								/**
+								 * 
+								 * */
+								protected function reverseImage_clickHandler(event:MouseEvent):void {
+									if (item.isPlaying) {
+										item.reverse();
+									}
+									else {
+										resetEffectEvents();
+										item.play(null, true);
+									}
+								}
+								
+								/**
+								 * 
+								 * */
+								public function sanitizeTime(value:Number, units:String = "seconds", places:int = 2):String {
+									
+									if (units=="seconds") {
+										value = value / 1000;
+									}
+									
+									return StringUtils.padLeft(value.toFixed(places), places, "0", true);
+								}
+								
+								/**
+								 * 
+								 * */
+								private function enterFrameHandler(event:Event):void {
+									updateEffectStatus();
+									//trace("enterframe");
+								}
+								
+								/**
+								 * 
+								 * */
+								private function resetEffectEvents():void {
+									
+									/* effectStartRect.alpha 	= effectDisabledAlpha;
+									effectUpdateRect.alpha 	= effectDisabledAlpha;
+									effectStopRect.alpha 	= effectDisabledAlpha;
+									effectRepeatRect.alpha 	= effectDisabledAlpha;
+									effectEndRect.alpha 	= effectDisabledAlpha; */
+									
+									effectStartLabel.text 	= "";
+									effectUpdateLabel.text 	= "";
+									effectEndLabel.text 	= "";
+									effectStopLabel.text 	= "";
+									effectRepeatLabel.text 	= "";
+									effectDurationRectFill.color = eventColor;
+									
+									effectStartLabel.setStyle("backgroundColor", 	eventColor);
+									effectUpdateLabel.setStyle("backgroundColor", 	eventColor);
+									effectEndLabel.setStyle("backgroundColor", 		eventColor);
+									effectStopLabel.setStyle("backgroundColor", 	eventColor);
+									effectRepeatLabel.setStyle("backgroundColor", 	eventColor);
+									
+									effectStartCount 	= 0;
+									effectUpdateCount 	= 0;
+									effectStopCount 	= 0;
+									effectRepeatCount 	= 0;
+									effectEndCount 		= 0;
+								}
+								
+								/**
+								 * 
+								 * */
+								private function updateEffectEventCount(type:String):void {
+									
+									if (type==EffectEvent.EFFECT_START) {
+										effectStartCount++;
+										effectStartLabel.text = effectStartCount>1 ? String(effectStartCount) : playedOnceCharacter;
+										effectStartLabel.setStyle("backgroundColor", eventPlayedColor);
+									}
+									else if (type==EffectEvent.EFFECT_UPDATE) {
+										effectUpdateCount++;
+										//effectUpdateLabel.text = effectUpdateCount>1 ? String(effectUpdateCount) : playedOnceCharacter;
+										effectUpdateLabel.text = effectUpdateCount>1000 ? String(effectUpdateCount) : playedOnceCharacter;
+										effectUpdateLabel.setStyle("backgroundColor", eventPlayedColor);
+									}
+									else if (type==EffectEvent.EFFECT_STOP) {
+										effectStopCount++;
+										effectStopLabel.text = effectStopCount>1 ? String(effectStopCount) : playedOnceCharacter;
+										effectStopLabel.setStyle("backgroundColor", eventPlayedColor);
+									}
+									else if (type==EffectEvent.EFFECT_REPEAT) {
+										effectRepeatCount++;
+										effectRepeatLabel.text = effectRepeatCount>1 ? String(effectRepeatCount) : playedOnceCharacter;
+										effectRepeatLabel.setStyle("backgroundColor", eventPlayedColor);
+									}
+									else if (type==EffectEvent.EFFECT_END) {
+										effectEndCount++;
+										effectEndLabel.text = effectEndCount>1 ? String(effectEndCount) : playedOnceCharacter;
+										effectEndLabel.setStyle("backgroundColor", eventPlayedColor);
+									}
+								}
+								
+								/**
+								 * 
+								 * */
+								private function removeListeners(item:Effect):void {
+									
+									item.removeEventListener(EffectEvent.EFFECT_START, 		updateEffectStatus);
+									item.removeEventListener(EffectEvent.EFFECT_UPDATE, 	updateEffectStatus);
+									item.removeEventListener(EffectEvent.EFFECT_END, 		updateEffectStatus);
+									item.removeEventListener(EffectEvent.EFFECT_REPEAT, 	updateEffectStatus);
+									item.removeEventListener(EffectEvent.EFFECT_STOP, 		updateEffectStatus);
+									
+									
+									if (item.parentCompositeEffect) {
+										item.parentCompositeEffect.removeEventListener(EffectEvent.EFFECT_START, parentStartEffectHandler);
+									}
+									
+								}
+								
+								/**
+								 * 
+								 * */
+								private function addListeners(item:Effect):void {
+									
+									item.addEventListener(EffectEvent.EFFECT_START, 	updateEffectStatus, false, 0, true);
+									item.addEventListener(EffectEvent.EFFECT_UPDATE, 	updateEffectStatus, false, 0, true);
+									item.addEventListener(EffectEvent.EFFECT_END, 		updateEffectStatus, false, 0, true);
+									item.addEventListener(EffectEvent.EFFECT_REPEAT, 	updateEffectStatus, false, 0, true);
+									item.addEventListener(EffectEvent.EFFECT_STOP, 		updateEffectStatus, false, 0, true);
+									
+									if (item.parentCompositeEffect) {
+										item.parentCompositeEffect.addEventListener(EffectEvent.EFFECT_START, parentStartEffectHandler, false, 0, true);
+									}
+								}
+								
+								/**
+								 * Reset effect counters when parent effect plays for the first time
+								 * */
+								protected function parentStartEffectHandler(event:EffectEvent):void {
+									resetEffectEvents();
+								}
+								
+								/**
+								 * Reset effect counters when parent effect plays for the first time
+								 * */
+								protected function clearImage_clickHandler(event:MouseEvent):void {
+									resetEffectEvents();
+								}
+								
+								/**
+								 * Check if ancestor effect is playing
+								 * */
+								private function isAncestorPlaying(item:Effect):Boolean {
+									
+									while (item.parentCompositeEffect) {
+										
+										if (item.parentCompositeEffect.isPlaying) {
+											return true;
+										}
+										item = item.parentCompositeEffect;
+									}
+									return false;
+								}
+								
+								/**
+								 * Get greatest ancestor effect
+								 * */
+								private function getItemRoot(item:Effect, isAlsoPlaying:Boolean = false):Effect {
+									var parentCompositeEffect:Effect = item.parentCompositeEffect;
+									var isPlaying:Boolean;
+									
+									
+									if (isAlsoPlaying) {
+										
+										isPlaying = parentCompositeEffect ? parentCompositeEffect.isPlaying : false;
+										
+										while (isPlaying) {
+											
+											if (parentCompositeEffect.parentCompositeEffect && parentCompositeEffect.parentCompositeEffect.isPlaying) {
+												parentCompositeEffect = parentCompositeEffect.parentCompositeEffect;
+											}
+											else {
+												return parentCompositeEffect;
+											}
+										}
+										
+										if (isPlaying) {
+											return parentCompositeEffect;
+										}
+										else {
+											return null;
+										}
+									}
+									else {
+										
+										while (parentCompositeEffect) {
+											
+											if (parentCompositeEffect.parentCompositeEffect) {
+												parentCompositeEffect = parentCompositeEffect.parentCompositeEffect;
+											}
+											else {
+												return parentCompositeEffect;
+											}
+										}
+										return parentCompositeEffect;
+									}
+									
+									return null;
+								}
+								
+								protected function loopButton_changeHandler(event:Event):void {
+									
+									if (loopButton.selected) {
+										item.repeatCount = 0;
+									}
+									else {
+										item.repeatCount = 1;
+									}
+								}
+								
+							]]>
+						</fx:Script>
+						
+						<s:states>
+							<s:State name="normal" />            
+							<s:State name="hovered" />
+							<s:State name="selected" />
+						</s:states>
+						
+						<s:HGroup left="1" right="1" top="1" bottom="1" verticalAlign="middle">
+							
+							<s:Rect id="indentationSpacer" width="{treeListData.indent}" percentHeight="100" alpha="0">
+								<s:fill>
+									<s:SolidColor color="0xFFFFFF" />
+								</s:fill>
+							</s:Rect>
+							
+							<s:Group id="disclosureGroup"
+									 useHandCursor="true"
+									 buttonMode="true">
+								<s:BitmapImage source="{treeListData.disclosureIcon}" 
+											   visible="{treeListData.hasChildren}" 
+											   />
+							</s:Group>
+							
+							<!--<s:HGroup id="controlsGroup" 
+									  height="100%"
+									  paddingRight="8"
+									  verticalAlign="middle"
+									  width="80"
+									  >
+								
+							</s:HGroup>
+							-->
+							
+							<s:Label id="nameLabel" 
+									 text="" 
+									 paddingTop="2"/>
+							
+							<s:Spacer width="100%"/>
+							
+							<!-- Events-->
+							<s:Group height="100%"
+									 width="100%">
+								
+								<s:HGroup width="100%"
+										  height="100%"
+										  paddingRight="8"
+										  paddingTop="1"
+										  paddingBottom="1"
+										  verticalAlign="middle"
+										  fontSize="10"
+										  gap="1">
+									
+									<controls:BlinkingImageButton id="playImage" 
+																  dim="true"
+																  click="playImage_clickHandler(event)"
+																  useHandCursor="true"
+																  buttonMode="true"/>
+									<s:Image id="reverseImage"
+											 click="reverseImage_clickHandler(event)"
+											 source="{Radii8LibraryEffectsAssets.reverse}" 
+											 useHandCursor="true"
+											 buttonMode="true"/>
+									
+									<s:Image id="stopImage"
+											 click="stopImage_clickHandler(event)"
+											 source="{Radii8LibraryEffectsAssets.stop}"
+											 useHandCursor="true"
+											 buttonMode="true" />
+									
+									<s:Image id="endImage"
+											 click="endImage_clickHandler(event)"
+											 source="{Radii8LibraryEffectsAssets.end}" 
+											 useHandCursor="true"
+											 buttonMode="true"/>
+									
+									<s:Image id="clearImage"
+											 click="clearImage_clickHandler(event)"
+											 source="{Radii8LibraryEffectsAssets.clear}" 
+											 useHandCursor="true"
+											 buttonMode="true"/>
+									
+									<s:ToggleButton id="loopButton" 
+													skinClass="com.flexcapacitor.views.skins.LoopButton"
+													change="loopButton_changeHandler(event)"
+													useHandCursor="true"
+													buttonMode="true"/>
+									
+									<s:Spacer width="10" />
+									
+									<s:BitmapImage id="playingIndicator" source="{Radii8LibraryEffectsAssets.selected}"  />
+									
+									
+									<s:Label id="effectStartLabel"
+											 backgroundColor="#00ff00"
+											 height="100%" 
+											 width="10" 
+											 paddingTop="2"
+											 textAlign="center"
+											 verticalAlign="middle"/>
+									
+									<s:Group width="250"
+											 height="100%"
+											 >
+										
+										<s:Rect id="effectDurationRect" width="100%" percentHeight="100">
+											<s:fill>
+												<s:SolidColor id="effectDurationRectFill" color="0x00FF00" />
+											</s:fill>
+										</s:Rect>
+										
+										<s:BitmapImage id="divider" source="{Radii8LibraryEffectsAssets.playhead}" 
+													   height="100%"
+													   bottom="0"/>
+										
+										<s:Spacer width="10"/>
+										
+										<s:Label id="playheadTimeLabel" 
+												 text="" 
+												 paddingTop="2" 
+												 left="8"
+												 height="100%"
+												 verticalAlign="middle"
+												 color="white"/>
+										
+										
+										<s:Label id="durationLabel" 
+												 text="" 
+												 paddingTop="2" 
+												 right="8"
+												 height="100%"
+												 verticalAlign="middle"
+												 color="white"/>
+										
+										<s:HGroup width="100%" 
+												  height="100%"
+												  horizontalAlign="right"
+												  verticalAlign="middle"
+												  >
+										</s:HGroup>
+									</s:Group>
+									
+									<s:Label id="effectEndLabel" 
+											 backgroundColor="#00ff00"
+											 paddingTop="2" 
+											 height="100%"
+											 width="10"
+											 textAlign="center"
+											 verticalAlign="middle"/>
+									
+									<s:Spacer width="10" />
+									
+									<s:Label id="effectStopLabel" 
+											 backgroundColor="#00ff00"
+											 paddingTop="2"
+											 height="100%" 
+											 width="10"
+											 textAlign="center"
+											 verticalAlign="middle"/>
+									<s:Label id="effectRepeatLabel" 
+											 backgroundColor="#00ff00"
+											 paddingTop="2" 
+											 height="100%"
+											 width="10"
+											 textAlign="center"
+											 verticalAlign="middle"/>
+									<s:Label id="effectUpdateLabel" 
+											 backgroundColor="#00ff00"
+											 paddingTop="2"
+											 height="100%"
+											 width="10"
+											 includeInLayout="false"
+											 visible="false"
+											 maxDisplayedLines="1"
+											 textAlign="center"
+											 verticalAlign="middle"/>
+								</s:HGroup>
+							</s:Group>
+							
+						</s:HGroup>
+						
+						
+						
+						<s:HGroup width="100%"
+								  height="100%"
+								  paddingRight="8"
+								  gap="1"
+								  visible="false"
+								  includeInLayout="false">
+							
+							<s:Rect id="effectStartRect" width="10" percentHeight="100">
+								<s:fill>
+									<s:SolidColor color="0x00FF00" />
+								</s:fill>
+							</s:Rect>
+							<s:Rect id="effectUpdateRect" width="10" percentHeight="100">
+								<s:fill>
+									<s:SolidColor color="0x00FF00" />
+								</s:fill>
+							</s:Rect>
+							<s:Rect id="effectEndRect" width="10" percentHeight="100">
+								<s:fill>
+									<s:SolidColor color="0x00FF00" />
+								</s:fill>
+							</s:Rect>
+							<s:Rect id="effectStopRect" width="10" percentHeight="100">
+								<s:fill>
+									<s:SolidColor color="0x00FF00" />
+								</s:fill>
+							</s:Rect>
+							<s:Rect id="effectRepeatRect" width="10" percentHeight="100">
+								<s:fill>
+									<s:SolidColor color="0x00FF00" />
+								</s:fill>
+							</s:Rect>
+						</s:HGroup>
+					</s:MXTreeItemRenderer>
+				</fx:Component>
+			</mx:itemRenderer>
+		</mx:Tree>
+	</s:VGroup>
+</s:Group>

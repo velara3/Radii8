@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:controls="com.flexcapacitor.controls.*"
+		 xmlns:inspectors="com.flexcapacitor.views.*"
+		 xmlns:supportClasses="spark.components.supportClasses.*" 
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:core="com.flexcapacitor.effects.core.*"
+		 xmlns:ns1="*" 
+		 xmlns:views="com.flexcapacitor.views.*"
+		 
+		 width="400" 
+		 height="100%"
+		 >
+		
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace controls "com.flexcapacitor.controls.*";
+		@namespace inspectors "com.flexcapacitor.inspectors.*";
+		@namespace ns1 "*";
+		@namespace supportClasses "spark.components.supportClasses.*";
+		
+		.formItem {
+			/* backgroundColor:#e6e6e6; */
+			backgroundColor:#a2a2a2;
+			backgroundAlpha:.25;
+			paddingLeft:6;
+			paddingTop:5;
+			paddingBottom:3;
+			fontSize:10;
+			fontWeight:bold;
+			textAlpha:.75;
+			typographicCase:uppercase;
+		}
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			protected function tabnavigator1_changeHandler(event:IndexChangedEvent):void {
+				var index:int = event.newIndex;
+				
+				if (index==1) {
+					Radiate.desetDocuments(true);
+				}
+				else {
+					var document:Document = NavigatorContent(tabNavigator.getItemAt(0)).getElementAt(0) as Document;
+					Radiate.setDocuments(document.targetApplication);
+				}
+				
+			}
+			
+			protected function panelsLabelFunction(item:Object):String {
+				var name:String = item is Label ? Label(item).text : " • ";
+				return name;
+			}
+			
+			protected function list1_changeHandler(event:IndexChangeEvent):void {
+				var point:Point = panels.layout.getScrollPositionDeltaToElement(event.newIndex +1);
+				
+				// if going up get the selected item
+				if (point && point.y<0) {
+					point = panels.layout.getScrollPositionDeltaToElement(event.newIndex);
+					scrollMotionPath.valueBy = point.y;
+					scrollPanelsAnimation.play();
+				}
+				else if (point) {
+					//panels.layout.verticalScrollPosition = panels.layout.verticalScrollPosition + point.y;
+					scrollMotionPath.valueBy = point.y;
+					scrollPanelsAnimation.play();
+				}
+				
+				event.preventDefault();
+			}
+			
+			protected function showConsoleHandler(event:MouseEvent):void {
+				
+				if (console.height>=100) {
+					console.height = 22;
+					console.includeInLayout = false;
+					console.visible = false;
+					showConsoleLabel.text = "Console";
+				}
+				else {
+					console.height = 200;
+					console.visible = true;
+					console.includeInLayout = true;
+					showConsoleLabel.text = "Close";
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	
+	<fx:Declarations>
+		
+		<s:Animate id="scrollPanelsAnimation" target="{panels.layout}" >
+			<s:SimpleMotionPath id="scrollMotionPath" property="verticalScrollPosition" />
+		</s:Animate>
+		
+		<!-- FADE IN APPLICATION -->
+		<s:Sequence id="fadeIn">
+			
+			<s:SetAction target="{radiateScroller}" property="alpha" value="0"/>
+			
+			<s:Fade target="{applicationGroup}" alphaFrom="0" alphaTo="1" duration="0"/>
+			
+			<s:SetAction target="{radiateScroller}" property="alpha" value="0"/>
+			
+			<s:Animate target="{applicationGroup}" startDelay="500" >
+				<s:SimpleMotionPath valueFrom="0" valueTo="270" property="left" />
+			</s:Animate>
+			
+			<s:SetAction target="{radiateScroller}" property="alpha" value="1"/>
+			
+			<s:Animate target="{radiateScroller.viewport}" duration="750">
+				<s:SimpleMotionPath valueFrom="0" valueTo="1" property="alpha"/>
+				<s:SimpleMotionPath valueFrom="{radiateScroller.viewport.contentHeight}" 
+									valueTo="0" property="verticalScrollPosition" />
+			</s:Animate>
+			
+		</s:Sequence>
+		
+		<handlers:EventHandler eventName="creationComplete" target="{this}">
+			<core:PlayEffect effect="{fadeIn}"/>
+		</handlers:EventHandler>
+	</fx:Declarations>
+	
+	
+	<s:Group width="100%" height="100%" bottom="35" left="5" right="5">
+		
+		<!-- EXAMPLE RADIATE CONTAINER -->
+		<s:Scroller id="radiateScroller" 
+					width="{260}"  
+					left="0"
+					top="0" 
+					bottom="0"
+					interactionMode="touch">
+			
+			<s:DataGroup id="panels" width="100%" height="100%" >
+				<s:layout>
+					<s:VerticalLayout paddingRight="10" 
+									  variableRowHeight="true"/>
+				</s:layout>
+				<s:ArrayCollection>
+					<!--<ns1:Panel width="100%" >
+					<s:Button label="hello"/>
+					</ns1:Panel>-->
+					
+					<!-- SELECTION -->
+					<!--<s:Label text="SELECTION" width="100%" styleName="formItem"/>
+					<inspectors:Selection height="100%" width="100%" />-->
+					
+					<!-- COMPONENTS -->
+					<s:Label text="COMPONENTS" width="100%" styleName="formItem"/>
+					<views:Components height="250" width="100%" />
+					
+					<!-- DISPLAY LIST -->
+					<s:Label text="DOCUMENT" width="100%"
+							 styleName="formItem"/>
+					<views:DisplayList width="100%" minHeight="220"/>
+					
+					<!-- PROPERTIES -->
+					<s:Label text="PROPERTIES" width="100%" styleName="formItem"/>
+					<inspectors:Property minHeight="180" height="100%" width="100%"/>
+					
+					<!-- LAYOUT CONSTRAINTS -->
+					<s:Label text="LAYOUT" width="100%" styleName="formItem"/>
+					<inspectors:Constraints height="100%" width="100%" />
+					
+					<!-- STATES -->
+					<s:Label text="STATES" width="100%" styleName="formItem"/>
+					<views:States minHeight="200" width="100%" />
+					
+					<!-- HISTORY -->
+					<s:Label text="HISTORY" width="100%" styleName="formItem"/>
+					<inspectors:History id="history" minHeight="100" 
+										clearOnTargetChange="false"
+										height="100%" width="100%"/>
+					
+					<!-- BLEND MODES -->
+					<s:Label text="BLEND MODE" width="100%" styleName="formItem"/>
+					<inspectors:BlendMode height="100%" width="100%" />
+					
+					
+					<!-- SNAPSHOT -->
+					<s:Label text="SNAPSHOT" width="100%" styleName="formItem" />
+					<inspectors:Snapshot height="100%" width="100%" />
+					
+					<!-- EDIT DECISION LIST -->
+					<s:Label text="CHANGE LOG" width="100%" styleName="formItem"/>
+					<inspectors:ChangeHistory minHeight="22" height="100%" width="100%" removeDuplicates="false"/>
+					
+					<!-- PROFILING -->
+					<s:Label text="PROFILE" width="100%" styleName="formItem"/>
+					<ns1:Profiling height="100%" width="100%"/>
+					
+					<!-- SEARCH EXPRESSION -->
+					<s:Label text="SEARCH EXPRESSION" width="100%" styleName="formItem"/>
+					<inspectors:SearchExpression height="100%" width="100%"/>
+					
+					<!-- REDRAW REGIONS -->
+					<s:Label text="REDRAW REGIONS" width="100%" styleName="formItem"/>
+					<inspectors:RedrawRegions width="20" height="20" />
+					
+					<!-- FRAMERATE -->
+					<s:Label text="FRAMERATE" width="100%"
+							 styleName="formItem"/>
+					<inspectors:FrameRate />
+					
+					<!-- MEMORY -->
+					<s:Label text="MEMORY" width="100%" styleName="formItem"/>
+					<inspectors:Memory height="100%" width="100%" 
+									   showCurrentlyUsedPlayerMemory="true"/>
+					
+					
+				</s:ArrayCollection>
+				<!-- DESCRIPTION -->
+				<!--<s:Label text="DESCRIPTION" width="100%" styleName="formItem"/>-->
+				<!--<inspectors:Description showDescriptionLabel="false" left="10" right="10" top="10"/>-->
+			</s:DataGroup>
+			
+		</s:Scroller>
+		
+		<!-- EXAMPLE APPLICATION -->
+		<s:VGroup id="applicationGroup" width="100%" height="100%" gap="0">
+			
+			<mx:TabNavigator id="tabNavigator" width="100%" height="100%" change="tabnavigator1_changeHandler(event)">
+				
+				<s:NavigatorContent width="100%" height="100%" label="New Document">
+					<ns1:Document id="document1" width="100%" height="100%" />
+				</s:NavigatorContent>
+				
+				<!--<s:NavigatorContent width="100%" height="100%" label="" >
+					<ns1:Document id="document2" width="100%" height="100%" />
+				</s:NavigatorContent>-->
+			</mx:TabNavigator>
+			
+			<!-- BREADCRUMBS -->
+			<!--<s:Label text="BREADCRUMBS" width="100%" styleName="formItem"/>-->
+			
+			<s:HGroup width="100%" paddingTop="8" >
+				<inspectors:Breadcrumbs height="18" width="100%" />
+				
+				<s:Label id="showConsoleLabel" 
+						 text="Console" 
+						 typographicCase="uppercase" 
+						 textAlign="center"
+						 verticalAlign="middle"
+						 paddingLeft="5"
+						 paddingRight="5"
+						 paddingBottom="5"
+						 paddingTop="5"
+						 fontWeight="bold"
+						 fontSize="10"
+						 backgroundAlpha=".75"
+						 backgroundColor="#FFFFFF"
+						 useHandCursor="true"
+						 buttonMode="true"
+						 click="showConsoleHandler(event)"
+						 />
+			</s:HGroup>
+			
+			
+			<!-- CONSOLE -->
+			<s:HGroup id="console" width="100%" height="10" includeInLayout="false" visible="false" >
+				<views:Console width="100%" height="100%"/>
+			</s:HGroup>
+			
+		</s:VGroup>
+		
+	</s:Group>
+	
+	<s:Rect width="100%" height="30" bottom="0">
+		<s:fill>
+			<s:SolidColor color="#3d3d3d"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:List id="shortcutList" 
+			width="100%" 
+			height="14" 
+			bottom="8" 
+			left="10"
+			contentBackgroundAlpha="0"
+			dataProvider="{panels.dataProvider}"
+			labelFunction="panelsLabelFunction"
+			borderVisible="false"
+			fontSize="8"
+			color="#dddddd"
+			rollOverColor="#222222"
+			changing="list1_changeHandler(event)"
+			horizontalScrollPolicy="off"
+			>
+		<s:layout>
+			<s:HorizontalLayout variableColumnWidth="true" 
+								verticalAlign="middle"/>
+		</s:layout>
+	</s:List>
+	
+</s:Group>

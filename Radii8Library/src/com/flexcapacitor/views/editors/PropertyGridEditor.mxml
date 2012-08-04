@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- dpcontrols\sparkdpcontrols\myComponents\DGNumStepperEditor.mxml -->
+<s:DefaultGridItemEditor xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				  xmlns:s="library://ns.adobe.com/flex/spark" 
+				  xmlns:mx="library://ns.adobe.com/flex/mx">
+	
+	<fx:Script>
+		<![CDATA[
+			
+			// Override the setter to initialize the NumericStepper control
+			// with the cell data.
+			override public function set value(newValue:Object):void {
+				textArea.text = newValue as String;
+			}
+			
+			// Override the getter to return the current value of 
+			// the NumericStepper control.
+			// The save() method updates the data provider element for the
+			// row of the grid with this value. 
+			override public function get value():Object {
+				return textArea.text;
+			}
+			
+			// Override setFocus() to shift focus to the NumericStepper.
+			override public function setFocus():void {
+				textArea.setFocus();
+			}
+		]]>
+	</fx:Script>
+	
+</s:DefaultGridItemEditor>

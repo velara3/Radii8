@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:fc="http://ns.adobe.com/flashcatalyst/2009"
+		width="14" height="15" >
+	
+	<fx:Metadata>
+		[HostComponent("spark.components.ToggleButton")]
+	</fx:Metadata>
+	
+	<s:states>
+		<s:State name="up" />
+		<s:State name="over"  />
+		<s:State name="down"  />
+		<s:State name="disabled"  />
+		<s:State name="upAndSelected"  />
+		<s:State name="overAndSelected" />
+		<s:State name="downAndSelected"  />
+		<s:State name="disabledAndSelected"  />
+	</s:states>
+	
+	<!-- background -->
+	<!-- shadow (down state only) -->
+	
+	<!-- label -->
+	<s:BitmapImage includeIn="disabled,down,over,up" x="0" y="0" smooth="true"
+				   source="{Radii8LibraryEffectsAssets.loopOff}"/>
+	<s:BitmapImage includeIn="disabledAndSelected,downAndSelected,overAndSelected,upAndSelected" x="0" y="0" smooth="true"
+				   source="{Radii8LibraryEffectsAssets.loopOn}"/>
+	
+	
+</s:Skin>

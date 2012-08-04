@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 width="100%"
+		 minWidth="80" 
+		 creationComplete="creationCompleteHandler(event)">
+
+	<!-- Consider width and height to be 100% -->
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.VisualElementVO;
+			import com.flexcapacitor.utils.InspectorUtils;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Application;
+
+			[Bindable]
+			public var dataProviderList:ArrayCollection = new ArrayCollection();
+
+			[Bindable]
+			public var itemDescription:String;
+			
+			[Bindable]
+			public var parentDocumentName:String;
+			
+			public var maxDepth:int = 50;
+			
+			
+			public var radiate:Radiate = Radiate.instance;
+			
+			/**
+			 * Flag for commit properties
+			 * */
+			private var targetChanged:Boolean;
+			
+			/**
+			 * Displays the ID of the component if available
+			 * */
+			private var showID:String;
+			
+			/**
+			 * When true sets the bread crumbs with the 
+			 * target on the right and ancestors on the left
+			 * */
+			public var showRightToLeft:Boolean = true;
+			
+			/**
+			 * Components tree
+			 * */
+			private var componentsTree:Array = [];
+			
+			private var _target:Object;
+			public function get target():* {
+				return _target;
+			}
+
+			/**
+			 * This is set automatically when a new target is selected
+			 * This can be any type. You must disable this component if the
+			 * type is not what you can process.
+			 * */
+			[Bindable]
+			public function set target(value:*):void {
+				_target = value;
+				targetChanged = true;
+				invalidateProperties();
+			}
+
+
+			private function mouseUpHandler(event:MouseEvent):void {
+				var isDraggable:Boolean = event.target as Sprite;
+				var isParentDraggable:Boolean = (event.target.parent != null && event.target.parent is Sprite);
+
+				radiate.dispatchTargetChangeEvent(event.target);
+			}
+
+
+			protected function list1_clickHandler(event:MouseEvent):void {
+				if (list.selectedItem) {
+					var element:DisplayObject = VisualElementVO(list.selectedItem).element as DisplayObject;
+					
+					if (element!=target) {
+						radiate.dispatchTargetChangeEvent(element);
+					}
+				}
+			}
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				radiate.addEventListener(RadiateEvent.ADD_ITEM, addChangeHandler);
+				radiate.addEventListener(RadiateEvent.MOVE_ITEM, moveChangeHandler);
+			}
+			
+			protected function addChangeHandler(event:Event):void {
+				
+			}
+			
+			protected function moveChangeHandler(event:Event):void {
+				
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem;
+				
+				// if target is null clear bookmarks
+				if (!target) {
+					
+				}
+				
+				
+			}
+			
+			override protected function commitProperties():void {
+				super.commitProperties();
+				
+				if (targetChanged) {
+					createBreadCrumbTrail();
+					targetChanged = false;
+					invalidateDisplayList();
+				}
+				
+			}
+			
+			private function createBreadCrumbTrail():void {
+				var parentDocument:Object = radiate.document;
+				var lastElement:IVisualElement;
+				var newScrollPosition:int;
+				var displayItems:Array;
+
+				if (!target) {
+					dataProviderList.source = [];
+					return;
+				}
+				
+				componentsTree.length = 0;
+				
+				componentsTree = InspectorUtils.getVisualElementsArray(target, componentsTree, maxDepth, parentDocument);
+				//DisplayObjectUtils.walkUpTree(target, processTree);
+				
+				if (!componentsTree) {
+					dataProviderList.source = [];
+					return;
+				}
+				
+				componentsTree.forEach(labelFunction);
+				
+				if (showRightToLeft) {
+					componentsTree.reverse();
+					dataProviderList.source = componentsTree;
+					
+					// NOTE: this is the only way i've been able to get it to work
+					// and a developer in the flex sdk recommends a similar solution
+					list.validateNow();
+					
+					if (list.scroller.viewport.contentWidth>list.width) {
+						newScrollPosition = list.scroller.viewport.contentWidth - list.width;
+					}
+	
+					list.scroller.viewport.horizontalScrollPosition = newScrollPosition;
+					list.validateNow();
+					
+					// check again
+					if (list.scroller.viewport.contentWidth>list.width) {
+						newScrollPosition = list.scroller.viewport.contentWidth - list.width;
+					}
+					
+					list.scroller.viewport.horizontalScrollPosition = newScrollPosition;
+					list.validateNow();
+					
+					if (componentsTree.length) {
+						list.selectedIndex = componentsTree.length-1;
+					}
+				}
+				else {
+					dataProviderList.source = componentsTree;
+					if (componentsTree.length) {
+						list.selectedIndex = 0;
+					}
+				}
+			}
+			
+			public function labelFunction(item:VisualElementVO, itemIndex:int, array:Array):void {
+				var label:String = item.id && showID ? item.type + "." + item.id : item.type;
+				
+				
+				if (item.element is Application) {
+					label = "Document";
+				}
+				
+				if (showRightToLeft) {
+					if (itemIndex!=0) {
+						label = label + "  >  ";
+					}
+				}
+				else {
+					if (itemIndex!=array.length-1) {
+						label = label + "  >  ";
+					}
+					
+				}
+				
+				item.label = label;
+			}
+			
+			
+			
+		]]>
+	</fx:Script>
+	
+	<!-- IF THIS IS TOO BIG SET THE HEIGHT IN THE INSTANCE -->
+	<s:Group width="100%">
+		
+		<s:List id="list"
+				contentBackgroundColor="#ffffff"
+				width="100%"
+				minHeight="16"
+				dataProvider="{dataProviderList}" 
+				borderVisible="false"
+				labelField="label"
+				click="list1_clickHandler(event)"
+				horizontalScrollPolicy="auto" 
+				verticalScrollPolicy="off">
+			
+			<s:layout>
+				<s:HorizontalLayout gap="4" useVirtualLayout="false" />
+			</s:layout>
+			
+			<s:itemRenderer>
+				<fx:Component>
+					<s:ItemRenderer width="100%" autoDrawBackground="false" minHeight="14"
+									useHandCursor="true" buttonMode="true">
+						
+						<s:states>
+							<s:State name="normal"/>
+							<s:State name="hovered"/>
+							<s:State name="selected"/>
+						</s:states>
+						<s:Label id="labelDisplay" 
+								 fontSize="11"
+								 color="#585858"
+								 color.hovered="#787878"
+								 color.selected="#383838"
+								 typographicCase="lowercaseToSmallCaps"
+								 fontWeight="normal"
+								 verticalCenter="0"/>
+					</s:ItemRenderer>
+				</fx:Component>
+			</s:itemRenderer>
+			
+		</s:List>
+		
+		<s:Label text="No selection" 
+				 fontSize="11"
+				 verticalAlign="middle" 
+				 height="{list.height}"
+				 visible="{dataProviderList.length==0}" 
+				 includeInLayout="{dataProviderList.length==0}"
+				 typographicCase="lowercaseToSmallCaps"/>
+	</s:Group>
+	
+
+</s:Group>

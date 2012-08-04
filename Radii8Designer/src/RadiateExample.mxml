@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:c="com.flexcapacitor.controls.*"
+			   xmlns:local="*"
+			   width="100%" height="100%" minWidth="800" minHeight="400"
+			   uncaughtError="uncaughtErrorHandler(event)" xmlns:handlers="com.flexcapacitor.handlers.*" xmlns:popup="com.flexcapacitor.effects.popup.*" xmlns:navigation="com.flexcapacitor.effects.navigation.*">
+	
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace local "*";
+		
+		s|Scroller
+		{
+			skinClass: ClassReference("com.flexcapacitor.skins.MinimalScrollerSkin");
+		}
+		global {
+			fontFamily: Verdana;
+		}
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			
+			import mx.events.FlexEvent;
+			
+			private var remoteTestURL:String = "http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf";
+			private var testURL:String = "assets/test/AboutYou.swf";
+			
+			include "build.as";
+			
+			private function uncaughtErrorHandler(event:UncaughtErrorEvent):void {
+				event.preventDefault();
+				
+				//to capture the error message
+				var errorMessage:String = new String();
+				
+				if (event.error is Error) {
+					errorMessage = Error( event.error ).message;
+				}
+				else if (event.error is ErrorEvent) {
+					errorMessage = ErrorEvent( event.error ).text;
+				}
+				else {
+					errorMessage = event.error.toString();
+				}
+				
+				//Radiate.logTarget.logEvent(new LogEvent("Uncaught Error", LogEventLevel.ERROR));
+				Radiate.log.error(errorMessage);
+				
+			}
+			
+			protected function loadTestProject_clickHandler(event:MouseEvent):void {
+				var url:String;
+				hideLoadControls();
+				currentState = "design";
+				validateNow();
+				
+				
+				// if on server use remote url
+				if (Security.sandboxType == Security.REMOTE) {
+					url = remoteTestURL;
+				}
+				else {
+					url = testURL;
+				}
+				
+				appURL.text = url;
+				loadURL(url);
+			}
+			
+			protected function textinput1_enterHandler(event:FlexEvent):void {
+				hideLoadControls();
+				currentState = "design";
+				validateNow();
+				loadURL(appURL.text);
+			}
+			
+			protected function loadNewProject_clickHandler(event:MouseEvent):void {
+				hideLoadControls();
+				currentState = "design";
+				validateNow();
+				remote.validateNow();
+				remote.document1.validateNow();
+				remote.document1.load();
+			}
+			
+			protected function logo_clickHandler(event:MouseEvent):void {
+				currentState = "start";
+				hideLoadControls();
+				Radiate.clearSelection();
+			}
+			
+			protected function description_clickHandler(event:MouseEvent):void {
+				currentState = "description";
+				hideLoadControls();
+				Radiate.clearSelection();
+			}
+			
+			protected function loadProject_clickHandler(event:MouseEvent):void {
+				
+				if (appURL.visible) {
+					hideLoadControls();
+					currentState = "design";
+					validateNow();
+					loadURL(appURL.text);
+				}
+				else {
+					showLoadControls();
+				}
+			}
+			
+			private function loadURL(url:String):void {
+				remote.document1.loadRemote(url, trustContent.selected, loadCompatible.selected);
+			}
+			
+			private function hideLoadControls():void {
+				loadLabel.text = "Load";
+				closeLabel.visible = false;
+				closeLabel.includeInLayout = false;
+				appURL.visible = false;
+				trustContent.visible = false;
+				loadCompatible.visible = false;
+			}
+			
+			private function showLoadControls():void {
+				loadLabel.text = "Load";
+				closeLabel.includeInLayout = true;
+				closeLabel.visible = true;
+				appURL.visible = true;
+				trustContent.visible = true;
+				loadCompatible.visible = true;
+			}
+			
+			
+			protected function aboutLabel_clickHandler(event:MouseEvent):void {
+				Radiate.log.info("Build Number: " + BUILD_NUMBER);
+				Radiate.log.info("Build Date: " + BUILD_DATE);
+			}
+			
+			protected function closeLabel_clickHandler(event:MouseEvent):void {
+				hideLoadControls();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!--- show about popup -->
+		<handlers:EventHandler target="{aboutLabel}" eventName="click">
+			<popup:ShowPopupAnchor target="{aboutPopUp}" />
+		</handlers:EventHandler>
+
+		<!--- hide about popup -->
+		<handlers:EventHandler target="{popUpGroup}" eventNames="['mouseDownOutside']">
+			<popup:HidePopupAnchor target="{aboutPopUp}" />
+		</handlers:EventHandler>
+		
+		<!--- open more info URL -->
+		<handlers:EventHandler target="{moreInfoLabel}" eventName="click">
+			<popup:HidePopupAnchor target="{aboutPopUp}" />
+			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=2" window="_blank" />
+		</handlers:EventHandler>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="start"/>
+		<s:State name="design"/>
+		<s:State name="description"/>
+	</s:states>
+	
+	<s:Rect width="100%" height="30">
+		<s:fill>
+			<s:SolidColor color="#3d3d3d"/>
+		</s:fill>
+	</s:Rect>
+	
+	
+	<s:Group width="100%" height="100%" top="38" 
+			 includeIn="description">
+		
+		<c:PaginationText top="8" 
+				 left="40" 
+				 height="100%"
+				 width="100%"
+				 replaceLinebreaksWithBreaks="true"
+				 >
+			<c:htmlText>Welcome to the Radiate demo. There are many features shown here (many incomplete) but the main one that I would like you to notice is the history feature (via the History Panel). The Radiate class has static methods that allow you to get or set a target, change properties, move an element, select an element and so on. All the panels you see here are using these API's to modify the selected element or document in some way. 
+				
+				All the panels and features you see are made possible and work together through this system. This is important because it allows any developer with Flex knowledge to create their own panels usually very quickly and modify the document in their own way. For example, you could add a panel that lets you add a drop shadow to an element on the stage or provide a UI to adjust an existing one. Or you could create a States panel that lets you select and see the different states of a component. You could access this information with ActionScript code as easy as checking the Radiate.selectedTarget states property and showing those states in your UI. 
+				
+				As you can see there are many features that are missing or behaving incorrectly. Most are easily solved. This purpose of this demo to give you an early preview of where it's going and ideas for what it can be used for. 
+				
+				If you are giving it a run through add and test only with the Button and Group, VGroup and HGroup components. 
+				
+				For more information check the blog and send emails to flexcapacitor@gmail.com.
+			</c:htmlText>
+		</c:PaginationText>
+	</s:Group>
+	
+	<s:Group width="100%" height="100%" top="38" 
+			 includeIn="start">
+		
+		<s:HGroup gap="60" horizontalCenter="0" verticalCenter="-20">
+			<s:Label text="New Project" 
+					 height="200"
+					 width="200"
+					 paddingLeft="20"
+					 paddingRight="20"
+					 backgroundAlpha=".15"
+					 backgroundColor="0"
+					 fontWeight="bold"
+					 textAlign="center"
+					 verticalAlign="middle"
+					 useHandCursor="true"
+					 buttonMode="true"
+					 click="loadNewProject_clickHandler(event)"
+					 />
+			<s:Label text="Inspect Demo Project" 
+					 textAlign="center"
+					 verticalAlign="middle"
+					 height="200"
+					 width="200"
+					 paddingLeft="20"
+					 paddingRight="20"
+					 fontWeight="bold"
+					 backgroundAlpha=".15"
+					 backgroundColor="0"
+					 useHandCursor="true"
+					 buttonMode="true"
+					 click="loadTestProject_clickHandler(event)"
+					 />
+			<s:Label text="Description" 
+					 textAlign="center"
+					 verticalAlign="middle"
+					 height="200"
+					 width="200"
+					 paddingLeft="20"
+					 paddingRight="20"
+					 fontWeight="bold"
+					 backgroundAlpha=".15"
+					 backgroundColor="0"
+					 useHandCursor="true"
+					 buttonMode="true"
+					 click="description_clickHandler(event)"
+					 />
+		</s:HGroup>
+	</s:Group>
+	
+	
+	<local:Remote id="remote" width="100%" height="100%" top="38" includeIn="design" />
+	
+	<s:HGroup verticalAlign="middle" width="100%" height="28" paddingLeft="8" paddingRight="8"
+			  gap="3" 
+			  >
+		
+		<s:BitmapImage id="logo" source="assets/images/logo24.png" width="24" height="24"
+					   verticalAlign="middle" horizontalAlign="center"
+					   includeInLayout="true"
+					   >
+			<s:filters>
+				<s:GlowFilter blurX="2" blurY="2" knockout="false" strength="1" quality="4" color="#ffffff" />
+			</s:filters>
+		</s:BitmapImage>
+		
+		<s:Spacer width="1"/>
+		
+		<s:Label text="RADII8" 
+				 fontSize="12" 
+				 fontWeight="bold"
+				 color="#ffffff"
+				 paddingTop="2"
+				 top="10"
+				 left="10"
+				 buttonMode="true"
+				 useHandCursor="true"
+				 click="logo_clickHandler(event)"/>
+		<s:Label text="alpha" 
+				 fontSize="8" 
+				 fontWeight="bold"
+				 color="#ffffff"
+				 paddingBottom="6"
+				 top="10"
+				 left="10"/>
+		
+		<s:Spacer width="100%"/>
+		<s:Label id="aboutLabel" 
+				 text="About" 
+				 useHandCursor="true"
+				 buttonMode="true"
+				 verticalAlign="middle" 
+				 textAlign="center"
+				 color="#DDDDDD"/>
+		
+	</s:HGroup>
+	
+	<s:PopUpAnchor id="aboutPopUp" width="250" height="250" top="34" right="10" >
+		<s:Group id="popUpGroup" 
+				 mouseEnabledWhereTransparent="true" 
+				 width="250" height="100%" 
+				 >
+			
+			<s:Rect width="100%" height="100%" radiusX="8" radiusY="8">
+				<s:fill>
+					<s:SolidColor color="#ffffff" alpha=".9" />
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke color="#000000" pixelHinting="true" weight="1" />
+				</s:stroke>
+			</s:Rect>
+			
+			<s:VGroup paddingLeft="12" paddingRight="12" paddingTop="12" paddingBottom="12"
+					  gap="8">
+				<s:HGroup verticalAlign="middle">
+					<s:Label text="Build Date:" minWidth="100" /> 
+					<s:Label id="buildDate" text="{BUILD_DATE}" /> 
+				</s:HGroup>
+				<s:HGroup verticalAlign="middle">
+					<s:Label text="Build Number:" width="100" />
+					<s:Label id="buildNumber" text="{BUILD_NUMBER}" /> 
+				</s:HGroup>
+				<s:HGroup verticalAlign="middle">
+					<s:Label id="moreInfoLabel" text="More info" color="blue" fontWeight="bold"
+							 useHandCursor="true" buttonMode="true"/>
+				</s:HGroup>
+			</s:VGroup>
+			<s:filters>
+				<s:DropShadowFilter distance="6" blurX="3" blurY="3" strength=".35"/>
+			</s:filters>
+		</s:Group>
+	</s:PopUpAnchor>
+	
+	<s:HGroup verticalAlign="middle" width="100%" top="30" height="28" paddingLeft="8" paddingRight="8"
+			  gap="8" 
+			  >
+		<s:Spacer width="100%"/>
+		<s:CheckBox id="loadCompatible" label="Compatible" selected="false" visible="false"/>
+		<s:CheckBox id="trustContent" label="Trust Content" selected="true" visible="false"/>
+		<s:TextInput id="appURL" width="90%" prompt="Enter a URL to a SWF" text="" visible="false" enter="textinput1_enterHandler(event)"/>
+		<s:Label id="loadLabel" 
+				 text="Load" 
+				 useHandCursor="true"
+				 buttonMode="true"
+				 verticalAlign="middle" 
+				 textAlign="center"
+				 click="loadProject_clickHandler(event)" />
+		<s:Label id="resetLabel" 
+				 text="Restore" 
+				 verticalAlign="middle" 
+				 textAlign="center"
+				 visible="false"
+				 includeInLayout="false"
+				 click="loadNewProject_clickHandler(event)" />
+		<s:Label id="closeLabel" 
+				 text="Close" 
+				 verticalAlign="middle" 
+				 textAlign="center"
+				 visible="false"
+				 includeInLayout="false"
+				 click="closeLabel_clickHandler(event)" />
+	</s:HGroup>
+	
+</s:Application>
