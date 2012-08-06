@@ -28,22 +28,6 @@
 				}
 			}
 			
-			override public function getMinBoundsHeight(postLayoutTransform:Boolean=true):Number {
-				return super.getMinBoundsHeight(postLayoutTransform);
-			}
-			
-			override public function getPreferredBoundsHeight(postLayoutTransform:Boolean=true):Number {
-				return super.getPreferredBoundsHeight(postLayoutTransform);
-			}
-			
-			/* override mx_internal function getUnscaledHeight():Number {
-				return super.mx_internal::getUnscaledHeight();
-			} */
-			
-			override public function get measuredHeight():Number {
-				return super.measuredHeight;
-			}
-			
 		]]>
 	</fx:Script>
 	

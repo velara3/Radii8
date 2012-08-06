@@ -32,16 +32,31 @@ package {
 		[Embed(source="assets/icons/general/visible.png")]
 		public static const visible:Class;
 		
+		[Embed(source="assets/icons/general/arrow.png")]
+		public static const arrow:Class;
+		
 		
 		///////////////////////////////////////////////////////
 		// TYPES
 		///////////////////////////////////////////////////////
 		
 		[Embed(source="assets/icons/general/Component.png")]
-		public static const component:Class;
+		public static const componentIcon:Class;
 		
 		[Embed(source="assets/icons/general/Package.png")]
 		public static const packageIcon:Class;
+		
+		[Embed(source="assets/icons/general/Application.png")]
+		public static const applicationIcon:Class;
+		
+		[Embed(source="assets/icons/general/ItemRenderer.png")]
+		public static const itemRendererIcon:Class;
+		
+		[Embed(source="assets/icons/general/Module.png")]
+		public static const moduleIcon:Class;
+		
+		[Embed(source="assets/icons/general/Skin.png")]
+		public static const skinIcon:Class;
 		
 		
 		

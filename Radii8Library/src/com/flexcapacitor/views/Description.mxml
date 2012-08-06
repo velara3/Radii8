@@ -175,10 +175,10 @@
 	</s:states>
 	
 	<s:HGroup width="100%" verticalAlign="middle">
-		<s:Image source="{Radii8LibraryAssets.component}" 
+		<s:Image source="{Radii8LibraryAssets.componentIcon}" 
 				 height="16" 
 				 width="16"
-				 source.document="{Radii8LibraryAssets.component}" 
+				 source.document="{Radii8LibraryAssets.componentIcon}" 
 				 includeInLayout="{showIcon}"
 				 source.package="{Radii8LibraryAssets.packageIcon}" 
 				 visible="{showIcon}"

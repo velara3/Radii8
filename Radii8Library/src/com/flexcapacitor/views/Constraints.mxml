@@ -8,8 +8,9 @@
 		 xmlns:handlers="com.flexcapacitor.handlers.*"
 		 xmlns:supportClasses="com.flexcapacitor.effects.supportClasses.*"
 		 styleName="constraintStyles"
-		 creationComplete="creationCompleteHandler(event)" 
-		 width="100%" 
+		 creationComplete="creationCompleteHandler(event)"
+		 width="100%"
+		 height="100%"
 		 >
 
 	<fx:Script>
@@ -94,6 +95,18 @@
 			
 			[Bindable]
 			public var isVisualElement:Boolean;
+			
+			
+			public var radiate:Radiate = Radiate.instance;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				target = null;
+				var ra:* = radiate;
+				var radiate2:Radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChangeHandler);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
+			}
 			
 			/**
 			 * Clears the target dimension variables which updates any element
@@ -202,17 +215,18 @@
 
 			}
 			
-			public function get target():Object {
-				return _target;
-			}
-			
 			public function get element():IVisualElement {
 				return _visualElement;
+			}
+			
+			public function get target():Object {
+				return _target;
 			}
 
 			[Bindable]
 			public function set target(value:Object):void {
 				
+				trace("targt changed");
 				if (!(value is DisplayObject)) {
 					_target = null;
 					clearForm();
@@ -1078,14 +1092,6 @@
 				
 			}
 			
-			public var radiate:Radiate = Radiate.instance;
-			
-			protected function creationCompleteHandler(event:FlexEvent):void {
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChangeHandler);
-				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
-			}
-			
 			/**
 			 * Get current target
 			 * */
@@ -1127,8 +1133,7 @@
 			
 			private const watchedProperties:Array = [ "width", "height", "percentWidth", "percentHeight", "x",
 													"y", "top", "left", "right", "bottom", "verticalCenter",
-													"horizontalCenter", "baseline"];
-			
+													"horizontalCenter", "baseline"]
 			
 		]]>
 	</fx:Script>

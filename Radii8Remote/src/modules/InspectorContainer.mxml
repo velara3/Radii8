@@ -4,24 +4,44 @@
 		  xmlns:mx="library://ns.adobe.com/flex/mx" 
 		  width="400" height="100%"
 		  minHeight="250"
-		  
+		  styleName="shadow"
 		  creationComplete="init(event)"
 		  stateChangeComplete="module1_stateChangeCompleteHandler(event)"
+		  
+		  implements="mx.managers.IFocusManagerContainer"
 		  >
 	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		.shadow {
+			textShadowColor:red;
+		}
+	</fx:Style>
 	<fx:Script>
 		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			
 			import data.Item;
 			import data.Perspective;
 			import data.Preferences;
 			
+			import flash.utils.setTimeout;
+			
 			import mx.collections.ArrayList;
+			import mx.core.FlexGlobals;
+			import mx.core.IFlexDisplayObject;
 			import mx.events.FlexEvent;
 			import mx.events.MenuEvent;
+			import mx.managers.ISystemManager;
+			import mx.managers.SystemManager;
+			import mx.utils.ObjectUtil;
 			
 			import renderers.OnlineViewRenderer;
 			import renderers.PerspectivesViewRenderer;
 			import renderers.ViewRenderer;
+			
+			import spark.components.CheckBox;
 			
 			/////////////////////////////////////////////////////////
 			/// CONSTANTS
@@ -31,6 +51,8 @@
 			public const VIEWS_STATE:String 		= "views";
 			public const SETTINGS_STATE:String 		= "settings";
 			public const PERSPECTIVES_STATE:String 	= "perspectives";
+			public const LOADING_STATE:String 		= "loading";
+			
 			public const SHARED_OBJECT_NAME:String 	= "save";
 			public const ITEMS_UPDATED:String 		= "itemsUpdated";
 			public const ITEMS_UPDATE_FAULT:String 	= "itemsUpdateFault";
@@ -41,10 +63,16 @@
 			/////////////////////////////////////////////////////////
 			
 			/**
-			 * Indicates if getting list of items from the servcer
+			 * Indicates if getting list of items from the server
 			 * */
-			[Boolean]
+			[Bindable]
 			public var retrievingData:Boolean;
+			
+			/**
+			 * Items received successfully
+			 * */
+			[Bindable]
+			public var itemsReceived:Boolean;
 			
 			public var modulesArray:Array;
 			
@@ -75,10 +103,14 @@
 			[Bindable]
 			public var perspectivesList:ArrayList = new ArrayList();
 			
+			public var radiate:Radiate = Radiate.getInstance();
+			
 			
 			/////////////////////////////////////////////////////////
 			/// Methods
 			/////////////////////////////////////////////////////////
+
+			public var clearSharedObject:Boolean;
 			
 			/**
 			 * Register classes for saving settings
@@ -89,8 +121,9 @@
 				registerClassAlias("Preferences", Preferences);
 				registerClassAlias("Perspective", Perspective);
 				
-				getSettings();
 				createInitialPreferences();
+				getSettings();
+				getRemoteItems();
 				
 				// listen to changes to settings and save
 				addEventListener(SETTINGS_CHANGE, settingChangeHandler);
@@ -98,95 +131,11 @@
 			}
 			
 			/**
-			 * Loads the available remote items
-			 * */
-			public function getRemoteItems():void {
-				var request:URLRequest = new URLRequest(preferencesURL);
-				
-				// load happens when setting request
-				loader = new URLLoader(request);
-				loader.addEventListener(Event.COMPLETE, getRemoteItemsHandler);
-				loader.addEventListener(IOErrorEvent.IO_ERROR, ioErrorHandler);
-				loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler);
-				
-				
-			}
-			
-			/**
-			 * Parses response from the server of list of views 
-			 * */
-			protected function getRemoteItemsHandler(event:Event):void {
-				var data:String = loader.data as String;
-				retrievingData = false;
-				
-				try {
-					trace("GOT REMOTE ITEMS LIST");
-					var xml:XML = new XML(data);
-					itemsXMLList = xml.items.item;
-					
-					addRemoteItemsList();
-					dispatchEvent(new Event(ITEMS_UPDATED));
-				}
-				catch (error:Error) {
-					trace("error in xml:" + error.message);
-				}
-				
-			}
-			
-			/**
-			 * Offline 
-			 * */
-			protected function ioErrorHandler(event:IOErrorEvent):void {
-				var error:String;
-				retrievingData = false;
-				dispatchEvent(new Event(ITEMS_UPDATE_FAULT));
-				trace("Could not retrieve data=" + event.text);
-			}
-			
-			/**
-			 * Offline 
-			 * */
-			protected function securityErrorHandler(event:SecurityErrorEvent):void {
-				var error:String;
-				retrievingData = false;
-				dispatchEvent(new Event(ITEMS_UPDATE_FAULT));
-				trace("Could not retrieve data=" + event.text);
-			}
-			
-			/**
-			 * Converts items to objects
-			 * */
-			private function addRemoteItemsList():void {
-				var count:int = itemsXMLList.length();
-				
-				for (var i:int;i<count;i++) {
-					var item:Item = new Item(itemsXMLList[i]);
-					itemsList.addItem(item);
-				}
-				
-			}
-			
-			/**
-			 * Saves settings to disk
-			 * */
-			public function saveSettings():void {
-				var saveData:SharedObject = SharedObject.getLocal(SHARED_OBJECT_NAME); 
-				
-				
-				saveData.data.preferences = preferences;
-				saveData.flush();
-				
-				trace("Saving Settings:" + saveData.data.preferences);
-			}
-			
-			/**
-			 * Gets setings from disk
-			 * Creates 
+			 * Gets settings from disk
 			 * */
 			public function getSettings():void {
 				var saveData:SharedObject = SharedObject.getLocal(SHARED_OBJECT_NAME); 
 				preferences = saveData.data.preferences;
-				var clearSharedObject:Boolean = true;
 				
 				// clear the saved data
 				if (clearSharedObject) {
@@ -199,7 +148,135 @@
 					preferences.selectedPerspective = preferences.defaultPerspective;
 				}
 				
-				trace("Getting settings:" + saveData.data.preferences);
+				trace("Getting Settings:\n" + ObjectUtil.toString(saveData.data.preferences));
+				
+			}
+			
+			/**
+			 * Creates settings if they don't exist
+			 * */
+			private function createInitialPreferences():void {
+				var saveData:SharedObject = SharedObject.getLocal(SHARED_OBJECT_NAME); 
+				preferences = saveData.data.preferences;
+				
+				// get available views from remote server
+				if (!preferences) {
+					createDefaultPreferences();
+					saveSettings();
+				}
+				
+			}
+			
+			/**
+			 * Get Remote Items
+			 * */
+			public function getRemoteItems():void {
+				retrievingData = true;
+				itemsReceived = false;
+				
+				// if there are no items then get remote list of items
+				addEventListener(ITEMS_UPDATED, updateDefaultItemsHandler);
+				addEventListener(ITEMS_UPDATE_FAULT, itemsUpdateFaultHandler);
+				retrieveRemoteItems();
+				
+				if (currentState==LOADING_STATE) {
+					loadingStatusText.text = "Getting Remote Items...";
+				}
+			
+			}
+			
+			/**
+			 * Loads the available remote items from the preferences URL
+			 * */
+			private function retrieveRemoteItems():void {
+				var request:URLRequest = new URLRequest(preferencesURL);
+				
+				// load happens when setting request
+				loader = new URLLoader(request);
+				loader.addEventListener(Event.COMPLETE, getRemoteItemsHandler);
+				loader.addEventListener(IOErrorEvent.IO_ERROR, ioErrorHandler);
+				loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler);
+				
+			}
+			
+			/**
+			 * Parses list of views available on the server
+			 * */
+			protected function getRemoteItemsHandler(event:Event):void {
+				var data:String = loader.data as String;
+				retrievingData = false;
+				
+				try {
+					var xml:XML = new XML(data);
+					itemsXMLList = xml.items.item;
+					
+					if (currentState==LOADING_STATE) {
+						loadingStatusText.text += "\nData received...";
+					}
+					
+					addRemoteItemsList();
+					
+					if (currentState==LOADING_STATE) {
+						loadingStatusText.text += "\nParsed data items...";
+						loadingStatusText.text += "\nLoading Complete...";
+					}
+					
+					itemsReceived = true;
+					
+					dispatchEvent(new Event(ITEMS_UPDATED));
+				}
+				catch (error:Error) {
+					trace("error in xml:" + error.message);
+					
+					itemsReceived = false;
+					
+					if (currentState==LOADING_STATE) {
+						loadingStatusText.text += "\nError in data: " + error.message;
+					}
+					
+				}
+				
+			}
+			
+			/**
+			 * Offline 
+			 * */
+			protected function ioErrorHandler(event:IOErrorEvent):void {
+				var error:String;
+				retrievingData = false;
+				dispatchEvent(new Event(ITEMS_UPDATE_FAULT));
+				itemsReceived = false;
+				
+				if (currentState==LOADING_STATE) {
+					loadingStatusText.text += "\n" +  event.text;
+				}
+			}
+			
+			/**
+			 * Offline 
+			 * */
+			protected function securityErrorHandler(event:SecurityErrorEvent):void {
+				var error:String;
+				retrievingData = false;
+				itemsReceived = false;
+				
+				dispatchEvent(new Event(ITEMS_UPDATE_FAULT));
+
+				if (currentState==LOADING_STATE) {
+					loadingStatusText.text += "\n" +  event.text;
+				}
+			}
+			
+			/**
+			 * Converts items to objects
+			 * */
+			private function addRemoteItemsList():void {
+				var count:int = itemsXMLList.length();
+				
+				for (var i:int;i<count;i++) {
+					var item:Item = new Item(itemsXMLList[i]);
+					itemsList.addItem(item);
+				}
 				
 			}
 			
@@ -222,8 +299,18 @@
 				// Don’t open the Alert for a menu bar item that
 				// opens a popup submenu.
 				if (event.item.@data != "top") {
-					//Alert.show("Label: " + event.item.@label + "\n" + "Data: " + event.item.@data, "Clicked menu item");
 					
+					//Alert.show("Label: " + event.item.@label + "\n" + "Data: " + event.item.@data, "Clicked menu item");
+					var item:Object = focusManager.getFocus();
+					if (item is MenuBar) {
+						trace("is checkbox");
+						
+					}
+					//event.preventDefault();
+					
+					//FlexGlobals.topLevelApplication.setFocus();//setFocus();
+					//onlineList.setStyle("verticalScrollPolicy", "off");
+					//setTimeout(changeStates, 1000, stateName);
 					changeStates(stateName);
 				}
 			}
@@ -247,13 +334,16 @@
 					titleLabel.text = "Settings";
 				}
 				else if (currentState==ONLINE_STATE) {
-					titleLabel.text = "Online";
+					titleLabel.text = "Available Views";
 				}
 				else if (currentState==VIEWS_STATE) {
 					titleLabel.text = "Views";
 				}
 				else if (currentState==PERSPECTIVES_STATE) {
 					titleLabel.text = "Perspectives";
+				}
+				else if (currentState==LOADING_STATE) {
+					titleLabel.text = "Loading";
 				}
 			}
 			
@@ -270,7 +360,7 @@
 				}
 				else if (name==ONLINE_STATE) {
 					if (!itemsList.length) {
-						getRemoteItems();
+						retrieveRemoteItems();
 					}
 					currentState = ONLINE_STATE;
 				}
@@ -279,6 +369,9 @@
 				}
 				else if (name==PERSPECTIVES_STATE) {
 					currentState = PERSPECTIVES_STATE;
+				}
+				else if (name==LOADING_STATE) {
+					currentState = LOADING_STATE;
 				}
 				
 			}
@@ -289,18 +382,29 @@
 			private function menuLabelFunction(item:Object):String {
 				
 				if (item.@menuRoot==true) {
-					return "  ";
+					//return "  ";
 				}
 				
 				return String(item.@label);
 			}
 			
+			/**
+			 * Goes to online state
+			 * */
 			protected function showOnlineViewHandler(event:MouseEvent):void {
 				changeStates(ONLINE_STATE);
 			}
 			
 			/**
-			 * Create default preferences 
+			 * Goes to views state
+			 * */
+			protected function showViewsHandler(event:MouseEvent):void {
+				changeStates(VIEWS_STATE);
+			}
+			
+			/**
+			 * Create default preferences locally.
+			 * Sets default perspective and selected perspective
 			 * */
 			private function createDefaultPreferences():void {
 				var perspective:Perspective;
@@ -309,9 +413,9 @@
 				preferences.name 	= "Default";
 				preferences.url 	= preferencesURL;
 				
-				perspective = new Perspective();
-				perspective.name = "Default";
-				perspective.items = itemsList.source;
+				perspective 		= new Perspective();
+				perspective.name 	= "Default";
+				perspective.items 	= itemsList.source;
 				
 				preferences.defaultPerspective = perspective;
 				preferences.selectedPerspective = perspective;
@@ -320,25 +424,15 @@
 			}
 			
 			/**
-			 * Creates settings if they don't exist
+			 * Saves settings to disk
 			 * */
-			private function createInitialPreferences():void {
+			public function saveSettings():void {
 				var saveData:SharedObject = SharedObject.getLocal(SHARED_OBJECT_NAME); 
-				preferences = saveData.data.preferences;
 				
-				// get items data from remote server
-				if (!preferences) {
-					retrievingData = true;
-					createDefaultPreferences();
-					saveSettings();
-					
-					if (!itemsList.length) {
-						addEventListener(ITEMS_UPDATED, updateDefaultItemsHandler);
-						addEventListener(ITEMS_UPDATE_FAULT, itemsUpdateFaultHandler);
-						getRemoteItems();
-					}
-				}
+				saveData.data.preferences = preferences;
+				saveData.flush();
 				
+				trace("Saving Settings:" + saveData.data.preferences);
 			}
 			
 			/**
@@ -387,6 +481,26 @@
 				}
 			}
 			
+			public function get defaultButton():IFlexDisplayObject {
+				
+				return null;
+			}
+			
+			public function set defaultButton(value:IFlexDisplayObject):void {
+				
+			}
+			
+			override public function get systemManager():ISystemManager {
+				
+				return null;
+			}
+			
+			protected function loadRemoteViews(event:MouseEvent):void {
+				changeStates(LOADING_STATE);
+				
+				getRemoteItems();
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -417,14 +531,33 @@
 			</root>
 		</fx:Model>
 		
+		<fx:XMLList id="viewsXMLList" xmlns="">
+			<item label="Home" stateName="home" type="radio" groupName="view" toggled="true" />
+			<item label="Views" stateName="views" type="radio" groupName="view" toggled="false" />
+			<item label="Perspectives" stateName="perspectives" type="radio" groupName="view" toggled="false" />
+			<item label="Settings" stateName="settings" type="radio" groupName="view" toggled="false" />
+			<item label="Online" stateName="online" type="radio" groupName="view" toggled="false" />
+		</fx:XMLList>
+		
 
-		<fx:XMLList id="menuItemsList" xmlns="">
-			<menu label="View..." menuRoot="true">
+		<fx:XMLList id="perspectivesXMLList" xmlns="">
+			<item label="Default" toggled="false" groupName="perspectives" />
+			<fake type="separator" />
+			<item label="Settings" stateName="settings" type="radio" groupName="perspectives" />
+		</fx:XMLList>
+		
+		<fx:XMLList id="menuItemsXMLList" xmlns="">
+			<menu label="Perspectives...">
+				<item label="Default" toggled="false" groupName="perspectives" />
+				<item type="separator" />
+				<item label="Settings" stateName="settings" type="radio" groupName="perspectives" />
+			</menu>
+			<menu label="Screens" menuRoot="true">
 				<item label="Home" stateName="home" type="radio" groupName="view" toggled="true" />
 				<item label="Views" stateName="views" type="radio" groupName="view" toggled="false" />
 				<item label="Perspectives" stateName="perspectives" type="radio" groupName="view" toggled="false" />
-				<item label="Settings" stateName="settings" type="radio" groupName="view" toggled="false" />
 				<item label="Online" stateName="online" type="radio" groupName="view" toggled="false" />
+				<item label="Settings" stateName="settings" type="radio" groupName="view" toggled="false" />
 			</menu>
 		</fx:XMLList>
 	</fx:Declarations>
@@ -445,35 +578,46 @@
 	
 	<s:states>
 		<s:State name="home"/>
+		<s:State name="loading"/>
 		<s:State name="settings"/>
 		<s:State name="online"/>
 		<s:State name="views"/>
 		<s:State name="perspectives"/>
 	</s:states>
 	
-			  
+	
 	<s:VGroup width="100%" height="100%"
+			  top="30"
 			  clipAndEnableScrolling="true">
-		<!--<mx:MenuBar id="menuBar"
-					width="100%" 
-					labelField="@label"
-					itemClick="menuHandler(event)"
-					cornerRadius="0"
-					backgroundSkin="{null}"
-					>
-			<mx:dataProvider>
-				<s:XMLListCollection>{menuItemsList}</s:XMLListCollection>
-			</mx:dataProvider>
-		</mx:MenuBar>-->
-		
 		
 		<!-- HOME -->
 		<s:Group width="100%" height="100%" includeIn="home">
+			<s:Label x="9" y="6" text="HOME STATE"/>
+			
 			<s:VGroup horizontalCenter="0" verticalCenter="0">
-				<s:Label text="Welcome Screen&#xd;Shows instrutctions and how to find&#xd;and enable panels" />
-				<s:Button label="get panels" click="showOnlineViewHandler(event)"/>
+				<s:Label text="Welcome&#xd;Push the start button to get views from the server" />
+				<s:Button label="Start" click="loadRemoteViews(event)"/>
 			</s:VGroup>
-			<s:Label x="9" y="6" text="HOME"/>
+		</s:Group>
+		
+		
+		<!-- LOADING -->
+		<s:Group width="100%" height="100%" includeIn="loading">
+			<s:VGroup horizontalCenter="0" verticalCenter="0">
+				<s:Label text="Loading remote items"/>
+				<s:TextArea id="loadingStatusText" text="" />
+				<mx:ProgressBar visible="{retrievingData}" 
+								hideEffect="Fade" 
+								label=""
+								indeterminate="true"/>
+				<s:HGroup width="100%">
+					<s:Button label="Reload" 
+							  click="loadRemoteViews(event)"/>
+					<s:Button label="Continue" 
+							  enabled="{itemsReceived}" 
+							  click="showOnlineViewHandler(event)"/>
+				</s:HGroup>
+			</s:VGroup>
 		</s:Group>
 		
 		
@@ -542,7 +686,7 @@
 		<s:VGroup width="100%" 
 				  paddingBottom="2" paddingLeft="2" 
 				  paddingRight="2" paddingTop="2"
-				  includeIn="online">
+				  includeIn="online" focusEnabled="false">
 			
 			
 			<s:Label text="Search views:"/>
@@ -565,10 +709,13 @@
 				</s:Line>
 			</s:HGroup>
 			
-			<s:List dataProvider="{itemsList}"
+			<s:List id="onlineList" 
+					dataProvider="{itemsList}"
 					itemRenderer="{new ClassFactory(OnlineViewRenderer)}"
 					width="100%"
+					focusEnabled="false"
 					borderVisible="false"
+					verticalScrollPolicy="off"
 					>
 				<!--<s:layout>
 					<s:VerticalLayout horizontalAlign="contentJustify" 
@@ -632,7 +779,6 @@
 				  paddingRight="2" paddingTop="2"
 				  includeIn="views">
 			
-			
 			<s:Label text="Views" width="100%"/>
 			
 			<s:HGroup width="100%" gap="1" verticalAlign="middle">
@@ -649,6 +795,10 @@
 			</s:HGroup>
 			
 			
+			<s:HGroup gap="1" width="100%">
+				<s:ModuleLoader url="modules/Tools.swf" width="100%"/>
+ 			</s:HGroup>
+			
 			<!-- EXAMPLE RADIATE CONTAINER -->
 			<s:Scroller id="radiateScroller" 
 						width="100%"  
@@ -661,9 +811,11 @@
 				<s:DataGroup id="panels" width="100%" height="100%"
 							 clipAndEnableScrolling="true"
 							 itemRenderer="renderers.ModuleItemRenderer"
+							
 							 dataProvider="{new ArrayList(preferences.selectedPerspective.items)}">
 					<s:layout>
 						<s:VerticalLayout paddingRight="10"
+										  horizontalAlign="justify"
 										  useVirtualLayout="false"
 										  variableRowHeight="true"/>
 					</s:layout>
@@ -685,18 +837,20 @@
 			 width="22" height="20"/>
 	
 	<mx:MenuBar id="menuBar2"
+				focusEnabled="false"
+				hasFocusableChildren="false"
 				labelField="@label"
 				itemClick="menuHandler(event)"
 				labelFunction="menuLabelFunction"
 				backgroundSkin="{null}"
 				cornerRadius="0"
-				top="0" right="0"
-				width="32" height="28"
+				top="0" left="-10"
+				height="28"
 				useHandCursor="true"
 				buttonMode="true"
 				>
 		<mx:dataProvider>
-			<s:XMLListCollection>{menuItemsList}</s:XMLListCollection>
+			<s:XMLListCollection>{menuItemsXMLList}</s:XMLListCollection>
 		</mx:dataProvider>
 	</mx:MenuBar>
 </s:Group>

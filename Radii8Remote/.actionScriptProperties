@@ -12,6 +12,7 @@
       <libraryPathEntry kind="1" linkType="1" path="libs"/>
       <libraryPathEntry kind="3" linkType="1" path="/Radii8Library/bin/Radii8Library.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="/MyLibrary/bin/MyLibrary.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="/Radii8LibraryAssets/bin/Radii8LibraryAssets.swc" useDefaultLinkType="false"/>
     </libraryPath>
     <sourceAttachmentPath/>
   </compiler>
@@ -22,9 +23,8 @@
     <module destPath="modules/InspectorContainer.swf" optimize="false" sourcePath="src/modules/InspectorContainer.mxml"/>
     <module destPath="modules/Tools.swf" optimize="false" sourcePath="src/modules/Tools.mxml"/>
     <module application="src/Radii8Remote.mxml" destPath="modules/PropertiesExample.swf" optimize="true" sourcePath="src/modules/PropertiesExample.mxml"/>
-    <module destPath="modules/OutlineExample.swf" optimize="false" sourcePath="src/modules/OutlineExample.mxml"/>
+    <module application="src/Radii8Remote.mxml" destPath="modules/OutlineExample.swf" optimize="true" sourcePath="src/modules/OutlineExample.mxml"/>
   </modules>
   <buildCSSFiles/>
   <flashCatalyst validateFlashCatalystCompatibility="false"/>
 </actionScriptProperties>
-

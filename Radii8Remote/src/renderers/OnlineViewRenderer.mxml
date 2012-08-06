@@ -3,11 +3,15 @@
 				xmlns:s="library://ns.adobe.com/flex/spark" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
 				autoDrawBackground="true"
-				width="100%">
+				width="100%"
+				implements="mx.managers.IFocusManagerContainer">
 	
 	<fx:Script>
 		<![CDATA[
 			import data.Item;
+			
+			import mx.core.IFlexDisplayObject;
+			import mx.managers.ISystemManager;
 			
 			public var item:Item;
 			
@@ -36,16 +40,21 @@
 				dispatchEvent(new Event("settingChange", true));
 			}
 			
+			public function get defaultButton():IFlexDisplayObject {
+				return null;
+			}
+			
+			public function set defaultButton(value:IFlexDisplayObject):void {
+				// do nothing
+			}
+			
+			override public function get systemManager():ISystemManager {
+				return null;
+			}
 		]]>
 	</fx:Script>
 	
 	
-	<!--<s:layout>
-		<s:HorizontalLayout verticalAlign="middle" 
-							
-							paddingBottom="2" paddingLeft="2" paddingRight="2" paddingTop="2"/>
-	</s:layout>
-	-->
 	
 	<s:VGroup width="100%" right="22"
 			  gap="0"
@@ -64,7 +73,8 @@
 	
 	<!--<s:Spacer width="100%" />-->
 	
-	<s:CheckBox id="enabledCheckbox" change="enabledCheckbox_changeHandler(event)"
+	<s:CheckBox id="enabledCheckbox" 
+				change="enabledCheckbox_changeHandler(event)"
 				verticalCenter="0"
 				right="4"/>
 	<!--<s:Button id="loadButton" label="Load" click="loadButton_clickHandler(event)"/>-->

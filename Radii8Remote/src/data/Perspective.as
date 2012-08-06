@@ -12,12 +12,16 @@ package data {
 		
 		public static const VERTICAL:String = "vertical";
 		public static const HORIZONTAL:String = "horizontal";
+		public static const LEFT:String = "left";
+		public static const RIGHT:String = "right";
+		public static const TOP:String = "top";
+		public static const BOTTOM:String = "bottom";
 		
 		/**
 		 * @constructor
 		 * */
-		public function Perspective()
-		{
+		public function Perspective() {
+			
 		}
 		
 		/**
@@ -35,10 +39,40 @@ package data {
 		 * */
 		public var direction:String = VERTICAL;
 		
+		private var _items:Array;
+
 		/**
 		 * Items or perspectives
 		 * */
-		public var items:Array;
+		public function get items():Array {
+			return _items;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set items(value:Array):void {
+			_items = value;
+		}
+
+		
+		private var _visibleItems:Array;
+
+		/**
+		 * Items or perspectives
+		 * */
+		public function get visibleItems():Array {
+			
+			return _visibleItems;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set visibleItems(value:Array):void {
+			_visibleItems = value;
+		}
+
 		
 		/**
 		 * List of column or row positions for each item.
@@ -54,6 +88,16 @@ package data {
 		 * Height in percent or number
 		 * */
 		public var height:Object;
+		
+		/**
+		 * If docked
+		 * */
+		public var docked:Boolean;
+		
+		/**
+		 * Docked position
+		 * */
+		public var dockedPosition:String = LEFT;
 		
 	}
 }

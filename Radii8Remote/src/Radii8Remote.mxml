@@ -21,6 +21,9 @@
 			import spark.modules.Module;
 			import spark.primitives.Rect;
 			
+			public static const FLOATING_TEXT:String = "Floating";
+			public static const DOCKED_TEXT:String = "Docked";
+			
 			public var popup:Group;
 			public var titleWindow:TitleWindow;
 			public var dropRectangle:Group;
@@ -104,7 +107,7 @@
 				titleWindow.addElement(popup);
 				
 				// display pop up title window
-				PopUpManager.addPopUp(titleWindow, this, false);
+				PopUpManager.addPopUp(titleWindow, FlexGlobals.topLevelApplication as DisplayObject, false);
 				PopUpManager.centerPopUp(titleWindow);
 			}
 			
@@ -154,11 +157,11 @@
 							titleWindow.setStyle("dropShadowVisible", true);
 						}
 						
-						titleWindow.title = "floating";
+						titleWindow.title = FLOATING_TEXT;
 					}
 					else if (!docked) {
 						
-						titleWindow.title = "not docked";
+						titleWindow.title = FLOATING_TEXT;
 						
 					}
 				}
@@ -191,7 +194,7 @@
 					titleWindow.setStyle("dropShadowVisible", false);
 					FlexGlobals.topLevelApplication.x = titleWindow.width;
 					docked = true;
-					titleWindow.title = "Docked";
+					titleWindow.title = DOCKED_TEXT;
 					systemManager.topLevelSystemManager.addEventListener(Event.RESIZE, systemManagerResizeHandler);
 				}
 				else {
@@ -199,7 +202,7 @@
 						FlexGlobals.topLevelApplication.x = 0;
 					}
 					docked = false;
-					titleWindow.title = "Floating";
+					titleWindow.title = FLOATING_TEXT;
 					systemManager.topLevelSystemManager.removeEventListener(Event.RESIZE, systemManagerResizeHandler);
 				}
 				

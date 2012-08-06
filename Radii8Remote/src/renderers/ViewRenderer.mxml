@@ -8,6 +8,9 @@
 		<![CDATA[
 			import data.Item;
 			
+			import mx.core.IFlexDisplayObject;
+			import mx.managers.ISystemManager;
+			
 			public var item:Item;
 			
 			override public function set data(value:Object):void {
@@ -34,6 +37,16 @@
 				dispatchEvent(new Event("settingChange", true));
 			}
 			
+			public function get defaultButton():IFlexDisplayObject {
+				return null;
+			}
+			
+			public function set defaultButton(value:IFlexDisplayObject):void {
+			}
+			
+			override public function get systemManager():ISystemManager {
+				return null;
+			}
 		]]>
 	</fx:Script>
 	
