@@ -39,7 +39,7 @@ package data {
 		 * */
 		public var direction:String = VERTICAL;
 		
-		private var _items:Array;
+		private var _items:Array = [];
 
 		/**
 		 * Items or perspectives
@@ -71,6 +71,21 @@ package data {
 		 */
 		public function set visibleItems(value:Array):void {
 			_visibleItems = value;
+		}
+		
+		private var _types:Array = [];
+		/**
+		 * List of types
+		 * */
+		public function get types():Array {
+			return _types;
+		}
+		/**
+		 * List of types
+		 * */
+		public function set types(value:Array):void {
+			_types = value;
+			
 		}
 
 		

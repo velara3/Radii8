@@ -6,6 +6,18 @@
 			   minWidth="955" minHeight="600"
 			   applicationComplete="application1_applicationCompleteHandler(event)">
 	
+	<!--
+	TODO:
+	
+	- Add Add new perspective
+	- Add switch perspective
+	- Add delete perspective
+	- Add start docked
+	- Add Mini Inspector cmd click
+	- Add selector 
+	
+	-->
+	
 	
 	<fx:Script>
 		<![CDATA[
@@ -54,6 +66,7 @@
 			
 			protected function application1_applicationCompleteHandler(event:FlexEvent):void {
 				showInspector();
+				setDocked(true);
 			}
 			
 			/**
@@ -109,6 +122,8 @@
 				// display pop up title window
 				PopUpManager.addPopUp(titleWindow, FlexGlobals.topLevelApplication as DisplayObject, false);
 				PopUpManager.centerPopUp(titleWindow);
+				
+				
 			}
 			
 			/**
@@ -187,23 +202,10 @@
 				
 				// if near the edge then dock
 				if (xBound<20) {
-					previousHeight = Math.min(titleWindow.height, appHeight/2);
-					titleWindow.move(0, 0);
-					titleWindow.setActualSize(titleWindow.width, appHeight);
-					titleWindow.height = appHeight;
-					titleWindow.setStyle("dropShadowVisible", false);
-					FlexGlobals.topLevelApplication.x = titleWindow.width;
-					docked = true;
-					titleWindow.title = DOCKED_TEXT;
-					systemManager.topLevelSystemManager.addEventListener(Event.RESIZE, systemManagerResizeHandler);
+					setDocked(true);
 				}
 				else {
-					if (FlexGlobals.topLevelApplication.x!=0) {
-						FlexGlobals.topLevelApplication.x = 0;
-					}
-					docked = false;
-					titleWindow.title = FLOATING_TEXT;
-					systemManager.topLevelSystemManager.removeEventListener(Event.RESIZE, systemManagerResizeHandler);
+					setDocked(false);
 				}
 				
 				removeDropRectangle();
@@ -283,22 +285,52 @@
 				}
 			}
 			
+			/**
+			 * 
+			 * */
 			private function systemManagerResizeHandler(event:Event):void {
 				var appHeight:int = systemManager.topLevelSystemManager.getVisibleApplicationRect().height;
 			
 				titleWindow.move(0, 0);
-				titleWindow.setActualSize(titleWindow.width, appHeight);
+				titleWindow.setActualSize(titleWindow.width, appHeight); // this doesn't work :P
 				titleWindow.invalidateProperties();
 				titleWindow.invalidateDisplayList();
-				//titleWindow.height = appHeight;
+				titleWindow.height = appHeight;
 			}
 			
+			/**
+			 * Docks the window
+			 * */
+			public function setDocked(value:Boolean):void {
+				var appHeight:int = systemManager.topLevelSystemManager.getVisibleApplicationRect().height;
+				
+				if (value) {
+					previousHeight = Math.min(titleWindow.height, appHeight/2);
+					titleWindow.move(0, 0);
+					titleWindow.setActualSize(titleWindow.width, appHeight);
+					titleWindow.height = appHeight;
+					titleWindow.setStyle("dropShadowVisible", false);
+					FlexGlobals.topLevelApplication.x = titleWindow.width;
+					docked = true;
+					titleWindow.title = DOCKED_TEXT;
+					systemManager.topLevelSystemManager.addEventListener(Event.RESIZE, systemManagerResizeHandler);
+				}
+				else {
+					
+					if (FlexGlobals.topLevelApplication.x!=0) {
+						FlexGlobals.topLevelApplication.x = 0;
+					}
+					docked = false;
+					titleWindow.title = FLOATING_TEXT;
+					systemManager.topLevelSystemManager.removeEventListener(Event.RESIZE, systemManagerResizeHandler);
+				}
+			}
 		]]>
 	</fx:Script>
 	
 	
 	<fx:Declarations>
-		<modules:InspectorContainer/>
+		<modules:InspectorContainer clearSharedObject="true"/>
 	</fx:Declarations>
 	
 	<s:Button left="50" top="50" label="Get Thing" click="button1_clickHandler(event)"/>

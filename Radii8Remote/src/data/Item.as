@@ -17,6 +17,7 @@ package data {
 		public function unmarshall(value:XML):void {
 			name 			= String(value.@name);
 			url 			= String(value.@url);
+			type 			= String(value.@type);
 			description 	= String(value.content);
 			isDefault		= Boolean(value.isDefault);
 		}
@@ -39,7 +40,7 @@ package data {
 		/**
 		 * Type of module. Usually this is the fully qualified class name
 		 * */
-		public var type:Class;
+		public var type:String;
 		
 		/**
 		 * Enabled. May not be applicable when using perspectives. IE some perspectives 

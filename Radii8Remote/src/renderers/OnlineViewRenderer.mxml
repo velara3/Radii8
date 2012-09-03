@@ -9,11 +9,15 @@
 	<fx:Script>
 		<![CDATA[
 			import data.Item;
+			import data.Perspective;
+			
+			import managers.RemoteManager;
 			
 			import mx.core.IFlexDisplayObject;
 			import mx.managers.ISystemManager;
 			
 			public var item:Item;
+			public var perspective:Perspective;
 			
 			override public function set data(value:Object):void {
 				super.data = value;
@@ -24,9 +28,18 @@
 					enabledCheckbox.selected = false;
 				}
 				else {
-					enabledCheckbox.selected = item.enabled;
+					perspective = RemoteManager.selectedPerspective;
+					
+					if (perspective.types.indexOf(item.type)!=-1) {
+						enabledCheckbox.selected = true;
+					}
+					else {
+						enabledCheckbox.selected = false;
+					}
+					
+					/* enabledCheckbox.selected = item.enabled; */
 					nameLabel.text = item.name;
-					descriptionLabel.text = item.description;
+					descriptionLabel.text = item.description + "\n" + item.type; 
 				}
 				
 			}
@@ -36,8 +49,10 @@
 			}
 			
 			protected function enabledCheckbox_changeHandler(event:Event):void {
-				item.enabled = enabledCheckbox.selected;
-				dispatchEvent(new Event("settingChange", true));
+				enabledCheckbox.selected;
+				RemoteManager.updatePerspectiveItem(perspective, item, enabledCheckbox.selected);
+				
+				//dispatchEvent(new Event(RemoteManager.SETTINGS_CHANGE, true));
 			}
 			
 			public function get defaultButton():IFlexDisplayObject {
@@ -59,8 +74,10 @@
 	<s:VGroup width="100%" right="22"
 			  gap="0"
 			  paddingTop="2" paddingBottom="2">
-		<s:Label id="nameLabel" paddingTop="2" width="100%"
+		<s:Label id="nameLabel" 
+				 paddingTop="2" width="100%"
 				 fontWeight="bold"
+				 typographicCase="uppercase"
 				 />
 		
 		<s:Label id="descriptionLabel" 
@@ -68,15 +85,20 @@
 				 width="100%"
 				 />
 		
+		<s:Label id="typeLabel" 
+				 paddingTop="2" 
+				 width="100%"
+				 fontStyle="italic"
+				 alpha=".75"
+				 />
+		
 	</s:VGroup>
 	
 	
-	<!--<s:Spacer width="100%" />-->
 	
 	<s:CheckBox id="enabledCheckbox" 
 				change="enabledCheckbox_changeHandler(event)"
 				verticalCenter="0"
 				right="4"/>
-	<!--<s:Button id="loadButton" label="Load" click="loadButton_clickHandler(event)"/>-->
 	
 </s:ItemRenderer>
