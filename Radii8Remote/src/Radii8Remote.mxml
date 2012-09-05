@@ -92,7 +92,6 @@
 					stroke.joints = JointStyle.MITER;
 					rect.stroke = stroke;
 					
-					
 					dropRectangle = new Group();
 					dropRectangle.addElement(rect);
 					dropRectangle.width = 100;
@@ -104,20 +103,26 @@
 				
 				// remove title window if already visible
 				// may want to reuse or something
-				if (titleWindow) {
+				if (!titleWindow) {
 					PopUpManager.removePopUp(titleWindow);
 				}
 				
 				// create new inspector container
-				popup = new InspectorContainer();
-				titleWindow = new TitleWindow();
+				if (!popup) {
+					popup = new InspectorContainer();
+				}
+				
+				if (!titleWindow) {
+					titleWindow = new TitleWindow();
+					titleWindow.addElement(popup);
+				}
 				
 				titleWindow.addEventListener(TitleWindowBoundsEvent.WINDOW_MOVE_START, windowMoveStartHandler, false, 0, true);
 				titleWindow.addEventListener(TitleWindowBoundsEvent.WINDOW_MOVING, windowMovingHandler, false, 0, true);
 				titleWindow.addEventListener(TitleWindowBoundsEvent.WINDOW_MOVE, windowMoveHandler, false, 0, true);
 				titleWindow.addEventListener(TitleWindowBoundsEvent.WINDOW_MOVE_END, windowMoveEndHandler, false, 0, true);
 				titleWindow.addEventListener(Event.CLOSE, windowCloseHandler, false, 0, true);
-				titleWindow.addElement(popup);
+				
 				
 				// display pop up title window
 				PopUpManager.addPopUp(titleWindow, FlexGlobals.topLevelApplication as DisplayObject, false);
@@ -255,6 +260,11 @@
 					}
 					docked = false;
 				}
+				titleWindow.removeEventListener(TitleWindowBoundsEvent.WINDOW_MOVE_START, windowMoveStartHandler);
+				titleWindow.removeEventListener(TitleWindowBoundsEvent.WINDOW_MOVING, windowMovingHandler);
+				titleWindow.removeEventListener(TitleWindowBoundsEvent.WINDOW_MOVE, windowMoveHandler);
+				titleWindow.removeEventListener(TitleWindowBoundsEvent.WINDOW_MOVE_END, windowMoveEndHandler);
+				
 			}
 			
 			/**
@@ -330,7 +340,7 @@
 	
 	
 	<fx:Declarations>
-		<modules:InspectorContainer clearSharedObject="true"/>
+		<modules:InspectorContainer clearSharedObject="false"/>
 	</fx:Declarations>
 	
 	<s:Button left="50" top="50" label="Get Thing" click="button1_clickHandler(event)"/>

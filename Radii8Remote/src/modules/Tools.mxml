@@ -9,8 +9,27 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.DragDropEvent;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.DragManagerUtil;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
+			import mx.core.EventPriority;
 			import mx.core.FlexGlobals;
+			import mx.core.IUIComponent;
+			import mx.events.FlexMouseEvent;
+			import mx.managers.SystemManager;
+			
+			import spark.components.Application;
+			import spark.components.List;
+			
+			public var radiate:Radiate = Radiate.instance;
+			public var toggleMode:Boolean = true;
+			
+			private var targetApplication:Object;
+			private var dragManagerInstance:DragManagerUtil;
+			private var selectionToolEnabled:Boolean;
+			private var possibleTarget:Object;
 			
 			public function set targets(values:Array):void {
 				
@@ -19,14 +38,218 @@
 				}
 			}
 			
-			public var radiate:Radiate;
-			
+			 /*
+			mouseUp="imagebutton1_mouseUpHandler(event)"
+			mouseOut="imagebutton1_mouseUpHandler(event)"
+			mouseDownOutside="imagebutton1_mouseDownOutsideHandler(event)" 
+			*/
 			protected function image1_clickHandler(event:MouseEvent):void {
-				Radiate.getInstance().setTarget(event.currentTarget);
+				//Radiate.getInstance().setTarget(event.currentTarget);
+				
+				if (!selectionToolEnabled) {
+					selectionToolEnabled = true;
+					enableSelectionTool();
+				}
+				else {
+					deselectSelectionTool();
+				}
 			}
 			
+			/**
+			 * Click handler added to stage
+			 * We only check the target if the alt key is down
+			 * If the shift key is down also then we enter the debugger
+			 * Press step into to bring the debugger to the check target method
+			 * In that method you can check details in the target property
+			 * */
+			protected function handleClick(event:MouseEvent):void {
+				
+				event.stopImmediatePropagation();
+						/* 
+				if (enabled) {
+					if (event.ctrlKey) {
+						// we are intercepting this event so we can inspect the target
+						// stop the event propagation
+						event.stopImmediatePropagation();
+						checkTarget(event);
+					}
+				} */
+			}
+			
+			/**
+			 * Gets the current target and traces it to the console
+			 * */
+			private function checkTarget(event:MouseEvent):void {
+				/* var rootComponent:ComponentItem = document ? getComponentDisplayList(document) : getComponentDisplayList(FlexGlobals.topLevelApplication);
+				var componentItem:ComponentItem= getComponentFromDisplayObject(DisplayObject(event.target), rootComponent);
+				var target:DisplayObject = event.target as DisplayObject;
+				
+				
+				if (showDisplayObjectInformation) {
+					if (event.altKey) {
+						message = getComponentDetails(componentItem.accessPath, true);
+					}
+					else {
+						message = getComponentDetails(componentItem, false);
+					}
+				}
+				else {
+					// NOT SUPPORTED YET
+					//message = getDisplayObjectDetails(event.target);
+				}
+				
+				
+				trace(message);
+				
+				
+				// The purpose of this is to check the properties on the target
+				if (event.shiftKey) {
+					
+					// the debugger doesn't take you here until you press step into or step over
+					trace("\n// Click your heels three times and step in...");
+					
+					// the target object contains the item you clicked on
+					enterDebugger();
+				} */
+			}
 			protected function image2_clickHandler(event:MouseEvent):void {
 				Radiate.setDocuments(FlexGlobals.topLevelApplication);
+			}
+			
+			protected function stageClick_Handler(event:MouseEvent):void {
+				var componentTree:ComponentDescription;
+				var description:ComponentDescription;
+				var target:Object = event.target;
+				
+				/* if (target == stage) {
+					return;
+				} */
+				
+				
+				if (toggleMode) {
+					deselectSelectionTool();
+				}
+				
+				possibleTarget = target;
+				
+				
+				event.stopImmediatePropagation();
+				event.stopPropagation();
+				event.preventDefault();
+				
+				radiate.setTarget(target);
+				/* 
+				if (target) {
+					// select target on mouse up or drag drop whichever comes first
+					target.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, true, EventPriority.BINDING, true);
+					target.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, EventPriority.BINDING, true);
+					
+					
+					// drag support
+					if (false) {//target!=targetApplication) {
+						
+						// listen for drag
+						if (!dragManagerInstance) {
+							dragManagerInstance = new DragManagerUtil();
+						}
+						
+						//target.visible = false;
+						dragManagerInstance.listenForDragBehavior(target as IUIComponent, radiate.document as Application, event);
+						dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+					}
+				} */
+				
+				
+				
+				return;
+				
+				var point:Point = new Point(event.stageX, event.stageY);
+				var targetsUnderPoint:Array = radiate.getNonNullDocument().getObjectsUnderPoint(point);
+				targetApplication = Radiate.getInstance().getNonNullDocument();
+				
+				// clicked outside of this container. is there a way to prevent hearing
+				// events from everywhere? stage sandboxroot?
+				if (!targetApplication || !Object(targetApplication).contains(target)) {
+					//trace("does not contain");
+					return;
+				}
+				
+				// clicked on background area
+				if (target==targetApplication || target==this) {
+					radiate.setTarget(targetApplication, true);
+					return;
+				}
+				
+			}
+			
+			protected function handleDragDrop(event:DragDropEvent):void {
+				// select target
+				//radiate.target = event.draggedItem;
+			}
+			
+			protected function mouseUpHandler(event:MouseEvent):void {
+				var target:Object = event.currentTarget;
+				
+				if (target is List) {
+					target.dragEnabled = true; // restore drag and drop if it was enabled
+				}
+				
+				target.visible = true; // because we were dragging
+				
+				// select target
+				if (radiate.target!=target) {
+					radiate.setTarget(target);
+				}
+				
+				event.stopPropagation();
+				event.stopImmediatePropagation();
+				event.preventDefault();
+				
+				// clean up
+				target.removeEventListener(MouseEvent.MOUSE_UP, arguments.callee);
+				
+				if (toggleMode) {
+					deselectSelectionTool();
+				}
+				
+			}
+			
+			protected function imagebutton1_mouseUpHandler(event:MouseEvent):void {
+				
+				//stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+				//stage.addEventListener("mouseDownOutside", mouseDownOutsideHandler);
+				//stage.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+			}
+			
+			protected function imagebutton1_mouseDownOutsideHandler(event:FlexMouseEvent):void {
+				//enableSelectionTool = false;
+			}
+			
+			protected function mouseMoveHandler(event:MouseEvent):void {
+				trace("MOUSE MOVE");
+			}
+			
+			protected function mouseDownOutsideHandler(event:Event):void {
+				trace("MOUSE DOWN OUTSIDE");
+			}
+			
+			/**
+			 * Remove stage listeners
+			 * */
+			private function deselectSelectionTool():void {
+				selectionToolEnabled = false;
+				//stage.removeEventListener(MouseEvent.MOUSE_DOWN, stageClick_Handler);
+				//stage.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				stage.removeEventListener(MouseEvent.CLICK, stageClick_Handler, true);
+				selectionButton.setStyle("backgroundAlpha", 0);
+			}
+			
+			/**
+			 * Listen to the stage for click events
+			 * */
+			private function enableSelectionTool():void {
+				systemManager.stage.addEventListener(MouseEvent.CLICK, stageClick_Handler, true, EventPriority.BINDING, true);
+				selectionButton.setStyle("backgroundAlpha", .1);
 			}
 			
 		]]>
@@ -37,8 +260,18 @@
 	</fx:Declarations>
 	
 	<s:HGroup width="100%">
-		<controls:ImageButton source="{Radii8LibraryAssets.applicationIcon}" click="image2_clickHandler(event)"/>
-		<controls:ImageButton source="{Radii8LibraryAssets.arrow}" click="image1_clickHandler(event)"/>
+		<controls:ImageButton source="{Radii8LibraryAssets.applicationIcon}"
+							  useButtonUpStyle="true"
+							  click="image2_clickHandler(event)"
+							  />
+		<controls:ImageButton id="selectionButton" 
+							  useButtonUpStyle="true"
+							  backgroundColor="#0"
+							  backgroundAlpha="0"
+							  width="20"
+							  source="{Radii8LibraryAssets.arrow}" 
+							  click="image1_clickHandler(event)"
+							  />
 	</s:HGroup>
 	
 </s:Module>

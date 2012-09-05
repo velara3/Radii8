@@ -18,30 +18,19 @@
 	</fx:Style>
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.controller.Radiate;
-			
-			import data.Item;
 			import data.Perspective;
-			import data.Preferences;
-			
-			import flash.utils.setTimeout;
 			
 			import managers.RemoteManager;
 			
 			import mx.collections.ArrayList;
-			import mx.core.FlexGlobals;
-			import mx.core.IFlexDisplayObject;
 			import mx.events.FlexEvent;
 			import mx.events.MenuEvent;
-			import mx.managers.ISystemManager;
-			import mx.managers.SystemManager;
-			import mx.utils.ObjectUtil;
 			
 			import renderers.OnlineViewRenderer;
 			import renderers.PerspectivesViewRenderer;
 			import renderers.ViewRenderer;
 			
-			import spark.components.CheckBox;
+			import spark.events.IndexChangeEvent;
 			
 			/////////////////////////////////////////////////////////
 			/// CONSTANTS
@@ -277,6 +266,14 @@
 				selectedItems.refresh();
 			}
 			
+			protected function perspectivesDropDownList_changeHandler(event:IndexChangeEvent):void {
+				
+				if (event.newIndex>-1) {
+					var p:Object = perspectivesList.getItemAt(event.newIndex);
+					RemoteManager.selectedPerspective = perspectivesList.getItemAt(event.newIndex) as Perspective;
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -336,6 +333,8 @@
 				<item label="Settings" stateName="settings" type="radio" groupName="view" toggled="false" />
 			</menu>
 		</fx:XMLList>
+		
+		<s:ArrayCollection id="perspectivesList" source="{RemoteManager.perspectives}"/>
 		
 		<s:ArrayCollection id="selectedItems" 
 						   source="{RemoteManager.remoteItemsList.source}" 
@@ -421,9 +420,6 @@
 			<s:HGroup width="100%" gap="1" verticalAlign="middle">
 				<s:Label text="All Available Views"/>
 				<s:Spacer width="100%" height="10"/>
-				<s:TextInput id="searchInput" 
-							 prompt="Search"
-							 borderAlpha=".5"/>
 			</s:HGroup>
 			
 			<s:HGroup gap="1" width="100%">
@@ -437,7 +433,12 @@
 			</s:HGroup>
 			
 			<s:HGroup width="100%" gap="1" verticalAlign="middle">
-				<s:Label text="Current perspective {RemoteManager.selectedPerspective.name}"/>
+				<s:DropDownList id="perspectivesDropDownList" 
+								width="100%"
+								dataProvider="{perspectivesList}"
+								labelField="name"
+								selectedItem="{RemoteManager.selectedPerspective}"
+								change="perspectivesDropDownList_changeHandler(event)"/>
 				<s:Spacer width="100%" height="10"/>
 				<s:Label text="Enabled"/>
 			</s:HGroup>
@@ -464,6 +465,9 @@
 			</s:List>
 			
 			<s:HGroup width="100%" gap="1" verticalAlign="middle">
+				<s:TextInput id="searchInput" 
+							 prompt="Search"
+							 borderAlpha=".5"/>
 				<s:Spacer width="100%" height="10"/>
 				<s:Button label="Continue" click="continueOnlineViewsSelection_clickHandler(event)"/>
 			</s:HGroup>
@@ -521,8 +525,7 @@
 							 >
 					
 					<s:layout>
-						<s:VerticalLayout paddingRight="10"
-										  horizontalAlign="justify"
+						<s:VerticalLayout horizontalAlign="justify"
 										  useVirtualLayout="false"
 										  variableRowHeight="true"/>
 					</s:layout>

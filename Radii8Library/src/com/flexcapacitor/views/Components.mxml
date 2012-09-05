@@ -39,12 +39,15 @@
 				var item:XML;
 				var defaults:Object;
 				var propertyName:String;
+				var xml:XML;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemHandler);
 				
+				xml = new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
+				
 				// get list of component classes 
-				items = XML(Radii8LibrarySparkAssets.sparkManifestDefaults).component;
+				items = XML(xml).component;
 				
 				length = items.length();
 				

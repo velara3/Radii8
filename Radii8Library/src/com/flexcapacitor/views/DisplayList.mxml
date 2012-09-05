@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx" width="200" height="150"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="200" height="150"
 		 creationComplete="creationCompleteHandler(event)">
 	
 	<fx:Script>
@@ -41,6 +42,8 @@
 			 * */
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.instance;
+				updateComponentDisplayList();
+				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
 				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
@@ -91,6 +94,10 @@
 					//updateComponentDisplayList();
 				}
 				
+				if (collection.length==0) {
+					updateComponentDisplayList();
+					collection = displayListTree.dataProvider as ArrayCollection;
+				}
 				
 				if (target && collection.length) {
 					rootApplicationDescription = collection.getItemAt(0) as ComponentDescription;

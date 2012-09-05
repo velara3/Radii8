@@ -440,6 +440,16 @@ package com.flexcapacitor.controller {
 			
 		}
 		
+		/**
+		 *  Get's a non null document
+		 * */
+		public function getNonNullDocument():Object {
+			if (_documents.length > 0)
+				return _documents[0];
+			else
+				return FlexGlobals.topLevelApplication;
+		}
+		
 		
 		//----------------------------------
 		//  documents

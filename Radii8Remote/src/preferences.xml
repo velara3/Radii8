@@ -7,8 +7,8 @@
 		<item name="Properties Example" url="modules/PropertiesExample.swf" type="com.radii8.views.propertiesexample">
 			<content>Example that shows the properties of the selected target</content>
 		</item>
-		<item name="Outline Example" url="modules/OutlineExample.swf" type="com.radii8.views.outlineexample">
-			<content>Example that shows the outline of the selected target</content>
+		<item name="Outline Example" url="modules/Layers.swf" type="com.radii8.views.layer" default="true">
+			<content>Shows the component tree of the selected target</content>
 		</item>
 		<item name="Styles" url="panel2.swf" type="com.radii8.views.styles">
 			<content>Shows available styles of the selected target</content>

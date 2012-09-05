@@ -16,6 +16,7 @@ package managers {
 	import flash.net.URLRequest;
 	import flash.net.registerClassAlias;
 	
+	import mx.binding.utils.BindingUtils;
 	import mx.collections.ArrayCollection;
 	import mx.collections.ArrayList;
 	import mx.events.FlexEvent;
@@ -35,7 +36,6 @@ package managers {
 		public function RemoteManager(s:SINGLEDOUBLE) {
 			
 			//super(target as IEventDispatcher);
-			
 			
 			// listen to changes to settings and save
 			addEventListener(SETTINGS_CHANGE, settingChangeHandler);
@@ -229,6 +229,7 @@ package managers {
 				defaultPerspective = preferences.defaultPerspective;
 				selectedPerspective = preferences.selectedPerspective;
 				perspectives = preferences.perspectives;
+				perspectivesList.source = perspectives;
 			}
 			
 		}

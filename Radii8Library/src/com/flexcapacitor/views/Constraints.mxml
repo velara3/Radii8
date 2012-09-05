@@ -226,7 +226,6 @@
 			[Bindable]
 			public function set target(value:Object):void {
 				
-				trace("targt changed");
 				if (!(value is DisplayObject)) {
 					_target = null;
 					clearForm();

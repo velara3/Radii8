@@ -10,6 +10,9 @@ package {
 		// CORE
 		///////////////////////////////////////////////////////
 		
+		/**
+		 * var xml:XML = new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
+		 * */
 		[Embed(source="/assets/data/spark-manifest-defaults.xml", mimeType="application/octet-stream")]
 		public static const sparkManifestDefaults:Class;
 		
