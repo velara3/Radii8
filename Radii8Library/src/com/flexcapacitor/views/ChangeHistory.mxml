@@ -7,8 +7,10 @@
 		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*"
 		 xmlns:file="com.flexcapacitor.effects.file.*"
 		 xmlns:popup="com.flexcapacitor.effects.popup.*"
-		 width="400" height="300" 
-		 xmlns:controls="com.flexcapacitor.controls.*">
+		 xmlns:controls="com.flexcapacitor.controls.*"
+		 
+		 width="400" height="24" 
+		 >
 	
 	<fx:Script>
 		<![CDATA[
@@ -294,16 +296,26 @@
 			<core:CopyPreviousToNext />
 			
 			<popup:OpenPopUp popUpType="{popUp}" 
+							 duration="150"
 							 width="{parentApplication.width*.8}" 
 							 height="{parentApplication.height*.8}"/>
 		</handlers:EventHandler>
 		
 		<!-- COPY TO THE CLIPBOARD -->
-		<handlers:EventHandler eventName="click" target="{copyIcon}">
+		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
 			
-			<clipboard:CopyToClipboard data="{changesText}" targetAncestor="{this}"/>
+			<clipboard:CopyToClipboard data="{changesText}" targetAncestor="{this}" allowNullData="true">
+				<clipboard:successEffect>
+					<status:ShowStatusMessage message="Changes copied to the clipboard"/>
+				</clipboard:successEffect>
+				<clipboard:noDataEffect>
+					<status:ShowStatusMessage message="Nothing to copy to the clipboard"/>
+				</clipboard:noDataEffect>
+				<clipboard:errorEffect>
+					<status:ShowStatusMessage message="An error occurred while attempting to copy to the clipboard"/>
+				</clipboard:errorEffect>
+			</clipboard:CopyToClipboard>
 			
-			<status:ShowStatusMessage message="Changes copied to the clipboard"/>
 			
 		</handlers:EventHandler>
 		
@@ -365,7 +377,7 @@
 		
 		<s:Spacer width="100%"/>
 		
-		<s:Image id="copyIcon" 
+		<controls:ImageButton id="copyIcon" 
 				 source="{Radii8LibraryAssets.copy}" 
 				 toolTip="Copy the changes to the Clipboard"/>
 		

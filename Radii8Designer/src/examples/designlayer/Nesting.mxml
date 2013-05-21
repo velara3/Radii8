@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/halo" minWidth="1024" minHeight="768">
+	<!--
+	http://bugs.adobe.com/jira/browse/SDK-23254
+	http://bugs.adobe.com/jira/browse/TH-7485
+	
+	Workaround:
+	Assign the designLayer property on the Rect after building the layer hierarchy
+	
+	Specifically in Nesting.mxml:
+	
+	Move line 45 "outerLayer.addLayer(innerLayer);" above line 39 "r.designLayer = innerLayer;"
+	
+	Fixed in revision 4.0.0.10286 . 
+	-->
+	<fx:Script>
+		<![CDATA[
+			import mx.core.DesignLayer;
+			import mx.core.FlexGlobals;
+			import mx.graphics.SolidColor;
+			
+			import spark.components.Button;
+			
+			private static var outerLayer:DesignLayer;
+			
+			import spark.primitives.Rect;
+			public function makeLayers():void
+			{
+				outerLayer = new DesignLayer();
+				outerLayer.visible = false;
+				
+				var innerLayer:DesignLayer = new DesignLayer();
+				
+				var r:Rect = new Rect();
+				r.x = 100;
+				r.y = 10;
+				r.width = 200;
+				r.height = 50;
+				
+				var f:SolidColor = new SolidColor();
+				f.color = 0xFF0000;
+				r.fill = f;
+				
+				var b:Button = new Button();
+				b.x = 100;
+				b.y = 80;
+				b.label = "Hello";
+				
+				r.designLayer = innerLayer;
+				b.designLayer = innerLayer;
+				
+				FlexGlobals.topLevelApplication.addElement(r);
+				FlexGlobals.topLevelApplication.addElement(b);
+				
+				outerLayer.addLayer(innerLayer);
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Button label="make" x="10" y="10" click="makeLayers()"/>
+	
+</s:Application>

@@ -1,0 +1,20 @@
+<s:Application 
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark">
+	
+	<fx:Script>
+		<![CDATA[
+			public function changeAlpha():void {
+				dl.alpha = 1;
+			}
+		]]>
+	</fx:Script>
+
+	<s:VGroup>
+		<fx:DesignLayer id="dl" alpha="0.5">
+			<!--<s:Button label="change alpha" click="dl.alpha = 1" /> this works fine -->
+			<s:Button label="change alpha" click="changeAlpha()" />
+		</fx:DesignLayer>
+	</s:VGroup>
+
+</s:Application>

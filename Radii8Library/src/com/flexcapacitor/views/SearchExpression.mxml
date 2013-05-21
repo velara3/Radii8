@@ -33,6 +33,7 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.utils.InspectorUtils;
 			
+			import mx.core.FlexSprite;
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			
@@ -115,11 +116,21 @@
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeEvent, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+					
+					updateTarget(target);
+				}
 			}
 			
 			protected function targetChangeEvent(event:RadiateEvent):void {
 				target = event.selectedItem;
 				
+				updateTarget(target);
+			}
+			
+			public function updateTarget(target:Object):void {
 				// if null then clear the component
 				if (!target) {
 					searchPatternText.text = "";
@@ -148,8 +159,8 @@
 	
 	<s:HGroup width="100%" 
 			  verticalAlign="middle" 
-			  paddingRight="10" 
-			  paddingLeft="10">
+			  paddingRight="4" 
+			  paddingLeft="4">
 		
 		<s:TextArea id="searchPatternText" 
 					alpha=".8" 
@@ -157,14 +168,16 @@
 					heightInLines="2"
 					borderVisible="false"
 					width="100%" 
-					verticalScrollPolicy="off"/>
+					verticalScrollPolicy="off"
+					verticalAlign="middle"/>
+		
+		<s:Spacer width="100%"/>
 		
 		<controls:ImageButton source="{Radii8LibraryAssets.copy}" 
 							  click="copy()" 
 							  filters="{selectFiltersOff}"
 							  toolTip="Copy the search pattern to the Clipboard"/>
 		
-		<s:Spacer width="4"/>
 	</s:HGroup>
 	
 	<!--<s:Group width="100%">

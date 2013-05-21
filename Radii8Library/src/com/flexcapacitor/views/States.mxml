@@ -46,14 +46,25 @@
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				
+				if (radiate.target) {
+					updateTarget(radiate.target);
+				}
 			}
 			
 			protected function targetChangeHandler(event:RadiateEvent):void {
-				var state:Object;// TypeError: Error #1034: Type Coercion failed: cannot convert mx.states::State@13223d179 to mx.states.State.
+				updateTarget(event.selectedItem);
 				
-				if (target==event.selectedItem) return;
+			}
+			
+			protected function updateTarget(selectedItem:Object):void {
+				// TypeError: Error #1034: Type Coercion failed: cannot convert mx.states::State@13223d179 to mx.states.State.
+				// changing to Object type 
+				var state:Object;
 				
-				target = event.selectedItem;
+				//if (target==selectedItem) return;
+				
+				target = selectedItem;
 				
 				if (!statesCollection) {
 					statesCollection = new ArrayCollection();
@@ -113,7 +124,14 @@
 				}
 				
 				if (statesCollection.length) {
-					list.height = VerticalLayout(list.layout).rowHeight * statesCollection.length;
+					list.validateNow();
+					
+					if (VerticalLayout(list.layout).rowHeight) {
+						list.height = VerticalLayout(list.layout).rowHeight * statesCollection.length;
+					}
+					else {
+						list.height = 80;
+					}
 				}
 				else {
 					list.height = 30;
@@ -126,7 +144,12 @@
 				
 				if (statesFound) {
 					updateState(state);
+					dividerGroup.visible = true;
 				}
+				else {
+					dividerGroup.visible = false;
+				}
+				
 			}
 			
 			public function updateState(state:Object):void {
@@ -190,8 +213,9 @@
 				>
 		</s:List>
 		<s:Spacer id="spillSpacer" height="0" />
-		<s:Group width="80%"
-				 visible="{overridesCollection.length>0}">
+		<s:Group id="dividerGroup" 
+				 width="80%"
+				 visible="false">
 			<mx:HRule width="100%" 
 					  strokeColor="0"
 					  shadowColor="#ffffff" 

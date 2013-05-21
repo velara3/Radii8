@@ -18,16 +18,18 @@
 	</fx:Style>
 	<fx:Script>
 		<![CDATA[
-			import data.Perspective;
-			
-			import managers.RemoteManager;
+			import flash.utils.flash_proxy;
 			
 			import mx.collections.ArrayList;
 			import mx.events.FlexEvent;
 			import mx.events.MenuEvent;
 			
-			import renderers.OnlineViewRenderer;
-			import renderers.PerspectivesViewRenderer;
+			import data.Perspective;
+			
+			import managers.RemoteManager;
+			
+			import renderers.OnlineViewRenderer;OnlineViewRenderer;
+			import renderers.PerspectivesViewRenderer;PerspectivesViewRenderer;
 			import renderers.ViewRenderer;
 			
 			import spark.events.IndexChangeEvent;
@@ -97,10 +99,18 @@
 			private function menuHandler(event:MenuEvent):void {
 				var name:String = String(event.item.@label);
 				var stateName:String = String(event.item.@stateName);
+				var menuItem:Object = event.item;
 				
+				if (menuItem.@groupName=="perspectives") {
+					var perspective:Perspective = remoteManager.findPerspectiveByName(menuItem.@label);
+					RemoteManager.selectedPerspective = perspective;
+					RemoteManager.remoteItemsList.refresh();
+					changeStates(VIEWS_STATE);
+					
+				}
 				// Don’t open the Alert for a menu bar item that
 				// opens a popup submenu.
-				if (event.item.@data != "top") {
+				else if (menuItem.@data != "top") {
 					
 					//Alert.show("Label: " + event.item.@label + "\n" + "Data: " + event.item.@data, "Clicked menu item");
 					var item:Object = focusManager.getFocus();
@@ -204,24 +214,33 @@
 				changeStates(VIEWS_STATE);
 			}
 			
-			/**
-			 * Updates the items in the 
-			 * */
-			protected function updateDefaultItemsHandler(event:Event):void {
-				removeEventListener(ITEMS_UPDATED, updateDefaultItemsHandler);
-				removeEventListener(ITEMS_UPDATE_FAULT, itemsUpdateFaultHandler);
-				updateDefaultItems();
-				RemoteManager.saveSettings();
-			}
 			
 			/**
-			 * 
+			 * Add perspective
 			 * */
-			protected function itemsUpdateFaultHandler(event:Event):void {
-				removeEventListener(ITEMS_UPDATED, updateDefaultItemsHandler);
-				removeEventListener(ITEMS_UPDATE_FAULT, itemsUpdateFaultHandler);
-				
+			protected function addPerspectives_clickHandler(event:Event):void {
+				var name:String = newPerspectiveNameInput.text;
+				var perspective:Perspective = remoteManager.createPerspective(newPerspectiveNameInput.text);
+				RemoteManager.saveSettings();
+				perspectivesCollection.refresh();
+				var list:XMLList = menuItemsXMLList.(@label=="Perspectives").item;
+				var item = '<item label="'+perspective.name+'" groupName="perspectives" type="radio" toggled="true"/>';
+				//list.prependChild();
+				var newXML:XML = new XML("<menu>"+item + list.toXMLString()+"</menu>");
+				var nList:XMLList = menuItemsXMLList.(@label=="Perspectives").item;
+				//var nList = menuItemsXMLList.(@label=="Perspectives").item;
+				for ( var i:int = list.length() - 1; i >= 0; i-- ) {
+            		delete list[i];
+        		}
+
+				var nList2:XML = menuItemsXMLList.(@label=="Perspectives")[0];
+				nList2.menu = newXML.item;
+				//nList.children = undefined;
+				//delete nList[0][0];
+				newPerspectiveNameInput.text = "";
+				menuCollection.refresh();
 			}
+			
 			
 			/**
 			 * Updates the default perspective items 
@@ -269,8 +288,18 @@
 			protected function perspectivesDropDownList_changeHandler(event:IndexChangeEvent):void {
 				
 				if (event.newIndex>-1) {
-					var p:Object = perspectivesList.getItemAt(event.newIndex);
-					RemoteManager.selectedPerspective = perspectivesList.getItemAt(event.newIndex) as Perspective;
+					var p:Object = perspectivesCollection.getItemAt(event.newIndex);
+					RemoteManager.selectedPerspective = perspectivesCollection.getItemAt(event.newIndex) as Perspective;
+					RemoteManager.remoteItemsList.refresh();
+				}
+			}
+			
+			protected function perspectivesList_changeHandler(event:IndexChangeEvent):void {
+				
+				if (event.newIndex>-1) {
+					var p:Object = perspectivesCollection.getItemAt(event.newIndex);
+					RemoteManager.selectedPerspective = perspectivesCollection.getItemAt(event.newIndex) as Perspective;
+					RemoteManager.remoteItemsList.refresh();
 				}
 			}
 			
@@ -334,7 +363,8 @@
 			</menu>
 		</fx:XMLList>
 		
-		<s:ArrayCollection id="perspectivesList" source="{RemoteManager.perspectives}"/>
+		<s:ArrayCollection id="perspectivesCollection" source="{RemoteManager.perspectives}"/>
+		<s:ArrayCollection id="selectedPerspectiveItemsCollection" source="{RemoteManager.preferences.selectedPerspective.items}"/>
 		
 		<s:ArrayCollection id="selectedItems" 
 						   source="{RemoteManager.remoteItemsList.source}" 
@@ -382,14 +412,11 @@
 		
 		<!-- LOADING -->
 		<s:Group width="100%" height="100%" includeIn="loading">
-			<s:VGroup horizontalCenter="0" verticalCenter="0">
+			<s:VGroup horizontalCenter="0" verticalCenter="00">
 				<s:Label text="Loading remote items"/>
-				<s:TextArea id="loadingStatusText" 
+				<s:Label id="loadingStatusText" 
 							text="{RemoteManager.loadingStatusText}" 
-							editable="false" 
-							focusAlpha=".1"
-							borderAlpha=".1"
-							heightInLines="5"/>
+							/>
 				<mx:ProgressBar visible="{RemoteManager.retrievingData}" 
 								hideEffect="Fade" 
 								label=""
@@ -418,7 +445,7 @@
 			
 			
 			<s:HGroup width="100%" gap="1" verticalAlign="middle">
-				<s:Label text="All Available Views"/>
+				<s:Label text="Select the views to show in the perspective selected and click continue"/>
 				<s:Spacer width="100%" height="10"/>
 			</s:HGroup>
 			
@@ -435,7 +462,7 @@
 			<s:HGroup width="100%" gap="1" verticalAlign="middle">
 				<s:DropDownList id="perspectivesDropDownList" 
 								width="100%"
-								dataProvider="{perspectivesList}"
+								dataProvider="{perspectivesCollection}"
 								labelField="name"
 								selectedItem="{RemoteManager.selectedPerspective}"
 								change="perspectivesDropDownList_changeHandler(event)"/>
@@ -483,9 +510,9 @@
 			
 			
 			<s:HGroup width="100%" gap="1" verticalAlign="middle">
-				<s:Label text="Views" width="100%"/>
+				<s:Label text="Views in the current perspective" width="100%"/>
 				<s:Spacer width="100%" height="10"/>
-				<s:TextInput id="searchViewsInput" focusAlpha="0"/>
+				<s:TextInput id="searchViewsInput" focusAlpha="0" prompt="filter"/>
 			</s:HGroup>
 			
 			<s:HGroup gap="1" width="100%">
@@ -527,7 +554,8 @@
 					<s:layout>
 						<s:VerticalLayout horizontalAlign="justify"
 										  useVirtualLayout="false"
-										  variableRowHeight="true"/>
+										  variableRowHeight="true"
+										  paddingRight="10" paddingLeft="10"/>
 					</s:layout>
 					
 				</s:DataGroup>
@@ -586,7 +614,7 @@
 			<s:Label text="Panel"/>
 			</s:HGroup>-->
 			
-			<s:List dataProvider="{new ArrayList(RemoteManager.preferences.selectedPerspective.items)}"
+			<s:List dataProvider="{selectedPerspectiveItemsCollection}"
 					itemRenderer="{itemRenderer}"
 					width="100%"
 					dropEnabled="true"
@@ -610,10 +638,10 @@
 				  includeIn="perspectives">
 			
 			
-			<s:Label text="Perspectives" width="100%"/>
+			<s:Label text="Select the perspective" width="100%"/>
 			
 			<s:HGroup width="100%" gap="1" verticalAlign="middle">
-				<s:TextInput id="searchPerspectivesInput" />
+				<s:TextInput id="searchPerspectivesInput" prompt="Search" />
 				<s:Spacer width="100%" height="10"/>
 				<!--<s:Button label="Home" 
 						  click="showHomeButton_clickHandler(event)"/>-->
@@ -630,21 +658,22 @@
 				</s:Line>
 			</s:HGroup>
 			
-			<s:List dataProvider="{new ArrayList(RemoteManager.preferences.perspectives)}"
+			<s:List id="perspectivesList" 
+					dataProvider="{perspectivesCollection}"
 					itemRenderer="{new ClassFactory(PerspectivesViewRenderer)}"
+					change="perspectivesList_changeHandler(event)"
 					width="100%"
 					borderVisible="false"
 					>
-				<!--<s:layout>
-					<s:VerticalLayout horizontalAlign="contentJustify" 
-									  verticalAlign="middle"
-									  />
-				</s:layout>-->
 				
 			</s:List>
+			
+			<s:HGroup width="100%" gap="1" verticalAlign="middle">
+				<s:TextInput id="newPerspectiveNameInput" width="100%" />
+				<s:Button label="Add" 
+						  click="addPerspectives_clickHandler(event)"/>
+			</s:HGroup>
 		</s:VGroup>
-		
-		
 		
 	</s:VGroup>	
 	
@@ -671,7 +700,7 @@
 				buttonMode="true"
 				>
 		<mx:dataProvider>
-			<s:XMLListCollection>{menuItemsXMLList}</s:XMLListCollection>
+			<s:XMLListCollection id="menuCollection">{menuItemsXMLList}</s:XMLListCollection>
 		</mx:dataProvider>
 	</mx:MenuBar>
 </s:Group>

@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
-  <includeClasses/>
+  <includeClasses>
+    <classEntry path="com.flexcapacitor.tools.ITool"/>
+    <classEntry path="com.flexcapacitor.tools.Selection"/>
+    <classEntry path="com.flexcapacitor.controller.RadiateReferences"/>
+    <classEntry path="com.flexcapacitor.utils.supportClasses.ISelectionGroup"/>
+  </includeClasses>
   <includeResources/>
   <namespaceManifests/>
 </flexLibProperties>

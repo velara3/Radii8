@@ -54,7 +54,8 @@ package com.flexcapacitor.logging {
 			var shortMessage:String = message + "\n";
 			
 			if (console) {
-				console.text += shortMessage;
+				//console.text += shortMessage;
+				console.appendText(shortMessage);
 			}
 			else {
 				storedMessages += shortMessage;

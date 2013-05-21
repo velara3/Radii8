@@ -29,6 +29,9 @@ package {
 		[Embed(source="assets/icons/general/Cancel.png")]
 		public static const cancel:Class;
 		
+		[Embed(source="assets/icons/general/Clear.png")]
+		public static const clear:Class;
+		
 		[Embed(source="assets/icons/general/visible.png")]
 		public static const visible:Class;
 		

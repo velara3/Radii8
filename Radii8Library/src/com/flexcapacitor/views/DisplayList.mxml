@@ -2,8 +2,10 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
-		 width="200" height="150"
-		 creationComplete="creationCompleteHandler(event)">
+		 
+		 width="200" height="100%"
+		 creationComplete="creationCompleteHandler(event)"
+		 >
 	
 	<fx:Script>
 		<![CDATA[
@@ -48,6 +50,11 @@
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
 				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
 				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler);
+				
+				if (radiate.target) {
+					updateTarget(radiate.target);
+				}
+				
 			}
 			
 			
@@ -82,13 +89,18 @@
 			 * When the target changes reselect it 
 			 * */
 			protected function targetChangeHandler(event:RadiateEvent):void {
+				updateTarget(event.selectedItem);
+				
+			}
+			
+			public function updateTarget(selectedItem:Object):void {
 				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
 				var collection:ArrayCollection = displayListTree.dataProvider as ArrayCollection;
 				var rootApplicationDescription:ComponentDescription;
 				var targetDescription:ComponentDescription;
 				var parent:ComponentDescription;
 				
-				target = event.selectedItem;
+				target = selectedItem;
 				
 				if (item && target!=item.instance) {
 					//updateComponentDisplayList();
@@ -171,7 +183,8 @@
 				display = DisplayObjectUtils.getDisplayList(application);
 				displayListTree.dataProvider = display;
 				
-				DisplayObjectUtils.walkDownTree(application as IVisualElement, traceTree);
+				// 
+				//DisplayObjectUtils.walkDownTree(application as IVisualElement, traceTree);
 				
 				
 				if (preserveOpenItems) {
@@ -250,7 +263,8 @@
 				
 				newHeight = count * displayListTree.rowHeight;
 				
-				displayListTree.height = newHeight;
+				//displayListTree.height = newHeight;
+				displayListTree.explicitHeight = newHeight;
 			}
 			
 			// THIS IS ALL TO HANDLE SCROLLING INSIDE ANOTHER SCROLLER THAT HAS TOUCH INTERACTION
@@ -437,6 +451,7 @@
 								<s:Group id="_visibleButtonGroup" >
 									<!--- visible image -->
 									<s:BitmapImage id="visibleGroup" 
+												   contentLoader="{Radiate.contentCache}"
 												   source="{Radii8LibraryAssets.visible}" 
 												   verticalCenter="0" horizontalCenter="0"/>
 									

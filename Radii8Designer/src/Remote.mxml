@@ -11,7 +11,7 @@
 		 xmlns:views="com.flexcapacitor.views.*"
 		 
 		 width="400" 
-		 height="100%"
+		 height="100%" 
 		 >
 		
 	<fx:Style>
@@ -40,24 +40,10 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			
-			import mx.core.IVisualElement;
-			import mx.events.FlexEvent;
 			import mx.events.IndexChangedEvent;
 			
 			import spark.events.IndexChangeEvent;
 			
-			protected function tabnavigator1_changeHandler(event:IndexChangedEvent):void {
-				var index:int = event.newIndex;
-				
-				if (index==1) {
-					Radiate.desetDocuments(true);
-				}
-				else {
-					var document:Document = NavigatorContent(tabNavigator.getItemAt(0)).getElementAt(0) as Document;
-					Radiate.setDocuments(document.targetApplication);
-				}
-				
-			}
 			
 			protected function panelsLabelFunction(item:Object):String {
 				var name:String = item is Label ? Label(item).text : " • ";
@@ -65,7 +51,7 @@
 			}
 			
 			protected function list1_changeHandler(event:IndexChangeEvent):void {
-				var point:Point = panels.layout.getScrollPositionDeltaToElement(event.newIndex +1);
+				/*var point:Point = panels.layout.getScrollPositionDeltaToElement(event.newIndex +1);
 				
 				// if going up get the selected item
 				if (point && point.y<0) {
@@ -79,11 +65,11 @@
 					scrollPanelsAnimation.play();
 				}
 				
-				event.preventDefault();
+				event.preventDefault();*/
 			}
 			
 			protected function showConsoleHandler(event:MouseEvent):void {
-				
+				/*
 				if (console.height>=100) {
 					console.height = 22;
 					console.includeInLayout = false;
@@ -95,7 +81,20 @@
 					console.visible = true;
 					console.includeInLayout = true;
 					showConsoleLabel.text = "Close";
+				}*/
+			}
+			
+			protected function navigatorContent_changeHandler(event:IndexChangedEvent):void {
+				var index:int = event.newIndex;
+				
+				if (index==1) {
+					//Radiate.desetDocuments(true);
 				}
+				else {
+					var document:Document = NavigatorContent(navigatorContent.getItemAt(0)).getElementAt(0) as Document;
+					Radiate.setDocuments(document.targetApplication);
+				}
+				
 			}
 			
 		]]>
@@ -104,12 +103,12 @@
 	
 	<fx:Declarations>
 		
-		<s:Animate id="scrollPanelsAnimation" target="{panels.layout}" >
+		<!--<s:Animate id="scrollPanelsAnimation" target="{panels.layout}" >
 			<s:SimpleMotionPath id="scrollMotionPath" property="verticalScrollPosition" />
-		</s:Animate>
+		</s:Animate>-->
 		
 		<!-- FADE IN APPLICATION -->
-		<s:Sequence id="fadeIn">
+		<!--<s:Sequence id="fadeIn">
 			
 			<s:SetAction target="{radiateScroller}" property="alpha" value="0"/>
 			
@@ -129,171 +128,260 @@
 									valueTo="0" property="verticalScrollPosition" />
 			</s:Animate>
 			
-		</s:Sequence>
+		</s:Sequence>-->
 		
-		<handlers:EventHandler eventName="creationComplete" target="{this}">
+		<!--<handlers:EventHandler eventName="creationComplete" target="{this}">
 			<core:PlayEffect effect="{fadeIn}"/>
-		</handlers:EventHandler>
+		</handlers:EventHandler>-->
 	</fx:Declarations>
 	
 	
 	<s:Group width="100%" height="100%" bottom="35" left="5" right="5">
 		
-		<!-- EXAMPLE RADIATE CONTAINER -->
-		<s:Scroller id="radiateScroller" 
-					width="{260}"  
-					left="0"
-					top="0" 
-					bottom="0"
-					interactionMode="touch">
+		<s:HGroup width="100%" height="32" >
+			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStripIcon}"/>
+			<inspectors:ToolInspector />
+		</s:HGroup>
+	
+		<mx:HDividedBox width="100%" height="100%" 
+						top="32">
+				
+			<!-- EXAMPLE RADIATE CONTAINER -->
+			<!--<s:Scroller id="radiateScroller" 
+						width="300"  
+						height="100%"
+						left="0"
+						top="0" 
+						bottom="0">
+				
+				<s:DataGroup id="panels" width="100%" height="100%" >
+					<s:layout>
+						<s:VerticalLayout paddingRight="4" variableRowHeight="true"/>
+					</s:layout>
+					<s:ArrayCollection>-->
+						<!--<ns1:Panel width="100%" >
+						<s:Button label="hello"/>
+						</ns1:Panel>-->
+						
+						<!-- SELECTION -->
+						<!--<s:Label text="SELECTION" width="100%" styleName="formItem"/>
+						<inspectors:Selection height="100%" width="100%" />-->
 			
-			<s:DataGroup id="panels" width="100%" height="100%" >
-				<s:layout>
-					<s:VerticalLayout paddingRight="10" 
-									  variableRowHeight="true"/>
-				</s:layout>
-				<s:ArrayCollection>
-					<!--<ns1:Panel width="100%" >
-					<s:Button label="hello"/>
-					</ns1:Panel>-->
-					
-					<!-- SELECTION -->
-					<!--<s:Label text="SELECTION" width="100%" styleName="formItem"/>
-					<inspectors:Selection height="100%" width="100%" />-->
+			
+			<mx:VDividedBox width="300" height="100%">
+				<!--<s:layout>
+					<s:VerticalLayout gap="0" />
+				</s:layout>-->
+				
+				<!-- TOOLS -->
+				<s:VGroup width="100%" minHeight="48">
+					<s:Label text="TOOLS" width="100%" styleName="formItem"/>
+					<views:Tools width="100%" />
+				</s:VGroup>
+				
+				<!--<s:Spacer height="8"/>-->
+				
+				<!--<s:TabBar dataProvider="{firstViewStack}" width="100%" height="22"/>-->
+				
+				<mx:TabNavigator id="firstViewStack" 
+							  borderStyle="solid" 
+							  width="100%"
+							  height="100%"
+							  clipContent="true">
 					
 					<!-- COMPONENTS -->
-					<s:Label text="COMPONENTS" width="100%" styleName="formItem"/>
-					<views:Components height="250" width="100%" />
+					<s:NavigatorContent label="COMPONENTS">
+						<views:Components height="100%" width="100%" />
+					</s:NavigatorContent>
 					
-					<!-- DISPLAY LIST -->
-					<s:Label text="DOCUMENT" width="100%"
-							 styleName="formItem"/>
-					<views:DisplayList width="100%" minHeight="220"/>
-					
-					<!-- PROPERTIES -->
-					<s:Label text="PROPERTIES" width="100%" styleName="formItem"/>
-					<inspectors:Property minHeight="180" height="100%" width="100%"/>
-					
-					<!-- LAYOUT CONSTRAINTS -->
-					<s:Label text="LAYOUT" width="100%" styleName="formItem"/>
-					<inspectors:Constraints height="100%" width="100%" />
+					<!-- EVENT LISTENERS -->
+					<s:NavigatorContent label="EVENTS">
+						<s:Scroller width="100%" height="100%">
+							<inspectors:EventListeners height="100%" width="100%"/>
+						</s:Scroller>
+					</s:NavigatorContent>
 					
 					<!-- STATES -->
-					<s:Label text="STATES" width="100%" styleName="formItem"/>
-					<views:States minHeight="200" width="100%" />
+					<s:NavigatorContent label="STATES">
+						<s:Scroller width="100%" height="100%">
+							<views:States height="100%" width="100%" />
+						</s:Scroller>
+					</s:NavigatorContent>
+					
+					<!-- OTHER -->
+					<s:NavigatorContent label="OTHERS">
+						
+						<s:Scroller width="100%"  
+									height="100%"
+									left="0"
+									top="0" 
+									bottom="0">
+				
+						<s:Group id="panels" width="100%" height="100%" >
+							<s:layout>
+								<s:VerticalLayout paddingRight="4" variableRowHeight="true"/>
+							</s:layout>
+						
+							<!-- BLEND MODES -->
+							<s:Label text="BLEND MODE" width="100%" styleName="formItem"/>
+							<inspectors:BlendMode height="100%" width="100%" />
+							
+							<!-- SNAPSHOT -->
+							<s:Label text="SNAPSHOT" width="100%" styleName="formItem" />
+							<inspectors:Snapshot height="100%" width="100%" />
+							
+							<!-- EDIT DECISION LIST -->
+							<s:Label text="CHANGE LOG" width="100%" styleName="formItem"/>
+							<inspectors:ChangeHistory minHeight="22" height="100%" width="100%" removeDuplicates="false"/>
+							
+							<!-- PROFILING -->
+							<s:Label text="PROFILE" width="100%" styleName="formItem"/>
+							<ns1:Profiling height="100%" width="100%"/>
+							
+							<!-- SEARCH EXPRESSION -->
+							<s:Label text="SEARCH EXPRESSION" width="100%" styleName="formItem"/>
+							<inspectors:SearchExpression height="100%" width="100%"/>
+							
+							<!-- REDRAW REGIONS -->
+							<s:Label text="REDRAW REGIONS" width="100%" styleName="formItem"/>
+							<inspectors:RedrawRegions width="20" height="20" />
+							
+							<!-- FRAMERATE -->
+							<s:Label text="FRAMERATE" width="100%"
+									 styleName="formItem"/>
+							<inspectors:FrameRate />
+							
+							<!-- MEMORY -->
+							<s:Label text="MEMORY" width="100%" styleName="formItem"/>
+							<inspectors:Memory height="100%" width="100%" 
+											   showCurrentlyUsedPlayerMemory="true"/>
+							<s:Spacer height="10"/>
+						</s:Group>
+						</s:Scroller>
+					</s:NavigatorContent>
+				</mx:TabNavigator>
+				
+				<mx:TabNavigator id="secondViewStack" 
+								 borderStyle="solid"
+								 width="100%"
+								 height="100%"
+								 selectedIndex="1">
+					
+					<!-- DISPLAY LIST -->
+					<s:NavigatorContent label="DOCUMENT"  >
+						<views:DisplayList width="100%" minHeight="220"/>
+					</s:NavigatorContent>
+					
+					<!-- LAYOUT CONSTRAINTS -->
+					<s:NavigatorContent label="LAYOUT">
+						<s:Scroller width="100%" height="100%">
+							<inspectors:Constraints height="100%" width="100%" />
+						</s:Scroller>
+					</s:NavigatorContent>
+					
+					<!-- PROPERTIES -->
+					<s:NavigatorContent label="PROPERTIES">
+						<inspectors:Properties minHeight="180" height="100%" width="100%"/>
+					</s:NavigatorContent>
 					
 					<!-- HISTORY -->
-					<s:Label text="HISTORY" width="100%" styleName="formItem"/>
-					<inspectors:History id="history" minHeight="100" 
-										clearOnTargetChange="false"
-										height="100%" width="100%"/>
-					
-					<!-- BLEND MODES -->
-					<s:Label text="BLEND MODE" width="100%" styleName="formItem"/>
-					<inspectors:BlendMode height="100%" width="100%" />
-					
-					
-					<!-- SNAPSHOT -->
-					<s:Label text="SNAPSHOT" width="100%" styleName="formItem" />
-					<inspectors:Snapshot height="100%" width="100%" />
-					
-					<!-- EDIT DECISION LIST -->
-					<s:Label text="CHANGE LOG" width="100%" styleName="formItem"/>
-					<inspectors:ChangeHistory minHeight="22" height="100%" width="100%" removeDuplicates="false"/>
-					
-					<!-- PROFILING -->
-					<s:Label text="PROFILE" width="100%" styleName="formItem"/>
-					<ns1:Profiling height="100%" width="100%"/>
-					
-					<!-- SEARCH EXPRESSION -->
-					<s:Label text="SEARCH EXPRESSION" width="100%" styleName="formItem"/>
-					<inspectors:SearchExpression height="100%" width="100%"/>
-					
-					<!-- REDRAW REGIONS -->
-					<s:Label text="REDRAW REGIONS" width="100%" styleName="formItem"/>
-					<inspectors:RedrawRegions width="20" height="20" />
-					
-					<!-- FRAMERATE -->
-					<s:Label text="FRAMERATE" width="100%"
-							 styleName="formItem"/>
-					<inspectors:FrameRate />
-					
-					<!-- MEMORY -->
-					<s:Label text="MEMORY" width="100%" styleName="formItem"/>
-					<inspectors:Memory height="100%" width="100%" 
-									   showCurrentlyUsedPlayerMemory="true"/>
-					
-					
-				</s:ArrayCollection>
-				<!-- DESCRIPTION -->
-				<!--<s:Label text="DESCRIPTION" width="100%" styleName="formItem"/>-->
-				<!--<inspectors:Description showDescriptionLabel="false" left="10" right="10" top="10"/>-->
-			</s:DataGroup>
+					<s:NavigatorContent label="HISTORY">
+						<inspectors:History id="history" minHeight="100" 
+											clearOnTargetChange="false"
+											height="100%" width="100%"/>
+					</s:NavigatorContent>
+				</mx:TabNavigator>
+				
+			</mx:VDividedBox>
+						
+					<!-- DESCRIPTION -->
+					<!--<s:Label text="DESCRIPTION" width="100%" styleName="formItem"/>-->
+					<!--<inspectors:Description showDescriptionLabel="false" left="10" right="10" top="10"/>-->
+					<!--</s:ArrayCollection>
+				</s:DataGroup>
+				
+			</s:Scroller>-->
 			
-		</s:Scroller>
+			<!-- EXAMPLE APPLICATION -->
+			<mx:VDividedBox id="applicationGroup" width="100%" height="100%" >
+				
+				<mx:TabNavigator  id="navigatorContent" width="100%" height="100%"
+								  change="navigatorContent_changeHandler(event)">
+					<s:NavigatorContent width="100%" height="100%" label="DOCUMENT">
+						<ns1:Document id="document1" width="100%" height="100%" />
+					</s:NavigatorContent>
+					
+					<!--<s:NavigatorContent width="100%" height="100%" label="" >
+						<ns1:Document id="document2" width="100%" height="100%" />
+					</s:NavigatorContent>-->
+				</mx:TabNavigator>
+				
+				<!-- BREADCRUMBS -->
+				<!--<s:Label text="BREADCRUMBS" width="100%" styleName="formItem"/>-->
+				
+				<!--<s:HGroup width="100%" paddingTop="8" >
+					<s:Label id="showConsoleLabel" 
+							 text="Console" 
+							 typographicCase="uppercase" 
+							 textAlign="center"
+							 verticalAlign="middle"
+							 paddingLeft="5"
+							 paddingRight="5"
+							 paddingBottom="5"
+							 paddingTop="5"
+							 fontWeight="bold"
+							 fontSize="10"
+							 backgroundAlpha=".75"
+							 backgroundColor="#FFFFFF"
+							 useHandCursor="true"
+							 buttonMode="true"
+							 click="showConsoleHandler(event)"
+							 />
+				</s:HGroup>-->
+				
+				
+				<mx:TabNavigator id="thirdViewStack" 
+								 borderStyle="solid"
+								 width="100%"
+								 height="200">
+					
+					<!-- CONSOLE -->
+					<s:NavigatorContent label="CONSOLE">
+						<!--<s:Label text="BREADCRUMBS" width="100%" styleName="formItem"/>-->
+						<views:Console width="100%" height="100%"/>
+					</s:NavigatorContent>
+					
+					<!-- PROPERTY INSPECTOR -->
+					<!--<s:NavigatorContent label="PROPERTY INSPECTOR">
+					</s:NavigatorContent>-->
+				
+					<!-- CODE INSPECTOR -->
+					<s:NavigatorContent width="100%" height="100%" label="CODE">
+						<inspectors:Code id="code1" width="100%" height="100%" />
+					</s:NavigatorContent>
+				</mx:TabNavigator>
+				
+				
+			</mx:VDividedBox>
 		
-		<!-- EXAMPLE APPLICATION -->
-		<s:VGroup id="applicationGroup" width="100%" height="100%" gap="0">
-			
-			<mx:TabNavigator id="tabNavigator" width="100%" height="100%" change="tabnavigator1_changeHandler(event)">
-				
-				<s:NavigatorContent width="100%" height="100%" label="New Document">
-					<ns1:Document id="document1" width="100%" height="100%" />
-				</s:NavigatorContent>
-				
-				<!--<s:NavigatorContent width="100%" height="100%" label="" >
-					<ns1:Document id="document2" width="100%" height="100%" />
-				</s:NavigatorContent>-->
-			</mx:TabNavigator>
-			
-			<!-- BREADCRUMBS -->
-			<!--<s:Label text="BREADCRUMBS" width="100%" styleName="formItem"/>-->
-			
-			<s:HGroup width="100%" paddingTop="8" >
-				<inspectors:Breadcrumbs height="18" width="100%" />
-				
-				<s:Label id="showConsoleLabel" 
-						 text="Console" 
-						 typographicCase="uppercase" 
-						 textAlign="center"
-						 verticalAlign="middle"
-						 paddingLeft="5"
-						 paddingRight="5"
-						 paddingBottom="5"
-						 paddingTop="5"
-						 fontWeight="bold"
-						 fontSize="10"
-						 backgroundAlpha=".75"
-						 backgroundColor="#FFFFFF"
-						 useHandCursor="true"
-						 buttonMode="true"
-						 click="showConsoleHandler(event)"
-						 />
-			</s:HGroup>
-			
-			
-			<!-- CONSOLE -->
-			<s:HGroup id="console" width="100%" height="10" includeInLayout="false" visible="false" >
-				<views:Console width="100%" height="100%"/>
-			</s:HGroup>
-			
-		</s:VGroup>
-		
+		</mx:HDividedBox>
 	</s:Group>
 	
-	<s:Rect width="100%" height="30" bottom="0">
+	<s:Rect width="100%" height="28" bottom="0">
 		<s:fill>
 			<s:SolidColor color="#3d3d3d"/>
 		</s:fill>
 	</s:Rect>
 	
-	<s:List id="shortcutList" 
+	<inspectors:Breadcrumbs height="14" bottom="8" left="10" width="100%" 
+							color="#ffffff"/>
+					
+	<!--<s:List id="shortcutList" 
 			width="100%" 
 			height="14" 
 			bottom="8" 
 			left="10"
 			contentBackgroundAlpha="0"
-			dataProvider="{panels.dataProvider}"
 			labelFunction="panelsLabelFunction"
 			borderVisible="false"
 			fontSize="8"
@@ -301,11 +389,12 @@
 			rollOverColor="#222222"
 			changing="list1_changeHandler(event)"
 			horizontalScrollPolicy="off"
+			dataProvider="{panels.dataProvider}"
 			>
 		<s:layout>
 			<s:HorizontalLayout variableColumnWidth="true" 
 								verticalAlign="middle"/>
 		</s:layout>
-	</s:List>
+	</s:List>-->
 	
 </s:Group>

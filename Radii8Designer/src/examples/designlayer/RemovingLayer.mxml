@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/halo"
+			   minWidth="1024" minHeight="768">
+	
+	<!-- 
+	http://bugs.adobe.com/jira/browse/SDK-22986
+	
+	2. Click "1. removeLayer()"
+3. Click "2. trace()"
+ 
+ Actual Results:
+ 
+btn1.designLayer=designLayerChild (expected designLayerParent)
+ 
+ Expected Results:
+ 
+btn1.designLayer=designLayerParent (expected designLayerParent) 
+	
+	
+	
+	
+	This is not a bug actually. When you remove the inner layer, 
+	all you are really doing is disassociating it with it's parent layer.
+
+e.g. The inner layer is detached from it's parent but is still affecting 
+	it's layer children. The outer layer no longer is however.
+
+Working as intended. 
+	-->
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			protected function removeDesignLayerChild(event:MouseEvent):void {
+				trace('removing btn1.designLayer=' + btn1.designLayer.id);
+				designLayerParent.removeLayer(designLayerChild);
+			}
+			
+			protected function traceResults(event:MouseEvent):void {
+				trace('btn1.designLayer=' + btn1.designLayer.id);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:DesignLayer id="designLayerParent">
+		<fx:DesignLayer id="designLayerChild" alpha="1" visible="false">
+			<s:Button id="btn1" label="1. removeLayer()" 
+					  click="removeDesignLayerChild(event)"/>
+			<s:Button id="btn2" label="2. trace()"
+					  click="traceResults(event)"/>
+			<s:TextInput />
+		</fx:DesignLayer>
+	</fx:DesignLayer>
+
+	
+</s:Application>

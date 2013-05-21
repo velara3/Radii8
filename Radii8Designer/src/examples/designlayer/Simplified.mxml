@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application 
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.core.DesignLayer;
+			
+			import spark.components.Button;
+			
+			private var outerLayer:DesignLayer;
+			private var innerLayer:DesignLayer;
+			
+			public function makeLayers():void
+			{
+				outerLayer = new DesignLayer();
+				innerLayer = new DesignLayer();
+
+				outerLayer.visible = false;
+				innerLayer.visible = true;
+
+				rect.designLayer = innerLayer;
+				
+				outerLayer.addLayer(innerLayer);
+				
+				addElement(rect);
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Rect id="rect" width="100" height="100" x="100">
+			<s:fill><s:SolidColor color="0xFF0000" /></s:fill>
+		</s:Rect>
+	</fx:Declarations>
+	
+	<s:Button label="make" x="10" y="10" click="makeLayers();"/>
+	
+</s:Application>

@@ -11,7 +11,9 @@ package com.flexcapacitor.events {
 	
 	public class DragDropEvent extends Event {
 		
+		public static var DRAG_OVER:String = "dragOver";
 		public static var DRAG_DROP:String = "dragDrop";
+		public static var DRAG_DROP_COMPLETE:String = "dragDropComplete";
 		
 		public var dragInitiator:IUIComponent;
 		public var dropTarget:Object;

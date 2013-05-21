@@ -4,7 +4,7 @@
 			   xmlns:mx="library://ns.adobe.com/flex/mx"
 			   xmlns:modules="modules.*"
 			   minWidth="955" minHeight="600"
-			   applicationComplete="application1_applicationCompleteHandler(event)">
+			   applicationComplete="application1_applicationCompleteHandler(event)" xmlns:utils="com.flexcapacitor.utils.*">
 	
 	<!--
 	TODO:
@@ -21,17 +21,13 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import mx.core.FlexGlobals;
-			import mx.events.CloseEvent;
 			import mx.events.FlexEvent;
-			import mx.graphics.SolidColorStroke;
-			import mx.managers.PopUpManager;PopUpManager;
+			import mx.managers.PopUpManager;
 			
 			import spark.components.Group;
-			import spark.components.TitleWindow;
-			import spark.events.TitleWindowBoundsEvent;
-			import spark.modules.Module;
-			import spark.primitives.Rect;
+			import spark.components.TitleContainer;
+			import spark.components.TitleWindow;PopUpManager;
+			
 			
 			public static const FLOATING_TEXT:String = "Floating";
 			public static const DOCKED_TEXT:String = "Docked";
@@ -40,300 +36,17 @@
 			public var titleWindow:TitleWindow;
 			public var dropRectangle:Group;
 			
-			/**
-			 * Previous height of window before docked
-			 * */
-			public var previousHeight:int;
-			
-			/**
-			 * Previous width of window before docked
-			 * */
-			public var previousWidth:int;
-			
-			/**
-			 * Indicates if window is docked
-			 * */
-			public var docked:Boolean;
-			
-			/**
-			 * Minimum distance to the edge of the screen to show the drop indicator rectangle
-			 * */
-			public var minEdgeDistance:int = 20;
-			
 			protected function button1_clickHandler(event:MouseEvent):void {
-				showInspector();
+				var newTitleContainer:TitleContainer = new TitleContainer();
+				newTitleContainer.showInspector();
 			}
 			
 			protected function application1_applicationCompleteHandler(event:FlexEvent):void {
-				showInspector();
-				setDocked(true);
-			}
-			
-			/**
-			 * Display the inspector
-			 * */
-			public function showInspector():void {
+				var newTitleContainer:TitleContainer = new TitleContainer();
+				newTitleContainer.showInspector();
 				
-				// create drop rectangle to be ready to use
-				// or remove if already visible
-				if (!dropRectangle) {
-					var rect:Rect = new Rect();
-					rect.bottom = 0;
-					rect.left = 0;
-					rect.top = 0;
-					rect.right = 0;
-					rect.percentWidth = 100;
-					rect.percentHeight = 100;
-					
-					var stroke:SolidColorStroke = new SolidColorStroke();
-					stroke.weight = 4;
-					stroke.alpha = .5;
-					stroke.color = 0x0000ff;
-					stroke.joints = JointStyle.MITER;
-					rect.stroke = stroke;
-					
-					dropRectangle = new Group();
-					dropRectangle.addElement(rect);
-					dropRectangle.width = 100;
-					dropRectangle.height = 100;
-				}
-				else {
-					PopUpManager.removePopUp(dropRectangle);
-				}
-				
-				// remove title window if already visible
-				// may want to reuse or something
-				if (!titleWindow) {
-					PopUpManager.removePopUp(titleWindow);
-				}
-				
-				// create new inspector container
-				if (!popup) {
-					popup = new InspectorContainer();
-				}
-				
-				if (!titleWindow) {
-					titleWindow = new TitleWindow();
-					titleWindow.addElement(popup);
-				}
-				
-				titleWindow.addEventListener(TitleWindowBoundsEvent.WINDOW_MOVE_START, windowMoveStartHandler, false, 0, true);
-				titleWindow.addEventListener(TitleWindowBoundsEvent.WINDOW_MOVING, windowMovingHandler, false, 0, true);
-				titleWindow.addEventListener(TitleWindowBoundsEvent.WINDOW_MOVE, windowMoveHandler, false, 0, true);
-				titleWindow.addEventListener(TitleWindowBoundsEvent.WINDOW_MOVE_END, windowMoveEndHandler, false, 0, true);
-				titleWindow.addEventListener(Event.CLOSE, windowCloseHandler, false, 0, true);
-				
-				
-				// display pop up title window
-				PopUpManager.addPopUp(titleWindow, FlexGlobals.topLevelApplication as DisplayObject, false);
-				PopUpManager.centerPopUp(titleWindow);
-				
-				
-			}
-			
-			/**
-			 * Handles when moving title window
-			 * */
-			protected function windowMoveHandler(event:TitleWindowBoundsEvent):void {
-				var xBound:int = event.afterBounds.x;
-				var visibleHeight:int = systemManager.topLevelSystemManager.getVisibleApplicationRect().height;
-				
-				if (event) {
-					positionLabel.text = "X:"+ event.afterBounds.x + " Y:" + event.afterBounds.y;
-					sizeLabel.text = "w:"+ event.afterBounds.width + " h:" + visibleHeight;
-				}
-				
-				// if less than minimum edge distance (checking mouse position)
-				// show drop indicator rectangle
-				if (xBound<minEdgeDistance) {
-					dropRectangle.visible = true;
-					dropRectangle.x = 0;
-					dropRectangle.y = 0;
-					dropRectangle.height = visibleHeight;
-					dropRectangle.width = titleWindow.width;
-					
-					titleWindow.title = "near edge";
-						
-				}
-				else {
-					
-					// hide drop indicator rectangle
-					dropRectangle.visible = false;
-					
-					// if docked and title window is not near the edge 
-					// then undock and resize
-					if (docked) {
-						
-						// resize
-						if (titleWindow.height!=previousHeight) {
-							titleWindow.height = previousHeight;
-						}
-						
-						// undock
-						docked = false;
-						
-						
-						if (titleWindow.getStyle("dropShadowVisible")!=true) {
-							titleWindow.setStyle("dropShadowVisible", true);
-						}
-						
-						titleWindow.title = FLOATING_TEXT;
-					}
-					else if (!docked) {
-						
-						titleWindow.title = FLOATING_TEXT;
-						
-					}
-				}
-			}
-			
-			/**
-			 * Handles end of move of title window
-			 * */
-			protected function windowMoveEndHandler(event:TitleWindowBoundsEvent):void {
-				var yBound:int = event.afterBounds.y;
-				var xBound:int = event.afterBounds.x;
-				var appHeight:int = systemManager.topLevelSystemManager.getVisibleApplicationRect().height;
-				
-				// if off the screen then snap top to 0. bug when mouse leaves browser - using firefox fp 11.4 osx
-				if (yBound<0) {
-					titleWindow.y = 0;
-				}
-				
-				if (event) {
-					positionLabel.text = "x:"+ event.beforeBounds.x + " y:" + event.beforeBounds.y;
-					sizeLabel.text = "w:"+ event.afterBounds.width + " h:" + appHeight;
-				}
-				
-				// if near the edge then dock
-				if (xBound<20) {
-					setDocked(true);
-				}
-				else {
-					setDocked(false);
-				}
-				
-				removeDropRectangle();
-				
-			}
-			
-			/**
-			 * Checks if near edges of screen and keeps the 
-			 * title window in bounds
-			 * */
-			protected function windowMovingHandler(event:TitleWindowBoundsEvent):void {
-				
-				// These are the new bounds when the window is moved.
-				// You can modify them to alter the result of when the TitleWindow moves.
-				var endBounds:Rectangle = event.afterBounds;
-				
-				// check if near the left edge of the stage
-				if (endBounds.x < 0) {
-					endBounds.x = 0;
-				}
-				
-				// near right edge of the stage
-				if ((endBounds.x + endBounds.width) > this.width) {
-					endBounds.x = this.width - endBounds.width;
-				}
-				
-				// near top edge of the stage
-				if (endBounds.y < 0) {
-					endBounds.y = 0;
-				}
-				
-				// near bottom edge of the stage
-				if ((endBounds.y + titleWindow.moveArea.height) > this.height) {
-					endBounds.y = this.height - titleWindow.moveArea.height;
-				}
-			}
-			
-			/**
-			 * Handles when user presses the close button on the title window
-			 * */
-			protected function windowCloseHandler(event:CloseEvent):void {
-				PopUpManager.removePopUp(titleWindow);
-				
-				if (docked) {
-					if (FlexGlobals.topLevelApplication.x!=0) {
-						FlexGlobals.topLevelApplication.x = 0;
-					}
-					docked = false;
-				}
-				titleWindow.removeEventListener(TitleWindowBoundsEvent.WINDOW_MOVE_START, windowMoveStartHandler);
-				titleWindow.removeEventListener(TitleWindowBoundsEvent.WINDOW_MOVING, windowMovingHandler);
-				titleWindow.removeEventListener(TitleWindowBoundsEvent.WINDOW_MOVE, windowMoveHandler);
-				titleWindow.removeEventListener(TitleWindowBoundsEvent.WINDOW_MOVE_END, windowMoveEndHandler);
-				
-			}
-			
-			/**
-			 * Adds drop indicator to the stage when window starts to move
-			 * but not visible
-			 * */
-			protected function windowMoveStartHandler(event:TitleWindowBoundsEvent):void {
-				
-				addDropRectangle();
-				
-			}
-			
-			/**
-			 * Removes the drop indicator rectangle
-			 * */
-			public function removeDropRectangle():void {
-				if (dropRectangle.isPopUp) {
-					PopUpManager.removePopUp(dropRectangle);
-				}
-			}
-			
-			/**
-			 * Adds the drop indicator rectangle
-			 * */
-			public function addDropRectangle():void {
-				if (!dropRectangle.isPopUp) {
-					PopUpManager.addPopUp(dropRectangle, this);
-				}
-			}
-			
-			/**
-			 * 
-			 * */
-			private function systemManagerResizeHandler(event:Event):void {
-				var appHeight:int = systemManager.topLevelSystemManager.getVisibleApplicationRect().height;
-			
-				titleWindow.move(0, 0);
-				titleWindow.setActualSize(titleWindow.width, appHeight); // this doesn't work :P
-				titleWindow.invalidateProperties();
-				titleWindow.invalidateDisplayList();
-				titleWindow.height = appHeight;
-			}
-			
-			/**
-			 * Docks the window
-			 * */
-			public function setDocked(value:Boolean):void {
-				var appHeight:int = systemManager.topLevelSystemManager.getVisibleApplicationRect().height;
-				
-				if (value) {
-					previousHeight = Math.min(titleWindow.height, appHeight/2);
-					titleWindow.move(0, 0);
-					titleWindow.setActualSize(titleWindow.width, appHeight);
-					titleWindow.height = appHeight;
-					titleWindow.setStyle("dropShadowVisible", false);
-					FlexGlobals.topLevelApplication.x = titleWindow.width;
-					docked = true;
-					titleWindow.title = DOCKED_TEXT;
-					systemManager.topLevelSystemManager.addEventListener(Event.RESIZE, systemManagerResizeHandler);
-				}
-				else {
-					
-					if (FlexGlobals.topLevelApplication.x!=0) {
-						FlexGlobals.topLevelApplication.x = 0;
-					}
-					docked = false;
-					titleWindow.title = FLOATING_TEXT;
-					systemManager.topLevelSystemManager.removeEventListener(Event.RESIZE, systemManagerResizeHandler);
-				}
+				//showInspector();
+				newTitleContainer.setDocked(true);
 			}
 		]]>
 	</fx:Script>
@@ -341,10 +54,9 @@
 	
 	<fx:Declarations>
 		<modules:InspectorContainer clearSharedObject="false"/>
+		<utils:MiniInspector />
 	</fx:Declarations>
 	
 	<s:Button left="50" top="50" label="Get Thing" click="button1_clickHandler(event)"/>
-	<s:Label id="positionLabel" horizontalCenter="0" top="20" />
-	<s:Label id="sizeLabel" horizontalCenter="0" top="35" />
 	
 </s:Application>

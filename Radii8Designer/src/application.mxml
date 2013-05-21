@@ -5,6 +5,7 @@
 	<fx:Script>
 		<![CDATA[
 			import mx.core.IVisualElement;
+			public var version:String = "4.6.0";
 		]]>
 	</fx:Script>
 	<fx:Declarations>

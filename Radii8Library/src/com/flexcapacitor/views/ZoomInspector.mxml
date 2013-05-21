@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:filters="com.flexcapacitor.filters.*">
+
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="4" />
+	</s:layout>
+	
+	<!--<s:CheckBox label="Scrub Zoom" />-->
+	<s:Button label="Actual Size" />
+	<s:ComboBox width="100" focusAlpha="0" selectedIndex="0">
+		<s:dataProvider>
+			<s:ArrayList>
+				<fx:String>100%</fx:String>
+				<fx:String>75%</fx:String>
+				<fx:String>50%</fx:String>
+				<fx:String>25%</fx:String>
+				<fx:String>10%</fx:String>
+			</s:ArrayList>
+		</s:dataProvider>
+	</s:ComboBox>
+
+</s:Group>

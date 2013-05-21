@@ -48,12 +48,25 @@ package com.flexcapacitor.utils {
 	import spark.skins.spark.ListDropIndicator;
 
 	/**
+	 * Drag over 
+	 * */
+	[Event(name="dragOver", type="com.flexcapacitor.radiate.events.DragDropEvent")]
+
+	/**
 	 * Drop event 
 	 * */
 	[Event(name="dragDrop", type="com.flexcapacitor.radiate.events.DragDropEvent")]
+
+	/**
+	 * Drop complete event 
+	 * */
+	[Event(name="dragDropComplete", type="com.flexcapacitor.radiate.events.DragDropEvent")]
 	
 	/**
-	 * Enables drag and drop of UIComponent
+	 * Enables drag and drop of UIComponent. 
+	 * I don't know if this has a drag cancel event. 
+	 * That is, if you don't find a place to drop then what happens? 
+	 * Could listen for stage mouse up or mouse up outside. 
 	 * */
 	public class DragManagerUtil extends EventDispatcher {
 		
@@ -196,10 +209,11 @@ package com.flexcapacitor.utils {
 				removeMouseHandlers(dragInitiator);
 				startDrag(dragInitiator, parentApplication, event);
 			}
+			
 		}
 		
 		/**
-		 * 
+		 * Start dragging
 		 * */
 		public function startDrag(dragInitiator:IUIComponent, parentApplication:Application, event:MouseEvent):void {
 			var dragSource:DragSource = new DragSource();
@@ -235,6 +249,7 @@ package com.flexcapacitor.utils {
 			
 			// show selection / bounding box 
 			if (showSelectionBox) {
+				// RangeError: Error #2006: The supplied index is out of bounds.
 				PopUpManager.addPopUp(targetSelectionGroup, swfRoot);
 				targetSelectionGroup.visible = false;
 				targetSelectionGroup.addEventListener(DragEvent.DRAG_OVER, dragOverHandler);
@@ -251,7 +266,7 @@ package com.flexcapacitor.utils {
 				snapshot = null;
 			}
 			else {
-				snapshot = DisplayObjectUtils.getBitmapAssetSnapshot(dragInitiator as DisplayObject);
+				snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject);
 				//snapshot = DisplayObjectUtils.getSpriteSnapshot(dragInitiator as DisplayObject);
 			}
 			
@@ -336,6 +351,11 @@ package com.flexcapacitor.utils {
 					continue;
 				}
 				
+				// check if target is child of self
+				if ("contains" in draggedItem && draggedItem.contains(target)) {
+					continue;
+				}
+				
 				// as soon as we find a visual element we can find the owner
 				if (target is IVisualElement) {
 					description = DisplayObjectUtils.getVisualElementContainerFromElement(IVisualElement(target), componentTree);
@@ -345,6 +365,21 @@ package com.flexcapacitor.utils {
 						break;
 					}
 				}
+			}
+			
+			
+			// check if target is self
+			if (target==draggedItem) {
+				target = parentApplication;
+				Radiate.log.info("Cannot drag onto self");
+				return;
+				//continue;
+			}
+			
+			// check if target is child of self
+			if ("contains" in draggedItem && draggedItem.contains(target)) {
+				Radiate.log.info("Cannot drag into child of self");
+				return;
 			}
 			
 			// this shouldn't be here but if document is not set then we get all sorts of targets
@@ -530,8 +565,13 @@ package com.flexcapacitor.utils {
 			
 			dropTargetName = NameUtil.getUnqualifiedClassName(dropTarget);
 			
-			//trace("target: " + dropTargetName);
 			event.updateAfterEvent();
+			
+			
+			if (hasEventListener(DragDropEvent.DRAG_OVER)) {
+				dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_OVER));
+			}
+			
 			
 			return;
 			
@@ -889,8 +929,28 @@ package com.flexcapacitor.utils {
 				else {
 					moveResult = Radiate.moveElement(draggedItem, dropTarget, null, null, eventDescription, null, null, index);
 				}
-				
 			}
+			
+			
+			var dragCompleteEvent:DragDropEvent = new DragDropEvent(DragDropEvent.DRAG_DROP_COMPLETE, false, true);
+			dragCompleteEvent.offsetPoint 			= offset;
+			dragCompleteEvent.dragEvent				= event;
+			dragCompleteEvent.dropTarget 			= dropTarget;
+			dragCompleteEvent.dragInitiator 		= event.dragInitiator;
+			dragCompleteEvent.dragSource 			= event.dragSource;
+			dragCompleteEvent.draggedItem 			= draggedItem;
+			dragCompleteEvent.dropLocation 			= dropLocation;
+			dragCompleteEvent.dropPoint 			= dropLocation ? dropLocation.dropPoint : new Point(event.localX, event.localY);
+			dragCompleteEvent.isGroup 				= isGroup;
+			dragCompleteEvent.isTile 				= isTile;
+			dragCompleteEvent.isVertical 			= isVertical;
+			dragCompleteEvent.isHorizontal 			= isHorizontal;
+			dragCompleteEvent.isBasicLayout			= isBasicLayout;
+			dragCompleteEvent.isSkinnableContainer	= isSkinnableContainer;
+			dragCompleteEvent.isDropTargetParent 	= (dropTarget == draggedItem.parent);
+			dragCompleteEvent.isDropTargetOwner 	= (dropTarget == draggedItem.owner);
+			
+			dispatchEvent(dragCompleteEvent);
 			
 		}
 		
@@ -936,10 +996,16 @@ package com.flexcapacitor.utils {
 			
 		}
 		
+		/**
+		 * Remove listeners from selected target
+		 * */
 		protected function mouseUpHandler(event:Event):void {
 			removeMouseHandlers(IUIComponent(event.currentTarget));
 		}
 		
+		/**
+		 * Remove listeners from selected target and swfroot. 
+		 * */
 		protected function removeMouseHandlers(target:IUIComponent):void {
 			
 			target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);

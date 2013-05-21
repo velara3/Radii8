@@ -97,6 +97,10 @@
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 				radiate.addEventListener(RadiateEvent.ADD_ITEM, addChangeHandler);
 				radiate.addEventListener(RadiateEvent.MOVE_ITEM, moveChangeHandler);
+				
+				if (radiate.targets) {
+					target = radiate.target;
+				}
 			}
 			
 			protected function addChangeHandler(event:Event):void {
@@ -220,6 +224,7 @@
 		
 		<s:List id="list"
 				contentBackgroundColor="#ffffff"
+				contentBackgroundAlpha="0"
 				width="100%"
 				minHeight="16"
 				dataProvider="{dataProviderList}" 
@@ -245,12 +250,17 @@
 						</s:states>
 						<s:Label id="labelDisplay" 
 								 fontSize="11"
-								 color="#585858"
-								 color.hovered="#787878"
-								 color.selected="#383838"
 								 typographicCase="lowercaseToSmallCaps"
 								 fontWeight="normal"
-								 verticalCenter="0"/>
+								 verticalCenter="0"
+								 color="#BBBBBB"
+								 color.hovered="#DDDDDD"
+								 color.selected="#FFFFFF"
+								 />
+								<!-- light background colors -->
+								<!-- color="#585858"
+								 color.hovered="#787878"
+								 color.selected="#383838"-->
 					</s:ItemRenderer>
 				</fx:Component>
 			</s:itemRenderer>

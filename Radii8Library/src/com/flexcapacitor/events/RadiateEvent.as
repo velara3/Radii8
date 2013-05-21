@@ -1,26 +1,22 @@
 
 package com.flexcapacitor.events {
+	import com.flexcapacitor.tools.ITool;
+	
 	import flash.events.Event;
 	
 	import mx.states.AddItems;
 	
 	public class RadiateEvent extends Event {
 		
-		public function RadiateEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, 
-									 target:Object=null, changes:Array=null, properties:Array=null, value:*=null, multipleSelection:Boolean = false) {
-			super(type, bubbles, cancelable);
-			
-			this.selectedItem = target;
-			this.properties = properties;
-			this.changes = changes;
-			this.value = value;
-			this.multipleSelection = multipleSelection;
-		}
-		
 		/**
 		 * Dispatched when the document is changed
 		 * */
 		public static const DOCUMENT_CHANGE:String = "documentChange";
+		
+		/**
+		 * Dispatched when the canvas is changed
+		 * */
+		public static const CANVAS_CHANGE:String = "canvasChange";
 		
 		/**
 		 * Dispatched when the target is changed
@@ -67,6 +63,17 @@ package com.flexcapacitor.events {
 		 * */
 		public static var HISTORY_CHANGE:String = "historyChange";
 		
+		/**
+		 * Dispatched when the tool is changed.
+		 * */
+		public static var TOOL_CHANGE:String = "toolChange";
+		
+		/**
+		 * Dispatched when the tools list is updated.
+		 * */
+		public static var TOOLS_UPDATED:String = "toolsUpdated";
+		
+		
 		public var selectedItem:Object;
 		public var properties:Array;
 		public var changes:Array;
@@ -78,6 +85,22 @@ package com.flexcapacitor.events {
 		public var oldIndex:int;
 		public var historyEvent:HistoryEvent;
 		public var targets:Array;
+		public var tool:ITool;
+		
+		/**
+		 * Constructor.
+		 * */
+		public function RadiateEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, 
+									 target:Object=null, changes:Array=null, properties:Array=null, value:*=null, multipleSelection:Boolean = false, tool:ITool = null) {
+			super(type, bubbles, cancelable);
+			
+			this.selectedItem = target;
+			this.properties = properties;
+			this.changes = changes;
+			this.value = value;
+			this.multipleSelection = multipleSelection;
+			this.tool = tool;
+		}
 		
 		override public function clone():Event {
 			throw new Error("do this");

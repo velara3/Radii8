@@ -7,8 +7,10 @@
 		 xmlns:handlers="com.flexcapacitor.handlers.*"
 		 xmlns:supportClasses="com.flexcapacitor.effects.supportClasses.*"
 		 xmlns:local="*"
+		 
 		 width="100%" 
-		 creationComplete="group1_creationCompleteHandler(event)">
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 >
 	
 	<fx:Script>
 		<![CDATA[
@@ -50,6 +52,10 @@
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChangeHandler);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
 			}
 			
 			protected function targetChangeHandler(event:RadiateEvent):void {
@@ -184,6 +190,7 @@
 	<s:DropDownList id="blendModeCombo"
 					interactionMode="mouse"
 					width="100%"
+					left="4"
 					change="applyPropertiesToTargetHandler(event)"
 					focusOut="applyPropertiesToTargetHandler()"
 					dataProvider="{blendModesCollection}">

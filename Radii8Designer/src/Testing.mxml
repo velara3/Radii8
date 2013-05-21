@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   
+			   minWidth="955" minHeight="600"
+			   mouseDown="application1_mouseDownHandler(event)"
+			   >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.tools.Selection;
+			protected function group1_mouseDownHandler(event:MouseEvent):void {
+				trace("event target="+ event.target);
+				targetInput.text = Object(event.target).toString();
+				Radiate.setDocuments(group1);
+				new Selection().drawSelection(event.target, toolLayer);
+			}
+			
+			protected function application1_mouseDownHandler(event:MouseEvent):void {
+				
+				trace("event target="+ event.target);
+				targetInput.text = Object(event.target).toString();
+				Radiate.setDocuments(group1);
+				new Selection().drawSelection(event.target, toolLayer);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Scroller width="500" height="500" horizontalCenter="0" verticalCenter="0">
+		<s:Group id="container" >
+			
+			<s:Group id="group1" width="500" height="500" horizontalCenter="0" verticalCenter="0"
+					 mouseDown="group1_mouseDownHandler(event)"
+					 mouseEnabledWhereTransparent="true">
+				
+				
+				<s:Rect id="rect1" x="10" width="100" height="100" radiusX="10" radiusY="10">
+					<s:fill>
+						<s:SolidColor color="#ff0000"/>
+					</s:fill>
+				</s:Rect>
+				<s:Rect id="rect2" x="0" y="120" width="60" height="60" radiusX="0" radiusY="0">
+					<s:fill>
+						<s:SolidColor color="#00ff00"/>
+					</s:fill>
+				</s:Rect>
+				
+				<s:Ellipse id="ellipse1" x="150" width="100" height="100">
+					<s:fill>
+						<s:SolidColor color="#ff0000"/>
+					</s:fill>
+				</s:Ellipse>
+				
+				<s:Button x="200" y="120" label="Hello World"/>
+			</s:Group>
+			
+			<s:Group id="toolLayer" mouseChildren="false" mouseEnabled="false">
+				
+			</s:Group>
+		</s:Group>
+		
+	</s:Scroller>
+	
+	
+	
+	<s:Group id="group2" width="500" height="500" horizontalCenter="0" y="500"
+			 mouseDown="group1_mouseDownHandler(event)"
+			 mouseEnabledWhereTransparent="true">
+		
+		<s:Rect id="rect3" x="0" width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="#555555"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	
+	<s:TextInput id="targetInput" width="100%"/>
+</s:Application>

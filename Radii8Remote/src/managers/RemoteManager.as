@@ -2,10 +2,6 @@
 package managers {
 	import com.flexcapacitor.controller.Radiate;
 	
-	import data.Item;
-	import data.Perspective;
-	import data.Preferences;
-	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
@@ -21,6 +17,10 @@ package managers {
 	import mx.collections.ArrayList;
 	import mx.events.FlexEvent;
 	import mx.utils.ObjectUtil;
+	
+	import data.Item;
+	import data.Perspective;
+	import data.Preferences;
 	
 	/**
 	 * 
@@ -220,7 +220,7 @@ package managers {
 			preferences = saveData.data.preferences;
 			
 			// create default settings
-			if (!preferences) {
+ 			if (!preferences) {
 				createDefaultPreferences();
 				saveSettings();
 			}
@@ -261,6 +261,23 @@ package managers {
 		}
 		
 		/**
+		 * Create perspective
+		 * */
+		public function createPerspective(name:String = ""):Perspective {
+			var newPerspective:Perspective;
+			
+			newPerspective 			= new Perspective();
+			newPerspective.name 	= name!="" ? name : "Perspective " + (perspectives.length + 1);
+			newPerspective.types 	= defaultTypes.slice();
+			
+			selectedPerspective 	= newPerspective;
+			
+			perspectives.push(newPerspective);
+			
+			return newPerspective;
+		}
+		
+		/**
 		 * Gets settings from disk
 		 * */
 		public static function getSettings():void {
@@ -269,8 +286,13 @@ package managers {
 			
 			
 			// set selected perspective
-			if (savedPreferences && !savedPreferences.selectedPerspective) {
-				preferences.selectedPerspective = savedPreferences.defaultPerspective;
+			if (savedPreferences) {
+				if (savedPreferences.selectedPerspective) {
+					preferences.selectedPerspective = savedPreferences.defaultPerspective;
+				}
+				if (savedPreferences.perspectives) {
+					preferences.perspectives = savedPreferences.perspectives;
+				}
 			}
 			
 			trace("Getting Settings:\n" + ObjectUtil.toString(saveData.data.preferences));
@@ -292,6 +314,7 @@ package managers {
 			
 			preferences.defaultPerspective = defaultPerspective;
 			preferences.selectedPerspective = selectedPerspective;
+			preferences.perspectives = perspectives;
 			
 			saveData.data.preferences = preferences;
 			
@@ -343,6 +366,8 @@ package managers {
 				
 				loadingStatusText += "\nParsed data items...";
 				loadingStatusText += "\nLoading Complete...";
+				loadingStatusText += "\nFound " + remoteItemsList.length + " views...";
+				loadingStatusText += "\nClick Continue...";
 				
 				itemsReceived = true;
 				
@@ -459,6 +484,24 @@ package managers {
 					}
 				}
 			}
+		}
+		
+		/**
+		 * finds perspective by name
+		 * */
+		public function findPerspectiveByName(name:String):Perspective {
+			var perspectiveCount:int = perspectives.length;
+			var currentPerspective:Perspective;
+			
+			for (var j:int;j<perspectiveCount;j++) {
+				currentPerspective = perspectives[j];
+				
+				if (currentPerspective.name==name) {
+					return currentPerspective;
+				}
+			}
+			
+			return null;
 		}
 		
 		//----------------------------------

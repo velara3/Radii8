@@ -7,14 +7,20 @@
 		 xmlns:file="com.flexcapacitor.effects.file.*" 
 		 xmlns:core="com.flexcapacitor.effects.core.*"
 		 xmlns:status="com.flexcapacitor.effects.status.*"
+		 xmlns:popup="com.flexcapacitor.effects.popup.*" 
+		 xmlns:controls="com.flexcapacitor.controls.*"
+		 
 		 creationComplete="group1_creationCompleteHandler(event)"
 		 width="400" 
-		 height="300" xmlns:popup="com.flexcapacitor.effects.popup.*" xmlns:controls="com.flexcapacitor.controls.*"  >
+		 height="300" 
+		 >
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.TypeUtils;
 			
 			import mx.events.FlexEvent;
 			public var radiate:Radiate = Radiate.instance;
@@ -34,11 +40,22 @@
 					rasterize.bitmapData = null;
 				}
 				
+				if (target) {
+					fileName = ClassUtils.getClassNameOrID(target);
+				}
+				else {
+					fileName = "Screenshot";
+				}
+				
 			}
 
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				
+				if (radiate.target) {
+					target = radiate.target as DisplayObject;
+				}
 			}
 			
 			
@@ -50,16 +67,25 @@
 	</fx:Script>
 	
 	<fx:Declarations>
+		<fx:String id="fileName">screenshot</fx:String>
 		
 		<!-- TAKE SNAPSHOT -->
 		<handlers:EventHandler eventName="click" 
 							   target="{snapshotLabel}">
 			
-			<display:Rasterize id="rasterize" target="{target}" absoluteBounds="true">
+			<display:Rasterize id="rasterize" target="{target}" source="{target}" 
+							   horizontalPadding="0" fillColor="#ff0000" absoluteBounds="true">
 				<display:invalidTargetEffect>
 					<status:ShowStatusMessage message="Select a target"/>
 				</display:invalidTargetEffect>
+				<display:successEffect>
+					<status:ShowStatusMessage message="Snapshot captured"/>
+				</display:successEffect>
+				<display:errorEffect>
+					<status:ShowStatusMessage message="An error occurred. {rasterize.errorEvent.text}"/>
+				</display:errorEffect>
 			</display:Rasterize>
+			
 			
 		</handlers:EventHandler>
 		
@@ -72,7 +98,7 @@
 			
 			<core:CopyPreviousToNext 	sourcePropertyName="byteArray" />
 			
-			<file:PromptSaveAs 			fileName="screenshot" 
+			<file:PromptSaveAs 			fileName="{fileName}" 
 										fileExtension="png"
 										targetAncestor="{this}"/>
 			
@@ -80,6 +106,7 @@
 		
 		<!-- PREVIEW -->
 		<popup:OpenPopUp id="openPopUp" 
+						 duration="250"
 						 showDropShadow="true"
 						 popUpType="{ImagePreview}"
 						 closeOnMouseDownInside="true"
@@ -97,6 +124,7 @@
 			</s:ItemRenderer>
 		</fx:Component>
 	</fx:Declarations>
+	
 	<s:HGroup width="100%" typographicCase="uppercase" left="4" right="4">
 		<s:Label id="snapshotLabel" 
 				 text="Capture Image" 

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:filters="com.flexcapacitor.filters.*"
+		 
+		 creationComplete="group1_creationCompleteHandler(event)">
+
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="4" />
+	</s:layout>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.tools.Selection;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.events.FlexEvent;
+			
+			public var radiate:Radiate;
+			public var tool:ITool;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				//radiate.addEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler, false, 0, true);
+				
+				tool = radiate.selectedTool;
+				
+				updateTool(tool);
+			}
+			/*
+			protected function toolChangeHandler(event:RadiateEvent):void {
+				updateTool(event.tool);
+			}*/
+			
+			public function updateTool(tool:ITool):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				
+				if (toolDescription && toolDescription.instance 
+					&& toolDescription.instance is Selection) {
+					var selectionTool:Selection = Selection(toolDescription.instance);
+					showSelection.selected = selectionTool.showSelection;
+					showLabel.selected = selectionTool.showSelectionLabel;
+				}
+			}
+			
+			protected function showSelection_changeHandler(event:Event):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var selectedTool:ITool = tool;
+				
+				
+				if (toolDescription.instance) {
+					var selectionTool:Selection = Selection(toolDescription.instance);
+					selectionTool.showSelection = showSelection.selected;
+				}
+				
+			}
+			
+			
+			protected function showLabel_changeHandler(event:Event):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var selectedTool:ITool = tool;
+				
+				if (toolDescription.instance) {
+					var selectionTool:Selection = Selection(toolDescription.instance);
+					selectionTool.showSelectionLabel = showLabel.selected;
+				}
+				
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:CheckBox id="showSelection" label="Show Selection" change="showSelection_changeHandler(event)"/>
+	<s:CheckBox id="showLabel" label="Show Label" change="showLabel_changeHandler(event)"/>
+	<!--<s:CheckBox label="Layer" />
+	<s:CheckBox label="Group" />-->
+
+</s:Group>

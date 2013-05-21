@@ -3,7 +3,9 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.events.HistoryEvent;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.logging.RadiateLogTarget;
+	import com.flexcapacitor.tools.ITool;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
+	import com.flexcapacitor.utils.TypeUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	
@@ -12,6 +14,7 @@ package com.flexcapacitor.controller {
 	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
 	import flash.geom.Rectangle;
+	import flash.system.ApplicationDomain;
 	import flash.utils.Dictionary;
 	
 	import mx.collections.ArrayCollection;
@@ -33,6 +36,7 @@ package com.flexcapacitor.controller {
 	import mx.utils.ArrayUtil;
 	
 	import spark.components.Application;
+	import spark.components.Scroller;
 	import spark.components.supportClasses.GroupBase;
 	import spark.components.supportClasses.ItemRenderer;
 	import spark.core.ContentCache;
@@ -46,6 +50,11 @@ package com.flexcapacitor.controller {
 	 * Dispatched when an item is added to the target
 	 * */
 	[Event(name="addItem", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when an item is removed from the target
+	 * */
+	[Event(name="removeItem", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when an item is removed from the target
@@ -66,6 +75,31 @@ package com.flexcapacitor.controller {
 	 * Dispatched when a property edit is requested
 	 * */
 	[Event(name="propertyEdit", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when the tool changes
+	 * */
+	[Event(name="toolChanged", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Not used yet. 
+	 * */
+	[Event(name="initialized", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Used when the tools list has been updated. 
+	 * */
+	[Event(name="toolsUpdated", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Used when the components list is updated. 
+	 * */
+	[Event(name="componentsUpdated", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Used when the document canvas is updated. 
+	 * */
+	[Event(name="canvasChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
 	 * Dispatches events when the target or targets property changes or is about to change. 
@@ -90,6 +124,7 @@ package com.flexcapacitor.controller {
 		public static const ADDED:String = "added";
 		public static const MOVED:String = "moved";
 		public static const ADD_ERROR:String = "addError";
+		public static const REMOVE_ERROR:String = "removeError";
 		public static const RADIATE_LOG:String = "radiate";
 		
 		public function Radiate(s:SINGLEDOUBLE) {
@@ -98,6 +133,9 @@ package com.flexcapacitor.controller {
 			// Create a target
 			setLoggingTarget(defaultLogTarget);
 			
+			
+			// initialize
+			initialize();
 		}
 		
 		//----------------------------------
@@ -156,6 +194,8 @@ package com.flexcapacitor.controller {
 			return instance;
 		}
 		
+		public static var radiateReferences:RadiateReferences;
+		
 		//----------------------------------
 		//
 		//  Events Management
@@ -172,6 +212,31 @@ package com.flexcapacitor.controller {
 				targetChangeEvent.selectedItem = target && target is Array ? target[0] : target;
 				targetChangeEvent.targets = ArrayUtil.toArray(target);
 				dispatchEvent(targetChangeEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch canvas change event
+		 * */
+		public function dispatchCanvasChangeEvent(canvas:*, canvasBackgroundParent:*, scroller:Scroller):void {
+			var targetChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.CANVAS_CHANGE);
+			
+			if (hasEventListener(RadiateEvent.CANVAS_CHANGE)) {
+				dispatchEvent(targetChangeEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch tool change event
+		 * */
+		public function dispatchToolChangeEvent(value:ITool):void {
+			var toolChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.TOOL_CHANGE);
+			
+			if (hasEventListener(RadiateEvent.TOOL_CHANGE)) {
+				toolChangeEvent.selectedItem = target && target is Array ? target[0] : target;
+				toolChangeEvent.targets = targets;
+				toolChangeEvent.tool = value;
+				dispatchEvent(toolChangeEvent);
 			}
 		}
 		
@@ -215,6 +280,7 @@ package com.flexcapacitor.controller {
 				event.multipleSelection = multipleSelection;
 				event.selectedItem = target && target is Array ? target[0] : target;
 				event.targets = ArrayUtil.toArray(target);
+				
 				for (var i:int;i<length;i++) {
 					if (changes[i] is AddItems) {
 						event.addItemsInstance = changes[i];
@@ -238,6 +304,7 @@ package com.flexcapacitor.controller {
 				event.multipleSelection = multipleSelection;
 				event.selectedItem = target && target is Array ? target[0] : target;
 				event.targets = ArrayUtil.toArray(target);
+				
 				for (var i:int;i<length;i++) {
 					if (changes[i] is AddItems) {
 						event.addItemsInstance = changes[i];
@@ -261,6 +328,7 @@ package com.flexcapacitor.controller {
 				event.multipleSelection = multipleSelection;
 				event.selectedItem = target && target is Array ? target[0] : target;
 				event.targets = ArrayUtil.toArray(target);
+				
 				for (var i:int;i<length;i++) {
 					if (changes[i] is AddItems) {
 						event.addItemsInstance = changes[i];
@@ -308,7 +376,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * 
+		 * Sets the logging target
 		 * */
 		public static function setLoggingTarget(target:AbstractTarget = null, category:String = null, consoleObject:Object = null):void {
 			
@@ -333,6 +401,222 @@ package com.flexcapacitor.controller {
 			if (consoleObject) {
 				console = consoleObject;
 			}
+		}
+		
+		/**
+		 * Creates the list of components and tools.
+		 * */
+		public static function initialize():void {
+			
+			
+			createComponentList();
+			
+			createToolsList();
+		}
+		
+		/**
+		 * Creates the list of components.
+		 * */
+		public static function createComponentList():void {
+			var xml:XML;
+			var length:uint;
+			var items:XMLList;
+			var className:String;
+			var skinClassName:String;
+			var inspectorClassName:String;
+			var hasDefinition:Boolean;
+			var classType:Object;
+			var includeItem:Boolean;
+			var attributes:XMLList;
+			var attributesLength:int;
+			var defaults:Object;
+			var propertyName:String;
+			var item:XML;
+			
+			
+			
+			xml = new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
+			
+			// get list of component classes 
+			items = XML(xml).component;
+			
+			length = items.length();
+			
+			for (var i:int;i<length;i++) {
+				item = items[i];
+				
+				var name:String = String(item.id);
+				className = item.attribute("class");
+				skinClassName = item.attribute("skinClass");
+				inspectorClassName = item.attribute("inspector");
+				
+				includeItem = item.attribute("include")=="false" ? false : true;
+				
+				if (!includeItem) continue;
+				
+				
+				// check that definitions exist in domain
+				// skip any support classes
+				if (className.indexOf("mediaClasses")==-1 && 
+					className.indexOf("gridClasses")==-1 &&
+					className.indexOf("windowClasses")==-1 &&
+					className.indexOf("supportClasses")==-1) {
+					
+					hasDefinition = ApplicationDomain.currentDomain.hasDefinition(className);
+					
+					if (hasDefinition) {
+						classType = ApplicationDomain.currentDomain.getDefinition(className);
+						
+						// need to check if we have the skin as well
+						
+						//hasDefinition = ApplicationDomain.currentDomain.hasDefinition(skinClassName);
+						
+						if (hasDefinition) {
+							
+							// get default values
+							if (item.defaults) {
+								attributes = item.defaults.attributes();
+								attributesLength = attributes.length();
+								defaults = {};
+								
+								for each (var value:Object in attributes) {
+									propertyName = String(value.name());
+									
+									if (propertyName=="dataProvider") {
+										var array:Array = String(value).split(",");
+										defaults[propertyName] = new ArrayCollection(array);
+									}
+									else {
+										defaults[propertyName] = String(value);
+									}
+								}
+							}
+							
+							Radiate.addComponentType(item.@id, className, classType, inspectorClassName, null, defaults);
+						}
+						else {
+							Radiate.log.error("Component skin class, '" + skinClassName + "' not found for '" + className + "'.");
+						}
+					}
+					else {
+						Radiate.log.error("Component class not found: " + className);
+					}
+					
+				}
+				else {
+					// delete support classes
+					// may need to refactor why we are including them in the first place
+					delete items[i];
+					length--;
+				}
+			}
+			
+			// componentDescriptions should now be populated
+		}
+		
+		
+		/**
+		 * Creates the list of tools.
+		 * */
+		public static function createToolsList():void {
+			var xml:XML;
+			var length:uint;
+			var items:XMLList;
+			var className:String;
+			var inspectorClassName:String;
+			var hasDefinition:Boolean;
+			var toolClassDefinition:Object;
+			var inspectorClassDefinition:Object;
+			var includeItem:Boolean;
+			var attributes:XMLList;
+			var attributesLength:int;
+			var item:XML;
+			var defaults:Object;
+			var propertyName:String;
+			var toolClassFactory:ClassFactory;
+			var inspectorClassFactory:ClassFactory;
+			var toolInstance:ITool;
+			var inspectorInstance:UIComponent;
+			
+			
+			xml = new XML(new Radii8LibraryToolAssets.toolManifestDefaults());
+			
+			// get list of tool classes 
+			items = XML(xml).tool;
+			
+			length = items.length();
+			
+			for (var i:int;i<length;i++) {
+				item = items[i];
+				
+				var name:String = String(item.id);
+				className = item.attribute("class");
+				inspectorClassName = item.attribute("inspector");
+				
+				includeItem = item.attribute("include")=="false" ? false : true;
+				
+				if (!includeItem) continue;
+				
+				hasDefinition = ApplicationDomain.currentDomain.hasDefinition(className);
+				
+				if (hasDefinition) {
+					toolClassDefinition = ApplicationDomain.currentDomain.getDefinition(className);
+					
+					
+					// get default values
+					if (item.defaults) {
+						attributes = item.defaults.attributes();
+						attributesLength = attributes.length();
+						defaults = {};
+						
+						for each (var value:Object in attributes) {
+							propertyName = String(value.name());
+							
+							if (propertyName=="dataProvider") {
+								defaults[propertyName] = new ArrayCollection(String(value).split(","));
+							}
+							else {
+								defaults[propertyName] = String(value);
+							}
+						}
+					}
+					
+					// create tool
+					toolClassFactory = new ClassFactory(toolClassDefinition as Class);
+					toolClassFactory.properties = defaults;
+					toolInstance = toolClassFactory.newInstance();
+					
+					
+					// create inspector
+					if (inspectorClassName!="") {
+						hasDefinition = ApplicationDomain.currentDomain.hasDefinition(inspectorClassName);
+						
+						if (hasDefinition) {
+							inspectorClassDefinition = ApplicationDomain.currentDomain.getDefinition(inspectorClassName);
+							
+							// Create tool inspector
+							inspectorClassFactory = new ClassFactory(inspectorClassDefinition as Class);
+							//classFactory.properties = defaults;
+							inspectorInstance = inspectorClassFactory.newInstance();
+					
+						}
+						else {
+							var errorMessage:String = "Could not find inspector, '" + inspectorClassName + "' for tool, '" + className + "'. ";
+							errorMessage += "You may need to add a reference to it in RadiateReferences.";
+							Radiate.log.error(errorMessage);
+						}
+					}
+						
+					Radiate.addToolType(item.@id, className, toolClassDefinition, toolInstance, inspectorClassName, null, defaults);
+				}
+				else {
+					//trace("Tool class not found: " + classDefinition);
+					Radiate.log.error("Tool class not found: " + toolClassDefinition);
+				}
+				
+			}
+			
+			// toolDescriptions should now be populated
 		}
 		
 		//----------------------------------
@@ -441,7 +725,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 *  Get's a non null document
+		 *  Get's a non null document. Should not be doing this for production. 
 		 * */
 		public function getNonNullDocument():Object {
 			if (_documents.length > 0)
@@ -501,6 +785,8 @@ package com.flexcapacitor.controller {
 			
 		}
 		
+		public var toolLayer:IVisualElementContainer;
+		
 		/**
 		 * Default log target
 		 * */
@@ -514,6 +800,102 @@ package com.flexcapacitor.controller {
 		private static var _log:ILogger;
 		
 		private static var _console:Object;
+		
+		
+		//----------------------------------
+		//
+		//  Tools Management
+		// 
+		//----------------------------------
+		
+		public var _selectedTool:ITool;
+		
+		/**
+		 * Get selected tool.
+		 * */
+		public function get selectedTool():ITool {
+			return _selectedTool;
+		}
+		
+		/**
+		 * Collection of tools that can be added or removed to 
+		 * */
+		[Bindable]
+		public static var toolsDescriptions:ArrayCollection = new ArrayCollection();
+		
+		/**
+		 * Add the named tool class to the list of available tools.
+		 * 
+		 * Not sure if we should create an instance here or earlier or later. 
+		 * */
+		public static function addToolType(name:String, className:String, classType:Object, instance:ITool, inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null):Boolean {
+			var definition:ComponentDescription;
+			var length:uint = toolsDescriptions.length;
+			var item:ComponentDescription;
+			
+			for (var i:uint;i<length;i++) {
+				item = toolsDescriptions.getItemAt(i) as ComponentDescription;
+				
+				// check if it exists already
+				if (item && item.classType==classType) {
+					return false;
+				}
+			}
+			
+			definition = new ComponentDescription();
+			
+			definition.name = name;
+			definition.icon = icon;
+			definition.className = className;
+			definition.classType = classType;
+			definition.defaultStyles = defaultStyles;
+			definition.defaultProperties = defaultProperties;
+			definition.instance = instance;
+			definition.inspectorClassName = inspectorClassName;
+			
+			toolsDescriptions.addItem(definition);
+			
+			return true;
+		}
+		
+		/**
+		 * Sets the selected tool
+		 * */
+		public function setTool(value:ITool, dispatchEvent:Boolean = true, cause:String = ""):void {
+			
+			if (selectedTool) {
+				selectedTool.disable();
+			}
+			
+			_selectedTool = value;
+			
+			if (selectedTool) {
+				selectedTool.enable();
+			}
+			
+			if (dispatchEvent) {
+				instance.dispatchToolChangeEvent(selectedTool);
+			}
+			
+		}
+		
+		/**
+		 * Get tool description.
+		 * */
+		public function getToolDescription(instance:ITool):ComponentDescription {
+			var length:int = toolsDescriptions.length;
+			var componentDescription:ComponentDescription;
+			
+			for (var i:int;i<length;i++) {
+				componentDescription = ComponentDescription(toolsDescriptions.getItemAt(i));
+				
+				if (componentDescription.instance==instance) {
+					return componentDescription;
+				}
+			}
+			
+			return null;
+		}
 		
 		//----------------------------------
 		//
@@ -536,7 +918,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add the named component class to the list of available components
 		 * */
-		public static function addComponentType(name:String, className:String, classType:Object, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null):Boolean {
+		public static function addComponentType(name:String, className:String, classType:Object, inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null):Boolean {
 			var definition:ComponentDescription;
 			var length:uint = componentDescriptions.length;
 			var item:ComponentDescription;
@@ -560,10 +942,68 @@ package com.flexcapacitor.controller {
 			definition.classType = classType;
 			definition.defaultStyles = defaultStyles;
 			definition.defaultProperties = defaultProperties;
+			definition.inspectorClassName = inspectorClassName;
 			
 			componentDescriptions.addItem(definition);
 			
 			return true;
+		}
+		
+		/**
+		 * Remove the named component class
+		 * */
+		public static function removeComponentType(className:String):Boolean {
+			var definition:ComponentDescription;
+			var length:uint = componentDescriptions.length;
+			var item:ComponentDescription;
+			
+			for (var i:uint;i<length;i++) {
+				item = componentDescriptions.getItemAt(i) as ComponentDescription;
+				
+				if (item && item.classType==className) {
+					componentDescriptions.removeItemAt(i);
+				}
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Removes all components. If components were removed then returns true. 
+		 * */
+		public static function removeAllComponents():Boolean {
+			var length:uint = componentDescriptions.length;
+			
+			if (length) {
+				componentDescriptions.removeAll();
+				return true;
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * The background canvas. 
+		 * */
+		public var canvasBackground:Object;
+		public var canvasBackgroundParent:Object;
+		public var canvasScroller:Scroller;
+		
+		/**
+		 * Sets the canvas and canvas parent. Not sure if going to be used. 
+		 * May use canvas property on document.
+		 * */
+		public function setCanvas(value:Object, canvasParent:Object, scroller:Scroller, dispatchEvent:Boolean = true, cause:String = ""):void {
+			if (canvasBackground==value) return;
+			
+			canvasBackground = value;
+			canvasBackgroundParent = canvasParent;
+			canvasScroller = scroller;
+			
+			if (dispatchEvent) {
+				instance.dispatchCanvasChangeEvent(canvasBackground, canvasBackgroundParent, scroller);
+			}
+			
 		}
 		
 		/**
@@ -584,9 +1024,9 @@ package com.flexcapacitor.controller {
 			}
 			
 			// move this later
-			if (_documents.length==0) {
+			/*if (_documents.length==0) {
 				clearSelection();
-			}
+			}*/
 		}
 		
 		/**
@@ -626,9 +1066,9 @@ package com.flexcapacitor.controller {
 			}
 			
 			// move this later
-			if (_documents.length==0) {
+			/*if (_documents.length==0) {
 				clearSelection();
-			}
+			}*/
 		}
 		
 		/**
@@ -648,10 +1088,6 @@ package com.flexcapacitor.controller {
 				instance.dispatchTargetChangeEvent(target);
 			}
 			
-			// move this later
-			if (_targets.length==0) {
-				clearSelection();
-			}
 		}
 		
 		/**
@@ -691,10 +1127,6 @@ package com.flexcapacitor.controller {
 				instance.dispatchTargetChangeEvent(_targets, true);
 			}
 			
-			// move this later
-			if (_targets.length==0) {
-				clearSelection();
-			}
 		}
 		
 		/**
@@ -778,107 +1210,12 @@ package com.flexcapacitor.controller {
 			return DisplayObjectUtils.getComponentDisplayList(instance.document);
 		}
 		
-		public static var targetSelectionGroup:ItemRenderer = new TargetSelectionGroup();
-		public static var mouseLocationLines:IFlexDisplayObject = new ListDropIndicator();
-		public static var showSelectionLabel:Boolean = true;
-		public static var showSelectionLabelOnDocument:Boolean = false;
-		public static var showSelectionBackground:Boolean = true;
-		public static var showSelectionBackgroundOnDocument:Boolean = false;
-		public static var lastTargetCandidate:Object;
-		
 		/**
-		 * Show selection box on target change
-		 * */
-		public static var showSelectionRectangle:Boolean = true;
-		
-		/**
-		 * Clears the outline around a target display object
-		 * */
-		public static function clearSelection():void {
-			
-			if (targetSelectionGroup) {
-				targetSelectionGroup.visible = false;
-			}
-		}
-		
-		/**
-		 * Draws outline around target display object
-		 * */
-		public static function drawSelection(target:Object):void {
-			var rectangle:Rectangle;
-			
-			// creates an instance of the bounding box that will be shown around the drop target
-			if (targetSelectionGroup) {
-				targetSelectionGroup.mouseEnabled = false;
-				targetSelectionGroup.mouseChildren = false;
-			}
-			
-			// get bounds
-			if (!target) {
-				
-				// set values to zero
-				if (!rectangle) {
-					rectangle = new Rectangle();
-				}
-				
-				// hide selection group
-				if (targetSelectionGroup.visible) {
-					targetSelectionGroup.visible = false;
-				}
-			}
-			else {
-				
-				// draw the selection rectangle only if it's changed
-				if (lastTargetCandidate!=target) {
-					var topLevelApplication:Object = FlexGlobals.topLevelApplication;
-					// if selection is offset then check if using system manager sandbox root or top level root
-					var systemManager:ISystemManager = ISystemManager(topLevelApplication.systemManager);
-					
-					// no types so no dependencies
-					var marshallPlanSystemManager:Object = systemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
-					var targetCoordinateSpace:DisplayObject;
-					
-					if (marshallPlanSystemManager && marshallPlanSystemManager.useSWFBridge()) {
-						targetCoordinateSpace = Sprite(systemManager.getSandboxRoot());
-					}
-					else {
-						targetCoordinateSpace = Sprite(topLevelApplication);
-					}
-					
-					// get target bounds
-					if (target is UIComponent) {
-						rectangle = UIComponent(target).getVisibleRect(target.parent);
-					}
-					else {
-						rectangle = DisplayObject(target).getBounds(targetCoordinateSpace);
-					}
-					
-					// size and position fill
-					targetSelectionGroup.width = rectangle.width;
-					targetSelectionGroup.height = rectangle.height;
-					targetSelectionGroup.x = rectangle.x;
-					targetSelectionGroup.y = rectangle.y;
-					
-					targetSelectionGroup.data = target;
-					
-					// unhide target selection group
-					if (!targetSelectionGroup.visible) {
-						targetSelectionGroup.visible = true;
-					}
-					
-					// show selection / bounding box 
-					PopUpManager.addPopUp(targetSelectionGroup, targetCoordinateSpace);
-					targetSelectionGroup.validateNow();
-				}
-				
-			}
-		}
-		
-		/**
-		 * Returns true if the property was changed
-		 * Usage:
-		 * setProperty(myButton, "x", 40);
-		 * setProperty([myButton,myButton2], "x", 40);
+		 * Returns true if the property was changed.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>Radiate.setProperty(myButton, "x", 40);</pre>
+		 * <pre>Radiate.setProperty([myButton,myButton2], "x", 40);</pre>
 		 * */
 		public static function setProperty(target:Object, property:String, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
 			var targets:Array = ArrayUtil.toArray(target);
@@ -901,11 +1238,12 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Returns true if the property(s) were changed.
-		 * Usage:
-		 * setProperties([myButton,myButton2], ["x","y"], {x:40,y:50});
-		 * setProperties(myButton, "x", 40);
-		 * setProperties(button, ["x", "left"], {x:50,left:undefined});
+		 * Returns true if the property(s) were changed.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>setProperties([myButton,myButton2], ["x","y"], {x:40,y:50});</pre>
+		 * <pre>setProperties(myButton, "x", 40);</pre>
+		 * <pre>setProperties(button, ["x", "left"], {x:50,left:undefined});</pre>
 		 * */
 		public static function setProperties(target:Object, property:*, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
 			var targets:Array = ArrayUtil.toArray(target);
@@ -927,14 +1265,24 @@ package com.flexcapacitor.controller {
 			return false;
 		}
 		
+		/**
+		 * Gets the value translated into a type. 
+		 * */
+		public static function getTypedValue(value:*, valueType:*):* {
+			
+			return TypeUtils.getTypedValue(value, valueType);
+		}
 		
 		
 		/**
 		 * Move a component in the display list and sets any properties 
-		 * such as positioning
+		 * such as positioning<br/><br/>
 		 * 
-		 * Usage:
-		 * Radiate.moveDisplayItems(new Button(), event.targetCandidate);
+		 * Usage:<br/>
+		 * <pre>Radiate.moveElement(new Button(), parentComponent);</pre>
+		 * 
+		 * Usage:<br/>
+		 * <pre>Radiate.moveElement(radiate.target, null, ["x"], 15);</pre>
 		 * */
 		public static function moveElement(items:*, 
 										   destination:Object, 
@@ -949,6 +1297,7 @@ package com.flexcapacitor.controller {
 										   isStyle:Boolean		= false, 
 										   vectorClass:Class	= null,
 										   keepUndefinedValues:Boolean = true):String {
+			
 			var visualElement:IVisualElement;
 			var moveItems:AddItems;
 			var childIndex:int;
@@ -998,6 +1347,12 @@ package com.flexcapacitor.controller {
 					//return SAME_PARENT;
 					
 				}
+			}
+			
+			// if destination is null then we assume we are moving
+			else {
+				isSameParent = true;
+				isSameOwner = true;
 			}
 			
 			
@@ -1118,11 +1473,11 @@ package com.flexcapacitor.controller {
 					instance.dispatchMoveEvent(items, changes, properties);
 				}
 				
+				setTargets(items, true);
+				
 				if (properties) {
 					instance.dispatchPropertyChangeEvent(items, changes, properties);
 				}
-				
-				setTargets(items, true);
 				
 				return MOVED; // we assume moved if it got this far - needs more checking
 			}
@@ -1303,6 +1658,18 @@ package com.flexcapacitor.controller {
 			}
 			
 			return ADD_ERROR;
+		}
+		
+		
+		/**
+		 * Removes a component from the display list.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>Radiate.removeElement(radiate.targets);</pre>
+		 * */
+		public static function removeElement(items:*, description:String = RadiateEvent.REMOVE_ITEM):String {
+			
+			return REMOVE_ERROR;
 		}
 		
 		/**
@@ -1880,12 +2247,12 @@ package com.flexcapacitor.controller {
 			for each (change in changes) {
 				historyEvent 						= factory.newInstance();
 				historyEvent.action 				= action;
-				historyEvent.properties 			= ArrayUtil.toArray(properties);
 				historyEvent.targets 				= targets;
 				historyEvent.description 			= description;
 				
 				// check for property change or add display object
 				if (change is PropertyChanges) {
+					historyEvent.properties 		= ArrayUtil.toArray(properties);
 					historyEvent.propertyChanges 	= PropertyChanges(change);
 				}
 				else if (change is AddItems) {
@@ -1904,6 +2271,9 @@ package com.flexcapacitor.controller {
 			
 		}
 		
+		/**
+		 * Creates a remove item from an add item. 
+		 * */
 		public static function createReverseAddItems(target:Object):AddItems {
 			var elementContainer:IVisualElementContainer;
 			var position:String = AddItems.LAST;

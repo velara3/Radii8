@@ -44,12 +44,8 @@
 				
 			}
 			
-			protected function loadButton_clickHandler(event:MouseEvent):void {
-				dispatchEvent(new Event("loadView", true));
-			}
-			
 			protected function enabledCheckbox_changeHandler(event:Event):void {
-				enabledCheckbox.selected;
+				perspective = RemoteManager.selectedPerspective;
 				RemoteManager.updatePerspectiveItem(perspective, item, enabledCheckbox.selected);
 				
 				//dispatchEvent(new Event(RemoteManager.SETTINGS_CHANGE, true));

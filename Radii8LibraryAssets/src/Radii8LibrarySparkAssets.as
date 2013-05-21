@@ -1,5 +1,18 @@
 package {
+	import spark.components.BorderContainer;
+	import spark.components.ButtonBar;
+	import spark.components.RadioButton;
+	import spark.components.TabBar;
+	import spark.components.ToggleButton;
+	import spark.skins.spark.BorderContainerSkin;
+	import spark.skins.spark.ButtonBarSkin;
+	import spark.skins.spark.RadioButtonSkin;
+	import spark.skins.spark.TabBarSkin;
+	import spark.skins.spark.ToggleButtonSkin;
 	
+	/**
+	 * Classes, skins and icons
+	 * */
 	public class Radii8LibrarySparkAssets {
 		
 		public function Radii8LibrarySparkAssets() {
@@ -12,6 +25,8 @@ package {
 		
 		/**
 		 * var xml:XML = new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
+		 * // get list of component classes
+		 * items = XML(xml).component;
 		 * */
 		[Embed(source="/assets/data/spark-manifest-defaults.xml", mimeType="application/octet-stream")]
 		public static const sparkManifestDefaults:Class;
@@ -29,6 +44,9 @@ package {
 		
 		[Embed(source="assets/icons/spark/containers/BorderContainer.png")]
 		public static const BorderContainerIcon:Class;
+		
+		public static var borderContainer:BorderContainer;
+		public static var borderContainerSkin:BorderContainerSkin;
 		
 		//[Embed(source="assets/icons/containers/Box.png")]
 		//public static const BoxIcon:Class;
@@ -106,6 +124,8 @@ package {
 		
 		[Embed(source="assets/icons/spark/controls/Button.png")]
 		public static const ButtonBarIcon:Class;
+		public static var buttonBar:ButtonBar;
+		public static var buttonBarSkin:ButtonBarSkin;
 		
 		[Embed(source="assets/icons/spark/controls/CheckBox.png")]
 		public static const CheckBoxIcon:Class;
@@ -169,6 +189,8 @@ package {
 		
 		[Embed(source="assets/icons/spark/controls/RadioButton.png")]
 		public static const RadioButtonIcon:Class;
+		public static const radioButton:RadioButton;
+		public static const radioButtonSkin:RadioButtonSkin;
 		
 		[Embed(source="assets/icons/spark/controls/RadioButtonGroup.png")]
 		public static const RadioButtonGroupIcon:Class;
@@ -193,6 +215,8 @@ package {
 		
 		[Embed(source="assets/icons/spark/controls/TabBar.png")]
 		public static const TabBarIcon:Class;
+		public static const tabBar:TabBar;
+		public static const tabBarSkin:TabBarSkin;
 		
 		//[Embed(source="assets/icons/spark/controls/Text.png")]
 		//public static const TextIcon:Class;
@@ -214,6 +238,8 @@ package {
 		
 		[Embed(source="assets/icons/spark/controls/ToggleButton.png")]
 		public static const ToggleButtonIcon:Class;
+		public static const toggleButton:ToggleButton;
+		public static const toggleButtonSkin:ToggleButtonSkin;
 		
 		[Embed(source="assets/icons/spark/controls/VideoDisplay.png")]
 		public static const VideoDisplayIcon:Class;

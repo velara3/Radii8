@@ -3,14 +3,25 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 width="200" height="100"
-		 creationComplete="group1_creationCompleteHandler(event)">
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:controls="com.flexcapacitor.controls.*">
 	
+	
+	<!-- to use
+	
+	
+				Radiate.log.info("Document SHOW event");
+				Radiate.log.error(event.text);
+	
+	-->
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			
 			import mx.events.FlexEvent;
 			import mx.logging.AbstractTarget;
+			
+			import spark.components.VScrollBar;
+			import spark.events.TextOperationEvent;
 			
 			private var radiate:Radiate;
 			
@@ -33,26 +44,63 @@
 				consoleTextArea.text = "";
 			}
 			
+			protected function consoleTextArea_valueCommitHandler(event:FlexEvent):void {
+				scrollToTheBottom();
+			}
+			
+			protected function consoleTextArea_changeHandler(event:TextOperationEvent):void {
+				scrollToTheBottom()
+			}
+			
+			public function scrollToTheBottom():void {
+				var scrollBar:VScrollBar = consoleTextArea.scroller.verticalScrollBar;
+				scrollBar.value = scrollBar.maximum;
+				consoleTextArea.validateNow();
+				
+				if (scrollBar.value != scrollBar.maximum) {
+					scrollBar.value = scrollBar.maximum;
+					consoleTextArea.validateNow();
+				}
+				
+				if (scrollBar.maximum>3500) {
+					consoleTextArea.text = "";
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
-	<s:VGroup width="100%" gap="2" height="100%">
-		<s:Label text="Clear" 
-				 typographicCase="uppercase" 
-				 textAlign="center"
-				 verticalAlign="middle"
-				 fontWeight="bold"
-				 backgroundAlpha=".75"
-				 backgroundColor="#FFFFFF"
-				 useHandCursor="true"
-				 buttonMode="true"
-				 fontSize="10"
-				 click="clearTextAreaHandler(event)"
-				 height="14"
-				 />
-		<s:TextArea id="consoleTextArea" width="100%" height="100%"
-					tabFocusEnabled="false"
-					fontSize="10"
-					focusAlpha="0"/>
- 	</s:VGroup>
+	<!--<s:Label text="Clear" 
+			 height="14"
+			 right="4"
+			 fontSize="10"
+			 typographicCase="uppercase" 
+			 textAlign="center"
+			 verticalAlign="middle"
+			 fontWeight="bold"
+			 backgroundAlpha=".75"
+			 backgroundColor="#FFFFFF"
+			 useHandCursor="true"
+			 buttonMode="true"
+			 click="clearTextAreaHandler(event)"
+			 />-->
+	<s:TextArea id="consoleTextArea" 
+				top="12"
+				width="100%" height="100%"
+				tabFocusEnabled="false"
+				fontSize="11"
+				focusAlpha="0"
+				fontFamily="Courier New"
+				borderVisible="false"
+				change="consoleTextArea_changeHandler(event)"
+				valueCommit="consoleTextArea_valueCommitHandler(event)"
+				/>
+	<controls:ImageButton source="{Radii8LibraryAssets.clear}" 
+						  right="8"
+						  click="clearTextAreaHandler(event)"
+						  width="18"
+						  height="18"
+						  horizontalAlign="center"
+						  verticalAlign="middle"
+						  />
 </s:Group>

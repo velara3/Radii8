@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 minWidth="200" 
+		 minHeight="100"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	
+	<!-- 
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			/**
+			 * Reference to Radiate
+			 * */
+			public var radiate:Radiate;
+			
+			public var componentDescription:ComponentDescription;
+
+			private var _tool:ITool;
+			
+			public function get tool():ITool {
+				return _tool;
+			}
+			
+			[Bindable]
+			public function set tool(value:ITool):void {
+				
+				_tool = value;
+				
+				if (_tool) {
+					
+				}
+				else {
+					
+				}
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, handleToolChange);
+				
+				if (radiate.selectedTool) {
+					updateTool(radiate.selectedTool);
+				}
+			}
+			
+			protected function handleToolChange(event:RadiateEvent):void {
+				
+				updateTool(event.tool);
+			}
+			
+			
+			public function updateTool(newTool:ITool):void {
+				var inspectorInstance:UIComponent;
+				
+				if (tool!=newTool) {
+					removeAllElements();
+				}
+				
+				tool = newTool;
+				
+				if (tool) {
+					componentDescription = Radiate.getInstance().getToolDescription(tool);
+					inspectorInstance = componentDescription.getInspectorInstance();
+					
+					if (inspectorInstance) {
+						addElement(inspectorInstance);
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	
+</s:Group>

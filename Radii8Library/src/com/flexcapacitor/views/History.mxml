@@ -2,12 +2,14 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:filters="com.flexcapacitor.filters.*" 
+		 xmlns:controls="com.flexcapacitor.controls.*"
+		 
 		 styleName="radiateInspector"
 		 width="100%" 
 		 minHeight="20"
 		 creationComplete="creationCompleteHandler(event)" 
-		 xmlns:filters="com.flexcapacitor.filters.*" 
-		 xmlns:controls="com.flexcapacitor.controls.*">
+		 >
 	
 	<fx:Script>
 		<![CDATA[
@@ -18,7 +20,6 @@
 			import mx.collections.ArrayCollection;
 			import mx.events.FlexEvent;
 			
-			import spark.components.supportClasses.ItemRenderer;
 			import spark.core.NavigationUnit;
 			import spark.events.IndexChangeEvent;
 			
@@ -55,13 +56,20 @@
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+				
+				scrollToBottom();
 			}
 			
+			/**
+			 * 
+			 * */
 			protected function targetChangeHandler(event:RadiateEvent):void {
 				target = event.selectedItem;
 			}
 			
-			
+			/**
+			 * 
+			 * */
 			public function redo():void {
 				Radiate.redo();
 				var index:int = list.selectedIndex;
@@ -74,8 +82,12 @@
 				}
 			}
 			
+			/**
+			 * 
+			 * */
 			public function undo():void {
 				Radiate.undo();
+				
 				var index:int = list.selectedIndex;
 				
 				if (index>-1) {
@@ -114,6 +126,9 @@
 				return label;
 			}
 			
+			/**
+			 * Show the last item in the list
+			 * */
 			private function scrollToBottom():void {
 				// update the verticalScrollPosition to the end of the List
 				// virtual layout may require us to validate a few times
@@ -139,6 +154,9 @@
 				}
 			}
 			
+			/**
+			 * 
+			 * */
 			protected function changeHandler(event:IndexChangeEvent):void
 			{
 				var newIndex:int = event.newIndex;
@@ -157,23 +175,59 @@
 						redo();
 					}
 				}
+				
+				ensureIndexIsVisible(newIndex);
 			}
 			
+			/**
+			 * 
+			 * */
 			protected function historyChangeHandler(event:Event):void {
 				
-				if (list.dataProvider.length) {
-					list.ensureIndexIsVisible(list.dataProvider.length-1);
+			}
+			
+			/**
+			 * 
+			 * */
+			public function ensureIndexIsVisible(index:int=0):void {
+				
+				list.ensureIndexIsVisible(index);
+				list.validateNow();
+				list.ensureIndexIsVisible(index);
+			}
+			
+			/**
+			 * 
+			 * */
+			public function ensureLastItemVisible():void {
+				if (list.dataProvider.length>0) {
+					ensureIndexIsVisible(list.dataProvider.length-1);
+					scrollToBottom();
 				}
 			}
 			
+			/**
+			 * 
+			 * */
 			protected function revertHandler(event:MouseEvent):void {
 				
 				var length:int = list.selectedIndex+1;
-				for (var i:int;i<length;i++) {
-					undo();
+				var i:int;
+				
+				if (length>10) {
+					for (i;i<length;i++) {
+						undo();
+					}
+				}
+				else {
+					for (i;i<length;i++) {
+						undo();
+					}
 				}
 				
 				list.selectedIndex = -1;
+				
+				ensureIndexIsVisible(0);
 			}
 			
 		]]>
@@ -190,13 +244,13 @@
 		
 	</fx:Declarations>
 	
-	<s:Group width="100%" height="100%" left="5" right="5" bottom="0">
+	<s:Group width="100%" height="100%" left="5" right="5" bottom="5">
 		
 		<s:List id="list" 
-				top="10"
+				top="14"
 				width="100%" height="100%"
 				minHeight="20"
-				interactionMode="touch"
+				interactionMode="mouse"
 				dataProvider="{Radiate.history}" 
 				selectedIndex="{Radiate.historyIndex}"
 				labelFunction="labelFunction"
@@ -214,14 +268,14 @@
 					<s:ItemRenderer width="100%" height="18" 
 									autoDrawBackground="false"
 									typographicCase="lowercaseToSmallCaps"
-									creationComplete="creationCompleteHandler(event)"
 									useHandCursor="true"
-									buttonMode="true">
+									buttonMode="true"
+									creationComplete="creationCompleteHandler(event)"
+									>
 						
 						<fx:Script>
 							<![CDATA[
 								import com.flexcapacitor.filters.BlackAndWhiteFilter;
-								import com.flexcapacitor.events.HistoryEvent;
 								
 								import mx.events.FlexEvent;
 								
@@ -281,14 +335,15 @@
 						<s:states>
 							<s:State name="normal"/>
 							<s:State name="selected"/>
+							<s:State name="hovered"/>
 						</s:states>
 						
 						<s:HGroup id="rowGroup" width="100%" height="100%" gap="0" verticalAlign="middle">
 							  
-							<s:Group height="12" width="10" includeIn="selected">
+							<s:Group height="12" width="10" includeIn="selected,hovered">
 								<s:Path data="M 0 0 L 0 16 L 16 8 z" width="100%" height="100%">
 									<s:fill>
-										<s:SolidColor color="#000000" alpha=".5"/>
+										<s:SolidColor color="#000000" alpha=".5" alpha.hovered=".25"/>
 									</s:fill>
 									<s:stroke>
 										<s:SolidColorStroke weight="0" color="#ffffff" />
@@ -316,7 +371,7 @@
 		
 		
 		<!--- triangle -->
-		<s:Group height="12" width="10" >
+		<s:Group height="14" width="10" >
 			<s:Path data="M 0 0 L 0 16 L 16 8 z" width="100%" height="100%"
 					visible="{list.selectedIndex==-1 &amp;&amp; list.dataProvider.length>0}">
 				<s:fill>

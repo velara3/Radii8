@@ -41,13 +41,16 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Get unqualified class name of the target object
+		 * Get unqualified class name of the target object. 
+		 * If target has the id of myImage and include class name is true then the result is
+		 * "Image.myImage". If delimiter is "_" then the result is "Image_myImage". 
+		 * If includeClassName is false then the result is, "myImage". 
 		 * */
-		public static function getClassNameOrID(element:Object):String {
+		public static function getClassNameOrID(element:Object, includeClassName:Boolean = false, delimiter:String = "."):String {
 			var name:String = NameUtil.getUnqualifiedClassName(element);
 			var id:String = element && "id" in element ? element.id : null;
 			
-			return !id ? name : name + "." + id;
+			return !id ? name : includeClassName ? name + "." + id : id;
 		}
 		
 		/**

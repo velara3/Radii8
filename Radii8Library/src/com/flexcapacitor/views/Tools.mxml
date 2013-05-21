@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="200" height="50"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	
+	<!-- 
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			
+			
+			private var radiate:Radiate;
+			
+			public var selectedTool:ITool;
+			
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler);
+				radiate.addEventListener(RadiateEvent.TOOLS_UPDATED, toolsUpdatedHandler);
+				
+				tools.dataProvider = Radiate.toolsDescriptions;
+				
+				if (radiate.selectedTool==null) {
+					tools.selectedIndex = 0;
+					updateTool();
+				}
+			}
+			
+			
+			protected function toolChangeHandler(event:RadiateEvent):void
+			{
+				selectedTool = event.selectedItem as ITool;
+			}
+			
+			protected function toolsUpdatedHandler(event:RadiateEvent):void
+			{
+				tools.dataProvider = Radiate.toolsDescriptions;
+			}
+			
+			
+			protected function tools_updateCompleteHandler(event:FlexEvent):void {
+				explicitHeight = tools.measuredHeight;
+			}
+			
+			/**
+			 * Update tool.
+			 * */
+			protected function tools_changeHandler(event:IndexChangeEvent):void {
+				updateTool();
+			}
+			
+			public function updateTool():void {
+				var item:ComponentDescription;
+				
+				radiate = Radiate.getInstance();
+				
+				item = tools.selectedItem as ComponentDescription;
+				
+				radiate.setTool(item.instance as ITool);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:List id="tools" 
+			width="100%" 
+			height="100%"
+			minHeight="24"
+			labelField="name" 
+			dragEnabled="false"
+			borderVisible="false"
+			interactionMode="mouse"
+			updateComplete="tools_updateCompleteHandler(event)"
+			change="tools_changeHandler(event)">
+		<s:layout>
+			<s:TileLayout  />
+		</s:layout>
+		
+		<s:itemRenderer>
+			<fx:Component>
+				<s:ItemRenderer width="24" height="24" minHeight="22" >
+					<fx:Script>
+						<![CDATA[
+							import com.flexcapacitor.controller.Radiate;
+							import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+							
+							override public function set data(value:Object):void {
+								super.data = value;
+								var definition:ComponentDescription = value as ComponentDescription;
+								var path:String;
+								
+								
+								if (definition) {
+									if (definition.icon) {
+										iconImage.source = definition.icon;
+									}
+									else {
+										path = "assets/images/tools/" + definition.name + ".png";
+										iconImage.source = path;
+									}
+								}
+							}
+							
+							protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
+								//iconImage.source = "assets/images/components/BorderContainer.png";
+							}
+							
+							
+						]]>
+					</fx:Script>
+					
+					<!--<s:Image id="iconImage"
+							 contentLoader="{Radiate.contentCache}"
+							 ioError="iconImage_ioErrorHandler(event)"
+							 width="16" height="16"/>-->
+					<s:HGroup horizontalAlign="center" verticalAlign="middle">
+						<s:Image id="iconImage"
+								 contentLoader="{Radiate.contentCache}"
+								 ioError="iconImage_ioErrorHandler(event)"
+								 />
+					</s:HGroup>
+					
+				</s:ItemRenderer>
+			</fx:Component>
+			
+		</s:itemRenderer>
+	</s:List>
+	
+</s:Group>

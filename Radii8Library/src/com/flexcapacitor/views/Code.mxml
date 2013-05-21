@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 minWidth="200" 
+		 minHeight="100"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	
+	<!-- 
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.HistoryEvent;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.collections.ArrayCollection;
+			import mx.effects.effectClasses.PropertyChanges;
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			/**
+			 * Reference to Radiate
+			 * */
+			public var radiate:Radiate;
+			
+			/**
+			 * 
+			 * */
+			public var componentDescription:ComponentDescription;
+
+			/**
+			 * 
+			 * */
+			private var _target:Object;
+			
+			/**
+			 * 
+			 * */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, handlePropertyChange);
+				
+				if (radiate.target) {
+					updateTarget(radiate.target);
+				}
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function handleTargetChange(event:RadiateEvent):void {
+				
+				updateTarget(event.selectedItem);
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function handlePropertyChange(event:RadiateEvent):void {
+				
+				updateTarget(event.selectedItem);
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function codeType_changeHandler(event:IndexChangeEvent):void {
+				updateTarget(radiate.target);
+			}
+			
+			/**
+			 * 
+			 * */
+			public function updateTarget(target:Object):void {
+				var application:Object = radiate.document || parentApplication;
+				var targetDescription:ComponentDescription;
+				var display:ComponentDescription;
+				var length:int;
+				var history:ArrayCollection;
+				var output:String = "";
+				var historyEvent:HistoryEvent;
+				var historyArray:Array;
+				var targetsLength:int;
+				var targets:Array;
+				//var codeObject:Object = {};
+				var xml:XML;
+				
+				display = DisplayObjectUtils.getDisplayList(application);
+				
+				// find target in display list and get it's code
+				targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, display);
+				
+				
+				if (targetDescription) {
+					getCodeModel(targetDescription);
+					
+					
+					if (codeType.selectedItem=="MXML") {
+						output = getMXMLOutputString(targetDescription, codeType.selectedItem);
+					}
+					else if (codeType.selectedItem=="HTML") {
+						output = getHTMLOutputString(targetDescription, codeType.selectedItem);
+					}
+					
+					
+					//codeModel.text = output;
+					
+					
+					try {
+						xml = new XML(output);
+						codeModel.text = xml.toXMLString();
+					}
+					catch (error:Error) {
+						// Error #1083: The prefix "s" for element "Group" is not bound.
+						// <s:Group x="93" y="128">
+						//	<s:Button x="66" y="17"/>
+						//</s:Group>
+						codeModel.text = output;
+					}
+					
+				}
+				else {
+					codeModel.text = "";
+				}
+			}
+			
+			/**
+			 * Gets the formatted MXML output from a component
+			 * */
+			public function getMXMLOutputString(component:ComponentDescription, addLineBreak:Boolean = false, tabs:String = ""):String {
+				var output:String = "";
+				var value:*;
+				var properties:Object = component.properties;
+				var name:String = component.name;
+				var componentChild:ComponentDescription;
+				
+				
+				for (var propertyName:String in properties) {
+					value = properties[propertyName];
+					if (value===undefined) {
+						continue;
+					}
+					output += " ";
+					output += propertyName + "=\"" + Object(properties[propertyName]).toString() + "\"";
+				}
+				
+				if (name) {
+					if (name=="application") {
+						name = "Application";
+					}
+					
+					output = tabs + "<s:" + name + output;
+					
+					if (component.children && component.children.length>0) {
+						output += ">\n";
+						
+						for (var i:int;i<component.children.length;i++) {
+							componentChild = component.children[i];
+							getCodeModel(componentChild);
+							output += getMXMLOutputString(componentChild, false, tabs + "\t");
+						}
+						
+						output += tabs + "</s:" + name + ">\n";
+					}
+					else {
+						 output += "/>\n";
+					}
+				}
+				else {
+					output = "";
+				}
+				
+				return output;
+			}
+			
+			
+			/**
+			 * Gets the formatted output from a component
+			 * */
+			public function getHTMLOutputString(component:ComponentDescription, addLineBreak:Boolean = false, tabs:String = ""):String {
+				var output:String = "";
+				var value:*;
+				var properties:Object = component.properties;
+				var name:String = component.name;
+				var componentChild:ComponentDescription;
+				
+				
+				for (var propertyName:String in properties) {
+					value = properties[propertyName];
+					if (value===undefined) {
+						continue;
+					}
+					output += " ";
+					output += propertyName + "=\"" + Object(properties[propertyName]).toString() + "\"";
+				}
+				
+				if (name) {
+					if (name=="application") {
+						name = "body";
+					}
+					
+					if (name=="Group") {
+						name = "div";
+					}
+					
+					if (name=="HGroup") {
+						name = "span";
+					}
+					
+					output = tabs + "<" + name.toLowerCase() + output;
+					
+					if (component.children && component.children.length>0) {
+						output += ">\n";
+						
+						for (var i:int;i<component.children.length;i++) {
+							componentChild = component.children[i];
+							getCodeModel(componentChild);
+							output += getHTMLOutputString(componentChild, false, tabs + "\t");
+						}
+						
+						output += tabs + "</" + name.toLowerCase() + ">\n";
+					}
+					else {
+						 output += "/>\n";
+					}
+				}
+				else {
+					output = "";
+				}
+				
+				return output;
+			}
+			
+			/**
+			 * Gets the formatted MXML of Flex code model
+			 * */
+			public function getMXMLOutputValue(codeObject:Object, name:String, existingValue:String = ""):String {
+				var output:String = "";
+				var value:*;
+				
+				for (var propertyName:String in codeObject) {
+					value = codeObject[propertyName];
+					if (value===undefined) {
+						continue;
+					}
+					output += " ";
+					output += propertyName + "=\"" + Object(codeObject[propertyName]).toString() + "\"";
+				}
+				
+				if (name) {
+					if (name=="application") {
+						name = "Application";
+					}
+					
+					if (existingValue) {
+						output = "<s:" + name + output + ">" + existingValue + "</s:" + name + ">";
+					}
+					else {
+						output = "<s:" + name + output + "/>";
+					}
+				}
+				else {
+					output = "";
+				}
+				
+				return output;
+			}
+			
+			/**
+			 * Gets the formatted HTML of code model
+			 * */
+			public function getHTMLOutputValue(codeObject:Object, name:String, existingValue:String = ""):String {
+				var output:String = "";
+				var value:*;
+				
+				for (var propertyName:String in codeObject) {
+					value = codeObject[propertyName];
+					if (value===undefined) {
+						continue;
+					}
+					output += " ";
+					output += propertyName + "=\"" + Object(codeObject[propertyName]).toString() + "\"";
+				}
+				
+				if (name) {
+					if (name=="application") {
+						name = "body";
+					}
+					if (name=="Group") {
+						name = "div";
+					}
+					
+					if (existingValue) {
+						output = "<" + name + output + ">" + existingValue + "</" + name + ">";
+					}
+					else {
+						output = "<" + name + output + "/>";
+					}
+				}
+				else {
+					output = "";
+				}
+				
+				return output;
+			}
+			
+			/**
+			 * Get object containing properties that have been set on the object.
+			 * */
+			public function getCodeModel(component:ComponentDescription, addToProperties:Boolean = true):Object {
+				var display:ComponentDescription;
+				var length:int;
+				var history:ArrayCollection;
+				var output:String = "";
+				var historyEvent:HistoryEvent;
+				var historyArray:Array;
+				var targetsLength:int;
+				var targets:Array;
+				var codeObject:Object = {};
+				var change:PropertyChanges;
+				var index:int = Radiate.getHistoryIndex();
+				var value:*;
+				
+				history = Radiate.history;
+				length = Radiate.history.length;
+				
+				for (;index>=0;index--) {
+					historyArray = history.getItemAt(index) as Array;
+					h = 0;
+					
+					for (var h:int;h<historyArray.length;h++) {
+						change = historyArray[h] as PropertyChanges;
+						
+						if (change) {
+							//targets = change.target;
+							targetsLength = 1;//targets.length; not supporting multiple targets yet
+							j = 0;
+							
+							for (var j:int;j<targetsLength;j++) {
+								if (component.instance==change.target) {
+									historyEvent = Radiate.historyEventsDictionary[change];
+									
+									for each (var property:String in historyEvent.properties) {
+										
+										if (property in codeObject) {
+											continue;
+										}
+										else {
+											//var value:* = historyEvent.propertyChanges.end[property];
+											/*if (value===undefined) {
+												delete codeObject[property];
+											}
+											else {*/
+												codeObject[property] = historyEvent.propertyChanges.end[property];
+											//}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				
+				component.properties = codeObject;
+				
+				return codeObject;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:TextArea id="codeModel" width="100%" height="100%" 
+				fontFamily="Courier New"
+				borderVisible="false">
+		
+	</s:TextArea>
+	
+	<s:ButtonBar id="codeType" 
+					selectedIndex="1"
+					right="15"
+					change="codeType_changeHandler(event)">
+		<s:dataProvider>
+			<s:ArrayList>
+				<fx:String>MXML</fx:String>
+				<fx:String>HTML</fx:String>
+			</s:ArrayList>
+		</s:dataProvider>
+	</s:ButtonBar>
+	
+</s:Group>

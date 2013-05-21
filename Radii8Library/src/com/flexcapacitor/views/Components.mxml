@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300"
-		 creationComplete="creationCompleteHandler(event)">
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 
+		 width="400" height="300"
+		 creationComplete="creationCompleteHandler(event)"
+		 >
 	
 	<fx:Script>
 		<![CDATA[
@@ -14,94 +17,28 @@
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.core.IFlexDisplayObject;
+			import mx.events.DragEvent;
 			import mx.events.FlexEvent;
+			import mx.graphics.SolidColor;
 			
 			import spark.components.Application;
+			import spark.components.ComboBox;
+			import spark.components.Group;
 			import spark.components.List;
 			import spark.components.supportClasses.GroupBase;
+			import spark.components.supportClasses.SkinnableTextBase;
+			import spark.components.supportClasses.TextBase;
+			import spark.primitives.Rect;
 			
 			private var target:Object;
-			private var radiate:Radiate = Radiate.instance;
+			private var radiate:Radiate;
 			private var dragManagerInstance:DragManagerUtil;
 			
 			/**
 			 *  Get list of component classes from XML and check for definitions
 			 * */
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				var length:uint;
-				var items:XMLList;
-				var className:String;
-				var hasDefinition:Boolean;
-				var classType:Object;
-				var includeItem:Boolean;
-				var attributes:XMLList;
-				var attributesLength:int;
-				var item:XML;
-				var defaults:Object;
-				var propertyName:String;
-				var xml:XML;
-				
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemHandler);
-				
-				xml = new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
-				
-				// get list of component classes 
-				items = XML(xml).component;
-				
-				length = items.length();
-				
-				for (var i:int;i<length;i++) {
-					item = items[i];
-					
-					var name:String = String(item.id);
-					className = item.attribute("class");
-					
-					includeItem = item.attribute("include")=="false" ? false : true;
-					
-					if (!includeItem) continue;
-					
-					
-					// check that definitions exist in domain
-					// skip any support classes
-					if (className.indexOf("mediaClasses")==-1 && 
-						className.indexOf("gridClasses")==-1 &&
-						className.indexOf("windowClasses")==-1 &&
-						className.indexOf("supportClasses")==-1) {
-						
-						hasDefinition = ApplicationDomain.currentDomain.hasDefinition(className);
-						
-						if (hasDefinition) {
-							classType = ApplicationDomain.currentDomain.getDefinition(className);
-							
-							if (item.defaults) {
-								attributes = item.defaults.attributes();
-								attributesLength = attributes.length();
-								defaults = {};
-								
-								for each (var value:Object in attributes) {
-									propertyName = String(value.name());
-									
-									if (propertyName=="dataProvider") {
-										defaults[propertyName] = new ArrayCollection(String(value).split(","));
-									}
-									else {
-										defaults[propertyName] = String(value);
-									}
-								}
-							}
-							
-							Radiate.addComponentType(item.@id, className, classType, null, defaults);
-						}
-						
-					}
-					else {
-						delete items[i];
-						length--;
-					}
-					
-					
-				}
+				radiate = Radiate.getInstance();
 				
 				components = Radiate.componentDescriptions;
 			}
@@ -123,11 +60,12 @@
 				
 				item = ComponentDescription(data);
 				
+				dropTargetLabel.text = "";
+				
 				rowGroup = event.currentTarget as Group;
-				rowGroup.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
 				
 				event.stopImmediatePropagation();
-				list.dragEnabled = false;
+				//list.dragEnabled = false;
 				
 				application = radiate.document as Application || parentApplication as Application;
 				
@@ -136,6 +74,28 @@
 				classFactory.properties = item.defaultProperties;
 				component = classFactory.newInstance();
 				
+				// add fill to rect
+				if (component is Rect) {
+					var fill:SolidColor = new SolidColor();
+					fill.color = 0xFF0000;
+					Rect(component).fill = fill;
+				}
+				
+				// we need a custom FlexSprite class to do this
+				// do this after drop
+				/*if ("eventListeners" in component) {
+					component.removeAllEventListeners();
+				}*/
+				
+				// if text based or combo box we need to prevent 
+				// interaction with cursor
+				if (component is TextBase || component is SkinnableTextBase) {
+					component.mouseChildren = false;
+					
+					if ("textDisplay" in component && component.textDisplay) {
+						component.textDisplay.enabled = false;
+					}
+				}
 				
 				if (component is IFlexDisplayObject) {
 					//component.width = IFlexDisplayObject(component).measuredWidth;
@@ -150,27 +110,113 @@
 					dragManagerInstance = new DragManagerUtil();
 				}
 				
-				dragManagerInstance.listenForDragBehavior(rowGroup, application, event, component);
-				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				rowGroup.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				rowGroup.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
 				
+				dragManagerInstance.listenForDragBehavior(rowGroup, application, event, component);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dragManagerInstance.addEventListener(DragEvent.DRAG_OVER, handleDragOver);
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				
+				// DRAG DROP 
+				// is continued in 
+				// DragManagerUtil.dragDropHandler()
+				
+				// and then in handleDragDrop() here
 			}
 			
-			
+			/**
+			 * Remove mouse handlers from row
+			 * */
 			protected function mouseUpHandler(event:MouseEvent):void
 			{
-				list.dragEnabled = true;
+				// we need a custom FlexSprite class to do this
+				/*if (event.currentTarget.eventListeners) {
+					event.currentTarget.removeAllEventListeners();
+				}*/
+				
+				//list.dragEnabled = true;
 				event.currentTarget.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
 				
 			}
 			
+			/**
+			 * Handles drag drop event. This is only the first part of adding to the stage. 
+			 * We can prevent automatic adding by calling event.preventDefault().
+			 * If we do not call preventDefault dragDropComplete is the next event to be called. 
+			 * */
 			protected function handleDragDrop(event:DragDropEvent):void
 			{
+				var component:Object = event.draggedItem;
+				
+				// if text based or combo box we need to prevent 
+				// interaction with cursor
+				
+				// UPDATE THIS IN DRAG DROP COMPLETE
+				
+				if (component is TextBase || component is SkinnableTextBase) {
+					component.mouseChildren = false;
+					
+					if ("textDisplay" in component && component.textDisplay) {
+						component.textDisplay.enabled = false;
+					}
+				}
+				
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dropTargetLabel.text = "Drag drop to:" + dragManagerInstance.dropTargetName;
+				
+				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
+			}
+			
+			/**
+			 * Dispatched after drag drop event. Drag drop can be canceled. If it
+			 * is not canceled this event happens. 
+			 * */
+			protected function handleDragDropComplete(event:DragDropEvent):void
+			{
+				var component:Object = event.draggedItem;
+				
+				// if text based or combo box we need to prevent 
+				// interaction with cursor
+				if (component is TextBase || component is SkinnableTextBase) {
+					component.mouseChildren = false;
+					
+					if ("textDisplay" in component && component.textDisplay) {
+						component.textDisplay.enabled = false;
+					}
+				}
+				
+				if (component is ComboBox) {
+					if ("textInput" in component && component.textInput.textDisplay) {
+						component.textInput.textDisplay.enabled = false;
+					}
+				}
+				
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				dropTargetLabel.text = "Drag Complete to:" + dragManagerInstance.dropTargetName;
+				
+				
+				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
 			}
 			
 			protected function addItemHandler(event:RadiateEvent):void {
 				//trace("item addedd");
 				
 				//radiate.target = event.eventTarget;
+				
+			}
+			
+			protected function handleDragOver(event:Event):void {
+				
+				//Radiate.log.info("target: " + dragManagerInstance.lastTargetCandidate);
+				dropTargetLabel.text = "Drag over: " + dragManagerInstance.dropTargetName;
+			}
+			
+			protected function list_dragStartHandler(event:DragEvent):void {
 				
 			}
 			
@@ -181,6 +227,16 @@
 		<s:ArrayCollection id="components"/>
 	</fx:Declarations>
 	
+	<!--
+	<s:Rect>
+		<s:fill>
+			<s:SolidColor color=""
+		</s:fill>
+	</s:Rect>-->
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
 	
 	<s:List id="list" 
 			width="100%" 
@@ -190,6 +246,7 @@
 			borderVisible="false"
 			interactionMode="mouse"
 			dataProvider="{components}"
+			dragStart="list_dragStartHandler(event)"
 			>
 		<s:itemRenderer>
 			<fx:Component>
@@ -247,4 +304,8 @@
 			
 		</s:itemRenderer>
 	</s:List>
+	
+	<s:Spacer height="1"/>
+	<s:Label id="dropTargetLabel" width="100%" paddingLeft="4"/>
+	<s:Spacer height="4"/>
 </s:Group>

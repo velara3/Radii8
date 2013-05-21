@@ -6,8 +6,11 @@
 			   xmlns:handlers="com.flexcapacitor.handlers.*" 
 			   xmlns:popup="com.flexcapacitor.effects.popup.*" 
 			   xmlns:navigation="com.flexcapacitor.effects.navigation.*"
+			   xmlns:utils="com.flexcapacitor.utils.*" 
 			   xmlns:local="*"
-			   width="100%" height="100%" minWidth="800" minHeight="400"
+			   
+			   width="100%" height="100%" 
+			   minWidth="800" minHeight="400"
 			   uncaughtError="uncaughtErrorHandler(event)" 
 			   >
 	
@@ -25,6 +28,15 @@
 			fontFamily: Verdana;
 		}
 		
+		mx|TabNavigator {
+			tabStyleName:tabStyle;
+		}
+		
+		.tabStyle {
+			fontFamily:"Verdana";
+			fontSize:  10;
+			
+		}
 	</fx:Style>
 	
 	<fx:Script>
@@ -97,13 +109,13 @@
 			protected function logo_clickHandler(event:MouseEvent):void {
 				currentState = "start";
 				hideLoadControls();
-				Radiate.clearSelection();
+				//Radiate.clearSelection();
 			}
 			
 			protected function description_clickHandler(event:MouseEvent):void {
 				currentState = "description";
 				hideLoadControls();
-				Radiate.clearSelection();
+				//Radiate.clearSelection();
 			}
 			
 			protected function loadProject_clickHandler(event:MouseEvent):void {
@@ -170,11 +182,14 @@
 			<popup:HidePopupAnchor target="{aboutPopUp}" />
 			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=2" window="_blank" />
 		</handlers:EventHandler>
+		
+		<utils:MiniInspector showDisplayObjectOutlines="true"
+							 showRuler="true"/>
 	</fx:Declarations>
 	
 	<s:states>
-		<s:State name="start"/>
 		<s:State name="design"/>
+		<s:State name="start"/>
 		<s:State name="description"/>
 	</s:states>
 	
@@ -193,14 +208,15 @@
 				 height="100%"
 				 width="100%"
 				 replaceLinebreaksWithBreaks="true"
+				 fontFamily="Arial"
 				 >
 			<c:htmlText>Welcome to the Radiate demo. There are many features shown here (many incomplete) but the main one that I would like you to notice is the history feature (via the History Panel). The Radiate class has static methods that allow you to get or set a target, change properties, move an element, select an element and so on. All the panels you see here are using these API's to modify the selected element or document in some way. 
 				
-				All the panels and features you see are made possible and work together through this system. This is important because it allows any developer with Flex knowledge to create their own panels usually very quickly and modify the document in their own way. For example, you could add a panel that lets you add a drop shadow to an element on the stage or provide a UI to adjust an existing one. Or you could create a States panel that lets you select and see the different states of a component. You could access this information with ActionScript code as easy as checking the Radiate.selectedTarget states property and showing those states in your UI. 
+				All the panels and features you see are made possible and work together through this system. This is important because it allows any developer with Flex or ActionScript knowledge to create their own panels usually very quickly and modify the document in their own way. For example, you could add a panel that lets you add a drop shadow to an element on the stage or provide a UI to adjust blend mode of the selected component. Or you could create a States panel that lets you select and see the different states of a component. You could access this information with ActionScript code as easily as checking the Radiate.selectedTarget states property and showing those states in your UI. 
 				
 				As you can see there are many features that are missing or behaving incorrectly. Most are easily solved. This purpose of this demo to give you an early preview of where it's going and ideas for what it can be used for. 
 				
-				If you are giving it a run through add and test only with the Button and Group, VGroup and HGroup components. 
+				If you are giving it a run through work with the Button and Group elements for the most stability. 
 				
 				For more information check the blog and send emails to flexcapacitor@gmail.com.
 			</c:htmlText>

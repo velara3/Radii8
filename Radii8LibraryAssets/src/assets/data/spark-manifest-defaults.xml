@@ -27,19 +27,19 @@
     	<defaults width="70" height="21" label="Label"/>
     </component>
     
-    <component id="ButtonBar" class="spark.components.ButtonBar" include="true">
+    <component id="ButtonBar" class="spark.components.ButtonBar" include="false" >
     	<defaults width="240" height="22" dataProvider="Button 1, Button 2, Button 3"/>
     </component>
     
     <component id="ButtonBarButton" class="spark.components.ButtonBarButton" include="false"/>
     
     <component id="CheckBox" class="spark.components.CheckBox">
-    	<defaults width="76" height="20" label="Checkbox"/>
+    	<defaults width="78" height="20" label="Checkbox"/>
     </component>
     
     <component id="GridColumnHeaderGroup" class="spark.components.GridColumnHeaderGroup" include="false"/>
     
-    <component id="ComboBox" class="spark.components.ComboBox">
+    <component id="ComboBox" class="spark.components.ComboBox" include="false">
     	<defaults width="166" height="23" dataProvider="Item 1,Item 2,Item 3"/>
     </component>
 	
@@ -53,7 +53,7 @@
     
     <component id="DataRenderer" class="spark.components.DataRenderer" include="false"/>
     
-    <component id="DropDownList" class="spark.components.DropDownList">
+    <component id="DropDownList" class="spark.components.DropDownList" include="false">
     	<defaults width="166" height="23" dataProvider="Item 1,Item 2,Item 3"/>
     </component>
     
@@ -95,7 +95,7 @@
     	<defaults width="76" height="15" text="Label"/>
     </component>
     
-	<component id="List" class="spark.components.List">
+	<component id="List" class="spark.components.List" include="false">
     	<defaults width="160" height="160" dataProvider="Item 1,Item 2,Item 3"/>
     </component>
     
@@ -111,7 +111,7 @@
  	<component id="PopUpPosition" class="spark.components.PopUpPosition" include="false"/>
     
 	<component id="RadioButton" class="spark.components.RadioButton">
-    	<defaults width="76" height="20" label="Radio Button"/>
+    	<defaults width="96" height="20" label="Radio Button"/>
     </component>
     
     <component id="RadioButtonGroup" class="spark.components.RadioButtonGroup" include="false"/>
@@ -142,7 +142,7 @@
     
     <component id="SkinnablePopUpContainer" class="spark.components.SkinnablePopUpContainer" include="false"/>
     
-    <component id="Spacer" class="mx.controls.Spacer" lookupOnly="true">
+    <component id="Spacer" class="mx.controls.Spacer" lookupOnly="true" include="false">
     	<defaults width="10" height="10"/>
     </component>
     
@@ -150,11 +150,11 @@
     	<defaults width="86" height="20"/>
     </component>
     
-    <component id="TabBar" class="spark.components.TabBar">
+    <component id="TabBar" class="spark.components.TabBar" include="false">
     	<defaults width="240" height="22" dataProvider="Item 1,Item 2,Item 3"/>
     </component>
     
-    <component id="TextArea" class="spark.components.TextArea">
+    <component id="TextArea" class="spark.components.TextArea" include="false">
     	<defaults width="166" height="66"/>
     </component>
     
@@ -168,7 +168,7 @@
     	<defaults width="240" height="166"/>
     </component>
     
-    <component id="TitleWindow" class="spark.components.TitleWindow">
+    <component id="TitleWindow" class="spark.components.TitleWindow" include="false">
     	<defaults width="240" height="166"/>
     </component>
     

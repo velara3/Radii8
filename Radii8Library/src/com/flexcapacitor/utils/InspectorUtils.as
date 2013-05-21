@@ -115,7 +115,8 @@ package com.flexcapacitor.utils {
 		 * Draws outline around target display object
 		 * */
 		public static function drawSelection(target:Object, systemManager:ISystemManager):void {
-			Radiate.drawSelection(target);
+			throw new Error("CANNOT USE DRAW SELECTION");
+			//Radiate.drawSelection(target);
 			/*if (target is DisplayObject) {
 				LayoutLines.getInstance().drawLines(target, systemManager);
 			}

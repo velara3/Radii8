@@ -72,7 +72,7 @@
 					<s:layout>
 						<s:VerticalLayout/>
 					</s:layout>
-					<views:Selection height="100%" width="100%"/>
+					<views:SelectionOld height="100%" width="100%"/>
 				</s:Group>
 			</s:Scroller>
 		<!--</s:View>-->
@@ -108,7 +108,7 @@
 					<s:layout>
 						<s:VerticalLayout/>
 					</s:layout>
-					<views:Property height="100%" width="100%"/>
+					<views:Properties height="100%" width="100%"/>
 				</s:Group>
 			</s:Scroller>
 		<!--</s:View>-->

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!--
+
+    JUDAH SYSTEMS INCORPORATED
+    Copyright 2008 Judah Systems Incorporated
+    All Rights Reserved.
+
+    NOTICE: Judah permits you to use, modify, and distribute this file
+    in accordance with the terms of the license agreement accompanying it.
+
+-->
+
+<!--
+
+    Tools
+    
+    Be sure to include a reference to the classes in RadiateReferences
+-->
+<toolsPackage>
+
+    <tool id="Selection" class="com.flexcapacitor.tools.Selection" 
+    		inspector="com.flexcapacitor.views.SelectionInspector" 
+    		include="true"/>
+    
+    <tool id="Zoom" class="com.flexcapacitor.tools.Zoom" 
+    		inspector="com.flexcapacitor.views.ZoomInspector" 
+    		include="true"/>
+
+</toolsPackage>

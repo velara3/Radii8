@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 minWidth="200" 
+		 minHeight="100"
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	
+	<!-- 
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			
+			import mx.events.FlexEvent;
+			
+			/**
+			 * Reference to Radiate
+			 * */
+			public var radiate:Radiate;
+
+			private var _target:Object;
+			
+			public function get target():Object {
+				return _target;
+			}
+			
+			[Bindable]
+			public function set target(value:Object):void {
+				
+				_target = value;
+				
+				if (_target) {
+					
+				}
+				else {
+					
+				}
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, handleTargetChange);
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				target = event.selectedItem;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	
+</s:Group>

@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:s="library://ns.adobe.com/flex/spark" 
+				
 				autoDrawBackground="false"
 				mouseChildren="false"
 				mouseEnabled="false"
 				buttonMode="false"
 				mouseEnabledWhereTransparent="false"
 				width="20" height="20"
+				implements="com.flexcapacitor.utils.supportClasses.ISelectionGroup"
 				>
 	
 	
@@ -21,24 +23,38 @@
 			use namespace mx_internal;
 			
 			
-			override public function get data():Object {
-				return super.data;
-			}
 			
 			override public function set data(value:Object):void {
-				// TODO Auto Generated method stub
 				super.data = value;
+				
 				
 				// check if target is component and is not skin
 				// should not be a skin
-				labelDisplay.text = NameUtil.getUnqualifiedClassName(value);
+				labelDisplay.text = NameUtil.getUnqualifiedClassName(data);
+				
+			}
+			
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				
+				//graphics.clear();
+				/*
+				was showing previous selection like the graphics weren't cleared
+				selectionFill.width = unscaledWidth;
+				selectionFill.height = unscaledHeight;
+				selectionStroke.width = unscaledWidth;
+				selectionStroke.height = unscaledHeight;*/
 				
 				// hide or show background fill
-				if (Radiate.showSelectionBackground) {
-					selectionFill.visible = true;
+				if (showSelectionFill) {
 					
-					if (Radiate.instance.document == value && !Radiate.showSelectionBackgroundOnDocument) {
+					if (Radiate.instance.document == data && !showSelectionFillOnDocument) {
 						selectionFill.visible = false;
+					}
+					else {
+						selectionFill.visible = true;
 					}
 				}
 				else {
@@ -46,20 +62,19 @@
 				}
 				
 				// hide or show label
-				labelDisplay.visible = Radiate.showSelectionLabel;
+				if (showSelectionLabel) {
 				
-				if (Radiate.instance.document == value && !Radiate.showSelectionLabelOnDocument) {
+					if (Radiate.instance.document == data && !showSelectionLabelOnDocument) {
+						labelDisplay.visible = false;
+					}
+					else {
+						labelDisplay.visible = true;
+					}
+				}
+				else {
 					labelDisplay.visible = false;
 				}
-			}
-			
-			
-			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
-			{
-				// TODO Auto Generated method stub
-				super.updateDisplayList(unscaledWidth, unscaledHeight);
 				
-				graphics.clear();
 			}
 			
 			
@@ -76,26 +91,65 @@
 				dispatchEvent(event.clone());
 			}
 			
-			[Bindable]
-			public var showSelectionBackground:Boolean = true;
+			private var _showSelectionFill:Boolean = true;
+
+			public function get showSelectionFill():Boolean {
+				return _showSelectionFill;
+			}
+
+			public function set showSelectionFill(value:Boolean):void {
+				_showSelectionFill = value;
+				invalidateDisplayList();
+			}
+
 			
-			[Bindable]
-			public var showSelectionBackgroundOnDocument:Boolean = true;
+			private var _showSelectionFillOnDocument:Boolean = true;
+
+			public function get showSelectionFillOnDocument():Boolean {
+				return _showSelectionFillOnDocument;
+			}
+
+			public function set showSelectionFillOnDocument(value:Boolean):void {
+				_showSelectionFillOnDocument = value;
+				invalidateDisplayList();
+			}
+
 			
-			[Bindable]
-			public var showSelectionLabel:Boolean = true;
+			private var _showSelectionLabel:Boolean = true;
+
+			public function get showSelectionLabel():Boolean {
+				return _showSelectionLabel;
+			}
+
+			public function set showSelectionLabel(value:Boolean):void {
+				_showSelectionLabel = value;
+				invalidateDisplayList();
+			}
+
+			
+			private var _showSelectionLabelOnDocument:Boolean = true;
+
+			public function get showSelectionLabelOnDocument():Boolean {
+				return _showSelectionLabelOnDocument;
+			}
+
+			public function set showSelectionLabelOnDocument(value:Boolean):void {
+				_showSelectionLabelOnDocument = value;
+				invalidateDisplayList();
+			}
+
 			
 		]]>
 	</fx:Script>
 	
 	
-	<s:Rect id="selectionFill" width="{width}" height="{height}" >
+	<s:Rect id="selectionFill"  width="{width}" height="{height}">
 		<s:fill>
 			<s:SolidColor color="0x2da6e9" alpha=".08" />
 		</s:fill>
 	</s:Rect>
 	
-	<s:Rect id="selectionStroke" width="{width}" height="{height}" >
+	<s:Rect id="selectionStroke" width="{width}" height="{height}">
 		<s:stroke>
 			<s:SolidColorStroke color="0x2da6e9" weight="0" alpha=".5"/>
 		</s:stroke>
@@ -118,4 +172,5 @@
 			 mouseChildren="false"
 			 mouseEnabled="false"
 			 />
+	<!--<s:Button bottom="-5" label="clicable?" click="trace('clicked')"/>-->
 </s:ItemRenderer>
