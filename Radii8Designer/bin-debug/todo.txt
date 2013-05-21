@@ -1,0 +1,17 @@
+
+
+Apr 24
+- add code to allow event listeners to be removed on add -X april 25
+- remove event listeners of components dragged to the stage - 
+- create document object model (AST like model)
+- store property changes to it
+- create project in wordpress
+- retrieve project in wordpress
+- retrieve projects in wordpress
+- create mxml document export
+- save mxml to wordpress
+- retrieve mxml from wordpress
+- retrieve assets from wordpress
+- set explicit size (prompt) vs actual size (text) in properties panel
+- add clear button to size and properties in properties panel
+- make property value grid easier to edit values
