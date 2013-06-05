@@ -1,12 +1,9 @@
 
 package 
 {
-	import flash.display.GradientType;
 	import flash.display.Graphics;
 	import flash.display.GraphicsPathCommand;
 	import flash.events.MouseEvent;
-	import flash.geom.Matrix;
-	import flash.utils.getTimer;
 	
 	import spark.core.SpriteVisualElement;
 	

@@ -726,7 +726,7 @@
 		<s:TextArea id="targetValueText" 
 					text="{XML(propertiesGrid.selectedItem).@value}"
 					width="100%" 
-					heightInLines="1" 
+					heightInLines="2" 
 					skinClass="spark.skins.spark.TextAreaSkin"
 					minHeight="10" 
 					visible="{propertiesGrid.selectedIndex>=0}"

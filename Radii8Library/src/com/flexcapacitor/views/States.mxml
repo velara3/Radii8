@@ -200,7 +200,7 @@
 		]]>
 	</fx:Script>
 	
-	<s:VGroup width="100%" height="100%" horizontalAlign="center">
+	<s:VGroup width="100%" height="100%" paddingLeft="5" paddingRight="10">
 		<s:List id="list" 
 				minHeight="20"
 				width="100%" 
@@ -214,7 +214,7 @@
 		</s:List>
 		<s:Spacer id="spillSpacer" height="0" />
 		<s:Group id="dividerGroup" 
-				 width="80%"
+				 width="100%"
 				 visible="false">
 			<mx:HRule width="100%" 
 					  strokeColor="0"
@@ -222,7 +222,7 @@
 					  alpha=".9" 
 					  verticalCenter="0"
 					  height="2"/>
-			<s:Label horizontalCenter="0"
+			<s:Label 
 					 text="Overrides" 
 					 color="#585858"
 					 alpha="1"
@@ -232,11 +232,12 @@
 					 />
 		</s:Group>
 		
-		<s:Scroller width="90%" height="100%" >
-			<s:Group width="90%" horizontalCenter="0" >
+		<s:Scroller width="100%" height="100%" >
+			<s:Group width="100%"  >
 				
 				<s:List id="overrides" 
 						minHeight="40"
+						height="100%"
 						width="100%" 
 						rollOverColor="#ffffff"
 						selectionColor="#d8d8d8"

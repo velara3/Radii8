@@ -74,6 +74,14 @@
 				classFactory.properties = item.defaultProperties;
 				component = classFactory.newInstance();
 				
+				if (component is Label) {
+					
+				}
+				
+				if (component is Label) {
+					
+				}
+				
 				// add fill to rect
 				if (component is Rect) {
 					var fill:SolidColor = new SolidColor();
@@ -196,6 +204,12 @@
 					}
 				}
 				
+				// we need a custom FlexSprite class to do this
+				// do this after drop
+				if ("eventListeners" in component && !(component is GroupBase)) {
+					component.removeAllEventListeners();
+				}
+				
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
 				dropTargetLabel.text = "Drag Complete to:" + dragManagerInstance.dropTargetName;
 				
@@ -235,7 +249,7 @@
 	</s:Rect>-->
 	
 	<s:layout>
-		<s:VerticalLayout />
+		<s:VerticalLayout gap="6"/>
 	</s:layout>
 	
 	<s:List id="list" 
@@ -305,7 +319,6 @@
 		</s:itemRenderer>
 	</s:List>
 	
-	<s:Spacer height="1"/>
 	<s:Label id="dropTargetLabel" width="100%" paddingLeft="4"/>
 	<s:Spacer height="4"/>
 </s:Group>

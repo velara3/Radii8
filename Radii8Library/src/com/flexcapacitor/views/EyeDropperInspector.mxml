@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:filters="com.flexcapacitor.filters.*"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 
+		 creationComplete="group1_creationCompleteHandler(event)" 
+		 >
+
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.EyeDropper;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.events.FlexEvent;
+			
+			public var radiate:Radiate;
+			public var color:uint;
+			public var tool:ITool;
+			private var isOverDocument:Boolean;
+			
+			/**
+			 * 
+			 * */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.COLOR_SELECTED, colorSelectedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.COLOR_PREVIEW, colorPreviewHandler, false, 0, true);
+				
+				tool = radiate.selectedTool;
+				
+				EyeDropper(tool).addEventListener(MouseEvent.ROLL_OUT, rollOutHandler, false, 0, true);
+				EyeDropper(tool).addEventListener(MouseEvent.ROLL_OVER, rollOverHandler, false, 0, true);
+				//EyeDropper(tool).addEventListener(MouseEvent.MOUSE_MOVE, rollOverHandler, false, 0, true);
+				
+				Radiate.log.info("INSPECTOR TOOL CREATED");
+				
+				updateTool(tool);
+			}
+			
+			/**
+			 * Update UI components to tool settings
+			 * */
+			public function updateTool(tool:ITool):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				
+				if (toolDescription && toolDescription.instance 
+					&& toolDescription.instance is EyeDropper) {
+					var eyeDropperTool:EyeDropper = EyeDropper(toolDescription.instance);
+					//showSelection.selected = selectionTool.showSelection;
+					//showLabel.selected = selectionTool.showSelectionLabel;
+				}
+			}
+			
+			/**
+			 * When user clicks on a location apply the values
+			 * */
+			protected function colorSelectedHandler(event:RadiateEvent):void {
+				Radiate.log.info("COLOR CHANGE");
+				
+				updateDisplay(event.color, event.invalid, false);
+			}
+			
+			/**
+			 * When user previews a location (mouse movement) show in preview components
+			 * */
+			protected function colorPreviewHandler(event:RadiateEvent):void {
+				//Radiate.log.info("COLOR PREVIEW");
+				
+				updateDisplay(event.color, event.invalid, true);
+			}
+			
+			/**
+			 * Updates UI
+			 * */
+			public function updateDisplay(color:uint, invalid:Boolean, preview:Boolean):void {
+				
+				if (preview) {
+					if (invalid) {
+						colorPickerPreview.selectedColor = 0;
+					}
+					else {
+						colorPickerPreview.selectedColor = color;
+						colorTextInputPreview.text = DisplayObjectUtils.getColorInHex(color, true);
+					}
+					
+				}
+				else {
+					if (invalid) {
+						colorPicker.selectedColor = 0;
+					}
+					else {
+						colorPicker.selectedColor = color;
+						colorTextInput.text = DisplayObjectUtils.getColorInHex(color, true);
+					}
+				}
+			}
+			
+			
+			protected function rollOutHandler(event:MouseEvent):void {
+				colorPickerPreview.visible = false;
+				colorTextInputPreview.visible = false;
+				isOverDocument = false;
+				
+			}
+			
+			protected function rollOverHandler(event:MouseEvent):void {
+				colorPickerPreview.visible = true;
+				colorTextInputPreview.visible = true;
+				isOverDocument = true;
+			}
+			
+		]]>
+	</fx:Script>
+	
+
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="4" />
+	</s:layout>
+	
+	<mx:ColorPicker id="colorPicker" />
+	
+	<s:TextInput id="colorTextInput" />
+	
+	<mx:ColorPicker id="colorPickerPreview" visible="false" />
+	<s:TextInput id="colorTextInputPreview" visible="false" />
+	
+</s:Group>

@@ -17,7 +17,6 @@
 			
 			import mx.events.FlexEvent;
 			import mx.events.ResizeEvent;
-			import mx.logging.AbstractTarget;
 			import mx.utils.NameUtil;
 			
 			/**
@@ -205,7 +204,7 @@
 				
 				//Radiate.logTarget.logEvent(new LogEvent("Uncaught Error", LogEventLevel.ERROR));
 				Radiate.log.error(errorMessage);
-				trace("Uncaught error", event);
+				//trace("Uncaught error", event);
 				
 				hideBusyIndicators();
 			}
@@ -250,10 +249,6 @@
 				
 				targetApplication = loader.application;
 				
-				//radiate.document = targetApplication as IEventDispatcher;
-				//radiate.setCanvas(canvasBackground, canvasBackgroundParent);
-				radiate.setDocument(targetApplication as IEventDispatcher);
-				radiate.setTarget(targetApplication);
 				
 				//Application(targetApplication).systemManager.deployMouseShields(true);
 				
@@ -261,6 +256,11 @@
 				targetApplication.height = 600;
 				
 				validateNow();
+				
+				//radiate.document = targetApplication as IEventDispatcher;
+				//radiate.setCanvas(canvasBackground, canvasBackgroundParent);
+				radiate.setDocument(targetApplication as IEventDispatcher);
+				radiate.setTarget(targetApplication);
 				
 				updateAppScrollPosition();
 				

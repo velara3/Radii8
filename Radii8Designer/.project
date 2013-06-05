@@ -31,5 +31,10 @@
 			<type>2</type>
 			<locationURI>DOCUMENTS/Radii8SDKPatch/src</locationURI>
 		</link>
+		<link>
+			<name>bin-debug</name>
+			<type>2</type>
+			<location>/Applications/MAMP/htdocs/Radii8-debug</location>
+		</link>
 	</linkedResources>
 </projectDescription>

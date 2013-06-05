@@ -17,6 +17,13 @@ package com.flexcapacitor.tools {
 			
 		}
 		
+		[Embed(source="assets/icons/tools/Zoom.png")]
+		private var _icon:Class;
+		
+		public function get icon():Class {
+			return _icon;
+		}
+		
 		/**
 		 * Enable this tool. 
 		 * */

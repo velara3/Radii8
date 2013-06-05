@@ -161,23 +161,22 @@
 	</fx:Script>
 		
 	<s:layout>
-		<s:VerticalLayout />
+		<s:VerticalLayout paddingRight="10"/>
 	</s:layout>
 
 	<s:Button label="Remove All Event Listeners" click="removeAll()" />
 	
 	<mx:DataGrid id="grid" 
 				 width="100%" 
-				 height="100%" 
 				 minWidth="100"
-				 minHeight="450"
+				 minHeight="100"
 				 change="selectedTracker = grid.selectedItem as ListenerTracker"
 				 >
 		<mx:columns>
 			<mx:DataGridColumn dataField="type" headerText="Type" />
 			<mx:DataGridColumn dataField="callingClassName" headerText="Added By" />
 
-			<mx:DataGridColumn dataField="type" headerText="" >
+			<mx:DataGridColumn dataField="type" headerText="" width="50" >
 				<mx:itemRenderer>
 					<fx:Component>
 						<mx:Button label="Remove" click="outerDocument.removeListener(data as mx.core.ListenerTracker)" />
@@ -190,7 +189,7 @@
 	<mx:Panel title="Details: {selectedTracker.type}" 
 			  width="100%" 
 			  height="100%" 
-			  minHeight="50"
+			  minHeight="150"
 			  minWidth="100"
 			  dropShadowVisible="false"
 			  >

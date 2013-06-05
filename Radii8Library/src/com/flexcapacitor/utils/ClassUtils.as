@@ -33,7 +33,7 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Get unqualified class name of the target object
+		 * @copy NameUtil.getUnqualifiedClassName()
 		 * */
 		public static function getClassName(element:Object):String {
 			var name:String = NameUtil.getUnqualifiedClassName(element);
@@ -41,7 +41,8 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Get unqualified class name of the target object. 
+		 * Get unqualified class name of the target object. <br/>
+		 * 
 		 * If target has the id of myImage and include class name is true then the result is
 		 * "Image.myImage". If delimiter is "_" then the result is "Image_myImage". 
 		 * If includeClassName is false then the result is, "myImage". 
@@ -81,7 +82,10 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Get package of the target object
+		 * Get fully qualified package of an object minus the class name. 
+		 * 
+		 * For example, if fully qualified class name is "mx.components::Button" then
+		 * this method returns "mx.components".
 		 * */
 		public static function getPackageName(element:Object):String {
 			var name:String = flash.utils.getQualifiedClassName(element);
@@ -115,6 +119,76 @@ package com.flexcapacitor.utils {
 			
 			return name;
 		}
+
+
+		/**
+		 * Gets the ID of the target object
+		 * returns null if no ID is specified or target is not a UIComponent
+		 * */
+		public static function getIdentifier(element:Object):String {
+			var id:String;
+
+			if (element is UIComponent && UIComponent(element).id) {
+				id = UIComponent(element).id;
+			}
+			return id;
+		}
+
+		/**
+		 * Get name of target object or null if not available
+		 * */
+		public static function getName(element:Object):String {
+			var name:String;
+
+			if (element.hasOwnProperty("name") && element.name) {
+				name = element.name;
+			}
+
+			return name;
+		}
+
+		/**
+		 * Get qualified class name of the target object. 
+		 * If normalize is true then replaces, "::" with ".";
+		 * 
+		 * @copy flash.utils.getQualifiedClassName()
+		 * */
+		public static function getQualifiedClassName(element:Object, normalize:Boolean = false):String {
+			var name:String = flash.utils.getQualifiedClassName(element);
+			if (normalize && name) {
+				name = name.replace("::", ".");
+			}
+			return name;
+		}
+
+		/**
+		 * With the given target it returns a regexp pattern to find the exact instance in MXML
+		 * If isScript is true it attempts to returns a pattern to find the exact instance in AS3
+		 * The MXML pattern will find the instance with that ID. If the instance doesn't have an ID it no worky.
+		 * NOTE: Press CMD+SHIFT+F to and check regular expression in the Find in Files dialog
+		 * */
+		public static function getRegExpSearchPattern(target:DisplayObject, isScript:Boolean = false):String {
+			var id:String = getIdentifier(target);
+			var className:String = NameUtil.getUnqualifiedClassName(target);
+			var pattern:String;
+			var scriptPattern:String;
+
+			if (id == null) {
+				pattern = className + "(.*)";
+			}
+			else {
+				pattern = className + "(.*)id\\s?=\\s?[\"|']" + id + "[\"|']";
+				scriptPattern = id + ".addEventListener";
+			}
+
+
+			if (isScript) {
+				return scriptPattern;
+			}
+
+			return pattern;
+		}
+
 		
 		/**
 		 * Clears outline drawn around target display object
@@ -181,70 +255,6 @@ package com.flexcapacitor.utils {
 
 			return children;
 		}
-
-
-		/**
-		 * Gets the ID of the target object
-		 * returns null if no ID is specified or target is not a UIComponent
-		 * */
-		public static function getIdentifier(element:Object):String {
-			var id:String;
-
-			if (element is UIComponent && UIComponent(element).id) {
-				id = UIComponent(element).id;
-			}
-			return id;
-		}
-
-		/**
-		 * Get name of target object or null if not available
-		 * */
-		public static function getName(element:Object):String {
-			var name:String;
-
-			if (element.hasOwnProperty("name") && element.name) {
-				name = element.name;
-			}
-
-			return name;
-		}
-
-		/**
-		 * Get qualified class name of the target object
-		 * */
-		public static function getQualifiedClassName(element:Object):String {
-			var name:String = flash.utils.getQualifiedClassName(element);
-			return name;
-		}
-
-		/**
-		 * With the given target it returns a regexp pattern to find the exact instance in MXML
-		 * If isScript is true it attempts to returns a pattern to find the exact instance in AS3
-		 * The MXML pattern will find the instance with that ID. If the instance doesn't have an ID it no worky.
-		 * NOTE: Press CMD+SHIFT+F to and check regular expression in the Find in Files dialog
-		 * */
-		public static function getRegExpSearchPattern(target:DisplayObject, isScript:Boolean = false):String {
-			var id:String = getIdentifier(target);
-			var className:String = NameUtil.getUnqualifiedClassName(target);
-			var pattern:String;
-			var scriptPattern:String;
-
-			if (id == null) {
-				pattern = className + "(.*)";
-			}
-			else {
-				pattern = className + "(.*)id\\s?=\\s?[\"|']" + id + "[\"|']";
-				scriptPattern = id + ".addEventListener";
-			}
-
-
-			if (isScript) {
-				return scriptPattern;
-			}
-
-			return pattern;
-		}
-
 
 		/**
 		 * Get ancestors of target 

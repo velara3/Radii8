@@ -6,6 +6,10 @@ package com.flexcapacitor.events {
 	
 	import mx.states.AddItems;
 	
+	/**
+	 * Handles Radiate events. 
+	 * Need to refactor. 
+	 * */
 	public class RadiateEvent extends Event {
 		
 		/**
@@ -22,6 +26,26 @@ package com.flexcapacitor.events {
 		 * Dispatched when the target is changed
 		 * */
 		public static const TARGET_CHANGE:String = "targetChange";
+		
+		/**
+		 * Dispatched when a preview is requested
+		 * */
+		public static const REQUEST_PREVIEW:String = "requestPreview";
+		
+		/**
+		 * Dispatched when a color is selected
+		 * */
+		public static const COLOR_SELECTED:String = "colorSelected";
+		
+		/**
+		 * Dispatched when a color is previewed before color selected event.
+		 * */
+		public static const COLOR_PREVIEW:String = "colorPreview";
+		
+		/**
+		 * Dispatched when the generated code is updated
+		 * */
+		public static const CODE_UPDATED:String = "codeUpdated";
 		
 		/**
 		 * Dispatched when an item (usually a display object) is added
@@ -61,17 +85,17 @@ package com.flexcapacitor.events {
 		/**
 		 * Dispatched when history is changed.
 		 * */
-		public static var HISTORY_CHANGE:String = "historyChange";
+		public static const HISTORY_CHANGE:String = "historyChange";
 		
 		/**
 		 * Dispatched when the tool is changed.
 		 * */
-		public static var TOOL_CHANGE:String = "toolChange";
+		public static const TOOL_CHANGE:String = "toolChange";
 		
 		/**
 		 * Dispatched when the tools list is updated.
 		 * */
-		public static var TOOLS_UPDATED:String = "toolsUpdated";
+		public static const TOOLS_UPDATED:String = "toolsUpdated";
 		
 		
 		public var selectedItem:Object;
@@ -86,12 +110,17 @@ package com.flexcapacitor.events {
 		public var historyEvent:HistoryEvent;
 		public var targets:Array;
 		public var tool:ITool;
+		public var previewType:String;
+		public var color:uint;
+		public var invalid:Boolean;
+		public var isRollOver:Boolean;
 		
 		/**
 		 * Constructor.
 		 * */
 		public function RadiateEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, 
-									 target:Object=null, changes:Array=null, properties:Array=null, value:*=null, multipleSelection:Boolean = false, tool:ITool = null) {
+									 target:Object=null, changes:Array=null, properties:Array=null, 
+									 value:*=null, multipleSelection:Boolean = false, tool:ITool = null) {
 			super(type, bubbles, cancelable);
 			
 			this.selectedItem = target;
@@ -104,7 +133,7 @@ package com.flexcapacitor.events {
 		
 		override public function clone():Event {
 			throw new Error("do this");
-			return new RadiateEvent(type, bubbles, cancelable, selectedItem, changes, properties, value, multipleSelection);
+			return new RadiateEvent(type, bubbles, cancelable, selectedItem, changes, properties, value, multipleSelection, tool);
 		}
 		
 		

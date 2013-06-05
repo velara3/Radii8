@@ -6,10 +6,6 @@
 		 
 		 creationComplete="group1_creationCompleteHandler(event)">
 
-	<s:layout>
-		<s:HorizontalLayout paddingLeft="4" />
-	</s:layout>
-	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
@@ -25,17 +21,15 @@
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				
-				//radiate.addEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler, false, 0, true);
 				
 				tool = radiate.selectedTool;
 				
 				updateTool(tool);
 			}
-			/*
-			protected function toolChangeHandler(event:RadiateEvent):void {
-				updateTool(event.tool);
-			}*/
 			
+			/**
+			 * Update UI components to tool value
+			 * */
 			public function updateTool(tool:ITool):void {
 				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
 				
@@ -47,6 +41,9 @@
 				}
 			}
 			
+			/**
+			 * Show selection checkbox change handler
+			 * */
 			protected function showSelection_changeHandler(event:Event):void {
 				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
 				var selectedTool:ITool = tool;
@@ -59,7 +56,9 @@
 				
 			}
 			
-			
+			/**
+			 * Show label change handler
+			 * */
 			protected function showLabel_changeHandler(event:Event):void {
 				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
 				var selectedTool:ITool = tool;
@@ -75,9 +74,12 @@
 		]]>
 	</fx:Script>
 	
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="4" />
+	</s:layout>
+	
+	
 	<s:CheckBox id="showSelection" label="Show Selection" change="showSelection_changeHandler(event)"/>
 	<s:CheckBox id="showLabel" label="Show Label" change="showLabel_changeHandler(event)"/>
-	<!--<s:CheckBox label="Layer" />
-	<s:CheckBox label="Group" />-->
 
 </s:Group>

@@ -16,5 +16,8 @@ package com.flexcapacitor.utils.supportClasses {
 		function get showSelectionLabelOnDocument():Boolean;
 		function set showSelectionLabelOnDocument(value:Boolean):void;
 		
+		function get selectionBorderColor():uint;
+		function set selectionBorderColor(value:uint):void;
+		
 	}
 }

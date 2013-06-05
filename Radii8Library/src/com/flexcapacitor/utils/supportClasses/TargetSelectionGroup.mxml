@@ -34,51 +34,6 @@
 				
 			}
 			
-			
-			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
-			{
-				super.updateDisplayList(unscaledWidth, unscaledHeight);
-				
-				//graphics.clear();
-				/*
-				was showing previous selection like the graphics weren't cleared
-				selectionFill.width = unscaledWidth;
-				selectionFill.height = unscaledHeight;
-				selectionStroke.width = unscaledWidth;
-				selectionStroke.height = unscaledHeight;*/
-				
-				// hide or show background fill
-				if (showSelectionFill) {
-					
-					if (Radiate.instance.document == data && !showSelectionFillOnDocument) {
-						selectionFill.visible = false;
-					}
-					else {
-						selectionFill.visible = true;
-					}
-				}
-				else {
-					selectionFill.visible = false;
-				}
-				
-				// hide or show label
-				if (showSelectionLabel) {
-				
-					if (Radiate.instance.document == data && !showSelectionLabelOnDocument) {
-						labelDisplay.visible = false;
-					}
-					else {
-						labelDisplay.visible = true;
-					}
-				}
-				else {
-					labelDisplay.visible = false;
-				}
-				
-			}
-			
-			
-			
 			protected function itemrenderer1_mouseMoveHandler(event:MouseEvent):void
 			{
 				trace("selection group is getting mouse events");
@@ -138,6 +93,71 @@
 				invalidateDisplayList();
 			}
 
+		
+			private var _selectionBorderColor:uint = 0x2da6e9;
+	
+			public function get selectionBorderColor():uint {
+				return _selectionBorderColor;
+			}
+	
+			public function set selectionBorderColor(value:uint):void {
+				if (_selectionBorderColor==value) return;
+				
+				_selectionBorderColor = value;
+				
+				invalidateDisplayList();
+			}
+			
+			
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				
+				//graphics.clear();
+				/*
+				was showing previous selection like the graphics weren't cleared
+				selectionFill.width = unscaledWidth;
+				selectionFill.height = unscaledHeight;
+				selectionStroke.width = unscaledWidth;
+				selectionStroke.height = unscaledHeight;*/
+				var solidColorStroke:SolidColorStroke = SolidColorStroke(selectionStroke.stroke);
+				if (selectionStroke && 
+					solidColorStroke.color != selectionBorderColor) {
+					solidColorStroke.color = selectionBorderColor;
+					labelDisplay.setStyle("backgroundColor", selectionBorderColor);
+				}
+				
+				// hide or show background fill
+				if (showSelectionFill) {
+					
+					if (Radiate.instance.document == data && !showSelectionFillOnDocument) {
+						selectionFill.visible = false;
+					}
+					else {
+						selectionFill.visible = true;
+					}
+				}
+				else {
+					selectionFill.visible = false;
+				}
+				
+				// hide or show label
+				if (showSelectionLabel) {
+				
+					if (Radiate.instance.document == data && !showSelectionLabelOnDocument) {
+						labelDisplay.visible = false;
+					}
+					else {
+						labelDisplay.visible = true;
+					}
+				}
+				else {
+					labelDisplay.visible = false;
+				}
+				
+			}
+			
 			
 		]]>
 	</fx:Script>
@@ -151,7 +171,7 @@
 	
 	<s:Rect id="selectionStroke" width="{width}" height="{height}">
 		<s:stroke>
-			<s:SolidColorStroke color="0x2da6e9" weight="0" alpha=".5"/>
+			<s:SolidColorStroke color="0x2da6e9" weight="0" alpha="1"/>
 		</s:stroke>
 	</s:Rect>
 	

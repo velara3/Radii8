@@ -4,23 +4,25 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.logging.RadiateLogTarget;
 	import com.flexcapacitor.tools.ITool;
+	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.TypeUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
-	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	
+	import flash.display.Bitmap;
+	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
-	import flash.display.Sprite;
 	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
-	import flash.geom.Rectangle;
+	import flash.geom.Point;
 	import flash.system.ApplicationDomain;
+	import flash.ui.Mouse;
+	import flash.ui.MouseCursorData;
 	import flash.utils.Dictionary;
 	
 	import mx.collections.ArrayCollection;
 	import mx.core.ClassFactory;
 	import mx.core.FlexGlobals;
-	import mx.core.IFlexDisplayObject;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
@@ -29,20 +31,16 @@ package com.flexcapacitor.controller {
 	import mx.logging.AbstractTarget;
 	import mx.logging.ILogger;
 	import mx.logging.Log;
-	import mx.managers.ISystemManager;
 	import mx.managers.LayoutManager;
-	import mx.managers.PopUpManager;
 	import mx.states.AddItems;
 	import mx.utils.ArrayUtil;
 	
 	import spark.components.Application;
 	import spark.components.Scroller;
 	import spark.components.supportClasses.GroupBase;
-	import spark.components.supportClasses.ItemRenderer;
 	import spark.core.ContentCache;
 	import spark.effects.SetAction;
 	import spark.layouts.BasicLayout;
-	import spark.skins.spark.ListDropIndicator;
 	
 	use namespace mx_internal;
 	
@@ -100,6 +98,21 @@ package com.flexcapacitor.controller {
 	 * Used when the document canvas is updated. 
 	 * */
 	[Event(name="canvasChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Event to request a preview if available. Used for HTML preview. 
+	 * */
+	[Event(name="requestPreview", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when the generated code is updated. 
+	 * */
+	[Event(name="codeUpdated", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when a color is selected. 
+	 * */
+	[Event(name="colorSelected", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
 	 * Dispatches events when the target or targets property changes or is about to change. 
@@ -212,6 +225,60 @@ package com.flexcapacitor.controller {
 				targetChangeEvent.selectedItem = target && target is Array ? target[0] : target;
 				targetChangeEvent.targets = ArrayUtil.toArray(target);
 				dispatchEvent(targetChangeEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch preview event
+		 * */
+		public function dispatchPreviewEvent(code:String, type:String):void {
+			var previewEvent:RadiateEvent = new RadiateEvent(RadiateEvent.REQUEST_PREVIEW);
+			
+			if (hasEventListener(RadiateEvent.REQUEST_PREVIEW)) {
+				previewEvent.previewType = type;
+				previewEvent.value = code;
+				dispatchEvent(previewEvent);
+			}
+		}
+		
+		
+		/**
+		 * Dispatch code updated event
+		 * */
+		public function dispatchCodeUpdatedEvent(code:String, type:String):void {
+			var codeUpdatedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.CODE_UPDATED);
+			
+			if (hasEventListener(RadiateEvent.CODE_UPDATED)) {
+				codeUpdatedEvent.previewType = type;
+				codeUpdatedEvent.value = code;
+				dispatchEvent(codeUpdatedEvent);
+			}
+		}
+		
+		
+		/**
+		 * Dispatch color selected event
+		 * */
+		public function dispatchColorSelectedEvent(color:uint, invalid:Boolean = false):void {
+			var colorSelectedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.COLOR_SELECTED);
+			
+			if (hasEventListener(RadiateEvent.COLOR_SELECTED)) {
+				colorSelectedEvent.color = color;
+				colorSelectedEvent.invalid = invalid;
+				dispatchEvent(colorSelectedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch color preview event
+		 * */
+		public function dispatchColorPreviewEvent(color:uint, invalid:Boolean = false):void {
+			var colorPreviewEvent:RadiateEvent = new RadiateEvent(RadiateEvent.COLOR_PREVIEW);
+			
+			if (hasEventListener(RadiateEvent.COLOR_PREVIEW)) {
+				colorPreviewEvent.color = color;
+				colorPreviewEvent.invalid = invalid;
+				dispatchEvent(colorPreviewEvent);
 			}
 		}
 		
@@ -519,24 +586,37 @@ package com.flexcapacitor.controller {
 		 * Creates the list of tools.
 		 * */
 		public static function createToolsList():void {
-			var xml:XML;
-			var length:uint;
-			var items:XMLList;
-			var className:String;
 			var inspectorClassName:String;
 			var hasDefinition:Boolean;
 			var toolClassDefinition:Object;
 			var inspectorClassDefinition:Object;
+			var xml:XML;
+			var length:uint;
+			var items:XMLList;
+			var className:String;
 			var includeItem:Boolean;
 			var attributes:XMLList;
 			var attributesLength:int;
-			var item:XML;
 			var defaults:Object;
 			var propertyName:String;
 			var toolClassFactory:ClassFactory;
 			var inspectorClassFactory:ClassFactory;
 			var toolInstance:ITool;
 			var inspectorInstance:UIComponent;
+			var name:String;
+			var cursorItems:XMLList;
+			var cursorItem:XML;
+			var cursorName:String;
+			var cursors:Dictionary;
+			var cursorsCount:int;
+			var cursorData:MouseCursorData;
+			var cursorBitmapDatas:Vector.<BitmapData>;
+			var cursorBitmap:Bitmap;
+			var cursorClass:Class;
+			var cursorID:String;
+			var cursorX:int;
+			var cursorY:int;
+			var item:XML;
 			
 			
 			xml = new XML(new Radii8LibraryToolAssets.toolManifestDefaults());
@@ -549,9 +629,10 @@ package com.flexcapacitor.controller {
 			for (var i:int;i<length;i++) {
 				item = items[i];
 				
-				var name:String = String(item.id);
+				name = String(item.id);
 				className = item.attribute("class");
 				inspectorClassName = item.attribute("inspector");
+				cursorItems = item..cursor;
 				
 				includeItem = item.attribute("include")=="false" ? false : true;
 				
@@ -606,8 +687,61 @@ package com.flexcapacitor.controller {
 							Radiate.log.error(errorMessage);
 						}
 					}
+					
+					
+					cursorsCount = cursorItems.length();
+					
+					if (cursorsCount>0) {
+						cursors = new Dictionary(true);
+					}
+					
+					// create mouse cursors
+					for (var j:int;j<cursorsCount;j++) {
+						cursorItem = cursorItems[j];
+						cursorName = cursorItem.@name.toString();
+						cursorX = int(cursorItem.@x.toString());
+						cursorY = int(cursorItem.@y.toString());
+						cursorID = cursorName != "" ? className + "." + cursorName : className;
+			
+						// Create a MouseCursorData object 
+						cursorData = new MouseCursorData();
 						
-					Radiate.addToolType(item.@id, className, toolClassDefinition, toolInstance, inspectorClassName, null, defaults);
+						// Specify the hotspot 
+						cursorData.hotSpot = new Point(cursorX, cursorY); 
+						
+						// Pass the cursor bitmap to a BitmapData Vector 
+						cursorBitmapDatas = new Vector.<BitmapData>(1, true); 
+						
+						// Create the bitmap cursor 
+						// The bitmap must be 32x32 pixels or smaller, due to an OS limitation
+						//CursorClass = Radii8LibraryToolAssets.EyeDropper;
+						
+						if (cursorName) {
+							cursorClass = toolClassDefinition[cursorName];
+						}
+						else {
+							cursorClass = toolClassDefinition["Cursor"];
+						}
+						
+						cursorBitmap = new cursorClass();
+						
+						// Pass the value to the bitmapDatas vector 
+						cursorBitmapDatas[0] = cursorBitmap.bitmapData;
+						
+						// Assign the bitmap to the MouseCursor object 
+						cursorData.data = cursorBitmapDatas;
+						
+						// Register the MouseCursorData to the Mouse object with an alias 
+						Mouse.registerCursor(cursorID, cursorData);
+						
+						cursors[cursorName] = {cursorData:cursorData, id:cursorID};
+					}
+					
+					if (cursorsCount>0) {
+						mouseCursors[className] = cursors;
+					}
+					
+					addToolType(item.@id, className, toolClassDefinition, toolInstance, inspectorClassName, null, defaults, null, cursors);
 				}
 				else {
 					//trace("Tool class not found: " + classDefinition);
@@ -617,6 +751,21 @@ package com.flexcapacitor.controller {
 			}
 			
 			// toolDescriptions should now be populated
+		}
+		
+		/**
+		 * Helper method to get the ID of the mouse cursor by name.
+		 * 
+		 * */
+		public function getMouseCursorID(tool:ITool, name:String = "Cursor"):String {
+			var component:ComponentDescription = getToolDescription(tool);
+			
+			
+			if (component.cursors && component.cursors[name]) {
+				return component.cursors[name].id;
+			}
+			
+			return null;
 		}
 		
 		//----------------------------------
@@ -801,6 +950,17 @@ package com.flexcapacitor.controller {
 		
 		private static var _console:Object;
 		
+		/**
+		 * Is true when preview is visible. This is manually set. 
+		 * Needs refactoring. 
+		 * */
+		public var isPreviewVisible:Boolean;
+		
+		/**
+		 * Collection of mouse cursors that can be added or removed to 
+		 * */
+		[Bindable]
+		public static var mouseCursors:Dictionary = new Dictionary(true);
 		
 		//----------------------------------
 		//
@@ -828,7 +988,7 @@ package com.flexcapacitor.controller {
 		 * 
 		 * Not sure if we should create an instance here or earlier or later. 
 		 * */
-		public static function addToolType(name:String, className:String, classType:Object, instance:ITool, inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null):Boolean {
+		public static function addToolType(name:String, className:String, classType:Object, instance:ITool, inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null, cursors:Dictionary = null):Boolean {
 			var definition:ComponentDescription;
 			var length:uint = toolsDescriptions.length;
 			var item:ComponentDescription;
@@ -852,6 +1012,7 @@ package com.flexcapacitor.controller {
 			definition.defaultProperties = defaultProperties;
 			definition.instance = instance;
 			definition.inspectorClassName = inspectorClassName;
+			definition.cursors = cursors;
 			
 			toolsDescriptions.addItem(definition);
 			

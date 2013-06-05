@@ -41,6 +41,9 @@ package {
 		[Embed(source="assets/icons/tools/dragStripIcon.png")]
 		public static const DragStripIcon:Class;
 		
+		[Embed(source="assets/icons/tools/EyeDropper.png")]
+		public static const EyeDropper:Class;
+		
 		
 		
 	}

@@ -12,6 +12,11 @@ package com.flexcapacitor.tools {
 		 * Disables the selected tool. 
 		 * */
 		function disable():void 
+			
+		/**
+		 * Embedded icon
+		 * */
+		function get icon():Class
 	}
 	
 }

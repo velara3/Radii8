@@ -96,21 +96,14 @@
 						
 						<fx:Script>
 							<![CDATA[
-								import com.flexcapacitor.utils.ClassUtils;
 								import com.flexcapacitor.utils.StringUtils;
 								
-								import mx.controls.listClasses.ListBase;
-								import mx.controls.treeClasses.TreeListData;
 								import mx.core.mx_internal;
 								import mx.effects.CompositeEffect;
 								import mx.effects.Effect;
-								import mx.effects.IEffect;
 								import mx.effects.Pause;
 								import mx.effects.Sequence;
 								import mx.events.EffectEvent;
-								import mx.utils.StringUtil;
-								
-								import spark.effects.Move;
 								
 								use namespace mx_internal;
 								

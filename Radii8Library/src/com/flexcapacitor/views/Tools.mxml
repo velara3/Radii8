@@ -2,7 +2,8 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
-		 width="200" height="50"
+		 width="200" height="24"
+		 
 		 creationComplete="group1_creationCompleteHandler(event)">
 	
 	
@@ -21,12 +22,19 @@
 			import spark.events.IndexChangeEvent;
 			
 			
-			
+			/**
+			 * 
+			 * */
 			private var radiate:Radiate;
 			
+			/**
+			 * 
+			 * */
 			public var selectedTool:ITool;
 			
-			
+			/**
+			 * 
+			 * */
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler);
@@ -40,18 +48,25 @@
 				}
 			}
 			
-			
+			/**
+			 * 
+			 * */
 			protected function toolChangeHandler(event:RadiateEvent):void
 			{
 				selectedTool = event.selectedItem as ITool;
 			}
 			
+			/**
+			 * 
+			 * */
 			protected function toolsUpdatedHandler(event:RadiateEvent):void
 			{
 				tools.dataProvider = Radiate.toolsDescriptions;
 			}
 			
-			
+			/**
+			 * 
+			 * */
 			protected function tools_updateCompleteHandler(event:FlexEvent):void {
 				explicitHeight = tools.measuredHeight;
 			}
@@ -63,6 +78,9 @@
 				updateTool();
 			}
 			
+			/**
+			 * Update the tool
+			 * */
 			public function updateTool():void {
 				var item:ComponentDescription;
 				
@@ -78,7 +96,7 @@
 	
 	<s:List id="tools" 
 			width="100%" 
-			height="100%"
+			height="24"
 			minHeight="24"
 			labelField="name" 
 			dragEnabled="false"

@@ -14,7 +14,12 @@
 			   uncaughtError="uncaughtErrorHandler(event)" 
 			   >
 	
-	
+	<!-- 5,483 lines of code-->
+	<!-- radiate library 8103 
+	654
+	252
+	53,549
+	-->
 	<fx:Style>
 		@namespace s "library://ns.adobe.com/flex/spark";
 		@namespace mx "library://ns.adobe.com/flex/mx";
@@ -184,7 +189,8 @@
 		</handlers:EventHandler>
 		
 		<utils:MiniInspector showDisplayObjectOutlines="true"
-							 showRuler="true"/>
+							 showRuler="true"
+							 showColorUnderMouse="true"/>
 	</fx:Declarations>
 	
 	<s:states>

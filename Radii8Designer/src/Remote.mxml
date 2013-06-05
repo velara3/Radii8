@@ -7,11 +7,13 @@
 		 xmlns:supportClasses="spark.components.supportClasses.*" 
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:core="com.flexcapacitor.effects.core.*"
-		 xmlns:ns1="*" 
+		 xmlns:flexiframe="com.google.code.flexiframe.*" 
 		 xmlns:views="com.flexcapacitor.views.*"
+		 xmlns:ns1="*" 
 		 
 		 width="400" 
 		 height="100%" 
+		 creationComplete="group1_creationCompleteHandler(event)"
 		 >
 		
 	<fx:Style>
@@ -39,11 +41,16 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.google.code.flexiframe.IFrame;
 			
+			import mx.events.FlexEvent;
 			import mx.events.IndexChangedEvent;
 			
 			import spark.events.IndexChangeEvent;
 			
+			
+			private var radiate:Radiate;
 			
 			protected function panelsLabelFunction(item:Object):String {
 				var name:String = item is Label ? Label(item).text : " • ";
@@ -89,12 +96,78 @@
 				
 				if (index==1) {
 					//Radiate.desetDocuments(true);
+					radiate.isPreviewVisible = true;
 				}
 				else {
-					var document:Document = NavigatorContent(navigatorContent.getItemAt(0)).getElementAt(0) as Document;
+					var document:Document = NavigatorContent(documentsTagNavigator.getItemAt(0)).getElementAt(0) as Document;
 					Radiate.setDocuments(document.targetApplication);
+					radiate.isPreviewVisible = false;
 				}
 				
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.REQUEST_PREVIEW, requestPreviewHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.CODE_UPDATED, codeUpdatedHandler, false, 0, true);
+			}
+			
+			private var previewCreated:Boolean;
+			private var initialDocument:Boolean;
+
+			private var iframe:IFrame;
+
+			private var navigatorContent:NavigatorContent;
+			
+			protected function requestPreviewHandler(event:RadiateEvent):void {
+				var previewType:String = event.previewType;
+				
+				if (!previewCreated && previewType==Code.HTML) {
+					navigatorContent = new NavigatorContent();
+					navigatorContent.percentWidth = 100;
+					navigatorContent.percentHeight = 100;
+					navigatorContent.label = "PREVIEW";
+					//navigatorContent.setStyle("backgroundColor", "#ff0000");
+					
+					iframe = new IFrame();
+					iframe.id = "iframe";
+					iframe.top = 20;
+					iframe.left = 20;
+					iframe.percentWidth = 100;
+					iframe.percentHeight = 100;
+					iframe.setStyle("backgroundColor", "#666666");
+					//iframe.setStyle("backgroundAlpha", 0);
+					
+					navigatorContent.addElement(iframe);
+					navigatorContent.validateNow();
+					documentsTagNavigator.addElement(navigatorContent);
+					
+					previewCreated = true;
+				}
+				
+				//var displayList:ComponentDescription = DisplayObjectUtils.getDisplayList(radiate.document);
+				
+				if (previewType==Code.HTML) {
+					documentsTagNavigator.selectedIndex = 1;
+					iframe.content = event.value;
+					//radiate.isPreviewVisible = true;
+				}
+				else {
+					documentsTagNavigator.selectedIndex = 0;
+				}
+				
+				
+			}
+			
+			/**
+			 * Update code in preview
+			 * */
+			protected function codeUpdatedHandler(event:RadiateEvent):void {
+				
+				if (iframe) { 
+					//documentsTagNavigator.selectedIndex = 1;
+					iframe.content = event.value;
+				}
 			}
 			
 		]]>
@@ -174,9 +247,9 @@
 				</s:layout>-->
 				
 				<!-- TOOLS -->
-				<s:VGroup width="100%" minHeight="48">
+				<s:VGroup width="100%" height="48" minHeight="48">
 					<s:Label text="TOOLS" width="100%" styleName="formItem"/>
-					<views:Tools width="100%" />
+					<views:Tools width="100%" height="24"/>
 				</s:VGroup>
 				
 				<!--<s:Spacer height="8"/>-->
@@ -304,12 +377,21 @@
 			
 			<!-- EXAMPLE APPLICATION -->
 			<mx:VDividedBox id="applicationGroup" width="100%" height="100%" >
+		
 				
-				<mx:TabNavigator  id="navigatorContent" width="100%" height="100%"
+				<mx:TabNavigator  id="documentsTagNavigator" width="100%" height="100%"
 								  change="navigatorContent_changeHandler(event)">
 					<s:NavigatorContent width="100%" height="100%" label="DOCUMENT">
 						<ns1:Document id="document1" width="100%" height="100%" />
 					</s:NavigatorContent>
+					<!--<s:NavigatorContent width="100%" height="100%" label="PREVIEW" creationPolicy="all">
+						<flexiframe:IFrame id="iframe" 
+										   top="20"
+										   left="20"
+										   width="100%" height="100%" 
+										   debug="false"
+										   />
+					</s:NavigatorContent>-->
 					
 					<!--<s:NavigatorContent width="100%" height="100%" label="" >
 						<ns1:Document id="document2" width="100%" height="100%" />
@@ -344,6 +426,11 @@
 								 borderStyle="solid"
 								 width="100%"
 								 height="200">
+				
+					<!-- CODE INSPECTOR -->
+					<s:NavigatorContent width="100%" height="100%" label="CODE">
+						<inspectors:Code id="code1" width="100%" height="100%" />
+					</s:NavigatorContent>
 					
 					<!-- CONSOLE -->
 					<s:NavigatorContent label="CONSOLE">
@@ -354,11 +441,6 @@
 					<!-- PROPERTY INSPECTOR -->
 					<!--<s:NavigatorContent label="PROPERTY INSPECTOR">
 					</s:NavigatorContent>-->
-				
-					<!-- CODE INSPECTOR -->
-					<s:NavigatorContent width="100%" height="100%" label="CODE">
-						<inspectors:Code id="code1" width="100%" height="100%" />
-					</s:NavigatorContent>
 				</mx:TabNavigator>
 				
 				
@@ -373,8 +455,15 @@
 		</s:fill>
 	</s:Rect>
 	
-	<inspectors:Breadcrumbs height="14" bottom="8" left="10" width="100%" 
+	<inspectors:Breadcrumbs height="14" bottom="6" left="10" width="100%" 
 							color="#ffffff"/>
+	
+	<s:Label right="10" 
+			 bottom="6"
+			 textAlign="right" 
+			 color="#888888"
+			 text="©2009-2013 Velara III. All rights reserved."
+			 />
 					
 	<!--<s:List id="shortcutList" 
 			width="100%" 

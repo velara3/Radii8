@@ -33,6 +33,7 @@ package com.flexcapacitor.utils {
 	import mx.utils.NameUtil;
 	
 	import spark.components.Application;
+	import spark.components.CheckBox;
 	import spark.components.Image;
 	import spark.components.SkinnableContainer;
 	import spark.components.supportClasses.GroupBase;
@@ -313,7 +314,7 @@ package com.flexcapacitor.utils {
 			
 			
 			
-			// get targets under point
+			// get targets under mouse pointer
 			if (adjustMouseOffset) {
 				topLeftEdgePoint = new Point(event.stageX-offset.x, event.stageY-offset.y);
 			}
@@ -393,7 +394,14 @@ package com.flexcapacitor.utils {
 				
 				// skip skins
 				if (target is Skin && !includeSkins) {
-					throw new Error("target cannot be a skin");
+					//throw new Error("target cannot be a skin");
+					target = parentApplication;
+				}
+					
+				// skip skins (for groups in checkbox skin for example)
+				if ("owner" in target && target.owner is Skin && !includeSkins) {
+					//continue;
+					target = parentApplication;
 				}
 				
 				// we found a group
@@ -654,6 +662,8 @@ package com.flexcapacitor.utils {
 			// find first available group
 			////////////////////////////////////////////////////////////
 			for (var i:int;i<length;i++) {
+				isGroup = false;
+				
 				target = targetsUnderPoint[i];
 				//trace(i + " of " + length+ " target:"+NameUtil.getUnqualifiedClassName(target));
 				
@@ -671,7 +681,12 @@ package com.flexcapacitor.utils {
 					continue;
 				}
 				
-				isGroup = false;
+				// check if target is child of self
+				if ("contains" in draggedItem && draggedItem.contains(target)) {
+					continue;
+				}
+				
+				
 				
 				// check if target is a group
 				if (target is GroupBase || target is SkinnableContainer) {
@@ -684,6 +699,11 @@ package com.flexcapacitor.utils {
 					
 					// skip skins
 					if (target is Skin && !includeSkins) {
+						continue;
+					}
+					
+					// skip skins (for groups in checkbox skin for example)
+					if ("owner" in target && target.owner is Skin && !includeSkins) {
 						continue;
 					}
 					
@@ -728,9 +748,31 @@ package com.flexcapacitor.utils {
 					break;
 				}
 				
+			}// end loop to find target
+			
+			// check document, parentDocument, owner and parent
+			// GROUP in CHECKBOX
+			// document = spark.skins.spark.CheckBoxSkin
+			// isDocument = false;
+			// owner = spark.skins.spark.CheckBoxSkin
+			// parent = spark.skins.spark.CheckBoxSkin
+			// parentDocument = spark.skins.spark.CheckBoxSkin
+			// systemManager = _application_mx_managers_SystemManager (@118f03ba1)
+			
+			// GROUP on Application
+			// document = spark.skins.spark.ApplicationSkin;
+			// isDocument = false;
+			// owner = application
+			// parent = spark.components.Group
+			// parentDocument = spark.skins.spark.ApplicationSkin
+			// systemManager = _application_mx_managers_SystemManager (@118f03ba1)
+			if (dropTarget is CheckBox) {
+				//trace("is checkbox");
+			}
+			else {
+				//trace("is group");
 			}
 			
-			// end loop to find target
 			if (!dropTarget) {
 				dropTarget = parentApplication;
 			}
@@ -1124,6 +1166,17 @@ package com.flexcapacitor.utils {
 					// if the top level container doesn't contain 
 					break;
 				}
+				
+				
+				// check if target is self
+				/*if (target==draggedItem) {
+					continue;
+				}
+				
+				// check if target is child of self
+				if ("contains" in draggedItem && draggedItem.contains(target)) {
+					continue;
+				}*/
 				
 				isGroup = false;
 				

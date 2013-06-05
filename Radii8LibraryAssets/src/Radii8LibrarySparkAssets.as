@@ -3,6 +3,7 @@ package {
 	import spark.components.ButtonBar;
 	import spark.components.RadioButton;
 	import spark.components.TabBar;
+	import spark.components.TileGroup;
 	import spark.components.ToggleButton;
 	import spark.skins.spark.BorderContainerSkin;
 	import spark.skins.spark.ButtonBarSkin;
@@ -70,7 +71,7 @@ package {
 		public static const FormHeadingIcon:Class;
 		
 		//[Embed(source="assets/icons/spark/containers/FormItem.png")]
-		//public static const FormItemIcon:Class;
+		//public static var FormItemIcon:Class;
 		
 		[Embed(source="assets/icons/spark/containers/GridColumnHeaderGroup.png")]
 		public static const GridColumnHeaderGroupIcon:Class;
@@ -98,6 +99,7 @@ package {
 		
 		[Embed(source="assets/icons/spark/containers/TileGroup.png")]
 		public static const TileGroupIcon:Class;
+		public static var tileGroup:TileGroup;
 		
 		//[Embed(source="assets/icons/spark/containers/TitleWindow.png")]
 		//public static const TitleWindowIcon:Class;
@@ -189,8 +191,8 @@ package {
 		
 		[Embed(source="assets/icons/spark/controls/RadioButton.png")]
 		public static const RadioButtonIcon:Class;
-		public static const radioButton:RadioButton;
-		public static const radioButtonSkin:RadioButtonSkin;
+		public static var radioButton:RadioButton;
+		public static var radioButtonSkin:RadioButtonSkin;
 		
 		[Embed(source="assets/icons/spark/controls/RadioButtonGroup.png")]
 		public static const RadioButtonGroupIcon:Class;
@@ -215,8 +217,8 @@ package {
 		
 		[Embed(source="assets/icons/spark/controls/TabBar.png")]
 		public static const TabBarIcon:Class;
-		public static const tabBar:TabBar;
-		public static const tabBarSkin:TabBarSkin;
+		public static var tabBar:TabBar;
+		public static var tabBarSkin:TabBarSkin;
 		
 		//[Embed(source="assets/icons/spark/controls/Text.png")]
 		//public static const TextIcon:Class;
@@ -238,8 +240,8 @@ package {
 		
 		[Embed(source="assets/icons/spark/controls/ToggleButton.png")]
 		public static const ToggleButtonIcon:Class;
-		public static const toggleButton:ToggleButton;
-		public static const toggleButtonSkin:ToggleButtonSkin;
+		public static var toggleButton:ToggleButton;
+		public static var toggleButtonSkin:ToggleButtonSkin;
 		
 		[Embed(source="assets/icons/spark/controls/VideoDisplay.png")]
 		public static const VideoDisplayIcon:Class;

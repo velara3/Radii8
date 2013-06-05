@@ -1175,7 +1175,7 @@
 	</fx:Script>
 
 	<fx:Declarations>
-		<handlers:EventHandler eventName="{SearchTextInput.CLEAR_TEXT}"
+		<!--<handlers:EventHandler eventName="{SearchTextInput.CLEAR_TEXT}"
 							   targets="{[
 							   topText, 
 							   bottomText, 
@@ -1195,7 +1195,7 @@
 				applyPropertiesToTargetHandler(event.currentTarget.event);
 				]]>
 			</handlers:eventStart>
-		</handlers:EventHandler>
+		</handlers:EventHandler>-->
 		
 		<handlers:EventHandler eventName="{FlexEvent.ENTER}"
 							   targets="{[
@@ -1315,13 +1315,13 @@
 	<!-- POSITIONING -->
 	<s:Group horizontalCenter="0" y="30" 
 			 styleName="constraintStyles">
-		<fc:SearchTextInput id="widthText" 
+		<s:TextInput id="widthText" 
 					 fontSize="12"
 					 styleName="inputStyles"
 					 width="70" x="44" y="0"
 					 restrict="0-9%"
 					 name="width:Number"/>
-		<fc:SearchTextInput id="heightText"
+		<s:TextInput id="heightText"
 					 fontSize="12"
 					 styleName="inputStyles" 
 					 width="70" x="174" y="0"
@@ -1331,13 +1331,13 @@
 					 fontSize="12"
 					 styleName="inputStyles"
 					 width="70" x="44" y="35"
-					 restrict="0-9"
+					 restrict="0-9-"
 					 name="x:Number"/>
 		<s:TextInput id="yText" 
 					 fontSize="12"
 					 styleName="inputStyles"
 					 width="70" x="174" y="35"
-					 restrict="0-9"
+					 restrict="0-9-"
 					 name="y:Number"/>
 		<s:Label text="Height:" 
 				 styleName="constraintStyles"
@@ -1365,12 +1365,12 @@
 		<s:TextInput id="topText"
 					 styleName="inputStyles"
 					 width="40" x="205" y="47"
-					 restrict="0-9"
+					 restrict="0-9-"
 					 name="top:style"/>
 		<s:TextInput id="verticalCenterText"
 					 styleName="inputStyles"
 					 width="40" x="205" y="95"
-					 restrict="0-9"
+					 restrict="0-9-"
 					 name="verticalCenter:style"/>
 		<s:TextInput id="bottomText"
 					 styleName="inputStyles"

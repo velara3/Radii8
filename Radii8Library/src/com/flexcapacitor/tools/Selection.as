@@ -10,6 +10,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	
 	import flash.display.DisplayObject;
+	import flash.display.DisplayObjectContainer;
 	import flash.display.Loader;
 	import flash.display.Sprite;
 	import flash.events.Event;
@@ -59,6 +60,13 @@ package com.flexcapacitor.tools {
 			
 		}
 		
+		[Embed(source="assets/icons/tools/Selection.png")]
+		private var _icon:Class;
+		
+		public function get icon():Class {
+			return _icon;
+		}
+		
 		/**
 		 * Reference to the current or last target.
 		 * */
@@ -80,8 +88,8 @@ package com.flexcapacitor.tools {
 			_showSelection = value;
 			
 			if (value) {
-				if (radiate.target) {
-					drawSelection(radiate.target, toolLayer);
+				if (lastTarget) {
+					drawSelection(lastTarget, toolLayer);
 				}
 			}
 			else {
@@ -92,7 +100,7 @@ package com.flexcapacitor.tools {
 		
 		public var targetSelectionGroup:ItemRenderer;
 		public var mouseLocationLines:IFlexDisplayObject = new ListDropIndicator();
-		private var _showSelectionLabel:Boolean = true;
+		private var _showSelectionLabel:Boolean = false;
 
 		public function get showSelectionLabel():Boolean {
 			return _showSelectionLabel;
@@ -103,15 +111,30 @@ package com.flexcapacitor.tools {
 			
 			_showSelectionLabel = value;
 			
-			updateTarget(radiate.target);
+			updateTarget(lastTarget);
+		}
+		
+		private var _selectionBorderColor:uint = 0x2da6e9;
+
+		public function get selectionBorderColor():uint {
+			return _selectionBorderColor;
+		}
+
+		public function set selectionBorderColor(value:uint):void {
+			if (_selectionBorderColor==value) return;
+			
+			_selectionBorderColor = value;
+			
+			updateTarget(lastTarget);
 		}
 
 		public var showSelectionLabelOnDocument:Boolean = false;
 		public var showSelectionFill:Boolean = true;
 		public var showSelectionFillOnDocument:Boolean = false;
 		public var lastTargetCandidate:Object;
-		
+		public var enableDrag:Boolean = true;
 		public var toolLayer:IVisualElementContainer;
+		public var updateOnUpdateComplete:Boolean = false;
 		
 		/**
 		 * Enable this tool. 
@@ -150,31 +173,67 @@ package com.flexcapacitor.tools {
 			
 			// remove listeners
 			if (targetApplication && targetApplication!=document) {
-				Object(targetApplication).stage.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
-				Object(targetApplication).removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
+				Object(targetApplication).removeEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler);
+				
+				if ("systemManager" in targetApplication) {
+					Object(targetApplication).systemManager.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+					Object(targetApplication).systemManager.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
+					Object(targetApplication).systemManager.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
+					
+				}
 			}
 			
 			targetApplication = document;
 			
 			// add listeners
-			if (document) {
-				Object(document).stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
-				Object(document).addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, false, 0, true);
-				Object(document).addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true, 1001, true);
-				Object(document).addEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler, false, 0, true);
+			if (targetApplication) {
+				Object(targetApplication).addEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler, false, 0, true);
+				
+				if ("systemManager" in targetApplication) {
+					var systemManager1:ISystemManager = Object(targetApplication).systemManager;
+					
+					
+					var topLevelApplication:Object = FlexGlobals.topLevelApplication;
+					var topSystemManager:ISystemManager = ISystemManager(topLevelApplication.systemManager);
+					var marshallPlanSystemManager:Object = topSystemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
+					
+					if (marshallPlanSystemManager && marshallPlanSystemManager.useSWFBridge()) {
+						var sandBoxRoot:Object = Sprite(topSystemManager.getSandboxRoot());
+					}
+					
+					
+					systemManager1.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
+					systemManager1.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, false, 0, true);
+					
+					// get keyboard events
+					systemManager1.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerCapture, true, 1001, true);
+					systemManager1.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, false, 1001, true);
+					topSystemManager.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, false, 1001, true);
+					topSystemManager.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, true, 1001, true);
+					targetApplication.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, false, 0, true);
+					targetApplication.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, true, 0, true);
+					
+					/*
+					EventPriority.CURSOR_MANAGEMENT; //200
+					EventPriority.BINDING;//100
+					EventPriority.EFFECT;//-100
+					EventPriority.DEFAULT;// 0
+					EventPriority.DEFAULT_HANDLER;//-50
+					*/
+				}
 			}
 			
 			
 			
-			if (radiate.toolLayer) {
+			if (radiate && radiate.toolLayer) {
 				toolLayer = radiate.toolLayer;
 			}
 			
-			if (radiate.canvasBackground) {
+			if (radiate && radiate.canvasBackground) {
 				canvasBackground = radiate.canvasBackground;
 			}
 			
-			if (radiate.canvasBackgroundParent) {
+			if (radiate && radiate.canvasBackgroundParent) {
 				if (canvasBackgroundParent) {
 					canvasBackgroundParent.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges);
 				}
@@ -182,7 +241,7 @@ package com.flexcapacitor.tools {
 				canvasBackgroundParent.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges, false, 1000, true);
 			}
 			
-			if (radiate.canvasScroller) {
+			if (radiate && radiate.canvasScroller) {
 				if (canvasScroller) {
 					
 				}
@@ -212,7 +271,10 @@ package com.flexcapacitor.tools {
 		 * */
 		public function updateCompleteHandler(event:FlexEvent):void {
 			
-			updateTarget(event.currentTarget);
+			// this can go into an infinite loop if tool layer is causing update events
+			if (updateOnUpdateComplete) {
+				updateTarget(event.currentTarget);
+			}
 		}
 	
 		/**
@@ -251,11 +313,7 @@ package com.flexcapacitor.tools {
 		 * */
 		public function disable():void {
 			
-			if (radiate.document) {
-				Object(radiate.document).stage.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
-			}
-			
-			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
+			removeEventListeners();
 				
 			clearSelection();
 		}
@@ -299,13 +357,14 @@ package com.flexcapacitor.tools {
 			var componentTree:ComponentDescription;
 			var description:ComponentDescription;
 			var target:Object = event.target;
+			var originalTarget:Object = event.target;
 			var items:Array = [];
 			var length:int;
 			
 			
 			
-			radiate = Radiate.getInstance();
-			targetApplication = radiate.document;
+			/*radiate = Radiate.getInstance();
+			targetApplication = radiate.document;*/
 			
 			// test url for remote image: 
 			// http://www.google.com/intl/en_com/images/srpr/logo3w.png
@@ -338,7 +397,7 @@ package com.flexcapacitor.tools {
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
 			// loop through items under point until we find one on the *component* tree
-			componentTree = Radiate.getComponentDisplayList();
+			componentTree = DisplayObjectUtils.getComponentDisplayList(targetApplication);
 			
 			componentTreeLoop:
 			for (var i:int;i<length;i++) {
@@ -357,7 +416,7 @@ package com.flexcapacitor.tools {
 			}
 			
 			
-			if (target) {
+			if (target && enableDrag) {
 				
 				//Radiate.log.info("Selection Mouse down");
 				
@@ -372,9 +431,20 @@ package com.flexcapacitor.tools {
 					}
 					
 					//target.visible = false;
-					dragManagerInstance.listenForDragBehavior(target as IUIComponent, radiate.document as Application, event);
-					dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
-					dragManagerInstance.addEventListener(DragDropEvent.DRAG_OVER, handleDragOver);
+					dragManagerInstance.listenForDragBehavior(target as IUIComponent, targetApplication as Application, event);
+					dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop, false, 0, true);
+					dragManagerInstance.addEventListener(DragDropEvent.DRAG_OVER, handleDragOver, false, 0, true);
+				}
+			}
+			else if (target && !enableDrag) {
+				// select target right away
+				if (radiate && radiate.target!=target) {
+					radiate.setTarget(target, true);
+				}
+				
+				// draw selection rectangle
+				if (showSelection) {
+					updateTarget(target);
 				}
 			}
 			
@@ -443,7 +513,7 @@ package com.flexcapacitor.tools {
 			//Radiate.log.info("Selection Mouse up");
 			
 			if (target is List) {
-				target.dragEnabled = true; // restore drag and drop if it was enabled
+				//target.dragEnabled = true; // restore drag and drop if it was enabled
 			}
 			
 			target.visible = true;
@@ -498,6 +568,55 @@ package com.flexcapacitor.tools {
                 }
             }
 	    }
+		/**
+		 * Prevent system manager from taking our events
+		 * */
+	    private function keyDownHandlerTopSystemManager(event:KeyboardEvent):void
+	    {
+			
+            switch (event.keyCode)
+            {
+                case Keyboard.UP:
+                case Keyboard.DOWN:
+                case Keyboard.PAGE_UP:
+                case Keyboard.PAGE_DOWN:
+                case Keyboard.HOME:
+                case Keyboard.END:
+                case Keyboard.LEFT:
+                case Keyboard.RIGHT:
+                case Keyboard.ENTER:
+                {
+					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
+	                    event.stopImmediatePropagation();
+					}
+					//Radiate.log.info("Canceling key down");
+                }
+            }
+	    }
+		
+		/**
+		 * Prevent system manager from taking our events
+		 * */
+	    private function keyDownHandlerCapture(event:KeyboardEvent):void
+	    {
+			
+            switch (event.keyCode)
+            {
+                case Keyboard.UP:
+                case Keyboard.DOWN:
+                case Keyboard.PAGE_UP:
+                case Keyboard.PAGE_DOWN:
+                case Keyboard.HOME:
+                case Keyboard.END:
+                case Keyboard.LEFT:
+                case Keyboard.RIGHT:
+                case Keyboard.ENTER:
+                {
+                    event.stopImmediatePropagation();
+					//Radiate.log.info("Canceling key down");
+                }
+            }
+	    }
 		
 		/**
 		 * Handle keyboard position changes
@@ -509,7 +628,7 @@ package com.flexcapacitor.tools {
 			var applicable:Boolean;
 			
 					//Radiate.log.info("Selection key up");
-			if (radiate.targets.length>0) {
+			if (radiate && radiate.targets.length>0) {
 				applicable = true;
 			}
 			
@@ -573,113 +692,6 @@ package com.flexcapacitor.tools {
 		 * Draws outline around target display object. 
 		 * Trying to add support to add different types of selection rectangles. 
 		 * */
-		public function drawSelection2(target:Object, selection:Object = null):void {
-			var rectangle:Rectangle;
-			
-			// creates an instance of the bounding box that will be shown around the drop target
-			if (targetSelectionGroup) {
-				targetSelectionGroup.mouseEnabled = false;
-				targetSelectionGroup.mouseChildren = false;
-			}
-			
-			// get bounds
-			if (!target) {
-				
-				// set values to zero
-				if (!rectangle) {
-					rectangle = new Rectangle();
-				}
-				
-				// hide selection group
-				if (targetSelectionGroup.visible) {
-					targetSelectionGroup.visible = false;
-				}
-			}
-			else {
-				
-				if (selection) {
-					
-					
-				}
-				
-				// draw the selection rectangle only if it's changed
-				else if (lastTargetCandidate!=target) {
-					var topLevelApplication:Object = FlexGlobals.topLevelApplication;
-					// if selection is offset then check if using system manager sandbox root or top level root
-					var systemManager:ISystemManager = ISystemManager(topLevelApplication.systemManager);
-					
-					// no types so no dependencies
-					var marshallPlanSystemManager:Object = systemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
-					var targetCoordinateSpace:DisplayObject;
-					
-					if (marshallPlanSystemManager && marshallPlanSystemManager.useSWFBridge()) {
-						targetCoordinateSpace = Sprite(systemManager.getSandboxRoot());
-					}
-					else {
-						targetCoordinateSpace = Sprite(topLevelApplication);
-					}
-					
-					
-					// get content width and height
-					if (target is GroupBase) {
-						rectangle = GroupBase(target).getBounds(target.parent);
-						
-						// size and position fill
-						targetSelectionGroup.width = GroupBase(target).contentWidth || rectangle.size.x;
-						targetSelectionGroup.height = GroupBase(target).contentHeight || rectangle.size.y;
-						
-						rectangle = GroupBase(target).getVisibleRect(target.parent);
-						targetSelectionGroup.x = rectangle.x;
-						targetSelectionGroup.y = rectangle.y;
-						//trace("target is groupbase");
-					}
-					
-					// get target bounds
-					else if (target is UIComponent) {
-						rectangle = UIComponent(target).getVisibleRect(target.parent);
-						//rectangle = UIComponent(target).getBounds(target.parent);
-						
-						// size and position fill
-						targetSelectionGroup.width = rectangle.width;
-						targetSelectionGroup.height = rectangle.height;
-						//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
-						targetSelectionGroup.x = rectangle.x;
-						targetSelectionGroup.y = rectangle.y;
-						//trace("target is uicomponent");
-					}
-					else {
-						rectangle = DisplayObject(target).getBounds(targetCoordinateSpace);
-						
-						// size and position fill
-						targetSelectionGroup.width = rectangle.width;
-						targetSelectionGroup.height = rectangle.height;
-						targetSelectionGroup.x = rectangle.x;
-						targetSelectionGroup.y = rectangle.y;
-						//trace("target is not uicomponent");
-					}
-					
-					
-					targetSelectionGroup.data = target;
-					
-					// unhide target selection group
-					if (!targetSelectionGroup.visible) {
-						targetSelectionGroup.visible = true;
-					}
-					
-					targetCoordinateSpace = Radiate.instance.document as DisplayObject;
-					
-					// show selection / bounding box 
-					PopUpManager.addPopUp(targetSelectionGroup, targetCoordinateSpace);
-					targetSelectionGroup.validateNow();
-				}
-				
-			}
-		}
-		
-		/**
-		 * Draws outline around target display object. 
-		 * Trying to add support to add different types of selection rectangles. 
-		 * */
 		public function drawSelection(target:Object, selection:Object = null):void {
 			var rectangle:Rectangle;
 			var selectionGroup:ISelectionGroup;
@@ -695,11 +707,11 @@ package com.flexcapacitor.tools {
 				selectionGroup = targetSelectionGroup as ISelectionGroup;
 				
 				if (selectionGroup) {
-					
 					selectionGroup.showSelectionFill 			= showSelectionFill;
 					selectionGroup.showSelectionFillOnDocument	= showSelectionFillOnDocument;
 					selectionGroup.showSelectionLabel 			= showSelectionLabel;
 					selectionGroup.showSelectionLabelOnDocument = showSelectionLabelOnDocument;
+					selectionGroup.selectionBorderColor 		= selectionBorderColor;
 					
 				}
 			}
@@ -718,14 +730,19 @@ package com.flexcapacitor.tools {
 				}
 			}
 			else {
-				
-				// get and set selection rectangle
-				setSelectionGroup(target, selection as DisplayObject);
-				
-				
-				// add to tools layer
+				// add to tools layer	
 				if (selection && selection is IVisualElementContainer) {
 					IVisualElementContainer(selection).addElement(targetSelectionGroup);
+					targetSelectionGroup.validateNow();
+				}
+				
+				// get and set selection rectangle
+				sizeSelectionGroup(target, selection as DisplayObject);
+				
+				
+				// validate
+				if (selection && selection is IVisualElementContainer) {
+					//IVisualElementContainer(selection).addElement(targetSelectionGroup);
 					targetSelectionGroup.validateNow();
 				}
 				
@@ -766,14 +783,13 @@ package com.flexcapacitor.tools {
 					PopUpManager.addPopUp(targetSelectionGroup, targetCoordinateSpace);
 					targetSelectionGroup.validateNow();
 				}
-				
 			}
 		}
 		
 		/**
 		 * Sets the selection rectangle to the size of the target.
 		 * */
-		public function setSelectionGroup(target:Object, targetCoordinateSpace:DisplayObject = null, localTargetSpace:Boolean = true):void {
+		public function sizeSelectionGroup(target:Object, targetCoordinateSpace:DisplayObject = null, localTargetSpace:Boolean = true):void {
 			var rectangle:Rectangle;
 			var showContentSize:Boolean = false;
 			var isEmbeddedCoordinateSpace:Boolean;
@@ -786,8 +802,8 @@ package com.flexcapacitor.tools {
 				rectangle = GroupBase(target).getBounds(targetCoordinateSpace);
 				
 				// size and position fill
-				targetSelectionGroup.width = showContentSize ? GroupBase(target).contentWidth : rectangle.size.x;
-				targetSelectionGroup.height = showContentSize ? GroupBase(target).contentHeight : rectangle.size.y;
+				targetSelectionGroup.width = showContentSize ? GroupBase(target).contentWidth : rectangle.size.x -1;
+				targetSelectionGroup.height = showContentSize ? GroupBase(target).contentHeight : rectangle.size.y -1;
 				
 				if (!localTargetSpace) {
 					rectangle = GroupBase(target).getVisibleRect(target.parent);
@@ -795,6 +811,246 @@ package com.flexcapacitor.tools {
 				
 				targetSelectionGroup.x = rectangle.x;
 				targetSelectionGroup.y = rectangle.y;
+				//trace("target is groupbase");
+			}
+			else if (target is Image) {
+				
+				if (targetCoordinateSpace && "systemManager" in targetCoordinateSpace
+					&& Object(targetCoordinateSpace).systemManager!=target.systemManager) {
+					isEmbeddedCoordinateSpace = true;
+				}
+				
+				if (!targetCoordinateSpace ) targetCoordinateSpace = target.parent; 
+				
+			
+				// if target is IMAGE it can be sized to 6711034.2 width or height at times!!! 6710932.2
+				// possibly because it is not ready. there is a flag _ready that is false
+				// also sourceWidth and sourceHeight are NaN at first
+					
+				/*trace("targetCoordinateSpace="+Object(targetCoordinateSpace).id);
+				trace("targetCoordinateSpace owner="+Object(targetCoordinateSpace).owner.id);
+				trace("x=" + target.x);
+				trace("y=" + target.y);
+				trace("w=" + target.width);
+				trace("h=" + target.height);*/
+				//if (!localTargetSpace) {
+				/*	rectangle = UIComponent(target).getVisibleRect();
+					rectangle = UIComponent(target).getVisibleRect(targetCoordinateSpace);
+					rectangle = UIComponent(target).getVisibleRect(target.parent);
+					rectangle = UIComponent(target).getVisibleRect(targetApplication.parent);
+					rectangle = UIComponent(target).getVisibleRect(Object(targetCoordinateSpace).owner);
+					rectangle = UIComponent(target).getVisibleRect(targetCoordinateSpace.parent);
+				*/
+				target.validateNow();
+				
+				rectangle = UIComponent(target).getBounds(targetCoordinateSpace);
+				
+				if (rectangle.width==0 || rectangle.height==0
+					|| rectangle.x>100000 || rectangle.y>100000) {
+					
+					//Radiate.log.info("Image not returning correct bounds");
+					/*
+					target.addEventListener(FlexEvent.READY, setSelectionLaterHandler, false, 0, true);
+					target.addEventListener(Event.COMPLETE, setSelectionLaterHandler, false, 0, true);
+					target.addEventListener(IOErrorEvent.IO_ERROR, setSelectionLaterHandler, false, 0, true);
+					target.addEventListener(SecurityErrorEvent.SECURITY_ERROR, setSelectionLaterHandler, false, 0, true);
+					*/
+					//target.imageDisplay.addEventListener(FlexEvent.READY, setSelectionLaterHandler, false, 0, true);
+					//target.imageDisplay.addEventListener(Event.COMPLETE, setSelectionLaterHandler, false, 0, true);
+					
+					// size and position fill
+					//targetSelectionGroup.width = 0;//rectangle.width;//UIComponent(target).getLayoutBoundsWidth();
+					//targetSelectionGroup.height = 0;//rectangle.height; // UIComponent(target).getLayoutBoundsHeight();
+					//targetSelectionGroup.x = 0;//rectangle.x;
+					//targetSelectionGroup.y = 0;//rectangle.y;
+					isTargetInvalid = true;
+				}
+				else {
+					
+					/*rectangle = UIComponent(target).getBounds(target.parent);
+					rectangle = UIComponent(target).getBounds(target.owner);
+					rectangle = UIComponent(target).getBounds(targetCoordinateSpace.parent);
+					rectangle = UIComponent(target).getBounds(null);*/
+				//}
+				//else {
+					
+					/*rectangle = UIComponent(target).getBounds(targetCoordinateSpace);
+					rectangle = UIComponent(target).getBounds(target.parent);
+					rectangle = UIComponent(target).getBounds(targetApplication as DisplayObject);
+					rectangle = UIComponent(target).getBounds(targetApplication.parent);
+					var s:Number = UIComponent(target).getLayoutBoundsWidth();
+					s= UIComponent(target).getLayoutBoundsHeight();
+					s= UIComponent(target).getLayoutBoundsX();
+					s= UIComponent(target).getLayoutBoundsY();*/
+				//}
+					
+					// size and position fill
+					targetSelectionGroup.width = rectangle.width -1;//UIComponent(target).getLayoutBoundsWidth();
+					targetSelectionGroup.height = rectangle.height-1; // UIComponent(target).getLayoutBoundsHeight();
+					//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
+					targetSelectionGroup.x = rectangle.x;
+					targetSelectionGroup.y = rectangle.y;
+				}
+				
+			}
+			// get target bounds
+			else if (target is UIComponent) {
+				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent; 
+				
+				if (!localTargetSpace) {
+					rectangle = UIComponent(target).getVisibleRect(targetCoordinateSpace);
+				}
+				else {
+					// if target is IMAGE it can be sized to 6711034.2 width or height at times!!! 6710932.2
+					rectangle = UIComponent(target).getBounds(targetCoordinateSpace);
+				}
+				
+				// size and position fill
+				targetSelectionGroup.width = rectangle.width -1;
+				targetSelectionGroup.height = rectangle.height -1;
+				//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
+				targetSelectionGroup.x = rectangle.x;
+				targetSelectionGroup.y = rectangle.y;
+				//trace("target is uicomponent");
+			}
+			// get target bounds
+			else if (target is IGraphicElement) {
+				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent; 
+				
+				/*if (!localTargetSpace) {
+					rectangle = IGraphicElement(target).getLayoutBoundsHeight();
+				}
+				else {
+					rectangle = IGraphicElement(target).getBounds(targetCoordinateSpace);
+				}*/
+				
+				// size and position fill
+				targetSelectionGroup.width = IGraphicElement(target).getLayoutBoundsWidth();
+				targetSelectionGroup.height = IGraphicElement(target).getLayoutBoundsHeight();
+				//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
+				targetSelectionGroup.x = IGraphicElement(target).getLayoutBoundsX();
+				targetSelectionGroup.y = IGraphicElement(target).getLayoutBoundsY();
+				//trace("target is uicomponent");
+			}
+			
+			else {
+				if (!localTargetSpace) {
+					rectangle = DisplayObject(target).getBounds(targetCoordinateSpace);
+				}
+				else {
+					rectangle = DisplayObject(target).getBounds(targetCoordinateSpace);
+				}
+				
+				// size and position fill
+				targetSelectionGroup.width = rectangle.width-1;
+				targetSelectionGroup.height = rectangle.height-1;
+				targetSelectionGroup.x = rectangle.x;
+				targetSelectionGroup.y = rectangle.y;
+				//trace("target is not uicomponent");
+			}
+			
+			// we set to the target so we can display target name and size in label above selection
+			targetSelectionGroup.data = target;
+			
+			
+			// unhide target selection group
+			if (isTargetInvalid) {
+				targetSelectionGroup.visible = false;
+			}
+			
+			else if (!targetSelectionGroup.visible) {
+				targetSelectionGroup.visible = true;
+			}
+		}
+		
+		/**
+		 * Sets the selection rectangle to the size of the target.
+		 * */
+		public function sizeSelectionGroup2(target:Object, targetSpace:DisplayObject = null, localTargetSpace:Boolean = true):void {
+			var toolRectangle:Rectangle;
+			var showContentSize:Boolean = false;
+			var isEmbeddedCoordinateSpace:Boolean;
+			var isTargetInvalid:Boolean;
+			var toolLayer:DisplayObject = targetSpace;
+			var targetCoordinateSpace:DisplayObject = targetSpace;
+			var globalRectangle:Rectangle;
+			var visibleRectangle:Rectangle;
+			var rectangle:Rectangle;
+			
+			// get content width and height
+			if (target is GroupBase) {
+				
+				var topLevelApplication:Object = FlexGlobals.topLevelApplication;
+				// if selection is offset then check if using system manager sandbox root or top level root
+				var systemManager:ISystemManager = ISystemManager(topLevelApplication.systemManager);
+				
+				// no types so no dependencies
+				var marshallPlanSystemManager:Object = systemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
+				
+				if (marshallPlanSystemManager && marshallPlanSystemManager.useSWFBridge()) {
+					targetCoordinateSpace = Sprite(systemManager.getSandboxRoot());
+				}
+				else {
+					targetCoordinateSpace = Sprite(topLevelApplication);
+				}
+				
+				
+				if (!targetSpace) {
+					targetSpace = target.parent;
+				}
+				
+				globalRectangle = GroupBase(target).getBounds(targetCoordinateSpace);
+				toolRectangle = GroupBase(target).getBounds(toolLayer);
+				
+				/*trace("toollayer.x="+targetSpace.x);
+				trace("toollayer.y="+targetSpace.y);*/
+				/*
+				var newPoint:Point = DisplayObject(target).globalToLocal(toolRectangle.topLeft);
+				var newPoint2:Point = DisplayObject(target).localToGlobal(toolRectangle.topLeft);
+				var newPoint:Point = DisplayObject(target.parent).globalToLocal(toolRectangle.topLeft);
+				var newPoint2:Point = DisplayObject(target.parent).localToGlobal(toolRectangle.topLeft);
+				var newPoint:Point = DisplayObject(targetSpace).globalToLocal(toolRectangle.topLeft);
+				var newPoint2:Point = DisplayObject(targetSpace).localToGlobal(toolRectangle.topLeft);
+				var newPoint:Point = DisplayObject(targetSpace).globalToLocal(new Point());
+				var newPoint2:Point = DisplayObject(targetSpace).localToGlobal(new Point());
+				*/
+				//rectangle = GroupBase(target).getBounds(target.parent);
+				
+				if (true) {
+					visibleRectangle = GroupBase(target).getVisibleRect(toolLayer);
+				}
+				
+				var targetWidth:Number;
+				var targetHeight:Number;
+				
+				if (toolRectangle.x<0) {
+					targetWidth = toolRectangle.width+toolRectangle.x;
+				}
+				else {
+					targetWidth = toolRectangle.width-1;
+				}
+				
+				if (toolRectangle.y<0) {
+					targetHeight = toolRectangle.height+toolRectangle.y;
+				}
+				else {
+					targetHeight = toolRectangle.height-1;
+				}
+				
+				// size and position fill
+				targetSelectionGroup.width = showContentSize ? GroupBase(target).contentWidth : toolRectangle.width;
+				targetSelectionGroup.height = showContentSize ? GroupBase(target).contentHeight : toolRectangle.height;
+				targetSelectionGroup.width = showContentSize ? GroupBase(target).contentWidth : targetWidth;
+				targetSelectionGroup.height = showContentSize ? GroupBase(target).contentHeight : targetHeight;
+				
+				if (!localTargetSpace) {
+					visibleRectangle = GroupBase(target).getVisibleRect(toolLayer);
+				}
+				
+				targetSelectionGroup.x = toolRectangle.x<0? -1:toolRectangle.x;
+				targetSelectionGroup.y = toolRectangle.y<0? -1:toolRectangle.y;
+				//targetSelectionGroup.x = -1;//toolRectangle.x;
+				//targetSelectionGroup.y = -1;//toolRectangle.y;
 				//trace("target is groupbase");
 			}
 			else if (target is Image) {
@@ -879,7 +1135,9 @@ package com.flexcapacitor.tools {
 			}
 			// get target bounds
 			else if (target is UIComponent) {
-				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent; 
+				if (!targetCoordinateSpace) {
+					targetCoordinateSpace = target.parent; 
+				}
 				
 				if (!localTargetSpace) {
 					rectangle = UIComponent(target).getVisibleRect(targetCoordinateSpace);
@@ -968,5 +1226,47 @@ package com.flexcapacitor.tools {
 				event.currentTarget.removeEventListener(Event.COMPLETE, setSelectionLaterHandler);
 			}*/
 		}
+		
+		/**
+		 * Remove event listeners
+		 * */
+		public function removeEventListeners():void {
+		
+			if (lastTarget && lastTarget is Image) {
+				lastTarget.removeEventListener(FlexEvent.READY, setSelectionLaterHandler);
+				lastTarget.removeEventListener(Event.COMPLETE, setSelectionLaterHandler);
+				lastTarget.removeEventListener(IOErrorEvent.IO_ERROR, setSelectionLaterHandler);
+				lastTarget.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, setSelectionLaterHandler);
+			}
+			
+			if (targetApplication) {
+				Object(targetApplication).removeEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler);
+			}
+			
+			if ("systemManager" in targetApplication) {
+				Object(targetApplication).systemManager.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+				Object(targetApplication).systemManager.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
+				Object(targetApplication).systemManager.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
+			}
+			
+			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
+			radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+			radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChangeHandler);
+			
+			if (dragManagerInstance) {
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_OVER, handleDragOver);
+			}
+			
+			
+			if (radiate.canvasBackgroundParent) {
+				canvasBackgroundParent.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges);
+			}
+			
+			if (radiate.canvasScroller) {
+				canvasScroller.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges);
+			}
+		}
 	}
 }
+

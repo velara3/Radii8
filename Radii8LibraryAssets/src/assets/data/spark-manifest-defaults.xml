@@ -24,7 +24,7 @@
     </component>
     
     <component id="Button" class="spark.components.Button">
-    	<defaults width="70" height="21" label="Label"/>
+    	<defaults label="Label"/>
     </component>
     
     <component id="ButtonBar" class="spark.components.ButtonBar" include="false" >
@@ -92,7 +92,7 @@
     </component>
      
     <component id="Label" class="spark.components.Label">
-    	<defaults width="76" height="15" text="Label"/>
+    	<defaults text="Label"/>
     </component>
     
 	<component id="List" class="spark.components.List" include="false">
@@ -177,7 +177,7 @@
     </component>
     
     <component id="VGroup" class="spark.components.VGroup" include="true">
-    	<defaults width="240" height="166"/>
+    	<defaults width="180" height="166"/>
     </component>
     
     <component id="VideoDisplay" class="spark.components.VideoDisplay" include="false">
