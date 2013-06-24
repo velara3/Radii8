@@ -1,11 +1,15 @@
 
 package com.flexcapacitor.controller {
-	import com.flexcapacitor.events.HistoryEvent;
+	import com.flexcapacitor.components.IDocument;
+	import com.flexcapacitor.events.HistoryEventItem;
+	import com.flexcapacitor.events.HistoryItem;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.logging.RadiateLogTarget;
+	import com.flexcapacitor.model.Device;
+	import com.flexcapacitor.model.EventMetaData;
+	import com.flexcapacitor.model.MetaData;
+	import com.flexcapacitor.model.StyleMetaData;
 	import com.flexcapacitor.tools.ITool;
-	import com.flexcapacitor.utils.ClassUtils;
-	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.TypeUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
@@ -19,6 +23,7 @@ package com.flexcapacitor.controller {
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursorData;
 	import flash.utils.Dictionary;
+	import flash.utils.getTimer;
 	
 	import mx.collections.ArrayCollection;
 	import mx.core.ClassFactory;
@@ -39,8 +44,11 @@ package com.flexcapacitor.controller {
 	import spark.components.Scroller;
 	import spark.components.supportClasses.GroupBase;
 	import spark.core.ContentCache;
+	import spark.core.IViewport;
 	import spark.effects.SetAction;
 	import spark.layouts.BasicLayout;
+	
+	import org.as3commons.lang.ArrayUtils;
 	
 	use namespace mx_internal;
 	
@@ -70,6 +78,11 @@ package com.flexcapacitor.controller {
 	[Event(name="propertyChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
+	 * Dispatched when a property is selected on the target
+	 * */
+	[Event(name="propertySelected", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
 	 * Dispatched when a property edit is requested
 	 * */
 	[Event(name="propertyEdit", type="com.flexcapacitor.radiate.events.RadiateEvent")]
@@ -77,7 +90,17 @@ package com.flexcapacitor.controller {
 	/**
 	 * Dispatched when the tool changes
 	 * */
-	[Event(name="toolChanged", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="toolChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when the scale changes
+	 * */
+	[Event(name="scaleChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when the document size or scale changes
+	 * */
+	[Event(name="documentSizeChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
 	 * Not used yet. 
@@ -207,6 +230,9 @@ package com.flexcapacitor.controller {
 			return instance;
 		}
 		
+		/**
+		 * Create references for classes we need.
+		 * */
 		public static var radiateReferences:RadiateReferences;
 		
 		//----------------------------------
@@ -225,6 +251,30 @@ package com.flexcapacitor.controller {
 				targetChangeEvent.selectedItem = target && target is Array ? target[0] : target;
 				targetChangeEvent.targets = ArrayUtil.toArray(target);
 				dispatchEvent(targetChangeEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch scale change event
+		 * */
+		public function dispatchScaleChangeEvent(target:*, scaleX:Number = NaN, scaleY:Number = NaN):void {
+			var scaleChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.SCALE_CHANGE, false, false, target, null, null);
+			
+			if (hasEventListener(RadiateEvent.SCALE_CHANGE)) {
+				scaleChangeEvent.scaleX = scaleX;
+				scaleChangeEvent.scaleY = scaleY;
+				dispatchEvent(scaleChangeEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document size change event
+		 * */
+		public function dispatchDocumentSizeChangeEvent(target:*):void {
+			var scaleChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SIZE_CHANGE, false, false, target, null, null);
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE)) {
+				dispatchEvent(scaleChangeEvent);
 			}
 		}
 		
@@ -255,7 +305,6 @@ package com.flexcapacitor.controller {
 			}
 		}
 		
-		
 		/**
 		 * Dispatch color selected event
 		 * */
@@ -265,6 +314,19 @@ package com.flexcapacitor.controller {
 			if (hasEventListener(RadiateEvent.COLOR_SELECTED)) {
 				colorSelectedEvent.color = color;
 				colorSelectedEvent.invalid = invalid;
+				dispatchEvent(colorSelectedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch property selected event
+		 * */
+		public function dispatchPropertySelectedEvent(property:String, node:MetaData = null):void {
+			var colorSelectedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROPERTY_SELECTED);
+			
+			if (hasEventListener(RadiateEvent.PROPERTY_SELECTED)) {
+				colorSelectedEvent.property = property;
+				colorSelectedEvent.selectedItem = node;
 				dispatchEvent(colorSelectedEvent);
 			}
 		}
@@ -437,7 +499,7 @@ package com.flexcapacitor.controller {
 			if (hasEventListener(RadiateEvent.HISTORY_CHANGE)) {
 				event.newIndex = newIndex;
 				event.oldIndex = oldIndex;
-				event.historyEvent = getHistoryEventByIndex(newIndex);
+				event.historyEventItem = getHistoryItemAtIndex(newIndex);
 				dispatchEvent(event);
 			}
 		}
@@ -479,6 +541,8 @@ package com.flexcapacitor.controller {
 			createComponentList();
 			
 			createToolsList();
+			
+			createDevicesList();
 		}
 		
 		/**
@@ -559,14 +623,14 @@ package com.flexcapacitor.controller {
 								}
 							}
 							
-							Radiate.addComponentType(item.@id, className, classType, inspectorClassName, null, defaults);
+							addComponentType(item.@id, className, classType, inspectorClassName, null, defaults);
 						}
 						else {
-							Radiate.log.error("Component skin class, '" + skinClassName + "' not found for '" + className + "'.");
+							log.error("Component skin class, '" + skinClassName + "' not found for '" + className + "'.");
 						}
 					}
 					else {
-						Radiate.log.error("Component class not found: " + className);
+						log.error("Component class not found: " + className);
 					}
 					
 				}
@@ -590,17 +654,17 @@ package com.flexcapacitor.controller {
 			var hasDefinition:Boolean;
 			var toolClassDefinition:Object;
 			var inspectorClassDefinition:Object;
-			var xml:XML;
-			var length:uint;
+			var inspectorClassFactory:ClassFactory;
+			var toolClassFactory:ClassFactory;
 			var items:XMLList;
 			var className:String;
 			var includeItem:Boolean;
 			var attributes:XMLList;
+			var length:uint;
 			var attributesLength:int;
 			var defaults:Object;
 			var propertyName:String;
-			var toolClassFactory:ClassFactory;
-			var inspectorClassFactory:ClassFactory;
+			var xml:XML;
 			var toolInstance:ITool;
 			var inspectorInstance:UIComponent;
 			var name:String;
@@ -684,7 +748,7 @@ package com.flexcapacitor.controller {
 						else {
 							var errorMessage:String = "Could not find inspector, '" + inspectorClassName + "' for tool, '" + className + "'. ";
 							errorMessage += "You may need to add a reference to it in RadiateReferences.";
-							Radiate.log.error(errorMessage);
+							log.error(errorMessage);
 						}
 					}
 					
@@ -692,11 +756,11 @@ package com.flexcapacitor.controller {
 					cursorsCount = cursorItems.length();
 					
 					if (cursorsCount>0) {
-						cursors = new Dictionary(true);
+						cursors = new Dictionary(false);
 					}
-					
+
 					// create mouse cursors
-					for (var j:int;j<cursorsCount;j++) {
+					for (var j:int=0;j<cursorsCount;j++) {
 						cursorItem = cursorItems[j];
 						cursorName = cursorItem.@name.toString();
 						cursorX = int(cursorItem.@x.toString());
@@ -741,16 +805,81 @@ package com.flexcapacitor.controller {
 						mouseCursors[className] = cursors;
 					}
 					
-					addToolType(item.@id, className, toolClassDefinition, toolInstance, inspectorClassName, null, defaults, null, cursors);
+					//trace("tool cursors:", cursors);
+					var toolDescription:ComponentDescription = addToolType(item.@id, className, toolClassDefinition, toolInstance, inspectorClassName, null, defaults, null, cursors);
+					//trace("tool cursors:", toolDescription.cursors);
 				}
 				else {
 					//trace("Tool class not found: " + classDefinition);
-					Radiate.log.error("Tool class not found: " + toolClassDefinition);
+					log.error("Tool class not found: " + toolClassDefinition);
 				}
 				
 			}
 			
 			// toolDescriptions should now be populated
+		}
+		
+		/**
+		 * Creates the list of devices.
+		 * */
+		public static function createDevicesList():void {
+			var includeItem:Boolean;
+			var items:XMLList;
+			var length:uint;
+			var name:String;
+			var item:XML;
+			var xml:XML;
+			var device:Device;
+			var type:String;
+			
+			const RES_WIDTH:String = "resolutionWidth";
+			const RES_HEIGHT:String = "resolutionHeight";
+			const USABLE_WIDTH_PORTRAIT:String = "usableWidthPortrait";
+			const USABLE_HEIGHT_PORTRAIT:String = "usableHeightPortrait";
+			const USABLE_WIDTH_LANDSCAPE:String = "usableWidthLandscape";
+			const USABLE_HEIGHT_LANDSCAPE:String = "usableHeightLandscape";
+			
+			xml = new XML(new Radii8LibraryDeviceAssets.deviceManifestDefaults());
+			
+			// get list of device classes 
+			items = XML(xml).size;
+			
+			length = items.length();
+			
+			for (var i:int;i<length;i++) {
+				item = items[i];
+				
+				name = item.attribute("name");
+				type = item.attribute("type");
+				
+				device = new Device();
+				device.name = name;
+				device.type = type;
+				
+				if (type=="device") {
+					device.ppi 					= item.attribute("ppi");
+					
+					device.resolutionWidth 		= item.attribute(RES_WIDTH);
+					device.resolutionHeight 	= item.attribute(RES_HEIGHT);
+					device.usableWidthPortrait 	= item.attribute(USABLE_WIDTH_PORTRAIT);
+					device.usableHeightPortrait = item.attribute(USABLE_HEIGHT_PORTRAIT);
+					device.usableWidthLandscape = item.attribute(USABLE_WIDTH_LANDSCAPE);
+					device.usableHeightLandscape = item.attribute(USABLE_HEIGHT_LANDSCAPE);
+				}
+				else if (type=="screen") {
+					device.ppi 					= item.attribute("ppi");
+					device.resolutionWidth 		= item.attribute(RES_WIDTH);
+					device.resolutionHeight 	= item.attribute(RES_HEIGHT);
+					continue;
+				}
+				
+				includeItem = item.attribute("include")=="false" ? false : true;
+				
+				deviceCollections.addItem(device);
+				
+			}
+			
+			// componentDescriptions should now be populated
 		}
 		
 		/**
@@ -964,6 +1093,19 @@ package com.flexcapacitor.controller {
 		
 		//----------------------------------
 		//
+		//  Device Management
+		// 
+		//----------------------------------
+		
+		/**
+		 * Collection of devices
+		 * */
+		[Bindable]
+		public static var deviceCollections:ArrayCollection = new ArrayCollection();
+		
+		
+		//----------------------------------
+		//
 		//  Tools Management
 		// 
 		//----------------------------------
@@ -988,7 +1130,7 @@ package com.flexcapacitor.controller {
 		 * 
 		 * Not sure if we should create an instance here or earlier or later. 
 		 * */
-		public static function addToolType(name:String, className:String, classType:Object, instance:ITool, inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null, cursors:Dictionary = null):Boolean {
+		public static function addToolType(name:String, className:String, classType:Object, instance:ITool, inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null, cursors:Dictionary = null):ComponentDescription {
 			var definition:ComponentDescription;
 			var length:uint = toolsDescriptions.length;
 			var item:ComponentDescription;
@@ -998,7 +1140,8 @@ package com.flexcapacitor.controller {
 				
 				// check if it exists already
 				if (item && item.classType==classType) {
-					return false;
+					return item;
+					//return false;
 				}
 			}
 			
@@ -1016,7 +1159,7 @@ package com.flexcapacitor.controller {
 			
 			toolsDescriptions.addItem(definition);
 			
-			return true;
+			return definition;
 		}
 		
 		/**
@@ -1056,6 +1199,301 @@ package com.flexcapacitor.controller {
 			}
 			
 			return null;
+		}
+		
+		/**
+		 * Get tool by name.
+		 * */
+		public function getToolByName(name:String):ComponentDescription {
+			var length:int = toolsDescriptions.length;
+			var componentDescription:ComponentDescription;
+			
+			for (var i:int;i<length;i++) {
+				componentDescription = ComponentDescription(toolsDescriptions.getItemAt(i));
+				
+				if (componentDescription.className==name) {
+					return componentDescription;
+				}
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Get tool by type.
+		 * */
+		public function getToolByType(type:Class):ComponentDescription {
+			var length:int = toolsDescriptions.length;
+			var componentDescription:ComponentDescription;
+			
+			for (var i:int;i<length;i++) {
+				componentDescription = ComponentDescription(toolsDescriptions.getItemAt(i));
+				
+				if (componentDescription.classType==type) {
+					return componentDescription;
+				}
+			}
+			
+			return null;
+		}
+		
+		//----------------------------------
+		//
+		//  Scale Management
+		// 
+		//----------------------------------
+		
+		/**
+		 * Stops on the scale
+		 * */
+		public var scaleStops:Array = [.05,.0625,.0833,.125,.1666,.25,.333,.50,.667,1,1.25,1.50,1.75,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+		
+		/**
+		 * Increases the zoom of the target application to next value 
+		 * */
+		public function increaseScale(valueFrom:Number = NaN, dispatchEvent:Boolean = true):void {
+			var newScale:Number;
+			var currentScale:Number;
+			
+		
+			if (isNaN(valueFrom)) {
+				currentScale = Number(DisplayObject(document).scaleX.toFixed(4));
+			}
+			else {
+				currentScale = valueFrom;
+			}
+			
+			//newScale = DisplayObject(document).scaleX;
+			
+			for (var i:int=0;i<scaleStops.length;i++) {
+				if (currentScale<scaleStops[i]) {
+					newScale = scaleStops[i];
+					break;
+				}
+			}
+			
+			if (i==scaleStops.length-1) {
+				newScale = scaleStops[i];
+			}
+			
+			newScale = Number(newScale.toFixed(4));
+			
+			setScale(newScale, dispatchEvent);
+				
+		}
+		
+		/**
+		 * Decreases the zoom of the target application to next value 
+		 * */
+		public function decreaseScale(valueFrom:Number = NaN, dispatchEvent:Boolean = true):void {
+			var newScale:Number;
+			var currentScale:Number;
+		
+			if (isNaN(valueFrom)) {
+				currentScale = Number(DisplayObject(document).scaleX.toFixed(4));
+			}
+			else {
+				currentScale = valueFrom;
+			}
+			
+			//newScale = DisplayObject(document).scaleX;
+			
+			for (var i:int=scaleStops.length;i--;) {
+				if (currentScale>scaleStops[i]) {
+					newScale = scaleStops[i];
+					break;
+				}
+			}
+			
+			if (i==0) {
+				newScale = scaleStops[i];
+			}
+			
+			newScale = Number(newScale.toFixed(4));
+			
+			setScale(newScale, dispatchEvent);
+				
+		}
+		
+		/**
+		 * Sets the zoom of the target application to value. 
+		 * */
+		public function setScale(value:Number, dispatchEvent:Boolean = true):void {
+			
+			if (document && !isNaN(value) && value>0) {
+				DisplayObject(document).scaleX = value;
+				DisplayObject(document).scaleY = value;
+				
+				if (dispatchEvent) {
+					dispatchScaleChangeEvent(document, value, value);
+				}
+			}
+		}
+		
+		/**
+		 * Gets the scale of the target application. 
+		 * */
+		public function getScale():Number {
+			
+			if (document && document is DisplayObject) {
+				return Math.max(DisplayObject(document).scaleX, DisplayObject(document).scaleY);
+			}
+			
+			return NaN;
+		}
+			
+		/**
+		 * Center the application
+		 * */
+		public function centerApplication(vertically:Boolean = true, verticallyTop:Boolean = true, totalDocumentPadding:int = 0):void {
+			var viewport:IViewport = canvasScroller.viewport;
+			//var contentHeight:int = viewport.contentHeight * getScale();
+			//var contentWidth:int = viewport.contentWidth * getScale();
+			// get document size NOT scroll content size
+			var contentHeight:int = DisplayObject(document).height * getScale();
+			var contentWidth:int = DisplayObject(document).width * getScale();
+			var newHorizontalPosition:int;
+			var newVerticalPosition:int;
+			var needsValidating:Boolean;
+			var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 11;
+			var hsbHeight:int = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 11;
+			var availableWidth:int = canvasScroller.width;// - vsbWidth;
+			var availableHeight:int = canvasScroller.height;// - hsbHeight;
+			
+			if (LayoutManager.getInstance().isInvalid()) {
+				needsValidating = true;
+				//LayoutManager.getInstance().validateClient(canvasScroller as ILayoutManagerClient);
+				//LayoutManager.getInstance().validateNow();
+			}
+			
+			
+			if (vertically) {
+				// scroller height 359, content height 504, content height validated 550
+				// if document is taller than available space and 
+				// verticalTop is true then keep it at the top
+				if (contentHeight > availableHeight && verticallyTop) {
+					newVerticalPosition = canvasBackground.y - totalDocumentPadding;
+					viewport.verticalScrollPosition = Math.max(0, newVerticalPosition);
+				}
+				else if (contentHeight > availableHeight) {
+					newVerticalPosition = (contentHeight + hsbHeight - availableHeight) / 2;
+					viewport.verticalScrollPosition = Math.max(0, newVerticalPosition);
+				}
+				else {
+					// content height 384, scroller height 359, vsp 12
+					newVerticalPosition = (availableHeight + hsbHeight - contentHeight) / 2;
+					viewport.verticalScrollPosition = Math.max(0, newVerticalPosition);
+				}
+			}
+			
+			// if width of content is wider than canvasScroller width then center
+			if (canvasScroller.width < contentWidth) {
+				newHorizontalPosition = (contentWidth - availableWidth) / 2;
+				viewport.horizontalScrollPosition = Math.max(0, newHorizontalPosition);
+			}
+			else {
+				//newHorizontalPosition = (contentWidth - canvasScroller.width) / 2;
+				//viewport.horizontalScrollPosition = Math.max(0, newHorizontalPosition);
+			}
+		}
+		
+		/**
+		 * Restores the scale of the target application to 100%.
+		 * */
+		public function restoreDefaultScale(dispatchEvent:Boolean = true):void {
+			if (document) {
+				setScale(1, dispatchEvent);
+			}
+		}
+		
+		/**
+		 * Sets the scale to fit the available space. 
+		 * */
+		public function scaleToFit(dispatchEvent:Boolean = true):void {
+			var width:int;
+			var height:int;
+			var availableWidth:int;
+			var availableHeight:int;
+			var widthScale:Number;
+			var heightScale:Number;
+			var newScale:Number;
+			
+			if (document) {
+			
+				//width = DisplayObject(document).width;
+				//height = DisplayObject(document).height;
+				width = DisplayObject(document).width;
+				height = DisplayObject(document).height;
+				var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 20;
+				var hsbHeight:int = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 20;
+				availableWidth = canvasScroller.width - vsbWidth*2.5;
+				availableHeight = canvasScroller.height - hsbHeight*2.5;
+				
+				//var scrollerPaddedWidth:int = canvasScroller.width + documentPadding;
+				//var scrollerPaddedHeight:int = canvasScroller.height + documentPadding;
+			
+                // if the visible area is less than our content then scale down
+                if (height > availableHeight || width > availableWidth) {
+					heightScale = availableHeight/height;
+					widthScale = availableWidth/width;
+					newScale = Math.min(widthScale, heightScale);
+					width = newScale * width;
+					height = newScale * height;
+                }
+				else if (height < availableHeight && width < availableWidth) {
+					newScale = Math.min(availableHeight/height, availableWidth/width);
+					width = newScale * width;
+					height = newScale * height;
+					//newScale = Math.min(availableHeight/height, availableWidth/width);
+					//newScale = Math.max(availableHeight/height, availableWidth/width);
+                }
+
+				setScale(newScale, dispatchEvent);
+				
+				////////////////////////////////////////////////////////////////////////////////
+				/*var documentRatio:Number = width / height;
+				var canvasRatio:Number = availableWidth / availableHeight;
+				
+				var newRatio:Number = documentRatio / canvasRatio;
+				newRatio = canvasRatio / documentRatio;
+				newRatio = 1-documentRatio / canvasRatio;*/
+					
+			}
+		}
+		
+		//----------------------------------
+		//
+		//  Documentation Utility
+		// 
+		//----------------------------------
+		
+		//public static var docsURL:String = "http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/";
+		public static var docsURL:String = "http://flex.apache.org/asdoc/";
+		
+		public static function getURLToHelp(metadata:MetaData):String {
+			var path:String = "";
+			var currentClass:String;
+			var sameClass:Boolean;
+			var prefix:String = "";
+			var url:String;
+			
+			if (metadata && metadata.declaredBy) {
+				currentClass = String(metadata.declaredBy).replace(/::|\./g, "/");
+				
+				if (metadata is StyleMetaData) {
+					prefix = "style:";
+				}
+				else if (metadata is EventMetaData) {
+					prefix = "event:";
+				}
+				
+				
+				path = currentClass + ".html#" + prefix + metadata.name;
+			}
+			
+			url  = docsURL + path;
+			
+			return url;
 		}
 		
 		//----------------------------------
@@ -1144,25 +1582,33 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * The background canvas. 
+		 * The canvas border.
+		 * */
+		public var canvasBorder:Object;
+		
+		/**
+		 * The canvas background.
 		 * */
 		public var canvasBackground:Object;
-		public var canvasBackgroundParent:Object;
+		
+		/**
+		 * The canvas scroller.
+		 * */
 		public var canvasScroller:Scroller;
 		
 		/**
 		 * Sets the canvas and canvas parent. Not sure if going to be used. 
 		 * May use canvas property on document.
 		 * */
-		public function setCanvas(value:Object, canvasParent:Object, scroller:Scroller, dispatchEvent:Boolean = true, cause:String = ""):void {
-			if (canvasBackground==value) return;
+		public function setCanvas(canvasBorder:Object, canvasBackground:Object, canvasScroller:Scroller, dispatchEvent:Boolean = true, cause:String = ""):void {
+			//if (this.canvasBackground==canvasBackground) return;
 			
-			canvasBackground = value;
-			canvasBackgroundParent = canvasParent;
-			canvasScroller = scroller;
+			this.canvasBorder = canvasBorder;
+			this.canvasBackground = canvasBackground;
+			this.canvasScroller = canvasScroller;
 			
 			if (dispatchEvent) {
-				instance.dispatchCanvasChangeEvent(canvasBackground, canvasBackgroundParent, scroller);
+				instance.dispatchCanvasChangeEvent(canvasBackground, canvasBorder, canvasScroller);
 			}
 			
 		}
@@ -1368,11 +1814,59 @@ package com.flexcapacitor.controller {
 		 * Gets the display list of the current document
 		 * */
 		public static function getComponentDisplayList():ComponentDescription {
-			return DisplayObjectUtils.getComponentDisplayList(instance.document);
+			return IDocument(instance.document).componentDescription;
 		}
 		
 		/**
-		 * Returns true if the property was changed.<br/><br/>
+		 * Returns true if the property was changed. Use setProperties for 
+		 * setting multiple properties.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>Radiate.setProperty(myButton, "x", 40);</pre>
+		 * <pre>Radiate.setProperty([myButton,myButton2], "x", 40);</pre>
+		 * */
+		public static function clearStyle(target:Object, style:String, description:String = null):Boolean {
+			
+			return setStyle(target, style, undefined, description, true);
+		}
+		
+		/**
+		 * Returns true if the property was changed. Use setProperties for 
+		 * setting multiple properties.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>Radiate.setProperty(myButton, "x", 40);</pre>
+		 * <pre>Radiate.setProperty([myButton,myButton2], "x", 40);</pre>
+		 * */
+		public static function setStyle(target:Object, style:String, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
+			var targets:Array = ArrayUtil.toArray(target);
+			var propertyChanges:Array;
+			var historyEvents:Array;
+			
+			propertyChanges = createPropertyChange(targets, null, style, value, description);
+			
+			
+			if (!keepUndefinedValues) {
+				propertyChanges = stripUnchangedValues(propertyChanges);
+			}
+			
+			if (changesAvailable(propertyChanges)) {
+				applyChanges(targets, propertyChanges, null, style);
+				//LayoutManager.getInstance().validateNow(); // applyChanges calls this
+				
+				historyEvents = createHistoryEvents(targets, propertyChanges, null, style, value);
+				
+				addHistoryEvents(historyEvents, description);
+				instance.dispatchPropertyChangeEvent(targets, propertyChanges, ArrayUtil.toArray(style));
+				return true;
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Returns true if the property was changed. Use setProperties for 
+		 * setting multiple properties.<br/><br/>
 		 * 
 		 * Usage:<br/>
 		 * <pre>Radiate.setProperty(myButton, "x", 40);</pre>
@@ -1380,18 +1874,81 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function setProperty(target:Object, property:String, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
 			var targets:Array = ArrayUtil.toArray(target);
-			var propertyChanges:Array = createPropertyChange(targets, property, value, description);
-			var effectInstances:Array;
+			var propertyChanges:Array;
+			var historyEvents:Array;
+			
+			propertyChanges = createPropertyChange(targets, property, null, value, description);
+			
 			
 			if (!keepUndefinedValues) {
 				propertyChanges = stripUnchangedValues(propertyChanges);
 			}
 			
 			if (changesAvailable(propertyChanges)) {
-				applyChanges(targets, propertyChanges, property);
-				LayoutManager.getInstance().validateNow();
-				addHistoryItem(propertyChanges);
+				applyChanges(targets, propertyChanges, property, null);
+				//LayoutManager.getInstance().validateNow(); // applyChanges calls this
+				//addHistoryItem(propertyChanges, description);
+				
+				historyEvents = createHistoryEvents(targets, propertyChanges, property, null, value);
+				
+				addHistoryEvents(historyEvents, description);
+				
 				instance.dispatchPropertyChangeEvent(targets, propertyChanges, ArrayUtil.toArray(property));
+				
+				if (targets.indexOf(instance.document)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, [property])) {
+					instance.dispatchDocumentSizeChangeEvent(targets);
+				}
+				
+				return true;
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Properties on the application to listen for for document size change event
+		 * */
+		public static var notableApplicationProperties:Array = ["width","height","scaleX","scaleY"];
+		
+		/**
+		 * Returns true if the property(s) were changed.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>setProperties([myButton,myButton2], ["x","y"], {x:40,y:50});</pre>
+		 * <pre>setProperties(myButton, "x", 40);</pre>
+		 * <pre>setProperties(button, ["x", "left"], {x:50,left:undefined});</pre>
+		 * 
+		 * @see setStyle()
+		 * @see setStyles()
+		 * @see setProperty()
+		 * */
+		public static function setProperties(target:Object, properties:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
+			var propertyChanges:Array;
+			var historyEvents:Array;
+			var targets:Array;
+			
+			targets = ArrayUtil.toArray(target);
+			properties = ArrayUtil.toArray(properties);
+			propertyChanges = createPropertyChanges(targets, properties, null, value, description, false);
+			
+			if (!keepUndefinedValues) {
+				propertyChanges = stripUnchangedValues(propertyChanges);
+			}
+			
+			if (changesAvailable(propertyChanges)) {
+				applyChanges(targets, propertyChanges, properties, null);
+				//LayoutManager.getInstance().validateNow();
+				//addHistoryItem(propertyChanges);
+				
+				historyEvents = createHistoryEvents(targets, propertyChanges, properties, null, value);
+				
+				addHistoryEvents(historyEvents, description);
+				
+				instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties);
+				
+				if (targets.indexOf(instance.document)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, properties)) {
+					instance.dispatchDocumentSizeChangeEvent(targets);
+				}
 				return true;
 			}
 			
@@ -1405,21 +1962,32 @@ package com.flexcapacitor.controller {
 		 * <pre>setProperties([myButton,myButton2], ["x","y"], {x:40,y:50});</pre>
 		 * <pre>setProperties(myButton, "x", 40);</pre>
 		 * <pre>setProperties(button, ["x", "left"], {x:50,left:undefined});</pre>
+		 * 
+		 * @see setStyle()
+		 * @see setProperty()
+		 * @see setProperties()
 		 * */
-		public static function setProperties(target:Object, property:*, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
-			var targets:Array = ArrayUtil.toArray(target);
-			var properties:Array = ArrayUtil.toArray(property);
-			var propertyChanges:Array = createPropertyChanges(targets, properties, value, description);
+		public static function setStyles(target:Object, styles:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
+			var stylesChanges:Array;
+			var historyEvents:Array;
+			var targets:Array;
+			
+			targets = ArrayUtil.toArray(target);
+			styles = ArrayUtil.toArray(styles);
+			stylesChanges = createPropertyChanges(targets, styles, null, value, description, false);
 			
 			if (!keepUndefinedValues) {
-				propertyChanges = stripUnchangedValues(propertyChanges);
+				stylesChanges = stripUnchangedValues(stylesChanges);
 			}
 			
-			if (changesAvailable(propertyChanges)) {
-				applyChanges(targets, propertyChanges, properties);
-				LayoutManager.getInstance().validateNow();
-				addHistoryItem(propertyChanges);
-				instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties);
+			if (changesAvailable(stylesChanges)) {
+				applyChanges(targets, stylesChanges, null, styles);
+				//LayoutManager.getInstance().validateNow();
+				
+				historyEvents = createHistoryEvents(targets, stylesChanges, null, styles, value);
+				
+				addHistoryEvents(historyEvents, description);
+				instance.dispatchPropertyChangeEvent(targets, stylesChanges, styles);
 				return true;
 			}
 			
@@ -1440,7 +2008,7 @@ package com.flexcapacitor.controller {
 		 * such as positioning<br/><br/>
 		 * 
 		 * Usage:<br/>
-		 * <pre>Radiate.moveElement(new Button(), parentComponent);</pre>
+		 * <pre>Radiate.moveElement(new Button(), parentComponent, [], null);</pre>
 		 * 
 		 * Usage:<br/>
 		 * <pre>Radiate.moveElement(radiate.target, null, ["x"], 15);</pre>
@@ -1448,6 +2016,7 @@ package com.flexcapacitor.controller {
 		public static function moveElement(items:*, 
 										   destination:Object, 
 										   properties:Array, 
+										   styles:Array,
 										   values:Object, 
 										   description:String 	= RadiateEvent.MOVE_ITEM, 
 										   position:String		= AddItems.LAST, 
@@ -1462,13 +2031,27 @@ package com.flexcapacitor.controller {
 			var visualElement:IVisualElement;
 			var moveItems:AddItems;
 			var childIndex:int;
-			var changes:Array;
 			var propertyChangeChange:PropertyChanges;
+			var changes:Array;
+			var historyEvents:Array;
 			var isSameOwner:Boolean;
 			var isSameParent:Boolean;
+			var removeBeforeAdding:Boolean;
+			var currentIndex:int;
+			var movingIndexWithinParent:Boolean;
 			
 			items = ArrayUtil.toArray(items);
 			
+			var item:Object = items ? items[0] : null;
+			var itemOwner:Object = item ? item.owner : null;
+			
+			visualElement = item as IVisualElement;
+			var visualElementParent:Object = visualElement ? visualElement.parent : null;
+			var visualElementOwner:IVisualElementContainer = itemOwner as IVisualElementContainer;
+			var applicationGroup:GroupBase = destination is Application ? Application(destination).contentGroup : null;
+			
+			isSameParent = visualElementParent && (visualElementParent==destination || visualElementParent==applicationGroup);
+			isSameOwner = visualElementOwner && visualElementOwner==destination;
 			
 			// set default description
 			if (!description) {
@@ -1476,31 +2059,34 @@ package com.flexcapacitor.controller {
 			}
 			
 			// if it's a basic layout then don't try to add it
-			if (destination is GroupBase || destination is Application) {
+			// NO DO ADD IT bc we may need to swap indexes
+			if (destination is IVisualElementContainer) {
 				//destinationGroup = destination as GroupBase;
 				
 				if (destination.layout is BasicLayout) {
-					// does not support multiple items?
 					
+					// does not support multiple items?
 					// check if group parent and destination are the same
-					if (items && items[0].owner==destination) {
+					if (item && itemOwner==destination) {
 						//trace("can't add to the same owner in a basic layout");
 						isSameOwner = true;
+						
 						//return SAME_OWNER;
 					}
 					
 					// check if group parent and destination are the same
-					if (items && items[0].parent==destination) {
+					// NOTE: if the item is an element on application this will fail
+					if (item && visualElementParent && (visualElementParent==destination || visualElementParent==applicationGroup)) {
 						//trace("can't add to the same parent in a basic layout");
 						isSameParent = true;
 						//return SAME_PARENT;
 					}
 				}
 				// if element is already child of layout container and there is only one element 
-				else if (items 
-					&& items[0].parent==destination 
-					&& destination is IVisualElementContainer 
-					&& destination.numElements==1) {
+				else if (items && destination is IVisualElementContainer 
+						&& destination.numElements==1
+						&& visualElementParent
+						&& (visualElementParent==destination || visualElementParent==applicationGroup)) {
 					
 					isSameParent = true;
 					isSameOwner = true;
@@ -1511,9 +2097,10 @@ package com.flexcapacitor.controller {
 			}
 			
 			// if destination is null then we assume we are moving
+			// WRONG! null should mean remove
 			else {
-				isSameParent = true;
-				isSameOwner = true;
+				//isSameParent = true;
+				//isSameOwner = true;
 			}
 			
 			
@@ -1537,7 +2124,7 @@ package com.flexcapacitor.controller {
 					
 					// get relative to object
 				else if (index<=destination.numElements) {
-					visualElement = items is Array && (items as Array).length ? items[0] as IVisualElement : items as IVisualElement;
+					visualElement = items is Array && (items as Array).length>0 ? items[0] as IVisualElement : items as IVisualElement;
 					
 					// if element is already child of container account for removal of element before add
 					if (visualElement && visualElement.parent == destination) {
@@ -1554,12 +2141,36 @@ package com.flexcapacitor.controller {
 					}
 						// add as last item
 					else if (index>=destination.numElements) {
-						position = AddItems.LAST;
+						
+						// we need to remove first or we get an error in AddItems
+						// or we can set relativeTo item and set AFTER
+						if (isSameParent && destination.numElements>1) {
+							removeBeforeAdding = true;
+							relativeTo = destination.getElementAt(destination.numElements-1);
+							position = AddItems.AFTER;
+						}
+						else if (isSameParent) {
+							removeBeforeAdding = true;
+							position = AddItems.LAST;
+						}
+						else {
+							position = AddItems.LAST;
+						}
 					}
 						// add after first item
 					else if (index>0) {
 						relativeTo = destination.getElementAt(index-1);
 						position = AddItems.AFTER;
+					}
+				}
+				
+				
+				// check if moving to another index within the same parent 
+				if (visualElementOwner && visualElement) {
+					currentIndex = visualElementOwner.getElementIndex(visualElement);
+					
+					if (currentIndex!=index) {
+						movingIndexWithinParent = true;
 					}
 				}
 			}
@@ -1575,10 +2186,11 @@ package com.flexcapacitor.controller {
 			moveItems.isArray = isArray;
 			moveItems.isStyle = isStyle;
 			moveItems.vectorClass = vectorClass;
-			
+			/* euripidies, numenamena, hermermerphermer*/
 			// add properties that need to be modified
-			if (properties) { 
-				changes = createPropertyChanges(items, properties, values, description, false);
+			if (properties && properties.length>0 ||
+				styles && styles.length>0) {
+				changes = createPropertyChanges(items, properties, styles, values, description, false);
 				
 				// get the property change part
 				propertyChangeChange = changes[0];
@@ -1600,11 +2212,8 @@ package com.flexcapacitor.controller {
 				// insert moving of items before it
 				// if it's the same owner we don't want to run add items 
 				// but if it's a vgroup or hgroup does this count
-				if (!isSameParent && !isSameOwner) {
+				if ((!isSameParent && !isSameOwner) || movingIndexWithinParent) {
 					changes.unshift(moveItems); //add before other changes 
-				}
-				else {
-					//trace("NOT ADDING move add items");
 				}
 				
 				if (changes.length==0) {
@@ -1612,22 +2221,37 @@ package com.flexcapacitor.controller {
 				}
 				
 				// store changes
-				storeHistoryEvent(items, changes, properties, values, description, RadiateEvent.MOVE_ITEM);
+				historyEvents = createHistoryEvents(items, changes, properties, styles, values, description, RadiateEvent.MOVE_ITEM);
 				
 				// try moving
-				if (!isSameParent && !isSameOwner) {
+				if ((!isSameParent && !isSameOwner) || movingIndexWithinParent) {
+					
+					// this is to prevent error in AddItem when adding to the last position
+					// and we get an index is out of range. 
+					// 
+					// for example, if an element is at index 0 and there are 3 elements 
+					// then addItem will get the last index. 
+					// but since the parent is the same the addElement call removes 
+					// the element. the max index is reduced by one and previously 
+					// determined last index is now out of range. 
+					// AddItems was not meant to add an element that has already been added
+					// so we remove it before hand so addItems can add it again. 
+					if (removeBeforeAdding) {
+						visualElementOwner.removeElement(visualElement);
+					}
+					
 					moveItems.apply(moveItems.destination as UIComponent);
 					LayoutManager.getInstance().validateNow();
 				}
 				
 				// try setting properties
 				if (changesAvailable([propertyChangeChange])) {
-					applyChanges(items, [propertyChangeChange], properties);
+					applyChanges(items, [propertyChangeChange], properties, styles);
 					LayoutManager.getInstance().validateNow();
 				}
 				
 				// add to history
-				addHistoryItem(changes);
+				addHistoryEvents(historyEvents);
 				
 				// check for changes before dispatching
 				if (changes.indexOf(moveItems)!=-1) {
@@ -1644,6 +2268,7 @@ package com.flexcapacitor.controller {
 			}
 			catch (error:Error) {
 				// this is clunky - needs to be upgraded
+				Radiate.log.error("Move error: " + error.message);
 				removeHistoryEvent(changes);
 				removeHistoryItem(changes);
 				return String(error.message);
@@ -1666,6 +2291,7 @@ package com.flexcapacitor.controller {
 		public static function addElement(items:*, 
 										  destination:Object, 
 										  properties:Array, 
+										  styles:Array,
 										  values:Object, 
 										  description:String 	= RadiateEvent.ADD_ITEM, 
 										  position:String		= AddItems.LAST, 
@@ -1677,148 +2303,10 @@ package com.flexcapacitor.controller {
 										  vectorClass:Class		= null,
 										  keepUndefinedValues:Boolean = true):String {
 			
-			// this is way too long :(
-			return moveElement(items, destination, properties, values, 
+			return moveElement(items, destination, properties, styles, values, 
 								description, position, relativeTo, index, propertyName, 
 								isArray, isStyle, vectorClass, keepUndefinedValues);
 			
-			var visualElement:IVisualElement;
-			var removeItems:AddItems;
-			var addItems:AddItems;
-			var numOfElements:int;
-			var childIndex:int;
-			var changes:Array;
-			
-			items = ArrayUtil.toArray(items);
-			
-			
-			// set default description
-			if (!description) {
-				description = ADD_ITEM_DESCRIPTION;
-			}
-			
-			////////////////////////
-			// NOTE: This is an add, so there shouldn't be a previous owner or parent
-			// maybe remove this? may keep it to prevent misuse of api call
-			////////////////////////
-			
-			// if it's a basic layout then don't try to add it
-			if (destination is GroupBase || destination is Application) {
-				//destinationGroup = destination as GroupBase;
-				
-				if (destination.layout is BasicLayout) {
-					// does not support multiple items?
-					
-					// check if group parent and destination are the same
-					if (items && items[0].owner==destination) {
-						//trace("can't add to the same owner in a basic layout");
-						return SAME_OWNER;
-					}
-					
-					// check if group parent and destination are the same
-					if (items && items[0].parent==destination) {
-						//trace("can't add to the same parent in a basic layout");
-						return SAME_PARENT;
-					}
-				}
-				// if element is already child of layout container and there is only one element 
-				else if (items 
-						&& items[0].parent==destination 
-						&& destination is IVisualElementContainer 
-						&& destination.numElements==1) {
-					
-					//trace("can't add to the same parent in a basic layout");
-					return SAME_PARENT;
-					
-				}
-			}
-			
-			// create a new AddItems instance and add it to the changes
-			addItems = new AddItems();
-			removeItems = new AddItems();
-			changes = [addItems];
-			
-			// set default
-			if (!position) {
-				position = AddItems.LAST;
-			}
-			
-			// if destination is not a basic layout Group and the index is set 
-			// then find and override position and set the relative object 
-			// so we can position the target in the drop location point index
-			if (destination is IVisualElementContainer 
-				&& !relativeTo 
-				&& index!=-1
-				&& destination.numElements>0) {
-				
-				// add as first item
-				if (index==0) {
-					position = AddItems.FIRST;
-				}
-				
-				// get relative to object
-				else if (index<=destination.numElements) {
-					visualElement = items is Array && (items as Array).length ? items[0] as IVisualElement : items as IVisualElement;
-					
-					// if element is already child of container account for removal of element before add
-					if (visualElement && visualElement.parent == destination) {
-						childIndex = destination.getElementIndex(visualElement);
-						index = childIndex < index ? index-1: index;
-						
-						if (index<=0) {
-							position = AddItems.FIRST;
-						}
-						else {
-							relativeTo = destination.getElementAt(index-1);
-							position = AddItems.AFTER;
-						}
-					}
-					// add as last item
-					else if (index>=destination.numElements) {
-						position = AddItems.LAST;
-					}
-					// add after first item
-					else if (index>0) {
-						relativeTo = destination.getElementAt(index-1);
-						position = AddItems.AFTER;
-					}
-				}
-			}
-			
-			
-			addItems.items = ArrayUtil.toArray(items);
-			addItems.destination = destination;
-			addItems.position = position;
-			addItems.relativeTo = relativeTo;
-			addItems.propertyName = propertyName;
-			addItems.isArray = isArray;
-			addItems.isStyle = isStyle;
-			addItems.vectorClass = vectorClass;
-			
-			
-			// add property changes array to the history dictionary
-			storeHistoryEvent(ArrayUtil.toArray(items), changes, propertyName, null, description, RadiateEvent.ADD_ITEM);
-			
-			
-			// check for changes
-			if (true) {
-				
-				try {
-					addItems.apply(addItems.destination as UIComponent);
-					LayoutManager.getInstance().validateNow();
-					addHistoryItem(changes);
-					instance.dispatchAddEvent(items, changes, ArrayUtil.toArray(propertyName), false);
-					setTargets(items, true);
-					return ADDED; // we assume add was successful if we got this far - needs more work
-				}
-				catch (error:Error) {
-					removeHistoryEvent(changes);
-					removeHistoryItem(changes);
-					return String(error.message);
-				}
-			}
-			
-			return ADD_ERROR;
 		}
 		
 		
@@ -1830,19 +2318,28 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function removeElement(items:*, description:String = RadiateEvent.REMOVE_ITEM):String {
 			
-			return REMOVE_ERROR;
+			return moveElement(items, null, null, null, null, 
+								description);
 		}
 		
 		/**
-		 * Apply changes to targets
+		 * Apply changes to targets. You do not call this. Set properties through setProperties method. 
+		 * 
 		 * @param setStartValues applies the start values rather 
 		 * than applying the end values
+		 * 
+		 * @param property string or array of strings containing the 
+		 * names of the properties to set or null if setting styles
+		 * 
+		 * @param style string or araray of strings containing the 
+		 * names of the styles to set or null if setting properties
 		 * */
-		public static function applyChanges(targets:Array, changes:Array, property:*, setStartValues:Boolean=false):Boolean {
+		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, setStartValues:Boolean=false):Boolean {
 			var length:int = changes ? changes.length : 0;
 			var effect:SetAction = new SetAction();
 			var onlyPropertyChanges:Array = [];
 			var directApply:Boolean = true;
+			var isStyle:Boolean = style && style.length>0;
 			
 			for (var i:int;i<length;i++) {
 				if (changes[i] is PropertyChanges) { 
@@ -1852,7 +2349,11 @@ package com.flexcapacitor.controller {
 			
 			effect.targets = targets;
 			effect.propertyChangesArray = onlyPropertyChanges;
+			if (isStyle) {
+				effect.property = style;
+			}
 			effect.relevantProperties = ArrayUtil.toArray(property);
+			effect.relevantStyles = ArrayUtil.toArray(style);
 			
 			// this works for styles and properties
 			// note: the property applyActualDimensions is used to enable width and height values to stick
@@ -1879,6 +2380,7 @@ package com.flexcapacitor.controller {
 				effect.play(targets, setStartValues);
 				effect.playReversed = false;
 				effect.end();
+				LayoutManager.getInstance().validateNow();
 			}
 			return true;
 		}
@@ -1968,56 +2470,94 @@ package com.flexcapacitor.controller {
 		
 		
 		/**
+		 * Travel to the specified history index.
+		 * Going to fast may cause some issues. Need to test thoroughly 
+		 * We may need to call validateNow somewhere and set usePhasedInstantiation?
+		 * */
+		public static function goToHistoryIndex(index:int, dispatchEvents:Boolean = false):int {
+			var newIndex:int = index;
+			var oldIndex:int = historyIndex;
+			var time:int = getTimer();
+			var currentIndex:int;
+			var difference:int;
+			
+			if (newIndex<oldIndex) {
+				difference = oldIndex - newIndex;
+				for (var i:int;i<difference;i++) {
+					currentIndex = undo(dispatchEvents);
+				}
+			}
+			else if (newIndex>oldIndex) {
+				difference = oldIndex<0 ? newIndex+1 : newIndex - oldIndex;
+				for (var j:int;j<difference;j++) {
+					currentIndex = redo(dispatchEvents);
+				}
+			}
+			
+			if (currentIndex!=newIndex) {
+				historyIndex = getHistoryIndex();
+				
+				if (dispatchEvents) {
+					instance.dispatchHistoryChangeEvent(historyIndex, oldIndex);
+				}
+			}
+			
+			return currentIndex;
+		}
+		
+		/**
 		 * Undo last change. Returns the current index in the changes array. 
 		 * The property change object sets the property "reversed" to 
 		 * true.
-		 * Going to fast causes some issues (call validateNow somewhere)?
+		 * Going too fast causes some issues (call validateNow somewhere)?
 		 * */
-		public static function undo():int {
+		public static function undo(dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true):int {
 			var changeIndex:int = getPreviousHistoryIndex(); // index of next change to undo 
 			var currentIndex:int = getHistoryIndex();
+			var historyLength:int = history.length;
+			var historyEvent:HistoryEventItem;
+			var currentDocument:Object = instance.document;
 			var setStartValues:Boolean = true;
-			var length:int = history.length;
-			var historyEvent:HistoryEvent;
-			var effectInstances:Array;
+			var historyItem:HistoryItem;
+			var affectsDocument:Boolean;
+			var historyEvents:Array;
 			var dictionary:Dictionary;
 			var reverseItems:AddItems;
 			var eventTargets:Array;
-			var changesLength:int;
+			var eventsLength:int;
 			var targetsLength:int;
 			var addItems:AddItems;
 			var added:Boolean;
-			var changes:Array;
-			var change:Object;
 			var action:String;
 			
 			// no changes
-			if (!length) {
+			if (!historyLength) {
 				return -1;
 			}
 			
 			// all changes have already been undone
 			if (changeIndex<0) {
-				if (instance.hasEventListener(RadiateEvent.BEGINNING_OF_UNDO_HISTORY)) {
+				if (dispatchEvents && instance.hasEventListener(RadiateEvent.BEGINNING_OF_UNDO_HISTORY)) {
 					instance.dispatchEvent(new RadiateEvent(RadiateEvent.BEGINNING_OF_UNDO_HISTORY));
 				}
+				
 				return -1;
 			}
 			
 			// get current change to be redone
-			changes = history.length ? history.getItemAt(changeIndex) as Array : null;
-			changesLength = changes ? changes.length: 0;
+			historyItem = history.length ? history.getItemAt(changeIndex) as HistoryItem : null;
+			historyEvents = historyItem.historyEvents;
+			eventsLength = historyEvents.length;
 			
 			
 			// loop through changes
-			for (var i:int;i<changesLength;i++) {
-				change = changes[i];
+			for (var i:int=eventsLength;i--;) {
+				//changesLength = changes ? changes.length: 0;
 				
-				// get property change description object
-				historyEvent = historyEventsDictionary[change];
+				historyEvent = historyEvents[i];
 				addItems = historyEvent.addItemsInstance;
 				action = historyEvent.action;//==RadiateEvent.MOVE_ITEM && addItems ? RadiateEvent.MOVE_ITEM : RadiateEvent.PROPERTY_CHANGE;
-				
+				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentDocument)!=-1;
 				
 				// undo the add
 				if (action==RadiateEvent.ADD_ITEM) {
@@ -2041,7 +2581,10 @@ package com.flexcapacitor.controller {
 					}
 					
 					historyEvent.reversed = true;
-					instance.dispatchRemoveItemsEvent(historyEvent.targets, changes, historyEvent.properties);
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						instance.dispatchRemoveItemsEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+					}
 				}
 				
 				// undo the move
@@ -2057,7 +2600,10 @@ package com.flexcapacitor.controller {
 						if (reverseItems) {
 							addItems.remove(null);
 							reverseItems.apply(reverseItems.destination as UIComponent);
-							instance.dispatchRemoveItemsEvent(historyEvent.targets, [change], historyEvent.properties);
+							
+							if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+								instance.dispatchRemoveItemsEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+							}
 							
 							// was it added - note: can be refactored
 							if (reverseItems.destination==null) {
@@ -2065,10 +2611,13 @@ package com.flexcapacitor.controller {
 							}
 						}
 						else {
-							applyChanges(historyEvent.targets, [change], historyEvent.properties, 
+							applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
 								setStartValues);
 							historyEvent.reversed = true;
-							instance.dispatchPropertyChangeEvent(historyEvent.targets, [change], historyEvent.properties);
+							
+							if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+								instance.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+							}
 						}
 					}
 					
@@ -2078,17 +2627,25 @@ package com.flexcapacitor.controller {
 				else if (action==RadiateEvent.REMOVE_ITEM) {
 					addItems.apply(addItems.destination as UIComponent);
 					historyEvent.reversed = true;
-					instance.dispatchAddEvent(historyEvent.targets, changes, historyEvent.properties);
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						instance.dispatchAddEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+					}
 				}
 				// undo the property changes
 				else if (action==RadiateEvent.PROPERTY_CHANGE) {
 				
-					applyChanges(historyEvent.targets, changes, historyEvent.properties, 
+					applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
 						setStartValues);
 					historyEvent.reversed = true;
-					instance.dispatchPropertyChangeEvent(historyEvent.targets, changes, historyEvent.properties);
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						instance.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+					}
 				}
 			}
+			
+			historyItem.reversed = true;
 			
 			// select the target
 			if (selectTargetOnHistoryChange) {
@@ -2100,79 +2657,95 @@ package com.flexcapacitor.controller {
 				}
 			}
 			
-			if (changesLength) {
+			if (eventsLength) {
 				historyIndex = getHistoryIndex();
-				instance.dispatchHistoryChangeEvent(historyIndex, currentIndex);
+				
+				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+					instance.dispatchHistoryChangeEvent(historyIndex, currentIndex);
+				}
 				return changeIndex-1;
 			}
 			
-			return length;
+			return historyLength;
 		}
 		
 		/**
 		 * Redo last change
 		 * */
-		public static function redo():int {
+		public static function redo(dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true):int {
+			var currentDocument:Object = instance.document;
 			var changeIndex:int = getNextHistoryIndex();
 			var currentIndex:int = getHistoryIndex();
-			var length:int = history.length;
-			var historyEvent:HistoryEvent;
+			var historyLength:int = history.length;
+			var historyEvent:HistoryEventItem;
+			var historyItem:HistoryItem;
+			var affectsDocument:Boolean;
 			var setStartValues:Boolean;
-			var effectInstances:Array;
-			var changesLength:int;
+			var historyEvents:Array;
+			var eventsLength:int;
 			var addItems:AddItems;
-			var changes:Array;
-			var change:Object;
+			//var changes:Array;
+			//var change:Object;
 			var action:String;
 			
 			// no changes made
-			if (!length) {
+			if (!historyLength) {
 				return -1;
 			}
 			
 			// cannot redo any more changes
-			if (changeIndex==-1 || changeIndex>=length) {
+			if (changeIndex==-1 || changeIndex>=historyLength) {
 				if (instance.hasEventListener(RadiateEvent.END_OF_UNDO_HISTORY)) {
 					instance.dispatchEvent(new RadiateEvent(RadiateEvent.END_OF_UNDO_HISTORY));
 				}
-				return length-1;
+				return historyLength-1;
 			}
 			
 			// get current change to be redone
-			changes = history.length ? history.getItemAt(changeIndex) as Array : null;
-			changesLength = changes ? changes.length: 0;
+			historyItem = history.length ? history.getItemAt(changeIndex) as HistoryItem : null;
 			
-			for (var i:int;i<changesLength;i++) {
-				change = changes[i];
+			historyEvents = historyItem.historyEvents;
+			eventsLength = historyEvents.length;
+			//changes = historyEvents;
+			
+			for (var j:int;j<eventsLength;j++) {
+				historyEvent = HistoryEventItem(historyEvents[j]);
+				//changesLength = changes ? changes.length: 0;
 				
-				// get property changes description object
-				historyEvent = historyEventsDictionary[change];
 				addItems = historyEvent.addItemsInstance;
 				action = historyEvent.action;
-				
+				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentDocument)!=-1;
+
 				
 				if (action==RadiateEvent.ADD_ITEM) {
 					// redo the add
 					addItems.apply(addItems.destination as UIComponent);
 					historyEvent.reversed = false;
-					instance.dispatchAddEvent(historyEvent.targets, changes, historyEvent.properties);
-					/*historyIndex = getHistoryIndex();
-					instance.dispatchHistoryChangeEvent(historyIndex, currentIndex);
-					return changeIndex;*/
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						instance.dispatchAddEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+					}
+					
 				}
 				else if (action==RadiateEvent.MOVE_ITEM) {
 					// redo the move
 					if (addItems) {
 						addItems.apply(addItems.destination as UIComponent);
 						historyEvent.reversed = false;
-						instance.dispatchMoveEvent(historyEvent.targets, changes, historyEvent.properties);
+						
+						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+							instance.dispatchMoveEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+						}
 					}
 					else {
 						
-						applyChanges(historyEvent.targets, changes, historyEvent.properties, 
+						applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
 							setStartValues);
 						historyEvent.reversed = false;
-						instance.dispatchPropertyChangeEvent(historyEvent.targets, changes, historyEvent.properties);
+						
+						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+							instance.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+						}
 					}
 					
 				}
@@ -2180,28 +2753,41 @@ package com.flexcapacitor.controller {
 					// redo the remove
 					addItems.remove(addItems.destination as UIComponent);
 					historyEvent.reversed = false;
-					instance.dispatchRemoveItemsEvent(historyEvent.targets, changes, historyEvent.properties);
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						instance.dispatchRemoveItemsEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+					}
 				}
 				else if (action==RadiateEvent.PROPERTY_CHANGE) {
-					applyChanges(historyEvent.targets, changes, historyEvent.properties, 
+					applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
 						setStartValues);
 					historyEvent.reversed = false;
-					instance.dispatchPropertyChangeEvent(historyEvent.targets, changes, historyEvent.properties);
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						instance.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+					}
 				}
 			}
+			
+			
+			historyItem.reversed = false;
 			
 			// select target
 			if (selectTargetOnHistoryChange) {
 				instance.setTargets(historyEvent.targets, true);
 			}
 			
-			if (changesLength) {
+			if (eventsLength) {
 				historyIndex = getHistoryIndex();
-				instance.dispatchHistoryChangeEvent(historyIndex, currentIndex);
+				
+				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+					instance.dispatchHistoryChangeEvent(historyIndex, currentIndex);
+				}
+				
 				return changeIndex;
 			}
 			
-			return length;
+			return historyLength;
 		}
 		
 		
@@ -2215,10 +2801,15 @@ package com.flexcapacitor.controller {
 		/**
 		 * Current history index. 
 		 * The history index is the index of last applied change. Or
-		 * to put it another way the index of the last reversed change
-		 * -1. If there are 10 total changes and one has been reversed 
-		 * we would be at the 9 the change. The history index would 
+		 * to put it another way the index of the last reversed change minus 1. 
+		 * If there are 10 total changes and one has been reversed then 
+		 * we would be at the 9th change. The history index would 
 		 * be 8 since 9-1 = 8 since the array is a zero based index. 
+		 * 
+		 * value -1 means no history
+		 * value 0 means one item
+		 * value 1 means two items
+		 * value 2 means three items
 		 * */
 		[Bindable]
 		public static function get historyIndex():int {
@@ -2241,17 +2832,13 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function getPreviousHistoryIndex():int {
 			var length:int = history.length;
-			var propertyChangesItems:Array;
-			var historyEvent:HistoryEvent;
-			var change:Object;
+			var historyItem:HistoryItem;
 			var index:int;
 			
 			for (var i:int;i<length;i++) {
-				propertyChangesItems = history.getItemAt(i) as Array;
-				change = propertyChangesItems && propertyChangesItems.length ? propertyChangesItems[0] : null;
-				historyEvent = historyEventsDictionary[change];
+				historyItem = history.getItemAt(i) as HistoryItem;
 				
-				if (historyEvent.reversed) {
+				if (historyItem.reversed) {
 					return i-1;
 				}
 			}
@@ -2267,18 +2854,14 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function getNextHistoryIndex():int {
 			var length:int = history.length;
-			var change:Object;
-			var historyEvent:HistoryEvent;
-			var propertyChangesItems:Array;
+			var historyItem:HistoryItem;
 			var index:int;
 			
 			// start at the beginning and find the next item to redo
 			for (var i:int;i<length;i++) {
-				propertyChangesItems = history.getItemAt(i) as Array;
-				change = propertyChangesItems && propertyChangesItems.length ? propertyChangesItems[0] : null;
-				historyEvent = historyEventsDictionary[change];
+				historyItem = history.getItemAt(i) as HistoryItem;
 				
-				if (historyEvent.reversed) {
+				if (historyItem.reversed) {
 					return i;
 				}
 			}
@@ -2291,17 +2874,14 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function getHistoryIndex():int {
 			var length:int = history.length;
-			var historyEvent:HistoryEvent;
-			var changes:Array;
-			var change:Object;
+			var historyItem:HistoryItem;
 			var index:int;
 			
+			// go through and find last item that is reversed
 			for (var i:int;i<length;i++) {
-				changes = history.getItemAt(i) as Array;
-				change = changes && changes.length ? changes[0] : null;
-				historyEvent = historyEventsDictionary[change];
+				historyItem = history.getItemAt(i) as HistoryItem;
 				
-				if (historyEvent && historyEvent.reversed) {
+				if (historyItem.reversed) {
 					return i-1;
 				}
 			}
@@ -2312,11 +2892,9 @@ package com.flexcapacitor.controller {
 		/**
 		 * Returns the history event by index
 		 * */
-		public function getHistoryEventByIndex(index:int):HistoryEvent {
+		public function getHistoryItemAtIndex(index:int):HistoryItem {
 			var length:int = history.length;
-			var historyArray:Array;
-			var change:Object;
-			var historyEvent:HistoryEvent;
+			var historyItem:HistoryItem;
 			
 			// no changes
 			if (!length) {
@@ -2329,25 +2907,31 @@ package com.flexcapacitor.controller {
 			}
 			
 			// get change 
-			historyArray = history.length ? history.getItemAt(index) as Array : null;
-			change = historyArray && historyArray.length ? historyArray[0] : null;
+			historyItem = history.length ? history.getItemAt(index) as HistoryItem : null;
 			
-			// get property change description object
-			historyEvent = historyEventsDictionary[change];
-			
-			return historyEvent;
+			return historyItem;
 		}
 
 		
 		/**
 		 * Given a target or targets, property name and value
 		 * returns an array of PropertyChange objects.
+		 * Points to createPropertyChanges()
+		 * 
+		 * @see createPropertyChanges()
 		 * */
-		public static function createPropertyChange(targets:Array, property:String, value:*, description:String = ""):Array {
+		public static function createPropertyChange(targets:Array, property:String, style:String, value:*, description:String = ""):Array {
 			var values:Object = {};
 			var changes:Array;
-			values[property] = value;
-			changes = createPropertyChanges(targets, ArrayUtil.toArray(property), values, description);
+			
+			if (property) {
+				values[property] = value;
+			}
+			else if (style) {
+				values[style] = value;
+			}
+			
+			changes = createPropertyChanges(targets, ArrayUtil.toArray(property), ArrayUtil.toArray(style), values, description, false);
 			
 			return changes;
 		}
@@ -2357,29 +2941,51 @@ package com.flexcapacitor.controller {
 		 * returns an array of PropertyChange objects.
 		 * Value must be an object containing the properties mentioned in the properties array
 		 * */
-		public static function createPropertyChanges(targets:Array, properties:Array, value:Object, description:String = "", storeInHistory:Boolean = true):Array {
+		public static function createPropertyChanges(targets:Array, properties:Array, styles:Array, value:Object, description:String = "", storeInHistory:Boolean = true):Array {
 			var tempEffect:SetAction = new SetAction();
 			var propertyChanges:PropertyChanges;
 			var changes:Array;
-			var property:String;
+			var propertyOrStyle:String;
+			var isStyle:Boolean = styles && styles.length>0;
 			
 			tempEffect.targets = targets;
+			tempEffect.property = isStyle ? styles[0] : properties[0];
 			tempEffect.relevantProperties = properties;
+			tempEffect.relevantStyles = styles;
 			
 			// get start values for undo
 			changes = tempEffect.captureValues(null, true);
 			
 			// This may be hanging on to bindable objects
-			// set the values to be set to the property
+			// set the values to be set to the property 
+			// ..later - what??? give an example
 			for each (propertyChanges in changes) {
-				for each (property in properties) {
+				
+				// for properties 
+				for each (propertyOrStyle in properties) {
 					
 					// value may be an object with properties or a string
-					if (value && property in value) {
-						propertyChanges.end[property] = value[property];
+					// because we accept an object containing the values with 
+					// the name of the properties or styles
+					if (value && propertyOrStyle in value) {
+						propertyChanges.end[propertyOrStyle] = value[propertyOrStyle];
 					}
 					else {
-						propertyChanges.end[property] = value;
+						propertyChanges.end[propertyOrStyle] = value;
+					}
+				}
+				
+				// for styles
+				for each (propertyOrStyle in styles) {
+					
+					// value may be an object with properties or a string
+					// because we accept an object containing the values with 
+					// the name of the properties or styles
+					if (value && propertyOrStyle in value) {
+						propertyChanges.end[propertyOrStyle] = value[propertyOrStyle];
+					}
+					else {
+						propertyChanges.end[propertyOrStyle] = value;
 					}
 				}
 			}
@@ -2387,25 +2993,27 @@ package com.flexcapacitor.controller {
 			// we should move this out
 			// add property changes array to the history dictionary
 			if (storeInHistory) {
-				storeHistoryEvent(targets, changes, properties, value, description);
+				return createHistoryEvents(targets, changes, properties, styles, value, description);
 			}
 			
-			return changes;
+			return [propertyChanges];
 		}
 		
 		/**
-		 * Stores a history event in the history events dictionary
-		 * Changes can contain a property changes object or add items object
+		 * Creates a history event in the history 
+		 * Changes can contain a property or style changes or add items 
 		 * */
-		public static function storeHistoryEvent(targets:Array, changes:Array, properties:*, value:*, description:String = null, action:String="propertyChange"):void {
-			var factory:ClassFactory = new ClassFactory(HistoryEvent);
-			var historyEvent:HistoryEvent;
+		public static function createHistoryEvents(targets:Array, changes:Array, properties:*, styles:*, value:*, description:String = null, action:String="propertyChange"):Array {
+			var factory:ClassFactory = new ClassFactory(HistoryEventItem);
+			var historyEvent:HistoryEventItem;
+			var events:Array = [];
 			var reverseAddItems:AddItems;
-			var change:Object;
+			var change:Object; 
 			var length:int;
 			
 			// create property change objects for each
-			for each (change in changes) {
+			for (var i:int;i<changes.length;i++) {
+				change = changes[i];
 				historyEvent 						= factory.newInstance();
 				historyEvent.action 				= action;
 				historyEvent.targets 				= targets;
@@ -2414,6 +3022,7 @@ package com.flexcapacitor.controller {
 				// check for property change or add display object
 				if (change is PropertyChanges) {
 					historyEvent.properties 		= ArrayUtil.toArray(properties);
+					historyEvent.styles 			= ArrayUtil.toArray(styles);
 					historyEvent.propertyChanges 	= PropertyChanges(change);
 				}
 				else if (change is AddItems) {
@@ -2422,13 +3031,14 @@ package com.flexcapacitor.controller {
 					
 					// trying to add support for multiple targets - it's not all there yet
 					// probably not the best place to get the previous values or is it???
-					for (var i:int;i<length;i++) {
-						historyEvent.reverseAddItemsDictionary[targets[i]] = createReverseAddItems(targets[i]);
+					for (var j:int=0;j<length;j++) {
+						historyEvent.reverseAddItemsDictionary[targets[j]] = createReverseAddItems(targets[j]);
 					}
 				}
-				
-				historyEventsDictionary[change] 	= historyEvent;
+				events[i] = historyEvent;
 			}
+			
+			return events;
 			
 		}
 		
@@ -2531,7 +3141,7 @@ package com.flexcapacitor.controller {
 		 * Changes can contain a property changes object or add items object
 		 * */
 		public static function removeHistoryEvent(changes:Array):void {
-			var historyEvent:HistoryEvent;
+			var historyEvent:HistoryEventItem;
 			var change:Object;
 			
 			// delete change objects
@@ -2545,7 +3155,15 @@ package com.flexcapacitor.controller {
 		/**
 		 * Adds property change items to the history array
 		 * */
-		public static function addHistoryItem(changes:Array):void {
+		public static function addHistoryItem(historyEventItem:HistoryEventItem, description:String = null):void {
+			addHistoryEvents(ArrayUtil.toArray(historyEventItem), description);
+		}
+		
+		/**
+		 * Adds property change items to the history array
+		 * */
+		public static function addHistoryEvents(historyEvents:Array, description:String = null):void {
+			var historyItem:HistoryItem = new HistoryItem();
 			var currentIndex:int = getHistoryIndex();
 			var length:int = history.length;
 			
@@ -2554,11 +3172,15 @@ package com.flexcapacitor.controller {
 			// trim history 
 			if (currentIndex!=length-1) {
 				for (var i:int = length-1;i>currentIndex;i--) {
-					history.removeItemAt(i);
+					historyItem = history.removeItemAt(i) as HistoryItem;
+					historyItem.purge();
 				}
 			}
 			
-			history.addItem(changes);
+			historyItem.description = description ? HistoryEventItem(historyEvents[0]).description : description;
+			historyItem.historyEvents = historyEvents;
+			
+			history.addItem(historyItem);
 			history.enableAutoUpdate();
 			
 			historyIndex = getHistoryIndex();
@@ -2584,11 +3206,13 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Removes all history in the history array
+		 * Removes all history in the history array. 
+		 * Note: We should set the changes to null. 
 		 * */
 		public static function removeAllHistory():void {
 			var currentIndex:int = getHistoryIndex();
 			history.removeAll();
+			history.refresh(); // we should loop through and run purge on each HistoryItem
 			instance.dispatchHistoryChangeEvent(-1, currentIndex);
 		}
 	}

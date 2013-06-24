@@ -262,7 +262,9 @@ package com.flexcapacitor.utils {
 				if (!items) items = new Array();
 				items.push(vo);
 				
-				element = element.owner as IVisualElement;
+				if ("owner" in element) {
+					element = element.owner as IVisualElement;
+				}
 				
 				ancestors--;
 				

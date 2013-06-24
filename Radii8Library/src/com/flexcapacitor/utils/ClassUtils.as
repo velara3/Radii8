@@ -17,10 +17,13 @@ package com.flexcapacitor.utils {
 	import flash.utils.getQualifiedSuperclassName;
 	
 	import mx.collections.ArrayCollection;
+	import mx.collections.XMLListCollection;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
 	import mx.managers.ISystemManager;
+	import mx.utils.DescribeTypeCache;
+	import mx.utils.DescribeTypeCacheRecord;
 	import mx.utils.NameUtil;
 	import mx.utils.ObjectUtil;
 
@@ -402,6 +405,97 @@ package com.flexcapacitor.utils {
 		public static function convertIntToHex(item:Object):String {
 			var hex:String = Number(item).toString(16);
 			return ("00000" + hex.toUpperCase()).substr(-6);
+		}
+		
+		/**
+		 * Get describeType data for the given class. 
+		 * Can take string, instance or class. 
+		 * */
+		public static function getDescribeType(object:Object):XML {
+			var describedTypeRecord:mx.utils.DescribeTypeCacheRecord = mx.utils.DescribeTypeCache.describeType(object);
+			
+			return describedTypeRecord.typeDescription;
+		}
+		
+		/**
+		 * Creates and array of metadata items for the given object type including inherited metadata. 
+		 * 
+		 * For example, if you give it a Spark Button class it gets all the
+		 * information for it and then gets it's super class ButtonBase and 
+		 * adds all that information and so on until it gets to Object. <br/><br/>
+		 * 
+		 * Usage:<br/><pre>
+		 * var allStyles:XMLList = concatenateMetaDataXMLItems(myButton, "Style", new XMLList());
+		 * </pre>
+		 * @param metaType The name of the data in the item name property. Either Style or Event
+		 * @param existingItems The list of the data in the item name property
+		 * */
+		public static function concatenateMetaDataXMLItems(object:Object, metaType:String, existingItems:XMLList):XMLList {
+			var describedTypeRecord:mx.utils.DescribeTypeCacheRecord = mx.utils.DescribeTypeCache.describeType(object);
+			var typeDescription:* = describedTypeRecord.typeDescription;
+			var hasFactory:Boolean = typeDescription.factory.length()>0;
+			var factory:* = typeDescription.factory;
+			var extendsClass:XMLList = typeDescription.extendsClass;
+			var extendsLength:int = extendsClass.length();
+			var list:XMLListCollection = new XMLListCollection(typeDescription.*);
+			// can be on typeDescription.metadata or factory.metadata
+			var isRoot:Boolean = object is String ? false : true;
+			var className:String = !isRoot ? object as String : getQualifiedClassName(object);
+			var itemsLength:int;
+			var itemsList:XMLList;
+			var existingItemsLength:int = existingItems.length();
+			var metaName:String;
+			var duplicateItems:Array = [];
+			
+			if (hasFactory) {
+				//itemsList = factory.metadata.(@name==name); property "name" won't work! no matches found
+				itemsList = factory.metadata.(@name==metaType);
+			}
+			else {
+				itemsList = typeDescription.metadata.(@name==metaType);
+			}
+			
+			itemsList = itemsList.copy();
+			itemsLength = itemsList.length();
+			
+			//trace("getting info on class : " + className + " for data on " + nAmEe );
+			//trace(" items : " + itemsList);
+			
+			
+			for (var i:int;i<itemsLength;i++) {
+				var item:XML = XML(itemsList[i]);
+				metaName = item.arg[0].@value;
+				item.@name = metaName;
+				item.@metadataType = metaType;
+				item.@declaredBy = className;
+				//item.@className = className.indexOf("::")!=-1 ? className.split("::")[1] : className;
+				//continue;
+				for (var j:int=0;j<existingItemsLength;j++) {
+					var existingItem:XML = existingItems[j];
+					if (metaName==existingItem.@name) {
+						delete itemsList[i];
+						itemsLength--;
+						i--;
+						//trace("meta name: " + metaName);
+						//trace("Deleting style: " + existingItem.@name);
+						continue;
+					}
+				}
+			}
+			
+			
+			if (itemsLength>0) {
+				existingItems = new XMLList(existingItems.toString()+itemsList.toString());
+			}
+
+			if (isRoot && extendsLength>0) {
+				for (i=0;i<extendsLength;i++) {
+					var newClass:String = String(extendsClass[i].@type);
+					existingItems = concatenateMetaDataXMLItems(newClass, metaType, existingItems);
+				}
+			}
+			
+			return existingItems;
 		}
 		
 		

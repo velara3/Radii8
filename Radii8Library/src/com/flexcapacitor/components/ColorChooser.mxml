@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:controls="com.flexcapacitor.controls.*"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
+		 xmlns:status="com.flexcapacitor.effects.status.*" 
+		 
+		 width="120" height="24" 
+		 >
+	
+	<fx:Metadata>
+		[Event(name="change")]
+	</fx:Metadata>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.core.IFlexModule;
+			import mx.events.ColorPickerEvent;
+			
+			public static const HEXIDECIMAL_HASH_TYPE:String = "hexidecimalHash";
+			public static const HEXIDECIMAL_TYPE:String = "hexidecimal";
+			public static const STRING_UINT_TYPE:String = "stringUint";
+			public static const NUMBER_TYPE:String = "number";
+			public static const UINT_TYPE:String = "uint";
+			public static const INT_TYPE:String = "int";
+			
+			/**
+			 * 
+			 * */
+			public var target:Object = this;
+			
+			private var _selectedColor:Object;
+			private var colorAsUint:uint;
+			public var originalColor:String;
+			
+			/**
+			 * Type of the original value. 
+			 * */
+			public var originalValueType:String;
+			
+			/**
+			 * Type of value to return
+			 * */
+			[Inspectable(enumeration="hexidecimalHash,hexidecimal,stringUint,number,uint,int,original")]
+			public var returnType:String;
+
+			public function get selectedColor():Object {
+				var type:String = returnType ? returnType : originalValueType;
+				
+				return DisplayObjectUtils.getColorAsType(colorAsUint, type);
+			}
+			
+			public function get selectedColorAsHex():String {
+				return DisplayObjectUtils.getColorInHex(colorAsUint, false);
+			}
+			
+			public function get selectedColorAsHexAndHash():String {
+				return DisplayObjectUtils.getColorInHex(colorAsUint, true);
+			}
+			
+			public function get selectedColorAsInt():String {
+				return DisplayObjectUtils.getColorInHex(colorAsUint, true);
+			}
+
+			public function set selectedColor(value:Object):void {
+				if (_selectedColor===value) return;
+				_selectedColor = value;
+				var actualValue:uint;
+				
+				if (value is String)
+				{
+					if (String(value).indexOf("#")==0) {
+						originalValueType = HEXIDECIMAL_HASH_TYPE;
+					}
+					else if (String(value).indexOf("0x")==0) {
+						originalValueType = HEXIDECIMAL_TYPE;
+					}
+					else {
+						//actualValue = int(value);
+						originalValueType = STRING_UINT_TYPE;
+					}
+					
+					var moduleFactory:IFlexModuleFactory = null;
+					if (target is IFlexModule)
+						moduleFactory = target.moduleFactory;
+					
+					actualValue = StyleManager.getStyleManager(moduleFactory).getColorName(value);
+					
+					if (actualValue===StyleManager.NOT_A_COLOR) {
+						actualValue = StyleManager.getStyleManager(moduleFactory).getColorName(int(value));
+					}
+				}
+				else if (value is Number) {
+					originalValueType = NUMBER_TYPE;
+					actualValue = Number(value);
+				}
+				else if (value is uint) {
+					originalValueType = UINT_TYPE;
+					actualValue = uint(value);
+				}
+				else if (value is int) {
+					originalValueType = INT_TYPE;
+					actualValue = int(value);
+				}
+				
+				colorAsUint = actualValue;
+				colorPicker.selectedColor = actualValue;
+				colorTextInput.text = DisplayObjectUtils.getColorInHex(actualValue, true);
+				originalColor = colorTextInput.text;
+			}
+
+			
+			/**
+			 * Update color text input
+			 * */
+			protected function colorPicker_changeHandler(event:ColorPickerEvent):void {
+				selectedColor = event.color;
+				
+				dispatchEvent(new Event(Event.CHANGE, false, true));
+			}
+			
+			protected function colorTextInput_keyUpHandler(event:KeyboardEvent):void {
+				if (event.keyCode==Keyboard.ENTER) {
+					selectedColor = colorTextInput.text;
+					dispatchEvent(new Event(Event.CHANGE, false, true));
+				}
+				else if (event.keyCode==Keyboard.ESCAPE) {
+					colorTextInput.text = originalColor;
+					event.preventDefault();
+				}
+			}
+			
+			protected function colorTextInput_focusOutHandler(event:FocusEvent):void {
+				if (colorTextInput.text==originalColor) return;
+				selectedColor = colorTextInput.text;
+				
+				if (selectedColor!=originalColor) {
+					dispatchEvent(new Event(Event.CHANGE, false, true));
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!-- COPY TO THE CLIPBOARD -->
+		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
+			
+			<clipboard:CopyToClipboard data="{colorTextInput.text}" targetAncestor="{this}" allowNullData="true">
+				<clipboard:successEffect>
+					<status:ShowStatusMessage message="Color copied to the clipboard"/>
+				</clipboard:successEffect>
+				<clipboard:noDataEffect>
+					<status:ShowStatusMessage message="Nothing to copy to the clipboard"/>
+				</clipboard:noDataEffect>
+				<clipboard:errorEffect>
+					<status:ShowStatusMessage message="An error occurred while attempting to copy to the clipboard"/>
+				</clipboard:errorEffect>
+			</clipboard:CopyToClipboard>
+			
+		</handlers:EventHandler>
+		
+		<fx:Boolean id="includeCopyIcon">true</fx:Boolean>
+		<fx:Boolean id="includeTextInput">true</fx:Boolean>
+		<fx:Boolean id="includeColorPicker">true</fx:Boolean>
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="4" />
+	</s:layout>
+	
+	<mx:ColorPicker id="colorPicker" 
+					height="100%" 
+					visible="{includeColorPicker}"
+					includeInLayout="{includeColorPicker}"
+					change="colorPicker_changeHandler(event)"
+					/>
+	
+	<s:TextInput id="colorTextInput" 
+				 widthInChars="6" 
+				 height="100%"
+				 visible="{includeTextInput}"
+				 includeInLayout="{includeTextInput}"
+				 keyUp="colorTextInput_keyUpHandler(event)"
+				 focusOut="colorTextInput_focusOutHandler(event)"
+				 />
+	
+	
+	<controls:ImageButton id="copyIcon" 
+						   height="100%"
+						   visible="{includeCopyIcon}"
+						   includeInLayout="{includeCopyIcon}"
+						   enabled="{includeCopyIcon &amp;&amp; colorTextInput.text!=''}"
+						   source="{Radii8LibraryAssets.copy}" 
+						   toolTip="Copy the color to the Clipboard"
+						   />
+</s:Group>

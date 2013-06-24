@@ -1,0 +1,704 @@
+<?xml version="1.0"?>
+
+<!--
+
+    List of devices
+    
+    Be sure to include this class in Radii8Library
+-->
+<sizesPackage>
+
+	<!-- DEVICES SIZES --><!-- 
+    <size name="Wide SXGA" resolutionWidth="1440" resolutionHeight="900" ppi="72"
+    		type="device"
+    		include="true"/>
+
+    <size name="UXGA" resolutionWidth="1600" resolutionHeight="1200" ppi="72"
+    		type="device"
+    		include="true"/>
+
+    <size name="WSXGA+" resolutionWidth="1680" resolutionHeight="1050" ppi="72"
+    		type="device"
+    		include="true"/>
+
+    <size name="HD 1080" resolutionWidth="1920" resolutionHeight="1080" ppi="72"
+    		type="device"
+    		include="true"/>
+
+    <size name="WUXGA" resolutionWidth="1920" resolutionHeight="1200" ppi="72"
+    		type="device"
+    		include="true"/>-->
+    
+    
+	<!-- SCREEN SIZES -->
+	
+    <size name="QQVGA" resolutionWidth="160" resolutionHeight="120" ppi="72"
+    		type="screen"
+    		include="true"/>
+    		
+    <size name="QVGA" resolutionWidth="320" resolutionHeight="240" ppi="72"
+    		type="screen"
+    		include="true"/>
+    		
+    <size name="HVGA" resolutionWidth="480" resolutionHeight="320" ppi="72"
+    		type="screen"
+    		include="true"/>
+    		
+    <size name="VGA" resolutionWidth="640" resolutionHeight="480" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="SVGA" resolutionWidth="800" resolutionHeight="600" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="XGA" resolutionWidth="1024" resolutionHeight="768" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="WSVGA" resolutionWidth="1024" resolutionHeight="600" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="VGA" resolutionWidth="1152" resolutionHeight="864" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="Wide XGA" resolutionWidth="1280" resolutionHeight="768" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="Wide XGA max" resolutionWidth="1280" resolutionHeight="800" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="SXGA" resolutionWidth="1280" resolutionHeight="1024" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="Wide SXGA" resolutionWidth="1440" resolutionHeight="900" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="UXGA" resolutionWidth="1600" resolutionHeight="1200" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="WSXGA+" resolutionWidth="1680" resolutionHeight="1050" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="HD 1080" resolutionWidth="1920" resolutionHeight="1080" ppi="72"
+    		type="screen"
+    		include="true"/>
+
+    <size name="WUXGA" resolutionWidth="1920" resolutionHeight="1200" ppi="72"
+    		type="screen"
+    		include="true"/>
+    
+    
+	<!-- ANDROID DEVICES  -->
+	
+    <size type="device"
+         name="Barnes &amp; Noble Nook Color"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="170"
+         resolutionHeight="1024"
+         resolutionWidth="600"
+         usableHeightPortrait="999"
+         usableWidthPortrait="600"
+         usableWidthLandscape="1024"
+         usableHeightLandscape="575">
+   </size> 
+    <size type="device"
+         name="Dell Streak 7"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="133"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="781"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="461">
+   </size> 
+   <size type="device"
+         name="Google Nexus One"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="252"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442"/>
+   <size type="device"
+         name="Google Nexus S"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         ppi="252"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442"/>
+   <size type="device"
+         name="HTC Aria"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="181"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>  
+   <size type="device"
+         name="HTC Desire"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="235"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+    <size type="device"
+         name="HTC Desire 2"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="252"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC Desire HD"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="216"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+   <size type="device"
+         name="HTC Desire S"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="252"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC Desire Z"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="252"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC Dream"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="180"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>
+   <size type="device"
+         name="HTC Driod Eris"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="180"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>
+   <size type="device"
+         name="HTC Droid Incredible"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="252"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC Droid Incredible 2"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="233"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+   <size type="device"
+         name="HTC EVO"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="217"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+   <size type="device"
+         name="HTC EVO 3D"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="256"
+         resolutionHeight="960"
+         resolutionWidth="540"
+         usableHeightPortrait="922"
+         usableWidthPortrait="540"
+         usableWidthLandscape="960"
+         usableHeightLandscape="502">
+   </size>
+   <size type="device"
+         name="HTC EVO Shift"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="259"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC EVO View"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="170"
+         resolutionHeight="1024"
+         resolutionWidth="600"
+         usableHeightPortrait="999"
+         usableWidthPortrait="600"
+         usableWidthLandscape="1024"
+         usableHeightLandscape="575">
+   </size>
+   <size type="device"
+         name="HTC Gratia"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="181"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>
+   <size type="device"
+         name="HTC Hero"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="180"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>
+   <size type="device"
+         name="HTC Inspire"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="217"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+   <size type="device"
+         name="HTC Incredible S"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="233"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+   <size type="device"
+         name="HTC Legend"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="180"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>
+   <size type="device"
+         name="HTC Merge"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="246"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC myTouch 3G"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="180"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>
+   <size type="device"
+         name="HTC myTouch 3G Slide"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="170"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>
+   <size type="device"
+         name="HTC myTouch 4G"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="245"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC myTouch 4G Slide"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="252"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC myTouch HD"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="245"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC Panache"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="245"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="762"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="HTC Sensation"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="256"
+         resolutionHeight="960"
+         resolutionWidth="540"
+         usableHeightPortrait="922"
+         usableWidthPortrait="540"
+         usableWidthLandscape="960"
+         usableHeightLandscape="502">
+   </size>
+   <size type="device"
+         name="HTC ThunderBolt"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="215"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+   <size type="device"
+         name="HTC Wildfire"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="125"
+         resolutionHeight="320"
+         resolutionWidth="240"
+         usableHeightPortrait="301"
+         usableWidthPortrait="240"
+         usableWidthLandscape="320"
+         usableHeightLandscape="221">
+   </size>
+   <size type="device"
+         name="HTC Wildfire S"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="180"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size> 
+   <size type="device"
+         name="Huawei S7 Slim"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="133"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="781"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="461">
+   </size><!-- I think the dimensions are swapped. 
+    <size type="device"
+         name="Motorola Atrix"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="275"
+         resolutionHeight="540"
+         resolutionWidth="960"
+         usableHeightPortrait="502"
+         usableWidthPortrait="960"
+         usableWidthLandscape="540"
+         usableHeightLandscape="922">
+   </size> -->              
+    <size type="device"
+         name="Motorola Atrix"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="275"
+         resolutionWidth="540"
+         resolutionHeight="960"
+         usableWidthPortrait="502"
+         usableHeightPortrait="960"
+         usableHeightLandscape="540"
+         usableWidthLandscape="922">
+   </size>               
+    <size type="device"
+         name="Motorola Defy+"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="165"
+         resolutionHeight="854"
+         resolutionWidth="480"
+         usableHeightPortrait="829"
+         usableWidthPortrait="480"
+         usableWidthLandscape="854"
+         usableHeightLandscape="442">
+   </size>                    
+   <size type="device"
+         name="Motorola Droid"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="265"
+         resolutionHeight="854"
+         resolutionWidth="480"
+         usableHeightPortrait="816"
+         usableWidthPortrait="480"
+         usableWidthLandscape="854"
+         usableHeightLandscape="442"/>
+   <size type="device"
+         name="Motorola Droid 2"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="265"
+         resolutionHeight="854"
+         resolutionWidth="480"
+         usableHeightPortrait="816"
+         usableWidthPortrait="480"
+         usableWidthLandscape="854"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="Motorola Droid 3"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="275"
+         resolutionHeight="960"
+         resolutionWidth="540"
+         usableHeightPortrait="922"
+         usableWidthPortrait="540"
+         usableWidthLandscape="960"
+         usableHeightLandscape="502">
+   </size>    
+   <size type="device"
+         name="Motorola Droid Pro"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="144"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>
+   <size type="device"
+         name="Motorola Droid X"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="228"
+         resolutionHeight="854"
+         resolutionWidth="480"
+         usableHeightPortrait="816"
+         usableWidthPortrait="480"
+         usableWidthLandscape="854"
+         usableHeightLandscape="442">
+   </size>
+   <size type="device"
+         name="Motorola XOOM"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="150"
+         resolutionHeight="800"
+         resolutionWidth="1280"
+         usableHeightPortrait="1232"
+         usableWidthPortrait="800"
+         usableWidthLandscape="1280"
+         usableHeightLandscape="752">
+   </size>
+   <size type="device"
+         name="Motorola XT316"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="143"
+         resolutionHeight="320"
+         resolutionWidth="240"
+         usableHeightPortrait="301"
+         usableWidthPortrait="240"
+         usableWidthLandscape="320"
+         usableHeightLandscape="221">
+   </size>        
+   <size type="device"
+         name="Motorola XT531"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="165"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>
+   <size type="device"
+         name="Samsung Captivate"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="233"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>   
+   <size type="device"
+         name="Samsung Epic"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="233"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+   <size type="device"
+         name="Samsung Fascinate"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="233"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+   <size type="device"
+         name="Samsung Galaxy Ace"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="165"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>    
+   <size type="device"
+         name="Samsung Galaxy Tab"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="168"
+         resolutionHeight="1024"
+         resolutionWidth="600"
+         usableHeightPortrait="999"
+         usableWidthPortrait="600"
+         usableWidthLandscape="1024"
+         usableHeightLandscape="575">
+   </size>    
+   <size type="device"
+         name="Samsung Galaxy Tab II (8.9)"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="170"
+         resolutionHeight="1280"
+         resolutionWidth="800"
+         usableHeightPortrait="1232"
+         usableWidthPortrait="800"
+         usableWidthLandscape="1280"
+         usableHeightLandscape="752">
+   </size>    
+   <size type="device"
+         name="Samsung Galaxy Tab 10.1"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="170"
+         resolutionHeight="1280"
+         resolutionWidth="800"
+         usableHeightPortrait="1232"
+         usableWidthPortrait="800"
+         usableWidthLandscape="1280"
+         usableHeightLandscape="752">
+   </size>    
+   <size type="device"
+         name="Samsung Transform"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="165"
+         resolutionHeight="480"
+         resolutionWidth="320"
+         usableHeightPortrait="455"
+         usableWidthPortrait="320"
+         usableWidthLandscape="480"
+         usableHeightLandscape="295">
+   </size>        
+   <size type="device"
+         name="Samsung Vibrant"
+         platformID="com.adobe.flexide.multiplatform.android.platform"
+         ppi="233"
+         resolutionHeight="800"
+         resolutionWidth="480"
+         usableHeightPortrait="775"
+         usableWidthPortrait="480"
+         usableWidthLandscape="800"
+         usableHeightLandscape="455">
+   </size>
+</sizesPackage>

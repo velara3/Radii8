@@ -4,252 +4,199 @@
 			   xmlns:mx="library://ns.adobe.com/flex/mx"
 			   
 			   minWidth="955" minHeight="600"
-			   creationComplete="application1_creationCompleteHandler(event)"
-			   mouseDown="application1_mouseDownHandler(event)"
 			   >
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.tools.Selection;
-			import com.flexcapacitor.utils.DisplayObjectUtils;
-			
-			import mx.events.FlexEvent;
-			
-			import spark.components.DataGroup;
-			import spark.core.SpriteVisualElement;
-			
-			public var selection:Selection;
-			
-			protected function group1_mouseDownHandler(event:MouseEvent):void {
-				//trace("event target="+ event.target);
-				targetInput.text = Object(event.currentTarget).toString();
-				//Radiate.setDocuments(group1);
-				//selection.drawSelection(event.target, toolLayer);
-			}
-			
-			public var spriteVE:SpriteVisualElement;
-			public var sprite:Sprite;
-			public var bitmap:Bitmap;
-			
-			protected function application1_mouseDownHandler(event:MouseEvent):void {
-				//trace("event target="+ event.target);
-				targetInput.text = Object(event.target).toString();
-				var target:DisplayObject = event.target as DisplayObject;
-				if (target is DataGroup) {
-					target = list.skin;
-				}
-				//Radiate.setDocuments(group1);
-				
-				if (radioGroup.selectedValue=="drawSelection") {
-					selection.drawSelection(target, toolLayer);
-				}
-				else if (radioGroup.selectedValue=="drawSelection2") {
-					selection.drawSelection(target, toolLayer);
-				}
-				else if (radioGroup.selectedValue=="getSpriteSnapshot") {
-					//group2.removeAllElements();
-					
-					if (!spriteVE) {
-						spriteVE = new SpriteVisualElement();
-						group2.addElement(spriteVE);
-					}
-					else {
-						if (spriteVE.numChildren>0) {
-							spriteVE.removeChildren();
-						}
-					}
-					
-					sprite = DisplayObjectUtils.getSpriteSnapshot(target);
-					spriteVE.addChild(sprite);
-				}
-				else if (radioGroup.selectedValue=="getBitmapDataSnapshot") {
-					
-					if (!bitmap) {
-						
-					}
-					
-					if (!spriteVE) {
-						spriteVE = new SpriteVisualElement();
-						bitmap = new Bitmap(bitmapData, PixelSnapping.ALWAYS, true);
-						group2.addElement(spriteVE);
-						spriteVE.addChild(bitmap);
-					}
-					else {
-						spriteVE.removeChildren();
-					}
-					
-					//bitmap.x = bounds.left;
-					//bitmap.y = bounds.top;
-					var bitmapData:BitmapData = DisplayObjectUtils.getBitmapDataSnapshot(target);
-					bitmap.bitmapData = bitmapData;
-					spriteVE.addChild(bitmap);
-					
-					//spriteVE.addChild(sprite);
-				}
-				else if (radioGroup.selectedValue=="getBitmapDataSnapshot2") {
-					
-					if (!bitmap) {
-						
-					}
-					
-					if (!spriteVE) {
-						spriteVE = new SpriteVisualElement();
-						bitmap = new Bitmap(bitmapData, PixelSnapping.ALWAYS, true);
-						group2.addElement(spriteVE);
-						spriteVE.addChild(bitmap);
-					}
-					else {
-						spriteVE.removeChildren();
-						//spriteVE.graphics.clear();
-						//spriteVE.removeChild(bitmap);
-					}
-					
-					//bitmap.x = bounds.left;
-					//bitmap.y = bounds.top;
-					var bitmapData:BitmapData = DisplayObjectUtils.getBitmapDataSnapshot2(target);
-					bitmap.bitmapData = bitmapData;
-					spriteVE.addChild(bitmap);
-					
-					//spriteVE.addChild(sprite);
-				}
-			}
-			
-			protected function application1_creationCompleteHandler(event:FlexEvent):void {
-				selection = new Selection();
-				selection.selectionBorderColor = 0xFF0000;
-				/*selection.updateDocument(this);
-				//selection.enable();
-				selection.enableDrag = false;
-				//selection.toolLayer = toolLayer;*/
-			}
+
 			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
-		<s:ArrayCollection id="data">
-			<fx:Array>
-				<fx:String>Apple</fx:String>
-				<fx:String>Orange</fx:String>
-				<fx:String>Banana</fx:String>
-			</fx:Array>
-		</s:ArrayCollection>
-		<s:ArrayCollection id="methods">
-			<fx:Array>
-				<fx:String>Apple</fx:String>
-				<fx:String>Orange</fx:String>
-				<fx:String>Banana</fx:String>
-			</fx:Array>
-		</s:ArrayCollection>
-		<s:RadioButtonGroup id="radioGroup"  />
 	</fx:Declarations>
 	
+	<s:Label text="HELLO WORLD" right="10" top="20"/>
+	
+	
+<!--	<mx:Grid width="400" height="300" 
+			 paddingLeft="16" paddingRight="16" 
+			 paddingBottom="16" paddingTop="16"
+			 backgroundColor="red">
+	
+		<mx:GridRow width="100%" paddingRight="0" paddingLeft="0" 
+					paddingBottom="0" paddingTop="0"
+					backgroundColor="green">
+			<mx:GridItem colSpan="3" paddingRight="0" paddingLeft="0" paddingBottom="0" paddingTop="0"
+						 backgroundColor="yellow">
+				<s:Group width="100%" height="1">
+					<s:Line width="100%" >
+						<s:stroke>
+							<s:SolidColorStroke color="#CCCCCC" caps="square" joints="miter"/>
+						</s:stroke>
+					</s:Line>
+				</s:Group>
+			</mx:GridItem>
+		</mx:GridRow>
+			
+		<mx:GridRow verticalAlign="middle" 
+					height="80" 
+					width="100%"
+					paddingTop="0"
+					paddingBottom="0"
+					backgroundColor="purple"
+					>
+		
+			<mx:GridItem width="50%" 
+						 verticalAlign="middle" 
+						 paddingLeft="16" 
+						 paddingRight="16" 
+						 paddingBottom="0"
+						 paddingTop="0"
+						 backgroundColor="blue"
+						 >
+				<s:Image />
+				<s:VGroup>
+					<s:Label text="Label 1" styleName="requirementsDescription"/>
+					<s:Label text="Label 2" styleName="requirementsSubDescription"/>
+				</s:VGroup>
+				<s:Spacer width="100%"/>
+				<s:Label text="Label 3" styleName="requirementsValue"/>
+			</mx:GridItem>
+		</mx:GridRow>
+	</mx:Grid>-->
+	
+	
+	
+<!--	<s:states>
+        <s:State name="up"/>
+        <s:State name="over"/>
+        <s:State name="down"/>
+		
+        <s:State name="upDefault" basedOn="up"/>
+        <s:State name="overDefault" basedOn="over"/>
+        <s:State name="downDefault" basedOn="down"/>
+		
+        <s:State name="upFocused" basedOn="up"/>
+        <s:State name="overFocused" basedOn="over"/>
+        <s:State name="downFocused" basedOn="down"/>
+		
+        <s:State name="upDefaultFocused" basedOn="up"/>
+        <s:State name="overDefaultFocused" basedOn="over"/>
+        <s:State name="downDefaultFocused" basedOn="down"/>
+	</s:states>
 	
 	<s:HGroup top="30">
-		<s:RadioButton label="drawSelection" group="{radioGroup}" selected="false" />
-		<s:RadioButton label="drawSelection2" group="{radioGroup}" selected="true" />
-		<s:RadioButton label="getSpriteSnapshot" group="{radioGroup}" selected="false" />
-		<s:RadioButton label="getBitmapDataSnapshot" group="{radioGroup}" selected="false" />
-		<s:RadioButton label="getBitmapDataSnapshot2" group="{radioGroup}" selected="false" />
-		<s:RadioButton label="getBitmapAssetSnapshot" group="{radioGroup}" selected="false" />
-		<s:RadioButton label="getBitmapAssetSnapshot2" group="{radioGroup}" selected="false" />
-		<s:RadioButton label="getHighlightBitmapCapture" group="{radioGroup}" selected="false" />
+		<s:Button label="up" click="currentState='up'" />
+		<s:Button label="over" click="currentState='down'"/>
+		<s:Button label="down" click="currentState='over'"/>
+		
+		<s:Button label="up default" click="currentState='upDefault'" />
+		<s:Button label="over default" click="currentState='overDefault'"/>
+		<s:Button label="down default" click="currentState='downDefault'"/>
+		
+		<s:Button label="up focused" click="currentState='upFocused'" />
+		<s:Button label="over focused" click="currentState='overFocused'"/>
+		<s:Button label="down focused" click="currentState='downFocused'"/>
+		
+		<s:Button label="up focused" click="currentState='upDefaultFocused'" />
+		<s:Button label="over focused" click="currentState='overDefaultFocused'"/>
+		<s:Button label="down focused" click="currentState='downDefaultFocused'"/>
 	</s:HGroup>
 	
-		<!--<s:Scroller width="500" height="500" horizontalCenter="0" verticalCenter="0">-->
-	<s:BorderContainer id="container" left="50" top="100">
+	<s:BorderContainer width="400" height="300" verticalCenter="0" horizontalCenter="0">
 		
-		<s:HGroup id="hgroup1" 
-				 mouseDown="group1_mouseDownHandler(event)"
-				 mouseEnabledWhereTransparent="true">
-			
-			<s:List id="list" dataProvider="{data}" width="100">
-			</s:List>
-			<s:Group >
-					
-				<s:Rect x="0" width="60" height="60" radiusX="0" radiusY="0">
-					<s:fill>
-						<s:SolidColor color="#00fff0"/>
-					</s:fill>
-				</s:Rect>
-			</s:Group>
-			<s:Group width="60" height="60" >
-					
-				<s:Rect x="0" width="60" height="60" radiusX="0" radiusY="0">
-					<s:fill>
-						<s:SolidColor color="#000fff"/>
-					</s:fill>
-				</s:Rect>
-			</s:Group>
-			<s:HGroup width="60" height="60" >
-					
-				<s:Rect x="0" width="60" height="60" radiusX="0" radiusY="0">
-					<s:fill>
-						<s:SolidColor color="#F00fff"/>
-					</s:fill>
-				</s:Rect>
-				<s:Rect x="0" width="60" height="60" radiusX="0" radiusY="0">
-					<s:fill>
-						<s:SolidColor color="#Ff0fff"/>
-					</s:fill>
-				</s:Rect>
-			</s:HGroup>
-			<s:Button id="button" label="Button" />
-			<s:ToggleButton id="toggleButton" label="Toggle Button" />
-			<s:RadioButton id="radioButton" label="Radio Button" groupName="Test"/>
-			<s:ComboBox id="comboBox" 
-						 dataProvider="{data}"/>
-			<s:DropDownList id="dropDownList" 
-						 dataProvider="{data}"/>
-			
-			<s:Rect id="rect1" x="10" width="100" height="100" radiusX="10" radiusY="10">
-				<s:fill>
-					<s:SolidColor color="#ff0000"/>
-				</s:fill>
-			</s:Rect>
-			<s:Rect id="rect2" x="0" y="120" width="60" height="60" radiusX="0" radiusY="0">
-				<s:fill>
-					<s:SolidColor color="#00ff00"/>
-				</s:fill>
-			</s:Rect>
-			
-			<s:Ellipse id="ellipse1" x="150" width="100" height="100">
-				<s:fill>
-					<s:SolidColor color="#ff0000"/>
-				</s:fill>
-			</s:Ellipse>
-			
-			<s:Button x="200" y="120" label="Hello World"/>
-		</s:HGroup>
-
-		<s:Group id="toolLayer" mouseChildren="false" mouseEnabled="false">
-			
-			<s:Ellipse id="ellipse2" x="0" width="100" height="100">
-				<s:fill>
-					<s:SolidColor color="#ff0000"/>
-				</s:fill>
-			</s:Ellipse>
-		</s:Group>
+		<s:layout>
+			<s:HorizontalLayout />
+		</s:layout>
 		
-	</s:BorderContainer>
-	<!--</s:Scroller>-->
-	
-	
-	
-	<s:BorderContainer id="group2" width="500" height="300" left="50" y="300"
-					   mouseDown="group1_mouseDownHandler(event)"
-					   backgroundColor="red"
-					   borderWeight="2"
-					   borderColor="blue"
-					   >
+		<s:Button id="myButton" 
+				  label.up="Up"
+				  label.down="Down"
+				  label.over="Over"
+				  />
 		
-		<!--<s:Rect id="rect3" x="0" width="100%" height="100%">
-			<s:fill>
-				<s:SolidColor color="#898989"/>
-			</s:fill>
-		</s:Rect>-->
-	</s:BorderContainer>
+		<s:Label includeIn="upDefault,overDefault,downDefault,upDefaultFocused,overDefaultFocused,downDefaultFocused"
+				 color="red"
+				 fontWeight="bold"
+				 text.up="Default (up)"
+				 text.over="Default (over)"
+				 text.down="Default (down)"
+				 />
+		
+		<s:Label includeIn="upFocused,overFocused,downFocused,upDefaultFocused,downDefaultFocused,overDefaultFocused"
+				 color="blue"
+				 fontWeight="bold"
+				 text.up="Focused (up)"
+				 text.over="Focused (over)"
+				 text.down="Focused (down)"
+				 />
+				 
+	</s:BorderContainer>-->
 	
+	<!--<s:states>
+        <s:State name="up"/>
+        <s:State name="over"/>
+        <s:State name="down"/>
+		
+        <s:State name="upDefault" basedOn="up" stateGroups="default"/>
+        <s:State name="overDefault" basedOn="over" stateGroups="default"/>
+        <s:State name="downDefault" basedOn="down" stateGroups="default"/>
+		
+        <s:State name="upFocused" basedOn="up" stateGroups="focused"/>
+        <s:State name="overFocused" basedOn="over" stateGroups="focused"/>
+        <s:State name="downFocused" basedOn="down" stateGroups="focused"/>
+		
+        <s:State name="upDefaultFocused" basedOn="up" stateGroups="defaultFocused"/>
+        <s:State name="overDefaultFocused" basedOn="over" stateGroups="defaultFocused"/>
+        <s:State name="downDefaultFocused" basedOn="down" stateGroups="defaultFocused"/>
+	</s:states>
 	
-	<s:TextInput id="targetInput" width="100%"/>
+	<s:HGroup top="30">
+		<s:Button label="up" click="currentState='up'" />
+		<s:Button label="over" click="currentState='down'"/>
+		<s:Button label="down" click="currentState='over'"/>
+		
+		<s:Button label="up default" click="currentState='upDefault'" />
+		<s:Button label="over default" click="currentState='overDefault'"/>
+		<s:Button label="down default" click="currentState='downDefault'"/>
+		
+		<s:Button label="up focused" click="currentState='upFocused'" />
+		<s:Button label="over focused" click="currentState='overFocused'"/>
+		<s:Button label="down focused" click="currentState='downFocused'"/>
+		
+		<s:Button label="up focused" click="currentState='upDefaultFocused'" />
+		<s:Button label="over focused" click="currentState='overDefaultFocused'"/>
+		<s:Button label="down focused" click="currentState='downDefaultFocused'"/>
+	</s:HGroup>
+	
+	<s:BorderContainer width="300" height="300" verticalCenter="0" horizontalCenter="0">
+		
+		<s:layout>
+			<s:HorizontalLayout />
+		</s:layout>
+		
+		<s:Button id="myButton" 
+				  label.up="Up"
+				  label.down="Down"
+				  label.over="Over"
+				  />
+		
+		<s:Label includeIn="default,defaultFocused"
+				 color="red"
+				 fontWeight="bold"
+				 text.up="Default (up)"
+				 text.over="Default (over)"
+				 text.down="Default (down)"
+				 />
+		
+		<s:Label includeIn="focused,defaultFocused"
+				 color="blue"
+				 fontWeight="bold"
+				 text.up="Focused (up)"
+				 text.over="Focused (over)"
+				 text.down="Focused (down)"/>
+				 
+	</s:BorderContainer>-->
+	
 </s:Application>

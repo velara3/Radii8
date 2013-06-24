@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:components="com.flexcapacitor.components.*" 
+		 
+		 minWidth="200" 
+		 minHeight="100"
+		 creationComplete="group1_creationCompleteHandler(event)" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.MetaData;
+			
+			import mx.events.FlexEvent;
+			
+			/**
+			 * Reference to Radiate
+			 * */
+			public var radiate:Radiate;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
+				
+				if (radiate.target) {
+					//target = radiate.target;
+				}
+			}
+			
+			protected function propertySelectedHandler(event:RadiateEvent):void {
+				var metadata:MetaData = event.selectedItem as MetaData;
+				
+				codeModelTextArea.text = metadata.raw;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:TextArea id="codeModelTextArea" 
+				top="8"
+				focusColor="#585858"
+				width="100%" height="100%" 
+				fontFamily="Courier New"
+				borderVisible="false"
+				paddingTop="8">
+		<s:keyFocusChange>
+			event.preventDefault();
+			event.currentTarget.insertText("\t");
+        </s:keyFocusChange>
+	</s:TextArea>
+	
+	
+</s:Group>

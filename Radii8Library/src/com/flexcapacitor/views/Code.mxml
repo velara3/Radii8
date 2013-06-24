@@ -3,6 +3,9 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
+		 xmlns:status="com.flexcapacitor.effects.status.*" 
 		 
 		 minWidth="200" 
 		 minHeight="100"
@@ -15,20 +18,24 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.events.HistoryEvent;
+			import com.flexcapacitor.events.HistoryEventItem;
+			import com.flexcapacitor.events.HistoryItem;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			import com.flexcapacitor.views.supportClasses.Styles;
 			
 			import mx.collections.ArrayCollection;
 			import mx.core.IVisualElement;
-			import mx.effects.effectClasses.PropertyChanges;
+			import mx.core.IVisualElementContainer;
 			import mx.events.FlexEvent;
 			
+			import spark.components.Application;
 			import spark.components.BorderContainer;
 			import spark.components.supportClasses.GroupBase;
 			import spark.events.IndexChangeEvent;
 			import spark.events.TextOperationEvent;
+			import spark.layouts.BasicLayout;
 			import spark.layouts.HorizontalLayout;
 			import spark.layouts.TileLayout;
 			import spark.layouts.VerticalLayout;
@@ -36,6 +43,7 @@
 			public static const HTML:String = "HTML";
 			public static const MXML:String = "MXML";
 			public static const ANDROID:String = "Android";
+			public static const XAML:String = "XAML";
 			
 			/**
 			 * Reference to Radiate
@@ -118,7 +126,7 @@
 				
 				
 				if (targetDescription) {
-					getCodeModel(targetDescription);
+					getAppliedPropertiesFromHistory(targetDescription);
 					
 					
 					if (codeType.selectedItem==MXML) {
@@ -187,10 +195,11 @@
 			 * */
 			public function getMXMLOutputString(component:ComponentDescription, addLineBreak:Boolean = false, tabs:String = ""):String {
 				var properties:Object = component.properties;
-				var name:String = component.name;
+				var styles:Object = component.styles;
 				var componentChild:ComponentDescription;
-				var namespaces:String;
+				var name:String = component.name;
 				var output:String = "";
+				var namespaces:String;
 				var value:*;
 				
 				
@@ -203,8 +212,17 @@
 					output += propertyName + "=\"" + Object(properties[propertyName]).toString() + "\"";
 				}
 				
+				for (var styleName:String in styles) {
+					value = styles[styleName];
+					if (value===undefined) {
+						continue;
+					}
+					output += " ";
+					output += styleName + "=\"" + Object(styles[styleName]).toString() + "\"";
+				}
+				
 				if (name) {
-					if (name=="application") {
+					if (component.instance is Application) {
 						name = "Application";
 						namespaces = " xmlns:fx=\"http://ns.adobe.com/mxml/2009\"";
 						namespaces += " xmlns:s=\"library://ns.adobe.com/flex/spark\"";
@@ -218,7 +236,7 @@
 						
 						for (var i:int;i<component.children.length;i++) {
 							componentChild = component.children[i];
-							getCodeModel(componentChild);
+							getAppliedPropertiesFromHistory(componentChild);
 							output += getMXMLOutputString(componentChild, false, tabs + "\t");
 						}
 						
@@ -244,10 +262,11 @@
 				var property:Object = component.properties;
 				var name:String = component.name.toLowerCase();
 				var componentChild:ComponentDescription;
-				var styles:String = "position:absolute;";
 				var contentToken:String = "[child_content]";
 				var isHorizontalLayout:Boolean;
+				var isTileLayout:Boolean;
 				var isVerticalLayout:Boolean;
+				var isBasicLayout:Boolean;
 				var childContent:String = "";
 				var wrapperTag:String = "";
 				var wrapperTagStyles:String = "";
@@ -258,34 +277,49 @@
 				var index:int;
 				var numElements:int;
 				var gap:int;
+				var instance:Object;
+				var styles2:String = "position:absolute";
+				var styles:Styles = new Styles();
+				var wrapperStyles:Styles = new Styles();
+				
+				
+				
+				styles.position = Styles.ABSOLUTE;
 				
 				// get layout positioning
-				if (component.parent && component.parent.instance is GroupBase) {
+				if (component.parent && component.parent.instance is IVisualElementContainer) {
 					
 					if (component.parent.instance.layout is HorizontalLayout) {
 						isHorizontalLayout = true;
-						styles = styles.replace("absolute", "relative");
+						styles2 = styles2.replace("absolute", "relative");
+						styles.position = Styles.RELATIVE;
 						index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
 						numElements = GroupBase(component.parent.instance).numElements;
 						wrapperTagStyles += "display:inline;";
+						wrapperStyles.display = Styles.INLINE_BLOCK;
 						gap = HorizontalLayout(component.parent.instance.layout).gap - 4;
 						
 						if (index<numElements-1 && numElements>1) {
 							wrapperTagStyles += "padding-right:" + gap + "px";
+							
 						}
 						
 						wrapperTag = "div";
 					}
 					else if (component.parent.instance.layout is TileLayout) {
-						isHorizontalLayout = true;
+						//isHorizontalLayout = true;
+						isTileLayout = true;
 						styles = styles.replace("absolute", "relative");
+						styles.position = Styles.RELATIVE;
 						index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
 						numElements = GroupBase(component.parent.instance).numElements;
 						wrapperTagStyles += "display:inline;";
+						wrapperStyles.display = Styles.INLINE;
 						gap = TileLayout(component.parent.instance.layout).horizontalGap - 4;
 						
 						if (index<numElements-1 && numElements>1) {
 							wrapperTagStyles += "padding-right:" + gap + "px";
+							wrapperStyles.paddingRight =  gap + "px";
 						}
 						
 						wrapperTag = "div";
@@ -304,8 +338,28 @@
 						
 						wrapperTag = "div";
 					}
+					
+					else if (component.parent.instance.layout is BasicLayout) {
+						isBasicLayout = true;
+						styles = styles.replace("absolute", "relative");
+						/*index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
+						numElements = GroupBase(component.parent.instance).numElements;
+						gap = BasicLayout(component.parent.instance.layout).gap;*/
+						
+						/*if (index<numElements-1 && numElements>1) {
+							wrapperTagStyles += "padding-bottom:" + gap + "px";
+						}
+						
+						wrapperTag = "div";*/
+					}
 				}
 				
+				var isXSet:Boolean;
+				var isYSet:Boolean;
+				// constraints take higher authority
+				var isTopSet:Boolean;
+				var isLeftSet:Boolean;
+				var isRightSet:Boolean;
 				
 				// loop through assigned properties
 				for (var propertyName:String in property) {
@@ -317,16 +371,45 @@
 					
 					
 					// if horizontal or vertical layout do not add position
-					if (propertyName=="x" || propertyName=="left") {
+					if (propertyName=="x") {
+						if (isLeftSet) continue;
 						
 						if (!isHorizontalLayout && !isVerticalLayout) {
 							styles += "left:" +  Object(property[propertyName]).toString() + "px;";
 						}
 					}
-					else if (propertyName=="y" || propertyName=="top") {
+					else if (propertyName=="left") {
+						if (isXSet) {
+							styles = styles.replace(/left:\.+px;/, "");
+						}
+						
+						if (!isHorizontalLayout && !isVerticalLayout) {
+							styles += "left:" +  Object(property[propertyName]).toString() + "px;";
+						}
+					}
+					else if (propertyName=="y") {
+						if (isTopSet) continue;
 						
 						if (!isHorizontalLayout && !isVerticalLayout) {
 							styles += "top:" +  Object(property[propertyName]).toString() + "px;";
+						}
+					}
+					else if (propertyName=="top") {
+						if (isYSet) {
+							styles = styles.replace(/top:\.+px;/, "");
+						}
+						
+						if (!isHorizontalLayout && !isVerticalLayout) {
+							styles += "top:" +  Object(property[propertyName]).toString() + "px;";
+						}
+					}
+					else if (propertyName=="horizontalCenter") {
+						if (isXSet || isLeftSet || isRightSet) {
+							styles = styles.replace(/left:\.+px;/, "");
+						}
+						
+						if (!isHorizontalLayout && !isVerticalLayout && !isTileLayout) {
+							styles += "display:block;margin:0 auto;";
 						}
 					}
 					else {
@@ -357,7 +440,7 @@
 							styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 							styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 							styles += "margin:0 auto;";
-							styles += "top:20px;";
+							styles += "top:25px;";
 							styles += "background-color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("backgroundColor"), true) + ";";
 							//output += properties ? " " : "";
 							output += "style=\"" + styles + "\">";
@@ -386,7 +469,7 @@
 						styles += "width:" + component.instance.width+ "px;";
 						styles += "height:" + component.instance.height+ "px;";
 						output += properties ? " " : "";
-						output += "style=\"" + styles + "\">";
+						output += " style=\"" + styles + "\">";
 						output += contentToken;
 						output += "\n" + tabs + "</div>";
 						output += getWrapperTag(wrapperTag, true);
@@ -401,9 +484,10 @@
 						styles += "width:" + component.instance.width+ "px;";
 						styles += "height:" + component.instance.height+ "px;";
 						styles += getBorderString(component.instance as BorderContainer);
+						//styles += component.instance as BorderContainer);
 						
 						output += properties ? " " : "";
-						output += "style=\"" + styles + "\">";
+						output += " style=\"" + styles + "\">";
 						output += contentToken;
 						output += "\n" + tabs + "</div>";
 						output += getWrapperTag(wrapperTag, true);
@@ -415,11 +499,16 @@
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<div " + properties;
 						output += "name=\"" + component.instance.name + "\"";
-						styles += "width:" + component.instance.width+ "px;";
+						if (component.name=="HGroup") {
+							styles += "width:" + Math.max(HGroup(component.instance).contentWidth, component.instance.width)+ "px;";
+						}
+						else {
+							styles += "width:" + component.instance.width+ "px;";
+						}
 						styles += "height:" + component.instance.height+ "px;";
 						
 						output += properties ? " " : "";
-						output += "style=\"" + styles + "\">";
+						output += " style=\"" + styles + "\">";
 						output += contentToken;
 						output += "\n" + tabs + "</div>";
 						output += getWrapperTag(wrapperTag, true);
@@ -432,7 +521,6 @@
 						styles += "height:" + (component.instance.height+1)+ "px;";
 						output += properties ? " " : "";
 						styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
-						//styles += "font-family:Arial;";
 						styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 						output += "style=\"" + styles + "\"";
 						output += " class=\"button\"";
@@ -446,6 +534,8 @@
 							output += "<label";
 							styles += "width:" + (component.instance.width + 6)+ "px;";
 							styles += "height:" + component.instance.height+ "px;";
+							styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+							styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 							output += " style=\"" + styles + "\">";
 							output += "<input type=\"" + name.toLowerCase() + "\">" ;
 						}
@@ -468,6 +558,8 @@
 							output += "<label";
 							styles += "width:" + (component.instance.width + 8)+ "px;";
 							styles += "height:" + component.instance.height+ "px;";
+							styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+							styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 							output += " style=\"" + styles + "\">";
 							output += "<input type=\"radio\"/>" ;
 						}
@@ -486,9 +578,12 @@
 					else if (name=="textinput") {
 						name = "input";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						output += "<input type=\"input\" "  + properties;
+						output += "<input type=\"input\""  + properties;
 						styles += "width:" + component.instance.width+ "px;";
 						styles += "height:" + component.instance.height+ "px;";
+						styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+						styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+						styles += "padding:0;border:1px solid " + DisplayObjectUtils.getColorInHex(component.instance.getStyle("borderColor"), true) + ";margin:0;";
 						output += " style=\"" + styles + "\"/>";
 						output += getWrapperTag(wrapperTag, true);
 					}
@@ -498,6 +593,10 @@
 						output += "<label "  + properties;
 						styles += "width:" + component.instance.width+ "px;";
 						styles += "height:" + component.instance.height+ "px;";
+						styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+						styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+						//styles += getBorderString(component.instance as IStyleClient);
+						
 						output += properties ? " " : "";
 						output += "style=\"" + styles + "\">";
 						output += component.instance.text;
@@ -530,7 +629,7 @@
 						
 						for (var i:int;i<component.children.length;i++) {
 							componentChild = component.children[i];
-							getCodeModel(componentChild);
+							getAppliedPropertiesFromHistory(componentChild);
 							if (i>0) {
 								childContent += "\n";
 							}
@@ -795,7 +894,7 @@
 						
 						for (var i:int;i<component.children.length;i++) {
 							componentChild = component.children[i];
-							getCodeModel(componentChild);
+							getAppliedPropertiesFromHistory(componentChild);
 							
 							if (i>0) {
 								childContent += "\n";
@@ -935,12 +1034,13 @@
 			/**
 			 * Get border and background styles of a border container
 			 * */
-			public function getBorderString(borderContainer:BorderContainer):String {
+			public function getBorderString(borderContainer:IStyleClient):String {
 				var value:String = "";
 				
 				if (borderContainer.getStyle("backgroundAlpha")!=0) {
 					value += "background-color:" + DisplayObjectUtils.getColorInHex(borderContainer.getStyle("backgroundColor"), true) + ";";
-				}	
+					value += "background-alpha:" + borderContainer.getStyle("backgroundAlpha") + ";";
+				}
 				
 				if (borderContainer.getStyle("borderVisible")) {
 					value += "border-weight:" + borderContainer.getStyle("borderWeight") + "px;";
@@ -958,29 +1058,70 @@
 			 * Get an object that contains the properties that have been set on the component.
 			 * This does this by going through the history events and checking the changes.
 			 * */
-			public function getCodeModel(component:ComponentDescription, addToProperties:Boolean = true):Object {
-				var display:ComponentDescription;
-				var length:int;
+			public function getAppliedPropertiesFromHistory(component:ComponentDescription, addToProperties:Boolean = true):Object {
+				//var display:ComponentDescription;
+				//var length:int;
 				var history:ArrayCollection;
-				var output:String = "";
-				var historyEvent:HistoryEvent;
-				var historyArray:Array;
-				var targetsLength:int;
-				var targets:Array;
-				var codeObject:Object = {};
-				var change:PropertyChanges;
-				var index:int = Radiate.getHistoryIndex();
-				var value:*;
+				//var output:String = "";
+				var historyEvent:HistoryEventItem;
+				var historyEvents:Array;
+				var historyItem:HistoryItem;
+				//var targetsLength:int;
+				var eventsLength:int;
+				//var targets:Array;
+				var propertiesObject:Object = {};
+				var stylesObject:Object = {};
+				//var changes:Array;
+				//var change:PropertyChanges;
+				var historyIndex:int = Radiate.getHistoryIndex();
+				//var value:*;
+				var properties:Array;
+				var styles:Array;
 				
 				history = Radiate.history;
-				length = Radiate.history.length;
+				//length = Radiate.history.length;
 				
-				for (;index>=0;index--) {
-					historyArray = history.getItemAt(index) as Array;
-					h = 0;
+				for (var i:int=historyIndex+1;i--;) {
+					historyItem = history.getItemAt(i) as HistoryItem;
+					historyEvents = historyItem.historyEvents;
+					eventsLength = historyEvents.length;
 					
-					for (var h:int;h<historyArray.length;h++) {
-						change = historyArray[h] as PropertyChanges;
+					for (var j:int=0;j<eventsLength;j++) {
+						historyEvent = historyEvents[j] as HistoryEventItem;
+						properties = historyEvent.properties;
+						styles = historyEvent.styles;
+			
+						if (historyEvent.targets.indexOf(component.instance)!=-1) {
+							for each (var property:String in properties) {
+								
+								if (property in propertiesObject) {
+									continue;
+								}
+								else {
+									propertiesObject[property] = historyEvent.propertyChanges.end[property];
+								}
+							}
+							
+							for each (var style:String in styles) {
+								
+								if (style in stylesObject) {
+									continue;
+								}
+								else {
+									stylesObject[style] = historyEvent.propertyChanges.end[style];
+								}
+							}
+						}
+						
+					}
+				}
+				/*
+				for (;historyIndex>=0;historyIndex--) {
+					historyArray = history.getItemAt(historyIndex) as Array;
+					j = 0;
+					
+					for (var j:int;j<historyArray.length;j++) {
+						change = historyArray[j] as PropertyChanges;
 						
 						if (change) {
 							//targets = change.target;
@@ -993,28 +1134,23 @@
 									
 									for each (var property:String in historyEvent.properties) {
 										
-										if (property in codeObject) {
+										if (property in propertiesObject) {
 											continue;
 										}
 										else {
-											//var value:* = historyEvent.propertyChanges.end[property];
-											/*if (value===undefined) {
-												delete codeObject[property];
-											}
-											else {*/
-												codeObject[property] = historyEvent.propertyChanges.end[property];
-											//}
+											propertiesObject[property] = historyEvent.propertyChanges.end[property];
 										}
 									}
 								}
 							}
 						}
 					}
-				}
+				}*/
 				
-				component.properties = codeObject;
+				component.properties = propertiesObject;
+				component.styles = stylesObject;
 				
-				return codeObject;
+				return propertiesObject;
 			}
 			
 			/**
@@ -1026,7 +1162,13 @@
 					getDocumentCode(); // puts document code into text area
 				}
 				
-				radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+				// allow to swap between preview and non preview
+				if (!radiate.isPreviewVisible) {
+					radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+				}
+				else {
+					radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+				}
 			}
 			
 			
@@ -1133,8 +1275,27 @@
 	</fx:Script>
 	
 	<fx:Declarations>
+		
+		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
+			
+			<clipboard:CopyToClipboard data="{codeModelTextArea.text}" 
+									   targetAncestor="{this}" 
+									   allowNullData="true">
+				<clipboard:successEffect>
+					<status:ShowStatusMessage message="Code copied to the clipboard"/>
+				</clipboard:successEffect>
+				<clipboard:noDataEffect>
+					<status:ShowStatusMessage message="Nothing to copy to the clipboard"/>
+				</clipboard:noDataEffect>
+				<clipboard:errorEffect>
+					<status:ShowStatusMessage message="An error occurred while attempting to copy to the clipboard"/>
+				</clipboard:errorEffect>
+			</clipboard:CopyToClipboard>
+			
+		</handlers:EventHandler>
+		
 		<fx:String id="stylesheets">
-			<![CDATA[<link rel="stylesheet" href="http://necolas.github.io/normalize.css/2.1.2/normalize.css"/>]]>
+			<![CDATA[<link rel="stylesheet" href="css/normalize/2.1.2/normalize.css"/>]]>
 		</fx:String>
 		<fx:String id="css">
 			<![CDATA[]]>
@@ -1165,9 +1326,12 @@
 				width="100%" height="100%" 
 				fontFamily="Courier New"
 				borderVisible="false"
-				paddingTop="5"
+				paddingTop="8"
 				change="codeModelTextArea_changeHandler(event)">
-		
+		<s:keyFocusChange>
+			event.preventDefault();
+			event.currentTarget.insertText("\t");
+        </s:keyFocusChange>
 	</s:TextArea>
 	
 	<s:HGroup left="0" right="0" 
@@ -1214,6 +1378,12 @@
 				</s:ArrayList>
 			</s:dataProvider>
 		</s:ButtonBar>
+		
+		<c:ImageButton id="copyIcon" 
+					   height="100%"
+					   source="{Radii8LibraryAssets.copy}" 
+					   toolTip="Copy the code to the Clipboard"
+					   />
 	</s:HGroup>
 	
 	

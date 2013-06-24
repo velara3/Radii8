@@ -16,10 +16,10 @@ package com.flexcapacitor.events {
 	 * remove display object
 	 * set property / style
 	 * */
-	public class HistoryEvent {
+	public class HistoryEventItem {
 		
 		
-		public function HistoryEvent() {
+		public function HistoryEventItem() {
 			
 		}
 		
@@ -57,7 +57,7 @@ package com.flexcapacitor.events {
 		/**
 		 * Description of the action this event contains
 		 * */
-		[Inspectable(enumeration="addItem,removeItem,propertyChange")]
+		[Inspectable(enumeration="addItem,removeItem,propertyChange,styleChange")]
 		public var action:String;
 		
 		/**
@@ -79,5 +79,12 @@ package com.flexcapacitor.events {
 		 * Stores the parents
 		 * */
 		public var reverseAddItemsDictionary:Dictionary = new Dictionary();
+		
+		/**
+		 * Called when item is removed from history
+		 * */
+		public function purge():void {
+			
+		}
 	}
 }

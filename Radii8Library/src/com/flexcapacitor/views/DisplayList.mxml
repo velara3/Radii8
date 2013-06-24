@@ -2,9 +2,10 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:views="com.flexcapacitor.views.*"
 		 
 		 width="200" height="100%"
-		 creationComplete="creationCompleteHandler(event)"
+		 creationComplete="creationCompleteHandler(event)" 
 		 >
 	
 	<fx:Script>
@@ -16,9 +17,14 @@
 			
 			import mx.collections.ArrayCollection;
 			import mx.core.IVisualElement;
+			import mx.core.IVisualElementContainer;
+			import mx.events.DragEvent;
 			import mx.events.FlexEvent;
 			import mx.events.ListEvent;
 			import mx.events.TreeEvent;
+			import mx.states.AddItems;
+			
+			import spark.components.Application;
 			
 			private var rootDisplayObject:DisplayObject;
 			private var displayList:Array = [];
@@ -90,9 +96,11 @@
 			 * */
 			protected function targetChangeHandler(event:RadiateEvent):void {
 				updateTarget(event.selectedItem);
-				
 			}
 			
+			/**
+			 * 
+			 * */
 			public function updateTarget(selectedItem:Object):void {
 				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
 				var collection:ArrayCollection = displayListTree.dataProvider as ArrayCollection;
@@ -123,8 +131,12 @@
 							
 							while (parent) {
 								
-								displayListTree.expandItem(parent, true, false, false);
-								displayListTree.validateNow();
+								// open item if not open
+								if (!displayListTree.isItemOpen(parent)) {
+									displayListTree.expandItem(parent, true, false, false);
+									displayListTree.validateNow();
+								}
+								
 								parent = parent.parent;
 							}
 							
@@ -141,8 +153,36 @@
 					}
 				}
 				
+				openAllItems();
 				updateTreeHeight();
 				scrollIntoView();
+			}
+			
+			/**
+			 * Open all items
+			 * */
+			public function openAllItems():void {
+				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
+				var collection:ArrayCollection = displayListTree.dataProvider as ArrayCollection;
+				var rootApplicationDescription:ComponentDescription;
+				var targetDescription:ComponentDescription;
+				var parent:ComponentDescription;
+				
+				if (item && target!=item.instance) {
+					//updateComponentDisplayList();
+				}
+				
+				if (collection.length==0) {
+					collection = displayListTree.dataProvider as ArrayCollection;
+				}
+				
+				rootApplicationDescription = collection.getItemAt(0) as ComponentDescription;
+				
+				for (var i:int;i<rootApplicationDescription.children.length;i++) {
+					displayListTree.expandChildrenOf(rootApplicationDescription.children[i], true);
+					displayListTree.validateNow();
+				}
+				
 			}
 			
 			/**
@@ -171,7 +211,7 @@
 			}
 			
 			/**
-			 * 
+			 * Recreate the display list and open all items.
 			 * */
 			private function updateComponentDisplayList(preserveOpenItems:Boolean = true):void {
 				var openItems:Object = displayListTree.openItems;
@@ -200,7 +240,9 @@
 					// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
 					// ALSO we are resetting the dataProvider so it's not going to find the items if we do that
 					for (var i:int;i<length;i++) {
-						displayListTree.expandItem(openItems[i], true, false, false);
+						if (!displayListTree.isItemOpen(openItems[i])) {
+							displayListTree.expandItem(openItems[i], true, false, false);
+						}
 						//trace("expanding");
 					}
 				}
@@ -210,6 +252,9 @@
 				//trace("element="+NameUtil.getUnqualifiedClassName(element));
 			}
 			
+			/**
+			 * 
+			 * */
 			private function findTargetInDisplayList(target:Object, parentItem:ComponentDescription, depth:int = 0):ComponentDescription {
 				var length:int = parentItem.children ? parentItem.children.length : 0;
 				var possibleItem:ComponentDescription;
@@ -241,28 +286,57 @@
 				return null;
 			}
 			
+			/**
+			 * Add item handler
+			 * */
 			protected function addItemChangeHandler(event:RadiateEvent):void {
 				updateComponentDisplayList();
 			}
 			
+			/**
+			 * Item open handler
+			 * */
 			protected function displayListTree_itemOpenHandler(event:TreeEvent):void {
 				updateTreeHeight()
 			}
 			
+			/**
+			 * 
+			 * */
+			public function getTotalRowCount(item:ComponentDescription, count:int = 0):int {
+				
+				if (item.children.length>0) {
+				// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
+				// ALSO we are resetting the dataProvider so it's not going to find the items if we do that
+				for (var i:int;i<item.children.length;i++) {
+					count++;
+					if (displayListTree.isItemOpen(item.children[i])) {
+						count = getTotalRowCount(item.children[i] as ComponentDescription, count);
+					}
+				}
+				}
+				return count;
+			}
+			
+			/**
+			 * Resize the tree to be as high as all open items
+			 * */
 			public function updateTreeHeight():void {
 				var newHeight:int = displayListTree.rowCount * displayListTree.rowHeight;
+				var numChildren:int = displayListTree.numChildren;
 				var openItems:Object = displayListTree.openItems;
 				var openItemsLength:int = displayListTree.openItems.length;
+				var dataProvider:Object = displayListTree.dataProvider;
+				var dataProviderLength:int = displayListTree.dataProvider.length;
 				var item:ComponentDescription;
-				var count:int = 1;
+				var count:int = 2; // application plus one for easier drop on last row
 				
-				for each (item in openItems) {
-					//item = openItems[i];
-					count = count + item.children.length;
-				}
+				var newCount:int = getTotalRowCount(dataProvider[0] as ComponentDescription, count);
 				
-				newHeight = count * displayListTree.rowHeight;
-				
+				newHeight = newCount * displayListTree.rowHeight;
+				// ArgumentError: Error #2004: One of the parameters is invalid.
+				//	at flash.display::Graphics/drawRect()
+				//displayListTree.setActualSize(NaN, newHeight);
 				//displayListTree.height = newHeight;
 				displayListTree.explicitHeight = newHeight;
 			}
@@ -304,13 +378,141 @@
 				}
 			}
 			
+			/**
+			 * 
+			 * */
+			protected function displayListTree_dragDropHandler(event:DragEvent):void {
+				//Radiate.log.info("Drag drop handler");
+				event.draggedItem;
+				event.target;
+				event.relatedObject;
+				
+				/*
+	            Pay attention at mx_internal namespace :
+	            Behaviour could change in the next flex version.
+	            Drop data structure.
+	            _dropData = { 
+	                parent: parent, 
+	                index: index, 
+	                localX: event.localX, 
+	                localY: event.localY, 
+	                emptyFolder: emptyFolder, 
+	                rowHeight: rowHeight, 
+	                rowIndex: rowNum };
+	            */
+	            var dropData:Object = displayListTree.mx_internal::_dropData;
+	            var dropParent:Object = dropData.parent;
+	            var dropIndex:int = dropData.index;
+	            var rowIndex:int = dropData.rowIndex;
+	            var draggedElement:Object = (event.dragSource.dataForFormat("treeItems") as Array)[0];
+				var draggedElementParent:Object = draggedElement.parent;
+				var canDragOutOfParent:Boolean = true;
+				
+	            if (!canDragOutOfParent && draggedElementParent != dropParent) {
+					
+	                // element is an item and parent is different => can not drop                                        
+	                event.preventDefault();
+	                displayListTree.hideDropFeedback(event);
+					return;
+	            }
+
+	            // you can also play with
+	            //var dropIndex:int = displayListTree.calculateDropIndex(event);
+	            //var itemIndex:int = displayListTree.getItemIndex(dropIndex);
+				
+	            // but it is a little more complicated to find 
+	            // the real parent because we haven't drop indicator 
+	            // information (child or parent position).
+	
+	            // I did not use xml element id but it is also possible
+	            // parent.id != draggedElement.parent().id
+				
+				
+				// some reason there is a bug when on the application
+				if (dropParent && draggedElement.parent == dropParent && 
+					dropParent.instance is Application) {
+					var currentIndex:int = ComponentDescription(dropParent).children.getItemIndex(draggedElement);
+					
+					// when dragging to an index after our index we have to subtract one
+					if (currentIndex<dropIndex) {
+						dropIndex--;
+						//Radiate.log.info("Lowering index");
+					}
+				}
+				
+				
+				// make sure application can't be dropped into itself
+				if (draggedElement.instance is Application) {
+	                event.preventDefault();
+	                displayListTree.hideDropFeedback(event);
+					return;
+				}
+				
+				// make sure container can't be dropped into child container
+				if (draggedElement.instance is DisplayObjectContainer &&
+					dropParent.instance is DisplayObjectContainer &&
+					DisplayObjectContainer(draggedElement.instance).contains(dropParent.instance)) {
+					
+	                event.preventDefault();
+	                displayListTree.hideDropFeedback(event);
+					return;
+				}
+				
+				if (dropParent) {
+					/*
+					Radiate.log.info("drop index:"+ dropIndex);
+					Radiate.log.info("row  index:" + rowIndex);
+					Radiate.log.info("item index:" + droppingIndex);*/
+					
+					Radiate.moveElement(draggedElement.instance, dropParent.instance, [], null, 
+										RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
+					
+					radiate.setTarget(draggedElement.instance);
+				}
+				else {
+	                // element is an item and parent is different => can not drop                                        
+	                event.preventDefault();
+	                displayListTree.hideDropFeedback(event);
+				}
+				
+			}
+			
+			protected function displayListTree_dragCompleteHandler(event:DragEvent):void {
+				
+			}
+			
+			/**
+			 * Handle when dragging just outside of tree
+			 * */
+			protected function displayListTree_dragOverHandler(event:DragEvent):void {
+				
+	            var dropData:Object = displayListTree.mx_internal::_dropData;
+	            var dropParent:Object = dropData.parent;
+				
+                // dragging outside of tree                                      
+	            if (dropParent==null) {
+					// prevents dragging from working after this point
+					//event.preventDefault(); 
+					//displayListTree.hideDropFeedback(event);
+	            }
+			}
+			
 		]]>
 	</fx:Script>
 	
-	<s:Scroller id="scroller" width="100%" height="100%">
-		<s:Group>
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	<!--
+	<views:BlendMode height="20" width="50%" />-->
+	
+	<s:Scroller id="scroller" width="100%" height="100%"
+				top="0"
+				bottom="0">
+		<s:Group width="100%" height="100%">
 			<mx:Tree id="displayListTree" 
 					 width="100%"
+					 focusAlpha="0"
 					 itemOpen="displayListTree_itemOpenHandler(event)"
 					 itemClose="displayListTree_itemCloseHandler(event)"
 					 change="displayListTree_changeHandler(event)"
@@ -324,7 +526,13 @@
 					 useRollOver="false"
 					 borderVisible="false"
 					 indentation="16"
+					 dragEnabled="true"
+					 dropEnabled="true"
+					 dragMoveEnabled="true"
 					 mouseDown="displayListTree_mouseDownHandler(event)"
+					 dragOver="displayListTree_dragOverHandler(event)"
+					 dragDrop="displayListTree_dragDropHandler(event)"
+					 dragComplete="displayListTree_dragCompleteHandler(event)"
 					 >
 				<mx:itemRenderer>
 					<fx:Component>
@@ -334,6 +542,7 @@
 											  creationComplete="creationCompleteHandler(event)">
 							<fx:Script>
 								<![CDATA[
+									import spark.components.Application;
 									import com.flexcapacitor.controller.Radiate;
 									import com.flexcapacitor.utils.DisplayObjectUtils;
 									import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -351,11 +560,22 @@
 										
 										if (item) {
 											if (item.icon) {
-												iconImage.source = item.icon;
+												
+												if (item.icon!=iconImage.source) {
+													iconImage.source = item.icon;
+												}
 											}
 											else {
-												path = "assets/images/components/" + item.name + ".png";
-												iconImage.source = path;
+												if (item.instance is Application) {
+													path = "assets/images/components/BorderContainer.png";
+												}
+												else {
+													path = "assets/images/components/" + item.name + ".png";
+												}
+												
+												if (path!=iconImage.source) {
+													iconImage.source = path;
+												}
 											}
 											
 											labelDisplay.text =  treeListData.label;
@@ -378,6 +598,7 @@
 									
 									protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
 										iconImage.source = "assets/images/components/BorderContainer.png";
+										Radiate.log.info(event.text);
 									}
 		
 									protected function visibleGroupClicked():void {
@@ -432,7 +653,7 @@
 							</s:states>
 							
 							<s:Group width="100%" height="100%" left="0" right="2">
-								<s:Rect width="100%" height="100%" alpha="0">
+								<s:Rect width="100%" height="100%" alpha="1">
 									<s:fill>
 										<s:SolidColor color="#f6f6f6"/>
 									</s:fill>

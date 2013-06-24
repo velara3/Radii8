@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:filters="com.flexcapacitor.filters.*"
+		 
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 >
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.Device;
+			import com.flexcapacitor.tools.ITool;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			public var radiate:Radiate;
+			
+			
+			/**
+			 * Shows the show actual size button
+			 * */
+			[Bindable]
+			public var showRestoreSize:Boolean = true;
+			
+			/**
+			 * Shows the show center button
+			 * */
+			[Bindable]
+			public var showCenterButton:Boolean = true;
+			
+			/**
+			 * Shows devices list
+			 * */
+			[Bindable]
+			public var showDevicesList:Boolean = false;
+			
+			/**
+			 * Shows the show fit size button
+			 * */
+			[Bindable]
+			public var showFitSize:Boolean = true;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				//radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChangedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, documentSizeChangeHandler, false, 0, true);
+				
+				//toolDescription = radiate.getToolByType(Zoom);
+				
+				//zoomTool = toolDescription.instance as Zoom;
+				
+				
+				// temp to get reference
+				//if (!tool) tool = new Zoom();
+				
+				//updateTool(zoomTool);
+			}
+			
+			/**
+			 * Update UI components to tool value
+			 * */
+			public function updateTool(tool:ITool):void {
+				/*var zoomValue:Number;
+				zoomValue = zoomTool.getScale();
+					
+				updateZoomInComboBox(zoomValue);*/
+			}
+			
+			/**
+			 * Size combo box change handler. Update size.
+			 * */
+			protected function sizeComboBox_changeHandler(event:IndexChangeEvent):void {
+				updateDocumentSize();
+				//zoomTool.setScale(parseInt(sizesComboBox.selectedItem)/100);
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function actualSize_clickHandler(event:MouseEvent):void {
+				radiate.restoreDefaultScale();
+				
+			}
+			
+			/**
+			 * Size changed
+			 * */
+			protected function sizeChangedHandler(event:RadiateEvent):void {
+				/*var zoomValue:Number;
+				var zoomString:String;
+				
+				zoomValue = zoomTool.getScale();
+				
+				updateZoomInComboBox(zoomValue);*/
+			}
+			
+			/**
+			 * Format size value.
+			 * */
+			public function updateSizeInComboBox(zoomValue:Number):void {
+				/*var zoomString:String;
+				
+				if (!isNaN(zoomValue)) {
+					
+					if (String(zoomValue*100).indexOf(".")!=-1) {
+						zoomString = Number(zoomValue*100).toFixed(1) + "%";
+					}
+					else {
+						zoomString = Number(zoomValue*100) + "%";
+					}
+					
+					if (zoomValue==1) {
+						sizesComboBox.selectedItem = "100%";
+					}
+					else {
+						sizesComboBox.selectedItem = zoomString;
+					}
+				}*/
+			}
+			
+			/**
+			 * Document changed
+			 * */
+			protected function documentChangeHandler(event:RadiateEvent):void {
+				// since we use this independently of the tool being selected we need to make sure
+				// the target application is set
+				// we'll move this later
+				/*var zoomValue:Number = zoomTool.getScale();
+				
+				updateSizeInComboBox(zoomValue);*/
+				
+				updatePortraitCheckbox();
+				
+			}
+			
+			/**
+			 * Restore
+			 * */
+			protected function sizeComboBox_doubleClickHandler(event:MouseEvent):void {
+				/*
+				if (zoomTool) {
+					zoomTool.restoreDefaultScale();
+					sizesComboBox.selectedItem = "100%";
+				}*/
+			}
+			
+			public function labelFunction(item:Object):String {
+				var device:Device = Device(item);
+				
+				if (device.type=="device" || device.type=="screen") {
+					return device.name;
+				}
+				
+				return device.name + device.width + "x" + device.height;
+			}
+			
+			protected function changeOrientation_changeHandler(event:Event):void {
+				updateDocumentSize();
+			}
+			
+			/**
+			 * 
+			 * */
+			public var properties:Array = ["width", "height"];
+			
+			/**
+			 * Update portrait setting
+			 * */
+			public function updatePortraitCheckbox():void {
+				var document:DisplayObject = radiate.document as DisplayObject;
+				var portrait:Boolean;
+				
+				if (document &&
+					document.width<document.height) {
+					portraitEnabledCheckbox.selected= true;
+					portraitEnabledCheckbox.enabled = true;
+				}
+				else if (document.width==document.height) {
+					portraitEnabledCheckbox.enabled = false;
+				}
+				else {
+					portraitEnabledCheckbox.selected= false;
+					portraitEnabledCheckbox.enabled = true;
+				}
+				
+			}
+			
+			/**
+			 * 
+			 * */
+			public function updateDocumentSize():void {
+				var device:Device = sizesComboBox.selectedItem as Device;
+				var object:Object = {};
+				var applied:Boolean;
+				
+				
+				if (!showDevicesList) {
+					var values:Object = {width:Object(radiate.document).height,height:Object(radiate.document).width};
+					Radiate.setProperties(radiate.document, properties, values);
+					return;
+				}
+				
+				
+				
+				
+				if (device.type=="screen") {
+					object.width = device.resolutionWidth;
+					object.height = device.resolutionHeight;
+					
+					applied = Radiate.setProperties(radiate.document, properties, object);
+				}
+				else {
+					if (portraitEnabledCheckbox.selected) {
+						object.width = device.usableWidthPortrait;
+						object.height = device.usableHeightPortrait;
+						
+						applied = Radiate.setProperties(radiate.document, properties, object, device.name);
+					}
+					else {
+						object.width = device.usableWidthLandscape;
+						object.height = device.usableHeightLandscape;
+						
+						applied = Radiate.setProperties(radiate.document, properties, object, device.name);
+					}
+				}
+			}
+			
+			protected function fitSizeButton_clickHandler(event:MouseEvent):void {
+				radiate.scaleToFit(true);
+				radiate.centerApplication(true, true);
+			}
+			
+			protected function centerButton_clickHandler(event:MouseEvent):void {
+				radiate.centerApplication(true, true);
+			}
+			
+			protected function documentSizeChangeHandler(event:RadiateEvent):void {
+				updatePortraitCheckbox();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:ArrayCollection id="sizesCollection">
+			
+		</s:ArrayCollection>
+	</fx:Declarations>
+
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="4" />
+	</s:layout>
+	
+	<s:CheckBox id="portraitEnabledCheckbox" 
+				label="Portrait" 
+				selected="true"
+				change="changeOrientation_changeHandler(event)"/>
+	
+	<s:DropDownList id="sizesComboBox" 
+				width="180" 
+				focusAlpha="0" 
+				selectedIndex="8"
+				visible="{showDevicesList}"
+				includeInLayout="{showDevicesList}"
+				arrowKeysWrapFocus="false"
+				doubleClickEnabled="true"
+				labelFunction="labelFunction"
+				dataProvider="{Radiate.deviceCollections}"
+				change="sizeComboBox_changeHandler(event)"
+				doubleClick="sizeComboBox_doubleClickHandler(event)"
+				>
+        <s:layout>
+            <s:VerticalLayout gap="0"
+                    horizontalAlign="contentJustify"
+                    requestedRowCount="10" />
+        </s:layout>
+	</s:DropDownList>
+	
+	<s:Button id="actualSizeButton" label="Actual"
+			  visible="{showRestoreSize}"
+			  includeInLayout="{showRestoreSize}"
+			  click="actualSize_clickHandler(event)"/>
+	
+	<s:Button id="fitSizeButton" label="Fit"
+			  visible="{showFitSize}"
+			  includeInLayout="{showFitSize}"
+			  click="fitSizeButton_clickHandler(event)"/>
+	
+	<s:Button id="centerButton" label="Center"
+			  visible="{showCenterButton}"
+			  includeInLayout="{showCenterButton}"
+			  click="centerButton_clickHandler(event)"/>
+	
+
+</s:Group>

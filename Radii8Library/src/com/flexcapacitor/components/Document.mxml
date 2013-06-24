@@ -1,0 +1,869 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:components="com.flexcapacitor.components.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:local="*"
+		 
+		 width="400" height="300"
+		 show="group1_showHandler(event)"
+		 creationComplete="initApp()"
+		 implements="com.flexcapacitor.components.IDocument" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			import mx.managers.SystemManager;
+			import mx.utils.NameUtil;
+			
+			import spark.components.Application;
+			
+			import org.as3commons.lang.ArrayUtils;
+			
+			/**
+			 * The document / application
+			 * */
+			public var targetApplication:Object;
+			
+			private var _url:String = "assets/460/application.swf";
+			
+			public var autoLoad:Boolean = true;
+			
+			private var radiate:Radiate;
+			
+			/**
+			 * Set to false. 
+			 * */
+			private var loadForCompatibility:Boolean;
+			
+			/**
+			 * Maintains the aspect ratio
+			 * */
+			private var maintainAspectRatio:Boolean = true;
+			
+			/**
+			 * Set to false to prevent application from scaling to fit (vs resizing)
+			 * */
+			private var scaleContent:Boolean;
+			
+			/**
+			 * Set to false for loading local file? And true for loading remote swf.
+			 * */
+			private var trustContent:Boolean;
+			
+			/**
+			 * System manager of the target application
+			 * */
+			private var targetSystemManager:SystemManager;
+			
+			/**
+			 * Padding to add around the document if it is too large to 
+			 * fit in the available space. 
+			 * */
+			public var documentPadding:int = 25;
+			
+			/**
+			 * True when updating the document and background size
+			 * */
+			public var inUpdateBackgroundSize:Boolean = true;
+			
+			/**
+			 * Application ready
+			 * */
+			public var applicationReady:Boolean;
+			
+			private var _componentDescription:ComponentDescription;
+
+			/**
+			 * Root component description
+			 * */
+			public function get componentDescription():ComponentDescription {
+				return _componentDescription;
+			}
+
+			/**
+			 * @private
+			 */
+			public function set componentDescription(value:ComponentDescription):void {
+				_componentDescription = value;
+			}
+
+			
+			/**
+			 * 
+			 * */
+			[Bindable]
+			public function get url():String {
+				return _url;
+			}
+
+			public function set url(value:String):void {
+				_url = value;
+				load();
+			}
+
+			/**
+			 * When this is added to the display list then we
+			 * load in a blank application.
+			 * 
+			 * We do this so that at some point we can sandbox 
+			 * the application.
+			 * We also do this so we can load in remote applications.
+			 * */
+			private function initApp():void {
+				radiate = Radiate.getInstance();
+				radiate.toolLayer = toolLayer;
+				radiate.setCanvas(canvasBorder, canvasBackground, canvasScroller);
+				
+				
+				
+				
+				
+				////////////////////////
+				/// WE SHOULD MOVE ALL OF THIS OUT OF THIS CLASS
+				///////////////////////
+				
+				systemManager.allowDomain("*");
+				
+				var context:LoaderContext = new LoaderContext();
+				
+				/* Specify the current application's security domain. */
+				context.securityDomain = SecurityDomain.currentDomain;
+				
+				/* Specify a new ApplicationDomain, which loads the sub-app into a 
+				peer ApplicationDomain. */
+				context.applicationDomain = new ApplicationDomain();
+				
+				projectLoader.trustContent = trustContent;
+				projectLoader.loadForCompatibility = loadForCompatibility;
+				projectLoader.maintainAspectRatio = maintainAspectRatio;
+				projectLoader.scaleContent = scaleContent;
+				
+				// if not on server context throws errors
+				if (Security.sandboxType == Security.REMOTE) {
+					//projectLoader.loaderContext = context;
+					projectLoader.trustContent = !trustContent;
+				}
+				
+				projectLoader.source = url;//URL.text; // "http://yourdomain.com/SubApp3.swf";
+				
+				//projectLoader.autoLoad = autoLoad;
+				load();
+				
+				//stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+			}
+			
+			/**
+			 * Load URL
+			 * */
+			public function load():void {
+				
+				removeErrorMessages();
+				
+				showBusyIndicators();
+				
+				if (url) {
+					try {
+						//projectLoader.trustContent = trustContent;
+						projectLoader.loaderContext = null;
+						projectLoader.source = "";
+						projectLoader.source = url;
+						projectLoader.load();
+					}
+					catch (error:Error) {
+						Radiate.log.error(error.message);
+						hideBusyIndicators();
+					}
+				}
+				else {
+					hideBusyIndicators();
+				}
+			}
+			
+			/**
+			 * Load URL
+			 * */
+			public function loadRemote(url:String, trustContent:Boolean = true, loadForCompatibility:Boolean = false):void {
+				
+				systemManager.allowDomain("*");
+				showBusyIndicators();
+				
+				if (url) {
+					try {
+						// if not on server context throws errors
+						//if (Security.sandboxType == Security.REMOTE) {
+							//projectLoader.loaderContext = context;
+						projectLoader.trustContent = trustContent;
+						//}
+							
+						var context:LoaderContext = new LoaderContext();
+							
+						/* Specify the current application's security domain. */
+						//context.securityDomain = SecurityDomain.currentDomain;
+						//projectLoader.loaderContext = context;
+						projectLoader.loadForCompatibility = loadForCompatibility;
+						projectLoader.source = "";
+						projectLoader.source = url;
+						projectLoader.load();
+					}
+					catch (error:Error) {
+						Radiate.log.error(error.message);
+						hideBusyIndicators();
+					}
+				}
+				else {
+					hideBusyIndicators();
+				}
+			}
+			
+			protected function allowDomainHandler(event:MouseEvent):void {
+				systemManager.allowDomain("*");
+			}
+			
+			private function uncaughtErrorHandler(event:UncaughtErrorEvent):void {
+				event.preventDefault();
+				
+				//to capture the error message
+				var errorMessage:String = new String();
+				
+				if (event.error is Error) {
+					errorMessage = Error( event.error ).message;
+				}
+				else if (event.error is ErrorEvent) {
+					errorMessage = ErrorEvent( event.error ).text;
+				}
+				else {
+					errorMessage = event.error.toString();
+				}
+				
+				//Radiate.logTarget.logEvent(new LogEvent("Uncaught Error", LogEventLevel.ERROR));
+				Radiate.log.error(errorMessage);
+				//trace("Uncaught error", event);
+				
+				hideBusyIndicators();
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function project_completeHandler(event:Event):void {
+				var loader:SWFLoader = event.currentTarget as SWFLoader;
+				/*
+				SecurityDomain 'http://www.radii8.com/demo2/RadiateExample.html?debug=true' tried to access incompatible context 'http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf'
+				SecurityError: Error #2121: Security sandbox violation: Loader.content: http://www.radii8.com/demo2/RadiateExample.swf/[[DYNAMIC]]/3 cannot access http://www.flexcapacitor.com/apps/urlcodec/URLCodec.swf. This may be worked around by calling Security.allowDomain.
+
+				*/
+				var loaderClassName:String = NameUtil.getUnqualifiedClassName(loader.content);
+				
+				projectLoader.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				
+				if (loader.content is DisplayObject) {
+					//parentAllowsChild.selected = b.parentAllowsChild;
+					//childAllowsParent.selected = b.childAllowsParent;
+					targetSystemManager = loader.content as SystemManager;
+					
+					targetSystemManager.addEventListener(FlexEvent.APPLICATION_COMPLETE, applicationComplete);
+					//LoaderInfo(targetApplication.loaderInfo).uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				}
+				
+				hideBusyIndicators();
+				
+				
+				Radiate.log.info("SWF Loaded");
+			}
+			
+			/**
+			 * Blank application loaded
+			 * */
+			protected function applicationComplete(event:Event):void {
+				var loader:Object = event.currentTarget;
+				var radiate:Radiate = Radiate.instance;
+				//parentAllowsChild.selected = b.parentAllowsChild;
+				//childAllowsParent.selected = b.childAllowsParent;
+				
+				targetSystemManager = loader as SystemManager;
+				targetApplication = loader.application;
+				
+				
+				targetApplication.width = 600;
+				targetApplication.height = 500;
+				
+				updateBackgroundSize();
+				//validateNow();
+				
+				radiate.setDocument(targetApplication as IEventDispatcher);
+				radiate.setTarget(targetApplication);
+				
+				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
+				//radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChange, false, 0, true);
+				
+				//updateAppScrollPosition();
+				
+				//setTimeout(updateAppScrollPosition, 10);
+				//setTimeout(updateAppScrollPosition, 100);
+				//setTimeout(updateAppScrollPosition, 500);
+				
+				hideBusyIndicators();
+				
+				applicationReady = true;
+				
+				radiate.centerApplication(true);
+				
+				Radiate.log.info("Application Complete");
+				
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function project_ioErrorHandler(event:IOErrorEvent):void {
+				//trace("ioerror");
+				Radiate.log.error(event.text);
+				hideBusyIndicators();
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function project_securityErrorHandler(event:SecurityErrorEvent):void
+			{
+				//trace("security error");
+				Radiate.log.error(event.text);
+				hideBusyIndicators();
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function project_initHandler(event:Event):void
+			{
+				//trace("init");
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function project_progressHandler(event:ProgressEvent):void
+			{
+				//trace("PROGRESS");
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function project_unloadHandler(event:Event):void
+			{
+				//trace("unload");
+				Radiate.log.info("SWF unloaded");
+				hideBusyIndicators();
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function project_openHandler(event:Event):void
+			{
+				//trace("open");
+				showBusyIndicators();
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function project_httpStatusHandler(event:HTTPStatusEvent):void {
+				//trace("http status");				
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function mainApplicationComplete(event:Event):void {
+				parentApplication.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				hideBusyIndicators();
+			}
+			
+			/**
+			 * 
+			 * */
+			public function showBusyIndicators():void {
+				//fadeOutBusy.end();
+				//fadeInBusy.play();
+				loadingLabel.visible =  true;
+				toolLayer.visible = false;
+				canvasBorder.visible = false;
+			}
+			
+			/**
+			 * 
+			 * */
+			public function hideBusyIndicators():void {
+				
+				loadingLabel.visible =  false;
+				toolLayer.visible = true;
+				canvasBorder.visible = true;
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function group1_showHandler(event:FlexEvent):void {
+				if (radiate.document!=targetApplication) {
+					radiate.setDocument(targetApplication, true);
+				}
+				
+				//Radiate.log.info("Document SHOW event");
+			}
+			
+			/**
+			 * Reload blank app
+			 * */
+			public function reload():void {
+				initApp();
+			}
+			
+			/**
+			 * 
+			 * */
+			private function removeErrorMessages():void {
+				
+			}
+			
+			
+			/**
+			 * 
+			 * */
+			private function canvasBorder_resizeHandler(event:ResizeEvent):void {
+				if (targetApplication) {
+					updateBackgroundSize();
+				}
+			}
+			
+			/**
+			 * Update the size of the target application
+			 * */
+			private function updateAppScrollPosition():void {
+				
+				if (targetApplication is DisplayObject) {
+					radiate.centerApplication();
+				}
+			}
+			
+			/**
+			 * 
+			 * */
+			public function updateBackgroundSize():void {
+				//if (inUpdateBackgroundSize) return;
+				inUpdateBackgroundSize = true;
+				
+				// size canvas background to be the minimum size of the scroller
+				// or the size of the target application + 50
+				var scaledDocumentWidth:int = targetApplication.width * targetApplication.scaleX;
+				var scaledDocumentHeight:int = targetApplication.height * targetApplication.scaleY;
+				/*var aspectRatio:String = scaledDocumentWidth/scaledDocumentHeight>1?"portrait":"landscape";
+				if (aspectRatio!=canvasBorder.skin.currentState) {
+					canvasBorder.skin.currentState = aspectRatio;
+				}*/
+				
+				var scaledPaddedDocumentWidth:int = documentPadding + (targetApplication.width * targetApplication.scaleX);
+				var scaledPaddedDocumentHeight:int = documentPadding + (targetApplication.height * targetApplication.scaleY);
+				
+				var scrollerWidth:int = canvasScroller.width;
+				var scrollerHeight:int = canvasScroller.height;
+				
+				var scrollerPaddedWidth:int = canvasScroller.width + documentPadding;
+				var scrollerPaddedHeight:int = canvasScroller.height + documentPadding;
+				
+				var visiblePaddedWidth:int = canvasScroller.width - documentPadding;
+				var visiblePaddedHeight:int = canvasScroller.height - documentPadding;
+				
+				var minimumWidth:int;
+				var minimumHeight:int;
+				
+				// if content width is more than available width plus padding then 
+				// set minimum width to show scrollbars and add padding
+				if (scaledPaddedDocumentWidth >= visiblePaddedWidth+10) {
+					minimumWidth = Math.max(scrollerWidth, scaledPaddedDocumentWidth);
+				}
+				else {
+					minimumWidth = scrollerWidth;
+				}
+				
+				// if content height is more than available height plus padding then 
+				// set minimum height to show scrollbars and add padding
+				if (scaledPaddedDocumentHeight >=visiblePaddedHeight+10) {
+					minimumHeight = Math.max(scrollerPaddedHeight, scaledPaddedDocumentHeight);
+				}
+				else {
+					minimumHeight = scrollerHeight;
+				}
+				
+				canvasBackgroundParent.percentWidth = 100;
+				canvasBackgroundParent.percentHeight = 100;
+				
+				canvasBackground.width = minimumWidth;//Math.max(canvasScroller.width, minimumWidth);
+				canvasBackground.height = minimumHeight;//Math.max(canvasScroller.height, minimumHeight);
+				
+				canvasBorder.width = scaledDocumentWidth;
+				canvasBorder.height = scaledDocumentHeight;
+				
+				projectLoader.width = scaledDocumentWidth;
+				projectLoader.height = scaledDocumentHeight;
+				
+				// we do this because when we scale the application the 
+				// system manager mask is not updated and the content gets clipped
+				targetSystemManager.setActualSize(scaledDocumentWidth, scaledDocumentHeight);
+				
+				validateNow();
+				
+				inUpdateBackgroundSize = false;
+			}
+			
+			/**
+			 * Update the position of the document
+			 * */
+			protected function scaleChange(event:RadiateEvent):void {
+				
+				//if (!inUpdateBackgroundSize) {
+					updateBackgroundSize();
+				//}
+			}
+			
+			public var importantProperties:Array = ["width", "explicitWidth", "height", "explicitHeight","scaleX","scaleY"];
+			
+			/**
+			 * Update the size of the document
+			 * */
+			protected function propertyChange(event:RadiateEvent):void {
+				var sizeChange:Boolean;
+				
+				if (event.selectedItem is Application) {
+					sizeChange = ArrayUtils.containsAny(event.properties, importantProperties);
+					
+					if (sizeChange) {
+						updateBackgroundSize();
+					}
+				}
+			}
+			
+			protected function canvasBackground_resizeHandler(event:ResizeEvent):void {
+				
+			}
+			
+			protected function canvasBackgroundParent_resizeHandler(event:ResizeEvent):void {
+				
+			}
+			
+			protected function projectLoader_resizeHandler(event:ResizeEvent):void {
+				//Radiate.log.info("Project loader resize");
+			}
+			
+			
+			/**
+			 * 
+			 * */
+			private function updateScrollBarPosition(center:Point=null):void {
+				/*if (canvasBackground.contentHeight > canvasBackground.height) {
+					//canvasBackground.verticalScrollPosition = int((canvasBackground.contentHeight-canvasBackground.height)/2)
+				}
+				else {
+					//canvasBackground.verticalScrollPosition = 0;
+				}*/
+				/*if (borderContainer.contentHeight > borderContainer.height) {
+					borderContainer.verticalScrollPosition = int((borderContainer.contentHeight-borderContainer.height)/2);
+				}
+				else {
+						borderContainer.verticalScrollPosition = 0;
+				}
+				
+				if (borderContainer.contentWidth > borderContainer.width) {
+					borderContainer.horizontalScrollPosition = int((borderContainer.contentWidth-borderContainer.width)/2);
+				}
+				else {
+					borderContainer.horizontalScrollPosition = 0;
+				}*/
+			}
+			
+			/**
+			 * 
+			 * */
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				
+				var scrollWidth:int = canvasScroller.width;
+				var scrollHeight:int = canvasScroller.height;
+				var scaledWidth:int;
+				var scaledHeight:int;
+				var largerWidth:int;
+				var largerHeight:int;
+				
+				
+				
+				if (!targetApplication) return;
+				
+				scaledWidth = targetApplication.width * targetApplication.scaleX; //getTextWidth();
+				scaledHeight = targetApplication.height * targetApplication.scaleY; //getTextHeight();
+				
+				largerWidth = Math.max(scrollWidth, scaledWidth);
+				largerHeight = Math.max(scrollHeight, scaledHeight);
+				/*
+				if (scaledHeight<scrollHeight) {
+					borderContainer.verticalCenter = 0;
+				}
+				else {
+					borderContainer.verticalCenter = scaledHeight>scrollHeight ? int(scaledHeight/2-scrollHeight/2) : 0;
+				}*/
+				
+				/*
+				fill.width = largerWidth;
+				fill.height = largerHeight;
+				fill2.width = largerWidth*2;
+				fill2.height = largerHeight*2;*/
+				
+				//PerformanceMeter.start("scroller validate", true);
+				//scroller.validateNow();
+				//PerformanceMeter.stop("scroller validate");
+				
+				
+				/*if (currentState==WEBVIEW_STATE) {
+					// do nothing
+				}
+				else if (currentState==RICHTEXT_STATE) {
+					asciiRichText.horizontalCenter = textWidth>scrollWidth ? int(textWidth/2-scrollWidth/2) : 0;
+					asciiRichText.verticalCenter = textHeight>scrollHeight ? int(textHeight/2-scrollHeight/2) : 0;
+				}
+				else if (currentState==LABEL_STATE) {*/
+				
+					//borderContainer.horizontalCenter = textWidth>scrollWidth ? int(textWidth/2-scrollWidth/2) : 0;
+					//borderContainer.verticalCenter = textHeight>scrollHeight ? int(textHeight/2-scrollHeight/2) : 0;
+				//}
+				
+				/*
+				if (showBackgroundImage) {
+					//imageBackground.width = asciiLabel.width;
+					//imageBackground.height = asciiLabel.height;
+					//imageBackground.validateNow();
+					backgroundImage.horizontalCenter = textWidth>scrollWidth ? int(textWidth/2-scrollWidth/2) : 0;
+					backgroundImage.verticalCenter = textHeight>scrollHeight ? int(textHeight/2-scrollHeight/2) : 0;
+				}*/
+				
+				/*
+				fill2.x = int((scrollWidth - largerWidth*2)/2);
+				fill2.y = int((scrollHeight - largerHeight*2)/2);*/
+				
+				return;
+				
+			}
+			
+			private var _showBorders:Boolean;
+
+			/**
+			 * 
+			 * */
+			public function get showBorders():Boolean {
+				return _showBorders;
+			}
+
+			/**
+			 * 
+			 * */
+			public function set showBorders(value:Boolean):void {
+				if (_showBorders == value) return;
+				_showBorders = value;
+				
+				if (_showBorders) {
+					canvasBackgroundParent.setStyle("backgroundColor", 0xF00000);
+					canvasBackground.setStyle("backgroundColor", 0xFF0000);
+					canvasBorder.setStyle("backgroundColor", 0xFFF000);
+					toolLayer.setStyle("backgroundColor", 0xFFFF00);
+					canvasBackgroundParent.setStyle("backgroundAlpha", 1);
+					canvasBackground.setStyle("backgroundAlpha", 1);
+					canvasBorder.setStyle("backgroundAlpha", 1);
+					toolLayer.setStyle("backgroundAlpha", 1);
+				}
+				else {
+					canvasBackgroundParent.setStyle("backgroundAlpha", 0);
+					canvasBackground.setStyle("backgroundAlpha", 0);
+					canvasBorder.setStyle("backgroundAlpha", 0);
+					toolLayer.setStyle("backgroundAlpha", 0);
+				}
+			}
+
+			/**
+			 * 
+			 * */
+			protected function scrollerCornerButton_clickHandler(event:MouseEvent):void {
+				//showBorders = !showBorders;
+				
+				//if (!inUpdateBackgroundSize) { 
+					radiate.centerApplication();
+				//}
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function scroller_resizeHandler(event:ResizeEvent):void {
+				if (!targetApplication) return;
+				
+				//if (!inUpdateBackgroundSize) {
+					updateBackgroundSize();
+				//}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!--<s:Fade id="fadeInBusy" 
+				alphaTo="1" 
+				target="{busyIndicator}"
+				effectStart="busyIndicator.visible=true"
+				effectEnd="busyIndicator.visible=true"/>
+		<s:Fade id="fadeOutBusy" 
+				alphaTo="0" 
+				target="{busyIndicator}" 
+				effectStart="busyIndicator.visible=true"
+				effectEnd="busyIndicator.visible=false"/>-->
+	</fx:Declarations>
+	
+	
+	
+	<s:Rect id="backgroundRect" width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="#666666"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Rect width="20" height="20">
+		<s:fill>
+			<s:SolidColor color="#FFFFFF"/>
+		</s:fill>
+	</s:Rect>
+	
+	
+	<s:Scroller id="canvasScroller" 
+				left="20" 
+				right="0" 
+				top="20" 
+				bottom="0" 
+				width="100%"
+				height="100%"
+				resize="scroller_resizeHandler(event)"
+				>
+		
+		<!--- why two containers around this? reasons below -->
+		<!--
+		
+			// clicked on background area
+			if (target==canvasBackground || target==canvasBackgroundParent) {
+				radiate.setTarget(targetApplication, true);
+		-->
+		
+		<!--- 
+		This first group is sized by the Scroller. 
+		The scroller automatically sets this group, the viewport, to 100%
+		-->
+		<s:Group id="canvasBackgroundParent"
+				 width="100%"
+				 height="100%" >
+			
+			
+			<!---
+			This second group is to provide padding to the top and bottom of the document 
+			and to receive any mouse events such as zoom in and out.
+			
+			It gets sized to the canvas size plus the padding value. 
+			
+			It may also be used for skinning with different devices. 
+			-->
+			<s:BorderContainer id="canvasBackground"
+							   borderVisible="false"
+							   backgroundAlpha="0"
+							   >
+				
+			
+				<!--- 
+				This third group is to mask application content.
+				Without it the application or the application's system manager
+				may bleed over. 
+				-->
+				<s:BorderContainer id="canvasBorder" 
+						 verticalCenter="0"
+						 horizontalCenter="0"
+						 backgroundAlpha="0"
+						 borderVisible="false"
+						 visible="false"
+						 resize="canvasBorder_resizeHandler(event)">
+				
+				<!--<s:SkinnableContainer id="canvasBorder"
+									  verticalCenter="0"
+									  horizontalCenter="0"
+									  visible="false"
+									  backgroundAlpha="1"
+									  skinClass="com.flexcapacitor.skins.DeviceSkin"
+									  >-->
+					
+				
+					<!--- 
+					This group contains the system manager and the empty application
+					-->
+					<s:SWFLoader id="projectLoader" 
+								 resize="projectLoader_resizeHandler(event)"
+								 complete="project_completeHandler(event)"
+								 httpStatus="project_httpStatusHandler(event)"
+								 init="project_initHandler(event)"
+								 ioError="project_ioErrorHandler(event)"
+								 open="project_openHandler(event)"
+								 progress="project_progressHandler(event)"
+								 securityError="project_securityErrorHandler(event)"
+								 unload="project_unloadHandler(event)"/>
+				
+					<!--- 
+					This group is used to add visual elements above the application.
+					For example, selection and resizing borders. 
+					-->
+					<s:Group id="toolLayer" 
+							 mouseChildren="false" 
+							 mouseEnabled="false">
+						
+					</s:Group>
+				
+				</s:BorderContainer>
+				<!--</s:SkinnableContainer>-->
+			</s:BorderContainer>
+		</s:Group>
+	</s:Scroller>
+	
+	<s:Label id="loadingLabel" color="#ffffff" text="Loading. Please wait..." 
+			 fontWeight="bold" horizontalCenter="0" verticalCenter="0"/>
+	
+	<s:Group id="scrollerCornerButton" 
+			 width="16" height="16" right="0" bottom="0"
+			 click="scrollerCornerButton_clickHandler(event)">
+		<s:Rect width="100%"
+				height="100%"
+				alpha="0"
+				visible="{canvasScroller.verticalScrollBar.visible &amp;&amp; canvasScroller.horizontalScrollBar.visible}"
+				>
+			<s:fill>
+				<s:SolidColor color="#000000"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<components:Ruler left="20" width="100%" height="20"/>
+	
+	<components:Ruler top="20" width="20" height="100%" direction="vertical"/>
+	
+	<!--<s:BusyIndicator id="busyIndicator" right="20" top="10" symbolColor="white"/>-->
+	
+	
+</s:Group>

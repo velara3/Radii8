@@ -17,7 +17,12 @@
     
     <tool id="Zoom" class="com.flexcapacitor.tools.Zoom" 
     		inspector="com.flexcapacitor.views.ZoomInspector" 
-    		include="true"/>
+    		include="true">
+    		<cursors>
+    			<cursor name="ZoomInCursor" x="10" y="10" />
+    			<cursor name="ZoomOutCursor" x="10" y="10" />
+    		</cursors>
+    </tool>
     
     <tool id="EyeDropper" class="com.flexcapacitor.tools.EyeDropper" 
     		inspector="com.flexcapacitor.views.EyeDropperInspector" 

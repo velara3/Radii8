@@ -3,6 +3,7 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:controls="com.flexcapacitor.controls.*"
+		 xmlns:components="com.flexcapacitor.components.*"
 		 xmlns:inspectors="com.flexcapacitor.views.*"
 		 xmlns:supportClasses="spark.components.supportClasses.*" 
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
@@ -214,6 +215,9 @@
 		<s:HGroup width="100%" height="32" >
 			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStripIcon}"/>
 			<inspectors:ToolInspector />
+			<s:Spacer width="100%"/>
+			<inspectors:SizesInspector showRestoreSize="true"/>
+			<inspectors:ZoomInspector showActualSize="false"/>
 		</s:HGroup>
 	
 		<mx:HDividedBox width="100%" height="100%" 
@@ -267,18 +271,16 @@
 						<views:Components height="100%" width="100%" />
 					</s:NavigatorContent>
 					
-					<!-- EVENT LISTENERS -->
-					<s:NavigatorContent label="EVENTS">
-						<s:Scroller width="100%" height="100%">
-							<inspectors:EventListeners height="100%" width="100%"/>
-						</s:Scroller>
+					<!-- DISPLAY LIST -->
+					<s:NavigatorContent label="DOCUMENT"  >
+						<views:DisplayList width="100%" minHeight="220"/>
 					</s:NavigatorContent>
 					
-					<!-- STATES -->
-					<s:NavigatorContent label="STATES">
-						<s:Scroller width="100%" height="100%">
-							<views:States height="100%" width="100%" />
-						</s:Scroller>
+					<!-- HISTORY -->
+					<s:NavigatorContent label="HISTORY">
+						<inspectors:History id="history" minHeight="100" 
+											clearOnTargetChange="false"
+											height="100%" width="100%"/>
 					</s:NavigatorContent>
 					
 					<!-- OTHER -->
@@ -296,8 +298,8 @@
 							</s:layout>
 						
 							<!-- BLEND MODES -->
-							<s:Label text="BLEND MODE" width="100%" styleName="formItem"/>
-							<inspectors:BlendMode height="100%" width="100%" />
+							<!--<s:Label text="BLEND MODE" width="100%" styleName="formItem"/>
+							<inspectors:BlendMode height="100%" width="100%" />-->
 							
 							<!-- SNAPSHOT -->
 							<s:Label text="SNAPSHOT" width="100%" styleName="formItem" />
@@ -307,9 +309,6 @@
 							<s:Label text="CHANGE LOG" width="100%" styleName="formItem"/>
 							<inspectors:ChangeHistory minHeight="22" height="100%" width="100%" removeDuplicates="false"/>
 							
-							<!-- PROFILING -->
-							<s:Label text="PROFILE" width="100%" styleName="formItem"/>
-							<ns1:Profiling height="100%" width="100%"/>
 							
 							<!-- SEARCH EXPRESSION -->
 							<s:Label text="SEARCH EXPRESSION" width="100%" styleName="formItem"/>
@@ -340,10 +339,6 @@
 								 height="100%"
 								 selectedIndex="1">
 					
-					<!-- DISPLAY LIST -->
-					<s:NavigatorContent label="DOCUMENT"  >
-						<views:DisplayList width="100%" minHeight="220"/>
-					</s:NavigatorContent>
 					
 					<!-- LAYOUT CONSTRAINTS -->
 					<s:NavigatorContent label="LAYOUT">
@@ -357,12 +352,32 @@
 						<inspectors:Properties minHeight="180" height="100%" width="100%"/>
 					</s:NavigatorContent>
 					
-					<!-- HISTORY -->
-					<s:NavigatorContent label="HISTORY">
-						<inspectors:History id="history" minHeight="100" 
-											clearOnTargetChange="false"
-											height="100%" width="100%"/>
+					<!-- EVENTS -->
+					<s:NavigatorContent label="EVENTS">
+						<s:Scroller width="100%" height="100%">
+							<inspectors:Events height="100%" width="100%"/>
+						</s:Scroller>
 					</s:NavigatorContent>
+					
+					<!-- EVENT LISTENERS -->
+					<!--<s:NavigatorContent label="EVENTS">
+						<s:Scroller width="100%" height="100%">
+							<inspectors:EventListeners height="100%" width="100%"/>
+						</s:Scroller>
+					</s:NavigatorContent>-->
+					
+					<!-- STATES -->
+					<s:NavigatorContent label="STATES">
+						<s:Scroller width="100%" height="100%">
+							<views:States height="100%" width="100%" />
+						</s:Scroller>
+					</s:NavigatorContent>
+					
+					<!-- PROFILING -->
+					<s:NavigatorContent width="100%" height="100%" label="PROFILE">
+						<ns1:Profiling height="100%" width="100%"/>
+					</s:NavigatorContent>
+					
 				</mx:TabNavigator>
 				
 			</mx:VDividedBox>
@@ -379,10 +394,10 @@
 			<mx:VDividedBox id="applicationGroup" width="100%" height="100%" >
 		
 				
-				<mx:TabNavigator  id="documentsTagNavigator" width="100%" height="100%"
+				<mx:TabNavigator id="documentsTagNavigator" width="100%" height="100%"
 								  change="navigatorContent_changeHandler(event)">
 					<s:NavigatorContent width="100%" height="100%" label="DOCUMENT">
-						<ns1:Document id="document1" width="100%" height="100%" />
+						<components:Document id="document1" width="100%" height="100%" />
 					</s:NavigatorContent>
 					<!--<s:NavigatorContent width="100%" height="100%" label="PREVIEW" creationPolicy="all">
 						<flexiframe:IFrame id="iframe" 
@@ -426,17 +441,27 @@
 								 borderStyle="solid"
 								 width="100%"
 								 height="200">
+					
+					<!-- CONSOLE -->
+					<s:NavigatorContent label="CONSOLE">
+						<views:Console width="100%" height="100%"/>
+					</s:NavigatorContent>
 				
 					<!-- CODE INSPECTOR -->
 					<s:NavigatorContent width="100%" height="100%" label="CODE">
 						<inspectors:Code id="code1" width="100%" height="100%" />
 					</s:NavigatorContent>
-					
-					<!-- CONSOLE -->
-					<s:NavigatorContent label="CONSOLE">
-						<!--<s:Label text="BREADCRUMBS" width="100%" styleName="formItem"/>-->
-						<views:Console width="100%" height="100%"/>
+				
+					<!-- METADATA INSPECTOR -->
+					<s:NavigatorContent width="100%" height="100%" label="METADATA">
+						<views:MetaDataInspector id="metadataInspector" width="100%" height="100%" />
 					</s:NavigatorContent>
+				
+					<!-- DOCS INSPECTOR -->
+					<s:NavigatorContent width="100%" height="100%" label="DOCS">
+						<views:DocsInspector id="docsInspector" width="100%" height="100%" />
+					</s:NavigatorContent>
+				
 					
 					<!-- PROPERTY INSPECTOR -->
 					<!--<s:NavigatorContent label="PROPERTY INSPECTOR">

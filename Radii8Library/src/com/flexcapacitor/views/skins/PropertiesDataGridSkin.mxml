@@ -11,6 +11,16 @@ in accordance with the terms of the license agreement accompanying it.
 
 -->
 
+<!---
+
+Added columnSeparatorAlpha alpha to 0;
+
+Added headerSeparatorAlpha style
+
+-->
+
+
+
 <!--- 
 The default skin class for a Spark DataGrid component.  
 
@@ -270,6 +280,15 @@ declarations define DataGrid skin parts except <code>headerColumnSeparator</code
             
             borderStroke.color = getStyle("borderColor");
             borderStroke.alpha = getStyle("borderAlpha");
+			
+			if (getStyle("headerSeparatorAlpha")!==undefined) {
+				headerSeparator.alpha = getStyle("headerSeparatorAlpha");
+			}
+			
+			if (columnHeaderGroup && columnHeaderGroup.columnSeparator && 
+				getStyle("columnSeparatorAlpha")!==undefined) {
+				Object(columnHeaderGroup.columnSeparator).alpha = getStyle("headerSeparatorAlpha");
+			}
             
             super.updateDisplayList(unscaledWidth, unscaledHeight);
         }

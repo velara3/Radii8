@@ -3,10 +3,13 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:components="com.flexcapacitor.components.*" 
 		 
 		 minWidth="200" 
 		 minHeight="100"
-		 creationComplete="group1_creationCompleteHandler(event)"
+		 creationComplete="group1_creationCompleteHandler(event)" 
 		 >
 	
 	
@@ -27,26 +30,41 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.AccessorMetaData;
+			import com.flexcapacitor.model.MetaData;
+			import com.flexcapacitor.model.StyleMetaData;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.InspectorUtils;
-			import com.flexcapacitor.utils.TypeUtils;
+			
+			import flash.utils.getTimer;
 			
 			import mx.collections.XMLListCollection;
-			import mx.core.IDataRenderer;
+			import mx.core.IFlexModule;
+			import mx.core.IFlexModuleFactory;
 			import mx.core.UIComponent;
 			import mx.effects.effectClasses.PropertyChanges;
 			import mx.events.FlexEvent;
-			import mx.utils.ObjectUtil;
+			import mx.utils.DescribeTypeCacheRecord;
 			
-			import spark.collections.Sort;
-			import spark.collections.SortField;
-			import spark.components.gridClasses.DefaultGridItemEditor;
-			import spark.events.GridItemEditorEvent;
+			import spark.events.GridSelectionEvent;
+			import spark.events.IndexChangeEvent;
 			import spark.events.TextOperationEvent;
 			
 			import flashx.textLayout.operations.SplitParagraphOperation;
 			
 			public var CUSTOM_ITEM_SORT_CHARACTER:String = "~";
 			
+			public var NONE_STATE:String = "none";
+			public var BOOLEAN_STATE:String = "boolean";
+			public var COLOR_STATE:String = "color";
+			public var FORMATS_STATE:String = "formats";
+			public var TEXT_STATE:String = "text";
+			public var NUMBER_STATE:String = "number";
+			public var INT_STATE:String = "int";
+			public var UINT_STATE:String = "uint";
+			
+			// LETS GET RID OF SOME OF THESE!
 			private var fontInfoCollection:XMLListCollection = new XMLListCollection();
 			private var allItems:XMLListCollection = new XMLListCollection();
 			private var inheritingStylesList:XMLListCollection = new XMLListCollection();
@@ -56,6 +74,46 @@
 			
 			public var describedType:XML;
 			
+			
+			[Bindable]
+			public var showSearchBox:Boolean = true;
+			
+			[Bindable]
+			public var showValueBox:Boolean = true;
+			
+			[Bindable]
+			public var showHeader:Boolean = false;
+			
+			/**
+			 * Reference to Radiate
+			 * */
+			public var radiate:Radiate;
+			
+			/**
+			 * Height of the header when not show (to allow resizing of columns)
+			 * */
+			public var hiddenHeaderHeight:uint = 0;
+			
+			private var _target:Object;
+			
+			public function get target():Object {
+				return _target;
+			}
+			
+			[Bindable]
+			public function set target(value:Object):void {
+				
+				_target = value;
+				
+				if (_target) {
+					clear();
+					currentState = NONE_STATE;
+					populatePropertiesGrid(_target);
+				}
+				else {
+					clear();
+				}
+			}
 			
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
@@ -89,9 +147,9 @@
 					_dataProviderProperties = new XMLListCollection(new XMLList());
 				}
 				
-				value.sort = new Sort();
-				value.sort.fields = [ new SortField("@name", true)];
-				value.refresh();
+				/*value.sort = new Sort();
+				value.sort.fields = [new SortField("@name", false)];
+				value.refresh();*/
 				_dataProviderProperties = value;
 			}
 			
@@ -120,6 +178,8 @@
 			 * Populates the datagrid with all the properties that describe type returns for the given object
 			 * */
 			public function populatePropertiesGrid(target:Object):void {
+				var describedTypeRecord:mx.utils.DescribeTypeCacheRecord;
+				var stylesList:XMLListCollection;
 				var accessorList:XMLListCollection;
 				var propertyName:String;
 				var fontLookup:String;
@@ -130,18 +190,30 @@
 				var nonInheritingStyles:Object;
 				var property:String;
 				var item:XML;
+				var styleNotDefined:Boolean;
+				var styleIsColor:Boolean;
 				
 				if (target != null) {
-					describedType = describeType(target);
+					//describedType = describeType(target);
+					var time:int = getTimer();
+					/*Radiate.log.info("Get properties on target " + getName(target));
+					describedType = ClassUtils.getDescribeType(target);
+					Radiate.log.info("2 Get properties on target : " + String(getTimer()-time));*/
+					describedType = ClassUtils.getDescribeType(target);
+					//Radiate.log.info("3 Get properties on target : " + String(getTimer()-time));
 					accessorList = new XMLListCollection(describedType.accessor);
 					
+					// DISABLE UPDATE UNTIL COMPLETE
+					//allItems.removeAll();
+					//allItems.disableAutoUpdate();
+						
 					// ADD ACCESSORS LIST
 					allItems.addAll(accessorList);
 					
 					// if item is an object enumerate 
 					if (describedType.@name=="Object") {
 						for (property in target) {
-							item = createXMLItem(property, target[property], true, true);
+							item = createXMLItem(property, target[property], null, true, true);
 							objectPropertiesList.addItem(item); // we could use allItems.addItem();
 						}
 					}
@@ -161,7 +233,7 @@
 					blah = styleManager.typeSelectorCache;
 					blah = styleManager.hasAdvancedSelectors(); */
 					
-					if (searchPropertyInput) searchPropertyInput.text = "";
+					if (filterInput) filterInput.text = "";
 					
 					// we check for the text flow property so we can see if fonts are embedded
 					if (target.hasOwnProperty("textFlow")) {
@@ -179,97 +251,168 @@
 					
 					//allItems.addAll(propertiesList);
 					
+					
+					var styles:XMLList = ClassUtils.concatenateMetaDataXMLItems(target, "Style", new XMLList());
+					
+					//describedTypeXML = describeType(target);
+					stylesList = new XMLListCollection(styles);
+					
+					allItems.addAll(stylesList);
+					
+					var moduleFactory:IFlexModuleFactory = null;
+					if (target is IFlexModule)
+						moduleFactory = target.moduleFactory;
+					
 					// attempts to get the values of the properties on the current target
 					for each (var node:XML in allItems) {
-						propertyName = node.@name;
-						
-						if (node.@access != "writeonly") {
-							
-							if (propertyName in target) {
-								
-								try {
-									node.@value = target[propertyName];
-									node.@isObject = (target[propertyName] is Object);
-								}
-								catch (error:Error) {
-									node.@value = error.message;
-									node.@valueError = true;
-								}
-							}
-						}
+						setValueOnNode(node);
 					}
 					
 					// Add in inheriting styles
-					if ("inheritingStyles" in target) {
+					/*if ("inheritingStyles" in target) {
 						inheritingStyles = target.inheritingStyles as Object;
 						
 						for (property in inheritingStyles) {
-							item = createXMLItem(property, inheritingStyles[property], true, true);
+							item = createXMLItem(property, inheritingStyles[property], null, true, true);
 							inheritingStylesList.addItem(item);
 						}
 						
 						//trace("Inheriting style count", inheritingStylesList.length);
 						
 						//allItems.addAll(inheritingStylesList);
-					}
+					}*/
 					
 					// Add in non inheriting styles - 
-					if (target.hasOwnProperty("nonInheritingStyles")) {
+					/*if (target.hasOwnProperty("nonInheritingStyles")) {
 						nonInheritingStyles = target.nonInheritingStyles as Object;
 						
 						for (property in nonInheritingStyles) {
-							item = createXMLItem(property, nonInheritingStyles[property], true, false);
+							item = createXMLItem(property, nonInheritingStyles[property], null, true, false);
 							nonInheritingStylesList.addItem(item);
 						}
 						
 						//trace("Non-Inheriting style count", nonInheritingStylesList.length);
 						
-						//allItems.addAll(nonInheritingStylesList);
-					}
+						allItems.addAll(nonInheritingStylesList);
+					}*/
+					
+					
 					
 					// create an item for unnamed style
-					var customItem:XML = createXMLItem(CUSTOM_ITEM_SORT_CHARACTER, "");
+					// this floats at the top so we can get the value of a style not listed by describe type
+					var customItem:XML = createXMLItem(CUSTOM_ITEM_SORT_CHARACTER, "", "String");
 					customItem.@search = true;
-					allItems.addItem(customItem);
+					//allItems.addItem(customItem);
 					
 					dataProviderProperties = allItems;
 				}
 				else {
 					dataProviderProperties = new XMLListCollection();
 				}
-			}
-			
-			private var _target:Object;
-			
-			public function get target():Object {
-				return _target;
-			}
-			
-			[Bindable]
-			public function set target(value:Object):void {
 				
-				_target = value;
+			}
+			
+			/**
+			 * Set the value on the node
+			 * */
+			public function setValueOnNode(node:XML):void {
+				var propertyName:String;
+				var styleNotDefined:Boolean;
+				var styleIsColor:Boolean;
 				
-				if (_target) {
-					clear();
-					populatePropertiesGrid(_target);
+				propertyName = node.@name;
+				if (propertyName=="backgroundColor") {
+					//trace("HELLO");
 				}
-				else {
-					clear();
+				
+				if (node.@access != "writeonly") {
+					
+					if (propertyName in target) {
+						
+						try {
+							node.@value = target[propertyName];
+							//node.@valueIsObject = (target[propertyName] is Object);
+						}
+						catch (error:Error) {
+							node.@value = error.message;
+							node.@valueError = true;
+						}
+					}
+					// styles
+					else if (target is IStyleClient) {
+						styleNotDefined = false;
+						styleIsColor = false;
+						var currentVal:Object = target.getStyle(propertyName);
+	
+						// Handle situation of turning strings into Boolean values
+						//if (currentVal is Boolean)
+						//{
+							//if (val is String) val = (value.toLowerCase() == "true");
+						//}
+							// Handle turning standard string representations of colors
+							// into numberic values
+						if (propertyName.toLowerCase().indexOf("color") != -1)
+						{
+							styleIsColor = true;
+						}
+						
+						if (currentVal is Number && styleIsColor)
+						{
+							currentVal = StyleManager.getStyleManager(moduleFactory).getColorName(currentVal);
+						}
+						
+						try {
+							if (target.getStyle(propertyName)===undefined) {
+								styleNotDefined = true;
+								node.@styleNotDefined = true;
+								node.@value = "";
+							}
+							else {
+								if (styleIsColor) {
+									node.@value = DisplayObjectUtils.getColorInHex(currentVal as uint, true);
+								}
+								else {
+									node.@value = currentVal;
+								}
+								//node.@valueIsObject = (currentVal is Object);
+							}
+						}
+						catch (error:Error) {
+							node.@value = error.message;
+							node.@valueError = true;
+						}
+					}
+					
 				}
 			}
 			
-			public function createXMLItem(name:String, value:*, style:Boolean=false, inheriting:Boolean=false):XML {
+			/**
+			 * From SetAction
+			 * */
+			public function getValue(propName:String):*
+			{
+				if (propName in target)
+					return target[propName];
+				else
+					return target.getStyle(propName);
+			}
+			
+			public function createXMLItem(name:String, value:*, type:String, style:Boolean=false, inheriting:Boolean=false):XML {
 				var xml:XML = <accessor />;
 				xml.@name = name;
 				xml.@style = style;
 				xml.@inheriting = inheriting;
 				xml.@access = "readwrite";
-				xml.@type = InspectorUtils.getValueType(value);
-				xml.@value = String(value);
+				if (type) {
+					xml.@type = type;
+				}
+				else {
+					xml.@type = InspectorUtils.getValueType(value);
+				}
+				xml.@value = value!=null || undefined ? String(value) : "";
 				return xml;
 			}
-			
+			/*
 			protected function filterDisplayObjectChangeHandler(item:XML):Boolean {
 				var itemName:String = item.attribute("name") ? item.attribute("name") : "";
 				var value:String = searchPropertyInput.text;
@@ -278,14 +421,14 @@
 					return true;
 				}
 				return false;
-			}
+			}*/
 			
 			/**
 			 * Filters the property list
 			 * if we type a period or a space at the end of the word then 
 			 * the value and the name have to match exactly (case-insensitive)
 			 * */
-			protected function filterPropertyChangeHandler(item:XML):Boolean {
+			/*protected function filterPropertyChangeHandler(item:XML):Boolean {
 				var itemName:String = item.attribute("name") ? item.attribute("name") : "";
 				var value:String = searchPropertyInput.text;
 				var valueLength:int = value.length;
@@ -298,14 +441,41 @@
 					return true;
 				}
 				
+				
 				// show custom item in case of style
 				if (item.@search=="true") {
+					
+					
+					
+					// undefined
+					//	at Function/<anonymous>()[E:\dev\4.y\frameworks\projects\framework\src\mx\utils\XMLNotifier.as:93]
+					// 	at com.flexcapacitor.views::Properties/filterPropertyChangeHandler()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/views/Properties.mxml:331]
+					//	at mx.collections::ListCollectionView/addItemsToView()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\ListCollectionView.as:1089]
+					//	at mx.collections::ListCollectionView/moveItemInView()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\ListCollectionView.as:1594]
+					//	at mx.collections::ListCollectionView/handlePropertyChangeEvents()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\ListCollectionView.as:1421]
+					//	at mx.collections::ListCollectionView/listChangeHandler()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\ListCollectionView.as:1316]
+					//	at flash.events::EventDispatcher/dispatchEventFunction()
+					//	at flash.events::EventDispatcher/dispatchEvent()
+					//	at mx.collections::ListCollectionView/dispatchEvent()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\ListCollectionView.as:1024]
+					//	at mx.collections::ListCollectionView/handlePropertyChangeEvents()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\ListCollectionView.as:1449]
+					//	at mx.collections::ListCollectionView/listChangeHandler()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\ListCollectionView.as:1316]
+					//	at flash.events::EventDispatcher/dispatchEventFunction()
+					//	at flash.events::EventDispatcher/dispatchEvent()
+		
+					//	at mx.collections::XMLListAdapter/itemUpdateHandler()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\XMLListAdapter.as:623]
+					//	at mx.collections::XMLListAdapter/itemUpdated()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\XMLListAdapter.as:366]
+					//	at mx.collections::XMLListAdapter/xmlNotification()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\XMLListAdapter.as:725]
+
+					// Seems like it's caused by a change > update > change > update loop 
+					
+					// we have a custom item at the top of the 
+					//filteredPropertiesCollection.disableAutoUpdate();
 					item.@name = CUSTOM_ITEM_SORT_CHARACTER + value;
-					filteredPropertiesCollection.enableAutoUpdate();
+					//filteredPropertiesCollection.enableAutoUpdate();
 					return true;
 				}
 				else {
-					filteredPropertiesCollection.disableAutoUpdate();
+					//filteredPropertiesCollection.disableAutoUpdate();
 				}
 				
 				// if we type a period or a space at the end of the word then 
@@ -325,16 +495,16 @@
 				}
 				
 				return false;
-			}
+			}*/
 			
-			protected function findPropertyChangeHandler(event:TextOperationEvent):void {
+			/*protected function findPropertyChangeHandler(event:TextOperationEvent):void {
 				filteredPropertiesCollection.refresh();
-			}
+			}*/
 			
 			/**
 			 * Attempts to drill into the selected property
 			 * */
-			protected function gridDoubleClickHandler(event:MouseEvent):void {
+			/*protected function gridDoubleClickHandler(event:MouseEvent):void {
 				// if the user switches applications and the editor is not closed
 				// we get the text control of the editor. we don't want that so return
 				if (!(event.target is IDataRenderer)) return;
@@ -360,8 +530,8 @@
 						//InspectorUtils.dispatchTargetChangeEvent(something, this);
 					}
 				}
-			}
-			
+			}*/
+			/*
 			protected function propertiesGrid_itemEditEndHandler(oldValue:Object, newValue:Object, editor:DefaultGridItemEditor):void {
 				throw new Error("Is this used?");
 				var instance:Object = editor.column.itemEditor;
@@ -390,19 +560,25 @@
 				}
 				
 				callLater(maintainFocus);
-			}
-			
+			}*/
+			/*
 			private function maintainFocus():void {
 				//propertiesGrid.editedItemPosition = null;
-			}
+			}*/
 
+			/**
+			 * Pressing enter would retrieve the style value.
+			 * 
+			 * This is no longer necessary since values are updated on property change events. 
+			 * */
 			protected function searchPropertyInput_enterHandler(event:FlexEvent):void {
-				var searchText:String = searchPropertyInput.text;
+				var searchText:String = filterInput.text;
 				var item:XML;
 				
+				return; // DISABLE FOR NOW
 				if (filteredPropertiesCollection.length==1) {
 					item = filteredPropertiesCollection.getItemAt(0) as XML;
-					if (item) {
+					if (item && item.nodeName()=="metadata") {
 						item.@value = target is UIComponent ? UIComponent(target).getStyle(searchText) : "";
 						filteredPropertiesCollection.itemUpdated(item, "@value");
 						filteredPropertiesCollection.refresh();
@@ -413,7 +589,7 @@
 			/**
 			 * Called when... 
 			 * */
-			protected function changeHandler(event:GridItemEditorEvent):void {
+/*			protected function changeHandler(event:GridItemEditorEvent):void {
 				
 				// This could probably all be rewritten
 				// we could use inspector utils setProperty
@@ -442,41 +618,33 @@
 					InspectorUtils.setTargetProperty(target, propertyName, newValue, type, isStyle);
 				}
 				
-			}
-			
-			[Bindable]
-			public var showSearchBox:Boolean = true;
-			
-			[Bindable]
-			public var showValueBox:Boolean = true;
-			
-			[Bindable]
-			public var showHeader:Boolean = false;
-			
-			/**
-			 * Reference to Radiate
-			 * */
-			public var radiate:Radiate;
-			
-			/**
-			 * Height of the header when not show (to allow resizing of columns)
-			 * */
-			public var hiddenHeaderHeight:uint = 8;
+			}*/
 
 			
 			/**
 			 * 
 			 * */
 			public function clear():void {
+				// on application getting this error: 
+				//RangeError: Index '-1' specified is out of bounds.???
+				/*allItems.enableAutoUpdate();
+				Radiate.log.info("1Length:"+allItems.length);
+				allItems.refresh();
+				Radiate.log.info("2Length:"+allItems.length);
+				allItems.sort = null;
+				Radiate.log.info("3Length:"+allItems.length);*/
+				allItems.removeAll();
+				allItems.refresh();
+				
 				inheritingStylesList.removeAll();
 				nonInheritingStylesList.removeAll();
 				objectPropertiesList.removeAll();
-				allItems.removeAll();
-				searchPropertyInput.text = "";
+				
+				filterInput.text = "";
 				targetValueText.text = "";
 				dataProviderProperties = new XMLListCollection();
 			}
-			
+			/*
 			protected function saveSessionHandler(event:GridItemEditorEvent):void {
 				//trace("Save session");
 				var item:XML = propertiesGrid.dataProvider.getItemAt(event.rowIndex) as XML;
@@ -504,17 +672,19 @@
 					// event.preventDefault();
 					// NOTIFY OF READ ONLY 
 				}
-			}
+			}*/
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void
 			{
 				// radiate property change event
-				updatePropertyChangeValue(event.changes);
+				updateDataGridPropertyValue(event.changes);
+				//updateSubComponentsValue();
 			}
 			
 			protected function targetValueText_keyUpHandler(event:KeyboardEvent):void {
+				
 				if (event.keyCode==Keyboard.ENTER) {
-					updateTargetValue();
+					setTargetValue();
 					event.preventDefault();
 				}
 				else if (event.keyCode==Keyboard.ESCAPE) {
@@ -526,25 +696,8 @@
 			}
 			
 			/**
-			 * Set the property to the value in the textarea.
+			 * Prevents line breaks
 			 * */
-			public function updateTargetValue():void {
-				var item:XML = propertiesGrid.selectedItem as XML;
-				var actualValue:*;
-				
-				if (item) {
-					var value:String = String(item.@value);
-					var property:String = String(item.@name);
-					var propertyType:String = String(item.@type);
-					
-					if (value!=targetValueText.text) {
-						actualValue = Radiate.getTypedValue(targetValueText.text, propertyType);
-						//trace("New Value= ", value);
-						Radiate.setProperty(target, property, actualValue);
-					}
-				}
-			}
-			
 			protected function targetValueText_changingHandler(event:TextOperationEvent):void {
 				
 				// prevent line breaks
@@ -553,11 +706,26 @@
 				}
 			}
 			
+			protected function colorChooser_changeHandler(event:Event):void {
+				setTargetValue();
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function propertiesGrid_selectionChangeHandler(event:GridSelectionEvent = null):void {
+				updateSubComponentsValue();
+			}
+			
+			protected function formatCombobox_changeHandler(event:IndexChangeEvent):void {
+				setTargetValue();
+			}
+			
 			/**
 			 * Update the property value in the datagrid when it changes 
 			 * without reloading all the properties.
 			 * */
-			public function updatePropertyChangeValue(changes:Array):void {
+			public function updateDataGridPropertyValue(changes:Array):void {
 				var length:int = allItems.length;
 				var itemList:XMLList;
 				var propertyName:String;
@@ -568,7 +736,8 @@
 					for each (var node:XML in allItems) {
 						propertyName = node.@name;
 						
-						// TypeError: Error #1034: Type Coercion failed: cannot convert mx.states::AddItems@1132558c9 to mx.effects.effectClasses.PropertyChanges.
+						// TypeError: Error #1034: Type Coercion failed: 
+						//     cannot convert mx.states::AddItems@1132558c9 to mx.effects.effectClasses.PropertyChanges.
 						// for each (var change:PropertyChanges in changes) {
 						for each (var change:Object in changes) {
 							
@@ -578,9 +747,17 @@
 								for (var property:String in changeObject) {
 									if (propertyName==property) {
 										//node.@value = changeObject[property] ? Object(changeObject[property]) : "";
-										node.@value = Object(changeObject[property]).toString();
-										filteredPropertiesCollection.itemUpdated(node, "@value");
-										filteredPropertiesCollection.refresh();
+										
+										// we probably cleared a style
+										if (changeObject[property]===undefined) {
+											setValueOnNode(node);
+										}
+										else {
+											setValueOnNode(node);
+											//node.@value = Object(changeObject[property]).toString();
+											filteredPropertiesCollection.itemUpdated(node, "@value");
+											filteredPropertiesCollection.refresh();
+										}
 									}
 								}
 							}
@@ -589,10 +766,339 @@
 				}
 			}
 			
-			protected function searchPropertyInput_clearTextHandler(event:TextOperationEvent):void {
+			/**
+			 * Get the value from the datagrid and 
+			 * show the correct sub component and
+			 * set it's value.
+			 * */
+			public function updateSubComponentsValue():void {
+				var item:XML = propertiesGrid.selectedItem as XML;
+				var actualValue:*;
+				var isStyle:int;
+				var type:String;
+				var enumeration:Array;
+				var format:String;
+				var propertyObject:MetaData;
+				var property:String;
+				var value:String;
+				var nodename:String;
+				
+				if (settingProperties) return;
+				
+				if (item) {
+					nodename = item.name();
+					
+					if (nodename=="metadata") {
+						isStyle = 1;
+						propertyObject = new StyleMetaData(item, target);
+					}
+					else if (nodename=="accessor") {
+						propertyObject = new AccessorMetaData(item, target);
+					}
+					else {
+						propertyObject = new MetaData(item, target);
+					}
+					
+					
+					
+					value = String(propertyObject.value);
+					property = propertyObject.name;
+					type = propertyObject.type;
+					format = propertyObject.format;
+					enumeration = propertyObject.enumeration;
+					
+					
+					if (type=="Boolean") {
+						currentState = BOOLEAN_STATE;
+						booleanEnabledRadioButton.selected = false;
+						booleanDisabledRadioButton.selected = false;
+						
+						if (value=="true") {
+							booleanEnabledRadioButton.selected = true;
+						}
+						else if (value=="false") {
+							booleanDisabledRadioButton.selected = true;
+						}
+					}
+					else if (format=="Color") {
+						currentState = COLOR_STATE;
+						colorChooser.selectedColor = value;
+						targetValueText.text = value;
+						clearColorButton.visible = isStyle==1;
+					}
+					else if (enumeration && enumeration.length>0) {
+						currentState = FORMATS_STATE;
+						formatsCollection.source = enumeration;
+						formatCombobox.selectedItem = propertyObject.value;
+						targetValueText.text = value;
+						clearFormatButton.visible = isStyle==1;
+					}
+					else if (type=="Number") {
+						currentState = NUMBER_STATE;
+						numericStepper.value = propertyObject.value;
+						
+						if (!isNaN(propertyObject.minValue)) {
+							numericStepper.minimum = propertyObject.minValue;
+						}
+						else {
+							numericStepper.minimum = Number(int.MIN_VALUE);
+						}
+						if (!isNaN(propertyObject.maxValue)) {
+							numericStepper.maximum = propertyObject.maxValue;
+						}
+						else {
+							numericStepper.maximum = Number(int.MAX_VALUE);
+						}
+						
+						if (property.indexOf("lpha")!=-1) {
+							numericStepper.stepSize = .1;
+							
+							if (isNaN(propertyObject.minValue)) {
+								numericStepper.minimum = 0;
+							}
+							if (isNaN(propertyObject.maxValue)) {
+								numericStepper.maximum = 1;
+							}
+						}
+						else {
+							numericStepper.stepSize = 1;
+						}
+						
+						targetValueText.text = value;
+					}
+					else {
+						actualValue = Radiate.getTypedValue(targetValueText.text, type);
+						currentState = TEXT_STATE;
+						targetValueText.text= item.value;
+					}
+				
+					
+					radiate.dispatchPropertySelectedEvent(property, propertyObject);
+				}
+				else {
+					currentState = NONE_STATE;
+				}
+				
 				
 			}
 			
+			
+			public var settingProperties:Boolean;
+			
+			/**
+			 * Set the property to the new value
+			 * */
+			public function setTargetValue(clearStyle:Boolean = false):void {
+				var item:XML = propertiesGrid.selectedItem as XML;
+				var actualValue:*;
+				var isStyle:int;
+				var styleIsColor:Boolean;
+				var valueSuccessfullyApplied:Boolean;
+				var propertyObject:MetaData;
+				var type:String;
+				var enumeration:Array;
+				var format:String;
+				var inherit:Boolean;
+				var property:String;
+				var value:String;
+				var nodename:String;
+				var access:String;
+				
+				if (item) {
+					nodename = item.name();
+					
+					if (nodename=="metadata") {
+						isStyle = 1;
+						propertyObject = new StyleMetaData(item, target);
+					}
+					else if (nodename=="accessor") {
+						propertyObject = new AccessorMetaData(item, target);
+						access = AccessorMetaData(propertyObject).access;
+					}
+					else {
+						propertyObject = new MetaData(item, target);
+					}
+					
+					// since we try to capture values for history 
+					// ReferenceError: Error #1077: Illegal read of write-only property cacheHeuristic on application.
+					if (access=="writeonly") {
+						return;
+					}
+					
+					value = String(propertyObject.value);
+					property = propertyObject.name;
+					type = propertyObject.type;
+					format = propertyObject.format;
+					enumeration = propertyObject.enumeration;
+					
+					/*
+					var type:Type = Type.forInstance(target);
+					var metadataItems:Array = type.metadata;
+					var b:Array = type.getMetadata("Style");
+					var metadata:Metadata = Metadata(metadataItems[0]);
+					var hasFormat:Boolean = metadata.hasArgumentWithKey("type");
+					var o:MetadataArgument = metadata.getArgument("type");
+					var xc:XML = MetadataUtils.getFromObject(target);*/
+					
+					// BEGIN // COPY CHANGES TO OTHER UPDATE FUNCTION
+					/*var value:String = String(item.@value);
+					var property:String = String(item.@name);
+					var args:XMLList = item.arg;
+					var metadata:Metadata = new Metadata(name);
+					var argument:MetadataArgument;
+					
+					for each (var arg:XML in args) {
+						argument = new MetadataArgument(arg.@key, arg.@value);
+						metadata.arguments.push(argument);
+					}
+					
+					var propertyType:String;
+					
+					if (isStyle==1 && metadata.hasArgumentWithKey("type")) {
+						propertyType = metadata.getArgument("type").value;
+					}
+					else {
+						propertyType = String(item.@type);
+					}
+					
+					var enumeration:Array;
+					
+					if (isStyle==1 && metadata.hasArgumentWithKey("enumeration")) {
+						enumeration =  metadata.getArgument("enumeration").value.split(",");
+					}
+					
+					var format:String;
+					
+					if (isStyle==1 && metadata.hasArgumentWithKey("format")) {
+						format =  metadata.getArgument("format").value;
+					}*/
+					// END
+					
+					//var hasAttribute:Boolean = XML(item).attribute("style").length()>0;
+					//var valuX:String = String(XML(item).attribute("style")).toString();
+					//var valuX2:String = String(item.@style).toString();
+					
+					// this is not a reliable way to compare if the value has changed
+					// probably remove it since setProperty and setStyle will double check
+					// if value has really changed
+					//if (value!=targetValueText.text) { 
+					
+					if (type=="Boolean") {
+						if (isStyle) {
+							actualValue = booleanGroup.selection==null ? undefined : booleanGroup.selection==booleanEnabledRadioButton;
+						}
+						else {
+							actualValue = booleanGroup.selection==booleanEnabledRadioButton;
+						}
+					}
+					// let SetAction convert 0xFF, #ff and red, ReD
+					else if (format=="Color") {
+						actualValue = colorChooser.selectedColor;
+					}
+					else if (type=="Number") {
+						actualValue = numericStepper.value;
+						
+						if (property.indexOf("lpha")!=-1) {//round down to two places
+							actualValue = int(actualValue*100)/100;
+						}
+					}
+					else if (type=="String" && enumeration && enumeration.length>0) {
+						actualValue = formatCombobox.selectedItem;
+					}
+					else {
+						actualValue = Radiate.getTypedValue(targetValueText.text, type);
+					}
+					
+					
+					settingProperties = true;
+					
+					if (isStyle) {
+						if (clearStyle) {
+							valueSuccessfullyApplied = Radiate.clearStyle(target, property);
+						}
+						else {
+							valueSuccessfullyApplied = Radiate.setStyle(target, property, actualValue);
+						}
+					}
+					else {
+						valueSuccessfullyApplied = Radiate.setProperty(target, property, actualValue);
+					}
+				}
+				
+				settingProperties = false;
+			}
+			
+			protected function clearStyleButton_clickHandler(event:MouseEvent):void {
+				setTargetValue(true);
+			}
+			
+			/**
+			 * Move from search text input to properties grid on down arrow key
+			 * */
+			protected function filterInput_keyUpHandler(event:KeyboardEvent):void {
+				/*if (event.keyCode==Keyboard.DOWN) {
+					propertiesGrid.setFocus();
+					if (propertiesGrid.selectedIndex ==-1) {
+						propertiesGrid.setSelectedIndex(0);
+					}
+				}*/
+			}
+			
+			/**
+			 * Move from properties grid to search text input on up arrow key
+			 * */
+			protected function propertiesGrid_keyUpHandler(event:KeyboardEvent):void {
+				/*
+				if (event.keyCode==Keyboard.UP) {
+					if (propertiesGrid.selectedIndex ==0 ||
+						filteredPropertiesCollection.length==0) {
+						filterInput.setFocus();
+						//filterInput.selectRange(filterInput.text.length,filterInput.text.length);
+					}
+				}
+				else if (event.keyCode==Keyboard.DOWN) {
+					if (propertiesGrid.selectedIndex==filteredPropertiesCollection.length-1) {
+						
+						if (!moveDownOnNextDownArrow) {
+							moveDownOnNextDownArrow = true;
+							return;
+						}
+						
+						moveDownOnNextDownArrow = false;
+						focusManager.setFocus(focusManager.getNextFocusManagerComponent());
+						
+						//filterInput.selectRange(filterInput.text.length,filterInput.text.length);
+					}
+				}*/
+			}
+			
+			/**
+			 * 
+			 * */
+			protected var moveDownOnNextDownArrow:Boolean;
+			
+			/**
+			 * Updated when the boolean change happens
+			 * */
+			protected function booleanGroup_changeHandler(event:Event):void {
+				setTargetValue();
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function numericStepper_changeHandler(event:Event):void {
+				setTargetValue();
+			}
+			
+			/**
+			 * Format numeric stepper
+			 * Trim down to 2 decimal places.
+			 * */
+			public function formatNumericStepper(value:Number):String {
+				
+				return String(int(value*100)/100);
+			}
 		]]>
 	</fx:Script>
 	
@@ -603,52 +1109,97 @@
 						   useGrouping="false"/>
 		
 		<s:ArrayCollection id="filteredPropertiesCollection"
-						   filterFunction="filterPropertyChangeHandler"
 						   list="{dataProviderProperties}"/>
 		
+		<s:ArrayCollection id="formatsCollection"/>
+		
+		<!-- SORT BY NAME -->
+		<handlers:EventHandler eventName="creationComplete" >
+			<collections:SortCollection target="{filteredPropertiesCollection}" 
+								 fields="{['@name']}" />
+		</handlers:EventHandler>
+		
+		<!-- FILTER BY NAME -->
+		<handlers:EventHandler eventName="change" 
+							   targets="{[filterInput,showAllItemsOnEmpty,caseSensitive,searchAtStart]}"
+							   >
+			<collections:FilterCollection target="{filteredPropertiesCollection}" 
+								   source="{filterInput}" 
+								   sourcePropertyName="text"
+								   fieldName="@name"
+								   showAllItemsOnEmpty="{showAllItemsOnEmpty.selected}"
+								   caseSensitive="{caseSensitive.selected}"
+								   searchAtStart="{searchAtStart.selected}"
+								   />
+		</handlers:EventHandler>
+		
+		<s:RadioButtonGroup id="booleanGroup" change="booleanGroup_changeHandler(event)"/>
 	</fx:Declarations>
 	
-	<c:SearchTextInput id="searchPropertyInput" 
-					   left="4" right="4" top="4" 
-					   width="100%"
-					   minWidth="60" 
-					   borderAlpha="0" 
-					   color="#2F3030" 
-					   focusAlpha="0" 
-					   fontWeight="normal" 
-					   prompt="Search"
-					   change="findPropertyChangeHandler(event)"
-					   enter="searchPropertyInput_enterHandler(event)"
-					   clearText="searchPropertyInput_clearTextHandler(event)"
-					   />
+	<s:states>
+		<s:State name="none"/>
+		<s:State name="number"/>
+		<s:State name="boolean"/>
+		<s:State name="int"/>
+		<s:State name="text"/>
+		<s:State name="color"/>
+		<s:State name="formats"/>
+	</s:states>
 	
 	<mx:VDividedBox id="verticalContainer" 
 					width="100%" height="100%"
-					top="40"
+					top="0"
 					left="4" 
 					right="4" 
 					bottom="4"
 					>
 		
+		<s:Group height="22" 
+				 minHeight="22"
+				 width="100%" 
+				 >
+					
+			<c:SearchTextInput id="filterInput" 
+							   left="4" right="4" top="0" 
+							   width="100%"
+							   minWidth="60" 
+							   borderAlpha="0" 
+							   color="#2F3030" 
+							   focusAlpha="0" 
+							   fontWeight="normal" 
+							   prompt="Search"
+							   enter="searchPropertyInput_enterHandler(event)"
+							   keyUp="filterInput_keyUpHandler(event)"
+							   />
+			<s:HGroup width="100%" top="32" left="4" >
+				<s:CheckBox id="showAllItemsOnEmpty" label="All" selected="true"/>
+				<s:CheckBox id="caseSensitive" label="Case" selected="false"/>
+				<s:CheckBox id="searchAtStart" label="At start" selected="false"/>
+				<s:Spacer width="100%"/>
+				<s:Label text="{filteredPropertiesCollection.length}"/>
+			</s:HGroup>
+		</s:Group>
+		
 		<c:DataGrid id="propertiesGrid"
-					borderAlpha=".2"
+					borderAlpha="0"
 					height="100%" 
 					width="100%"
 					minWidth="80"
 					minHeight="48"
-					rowHeight="18"
-					variableRowHeight="true"
+					rowHeight="26"
+					variableRowHeight="false"
 					dataProvider="{filteredPropertiesCollection}"
-					doubleClickEnabled="true" 
-					interactionMode="mouse"
-					editable="true"
-					doubleClick="gridDoubleClickHandler(event)"
-					skinClass="com.flexcapacitor.views.skins.PropertiesDataGridSkin"
-					gridItemEditorSessionStart="startSessionHandler(event)"
+					selectionChange="propertiesGrid_selectionChangeHandler(event)"
+					click="propertiesGrid_selectionChangeHandler()"
+					keyUp="propertiesGrid_keyUpHandler(event)"
+					>
+<!--					gridItemEditorSessionStart="startSessionHandler(event)"
 					gridItemEditorSessionSave="saveSessionHandler(event)"
 					gridItemEditorSessionSaving="savingSessionHandler(event)"
-					gridItemEditorSessionStarting="startingSessionHandler(event)">
-			
+					gridItemEditorSessionStarting="startingSessionHandler(event)"-->
+			<!--<s:layout>
+				<s:VerticalLayout rowHeight="22" />
+			</s:layout>-->
 			<c:columns>
 				<s:ArrayCollection>
 					
@@ -701,12 +1252,12 @@
 						</s:itemRenderer>
 					</s:GridColumn>
 					
-					<s:GridColumn headerText="" 
+					<!--<s:GridColumn headerText="" 
 								  minWidth="30"
 								  width="30"
 								  editable="false"
 								  labelFunction="{function(data:Object, column:GridColumn):String{return'...';}}">
-					</s:GridColumn>
+					</s:GridColumn>-->
 					
 					
 					<!--<s:GridColumn width="50"
@@ -723,17 +1274,105 @@
 			</c:columns>
 		</c:DataGrid>
 		
+		
+		<!-- TEXT OPTION -->
 		<s:TextArea id="targetValueText" 
-					text="{XML(propertiesGrid.selectedItem).@value}"
+					includeIn="text"
+					itemCreationPolicy="immediate"
+					minHeight="32" 
 					width="100%" 
 					heightInLines="2" 
 					skinClass="spark.skins.spark.TextAreaSkin"
-					minHeight="10" 
+					
+					
 					visible="{propertiesGrid.selectedIndex>=0}"
 					includeInLayout="{propertiesGrid.selectedIndex>=0}"
+					
 					keyUp="targetValueText_keyUpHandler(event)"
-					changing="targetValueText_changingHandler(event)">
+					changing="targetValueText_changingHandler(event)"
+					>
 		</s:TextArea>
+		
+		
+		<!-- COLOR OPTION -->
+		<s:Group width="100%"
+				 height="24"
+				 includeIn="color"
+				 itemCreationPolicy="immediate"
+				 >
+			<components:ColorChooser id="colorChooser" returnType="hexidecimalHash" 
+									 change="colorChooser_changeHandler(event)"/>
+			
+			<s:Button id="clearColorButton" 
+					  skinClass="com.flexcapacitor.skins.ClearButton"
+					  click="clearStyleButton_clickHandler(event)"
+					  right="0" 
+					  verticalCenter="0"/>
+		</s:Group>
+		
+		
+		<!-- CHOICES OPTION -->
+		<s:HGroup width="100%"
+				 height="24"
+				 minHeight="35"
+				 includeIn="formats"
+				 itemCreationPolicy="immediate"
+				 >
+			<s:DropDownList id="formatCombobox" 
+							width="100%"
+							change="formatCombobox_changeHandler(event)"
+							dataProvider="{formatsCollection}"/>
+			<s:Button id="clearFormatButton" 
+					  skinClass="com.flexcapacitor.skins.ClearButton"
+					  click="clearStyleButton_clickHandler(event)"
+					  right="0" 
+					  verticalCenter="0"/>
+		</s:HGroup>
+		
+		<!-- CHOICES OPTION -->
+		<s:HGroup width="100%"
+				 height="24"
+				 minHeight="35"
+				 includeIn="number"
+				 itemCreationPolicy="immediate"
+				 >
+			<s:NumericStepper id="numericStepper" 
+							  width="100%"
+							  valueFormatFunction="formatNumericStepper"
+							  change="numericStepper_changeHandler(event)"/>
+			<s:Button skinClass="com.flexcapacitor.skins.ClearButton"
+					  click="clearStyleButton_clickHandler(event)"
+					  right="0" 
+					  verticalCenter="0"
+					  />
+		</s:HGroup>
+		
+		
+		<!-- BOOLEAN OPTIONS -->
+		<s:HGroup width="100%"
+				 height="24"
+				 minHeight="24"
+				 includeIn="boolean"
+				 itemCreationPolicy="immediate"
+				 verticalAlign="middle"
+				 >
+			
+			<s:RadioButton id="booleanEnabledRadioButton" 
+						   label="True"
+						   group="{booleanGroup}"
+						   />
+			<s:RadioButton id="booleanDisabledRadioButton"
+						   label="False"
+						   group="{booleanGroup}"
+						   />
+			
+			<s:Spacer width="100%"/>
+			
+			<s:Button skinClass="com.flexcapacitor.skins.ClearButton"
+					  click="clearStyleButton_clickHandler(event)"
+					  right="0" 
+					  verticalCenter="0"/>
+		</s:HGroup>
 		
 	</mx:VDividedBox>
 	

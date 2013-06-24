@@ -5,6 +5,18 @@
     <classEntry path="com.flexcapacitor.tools.Selection"/>
     <classEntry path="com.flexcapacitor.controller.RadiateReferences"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.ISelectionGroup"/>
+    <classEntry path="com.flexcapacitor.components.ColorChooser"/>
+    <classEntry path="com.flexcapacitor.views.renderers.HistoryItemRenderer"/>
+    <classEntry path="com.flexcapacitor.model.Size"/>
+    <classEntry path="com.flexcapacitor.model.Device"/>
+    <classEntry path="com.flexcapacitor.events.HistoryItem"/>
+    <classEntry path="com.flexcapacitor.skins.DeviceSkin"/>
+    <classEntry path="com.flexcapacitor.skins.DeviceImage"/>
+    <classEntry path="com.flexcapacitor.preloader.SparkPreloader"/>
+    <classEntry path="com.flexcapacitor.utils.supportClasses.DragData"/>
+    <classEntry path="com.flexcapacitor.model.StyleMetaData"/>
+    <classEntry path="com.flexcapacitor.components.IDocument"/>
+    <classEntry path="com.flexcapacitor.views.supportClasses.Styles"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

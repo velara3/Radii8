@@ -15,7 +15,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.events.HistoryEvent;
+			import com.flexcapacitor.events.HistoryEventItem;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.XMLUtils;
@@ -66,7 +66,7 @@
 				var changesCollection:XMLListCollection;
 				var genericCollection:XMLListCollection;
 				var documentModel:ComponentDescription;
-				var historyEvent:HistoryEvent;
+				var historyEvent:HistoryEventItem;
 				var propertiesList:XMLList;
 				var targetsList:XMLList;
 				var historyArray:Array;
@@ -315,7 +315,6 @@
 					<status:ShowStatusMessage message="An error occurred while attempting to copy to the clipboard"/>
 				</clipboard:errorEffect>
 			</clipboard:CopyToClipboard>
-			
 			
 		</handlers:EventHandler>
 		

@@ -18,14 +18,12 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.utils.InspectorUtils;
 			import com.flexcapacitor.utils.TypeUtils;
 			
 			import mx.collections.ArrayList;
 			import mx.core.IVisualElement;
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
-			import mx.managers.SystemManager;
 			
 			import spark.components.Image;
 			import spark.components.supportClasses.GroupBase;
@@ -97,6 +95,10 @@
 			[Bindable]
 			public var isVisualElement:Boolean;
 			
+			/**
+			 * Select all the text in an input on focus in.
+			 * */
+			public var selectOnFocusIn:Boolean;
 			
 			public var radiate:Radiate = Radiate.instance;
 			
@@ -324,7 +326,6 @@
 				
 				updateVisibleControls();
 				
-				updateTargetOutline();
 				
 			}
 			
@@ -340,7 +341,7 @@
 				
 				
 				if (combobox && combobox.selectedIndex != -1) { // not used
-					TypeUtils.applyProperty(combobox, combobox.selectedItem.name, combobox.selectedItem.label, combobox.selectedItem.type);
+					//TypeUtils.applyProperty(combobox, combobox.selectedItem.name, combobox.selectedItem.label, combobox.selectedItem.type);
 				}
 
 				else if (textInput) {
@@ -362,14 +363,13 @@
 					else {
 						Radiate.setProperty(DisplayObject(target), property, textInput.text);
 					}
-					//TypeUtils.applyProperty(DisplayObject(target), currentTarget.name, currentTarget.text);
+					
 				}
 
 				else if (checkbox) {
 					var value:Boolean = checkbox.selected;
 					property = checkbox.name.indexOf(":") ? checkbox.name.split(":")[0]:checkbox.name;
 					Radiate.setProperty(DisplayObject(target), property, value);
-					//TypeUtils.applyProperty(DisplayObject(target), currentTarget.name, value, "Boolean");
 				}
 
 				updateTargetDimensionsLayout();
@@ -667,7 +667,7 @@
 			 * Selects all the text in the text field
 			 * */
 			protected function selectInputText(event:Event):void {
-				if (event.currentTarget is TextInput) {
+				if (selectOnFocusIn && event.currentTarget is TextInput) {
 					TextInput(event.currentTarget).selectAll();
 				}
 			}
@@ -974,14 +974,6 @@
 				}
 
 			}
-			
-			/**
-			 * Updates the visibility of the outline in the contraint box
-			 * */
-			public function updateTargetOutline(event:Event=null):void {
-				
-				//Radiate.drawSelection(target);
-			}
 
 			/**
 			 * Updates the visibility of the rulers and text boxes in the contraints container
@@ -1153,8 +1145,8 @@
 			}
 			
 			protected function historyChangeHandler(event:RadiateEvent):void {
-				if (event.newIndex==-1 || !event.historyEvent) return;
-				var properties:Array = event.historyEvent.properties;
+				if (event.newIndex==-1 || !event.historyEventItem) return;
+				var properties:Array = event.historyEventItem.properties;
 				var length:int = properties ? properties.length : 0;
 				
 				if (!target) return;
@@ -1219,6 +1211,10 @@
 			</handlers:eventStart>
 		</handlers:EventHandler>
 		
+		<!-- FOCUS OUT HANDLER 
+		
+		named focusOutHandler2 because conflict between UIComponent handler of the same name
+		-->
 		<handlers:EventHandler eventName="{FocusEvent.FOCUS_OUT}"
 							   targets="{[
 							   topText, 

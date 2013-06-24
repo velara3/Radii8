@@ -12,6 +12,11 @@
 			   width="100%" height="100%" 
 			   minWidth="800" minHeight="400"
 			   uncaughtError="uncaughtErrorHandler(event)" 
+			   preinitialize="ErrorText.show('application preinitialize')"
+			   initialize="ErrorText.show('application initialize')"
+			   creationComplete="ErrorText.show('creation complete')"
+			   applicationComplete="ErrorText.show('application initialize')"
+			   pageTitle="Radii8"
 			   >
 	
 	<!-- 5,483 lines of code-->
@@ -19,6 +24,18 @@
 	654
 	252
 	53,549
+	faith - the rescuers
+	
+			   preloader="com.flexcapacitor.preloader.SparkPreloader"
+	-
+	During beta, the Digg RSS reader is free. In a survey Digg published last month on its blog,
+	however, the company found that over 40 percent of respondents are 
+	"willing to pay for a Google Reader replacement." The company noted alongside the finding 
+	that, "Free products on the Internet don't have a great track record. They tend to disappear, 
+	leaving users in a lurch. We need to build a product that people can rely on and trust will
+	always be there for them. We're not sure how pricing might work, but we do know that we'd 
+	like our users to be our customers, not our product.
+	
 	-->
 	<fx:Style>
 		@namespace s "library://ns.adobe.com/flex/spark";
@@ -49,6 +66,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			
 			import mx.events.FlexEvent;
+			import mx.preloaders.ErrorText;
 			
 			private var remoteTestURL:String = "http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf";
 			private var testURL:String = "assets/test/AboutYou.swf";
@@ -112,7 +130,13 @@
 			}
 			
 			protected function logo_clickHandler(event:MouseEvent):void {
-				currentState = "start";
+				
+				if (currentState =="start") {
+					currentState = "design";
+				}
+				else {
+					currentState = "start";
+				}
 				hideLoadControls();
 				//Radiate.clearSelection();
 			}
@@ -188,9 +212,15 @@
 			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=2" window="_blank" />
 		</handlers:EventHandler>
 		
+		<!--- open feedback URL -->
+		<handlers:EventHandler target="{feedbackLabel}" eventName="click">
+			<popup:HidePopupAnchor target="{aboutPopUp}" />
+			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=120" window="_blank" />
+		</handlers:EventHandler>
+		
 		<utils:MiniInspector showDisplayObjectOutlines="true"
-							 showRuler="true"
-							 showColorUnderMouse="true"/>
+							 showRuler="false"
+							 showColorUnderMouse="false"/>
 	</fx:Declarations>
 	
 	<s:states>
@@ -282,19 +312,23 @@
 	<local:Remote id="remote" width="100%" height="100%" top="38" includeIn="design" />
 	
 	<s:HGroup verticalAlign="middle" width="100%" height="28" paddingLeft="8" paddingRight="8"
-			  gap="3" 
+			  gap="8" 
+			  color="#DFDFDF"
 			  >
 		
-		<s:BitmapImage id="logo" source="assets/images/logo24.png" width="24" height="24"
-					   verticalAlign="middle" horizontalAlign="center"
+		<s:BitmapImage id="logo" 
+					   source="assets/images/logo20.png" 
+					   width="20" height="20"
+					   verticalAlign="middle" 
+					   horizontalAlign="center"
 					   includeInLayout="true"
 					   >
-			<s:filters>
+			<!--<s:filters>
 				<s:GlowFilter blurX="2" blurY="2" knockout="false" strength="1" quality="4" color="#ffffff" />
-			</s:filters>
+			</s:filters>-->
 		</s:BitmapImage>
 		
-		<s:Spacer width="1"/>
+		<s:Spacer width="-6"/>
 		
 		<s:Label text="RADII8" 
 				 fontSize="12" 
@@ -315,56 +349,7 @@
 				 left="10"/>
 		
 		<s:Spacer width="100%"/>
-		<s:Label id="aboutLabel" 
-				 text="About" 
-				 useHandCursor="true"
-				 buttonMode="true"
-				 verticalAlign="middle" 
-				 textAlign="center"
-				 color="#DDDDDD"/>
 		
-	</s:HGroup>
-	
-	<s:PopUpAnchor id="aboutPopUp" width="250" height="250" top="34" right="10" >
-		<s:Group id="popUpGroup" 
-				 mouseEnabledWhereTransparent="true" 
-				 width="250" height="100%" 
-				 >
-			
-			<s:Rect width="100%" height="100%" radiusX="8" radiusY="8">
-				<s:fill>
-					<s:SolidColor color="#ffffff" alpha=".9" />
-				</s:fill>
-				<s:stroke>
-					<s:SolidColorStroke color="#000000" pixelHinting="true" weight="1" />
-				</s:stroke>
-			</s:Rect>
-			
-			<s:VGroup paddingLeft="12" paddingRight="12" paddingTop="12" paddingBottom="12"
-					  gap="8">
-				<s:HGroup verticalAlign="middle">
-					<s:Label text="Build Date:" minWidth="100" /> 
-					<s:Label id="buildDate" text="{BUILD_DATE}" /> 
-				</s:HGroup>
-				<s:HGroup verticalAlign="middle">
-					<s:Label text="Build Number:" width="100" />
-					<s:Label id="buildNumber" text="{BUILD_NUMBER}" /> 
-				</s:HGroup>
-				<s:HGroup verticalAlign="middle">
-					<s:Label id="moreInfoLabel" text="More info" color="blue" fontWeight="bold"
-							 useHandCursor="true" buttonMode="true"/>
-				</s:HGroup>
-			</s:VGroup>
-			<s:filters>
-				<s:DropShadowFilter distance="6" blurX="3" blurY="3" strength=".35"/>
-			</s:filters>
-		</s:Group>
-	</s:PopUpAnchor>
-	
-	<s:HGroup verticalAlign="middle" width="100%" top="30" height="28" paddingLeft="8" paddingRight="8"
-			  gap="8" 
-			  >
-		<s:Spacer width="100%"/>
 		<s:CheckBox id="loadCompatible" label="Compatible" selected="false" visible="false"/>
 		<s:CheckBox id="trustContent" label="Trust Content" selected="true" visible="false"/>
 		<s:TextInput id="appURL" width="90%" prompt="Enter a URL to a SWF" text="" visible="false" enter="textinput1_enterHandler(event)"/>
@@ -389,6 +374,54 @@
 				 visible="false"
 				 includeInLayout="false"
 				 click="closeLabel_clickHandler(event)" />
+		<s:Label id="aboutLabel" 
+				 text="About" 
+				 useHandCursor="true"
+				 buttonMode="true"
+				 verticalAlign="middle" 
+				 textAlign="center"
+				 color="#DDDDDD"/>
+		
 	</s:HGroup>
+	
+	<s:PopUpAnchor id="aboutPopUp" width="250" height="250" top="34" right="10" >
+		<s:Group id="popUpGroup" 
+				 mouseEnabledWhereTransparent="true" 
+				 width="250" height="100%" 
+				 >
+			
+			<s:Rect width="100%" height="100%" radiusX="8" radiusY="8">
+				<s:fill>
+					<s:SolidColor color="#ffffff" alpha=".9" />
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke color="#000000" pixelHinting="true" weight="2" />
+				</s:stroke>
+			</s:Rect>
+			
+			<s:VGroup paddingLeft="12" paddingRight="12" paddingTop="12" paddingBottom="12"
+					  gap="8">
+				<s:HGroup verticalAlign="middle">
+					<s:Label text="Build Date:" minWidth="100" /> 
+					<s:Label id="buildDate" text="{BUILD_DATE}" /> 
+				</s:HGroup>
+				<s:HGroup verticalAlign="middle">
+					<s:Label text="Build Number:" width="100" />
+					<s:Label id="buildNumber" text="{BUILD_NUMBER}" /> 
+				</s:HGroup>
+				<s:HGroup verticalAlign="middle">
+					<s:Label id="moreInfoLabel" text="More info" color="blue" fontWeight="bold"
+							 useHandCursor="true" buttonMode="true"/>
+				</s:HGroup>
+				<s:HGroup verticalAlign="middle">
+					<s:Label id="feedbackLabel" text="Feedback" color="blue" fontWeight="bold"
+							 useHandCursor="true" buttonMode="true"/>
+				</s:HGroup>
+			</s:VGroup>
+			<s:filters>
+				<s:DropShadowFilter distance="6" blurX="3" blurY="3" strength=".35"/>
+			</s:filters>
+		</s:Group>
+	</s:PopUpAnchor>
 	
 </s:Application>

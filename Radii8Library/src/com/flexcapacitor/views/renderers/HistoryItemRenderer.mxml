@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:controls="com.flexcapacitor.controls.*"
+				width="100%" height="18" 
+				autoDrawBackground="false"
+				typographicCase="capsToSmallCaps"
+				useHandCursor="true"
+				buttonMode="true"
+				>
+						
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.events.HistoryItem;
+			
+			public var historyItem:HistoryItem;
+			
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				if (value) {
+					historyItem = value as HistoryItem;
+					
+					//rowGroup.enabled = !historyItem.reversed;
+					//Radiate.log.info("updating row "  + itemIndex + " :" + label + " . Enabled " + rowGroup.enabled);
+				}
+				else {
+					if (horizontalLine) {
+						horizontalLine.visible = false;
+					}
+				}
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="selected"/>
+		<s:State name="hovered"/>
+	</s:states>
+	
+	<s:HGroup id="rowGroup" enabled="{!data.reversed}" width="100%" height="100%" gap="0" verticalAlign="middle">
+		  
+		<s:Group height="12" width="10" includeIn="selected,hovered">
+			<s:Path data="M 0 0 L 0 16 L 16 8 z" width="100%" height="100%" top="0">
+				<s:fill>
+					<s:SolidColor color="#000000" alpha=".5" alpha.hovered=".25"/>
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke weight="0" color="#ffffff" />
+				</s:stroke>
+			</s:Path>
+		</s:Group>
+		
+		<s:Spacer width="10" includeIn="normal"/>
+		
+		
+		<s:BitmapImage source="{Radii8LibraryAssets.edit}"  />
+		
+		<s:Spacer width="4" />
+		
+		<s:Label id="labelDisplay" 
+				 fontSize="11"
+				 width="100%" 
+				 paddingTop="2" />
+	</s:HGroup>
+	
+	<controls:HorizontalLine id="horizontalLine" includeIn="hovered" strokeColor="#000000" bottom="0"
+							 alpha.hovered=".15"
+							 visible="false"/>
+	
+</s:ItemRenderer>

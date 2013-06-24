@@ -4,6 +4,7 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:filters="com.flexcapacitor.filters.*" 
 		 xmlns:controls="com.flexcapacitor.controls.*"
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*" 
 		 
 		 styleName="radiateInspector"
 		 width="100%" 
@@ -14,8 +15,11 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.events.HistoryEvent;
+			import com.flexcapacitor.events.HistoryEventItem;
+			import com.flexcapacitor.events.HistoryItem;
 			import com.flexcapacitor.events.RadiateEvent;
+			
+			import flash.utils.getTimer;
 			
 			import mx.collections.ArrayCollection;
 			import mx.events.FlexEvent;
@@ -35,6 +39,8 @@
 			public var clearOnTargetChange:Boolean = true;
 			
 			private var radiate:Radiate = Radiate.instance;
+			
+			public var debug:Boolean;
 			
 			private var _target:*;
 			
@@ -56,8 +62,16 @@
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
+				
+				
+				//Radiate.history.refresh();
+				
+				list.selectedIndex = Radiate.historyIndex;
 				
 				scrollToBottom();
+				
+				updateNavigationButtons();
 			}
 			
 			/**
@@ -71,45 +85,63 @@
 			 * 
 			 * */
 			public function redo():void {
-				Radiate.redo();
-				var index:int = list.selectedIndex;
+				var historyIndex:int = Radiate.redo(true);
 				
-				if (index>-1) {
-					list.ensureIndexIsVisible(index);
+				if (historyIndex>-1) {
+					list.ensureIndexIsVisible(historyIndex);
 				}
 				else {
 					list.ensureIndexIsVisible(0);
 				}
+				
+				
+				//Radiate.history.refresh();
+				
+				//list.selectedIndex = historyIndex;
+				
+				updateNavigationButtons();
+				
+				if (debug) Radiate.log.info("3 SELECTED ITEM INDEX: " + list.selectedIndex);
 			}
 			
 			/**
 			 * 
 			 * */
 			public function undo():void {
-				Radiate.undo();
+				var historyIndex:int = Radiate.undo(true);
 				
-				var index:int = list.selectedIndex;
+				//Radiate.history.refresh();
 				
-				if (index>-1) {
-					list.ensureIndexIsVisible(index);
+				if (historyIndex>-1) {
+					list.ensureIndexIsVisible(historyIndex);
 				}
 				else {
 					list.ensureIndexIsVisible(0);
 				}
+				
+				list.selectedIndex = Radiate.historyIndex;
+				
+				updateNavigationButtons();
+				if (debug) Radiate.log.info("4 SELECTED ITEM INDEX: " + list.selectedIndex);
 			}
 			
 			/**
 			 * Label for the history item
 			 * */
 			public function labelFunction(item:Object):String {
-				var change:Object = item && item.length ? item[0] : null;
-				var historyEvent:HistoryEvent;
+				var historyItem:HistoryItem = item as HistoryItem;
+				var historyEvents:Array = historyItem.historyEvents;
+				var historyEvent:HistoryEventItem = historyEvents && historyEvents.length ? historyEvents[0] : null;
 				var label:String;
 				
-				historyEvent = HistoryEvent(Radiate.historyEventsDictionary[change]);
 				
 				if (historyEvent.action==RadiateEvent.PROPERTY_CHANGE) {
-					label = historyEvent.description || historyEvent.properties + " changed";
+					if (historyEvent.properties.length) {
+						label = historyEvent.description || historyEvent.properties + " changed";
+					}
+					else {
+						label = historyEvent.description || historyEvent.styles + " changed";
+					}
 				}
 				else if (historyEvent.action==RadiateEvent.ADD_ITEM) {
 					label = historyEvent.description || "Item added";
@@ -150,7 +182,7 @@
 			
 			protected function list1_clickHandler(event:MouseEvent):void {
 				if (list.selectedItem) {
-					
+					//Radiate.history.refresh();
 				}
 			}
 			
@@ -159,31 +191,78 @@
 			 * */
 			protected function changeHandler(event:IndexChangeEvent):void
 			{
+				if (debug) Radiate.log.info("SELECTED ITEM INDEX: " + list.selectedIndex);
 				var newIndex:int = event.newIndex;
-				var oldIndex:int = event.oldIndex;
+				var oldIndex:int = Radiate.historyIndex;
+				var dispatch:Boolean = false;
+				var time:int = getTimer();
+				var historyIndex:int;
 				var length:int;
-				
+				/*
 				if (newIndex<oldIndex) {
 					length = oldIndex - newIndex;
 					for (var i:int;i<length;i++) {
-						undo();
+						historyIndex = Radiate.undo(dispatch);
 					}
 				}
 				else if (newIndex>oldIndex) {
-					length = newIndex - oldIndex;
+					length = oldIndex<0 ? newIndex+1 : newIndex - oldIndex;
 					for (var j:int;j<length;j++) {
-						redo();
+						historyIndex = Radiate.redo(dispatch);
 					}
-				}
+				}*/
+				Radiate.goToHistoryIndex(newIndex);
+				//trace("changes:"+(getTimer()-time));
+				
+				list.selectedIndex = Radiate.historyIndex;
 				
 				ensureIndexIsVisible(newIndex);
+				
+				//Radiate.history.refresh();
+				
+				updateNavigationButtons();
+				if (debug) Radiate.log.info("2 SELECTED ITEM INDEX: " + list.selectedIndex);
+			}
+			
+			
+			public function updateNavigationButtons():void {
+				var historyIndex:int = Radiate.historyIndex;
+				var totalItems:int = Radiate.history.length;
+				var hasItems:Boolean = totalItems>0;
+				
+				// has forward history
+				if (hasItems && historyIndex+1<totalItems) {
+					forwardButton.enabled = true;
+				}
+				else {
+					forwardButton.enabled = false;
+				}
+				
+				// has previous items
+				if (hasItems && historyIndex>-1) {
+					backButton.enabled = true;
+				}
+				else {
+					backButton.enabled = false;
+				}
 			}
 			
 			/**
 			 * 
 			 * */
 			protected function historyChangeHandler(event:Event):void {
+				if (debug) Radiate.log.info("HISTORY CHANGE");
+				ensureIndexIsVisible(Radiate.historyIndex);
+				updateNavigationButtons();
+			}
+			
+			/**
+			 * Document change handler. Clear history
+			 * */
+			protected function documentChangeHandler(event:Event):void {
+				if (debug) Radiate.log.info("DOCUMENT CHANGE");
 				
+				Radiate.removeAllHistory();
 			}
 			
 			/**
@@ -193,7 +272,8 @@
 				
 				list.ensureIndexIsVisible(index);
 				list.validateNow();
-				list.ensureIndexIsVisible(index);
+				//list.ensureIndexIsVisible(index);
+				//list.validateNow();
 			}
 			
 			/**
@@ -210,170 +290,75 @@
 			 * 
 			 * */
 			protected function revertHandler(event:MouseEvent):void {
-				
-				var length:int = list.selectedIndex+1;
+				var length:int = Radiate.history.length;
+				var dispatch:Boolean = false;
+				var time:int = getTimer();
 				var i:int;
 				
-				if (length>10) {
-					for (i;i<length;i++) {
-						undo();
-					}
-				}
-				else {
-					for (i;i<length;i++) {
-						undo();
-					}
-				}
+				//trace("revert start: " + time);
+				// it is 22 times faster to not dispatch events until the end
+				// each change takes 85ms per change with dispatch events 
+				// and 2.58 without
+				//Radiate.undo(dispatch); 
 				
+				Radiate.goToHistoryIndex(-1);
+				
+				//trace("revert start: " + (getTimer()-time));
 				list.selectedIndex = -1;
 				
 				ensureIndexIsVisible(0);
+				
+				//Radiate.history.refresh();
+				
+				updateNavigationButtons();
+				if (debug) Radiate.log.info("5 SELECTED ITEM INDEX: " + list.selectedIndex);
 			}
 			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
-		<fx:Array id="selectFiltersOn">
-			<filters:BlackAndWhiteFilter />
-			<s:DropShadowFilter distance="1" blurX="3" blurY="3" strength=".8" inner="true" knockout="false"/>
-		</fx:Array>
-		<fx:Array id="selectFiltersOff">
-			<filters:BlackAndWhiteFilter  />
-		</fx:Array>
 		
 	</fx:Declarations>
 	
 	<s:Group width="100%" height="100%" left="5" right="5" bottom="5">
 		
 		<s:List id="list" 
-				top="14"
-				width="100%" height="100%"
+				top="26"
+				focusAlpha="0"
 				minHeight="20"
+				width="100%" height="100%"
 				interactionMode="mouse"
-				dataProvider="{Radiate.history}" 
 				selectedIndex="{Radiate.historyIndex}"
+				dataProvider="{Radiate.history}" 
 				labelFunction="labelFunction"
 				borderVisible="false"
-				focusAlpha="0"
-				click="list1_clickHandler(event)"
-				change="changeHandler(event)">
+				change="changeHandler(event)"
+				itemRenderer="com.flexcapacitor.views.renderers.HistoryItemRenderer"
+				>
 			
 			<s:layout>
-				<s:VerticalLayout useVirtualLayout="false" gap="1"/>
+				<s:VerticalLayout useVirtualLayout="true" gap="1"/>
 			</s:layout>
 			
-			<s:itemRenderer>
-				<fx:Component>
-					<s:ItemRenderer width="100%" height="18" 
-									autoDrawBackground="false"
-									typographicCase="lowercaseToSmallCaps"
-									useHandCursor="true"
-									buttonMode="true"
-									creationComplete="creationCompleteHandler(event)"
-									>
-						
-						<fx:Script>
-							<![CDATA[
-								import com.flexcapacitor.filters.BlackAndWhiteFilter;
-								
-								import mx.events.FlexEvent;
-								
-								import spark.components.List;
-								import spark.events.IndexChangeEvent;
-								
-								[Bindable]
-								private static var filtersArray:Array = [new BlackAndWhiteFilter()];
-								
-								override public function set data(value:Object):void {
-									super.data = value;
-									updateRow();
-								}
-								
-								protected function creationCompleteHandler(event:FlexEvent):void
-								{
-									owner.addEventListener(IndexChangeEvent.CHANGE, changeHandler, false, 0, true);
-									owner.addEventListener(FlexEvent.VALUE_COMMIT, valueCommitHandler, false, 0, true);
-								}
-								
-								private function updateRow():void {
-									var selectedIndex:int = (owner as List).selectedIndex;
-									
-									if (selectedIndex<itemIndex) {
-										rowGroup.enabled = false;
-									}
-									else {
-										rowGroup.enabled = true;
-									}
-								}
-								
-								private function changeHandler(event:IndexChangeEvent):void
-								{
-									var selectedIndex:int = event.newIndex;
-									
-									if (selectedIndex<itemIndex) {
-										rowGroup.enabled = false;
-									}
-									else {
-										rowGroup.enabled = true;
-									}
-								}
-								
-								private function valueCommitHandler(event:FlexEvent):void {
-									var selectedIndex:int = (owner as List).selectedIndex;
-									
-									if (selectedIndex<itemIndex) {
-										rowGroup.enabled = false;
-									}
-									else {
-										rowGroup.enabled = true;
-									}
-								}
-							]]>
-						</fx:Script>
-						
-						<s:states>
-							<s:State name="normal"/>
-							<s:State name="selected"/>
-							<s:State name="hovered"/>
-						</s:states>
-						
-						<s:HGroup id="rowGroup" width="100%" height="100%" gap="0" verticalAlign="middle">
-							  
-							<s:Group height="12" width="10" includeIn="selected,hovered">
-								<s:Path data="M 0 0 L 0 16 L 16 8 z" width="100%" height="100%">
-									<s:fill>
-										<s:SolidColor color="#000000" alpha=".5" alpha.hovered=".25"/>
-									</s:fill>
-									<s:stroke>
-										<s:SolidColorStroke weight="0" color="#ffffff" />
-									</s:stroke>
-								</s:Path>
-							</s:Group>
-							
-							<s:Spacer width="10" includeIn="normal"/>
-							
-							
-							<s:BitmapImage source="{Radii8LibraryAssets.edit}" 
-										   filters="{filtersArray}" />
-							
-							<s:Spacer width="4" />
-							
-							<s:Label id="labelDisplay" 
-									 fontSize="11"
-									 width="100%" 
-									 paddingTop="2" />
-						</s:HGroup>
-					</s:ItemRenderer>
-				</fx:Component>
-			</s:itemRenderer>
 		</s:List>
 		
+		<renderers:HistoryItemRenderer label="Open" 
+									   width="100%"
+									   right="60"
+									   useHandCursor="true" 
+									   buttonMode="true"
+									   data=""
+									   click="revertHandler(event)" />
+		
+		<controls:HorizontalLine top="22" 
+								 strokeColor="#000000" 
+								 alpha=".15"
+								 />
 		
 		<!--- triangle -->
-		<s:Group height="14" width="10" >
-			<s:Path data="M 0 0 L 0 16 L 16 8 z" width="100%" height="100%"
-					visible="{list.selectedIndex==-1 &amp;&amp; list.dataProvider.length>0}">
+		<s:Group height="14" width="10" top="4" visible="{Radiate.historyIndex==-1}">
+			<s:Path data="M 0 0 L 0 16 L 16 8 z" width="100%" height="100%">
 				<s:fill>
 					<s:SolidColor color="#000000" alpha=".25"/>
 				</s:fill>
@@ -381,36 +366,37 @@
 					<s:SolidColorStroke weight="0" color="#ffffff" />
 				</s:stroke>
 			</s:Path>
-			<s:Line width="40" x="13" y="5" >
+			<!--<s:Line width="40" x="13" y="5" >
 				<s:stroke>
 					<s:SolidColorStroke alpha=".15"/>
 				</s:stroke>
-			</s:Line>
+			</s:Line>-->
 		</s:Group>
 		
+		
+		<!--- UNDO REDO BUTTONS -->
 		<s:HGroup width="100%" right="0" top="0" verticalAlign="top">
 			
 			<!--- revert to beginning -->
-			<s:Group width="50%" height="8" click="revertHandler(event)" useHandCursor="true" buttonMode="true">
+			<!--<s:Group width="50%" height="8" >
 				<s:Rect width="100%" height="8" >
 					<s:fill>
 						<s:SolidColor alpha="0"/>
 					</s:fill>
 				</s:Rect>
-			</s:Group>
+			</s:Group>-->
 			
 			<s:Spacer width="100%"/>
 			
 			<!--- go back -->
-			<s:Group click="undo()" 
-					 width="16"
-					 height="10"
-					 filters="{selectFiltersOff}"
-					 enabled="{list.selectedIndex!=-1 &amp;&amp; list.dataProvider.length>0}"
+			<s:Group id="backButton" 
+					 click="undo()" 
+					 width="20"
+					 height="15"
 					 useHandCursor="true"
 					 buttonMode="true"
 					 >
-				<s:Path data="M 8 0 L 8 16 L 0 8 Z" height="10" width="10">
+				<s:Path data="M 8 0 L 8 16 L 0 8 Z" height="14" width="14">
 					<s:fill>
 						<s:SolidColor color="#000000" alpha=".5"/>
 					</s:fill>
@@ -419,14 +405,13 @@
 			
 			
 			<!--- go forward -->
-			<s:Group click="redo()" 
-					 width="16"
-					 height="10"
-					 filters="{selectFiltersOff}"
-					 enabled="{list.dataProvider.length &amp;&amp; list.selectedIndex+1!=list.dataProvider.length}"
+			<s:Group id="forwardButton" 
+					 click="redo()" 
+					 width="20"
+					 height="15"
 					 useHandCursor="true"
 					 buttonMode="true">
-				<s:Path data="M 0 0 L 0 16 L 16 8 L 0 0 Z" height="10" width="10">
+				<s:Path data="M 0 0 L 0 16 L 16 8 L 0 0 Z" height="14" width="14">
 					<s:fill>
 						<s:SolidColor color="#000000" alpha=".5"/>
 					</s:fill>

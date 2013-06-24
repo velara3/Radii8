@@ -20,7 +20,7 @@
 
 		 implements="com.flexcapacitor.views.Inspector" 
 		 
-		 creationComplete="group1_creationCompleteHandler(event)" 
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:handlers="com.flexcapacitor.handlers.*" xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" xmlns:status="com.flexcapacitor.effects.status.*" 
 		 >
 	
 	<s:layout>
@@ -148,6 +148,23 @@
 			<filters:BlackAndWhiteFilter  />
 		</fx:Array>
 		
+		
+		<!-- COPY TO THE CLIPBOARD -->
+		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
+			
+			<clipboard:CopyToClipboard data="{searchPattern}" targetAncestor="{this}" allowNullData="true">
+				<clipboard:successEffect>
+					<status:ShowStatusMessage message="Search pattern copied to the clipboard"/>
+				</clipboard:successEffect>
+				<clipboard:noDataEffect>
+					<status:ShowStatusMessage message="Nothing to copy to the clipboard"/>
+				</clipboard:noDataEffect>
+				<clipboard:errorEffect>
+					<status:ShowStatusMessage message="An error occurred while attempting to copy to the clipboard"/>
+				</clipboard:errorEffect>
+			</clipboard:CopyToClipboard>
+			
+		</handlers:EventHandler>
 	</fx:Declarations>
 	
 	
@@ -173,8 +190,8 @@
 		
 		<!--<s:Spacer width="100%"/>-->
 		
-		<controls:ImageButton source="{Radii8LibraryAssets.copy}" 
-							  click="copy()" 
+		<controls:ImageButton id="copyIcon" 
+							  source="{Radii8LibraryAssets.copy}" 
 							  filters="{selectFiltersOff}"
 							  toolTip="Copy the search pattern to the Clipboard"/>
 		

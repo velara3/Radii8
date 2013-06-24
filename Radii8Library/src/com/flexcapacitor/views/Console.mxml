@@ -28,6 +28,17 @@
 			[Bindable]
 			public var logTarget:AbstractTarget;
 			
+			/**
+			 * The more text in the text area the slower everything runs.
+			 * 
+			 * In one test during debug in Properties view, the time to call describe type 
+			 * on a target increased by 1 or 3 ms for each line of text.
+			 * 
+			 * If the font size is 10 px and max position is 200 lines 
+			 * since 2000/10.   
+			 * */
+			public var maxScrollPosition:int = 2000; 
+			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				
 				/*
@@ -62,7 +73,7 @@
 					consoleTextArea.validateNow();
 				}
 				
-				if (scrollBar.maximum>3500) {
+				if (scrollBar.maximum>maxScrollPosition) {
 					consoleTextArea.text = "";
 				}
 			}

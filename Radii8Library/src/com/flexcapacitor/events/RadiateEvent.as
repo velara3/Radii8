@@ -33,6 +33,11 @@ package com.flexcapacitor.events {
 		public static const REQUEST_PREVIEW:String = "requestPreview";
 		
 		/**
+		 * Dispatched when a property is selected
+		 * */
+		public static const PROPERTY_SELECTED:String = "propertySelected";
+		
+		/**
 		 * Dispatched when a color is selected
 		 * */
 		public static const COLOR_SELECTED:String = "colorSelected";
@@ -88,6 +93,16 @@ package com.flexcapacitor.events {
 		public static const HISTORY_CHANGE:String = "historyChange";
 		
 		/**
+		 * Dispatched when document scale is changed.
+		 * */
+		public static const SCALE_CHANGE:String = "scaleChange";
+		
+		/**
+		 * Dispatched when document size or scale is changed.
+		 * */
+		public static const DOCUMENT_SIZE_CHANGE:String = "documentSizeChange";
+		
+		/**
 		 * Dispatched when the tool is changed.
 		 * */
 		public static const TOOL_CHANGE:String = "toolChange";
@@ -99,6 +114,7 @@ package com.flexcapacitor.events {
 		
 		
 		public var selectedItem:Object;
+		public var property:String;
 		public var properties:Array;
 		public var changes:Array;
 		public var value:*;
@@ -107,13 +123,15 @@ package com.flexcapacitor.events {
 		public var moveItemsInstance:AddItems;
 		public var newIndex:int;
 		public var oldIndex:int;
-		public var historyEvent:HistoryEvent;
+		public var historyEventItem:HistoryEventItem;
 		public var targets:Array;
 		public var tool:ITool;
 		public var previewType:String;
 		public var color:uint;
 		public var invalid:Boolean;
 		public var isRollOver:Boolean;
+		public var scaleX:Number;
+		public var scaleY:Number;
 		
 		/**
 		 * Constructor.

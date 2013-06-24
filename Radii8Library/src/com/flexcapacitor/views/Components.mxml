@@ -7,28 +7,54 @@
 		 creationComplete="creationCompleteHandler(event)"
 		 >
 	
+	<!-- 
+	
+	The list of components to include come from spark-manifest-defaults.xml 
+	in Radii8LibrarySparkAssets. The include attribute must be set to true for them to be visible. 
+	
+	The component classes are included by creating a reference to them in Radii8LibrarySparkAssets.
+	
+	We create an instance of the class in the mouse down handler. 
+	
+	
+	-->
+	
+	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.DragDropEvent;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.layoutClasses.LayoutDebugHelper;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.DragManagerUtil;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
+			import mx.containers.Grid;
+			import mx.containers.GridItem;
+			import mx.containers.GridRow;
+			import mx.core.ContainerCreationPolicy;
 			import mx.core.IFlexDisplayObject;
+			import mx.core.ILayoutElement;
 			import mx.events.DragEvent;
 			import mx.events.FlexEvent;
 			import mx.graphics.SolidColor;
+			import mx.managers.ISystemManager;
+			import mx.managers.LayoutManager;
+			import mx.managers.SystemManagerGlobals;
 			
 			import spark.components.Application;
+			import spark.components.BorderContainer;
+			import spark.components.Button;
 			import spark.components.ComboBox;
+			import spark.components.Grid;
 			import spark.components.Group;
 			import spark.components.List;
 			import spark.components.supportClasses.GroupBase;
 			import spark.components.supportClasses.SkinnableTextBase;
 			import spark.components.supportClasses.TextBase;
 			import spark.primitives.Rect;
+			import spark.skins.spark.DefaultGridItemRenderer;
 			
 			private var target:Object;
 			private var radiate:Radiate;
@@ -69,17 +95,46 @@
 				
 				application = radiate.document as Application || parentApplication as Application;
 				
+				
+				
 				// Create component to drag
 				classFactory = new ClassFactory(item.classType as Class);
 				classFactory.properties = item.defaultProperties;
 				component = classFactory.newInstance();
 				
+				
 				if (component is Label) {
 					
 				}
 				
-				if (component is Label) {
+				// working on grid
+				if (component is spark.components.Grid) {
+					spark.components.Grid(component).itemRenderer= new ClassFactory(DefaultGridItemRenderer);
+					spark.components.Grid(component).dataProvider = new ArrayCollection(["item 1", "item 2", "item 3"]);
+				}
+				
+				// working on mx grid
+				if (component is mx.containers.Grid) {
+					mx.containers.Grid(component)
+					var grid:mx.containers.Grid = component as mx.containers.Grid;
+					var gridRow:GridRow	= new GridRow();
+					var gridItem:GridItem = new GridItem();
+					var gridItem2:GridItem = new GridItem();
 					
+					var gridButton:Button = new Button();
+					gridButton.width = 100;
+					gridButton.height = 100;
+					gridButton.label = "hello";
+					var gridButton2:Button = new Button();
+					gridButton2.width = 100;
+					gridButton2.height = 100;
+					gridButton2.label = "hello2";
+					
+					gridItem.addElement(gridButton);
+					gridItem2.addElement(gridButton2);
+					gridRow.addElement(gridItem);
+					gridRow.addElement(gridItem2);
+					grid.addElement(gridRow);
 				}
 				
 				// add fill to rect
@@ -113,6 +168,16 @@
 				if (component is GroupBase) {
 					DisplayObjectUtils.addGroupMouseSupport(component as GroupBase);
 				}
+				
+				// we can't add elements if skinnablecontainer._deferredContentCreated is false
+				if (component is BorderContainer) {
+					BorderContainer(component).creationPolicy = ContainerCreationPolicy.ALL;
+					BorderContainer(component).initialize();
+					BorderContainer(component).createDeferredContent();
+					BorderContainer(component).initialize();
+				}
+				
+				
 				
 				if (!dragManagerInstance) {
 					dragManagerInstance = new DragManagerUtil();
@@ -179,6 +244,25 @@
 				
 				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
 			}
+
+		    private static var _layoutDebugHelper:LayoutDebugHelper;
+		    
+		    public static function get debugHelper():LayoutDebugHelper
+		    {
+		        if (!_layoutDebugHelper)
+		        {
+		            _layoutDebugHelper = new LayoutDebugHelper();
+		            _layoutDebugHelper.mouseEnabled = false;
+		            var sm:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0]
+		            sm.addChild(_layoutDebugHelper);
+		        }
+		        return _layoutDebugHelper;
+		    }
+			
+			private function deferredInstanceFromFunction():Array {
+				var label:Label = new Label();
+				return [label];
+			}
 			
 			/**
 			 * Dispatched after drag drop event. Drag drop can be canceled. If it
@@ -186,6 +270,7 @@
 			 * */
 			protected function handleDragDropComplete(event:DragDropEvent):void
 			{
+				var o:LayoutDebugHelper = debugHelper;
 				var component:Object = event.draggedItem;
 				
 				// if text based or combo box we need to prevent 
@@ -204,12 +289,26 @@
 					}
 				}
 				
+				// we can't add elements if skinnablecontainer._deferredContentCreated is false
+				if (component is BorderContainer) {
+					var factory:DeferredInstanceFromFunction = new DeferredInstanceFromFunction(deferredInstanceFromFunction);
+					BorderContainer(component).mxmlContentFactory = factory;
+					//BorderContainer(component).initialize();
+					BorderContainer(component).createDeferredContent();
+					BorderContainer(component).removeAllElements();
+					
+					// we could probably also do this: 
+					//BorderContainer(component).addElement(new Button());
+					
+				}
+				
 				// we need a custom FlexSprite class to do this
 				// do this after drop
 				if ("eventListeners" in component && !(component is GroupBase)) {
 					component.removeAllEventListeners();
 				}
 				
+				//o.addElement(component as ILayoutElement);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
 				dropTargetLabel.text = "Drag Complete to:" + dragManagerInstance.dropTargetName;
 				

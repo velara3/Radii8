@@ -1,5 +1,5 @@
 
-package 
+package com.flexcapacitor.components
 {
 	import flash.display.Graphics;
 	import flash.display.GraphicsPathCommand;

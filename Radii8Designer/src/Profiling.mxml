@@ -4,14 +4,236 @@
 		xmlns:mx="library://ns.adobe.com/flex/mx" 
 		xmlns:handlers="com.flexcapacitor.handlers.*" 
 		xmlns:status="com.flexcapacitor.effect.status.*" 
-		xmlns:inspectors="com.flexcapacitor.inspectors.*">
+		xmlns:inspectors="com.flexcapacitor.inspectors.*"
+		
+		creationComplete="group2_creationCompleteHandler(event)"
+		click="toggleEnable()"
+		mouseEnabledWhereTransparent="true"
+		>
 	
 	<fx:Script>
 		<![CDATA[
+			import com.flexcapacitor.data.chart.DataItem;
 			import com.flexcapacitor.performance.PerformanceMeter;
 			import com.flexcapacitor.performance.ProfileTest;
 			import com.flexcapacitor.utils.VectorUtils;
 			
+			import flash.utils.clearTimeout;
+			import flash.utils.getTimer;
+			
+			import mx.charts.chartClasses.IAxis;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			
+			
+			
+			public const ANALYSIS_COMPLETE:String = "analysisComplete";
+			
+			/**
+			 * Is true when the component is enabled and remains true until 
+			 * the first timer event
+			 * */
+			[Bindable]
+			public var initializing:Boolean;
+			
+			/**
+			 * If true shows the chart labels 
+			 * */
+			public var showLabels:Boolean = true;
+			
+			/**
+			 * Delay interval when enabling chart 
+			 * */
+			private var timeoutInterval:uint;
+			
+			[Bindable]
+			public var columnChartAxisAlpha:Number = .9;
+			
+            [Bindable] 
+			public var dataSet:Array;
+			
+			[Bindable]
+			public var labelColor:Number = 0xAAAAAA;
+			
+			[Bindable]
+			public var backgroundLinesAlpha:Number = .5;
+			
+			/**
+			 * Max number of items to display
+			 * */
+			public var maxCount:int = 10;
+			
+			/**
+			 * Timer for data change, rotate and add remove updates
+			 * */
+			public var timer:Timer = new Timer(updateIntervalAmount);
+			
+			/**
+			 * Length in ms that it takes before changing chart data
+			 * */
+			[Bindable]
+			public var updateIntervalAmount:int = 1500;
+			
+			/**
+			 * Amount of time before adding or removing chart data items 
+			 * */
+			public var addRemoveInterval:int = 10000;
+			
+			/**
+			 * Last update time
+			 * */
+			public var lastUpdateTime:int;
+			
+			/**
+			 * Time since last rotation
+			 * */
+			private var rotateLastTime:int;
+			
+			/**
+			 * Time since last add remove event
+			 * */
+			public var addRemoveLastTime:int;
+			
+			/**
+			 * Number of items to display
+			 * */
+			public var lastCount:int = 6;
+			
+			/**
+			 * Flag indicating when state has changed
+			 * */
+			public var chartStateChanged:Boolean;
+			
+			/**
+			 * Flag indicating when data needs to change but animation is not finished
+			 * */
+			public var scheduleDataChange:Boolean;
+			
+			/**
+			 * Flag indicating when to disable the component but let animation finished
+			 * */
+			public var scheduleDisableChange:Boolean;
+			
+			/**
+			 * Letters used for labels
+			 * */
+			public var letters:String = "ACTG";
+			
+			/**
+			 * Placement of ticks on the charts
+			 * */
+			[Bindable]
+			[Inspectable(enumeration="inside,outside,cross,none")]
+			public var tickPlacement:String = "outside";
+			
+			public var chartSeriesDurationChanged:Boolean;
+			
+			private var _chartSeriesDuration:int = 1000;
+
+			/**
+			 * Chart series duration
+			 * */
+			[Bindable]
+			public function get chartSeriesDuration():int {
+				return _chartSeriesDuration;
+			}
+
+			/**
+			 * @private
+			 */
+			public function set chartSeriesDuration(value:int):void {
+				_chartSeriesDuration = value;
+				chartSeriesDurationChanged = true;
+			}
+			
+			
+			private var _enable:Boolean;
+			
+			public function get enable():Boolean {
+				return _enable;
+			}
+			
+		    /**
+		     *  @private
+		     */
+		    public function set enable(value:Boolean):void {
+				//trace("chart enable= " + value);
+				if (_enable==value) return;
+				
+				_enable = value;
+				
+				if (value) {
+					//columnChart.enabled = true;
+					
+					if (dataSet==null) {
+						generateData();
+					}
+					
+					// run through setting values
+					resetCharts();
+					
+					columnChart.enabled = true;
+				}
+				
+				else {
+					timer.stop();
+					
+					if (pieChartSeriesEffect.isPlaying || chartSeriesEffect.isPlaying) {
+						scheduleDisableChange = true;
+					}
+					else {
+						//clearDataSet(dataSet);
+						//pieChartSeriesEffect.stop();
+						//chartSeriesEffect.stop();
+						columnChart.enabled = false;
+					}
+				}
+				
+
+				
+				// initiates the first call to update timer handler
+				//timeoutInterval = setTimeout(timerHandler, 15);
+			}
+			
+			/**
+			 * 
+			 * */
+			public function toggleEnable():void {
+				return;
+				//enable = !enable;
+				if (!columnChart.enabled) {
+					enableSequence.play();
+				}
+				else {
+					disableSequence.play();
+				}
+			}
+			
+			
+			/**
+			 * Resets the timer and data
+			 * */
+			private function resetCharts():void {
+				clearTimeout(timeoutInterval);
+				
+				
+				if (enable) {
+					
+					// reset last time something happened times
+					addRemoveLastTime = getTimer();
+					rotateLastTime = getTimer();
+
+					
+					// reset and start timer
+					timer.reset();
+					timer.start();
+					
+					initializing = true;
+				}
+				else {
+					timer.stop();
+				}
+			}
 			
 			protected function button2_clickHandler(event:MouseEvent):void
 			{
@@ -32,8 +254,48 @@
 				var profileTest:ProfileTest = PerformanceMeter.getTest("Test1");
 				timestamps.source = profileTest.timestampsArray;
 				timestamps.refresh();
-				trace("time = ", time);
+				//trace("time = ", time);
 			}
+			
+			/**
+			 * Generates data
+			 * */
+			private function generateData():void {
+				//trace("generating Data");
+				
+				/*if (currentState==LINE_STATE) {
+					if (lastCount <8) {
+						lastCount = 8;
+					}
+					
+					generateLineData();
+				}
+				else {*/
+					generateChartData();
+				//}
+			}
+			
+			/**
+			 * Generates generic chart data
+			 * */
+            public function generateChartData():void {
+                var newData:Array = [];
+				
+                var X:Number = Math.random()*100 - 50;
+                var Y:Number = X - Math.random() * 10;
+                var V:Number = Math.random()*100;
+				
+				
+                for (var i:int = 0;i<lastCount;i++) {
+					X = Math.random()*100;
+                    Y = Math.random()*100;
+                    V = Math.random()*10;
+					
+                    newData.push(new DataItem(X,Y,V));
+                }
+				
+                dataSet = newData;
+            }
 			
 			protected function button1_clickHandler(event:MouseEvent):void
 			{
@@ -42,7 +304,7 @@
 			
 			protected function showMessage_profileDataUpdateHandler(event:Event):void
 			{
-				trace(event.currentTarget.profileData);
+				//trace(event.currentTarget.profileData);
 			}
 			
 			public function profileData(testName:String):Array {
@@ -54,29 +316,327 @@
 				}
 				return [];
 			}
+			
+			protected function group2_creationCompleteHandler(event:FlexEvent):void {
+				timer.addEventListener(TimerEvent.TIMER, timerHandler);
+				generateData();
+			}
+			
+			protected function timerHandler(event:TimerEvent = null):void {
+				var time:int = getTimer();
+				
+				//trace("TIMER UPDATE - " + String(time - lastUpdateTime));
+				
+				// if state changed check for timer delay change
+				
+				
+				// adding new items
+				if (time>addRemoveLastTime+addRemoveInterval) {
+					//trace("adding new items");
+					addRemoveLastTime = time;
+					lastCount = Math.random() * maxCount+3;
+				}
+				
+				// prevents data changes when animations are already running
+				if (chartSeriesEffect.isPlaying || pieChartSeriesEffect.isPlaying) {
+					scheduleDataChange = true;
+				}
+				else {
+					generateData();
+				}
+				
+				if (timer.currentCount>15) {
+					dispatchEvent(new Event(ANALYSIS_COMPLETE));
+				}
+				
+				initializing = false;
+				
+				lastUpdateTime = getTimer();
+			}
+			
+			protected function chartSeriesEffect_effectEndHandler(event:EffectEvent):void {
+				
+				/* if (checkMe) {
+					trace("checking");
+				} */
+				if (chartSeriesDurationChanged) {
+					//trace('effect ended duration changed:' + getTimer());
+					
+					chartSeriesEffect.duration = chartSeriesDuration;
+					pieChartSeriesEffect.duration = chartSeriesDuration;
+					chartSeriesDurationChanged = false;
+				}
+				else {
+					//trace('chart effect ended:'  + getTimer());
+				}
+				
+				// disable
+				if (scheduleDisableChange) {
+					//clearDataSet(dataSet);
+					//trace('scheduleDisableChange:'  + getTimer());
+					scheduleDisableChange = false;
+					enable = false;// try again 
+					return;
+				}
+				
+				// change data
+				if (scheduleDataChange) {
+					//trace('scheduleDataChange:'  + getTimer());
+					generateData();
+					scheduleDataChange = false;
+				}
+				
+			}
+			
+
+			public function axisLabelFunction(labelValue:Object, previousValue:Object, axis:IAxis):String {
+				var characters:int = String(labelValue).length;
+				
+				if (!showLabels) {
+					return " ";
+				}
+				
+				if (characters<2) {
+					//trace("value");
+					return "AB" + String(labelValue);
+				}
+				else if (characters<3) {
+					return "A" + String(labelValue);
+				}
+				
+				return String(labelValue);
+			}
+			
+			public function verticalAxisLabelFunction(labelValue:Object, previousValue:Object, axis:IAxis):String {
+				var characters:int = String(labelValue).length;
+				
+				
+				if (!showLabels) {
+					return " ";
+				}
+				
+				
+				//return "•";
+				if (characters<2) {
+					//trace("value");
+					return "  " + String(labelValue);
+				}
+				else if (characters<3) {
+					return " " + String(labelValue);
+				}
+				
+				return String(labelValue);
+			}
+			
+			private function clearDataSet(dataSet:Array):void {
+				dataSet = null; return;
+				for (var i:int;i<dataSet.length;i++) {
+					var item:DataItem = dataSet[i] as DataItem;
+					item.x = 0;
+					item.y = 0;
+					item.v = 0;
+				}
+			}
+			
+			
+			public function get disableTimers():Boolean {
+				return true;
+			}
+			
+			public function set disableTimers(value:Boolean):void {
+				//trace("disable timers A");
+				timer.stop();
+				//trace("disable timers B");
+			}
+			
 		]]>
 	</fx:Script>
 	
 	
 	<fx:Declarations>
-		<!--<handlers:EventHandler eventName="click" target="{button1}" >
-			<status:ShowStatusMessage id="showMessage" profileToConsole="true" message="Performance testing" profile="true"/>
-		</handlers:EventHandler>-->
+		<handlers:EventHandler eventName="creationComplete" target="{this}" >
+			
+				<s:Fade startDelay="1000" target="{awesomeLabel}" alphaTo="1" alphaFrom="0"/>
+				<s:Pause duration="1000"/>
+				<s:Fade target="{awesomeLabel}" alphaTo="0" alphaFrom="1"/>
+				
+		</handlers:EventHandler>
 		
-		<s:ArrayCollection id="timestamps"/>
+		<s:ArrayCollection id="timestamps" />
+		
+		<mx:SeriesInterpolate id="chartSeriesEffect" 
+							  duration="1000" 
+							  elementOffset="15"
+							  minimumElementDuration="200"
+							  effectEnd="chartSeriesEffect_effectEndHandler(event)"/>
+		
+		<mx:SeriesInterpolate id="pieChartSeriesEffect" 
+							  duration="1000" 
+							  elementOffset="0"
+							  minimumElementDuration="0"
+							  effectEnd="chartSeriesEffect_effectEndHandler(event)"/>
+		
+		<s:SolidColorStroke id="axisStroke" color="#ff000" weight="4"/>
+		<s:SolidColorStroke id="lineStroke" color="#ffd000" weight="4"/>
+		<s:SolidColorStroke id="tickStroke" color="#ffffff" alpha=".5" />
+		<s:SolidColorStroke id="backgroundLineStroke" 
+							color="#ffffff" 
+							weight="0"
+							alpha="{backgroundLinesAlpha}"/>
 	</fx:Declarations>
 	
+	<s:states>
+		<s:State name="column"/>
+		<s:State name="columnOff"/>
+	</s:states>
+	
+	<s:transitions>
+		
+		<s:Transition id="transitionOn" fromState="portraitOff" toState="portraitOn" >
+			<s:Sequence id="enableSequence" >
+				
+				<!--<s:SetAction target="{this}" property="dataSet" value="{null}" />-->
+				<s:SetAction target="{columnChart}" property="enabled" value="false"/>
+				<s:SetAction target="{this}" property="visible" value="true"/>
+				<s:Pause duration="1000"/>
+				<s:SetAction target="{this}" property="enable" value="true"/>
+				
+			</s:Sequence>
+		</s:Transition>
+		
+		<s:Transition id="transitionOff" fromState="portraitOn" toState="portraitOff" >
+			<s:Sequence id="disableSequence" >
+				
+				<s:SetAction target="{this}" property="disableTimers" value="false"/>
+				<s:Pause duration="1000"/>
+				<!--<s:SetAction target="{this}" property="dataSet" value="{null}" />-->
+				<s:Pause duration="2500"/>
+				<s:SetAction target="{this}" property="enable" value="false"/>
+				
+			</s:Sequence>
+		</s:Transition>
+	</s:transitions>
+	
 	<s:layout>
-		<s:VerticalLayout />
+		<s:BasicLayout />
 	</s:layout>
+	
 	<!--<s:Button id="button1" label="Test"  click="button1_clickHandler(event)"/>-->
 	
-	<mx:CartesianChart width="100%" height="100%" >
+	<!-- COLUMN CHART -->
+    <mx:ColumnChart id="columnChart" 
+					includeIn="column" 
+					enabled="false"
+					width="100%" height="100%" 
+					dataProvider="{dataSet}"
+					color="{labelColor}"
+					bottom="0"
+					>
+		
+		<!--<mx:fill>
+			<s:SolidColor color="#ff0000"/>
+		</mx:fill>-->
+		
+		<mx:backgroundElements>
+			<fx:Array>
+				<mx:GridLines alpha="{backgroundLinesAlpha}" gridDirection="both"/>
+			</fx:Array>
+		</mx:backgroundElements>
+		
+        <mx:series>
+            <mx:ColumnSeries showDataEffect="{chartSeriesEffect}" 
+							 yField="x"
+							 >
+				<mx:fill>
+					<s:SolidColor color="#2da6e9"/>
+				</mx:fill>
+			</mx:ColumnSeries>
+        </mx:series>
+		
+		<mx:verticalAxis>
+			<mx:LinearAxis id="verticalColumnAxisRenderer" 
+						   alignLabelsToInterval="true" 
+						   direction="normal" 
+						   interval="1"
+						   autoAdjust="true"
+						   baseAtZero="false"
+						   minimum="1" maximum="106" 
+						   labelFunction="verticalAxisLabelFunction"
+						   />
+		</mx:verticalAxis>
+		
+		<mx:horizontalAxis>
+			<mx:LinearAxis id="horizontalColumnAxisRenderer" 
+						   alignLabelsToInterval="true" 
+						   direction="normal" 
+						   interval="1"
+						   autoAdjust="false"
+						   baseAtZero="true"
+						   labelFunction="axisLabelFunction"
+						   />
+		</mx:horizontalAxis>
+		
+		
+		<mx:verticalAxisRenderers>
+				<mx:AxisRenderer axis="{verticalColumnAxisRenderer}" 
+								 showLabels="true"
+								 showLine="true"
+								 canDropLabels="true" 
+								 tickPlacement="{tickPlacement}"
+								 tickStroke="{tickStroke}"
+								 axisStroke="{backgroundLineStroke}"
+								 placement="left"
+								 alpha="{columnChartAxisAlpha}"
+								 />
+				<mx:AxisRenderer axis="{verticalColumnAxisRenderer}" 
+								 showLabels="true"
+								 showLine="true"
+								 canDropLabels="true" 
+								 tickPlacement="{tickPlacement}"
+								 placement="right"
+								 tickStroke="{tickStroke}"
+								 axisStroke="{backgroundLineStroke}"
+								 alpha="{columnChartAxisAlpha}"
+								 />
+		</mx:verticalAxisRenderers>
+		
+		<mx:horizontalAxisRenderers>
+			<mx:AxisRenderer axis="{horizontalColumnAxisRenderer}" 
+							 showLabels="true"
+							 showLine="true"
+							 canDropLabels="true" 
+							 axisStroke="{backgroundLineStroke}"
+							 tickStroke="{tickStroke}"
+							 tickPlacement="{tickPlacement}"
+							 placement="top"
+							 alpha="{columnChartAxisAlpha}"
+							 />
+			<mx:AxisRenderer axis="{horizontalColumnAxisRenderer}" 
+							 showLabels="true"
+							 showLine="true"
+							 canDropLabels="true" 
+							 axisStroke="{backgroundLineStroke}"
+							 tickStroke="{tickStroke}"
+							 tickPlacement="{tickPlacement}"
+							 placement="bottom"
+							 alpha="{columnChartAxisAlpha}"
+							 />
+		</mx:horizontalAxisRenderers>
+    </mx:ColumnChart>
+	
+	<s:Label id="awesomeLabel" 
+			 text="Awesome" 
+			 horizontalCenter="0" 
+			 top="24" 
+			 color="#555555"
+			 visible="false"/>
+
+	<!--<mx:CartesianChart width="100%" height="100%" >
 		
 		<mx:series>
 			<mx:AreaSeries dataProvider="{timestamps}" xField="startTime" yField="duration" displayName="Display Name"/>
 		</mx:series>
-	</mx:CartesianChart>
+	</mx:CartesianChart>-->
 	
 	
 </s:Group>

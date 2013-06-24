@@ -2,17 +2,183 @@
 <s:Group xmlns:controls="com.flexcapacitor.graphics.*"
 		 xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
-		 xmlns:filters="com.flexcapacitor.filters.*">
+		 xmlns:filters="com.flexcapacitor.filters.*"
+		 
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 >
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.tools.Zoom;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			public var radiate:Radiate;
+			
+			public var zoomTool:Zoom;
+			
+			public var toolDescription:ComponentDescription;
+			
+			/**
+			 * Shows the show actual size button
+			 * */
+			[Bindable]
+			public var showActualSize:Boolean = true;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChangedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
+				
+				toolDescription = radiate.getToolByType(Zoom);
+				
+				zoomTool = toolDescription.instance as Zoom;
+				
+				
+				// temp to get reference
+				//if (!tool) tool = new Zoom();
+				
+				updateTool(zoomTool);
+			}
+			
+			/**
+			 * Update UI components to tool value
+			 * */
+			public function updateTool(tool:ITool):void {
+				var zoomValue:Number;
+				zoomValue = zoomTool.getScale();
+					
+				updateZoomInComboBox(zoomValue);
+			}
+			
+			/**
+			 * Zoom combo box change handler. Update zoom level. 
+			 * */
+			protected function zoomComboBox_changeHandler(event:IndexChangeEvent):void {
+				
+				zoomTool.setScale(parseInt(zoomComboBox.selectedItem)/100);
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function actualSize_clickHandler(event:MouseEvent):void {
+				
+				if (zoomTool) {
+					zoomTool.restoreDefaultScale();
+					zoomComboBox.selectedItem = "100%";
+				}
+			}
+			
+			/**
+			 * Scale changed
+			 * */
+			protected function scaleChangedHandler(event:RadiateEvent):void {
+				var zoomValue:Number;
+				var zoomString:String;
+				
+				zoomValue = zoomTool.getScale();
+				
+				updateZoomInComboBox(zoomValue);
+			}
+			
+			/**
+			 * Format zoom value nicely.
+			 * */
+			public function updateZoomInComboBox(zoomValue:Number):void {
+				var zoomString:String;
+				
+				if (!isNaN(zoomValue)) {
+					
+					if (String(zoomValue*100).indexOf(".")!=-1) {
+						zoomString = Number(zoomValue*100).toFixed(1) + "%";
+					}
+					else {
+						zoomString = Number(zoomValue*100) + "%";
+					}
+					
+					if (zoomValue==1) {
+						zoomComboBox.selectedItem = "100%";
+					}
+					else {
+						zoomComboBox.selectedItem = zoomString;
+					}
+				}
+			}
+			
+			/**
+			 * Document changed
+			 * */
+			protected function documentChangeHandler(event:RadiateEvent):void {
+				// since we use this independently of the tool being selected we need to make sure
+				// the target application is set
+				// we'll move this later
+				var zoomValue:Number = zoomTool.getScale();
+				
+				updateZoomInComboBox(zoomValue);
+			}
+			
+			/**
+			 * Restore to 100%
+			 * */
+			protected function zoomComboBox_doubleClickHandler(event:MouseEvent):void {
+				
+				if (zoomTool) {
+					zoomTool.restoreDefaultScale();
+					zoomComboBox.selectedItem = "100%";
+				}
+			}
+			
+		]]>
+	</fx:Script>
 
 	<s:layout>
 		<s:HorizontalLayout paddingLeft="4" />
 	</s:layout>
 	
 	<!--<s:CheckBox label="Scrub Zoom" />-->
-	<s:Button label="Actual Size" />
-	<s:ComboBox width="100" focusAlpha="0" selectedIndex="0">
+	<s:Button id="actualSize" label="Actual Size"
+			  visible="{showActualSize}"
+			  includeInLayout="{showActualSize}"
+			  click="actualSize_clickHandler(event)"/>
+	
+	<!--<s:Button id="fitSize" label="Fit Size"
+			  visible="{showActualSize}"
+			  includeInLayout="{showActualSize}"
+			  click="actualSize_clickHandler(event)"/>-->
+	
+	<s:ComboBox id="zoomComboBox" 
+				width="80" 
+				focusAlpha="0" 
+				selectedIndex="8"
+				change="zoomComboBox_changeHandler(event)"
+				openOnInput="true" arrowKeysWrapFocus="true"
+				doubleClickEnabled="true"
+				doubleClick="zoomComboBox_doubleClickHandler(event)"
+				>
+        <s:layout>
+            <s:VerticalLayout gap="0"
+                    horizontalAlign="contentJustify"
+                    requestedRowCount="10" />
+        </s:layout>
 		<s:dataProvider>
 			<s:ArrayList>
+				<fx:String>600%</fx:String>
+				<fx:String>500%</fx:String>
+				<fx:String>400%</fx:String>
+				<fx:String>300%</fx:String>
+				<fx:String>200%</fx:String>
+				<fx:String>175%</fx:String>
+				<fx:String>150%</fx:String>
+				<fx:String>125%</fx:String>
 				<fx:String>100%</fx:String>
 				<fx:String>75%</fx:String>
 				<fx:String>50%</fx:String>

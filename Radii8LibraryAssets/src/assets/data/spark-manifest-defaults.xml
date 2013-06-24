@@ -13,18 +13,18 @@
 <!--
 
     Spark Components
-
+    also add references to Radii8SparkLibrary class
 -->
 <componentPackage>
 
     <component id="Application" class="spark.components.Application" include="false"/>
     
-    <component id="BorderContainer" class="spark.components.BorderContainer" include="false">
+    <component id="BorderContainer" class="spark.components.BorderContainer" include="true">
     	<defaults width="240" height="160"/>
     </component>
     
     <component id="Button" class="spark.components.Button">
-    	<defaults label="Label"/>
+    	<defaults label="Button"/>
     </component>
     
     <component id="ButtonBar" class="spark.components.ButtonBar" include="false" >
@@ -70,6 +70,10 @@
     </component>
     
     <component id="Grid" class="spark.components.Grid" include="false">
+    	<defaults width="240" height="160" />
+    </component>
+    
+    <component id="Grid" class="mx.containers.Grid" include="false">
     	<defaults width="240" height="160" />
     </component>
     

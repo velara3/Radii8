@@ -109,8 +109,8 @@
 			}
 			
 			protected function historyChangeHandler(event:RadiateEvent):void {
-				if (event.newIndex==-1 || !event.historyEvent) return;
-				var properties:Array = event.historyEvent.properties;
+				if (event.newIndex==-1 || !event.historyEventItem) return;
+				var properties:Array = event.historyEventItem.properties;
 				var length:int = properties ? properties.length : 0;
 				
 				if (!target) return;

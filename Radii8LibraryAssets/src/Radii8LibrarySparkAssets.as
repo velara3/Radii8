@@ -1,6 +1,7 @@
 package {
 	import spark.components.BorderContainer;
 	import spark.components.ButtonBar;
+	import spark.components.Grid;
 	import spark.components.RadioButton;
 	import spark.components.TabBar;
 	import spark.components.TileGroup;
@@ -72,6 +73,12 @@ package {
 		
 		//[Embed(source="assets/icons/spark/containers/FormItem.png")]
 		//public static var FormItemIcon:Class;
+		
+		[Embed(source="assets/icons/spark/containers/DataGroup.png")]
+		public static const Grid:Class;
+		public static var grid:spark.components.Grid;
+		public static var defaultGridItemRenderer:spark.skins.spark.DefaultGridItemRenderer;
+		//public static var gridColumn:GridColumn;
 		
 		[Embed(source="assets/icons/spark/containers/GridColumnHeaderGroup.png")]
 		public static const GridColumnHeaderGroupIcon:Class;

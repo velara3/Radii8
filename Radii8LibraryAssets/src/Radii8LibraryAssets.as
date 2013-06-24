@@ -11,7 +11,7 @@ package {
 		// EDIT
 		///////////////////////////////////////////////////////
 		
-		[Embed(source="assets/icons/general/Copy.png")]
+		[Embed(source="assets/icons/general/CopyBW.png")]
 		public static const copy:Class;
 		
 		[Embed(source="assets/icons/general/undo.png")]
@@ -20,7 +20,7 @@ package {
 		[Embed(source="assets/icons/general/redo.png")]
 		public static const redo:Class;
 		
-		[Embed(source="assets/icons/general/edit.png")]
+		[Embed(source="assets/icons/general/EditBW.png")]
 		public static const edit:Class;
 		
 		[Embed(source="assets/icons/general/Selection.png")]

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:components="com.flexcapacitor.components.*" 
+		 xmlns:flexiframe="com.google.code.flexiframe.*" 
+		 
+		 minWidth="200" 
+		 minHeight="100"
+		 creationComplete="group1_creationCompleteHandler(event)" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.MetaData;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.events.FlexEvent;
+			
+			/**
+			 * Reference to Radiate
+			 * */
+			public var radiate:Radiate;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
+				
+				if (radiate.target) {
+					//target = radiate.target;
+				}
+			}
+			
+			public var lastURL:String;
+			 
+			protected function propertySelectedHandler(event:RadiateEvent):void {
+				var metadata:MetaData = MetaData(event.selectedItem);
+				var isVisible:Boolean = DisplayObjectUtils.getGreatestVisibilityDisplayList(this);
+				var path:String = "";
+				var prefix:String = "";
+				
+				lastURL  = Radiate.getURLToHelp(metadata);
+				
+				if (!isVisible || !showDocsCheckbox.selected) {
+					
+					textURL.text = "";
+					return;
+				}
+				
+				updateDocumentation();
+				
+			}
+			
+			protected function showDocsCheckbox_changeHandler(event:Event):void {
+				
+				updateDocumentation();
+			}
+			
+			protected function openInSeparateWindow_changeHandler(event:Event):void {
+				
+				updateDocumentation();
+			}
+			
+			public function updateDocumentation():void {
+				
+				if (showDocsCheckbox.selected) {
+					
+					if (openInSeparateWindow.selected) {
+						var request:URLRequest = new URLRequest(lastURL);
+						navigateToURL(request, "asdocs");
+						
+						if (docsFrame.source!="" || docsFrame.source!="about:blank") {
+							docsFrame.source = "";
+						}
+					}
+					else {
+						docsFrame.source = lastURL;
+					}
+					textURL.text = lastURL;
+				}
+				else {
+					docsFrame.source = "about:blank";
+					textURL.text = "";
+				}
+			}
+			
+			protected function showURL_changeHandler(event:Event):void {
+				textURL.visible = textURL.includeInLayout = !textURL.visible;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup left="0" right="0" 
+			  width="100%"
+			  clipAndEnableScrolling="true" 
+			  paddingLeft="6" 
+			  paddingRight="10"
+			  >
+		<s:TextInput id="textURL" 
+					 width="100%" 
+					 color="#A6a5a5" 
+					 borderColor="#A5A5A5"
+					 visible="false"
+					 includeInLayout="false"/>
+		<s:Spacer width="100%"
+					 visible="{!textURL.visible}"
+					 includeInLayout="{!textURL.visible}"/>
+		<s:CheckBox id="showURL" label="Show URL" 
+					change="showURL_changeHandler(event)"/>
+		<s:CheckBox id="openInSeparateWindow" label="Open in Window" 
+					change="openInSeparateWindow_changeHandler(event)"/>
+		<s:CheckBox id="showDocsCheckbox" 
+					label="Enabled" 
+					change="showDocsCheckbox_changeHandler(event)"
+					selected="true"
+					/>
+	</s:HGroup>
+	
+	<flexiframe:IFrame id="docsFrame" top="28" width="100%" height="100%" />
+	
+</s:Group>

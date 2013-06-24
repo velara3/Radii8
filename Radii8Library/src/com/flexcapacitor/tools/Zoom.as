@@ -1,20 +1,31 @@
 
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.events.RadiateEvent;
 	
+	import flash.display.DisplayObject;
+	import flash.display.Stage;
+	import flash.events.Event;
+	import flash.events.EventDispatcher;
+	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
-	import flash.geom.Point;
+	import flash.ui.Mouse;
+	import flash.ui.MouseCursor;
+	
+	import mx.core.EventPriority;
+	import mx.core.FlexGlobals;
+	import mx.managers.SystemManager;
 	
 	/**
 	 * Zooms in on the stage.  
 	 * 
 	 * */
-	public class Zoom implements ITool {
+	public class Zoom extends EventDispatcher implements ITool {
 		
 		
 		public function Zoom()
 		{
-			
+			//radiate = Radiate.getInstance();
 		}
 		
 		[Embed(source="assets/icons/tools/Zoom.png")]
@@ -24,29 +35,23 @@ package com.flexcapacitor.tools {
 			return _icon;
 		}
 		
-		/**
-		 * Enable this tool. 
-		 * */
-		public function enable():void
-		{
-			radiate = Radiate.getInstance();
-			
-			radiate.document.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
-		}
+		[Embed(source="assets/icons/tools/ZoomIn.png")]
+		public static const ZoomInCursor:Class;
 		
-		/**
-		 * Disable this tool.
-		 * */
-		public function disable():void
-		{
-			radiate.document.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
-			
-		}
+		[Embed(source="assets/icons/tools/ZoomOut.png")]
+		public static const ZoomOutCursor:Class;
 		
+		public var cursors:Array;
+		
+		
+
 		/**
 		 * The radiate instance.
 		 * */
-		public var radiate:Radiate;
+		public function get radiate():Radiate {
+			return Radiate.getInstance();
+		}
+
 
 		/**
 		 * The document / application
@@ -62,109 +67,275 @@ package com.flexcapacitor.tools {
 		 * The background parent
 		 * */
 		public var canvasBackgroundParent:Object;
+
+		/**
+		 * 
+		 * */
+		public var defaultCursorID:String;
 		
 		/**
 		 * 
 		 * */
-		protected function mouseDownHandler(event:MouseEvent):void {
-			Radiate.log.info("ZOOM MOUSE DOWN");
-			var point:Point = new Point(event.stageX, event.stageY);
-			/*var targetsUnderPoint:Array = FlexGlobals.topLevelApplication.getObjectsUnderPoint(point);
-			var componentTree:ComponentDescription;
-			var description:ComponentDescription;
-			var target:Object = event.target;
-			var items:Array = [];
-			var length:int;
+		public var zoomInCursorID:String;
+		
+		/**
+		 * 
+		 * */
+		public var zoomOutCursorID:String;
+		
+		/**
+		 * 
+		 * */
+		public var isOverDocument:Boolean;
+		
+		/**
+		 * Enable this tool. 
+		 * */
+		public function enable():void
+		{
 			
-			// test url for remote image: 
-			// http://www.google.com/intl/en_com/images/srpr/logo3w.png
-			// file:///Users/monkeypunch/Documents/Adobe%20Flash%20Builder%2045/Radii8/src/assets/images/eye.png
+			//radiate.document.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
 			
-			// clicked outside of this container. is there a way to prevent hearing
-			// events from everywhere? stage sandboxroot?
-			if (!targetApplication || !Object(targetApplication).contains(target)) {
-				//trace("does not contain");
-				return;
+			if (radiate.document) {
+				updateDocument(DisplayObject(radiate.document));
 			}
 			
-			// clicked on background area
-			if (target==canvasBackground || target==canvasBackgroundParent) {
-				radiate.setTarget(targetApplication, true);
-				return;
+			zoomInCursorID = radiate.getMouseCursorID(this, "ZoomInCursor");
+			zoomOutCursorID = radiate.getMouseCursorID(this, "ZoomOutCursor");
+		}
+		
+		/**
+		 * Disable this tool.
+		 * */
+		public function disable():void {
+			
+			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
+			
+			updateDocument(null);
+		}
+		
+		/**
+		 * 
+		 * */
+		public function updateDocument(document:Object):void {
+			var stage:Stage = FlexGlobals.topLevelApplication.stage;
+			var sandboxRoot:DisplayObject = SystemManager(FlexGlobals.topLevelApplication.systemManager).getSandboxRoot();
+			
+			// remove listeners
+			if (targetApplication && targetApplication!=document) {
+				targetApplication.removeEventListener(MouseEvent.CLICK, handleClick, true);
+				targetApplication.removeEventListener(MouseEvent.MOUSE_MOVE, handleMouseMove);
+				targetApplication.removeEventListener(MouseEvent.MOUSE_DOWN, handleMouseDown);
+				targetApplication.removeEventListener(MouseEvent.ROLL_OVER, rollOverHandler);
+				targetApplication.removeEventListener(MouseEvent.ROLL_OUT, rollOutHandler);
+				
+				//targetApplication.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
+				//stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
+				
+				// keyboard handling
+				//targetApplication.removeEventListener(Event.ENTER_FRAME, enterFrameHandler, false);
+				sandboxRoot.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerSandboxRoot, false);
+				//sandboxRoot.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerSandboxRoot, false);
+				//sandboxRoot.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerSandboxRoot, true);
 			}
 			
+			targetApplication = document;
 			
-			// check if target is loader
-			if (target is Loader) {
-				//Error: Request for resource at http://www.google.com/intl/en_com/images/srpr/logo3w.png by requestor from http://www.radii8.com/debug-build/RadiateExample.swf is denied due to lack of policy file permissions.
+			// add listeners
+			if (targetApplication) {
+				targetApplication.addEventListener(MouseEvent.CLICK, handleClick, true, EventPriority.CURSOR_MANAGEMENT, true);
+				targetApplication.addEventListener(MouseEvent.MOUSE_MOVE, handleMouseMove, false, EventPriority.CURSOR_MANAGEMENT, true);
+				targetApplication.addEventListener(MouseEvent.MOUSE_DOWN, handleMouseDown, false, EventPriority.CURSOR_MANAGEMENT, true);
+				targetApplication.addEventListener(MouseEvent.ROLL_OVER, rollOverHandler, false, EventPriority.CURSOR_MANAGEMENT, true);
+				targetApplication.addEventListener(MouseEvent.ROLL_OUT, rollOutHandler, false, EventPriority.CURSOR_MANAGEMENT, true);
 				
-				//*** Security Sandbox Violation ***
-				//	Connection to http://www.google.com/intl/en_com/images/srpr/logo3w.png halted - not permitted from http://www.radii8.com/debug-build/RadiateExample.swf
-				targetsUnderPoint.push(target);
+				// keyboard handling
+				//targetApplication.addEventListener(Event.ENTER_FRAME, enterFrameHandler, false, EventPriority.DEFAULT, true);
+				sandboxRoot.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerSandboxRoot, false, EventPriority.DEFAULT, true);
+				sandboxRoot.addEventListener(KeyboardEvent.KEY_UP, keyUpHandlerSandboxRoot, false, EventPriority.DEFAULT, true);
+				//sandboxRoot.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerSandboxRoot, false, 1001, true);
+				//sandboxRoot.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerSandboxRoot, true, 1001, true);
+				
+				//targetApplication.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, false, EventPriority.CURSOR_MANAGEMENT, true);
+				//targetApplication.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true, EventPriority.CURSOR_MANAGEMENT, true);
+				
+				//stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, false, EventPriority.CURSOR_MANAGEMENT, true);
+				//stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true, EventPriority.CURSOR_MANAGEMENT, true);
 			}
 			
-			length = targetsUnderPoint.length;
-			targetsUnderPoint = targetsUnderPoint.reverse();
+		}
+		
+		/**
+		 * Click mouse move
+		 * */
+		protected function handleMouseMove(event:MouseEvent):void {
 			
-			// loop through items under point until we find one on the *component* tree
-			componentTree = Radiate.getComponentDisplayList();
-			
-			componentTreeLoop:
-			for (var i:int;i<length;i++) {
-				target = targetsUnderPoint[i];
+			if (isOverDocument) {
+				event.stopImmediatePropagation();
 				
-				if (!targetApplication.contains(DisplayObject(target))) {
-					continue;
-				}
+				// redispatch mouse move event
+				dispatchEvent(event);
 				
-				description = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
+				updateMouseCursor(event.altKey || event.shiftKey);
 				
-				if (description) {
-					target = description.instance;
-					break;
-				}
 			}
+		}
+		
+		/**
+		 * Click mouse down
+		 * */
+		protected function handleMouseDown(event:MouseEvent):void {
 			
-			
-			if (target) {
-				// select target on mouse up or drag drop whichever comes first
-				target.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+			if (isOverDocument) {
+				event.stopImmediatePropagation();
 				
-				if (target!=targetApplication) {
-					
-				}
+				// redispatch mouse move event
+				dispatchEvent(event);
+				
+				updateMouseCursor(event.altKey || event.shiftKey);
+				
 			}
-			*/
 		}
 		
 		
-		protected function mouseUpHandler(event:MouseEvent):void {
-			trace("ZOOM MOUSE UP");
-			/*var target:Object = event.currentTarget;
+		/**
+		 * Click handler added 
+		 * */
+		protected function handleClick(event:MouseEvent):void {
+			// we are intercepting this event so we can inspect the target
+			// stop the event propagation
 			
-			if (target is List) {
-				target.dragEnabled = true; // restore drag and drop if it was enabled
+			// we don't stop the propagation on touch devices so you can navigate the application
+			event.stopImmediatePropagation();
+			
+			updateMouseCursor(event.altKey || event.shiftKey);
+			
+			if (targetApplication is DisplayObject) {
+				
+				if (event.altKey || event.shiftKey) {
+					radiate.decreaseScale();
+				}
+				else {
+					radiate.increaseScale();
+				}
+				
 			}
+		}
+		
+		
+		/**
+		 * Roll over handler 
+		 * */
+		protected function rollOverHandler(event:MouseEvent):void {
+			isOverDocument = true;
 			
-			target.visible = true;
+			event.stopImmediatePropagation();
 			
-			// clean up
-			if (target.hasEventListener(MouseEvent.MOUSE_UP)) {
-				trace("1 has event listener");
+			// redispatch rollover event
+			dispatchEvent(event);
+			
+			
+			
+			updateMouseCursor(event.altKey || event.shiftKey);
+		}
+		
+		/**
+		 * Roll out handler 
+		 * */
+		protected function rollOutHandler(event:MouseEvent):void {
+			isOverDocument = false;
+			event.stopImmediatePropagation();
+			
+			// redispatch rollout event
+			dispatchEvent(event); 
+			
+			Mouse.cursor = MouseCursor.AUTO;
+		}
+		
+		/**
+		 * Key down handler 
+		 * */
+		protected function keyDownHandler(event:KeyboardEvent):void {
+			//Radiate.log.info("Dispatcher is: " + event.currentTarget + " in phase " + (event.eventPhase==1 ? "capture" : "bubble"));
+			updateMouseCursor(event.altKey || event.shiftKey);
+		}
+		
+		/**
+		 * Key down handler 
+		 * */
+		protected function keyDownHandlerSandboxRoot(event:KeyboardEvent):void {
+			// Radiate.log.info("1. Dispatcher is: " + event.currentTarget + " in phase " + (event.eventPhase==1 ? "capture" : "bubble"));
+			updateMouseCursor(event.altKey || event.shiftKey);
+		}
+		
+		/**
+		 * Key up handler 
+		 * */
+		protected function keyUpHandlerSandboxRoot(event:KeyboardEvent):void {
+			// Radiate.log.info("1. Dispatcher is: " + event.currentTarget + " in phase " + (event.eventPhase==1 ? "capture" : "bubble"));
+			updateMouseCursor(event.altKey || event.shiftKey);
+		}
+		
+		/**
+		 * Enter frame handler to try and capture ALT key. Doesn't work. 
+		 * */
+		protected function enterFrameHandler(event:Event):void {
+			//Radiate.log.info("1. Dispatcher is: " + event.currentTarget + " in phase " + (event.eventPhase==1 ? "capture" : "bubble"));
+			var newEvent:MouseEvent = new MouseEvent(MouseEvent.MOUSE_MOVE, false, false);
+			
+			if (newEvent.altKey) {
+				updateMouseCursor(newEvent.altKey);
 			}
-			target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
-			if (target.hasEventListener(MouseEvent.MOUSE_UP)) {
-				trace("2 has event listener");
+			if (newEvent.shiftKey) {
+				updateMouseCursor(newEvent.altKey);
 			}
-			else {
-				trace("listener removed");
+		}
+		
+		/**
+		 * Document changed update. 
+		 * */
+		protected function documentChangeHandler(event:RadiateEvent):void {
+			updateDocument(event.selectedItem);
+			
+		}
+		
+		/**
+		 * Restores the zoom of the target application to 100%. 
+		 * */
+		public function setScale(value:Number):void {
+			radiate.setScale(value);
+		}
+		
+		/**
+		 * Restores the zoom of the target application to 100%. 
+		 * */
+		public function getScale():Number {
+			
+			return radiate.getScale();
+		}
+		
+		/**
+		 * Restores the zoom of the target application to 100%. 
+		 * */
+		public function restoreDefaultScale():void {
+			radiate.restoreDefaultScale();
+		}
+		
+		/**
+		 * Update mouse cursor
+		 * */
+		public function updateMouseCursor(zoomOut:Boolean = false):void {
+			
+			if (isOverDocument) {
+				if (zoomOut) {
+					//Radiate.log.info("Setting zoom out");
+					Mouse.cursor = zoomOutCursorID;
+				}
+				else {
+					//Radiate.log.info("Setting zoom IN");
+					Mouse.cursor = zoomInCursorID;
+				}
 			}
-			
-			// select target
-			if (radiate.target!=target) {
-				radiate.setTarget(target, true);
-			}*/
-			
 		}
 		
 	}

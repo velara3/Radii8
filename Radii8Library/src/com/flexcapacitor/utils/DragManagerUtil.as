@@ -4,6 +4,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+	import com.flexcapacitor.utils.supportClasses.DragData;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	
 	import flash.display.DisplayObject;
@@ -18,6 +19,7 @@ package com.flexcapacitor.utils {
 	import flash.utils.Dictionary;
 	
 	import mx.collections.ArrayCollection;
+	import mx.containers.GridItem;
 	import mx.core.BitmapAsset;
 	import mx.core.DragSource;
 	import mx.core.FlexGlobals;
@@ -26,6 +28,7 @@ package com.flexcapacitor.utils {
 	import mx.core.IFlexDisplayObject;
 	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
+	import mx.core.IVisualElementContainer;
 	import mx.events.DragEvent;
 	import mx.managers.DragManager;
 	import mx.managers.ISystemManager;
@@ -93,14 +96,18 @@ package com.flexcapacitor.utils {
 		public var showSelectionBoxOnApplication:Boolean;
 		
 		public var swfRoot:DisplayObject;
+		
+		/**
+		 * Reference to the document
+		 * */
 		public var parentApplication:Application;
 		
-		public var targetSelectionGroup:ItemRenderer = new TargetSelectionGroup();
+		public var selectionGroup:ItemRenderer = new TargetSelectionGroup();
 		public var mouseLocationLines:IFlexDisplayObject = new ListDropIndicator();
 		public var lastTargetCandidate:Object;
 		public var dropTarget:Object;
-		public var targetGroup:GroupBase;
-		public var targetGroupLayout:LayoutBase;
+		public var groupBase:GroupBase;
+		public var dropLayout:LayoutBase;
 		
 		[Bindable] 
 		public var dropTargetName:String;
@@ -119,6 +126,7 @@ package com.flexcapacitor.utils {
 		
 		public var dragInitiator:IUIComponent;
 		private var dropLocation:DropLocation;
+		public var dragData:DragData;
 		
 		
 		public var showDropIndicator:Boolean = true;
@@ -242,18 +250,18 @@ package com.flexcapacitor.utils {
 			addDragListeners(dragInitiator, dragListener);
 			
 			// creates an instance of the bounding box that will be shown around the drop target
-			if (!targetSelectionGroup) {
-				targetSelectionGroup = new TargetSelectionGroup();
-				targetSelectionGroup.mouseEnabled = false;
-				targetSelectionGroup.mouseChildren = false;
+			if (!selectionGroup) {
+				selectionGroup = new TargetSelectionGroup();
+				selectionGroup.mouseEnabled = false;
+				selectionGroup.mouseChildren = false;
 			}
 			
 			// show selection / bounding box 
 			if (showSelectionBox) {
 				// RangeError: Error #2006: The supplied index is out of bounds.
-				PopUpManager.addPopUp(targetSelectionGroup, swfRoot);
-				targetSelectionGroup.visible = false;
-				targetSelectionGroup.addEventListener(DragEvent.DRAG_OVER, dragOverHandler);
+				PopUpManager.addPopUp(selectionGroup, swfRoot);
+				selectionGroup.visible = false;
+				selectionGroup.addEventListener(DragEvent.DRAG_OVER, dragOverHandler);
 			}
 			
 			// show mouse location lines
@@ -296,8 +304,6 @@ package com.flexcapacitor.utils {
 			//trace("Drag Exit:" + event.target);
 		}
 		
-		
-		
 		/**
 		 * Dispatched during a drag over event. Dispatched multiple times. 
 		 * */
@@ -307,13 +313,15 @@ package com.flexcapacitor.utils {
 			var topLeftEdgePoint:Point;
 			var rectangle:Rectangle;
 			var isHorizontal:Boolean;
+			var isApplication:Boolean;
 			var isVertical:Boolean;
+			var isBasic:Boolean;
 			var isTile:Boolean;
 			var target:Object;
 			var length:int;
 			
 			
-			
+			/*
 			// get targets under mouse pointer
 			if (adjustMouseOffset) {
 				topLeftEdgePoint = new Point(event.stageX-offset.x, event.stageY-offset.y);
@@ -332,6 +340,9 @@ package com.flexcapacitor.utils {
 			// update location properties
 			updateDropTargetLocation(event.stageX, event.stageY);
 			
+			if (target is mx.containers.GridItem) {
+				trace("break");
+			}
 			
 			////////////////////////////////////////////////////////////
 			// find drop target
@@ -378,7 +389,8 @@ package com.flexcapacitor.utils {
 			}
 			
 			// check if target is child of self
-			if ("contains" in draggedItem && draggedItem.contains(target)) {
+			if ("contains" in draggedItem && target && 
+				draggedItem.contains(target)) {
 				Radiate.log.info("Cannot drag into child of self");
 				return;
 			}
@@ -425,9 +437,21 @@ package com.flexcapacitor.utils {
 					}
 				}
 			}
+			*/
 			
-			dropTarget = target;
+			dragData = findDropTarget(event);
 			
+			if (dragData==null) return;
+			
+			
+			dropTarget = dragData.target;
+			isApplication = dragData.isApplication;
+			isTile = dragData.isTile;
+			isVertical = dragData.isVertical;
+			isBasic = dragData.isBasicLayout;
+			isHorizontal = dragData.isHorizontal;
+			dropLocation = dragData.dropLocation;
+			dropLayout = dragData.layout;
 			
 			////////////////////////////////////////////////////////////
 			// show selection box
@@ -436,7 +460,7 @@ package com.flexcapacitor.utils {
 				
 				// get bounds
 				if (!dropTarget || 
-					(dropTarget==parentApplication && !showSelectionBoxOnApplication)) {
+					(isApplication && !showSelectionBoxOnApplication)) {
 					
 					// set values to zero
 					if (!rectangle) {
@@ -444,8 +468,8 @@ package com.flexcapacitor.utils {
 					}
 					
 					// hide selection group
-					if (targetSelectionGroup.visible) {
-						targetSelectionGroup.visible = false;
+					if (selectionGroup.visible) {
+						selectionGroup.visible = false;
 					}
 				}
 				else {
@@ -471,17 +495,17 @@ package com.flexcapacitor.utils {
 						rectangle = DisplayObject(dropTarget).getBounds(targetCoordinateSpace);
 						
 						// size and position fill
-						targetSelectionGroup.width = rectangle.width;
-						targetSelectionGroup.height = rectangle.height;
-						targetSelectionGroup.x = rectangle.x;
-						targetSelectionGroup.y = rectangle.y;
+						selectionGroup.width = rectangle.width;
+						selectionGroup.height = rectangle.height;
+						selectionGroup.x = rectangle.x;
+						selectionGroup.y = rectangle.y;
 						
 						// show target selection group
-						if (!targetSelectionGroup.visible) {
-							targetSelectionGroup.visible = true;
+						if (!selectionGroup.visible) {
+							selectionGroup.visible = true;
 						}
 						
-						targetSelectionGroup.data = dropTarget;
+						selectionGroup.data = dropTarget;
 					//}
 					
 				}
@@ -498,10 +522,10 @@ package com.flexcapacitor.utils {
 				// remove previous drop indicator
 				if (lastTargetCandidate && 
 					lastTargetCandidate!=dropTarget && 
-					lastTargetCandidate is GroupBase) {
+					lastTargetCandidate is IVisualElementContainer) {
 					
 					// hide drop indicator
-					GroupBase(lastTargetCandidate).layout.hideDropIndicator();
+					lastTargetCandidate.layout.hideDropIndicator();
 					
 					// Hide focus
 					//targetGroup.drawFocus(false);
@@ -514,7 +538,7 @@ package com.flexcapacitor.utils {
 				// if drop indicator is needed
 				if (isHorizontal || isVertical || isTile) {
 					// get drop indicator location
-					dropLocation = targetGroupLayout.calculateDropLocation(event);
+					//dropLocation = targetGroupLayout.calculateDropLocation(event);
 					
 					if (dropLocation) {
 						//DragManager.acceptDragDrop(parentApplication);
@@ -522,7 +546,7 @@ package com.flexcapacitor.utils {
 						
 						// Create the dropIndicator instance. The layout will take care of
 						// parenting, sizing, positioning and validating the dropIndicator.
-						targetGroupLayout.dropIndicator = createDropIndicator();
+						dropLayout.dropIndicator = createDropIndicator();
 						
 						// Show focus
 						//drawFocusAnyway = true;
@@ -532,7 +556,7 @@ package com.flexcapacitor.utils {
 						DragManager.showFeedback(event.ctrlKey ? DragManager.COPY : DragManager.MOVE);
 						
 						// Show drop indicator
-						targetGroupLayout.showDropIndicator(dropLocation);
+						dropLayout.showDropIndicator(dropLocation);
 					}
 					else {
 						// drop location is null
@@ -540,7 +564,7 @@ package com.flexcapacitor.utils {
 						DragManager.showFeedback(DragManager.NONE);
 						
 						// hide drop indicator
-						targetGroupLayout.hideDropIndicator();
+						dropLayout.hideDropIndicator();
 						
 						// Hide focus
 						//targetGroup.drawFocus(false);
@@ -553,10 +577,13 @@ package com.flexcapacitor.utils {
 				}
 					// target group is basic layout
 					// does not need drop indicator
-				else if (targetGroupLayout) {
+				else if (dropLayout) {
+					if (lastTargetCandidate && "layout" in lastTargetCandidate) {
+						lastTargetCandidate.layout.hideDropIndicator();
+					}
 					
 					// Hide if previously showing
-					targetGroupLayout.hideDropIndicator();
+					dropLayout.hideDropIndicator();
 					
 					// Hide focus
 					//targetGroup.drawFocus(false);
@@ -589,7 +616,7 @@ package com.flexcapacitor.utils {
 			////////////////////////////////////////////////////////////
 			// show mouse lines
 			////////////////////////////////////////////////////////////
-			if (showListDropIndicator) {
+			/*if (showListDropIndicator) {
 				mouseLocationLines.x = topLeftEdgePoint.x;
 				mouseLocationLines.y = topLeftEdgePoint.y;
 				mouseLocationLines.width = 1;
@@ -608,28 +635,229 @@ package com.flexcapacitor.utils {
 			dropTargetName = NameUtil.getUnqualifiedClassName(dropTarget);
 			
 			//trace("target: " + dropTargetName);
-			event.updateAfterEvent();
+			event.updateAfterEvent();*/
 		}
+		
+		
+		/**
+		 * Find the target under mouse pointer
+		 * */
+		public function findDropTarget(event:DragEvent, dragOver:Boolean = true):DragData {
+			/*var eventTarget:FlexSprite = FlexSprite(event.target); */
+			var visualElementContainer:IVisualElementContainer;
+			var skinnableContainer:SkinnableContainer;
+			var description:ComponentDescription;
+			var isSkinnableContainer:Boolean;
+			var topLeftEdgePoint:Point;
+			var isApplication:Boolean;
+			var isBasicLayout:Boolean;
+			var isHorizontal:Boolean;
+			var isVertical:Boolean;
+			var isGroup:Boolean;
+			var isBasic:Boolean;
+			var isTile:Boolean;
+			var layout:LayoutBase;
+			var targetsLength:int;
+			var target:Object;
+			var debug:Boolean;
+			var dropIndex:int;
+			var location:DropLocation;
+			var offscreen:Boolean;
+			
+			dragData = new DragData();
+			
+			// get targets under mouse pointer
+			if (adjustMouseOffset) {
+				topLeftEdgePoint = new Point(event.stageX-offset.x, event.stageY-offset.y);
+			}
+			else {
+				topLeftEdgePoint = new Point(event.stageX, event.stageY);
+			}
+			
+			// get items under point
+			targetsUnderPoint = topLevelApplication.getObjectsUnderPoint(topLeftEdgePoint);
+			targetsLength = targetsUnderPoint.length;
+
+			// start from highest component and go back to application
+			targetsUnderPoint = targetsUnderPoint.reverse();
+			
+			// update location properties
+			updateDropTargetLocation(event.stageX, event.stageY);
+			
+			/*if (target is mx.containers.GridItem) {
+				trace("break");
+			}*/
+			
+			////////////////////////////////////////////////////////////
+			// find drop target
+			////////////////////////////////////////////////////////////
+			
+			componentTreeLoop:
+			
+			// loop through items under point until we find one on the *component* tree
+			for (var i:int;i<targetsLength;i++) {
+				target = targetsUnderPoint[i];
+				// if parent application does not contain the target
+				if (!parentApplication.contains(DisplayObject(target))) {
+					continue;
+				}
+				
+				// check if target is self
+				if (target==draggedItem) {
+					continue;
+				}
+				
+				// check if target is child of self
+				if ("contains" in draggedItem && draggedItem.contains(target)) {
+					continue;
+				}
+				
+				// as soon as we find a visual element we can find the owner
+				if (target is IVisualElement) {
+					description = DisplayObjectUtils.getVisualElementContainerFromElement(IVisualElement(target), componentTree);
+					
+					if (description) {
+						target = description.instance;
+						break;
+					}
+				}
+			}
+			
+			
+			// check if target is self
+			if (target==draggedItem) {
+				target = parentApplication;
+				if (debug) Radiate.log.info("Cannot drag onto self");
+				
+				if (dragOver) return null;
+				//continue;
+			}
+			
+			// check if target is child of self
+			if (target && "contains" in draggedItem && 
+				draggedItem.contains(target)) {
+				if (debug) Radiate.log.info("Cannot drag into child of self");
+				if (dragOver) return null;
+				//return null;
+			}
+			
+			// this shouldn't be here but if document is not set then we get all sorts of targets
+			if (target && target != parentApplication && 
+				!parentApplication.contains(DisplayObject(target))) {
+				if (debug) Radiate.log.info("Parent application doesn't contain target");
+				if (dragOver) return null;
+				//return null;
+			}
+			
+			// still no target then we are on the application (most likely)
+			if (!target) {
+				target = parentApplication;
+			}
+			
+			if (target==parentApplication) {
+				isApplication = true;
+			}
+			
+			// check if target is a group
+			if (target is IVisualElementContainer) {
+				visualElementContainer = target as IVisualElementContainer;
+				groupBase = target as GroupBase;
+				skinnableContainer = target as SkinnableContainer;
+				//isGroup = groupBase!=null;
+				//isSkinnableContainer = skinnableContainer!=null;
+				layout = target.layout;
+				
+				dropIndex = -1;
+				
+				// skip skins
+				if (target is Skin && !includeSkins) {
+					//throw new Error("target cannot be a skin");
+					target = parentApplication;
+				}
+				
+				// skip skins (for groups in checkbox skin for example)
+				if ("owner" in target && target.owner is Skin && !includeSkins) {
+					target = parentApplication;
+				}
+				
+				// we found a group
+				//dropTarget = target;
+		
+				
+				// get drop indicator location
+				location = layout.calculateDropLocation(event);
+				
+				var stagePoint:Point = new Point(event.stageX, event.stageY);
+				offscreen = location.dropPoint.equals(stagePoint);
+				
+				if (location) {
+					dropIndex = location.dropIndex;
+				}
+				
+				// reset group layout values
+				isBasic = isTile = isVertical = isHorizontal = false;
+				
+				// check the type
+				//if (targetGroup) {
+				//	targetGroupLayout = targetGroup.layout;
+				
+				if (layout is BasicLayout) {
+					isBasic = true;
+				}
+				else if (layout is HorizontalLayout) {
+					isHorizontal = true;
+				}
+				else if (layout is VerticalLayout) {
+					isVertical = true;
+				}
+				else if (layout is TileLayout) {
+					isTile = true;
+				}
+				//}
+			}
+			
+			dragData.target = target;
+			dragData.offscreen = offscreen;
+			dragData.dropLocation = location;
+			dragData.dropIndex = dropIndex;
+			dragData.description = description;
+			dragData.isApplication = isApplication;
+			dragData.isHorizontal = isHorizontal;
+			dragData.isVertical = isVertical;
+			dragData.isTile = isTile;
+			dragData.isBasicLayout = isBasic;
+			dragData.layout = layout;
+			dragData.isGroup = groupBase!=null;
+			dragData.isSkinnableContainer = skinnableContainer!=null;
+			dragData.isVisualElementContainer = visualElementContainer!=null;
+			
+			return dragData;
+		}
+		
 		
 		/**
 		 * Drag drop event
 		 * */
 		protected function dragDropHandler(event:DragEvent):void {
 			var targetSkinnableContainer:SkinnableContainer;
+			var isVisualElementContainer:Boolean;
 			var isSkinnableContainer:Boolean;
 			var targetsUnderPoint:Array;
 			var dragEvent:DragDropEvent;
 			var topLeftEdgePoint:Point;
+			var isApplication:Boolean;
 			var isBasicLayout:Boolean;
 			var isHorizontal:Boolean;
 			var isVertical:Boolean;
 			var isGroup:Boolean;
 			var isTile:Boolean;
+			var offscreen:Boolean;
 			var dropIndex:int;
 			var target:Object;
 			var point:Point;
 			var length:int;
 			
+			/*
 			target = getContainerUnderPoint(event, parentApplication, true, offset);
 			
 			// get point from upper left edge of drag proxy
@@ -749,6 +977,8 @@ package com.flexcapacitor.utils {
 				}
 				
 			}// end loop to find target
+			*/
+			
 			
 			// check document, parentDocument, owner and parent
 			// GROUP in CHECKBOX
@@ -766,25 +996,48 @@ package com.flexcapacitor.utils {
 			// parent = spark.components.Group
 			// parentDocument = spark.skins.spark.ApplicationSkin
 			// systemManager = _application_mx_managers_SystemManager (@118f03ba1)
-			if (dropTarget is CheckBox) {
+			
+			
+			/*if (dropTarget is CheckBox) {
 				//trace("is checkbox");
 			}
 			else {
 				//trace("is group");
-			}
+			}*/
 			
-			if (!dropTarget) {
+			
+			/*if (!dropTarget) {
 				dropTarget = parentApplication;
-			}
+			}*/
 			
+			dragData = findDropTarget(event, false);
+			
+			dropTarget 			= dragData.target;
+			dropIndex 			= dragData.dropIndex;
+			dropLocation		= dragData.dropLocation;
+			dropLayout		 	= dragData.layout;
+			isApplication 		= dragData.isApplication;
+			isTile		 		= dragData.isTile;
+			isVertical 			= dragData.isVertical;
+			isBasicLayout 		= dragData.isBasicLayout;
+			isHorizontal 		= dragData.isHorizontal;
+			isGroup				= dragData.isGroup;
+			isSkinnableContainer= dragData.isSkinnableContainer;
+			isVisualElementContainer= dragData.isVisualElementContainer;
+			offscreen			= dragData.offscreen;
 			
 			removeDragListeners(dragListener);
 			removeDragDisplayObjects();
 			removeGroupListeners(parentApplication);
 			
 			// Hide if previously showing
-			if (targetGroupLayout) {
-				targetGroupLayout.hideDropIndicator();
+			if (dropLayout) {
+				dropLayout.hideDropIndicator();
+			}
+			
+			// Hide if previously showing
+			if (lastTargetCandidate && "layout" in lastTargetCandidate) {
+				lastTargetCandidate.layout.hideDropIndicator();
 			}
 			
 			// hide drop indicator
@@ -823,6 +1076,8 @@ package com.flexcapacitor.utils {
 			
 			if (dragEvent.isDefaultPrevented()) return;
 
+			
+			// SHOULD BE MOVED TO SELECTION CLASS?!?!
 			// continue drop
 			var index:int = -1;
 			var dropPoint:Point;
@@ -845,7 +1100,7 @@ package com.flexcapacitor.utils {
 					index = dropLocation.dropIndex;
 				}
 				else if (isGroup || isSkinnableContainer) {
-					dropPoint = dropLocation.dropPoint;
+					dropPoint = offscreen ? new Point(event.localX, event.localY) : dropLocation.dropPoint;
 				}
 			}
 			
@@ -867,6 +1122,7 @@ package com.flexcapacitor.utils {
 				var dropY:int = dropPoint.y - offset.y;
 				var values:Object = new Object();
 				var properties:Array = [];
+				var styles:Array = [];
 				var verticalCenter:int;
 				var horizontalCenter:int;
 				var setVerticalCenter:Boolean;
@@ -955,21 +1211,21 @@ package com.flexcapacitor.utils {
 				var moveResult:String;
 				
 				if (draggedItem.parent==null) {
-					addResult = Radiate.addElement(draggedItem, dropTarget, properties, values, eventDescription);
+					addResult = Radiate.addElement(draggedItem, dropTarget, properties, styles, values, eventDescription);
 				}
 				else {
-					moveResult = Radiate.moveElement(draggedItem, dropTarget, properties, values, eventDescription);
+					moveResult = Radiate.moveElement(draggedItem, dropTarget, properties, styles, values, eventDescription);
 				}
 				
 			}
-			// non absolute group
+			// tile, vertical or horizontal layout
 			else {
 				
 				if (draggedItem.parent==null) {
-					addResult = Radiate.addElement(draggedItem, dropTarget, null, null, eventDescription, null, null, index);
+					addResult = Radiate.addElement(draggedItem, dropTarget, null, null, null, eventDescription, null, null, index);
 				}
 				else {
-					moveResult = Radiate.moveElement(draggedItem, dropTarget, null, null, eventDescription, null, null, index);
+					moveResult = Radiate.moveElement(draggedItem, dropTarget, null, null, null, eventDescription, null, null, index);
 				}
 			}
 			
@@ -1024,10 +1280,10 @@ package com.flexcapacitor.utils {
 		
 		private function removeDragDisplayObjects():void {
 			destroyDropIndicator();
-			targetSelectionGroup.width = 0;
-			targetSelectionGroup.height = 0;
+			selectionGroup.width = 0;
+			selectionGroup.height = 0;
 			
-			PopUpManager.removePopUp(targetSelectionGroup);
+			PopUpManager.removePopUp(selectionGroup);
 			
 			PopUpManager.removePopUp(mouseLocationLines);
 			
@@ -1296,7 +1552,7 @@ package com.flexcapacitor.utils {
 				
 				// check if target is a group
 				if (target is GroupBase) {
-					targetGroup = target as GroupBase;
+					groupBase = target as GroupBase;
 					
 					// skip skins
 					if (target is Skin && !includeSkins) {
@@ -1307,19 +1563,19 @@ package com.flexcapacitor.utils {
 					dropTarget = target;
 					
 					// check the type
-					if (targetGroup) {
-						targetGroupLayout = targetGroup.layout;
+					if (groupBase) {
+						dropLayout = groupBase.layout;
 						
 						// reset group layout values
 						isTile = isVertical = isHorizontal = false;
 						
-						if (targetGroupLayout is HorizontalLayout) {
+						if (dropLayout is HorizontalLayout) {
 							isHorizontal = true;
 						}
-						else if (targetGroupLayout is VerticalLayout) {
+						else if (dropLayout is VerticalLayout) {
 							isVertical = true;
 						}
-						else if (targetGroupLayout is TileLayout) {
+						else if (dropLayout is TileLayout) {
 							isTile = true;
 						}
 					}
