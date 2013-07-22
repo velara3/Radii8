@@ -126,15 +126,25 @@ package com.flexcapacitor.utils {
 
 		/**
 		 * Gets the ID of the target object
-		 * returns null if no ID is specified or target is not a UIComponent
+		 * 
+		 * @param name if id is not available then if true then use name
+		 * @param className if id is not available then if true use class name
+		 * 
+		 * returns id or name or class name or null if no ID is specified
 		 * */
-		public static function getIdentifier(element:Object):String {
-			var id:String;
+		public static function getIdentifierOrName(element:Object, name:Boolean = false, className:Boolean = false):String {
 
-			if (element is UIComponent && UIComponent(element).id) {
-				id = UIComponent(element).id;
+			if (element && "id" in element && element.id) {
+				return element.id;
 			}
-			return id;
+			else if (element && name && "name" in element && element.name) {
+				return element.name;
+			}
+			else if (element && className) {
+				return getClassName(element);
+			}
+			
+			return null;
 		}
 
 		/**
@@ -171,7 +181,7 @@ package com.flexcapacitor.utils {
 		 * NOTE: Press CMD+SHIFT+F to and check regular expression in the Find in Files dialog
 		 * */
 		public static function getRegExpSearchPattern(target:DisplayObject, isScript:Boolean = false):String {
-			var id:String = getIdentifier(target);
+			var id:String = getIdentifierOrName(target);
 			var className:String = NameUtil.getUnqualifiedClassName(target);
 			var pattern:String;
 			var scriptPattern:String;

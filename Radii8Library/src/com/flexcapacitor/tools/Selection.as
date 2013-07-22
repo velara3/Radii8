@@ -3,6 +3,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -190,16 +191,12 @@ package com.flexcapacitor.tools {
 		public function enable():void {
 			radiate = Radiate.getInstance();
 			
-			
 			if (radiate.document) {
-				
 				updateDocument(radiate.document);
-			}
-			else {
-				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
 			}
 			
 			// handle events last so that we get correct size
+			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
@@ -209,7 +206,7 @@ package com.flexcapacitor.tools {
 		/**
 		 * 
 		 * */
-		public function updateDocument(document:Object):void {
+		public function updateDocument(document:IDocument):void {
 			var stage:Stage;
 			
 			// remove listeners
@@ -228,7 +225,8 @@ package com.flexcapacitor.tools {
 				}
 			}
 			
-			targetApplication = document;
+			this.document = document;
+			targetApplication = document ? document.instance : null;
 			
 			// add listeners
 			if (targetApplication) {
@@ -284,7 +282,7 @@ package com.flexcapacitor.tools {
 				canvasBackground = radiate.canvasBackground;
 			}
 			
-			if (radiate && radiate.canvasBackground.parent) {
+			if (radiate && radiate.canvasBackground && radiate.canvasBackground.parent) {
 				if (canvasBackgroundParent) {
 					canvasBackgroundParent.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges);
 				}
@@ -317,7 +315,7 @@ package com.flexcapacitor.tools {
 				Object(targetApplication).removeEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler);
 			}
 			
-			if ("systemManager" in targetApplication) {
+			if (targetApplication && "systemManager" in targetApplication) {
 				Object(targetApplication).systemManager.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
 				Object(targetApplication).systemManager.stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
 				Object(targetApplication).systemManager.stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, false);
@@ -369,7 +367,7 @@ package com.flexcapacitor.tools {
 		 * */
 		protected function documentChangeHandler(event:RadiateEvent):void {
 			clearSelection();
-			updateDocument(event.selectedItem);
+			updateDocument(IDocument(event.selectedItem));
 		}
 		
 		/**
@@ -451,7 +449,12 @@ package com.flexcapacitor.tools {
 		private var dragManagerInstance:DragManagerUtil;
 
 		/**
-		 * The document / application
+		 * The document
+		 * */
+		public var document:IDocument;
+
+		/**
+		 * The application
 		 * */
 		public var targetApplication:Object;
 		
@@ -519,7 +522,7 @@ package com.flexcapacitor.tools {
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
 			// loop through items under point until we find one on the *component* tree
-			componentTree = DisplayObjectUtils.getComponentDisplayList(targetApplication);
+			componentTree = radiate.document.description;
 			
 			componentTreeLoop:
 			for (var i:int;i<length;i++) {
@@ -553,7 +556,7 @@ package com.flexcapacitor.tools {
 					}
 					
 					//target.visible = false;
-					dragManagerInstance.listenForDragBehavior(target as IUIComponent, targetApplication as Application, event);
+					dragManagerInstance.listenForDragBehavior(target as IUIComponent, document, event);
 					dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop, false, 0, true);
 					dragManagerInstance.addEventListener(DragDropEvent.DRAG_OVER, handleDragOver, false, 0, true);
 				}
@@ -794,28 +797,28 @@ package com.flexcapacitor.tools {
 					changes.push(radiate.targets[index].x-constant);
 				}
 				
-				Radiate.moveElement(radiate.targets, null, ["x"], null, changes);
+				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["x"], null, changes);
 			}
 			else if (event.keyCode==Keyboard.RIGHT) {
 				for (;index<radiate.targets.length;index++) {
 					changes.push(radiate.targets[index].x+constant);
 				}
 				
-				Radiate.moveElement(radiate.targets, null, ["x"], null, changes);
+				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["x"], null, changes);
 			}
 			else if (event.keyCode==Keyboard.UP) {
 				for (;index<radiate.targets.length;index++) {
 					changes.push(radiate.targets[index].y-constant);
 				}
 				
-				Radiate.moveElement(radiate.targets, null, ["y"], null, changes);
+				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["y"], null, changes);
 			}
 			else if (event.keyCode==Keyboard.DOWN) {
 				for (;index<radiate.targets.length;index++) {
 					changes.push(radiate.targets[index].y+constant);
 				}
 				
-				Radiate.moveElement(radiate.targets, null, ["y"], null, changes);
+				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["y"], null, changes);
 			}
 			else if (event.keyCode==Keyboard.BACKSPACE || event.keyCode==Keyboard.DELETE) {
 				
@@ -972,8 +975,9 @@ package com.flexcapacitor.tools {
 			}
 			else if (target is Image) {
 				
-				if (targetCoordinateSpace && "systemManager" in targetCoordinateSpace
-					&& Object(targetCoordinateSpace).systemManager!=target.systemManager) {
+				if (targetCoordinateSpace && 
+					"systemManager" in targetCoordinateSpace && 
+					Object(targetCoordinateSpace).systemManager!=target.systemManager) {
 					isEmbeddedCoordinateSpace = true;
 				}
 				
@@ -1002,8 +1006,10 @@ package com.flexcapacitor.tools {
 				
 				rectangle = UIComponent(target).getBounds(targetCoordinateSpace);
 				
-				if (rectangle.width==0 || rectangle.height==0
-					|| rectangle.x>100000 || rectangle.y>100000) {
+				if (rectangle.width==0 || 
+					rectangle.height==0 || 
+					rectangle.x>100000 || 
+					rectangle.y>100000) {
 					
 					//Radiate.log.info("Image not returning correct bounds");
 					/*

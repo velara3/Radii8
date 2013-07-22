@@ -6,10 +6,13 @@
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
 		 xmlns:status="com.flexcapacitor.effects.status.*" 
+		 xmlns:flexiframe="com.google.code.flexiframe.*"
 		 
 		 minWidth="200" 
 		 minHeight="100"
-		 creationComplete="group1_creationCompleteHandler(event)">
+		 creationComplete="creationCompleteHandler(event)" 
+		 resize="editor_resizeHandler(event)"
+		 >
 	
 	
 	<!-- 
@@ -18,17 +21,24 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.HistoryEvent;
 			import com.flexcapacitor.events.HistoryEventItem;
-			import com.flexcapacitor.events.HistoryItem;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.SyntaxHighlighter;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.supportClasses.Styles;
+			import com.google.code.flexiframe.IFrame;
+			
+			import flash.utils.getTimer;
 			
 			import mx.collections.ArrayCollection;
 			import mx.core.IVisualElement;
 			import mx.core.IVisualElementContainer;
 			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
 			
 			import spark.components.Application;
 			import spark.components.BorderContainer;
@@ -53,7 +63,7 @@
 			/**
 			 * 
 			 * */
-			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, handlePropertyChange);
@@ -67,13 +77,13 @@
 			 * Handle target change
 			 * */
 			protected function handleTargetChange(event:RadiateEvent):void {
-				
+
 				if (!isCodeModifiedByUser) {
 					update();
 				}
 				
 				if (updateCodeLive.selected) {
-					radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
+					radiate.dispatchCodeUpdatedEvent(sourceCode, HTML);
 				}
 			}
 			
@@ -89,7 +99,7 @@
 				}
 				
 				if (updateCodeLive.selected) {
-					radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
+					radiate.dispatchCodeUpdatedEvent(sourceCode, HTML);
 				}
 			}
 			
@@ -104,7 +114,7 @@
 				// so that preview can be changed else where
 				// needs refactoring
 				if (radiate.isPreviewVisible && String(codeType.selectedItem)!=HTML) {
-					radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+					radiate.dispatchPreviewEvent(sourceCode, String(codeType.selectedItem));
 				}
 				
 			}
@@ -113,16 +123,25 @@
 			 * Generate the code for the provided target component. 
 			 * */
 			public function updateTarget(target:Object):void {
-				var application:Object = radiate.document || parentApplication;
+				var document:IDocument = radiate.document;
+				var application:Object = document ? document.instance : null;
 				var targetDescription:ComponentDescription;
-				var display:ComponentDescription;
+				var componentTree:ComponentDescription;
 				var output:String = "";
 				var xml:XML;
 				
-				display = DisplayObjectUtils.getDisplayList(application);
+				componentTree = document.description;
+				
+				
+				
+				//return;
+				
+				// OLD CODE
+				
+				//componentTree = DisplayObjectUtils.getComponentDisplayList(application);
 				
 				// find target in display list and get it's code
-				targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, display);
+				targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, componentTree);
 				
 				
 				if (targetDescription) {
@@ -133,7 +152,9 @@
 						output = getMXMLOutputString(targetDescription, true);
 					}
 					else if (codeType.selectedItem==HTML) {
-						output = getHTMLOutputString(targetDescription, true, "", true);
+						var includePreviewCode:Boolean = true;
+						
+						output = getHTMLOutputString(targetDescription, true, "", includePreviewCode);
 						output = output + "\n";
 						
 						if (stylesheets) {
@@ -151,32 +172,45 @@
 					
 					//codeModel.text = output;
 					
+					/*if (currentState=="iframe" && createdEditor) {
+						var functionName:String = "setEditorText";
+						var result:String = ExternalInterface.call(functionName, output);
+					}*/
 					
-					try {
-						xml = new XML(output);
-						
-						// don't use XML because it converts this:
-						// <div ></div>
-						// to this:
-						// <div />
-						// and that breaks the html page
-						
-						// we can still try it to make sure it's valid
-						
-						//codeModelTextArea.text = xml.toXMLString();
-						codeModelTextArea.text = output;
+					if (codeType.selectedItem==HTML) {
+							
+						try {
+							// don't use XML for HTML output because it converts this:
+							// <div ></div>
+							// to this:
+							// <div />
+							// and that breaks the html page
+							
+							// we can still try it to make sure it's valid
+							xml = new XML(output); // check if valid
+							
+							sourceCode = output;
+							// passing the raw string not the xml
+							setTextareaCode(output);
+						}
+						catch (error:Error) {
+							// Error #1083: The prefix "s" for element "Group" is not bound.
+							// <s:Group x="93" y="128">
+							//	<s:Button x="66" y="17"/>
+							//</s:Group>
+							sourceCode = output;
+							setTextareaCode(output);
+						}
 					}
-					catch (error:Error) {
-						// Error #1083: The prefix "s" for element "Group" is not bound.
-						// <s:Group x="93" y="128">
-						//	<s:Button x="66" y="17"/>
-						//</s:Group>
-						codeModelTextArea.text = output;
+					else {
+						sourceCode = output;
+						setTextareaCode(output);
 					}
 					
 				}
 				else {
-					codeModelTextArea.text = "";
+					sourceCode = "";
+					setTextareaCode("");
 				}
 			}
 			
@@ -185,9 +219,85 @@
 			 * Get application code
 			 * */
 			public function getDocumentCode():String {
-				updateTarget(radiate.document);
+				updateTarget(radiate.document.instance);
 				
-				return codeModelTextArea.text;
+				return sourceCode;
+			}
+			
+			/**
+			 * Get the vertical position string for HTML
+			 * */
+			public function getVerticalPositionHTML(instance:IVisualElement, propertyModel:Styles, stylesValue:String = "", isBasicLayout:Boolean = true):String {
+				
+				if (!isBasicLayout) return "";
+				
+				if (instance.verticalCenter!=null) {
+					stylesValue += "display:block;margin:" + instance.verticalCenter + " auto;";
+					stylesValue = stylesValue.replace("absolute", "relative");
+					
+					propertyModel.display = Styles.BLOCK;
+					propertyModel.position = Styles.RELATIVE;
+					propertyModel.margin = instance.verticalCenter + " auto;";
+					
+					return stylesValue;
+				}
+				else if (instance.top!=null || instance.bottom!=null) {
+					stylesValue += instance.top!=null ? "top:" + instance.top + "px;" : "";
+					stylesValue += instance.bottom!=null ? "bottom:" + instance.bottom + "px;" : "";
+					if (instance.top!=null) propertyModel.top = instance.top + "px";
+					if (instance.bottom!=null) propertyModel.bottom = instance.bottom + "px";
+					return stylesValue;
+				}
+				else {
+					stylesValue += "top:" + instance.y + "px;";
+					propertyModel.top = instance.y + "px;";
+				}
+				
+				return stylesValue;
+			}
+			
+			/**
+			 * Gets if horizontal or vertical centered
+			 * */
+			public function getCentered(instance:IVisualElement):Boolean {
+				
+				if (instance.horizontalCenter!=null) {
+					return true;
+				}
+				
+				return false;
+			}
+			
+			/**
+			 * Get the horizontal position string for HTML
+			 * */
+			public function getHorizontalPositionHTML(instance:IVisualElement, propertyModel:Styles, stylesValue:String = "", isBasicLayout:Boolean = true):String {
+				
+				if (!isBasicLayout) return "";
+				
+				if (instance.horizontalCenter!=null) {
+					stylesValue += "display:block;margin:" + instance.horizontalCenter + " auto;";
+					stylesValue = stylesValue.replace("absolute", "relative");
+					
+					propertyModel.display = Styles.BLOCK;
+					propertyModel.position = Styles.RELATIVE;
+					propertyModel.margin = instance.horizontalCenter + " auto;";
+					
+					return stylesValue;
+				}
+				else if (instance.left!=null || instance.right!=null) {
+					stylesValue += instance.left!=null ? "left:" + instance.left + "px;" : "";
+					stylesValue += instance.right!=null ? "right:" + instance.right + "px;" : "";
+					if (instance.left!=null) propertyModel.left = instance.left + "px";
+					if (instance.right!=null) propertyModel.right = instance.right + "px";
+					return stylesValue;
+				}
+				else {
+					stylesValue += "left:" + instance.x + "px;";
+					propertyModel.left = instance.x + "px;";
+				}
+				
+				return stylesValue;
 			}
 			
 			/**
@@ -260,27 +370,28 @@
 			 * */
 			public function getHTMLOutputString(component:ComponentDescription, addLineBreak:Boolean = false, tabs:String = "", includePreview:Boolean = false):String {
 				var property:Object = component.properties;
-				var name:String = component.name.toLowerCase();
+				var componentName:String = component.name;
+				var htmlName:String = componentName.toLowerCase();
 				var componentChild:ComponentDescription;
 				var contentToken:String = "[child_content]";
+				var styleValue:String = "position:absolute;";
+				var styles:Styles = new Styles();
+				var wrapperStyles:Styles = new Styles();
 				var isHorizontalLayout:Boolean;
-				var isTileLayout:Boolean;
 				var isVerticalLayout:Boolean;
 				var isBasicLayout:Boolean;
+				var isTileLayout:Boolean;
 				var childContent:String = "";
 				var wrapperTag:String = "";
 				var wrapperTagStyles:String = "";
 				var properties:String = "";
 				var output:String = "";
 				var type:String = "";
-				var value:*;
-				var index:int;
-				var numElements:int;
-				var gap:int;
 				var instance:Object;
-				var styles2:String = "position:absolute";
-				var styles:Styles = new Styles();
-				var wrapperStyles:Styles = new Styles();
+				var numElements:int;
+				var index:int;
+				var value:*;
+				var gap:int;
 				
 				
 				
@@ -291,7 +402,8 @@
 					
 					if (component.parent.instance.layout is HorizontalLayout) {
 						isHorizontalLayout = true;
-						styles2 = styles2.replace("absolute", "relative");
+						styleValue = styleValue.replace("absolute", "relative");
+						styleValue += "vertical-align: middle;";
 						styles.position = Styles.RELATIVE;
 						index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
 						numElements = GroupBase(component.parent.instance).numElements;
@@ -301,6 +413,7 @@
 						
 						if (index<numElements-1 && numElements>1) {
 							wrapperTagStyles += "padding-right:" + gap + "px";
+							wrapperStyles.paddingRight =  gap + "px";
 							
 						}
 						
@@ -309,7 +422,7 @@
 					else if (component.parent.instance.layout is TileLayout) {
 						//isHorizontalLayout = true;
 						isTileLayout = true;
-						styles = styles.replace("absolute", "relative");
+						styleValue = styleValue.replace("absolute", "relative");
 						styles.position = Styles.RELATIVE;
 						index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
 						numElements = GroupBase(component.parent.instance).numElements;
@@ -327,13 +440,15 @@
 					
 					else if (component.parent.instance.layout is VerticalLayout) {
 						isVerticalLayout = true;
-						styles = styles.replace("absolute", "relative");
+						styleValue = styleValue.replace("absolute", "relative");
+						styles.position = Styles.RELATIVE;
 						index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
 						numElements = GroupBase(component.parent.instance).numElements;
 						gap = VerticalLayout(component.parent.instance.layout).gap;
 						
 						if (index<numElements-1 && numElements>1) {
 							wrapperTagStyles += "padding-bottom:" + gap + "px";
+							wrapperStyles.paddingBottom =  gap + "px";
 						}
 						
 						wrapperTag = "div";
@@ -341,7 +456,8 @@
 					
 					else if (component.parent.instance.layout is BasicLayout) {
 						isBasicLayout = true;
-						styles = styles.replace("absolute", "relative");
+						//styleValue = styleValue.replace("absolute", "relative");
+						//styles.position = Styles.RELATIVE;
 						/*index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
 						numElements = GroupBase(component.parent.instance).numElements;
 						gap = BasicLayout(component.parent.instance.layout).gap;*/
@@ -354,12 +470,9 @@
 					}
 				}
 				
-				var isXSet:Boolean;
-				var isYSet:Boolean;
 				// constraints take higher authority
-				var isTopSet:Boolean;
-				var isLeftSet:Boolean;
-				var isRightSet:Boolean;
+				var isHorizontalSet:Boolean;
+				var isVerticalSet:Boolean;
 				
 				// loop through assigned properties
 				for (var propertyName:String in property) {
@@ -370,178 +483,148 @@
 					}
 					
 					
-					// if horizontal or vertical layout do not add position
-					if (propertyName=="x") {
-						if (isLeftSet) continue;
-						
-						if (!isHorizontalLayout && !isVerticalLayout) {
-							styles += "left:" +  Object(property[propertyName]).toString() + "px;";
-						}
+					if (verticalPositions.indexOf(propertyName)!=-1 && !isVerticalSet) {
+						styleValue = getVerticalPositionHTML(component.instance as IVisualElement, styles, styleValue, isBasicLayout);
+						isVerticalSet = true;
 					}
-					else if (propertyName=="left") {
-						if (isXSet) {
-							styles = styles.replace(/left:\.+px;/, "");
-						}
-						
-						if (!isHorizontalLayout && !isVerticalLayout) {
-							styles += "left:" +  Object(property[propertyName]).toString() + "px;";
-						}
+					else if (horizontalPositions.indexOf(propertyName)!=-1 && !isHorizontalSet) {
+						styleValue = getHorizontalPositionHTML(component.instance as IVisualElement, styles, styleValue, isBasicLayout);
+						isHorizontalSet = true;
 					}
-					else if (propertyName=="y") {
-						if (isTopSet) continue;
-						
-						if (!isHorizontalLayout && !isVerticalLayout) {
-							styles += "top:" +  Object(property[propertyName]).toString() + "px;";
-						}
-					}
-					else if (propertyName=="top") {
-						if (isYSet) {
-							styles = styles.replace(/top:\.+px;/, "");
-						}
-						
-						if (!isHorizontalLayout && !isVerticalLayout) {
-							styles += "top:" +  Object(property[propertyName]).toString() + "px;";
-						}
-					}
-					else if (propertyName=="horizontalCenter") {
-						if (isXSet || isLeftSet || isRightSet) {
-							styles = styles.replace(/left:\.+px;/, "");
-						}
-						
-						if (!isHorizontalLayout && !isVerticalLayout && !isTileLayout) {
-							styles += "display:block;margin:0 auto;";
-						}
-					}
-					else {
-						// NOT SUPPORTING RANDOM PROPERTIES FOR NOW
-						//properties += propertyName + "=\"" + Object(property[propertyName]).toString() + "\"";
-						//properties += " ";
-					}
+					
 				}
 				
 				
-				if (name) {
+				if (htmlName) {
 					
 					// create code for element type
-					if (name=="application") {
-						name = "div";
+					if (htmlName=="application") {
+						htmlName = "div";
 						
 						// container div
 						if (includePreview) {
-							output = "<div style=\"position:absolute;";
+							/*output = "<div style=\"position:absolute;";
 							//output += "width:" + (component.instance.width + 40) + "px;";
 							output += "width:100%;";
 							output += "height:" + (component.instance.height + 40) + "px;";
-							output += "background-color:#666666;\">";
-							output += "\n <div " + properties;
-							styles = styles.replace("absolute", "relative");
-							styles += "width:" + component.instance.width+ "px;";
-							styles += "height:" + component.instance.height+ "px;";
-							styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
-							styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
-							styles += "margin:0 auto;";
-							styles += "top:25px;";
-							styles += "background-color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("backgroundColor"), true) + ";";
+							output += "background-color:#666666;\">";*/
+							output += "<div " + properties;
+							styleValue = styleValue.replace("absolute", "relative");
+							styles.position = Styles.ABSOLUTE;
+							styleValue += "width:" + component.instance.width+ "px;";
+							styleValue += "height:" + component.instance.height+ "px;";
+							styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+							styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+							styleValue += "margin:0 auto;";
+							styleValue += "left:8px;top:14px;";
+							styleValue += "background-color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("backgroundColor"), true) + ";";
 							//output += properties ? " " : "";
-							output += "style=\"" + styles + "\">";
+							output += "style=\"" + styleValue + "\">";
 							output += contentToken;
-							output += "\n </div>\n</div>";
+							//output += "\n </div>\n</div>";
+							output += "\n</div>";
 						}
 						else {
 							//output = "<div style=\"position: absolute;width:100%;height:100%;background-color:#666666;\">";
 							output = "<div " + properties;
-							styles += "width:" + component.instance.width+ "px;";
-							styles += "height:" + component.instance.height+ "px;";
-							styles += "border:1px solid black";
-							styles += "background-color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("backgroundColor"), true) + ";";
+							styleValue += "width:" + component.instance.width+ "px;";
+							styleValue += "height:" + component.instance.height+ "px;";
+							styleValue += "border:1px solid black";
+							styleValue += "background-color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("backgroundColor"), true) + ";";
 							//output += properties ? " " : "";
-							output += " style=\"" + styles + "\">";
+							output += " style=\"" + styleValue + "\">";
 							output += contentToken;
 							output += "\n</div>";
 						}
 					}
 					
-					else if (name=="group" || name=="vgroup") {
-						name = "div";
+					else if (htmlName=="group" || htmlName=="vgroup") {
+						htmlName = "div";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<div " + properties;
-						output += "name=\"" + component.instance.name + "\"";
-						styles += "width:" + component.instance.width+ "px;";
-						styles += "height:" + component.instance.height+ "px;";
+						output = getNameString(component.instance, output);
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+						
+						//styleValue += "width:" + component.instance.width+ "px;";
+						//styleValue += "height:" + component.instance.height+ "px;";
 						output += properties ? " " : "";
-						output += " style=\"" + styles + "\">";
+						output += " style=\"" + styleValue + "\">";
 						output += contentToken;
 						output += "\n" + tabs + "</div>";
 						output += getWrapperTag(wrapperTag, true);
 					}
 					
-					else if (name=="bordercontainer") {
-						name = "div";
+					else if (htmlName=="bordercontainer") {
+						htmlName = "div";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<div " + properties;
-						output += "name=\"" + component.instance.name + "\"";
-						
-						styles += "width:" + component.instance.width+ "px;";
-						styles += "height:" + component.instance.height+ "px;";
-						styles += getBorderString(component.instance as BorderContainer);
+						output = getNameString(component.instance, output);
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+						styleValue += getBorderString(component.instance as BorderContainer);
 						//styles += component.instance as BorderContainer);
 						
 						output += properties ? " " : "";
-						output += " style=\"" + styles + "\">";
+						output += " style=\"" + styleValue + "\">";
 						output += contentToken;
 						output += "\n" + tabs + "</div>";
 						output += getWrapperTag(wrapperTag, true);
 						
 					}
 					
-					else if (name=="hgroup" || name=="tilegroup") {
-						name = "div";
+					else if (htmlName=="hgroup" || htmlName=="tilegroup") {
+						htmlName = "div";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<div " + properties;
-						output += "name=\"" + component.instance.name + "\"";
+						output = getNameString(component.instance, output);
+						//styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 						if (component.name=="HGroup") {
-							styles += "width:" + Math.max(HGroup(component.instance).contentWidth, component.instance.width)+ "px;";
+							styleValue += "width:" + Math.max(HGroup(component.instance).contentWidth, component.instance.width)+ "px;";
 						}
 						else {
-							styles += "width:" + component.instance.width+ "px;";
+							styleValue += "width:" + component.instance.width+ "px;";
 						}
-						styles += "height:" + component.instance.height+ "px;";
+						styleValue += "height:" + component.instance.height+ "px;";
 						
 						output += properties ? " " : "";
-						output += " style=\"" + styles + "\">";
+						output += " style=\"" + styleValue + "\">";
 						output += contentToken;
 						output += "\n" + tabs + "</div>";
 						output += getWrapperTag(wrapperTag, true);
 					}
-					else if (name=="button" || name=="togglebutton") {
-						name = "button";
+					else if (htmlName=="button" || htmlName=="togglebutton") {
+						htmlName = "button";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						output += "<input type=\"" + name.toLowerCase() + "\" "  + properties;
-						styles += "width:" + component.instance.width+ "px;";
-						styles += "height:" + (component.instance.height+1)+ "px;";
+						output += "<input type=\"" + htmlName.toLowerCase() + "\" "  + properties;
 						output += properties ? " " : "";
-						styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
-						styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
-						output += "style=\"" + styles + "\"";
+						output = getNameString(component.instance, output);
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+						output += " style=\"" + styleValue + "\"";
 						output += " class=\"button\"";
 						
 						output += " value=\"" + component.instance.label + "\"/>";
 						output += getWrapperTag(wrapperTag, true);
 					}
-					else if (name=="checkbox") {
+					else if (htmlName=="checkbox") {
 						if (component.instance.label!="") {
 							output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 							output += "<label";
-							styles += "width:" + (component.instance.width + 6)+ "px;";
-							styles += "height:" + component.instance.height+ "px;";
-							styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
-							styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
-							output += " style=\"" + styles + "\">";
-							output += "<input type=\"" + name.toLowerCase() + "\">" ;
+							styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+							//styleValue += "width:" + (component.instance.width + 6)+ "px;";
+							//styleValue += "height:" + component.instance.height+ "px;";
+							styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+							styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+							output += " style=\"" + styleValue + "\">";
+							output += "<input type=\"" + htmlName.toLowerCase() + "\" " ;
+							output = getNameString(component.instance, output);
+							output += "/>" ;
 						}
 						else {
 							output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-							output += "<input type=\"" + name.toLowerCase() + "\" " + properties;
+							output += "<input type=\"" + htmlName.toLowerCase() + "\" " + properties;
+							output = getNameString(component.instance, output);
+							//styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 							output += " style=\"" + styles + "\"/>";
 						}
 						
@@ -551,22 +634,29 @@
 						
 						output += getWrapperTag(wrapperTag, true);
 					}
-					else if (name=="radiobutton") {
-						name = "radio";
+					else if (htmlName=="radiobutton") {
+						htmlName = "radio";
 						if (component.instance.label!="") {
 							output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 							output += "<label";
-							styles += "width:" + (component.instance.width + 8)+ "px;";
-							styles += "height:" + component.instance.height+ "px;";
-							styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
-							styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
-							output += " style=\"" + styles + "\">";
-							output += "<input type=\"radio\"/>" ;
+							//styleValue += "width:" + (component.instance.width + 8)+ "px;";
+							//styleValue += "height:" + component.instance.height+ "px;";
+							styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+							styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+							styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+							output += " style=\"" + styleValue + "\">";
+							output += "<input type=\"radio\" " ;
+							output = getNameString(component.instance, output);
+							//styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+							output += "/>" ;
 						}
 						else {
 							output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-							output += "<input type=\"" + name.toLowerCase() + "\" " + properties;
-							output += " style=\"" + styles + "\"/>";
+							output += "<input type=\"" + htmlName.toLowerCase() + "\" " + properties;
+							output = getNameString(component.instance, output);
+							styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+							//styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+							output += " style=\"" + styleValue + "\"/>";
 						}
 						
 						if (component.instance.label!="") {
@@ -575,50 +665,77 @@
 						
 						output += getWrapperTag(wrapperTag, true);
 					}
-					else if (name=="textinput") {
-						name = "input";
+					else if (htmlName=="textinput") {
+						htmlName = "input";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						output += "<input type=\"input\""  + properties;
-						styles += "width:" + component.instance.width+ "px;";
-						styles += "height:" + component.instance.height+ "px;";
-						styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
-						styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
-						styles += "padding:0;border:1px solid " + DisplayObjectUtils.getColorInHex(component.instance.getStyle("borderColor"), true) + ";margin:0;";
-						output += " style=\"" + styles + "\"/>";
+						output += "<input type=\"input\" "  + properties;
+						output = getNameString(component.instance, output);
+						//styleValue += "width:" + component.instance.width+ "px;";
+						//styleValue += "height:" + component.instance.height+ "px;";
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+						styleValue += "padding:0;border:1px solid " + DisplayObjectUtils.getColorInHex(component.instance.getStyle("borderColor"), true) + ";";
+						output += " style=\"" + styleValue + "\"/>";
 						output += getWrapperTag(wrapperTag, true);
 					}
-					else if (name=="label") {
-						name = "label";
+					else if (htmlName=="linkbutton") {
+						htmlName = "a";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						output += "<label "  + properties;
-						styles += "width:" + component.instance.width+ "px;";
-						styles += "height:" + component.instance.height+ "px;";
-						styles += "font-family:" + component.instance.getStyle("fontFamily") + ";";
-						styles += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+						output += "<a "  + properties;
+						output = getNameString(component.instance, output);
+						//styleValue += "width:" + component.instance.width+ "px;";
+						//styleValue += "height:" + component.instance.height+ "px;";
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 						//styles += getBorderString(component.instance as IStyleClient);
 						
 						output += properties ? " " : "";
-						output += "style=\"" + styles + "\">";
+						output += " style=\"" + styleValue + "\">";
+						output += component.instance.label;
+						output += "</a>";
+						output += getWrapperTag(wrapperTag, true);
+					}
+					else if (htmlName=="label") {
+						htmlName = "label";
+						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+						output += "<label "  + properties;
+						output = getNameString(component.instance, output);
+						//styleValue += "width:" + component.instance.width+ "px;";
+						//styleValue += "height:" + component.instance.height+ "px;";
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+						//styles += getBorderString(component.instance as IStyleClient);
+						
+						output += properties ? " " : "";
+						output += " style=\"" + styleValue + "\">";
 						output += component.instance.text;
 						output += "</label>";
 						output += getWrapperTag(wrapperTag, true);
 					}
-					else if (name=="image") {
-						name = "img";
+					else if (htmlName=="image") {
+						htmlName = "img";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<img " + properties;
-						styles += "width:" + component.instance.width+ "px;";
-						styles += "height:" + component.instance.height+ "px;";
+						output = getNameString(component.instance, output);
+						//styleValue += "width:" + component.instance.width+ "px;";
+						//styleValue += "height:" + component.instance.height+ "px;";
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+						output += properties ? " " : "";
 						output += " src=\"" + component.instance.source + "\"";
-						output += " style=\"" + styles + "\"/>";
+						output += " style=\"" + styleValue + "\"/>";
 						output += getWrapperTag(wrapperTag, true);
 					}
 					
 					else {
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						output += "<" + name.toLowerCase()  + " " + properties;
+						output += "<" + htmlName.toLowerCase()  + " " + properties;
+						output = getNameString(component.instance, output);
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 						output += properties ? " " : "";
-						output += "style=\"" + styles + "\"/>";
+						output += " style=\"" + styleValue + "\"/>";
 						output += getWrapperTag(wrapperTag, true);
 					}
 					
@@ -1043,14 +1160,61 @@
 				}
 				
 				if (borderContainer.getStyle("borderVisible")) {
-					value += "border-weight:" + borderContainer.getStyle("borderWeight") + "px;";
+					value += "border-width:" + borderContainer.getStyle("borderWeight") + "px;";
+					value += "border-style:solid;";
 					
-					if (borderContainer.getStyle("borderColor")) {
+					if (borderContainer.getStyle("borderColor")!==undefined) {
 						value += "border-color:" + DisplayObjectUtils.getColorInHex(borderContainer.getStyle("borderColor"), true) + ";";
 					}
 				}
 				
 				return value;
+				
+			}
+			
+			
+			/**
+			 * Get name and ID
+			 * */
+			public function getNameString(instance:Object, propertyValue:String = ""):String {
+				
+				if ("id" in instance && instance.id) {
+					propertyValue += "id=\"" + instance.id + "\"";
+				}
+				else if ("name" in instance && instance.name) {
+					propertyValue += "name=\"" + instance.name + "\"";
+				}
+				
+				return propertyValue;
+			}
+			
+			
+			/**
+			 * Get width and height styles
+			 * */
+			public function getSizeString(instance:IVisualElement, styleValue:String = ""):String {
+				
+				if (!isNaN(instance.percentWidth)) {
+					styleValue += "width:" + instance.percentWidth + "%;";
+				}
+				else if ("explicitWidth" in instance && Object(instance).explicitWidth!=null) {
+					styleValue += "width:" + instance.width + "px;";
+				}
+				else {
+					styleValue += "width:" + instance.width + "px;";
+				}
+				
+				if (!isNaN(instance.percentHeight)) {
+					styleValue += "height:" + instance.percentHeight + "%;";
+				}
+				else if ("explicitHeight" in instance && Object(instance).explicitHeight!=null) {
+					styleValue += "height:" + instance.height + "px;";
+				}
+				else {
+					styleValue += "height:" + instance.height + "px;";
+				}
+				
+				return styleValue;
 				
 			}
 			
@@ -1065,7 +1229,7 @@
 				//var output:String = "";
 				var historyEvent:HistoryEventItem;
 				var historyEvents:Array;
-				var historyItem:HistoryItem;
+				var historyItem:HistoryEvent;
 				//var targetsLength:int;
 				var eventsLength:int;
 				//var targets:Array;
@@ -1081,9 +1245,11 @@
 				history = Radiate.history;
 				//length = Radiate.history.length;
 				
+				// go back through the history of changes and 
+				// add the properties that have been set to an object
 				for (var i:int=historyIndex+1;i--;) {
-					historyItem = history.getItemAt(i) as HistoryItem;
-					historyEvents = historyItem.historyEvents;
+					historyItem = history.getItemAt(i) as HistoryEvent;
+					historyEvents = historyItem.historyEventItems;
 					eventsLength = historyEvents.length;
 					
 					for (var j:int=0;j<eventsLength;j++) {
@@ -1153,33 +1319,58 @@
 				return propertiesObject;
 			}
 			
+			public var horizontalPositions:Array = ["x","left","right","horizontalCenter"];
+			public var verticalPositions:Array = ["y","top","bottom","verticalCenter"];
+			public var sizesPositions:Array = ["width","height"];
+			
 			/**
 			 * Get the document code and dispatch a preview event.
 			 * */
 			protected function previewButton_clickHandler(event:MouseEvent):void {
+				var document:Object;
+				
+				if (!radiate.document) return;
 				
 				if (!isCodeModifiedByUser) {
-					getDocumentCode(); // puts document code into text area
+					var code:String = getDocumentCode(); // puts document code into text area
 				}
 				
 				// allow to swap between preview and non preview
-				if (!radiate.isPreviewVisible) {
-					radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+				if (!radiate.isPreviewDocumentVisible()) {
+					radiate.openDocument(radiate.document, true, null, false);
+					document = radiate.getDocumentPreview(radiate.document);
+					
+					if (document is IFrame) {
+						document.content = wrapInPreview(sourceCode);
+					}
+					
+					//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 				}
 				else {
-					radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+					radiate.openDocument(radiate.document);
+					//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
 				}
 			}
 			
 			
 			/**
-			 * 
+			 * Text has changed in the textarea. Update preview if visible
 			 * */
-			protected function codeModelTextArea_changeHandler(event:TextOperationEvent):void {
+			protected function textArea_changeHandler(event:TextOperationEvent = null):void {
 				//Radiate.log.info("Text area code changed");
 				
 				if (updateCodeLive.selected) {
-					radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
+					
+					if (radiate.isPreviewDocumentVisible()) {
+						var preview:Object = radiate.getDocumentPreview(radiate.document);
+						
+						if (preview is IFrame) {
+							preview.content = wrapInPreview(getTextAreaCode());
+						}
+						
+						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+					}
+					//radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
 				}
 				
 				if (codeType.selectedItem == HTML) {
@@ -1204,7 +1395,7 @@
 			/**
 			 * 
 			 * */
-			protected function resynceButton_clickHandler(event:MouseEvent):void {
+			protected function resyncButton_clickHandler(event:MouseEvent):void {
 				isCodeModifiedByUser = false;
 				update(true);
 			}
@@ -1214,18 +1405,56 @@
 			 * */
 			public function update(dispatchCodeUpdatedEvent:Boolean = false):void {
 			
+				if (!radiate.target && !radiate.document) return;
+				
 				if (showSelection.selected) {
 					updateTarget(radiate.target);
 				}
 				else {
-					updateTarget(radiate.document);
+					updateTarget(radiate.document.instance);
 				}
 				
 				if (dispatchCodeUpdatedEvent) {
-					radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
+					
+					//if (radiate.isPreviewDocumentVisible()) {
+					document = radiate.getDocumentPreview(radiate.document);
+					
+					if (document is IFrame) {
+						document.content = wrapInPreview(sourceCode);
+					}
+						
+						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+					//}
+					
+					radiate.dispatchCodeUpdatedEvent(sourceCode, HTML, openInSeparateWindow.selected);
 				}
-			}
 				
+				if (radiate.target is Application) {
+					targetNameLabel.text = "Application";
+				}
+				else {
+					targetNameLabel.text = ClassUtils.getIdentifierOrName(radiate.target, true, true);
+				}
+				/*
+				var functionName:String = "createEditor";
+				var result:Object;
+				if (currentState=="iframe" && !createdEditor) {
+					editor.content = "<div id='editor' style='display:block;position:absolute;top:0px;left:0px;right:0px;bottom:0px;height:100%;'></div>";
+					editor.validateNow();
+					result = ExternalInterface.call(functionName);
+					result = ExternalInterface.call("setEditorText", codeModelTextArea.text);
+                	createdEditor = true;
+				}*/
+				
+				return;
+				
+			}
+			
+			private function callback():void {
+				trace("CALLBACK");
+			}
+			
+			private var aceEditorCreated:Boolean;
 				
 			/**
 			 * Get a tag with less than or greater than wrapped around it. 
@@ -1262,13 +1491,188 @@
 				
 				
 				if (updateCodeLive.selected) {
-					radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
+					radiate.dispatchCodeUpdatedEvent(sourceCode, HTML);
 				}
 				else {
 					if (!isCodeModifiedByUser) {
-						radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
+						radiate.dispatchCodeUpdatedEvent(sourceCode, HTML);
 					}
 				}
+			}
+			
+			
+			protected function openInSeparateWindow_changeHandler(event:Event):void {
+				
+				update();
+			}
+			
+			protected function editor_updateCompleteHandler(event:FlexEvent):void {
+				
+				var result:Object = ExternalInterface.call("updateHeight", editor.height);
+				//trace(result);
+			}
+			
+			private var dataArray:Array= new Array();
+              
+			private var currentData:int;
+			
+			private function saveData():void {
+			
+				if (dataArray.length<10) {
+				    dataArray.push(mxTextArea.text);
+				}
+				else {
+					dataArray.splice(0,1);
+					dataArray.push(mxTextArea.text);
+				}
+				
+				currentData= dataArray.length-1;
+			}
+
+			private function undo():void {
+				
+				if (currentData>0) {
+					mxTextArea.text=dataArray[currentData-1];
+					currentData=currentData-1;
+				}
+			}
+			
+			private function redo():void {
+				if (currentData<dataArray.length-1){
+					mxTextArea.text=dataArray[currentData+1];
+					currentData=currentData+1;
+				}
+			}
+			
+			private function mxTextAreaChangeHandler():void {
+				textArea_changeHandler();
+				syntaxHighlighter.highlightCode();
+				saveData();
+			}
+			
+			/**
+			 * Last source code
+			 * */
+			[Bindable]
+			public var sourceCode:String;
+			
+			
+			public var syntaxHighlighter:SyntaxHighlighter;
+			
+			public function getTextAreaCode():String {
+				
+				if (currentState=="normal") {
+					return sparkTextArea.text;
+				}
+				else if (currentState=="highlight") {
+					return mxTextArea.text;
+				}
+				else if (currentState=="editor") {
+					var result:String = ExternalInterface.call("getEditorText");
+					return result;
+				}
+				
+				return null;
+			}
+			
+			/**
+			 * Put the generated code into a text area
+			 * */
+			public function setTextareaCode(value:String):void {
+				var functionName:String = "createEditor";
+				var result:Object;
+				
+				if (currentState=="normal") {
+					sparkTextArea.text = value;
+					aceEditorCreated = false; // temp for now
+				}
+				else if (currentState=="highlight") {
+					mxTextArea.text = value;
+
+					if (!syntaxHighlighter) {
+						syntaxHighlighter = new SyntaxHighlighter(mxTextArea);
+						syntaxHighlighter.timerInterval = 20;
+						syntaxHighlighter.cssString = SyntaxHighlighter.CRIMSON_EDITOR_CSS;
+					}
+					
+					syntaxHighlighter.highlightCode();
+					aceEditorCreated = false; // temp for now
+				}
+				else if (currentState=="editor") {
+					
+					if (!aceEditorCreated) {
+						editor.content = "<div id='editor' style='display:block;position:absolute;top:0px;left:0px;right:0px;bottom:0px;height:100%;'></div>";
+						editor.validateNow();
+						result = ExternalInterface.call(functionName, ExternalInterface.objectID);
+						ExternalInterface.addCallback("editorChange", editorChange);
+						ExternalInterface.addCallback("cursorChange", cursorChange);
+	                	aceEditorCreated = true;
+					}
+					
+					settingEditorText = true;
+					result = ExternalInterface.call("setEditorText", value);
+					settingEditorText = false;
+					
+				}
+				
+			}
+			
+			protected function editorType_changeHandler(event:IndexChangeEvent):void {
+				currentState = event.currentTarget.selectedItem.name;
+				setTextareaCode(sourceCode);
+			}
+			
+			public function editorChange(value:String = ""):void {
+				if (settingEditorText || value==sourceCode) return;
+				textArea_changeHandler();
+			}
+			
+			public function cursorChange(value:String = ""):void {
+				//trace("cursor change:" + getTimer());
+			}
+			
+			protected function editor_resizeHandler(event:ResizeEvent):void {
+				//trace("resize from : " + event.currentTarget);
+				ExternalInterface.call("resizeEditor");
+			}
+			
+			public var settingEditorText:Boolean;
+			
+			private function wrapInPreview(source:String):String {
+				var componentTree:ComponentDescription = radiate.document.description;
+				var targetDescription:ComponentDescription;
+				
+				if (showSelection.selected) {
+					targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(radiate.target, componentTree);
+				}
+				else {
+					targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(radiate.document.instance, componentTree);
+				}
+				
+				
+				var output:String = "<div style=\"position:absolute;";
+				//output += "width:" + (component.instance.width + 40) + "px;";
+				output += "width:100%;";
+				output += "height:" + (targetDescription.instance.height + 40) + "px;";
+				output += "background-color:#666666;\">" + source + "</div>";
+				
+				return output;
+			}
+			
+			protected function mxTextArea_keyUpHandler(event:KeyboardEvent):void {
+				if (event.keyCode==Keyboard.Z) {
+					if (event.ctrlKey && !event.shiftKey) {
+						undo();
+					}
+					if (event.ctrlKey && event.shiftKey) {
+						redo();
+					}
+				}
+			}
+			
+			protected function getHTMLButton_clickHandler(event:MouseEvent):void {
+				var htmlText:String = mxTextArea.htmlText;
+				trace(htmlText);
 			}
 			
 		]]>
@@ -1278,7 +1682,7 @@
 		
 		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
 			
-			<clipboard:CopyToClipboard data="{codeModelTextArea.text}" 
+			<clipboard:CopyToClipboard data="{sourceCode}" 
 									   targetAncestor="{this}" 
 									   allowNullData="true">
 				<clipboard:successEffect>
@@ -1294,8 +1698,9 @@
 			
 		</handlers:EventHandler>
 		
+			<!--<![CDATA[<link rel="stylesheet" href="css/normalize/2.1.2/normalize.css"/>]]>-->
 		<fx:String id="stylesheets">
-			<![CDATA[<link rel="stylesheet" href="css/normalize/2.1.2/normalize.css"/>]]>
+			<![CDATA[]]>
 		</fx:String>
 		<fx:String id="css">
 			<![CDATA[]]>
@@ -1320,32 +1725,81 @@
 		</fx:String>
 	</fx:Declarations>
 	
-	<s:TextArea id="codeModelTextArea" 
+	<s:states>
+		<s:State name="highlight"/>
+		<s:State name="editor"/>
+		<s:State name="normal"/>
+	</s:states>
+	
+	
+	<s:TextArea id="sparkTextArea" 
 				top="28"
 				focusColor="#585858"
 				width="100%" height="100%" 
-				fontFamily="Courier New"
+				fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
 				borderVisible="false"
 				paddingTop="8"
-				change="codeModelTextArea_changeHandler(event)">
+				fontSize="12"
+				includeIn="normal"
+				change="textArea_changeHandler(event)"
+				>
 		<s:keyFocusChange>
 			event.preventDefault();
 			event.currentTarget.insertText("\t");
         </s:keyFocusChange>
 	</s:TextArea>
 	
+	<mx:TextArea id="mxTextArea"  
+				 top="28"
+				 focusAlpha="0"
+				 fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
+				 borderVisible="false"
+				 paddingTop="8"
+				 fontSize="12"
+				 width="100%" height="100%"
+				 keyUp="mxTextArea_keyUpHandler(event)"
+				 change="mxTextAreaChangeHandler()"
+				 editable="true"
+				 includeIn="highlight"
+				 leading="0"
+				 />
+	
+	
+	<flexiframe:IFrame id="editor" 
+					   top="28" left="0"
+					   width="100%" height="100%" 
+					   overlayDetection="true"
+					   includeIn="editor"
+					   resize="editor_resizeHandler(event)"
+					   >
+	</flexiframe:IFrame>
+	
 	<s:HGroup left="0" right="0" 
 			  width="100%"
 			  clipAndEnableScrolling="true" 
 			  paddingLeft="6" 
 			  paddingRight="10"
+			  verticalAlign="baseline"
 			  >
-		
-		<s:Button id="resynceButton" 
-				  label="Sync Up" 
-				  visible="{isCodeModifiedByUser}" 
-				  click="resynceButton_clickHandler(event)"
+
+		<s:Button id="getHTMLButton" 
+				  label="GetHTML" 
+				  click="getHTMLButton_clickHandler(event)"
+				  includeInLayout="false"
 				  />
+		<s:Label id="targetNameLabel" 
+				 minWidth="150"
+				 color="#A6a5a5" 
+				 />
+		
+		<s:ButtonBar id="editorType" 
+					 requireSelection="true"
+					 selectedIndex="0"
+					 labelField="name"
+					 initialize="editorType.dataProvider = new ArrayList(states);editorType.selectedIndex = 0;"
+					 change="editorType_changeHandler(event)">
+		</s:ButtonBar>
+		
 		
 		<s:Spacer width="100%"/>
 		
@@ -1357,15 +1811,28 @@
 					change="updateCodeLive_changeHandler(event)"/>
 		
 		
+		<s:CheckBox id="openInSeparateWindow" label="Open in Window" 
+					visible="{codeType.selectedItem=='htmll'}" 
+					includeInLayout="{codeType.selectedItem=='htmll'}" 
+					change="openInSeparateWindow_changeHandler(event)"/>
+		
+		
 		<s:CheckBox id="showSelection" 
 					selected="false"
 					label="Show Selection"
 					click="showSelection_clickHandler(event)"/>
 		
+		<s:Button id="resyncButton" 
+				  label="Resync" 
+				  visible="{isCodeModifiedByUser}" 
+				  click="resyncButton_clickHandler(event)"
+				  />
+		
 		<s:Button label="Preview" 
 				  visible="{codeType.selectedItem==HTML}" 
 				  includeInLayout="{codeType.selectedItem==HTML}" 
 				  click="previewButton_clickHandler(event)"/>
+		
 		
 		<s:ButtonBar id="codeType" 
 						selectedIndex="1"
@@ -1380,9 +1847,9 @@
 		</s:ButtonBar>
 		
 		<c:ImageButton id="copyIcon" 
-					   height="100%"
 					   source="{Radii8LibraryAssets.copy}" 
 					   toolTip="Copy the code to the Clipboard"
+					   verticalAlign="middle"
 					   />
 	</s:HGroup>
 	

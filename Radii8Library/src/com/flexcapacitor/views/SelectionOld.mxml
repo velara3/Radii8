@@ -12,16 +12,17 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
-			import com.flexcapacitor.utils.InspectorUtils;
-			import com.flexcapacitor.model.VisualElementVO;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.collections.ArrayCollection;
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			import mx.utils.NameUtil;
+			
+			import spark.components.Group;
+			
 			
 			public var backgroundFillAlpha:Number = 0;
 			public var backgroundFillColor:uint = 0x000000;
@@ -159,7 +160,7 @@
 			
 			protected function findButtonHandler(event:MouseEvent):void {
 				_stage = systemManager.stage;
-				displayList = DisplayObjectUtils.getDisplayList(mainDocument);
+				displayList = DisplayObjectUtils.getComponentDisplayList2(mainDocument);
 				addMouseHandlers();
 				clearSelection(target, true);
 				selectButton.filters = selectFiltersOn;

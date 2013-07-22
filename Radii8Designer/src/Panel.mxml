@@ -13,7 +13,7 @@
 					<s:State name="normalWithControlBar" stateGroups="withControls" />
 					<s:State name="disabledWithControlBar" stateGroups="withControls" />
 				</s:states>
-				<s:Button label="HELLO SKIN"/>
+				<s:Button label="HELLO SKIN2" />
 			</s:Skin>
 		</fx:Component>
 	</fx:Declarations>

@@ -1,21 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
   <includeClasses>
+    <classEntry path="com.flexcapacitor.components.ColorChooser"/>
+    <classEntry path="com.flexcapacitor.components.IDocumentContainer"/>
+    <classEntry path="com.flexcapacitor.controller.RadiateReferences"/>
+    <classEntry path="com.flexcapacitor.events.HistoryEvent"/>
+    <classEntry path="com.flexcapacitor.model.Device"/>
+    <classEntry path="com.flexcapacitor.model.IProject"/>
+    <classEntry path="com.flexcapacitor.model.MXMLExporter"/>
+    <classEntry path="com.flexcapacitor.model.Project"/>
+    <classEntry path="com.flexcapacitor.model.ProjectDataDescriptor"/>
+    <classEntry path="com.flexcapacitor.model.Size"/>
+    <classEntry path="com.flexcapacitor.model.StyleMetaData"/>
+    <classEntry path="com.flexcapacitor.skins.DeviceImage"/>
+    <classEntry path="com.flexcapacitor.skins.DeviceSkin"/>
     <classEntry path="com.flexcapacitor.tools.ITool"/>
     <classEntry path="com.flexcapacitor.tools.Selection"/>
-    <classEntry path="com.flexcapacitor.controller.RadiateReferences"/>
-    <classEntry path="com.flexcapacitor.utils.supportClasses.ISelectionGroup"/>
-    <classEntry path="com.flexcapacitor.components.ColorChooser"/>
-    <classEntry path="com.flexcapacitor.views.renderers.HistoryItemRenderer"/>
-    <classEntry path="com.flexcapacitor.model.Size"/>
-    <classEntry path="com.flexcapacitor.model.Device"/>
-    <classEntry path="com.flexcapacitor.events.HistoryItem"/>
-    <classEntry path="com.flexcapacitor.skins.DeviceSkin"/>
-    <classEntry path="com.flexcapacitor.skins.DeviceImage"/>
-    <classEntry path="com.flexcapacitor.preloader.SparkPreloader"/>
+    <classEntry path="com.flexcapacitor.utils.MXMLImporter"/>
+    <classEntry path="com.flexcapacitor.utils.SyntaxHighlighter"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.DragData"/>
-    <classEntry path="com.flexcapacitor.model.StyleMetaData"/>
-    <classEntry path="com.flexcapacitor.components.IDocument"/>
+    <classEntry path="com.flexcapacitor.utils.supportClasses.ISelectionGroup"/>
+    <classEntry path="com.flexcapacitor.views.renderers.EditableDocumentRenderer"/>
+    <classEntry path="com.flexcapacitor.views.renderers.HistoryItemRenderer"/>
     <classEntry path="com.flexcapacitor.views.supportClasses.Styles"/>
   </includeClasses>
   <includeResources/>

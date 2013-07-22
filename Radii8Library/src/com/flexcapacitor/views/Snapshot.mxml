@@ -20,7 +20,6 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.utils.ClassUtils;
-			import com.flexcapacitor.utils.TypeUtils;
 			
 			import mx.events.FlexEvent;
 			public var radiate:Radiate = Radiate.instance;
@@ -56,11 +55,23 @@
 				if (radiate.target) {
 					target = radiate.target as DisplayObject;
 				}
+				
+				
 			}
 			
 			
 			protected function targetChangeHandler(event:RadiateEvent):void {
 				target = event.selectedItem as DisplayObject;
+			}
+			
+			protected function group1_pasteHandler(event:Event):void {
+				/*var clipboard:Clipboard = Clipboard.generalClipboard;
+				Radiate.log.info("Formats: " + clipboard.formats.join(","));
+				Radiate.log.info("PASTED: " + clipboard.getData(ClipboardFormats.TEXT_FORMAT));*/
+				/*var value:* = clipboard.getData(ClipboardFormats.BITMAP_FORMAT, ClipboardTransferMode.CLONE_ONLY);
+				var value1:* = clipboard.getData(ClipboardFormats.BITMAP_FORMAT, ClipboardTransferMode.CLONE_PREFERRED);
+				var value2:* = clipboard.getData(ClipboardFormats.BITMAP_FORMAT, ClipboardTransferMode.ORIGINAL_ONLY);
+				var value3:* = clipboard.getData(ClipboardFormats.BITMAP_FORMAT, ClipboardTransferMode.ORIGINAL_PREFERRED);*/
 			}
 			
 		]]>
@@ -155,7 +166,7 @@
 		
 		<s:Spacer width="100%" />
 		
-		
+		<!--<s:TextInput paste="group1_pasteHandler(event)"/>-->
 		<controls:ImageButton id="preview" 
 							  source="assets/images/components/Image.png"
 							  mouseUpEffect="{openPopUp}"

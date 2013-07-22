@@ -15,6 +15,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.HistoryEvent;
 			import com.flexcapacitor.events.HistoryEventItem;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -65,7 +66,7 @@
 				var setStartValues:Boolean = true;
 				var changesCollection:XMLListCollection;
 				var genericCollection:XMLListCollection;
-				var documentModel:ComponentDescription;
+				var documentTree:ComponentDescription;
 				var historyEvent:HistoryEventItem;
 				var propertiesList:XMLList;
 				var targetsList:XMLList;
@@ -100,7 +101,7 @@
 				xml = <root><items/></root>;
 				
 				// get document tree for getting path names later
-				documentModel = DisplayObjectUtils.getDisplayList(radiate.document);
+				documentTree = radiate.document.description;
 				
 				
 				// loop through changes and create change items
@@ -108,7 +109,9 @@
 					item = <item/>;
 					
 					// get changes
-					changes = history.getItemAt(i) as Array;
+					historyEvent = HistoryEvent(history.getItemAt(i));
+					
+					//changes = HistoryEvent(history.getItemAt(i));
 					changesLength = changes.length;
 					
 					// reset changes
@@ -158,10 +161,10 @@
 						else if (change is AddItems) {
 							addItem = change as AddItems;
 							changeItem.destinationClass = ClassUtils.getClassName(addItem.destination);
-							changeItem.destination = DisplayObjectUtils.getVisualElementPath(addItem.destination as IVisualElement, documentModel, reversePathOrder);
+							changeItem.destination = DisplayObjectUtils.getVisualElementPath(addItem.destination as IVisualElement, documentTree, reversePathOrder);
 							changeItem.position = addItem.position;
 							changeItem.propertyName = addItem.propertyName;
-							changeItem.relativeTo = DisplayObjectUtils.getVisualElementPath(addItem.relativeTo as IVisualElement, documentModel, reversePathOrder);
+							changeItem.relativeTo = DisplayObjectUtils.getVisualElementPath(addItem.relativeTo as IVisualElement, documentTree, reversePathOrder);
 							changeItem.isArray = addItem.isArray;
 						}
 						
@@ -182,7 +185,7 @@
 							targetItem = <target/>;
 							changeItem.@target = changeItem.@target!="" ? ", " + ClassUtils.getClassName(target) : ClassUtils.getClassName(target);
 							targetItem.className = ClassUtils.getClassName(target);
-							targetItem.id = ClassUtils.getIdentifier(target) || "";
+							targetItem.id = ClassUtils.getIdentifierOrName(target) || "";
 							
 							
 							if (target is DisplayObject && includeExpression && targetItem.id) {
@@ -192,7 +195,7 @@
 							
 							// if getting unique location find in and describe from within component tree 
 							//targetItem.uniqueIdentity = Object(target).toString();
-							targetItem.path = DisplayObjectUtils.getVisualElementPath(target as IVisualElement, documentModel, reversePathOrder);
+							targetItem.path = DisplayObjectUtils.getVisualElementPath(target as IVisualElement, documentTree, reversePathOrder);
 							
 							genericCollection.addItem(targetItem);
 						}

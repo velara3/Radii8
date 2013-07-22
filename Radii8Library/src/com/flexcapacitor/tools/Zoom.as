@@ -2,6 +2,7 @@
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.model.IDocument;
 	
 	import flash.display.DisplayObject;
 	import flash.display.Stage;
@@ -97,7 +98,7 @@ package com.flexcapacitor.tools {
 			//radiate.document.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
 			
 			if (radiate.document) {
-				updateDocument(DisplayObject(radiate.document));
+				updateDocument(radiate.document);
 			}
 			
 			zoomInCursorID = radiate.getMouseCursorID(this, "ZoomInCursor");
@@ -117,12 +118,12 @@ package com.flexcapacitor.tools {
 		/**
 		 * 
 		 * */
-		public function updateDocument(document:Object):void {
+		public function updateDocument(document:IDocument):void {
 			var stage:Stage = FlexGlobals.topLevelApplication.stage;
 			var sandboxRoot:DisplayObject = SystemManager(FlexGlobals.topLevelApplication.systemManager).getSandboxRoot();
 			
 			// remove listeners
-			if (targetApplication && targetApplication!=document) {
+			if (targetApplication) {
 				targetApplication.removeEventListener(MouseEvent.CLICK, handleClick, true);
 				targetApplication.removeEventListener(MouseEvent.MOUSE_MOVE, handleMouseMove);
 				targetApplication.removeEventListener(MouseEvent.MOUSE_DOWN, handleMouseDown);
@@ -139,7 +140,7 @@ package com.flexcapacitor.tools {
 				//sandboxRoot.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerSandboxRoot, true);
 			}
 			
-			targetApplication = document;
+			targetApplication = document ? document.instance : null;
 			
 			// add listeners
 			if (targetApplication) {
@@ -295,7 +296,7 @@ package com.flexcapacitor.tools {
 		 * Document changed update. 
 		 * */
 		protected function documentChangeHandler(event:RadiateEvent):void {
-			updateDocument(event.selectedItem);
+			updateDocument(event.selectedItem as IDocument);
 			
 		}
 		

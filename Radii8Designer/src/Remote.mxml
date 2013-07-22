@@ -14,7 +14,7 @@
 		 
 		 width="400" 
 		 height="100%" 
-		 creationComplete="group1_creationCompleteHandler(event)"
+		 creationComplete="creationCompleteHandler(event)"
 		 >
 		
 	<fx:Style>
@@ -41,9 +41,10 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import com.flexcapacitor.components.DocumentContainer;
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.google.code.flexiframe.IFrame;
+			import com.flexcapacitor.model.IDocument;
 			
 			import mx.events.FlexEvent;
 			import mx.events.IndexChangedEvent;
@@ -94,29 +95,39 @@
 			
 			protected function navigatorContent_changeHandler(event:IndexChangedEvent):void {
 				var index:int = event.newIndex;
+				var document:IDocument;
 				
+				document = radiate.getDocumentAtIndex(event.newIndex);
+				radiate.setDocument(document, true);
+				return;
+				
+				/*
 				if (index==1) {
 					//Radiate.desetDocuments(true);
 					radiate.isPreviewVisible = true;
 				}
 				else {
-					var document:Document = NavigatorContent(documentsTagNavigator.getItemAt(0)).getElementAt(0) as Document;
-					Radiate.setDocuments(document.targetApplication);
-					radiate.isPreviewVisible = false;
+					document = NavigatorContent(documentsTagNavigator.getItemAt(0)).getElementAt(0) as DocumentContainer;
+					
+					if (document) {
+						Radiate.setDocuments(document.targetApplication);
+						radiate.isPreviewVisible = false;
+					}
 				}
-				
+				*/
 			}
 			
-			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				radiate.addEventListener(RadiateEvent.REQUEST_PREVIEW, requestPreviewHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.CODE_UPDATED, codeUpdatedHandler, false, 0, true);
+				
+				radiate.documentsTabNavigator = documentsTagNavigator;
 			}
 			
 			private var previewCreated:Boolean;
 			private var initialDocument:Boolean;
 
-			private var iframe:IFrame;
 
 			private var navigatorContent:NavigatorContent;
 			
@@ -124,24 +135,6 @@
 				var previewType:String = event.previewType;
 				
 				if (!previewCreated && previewType==Code.HTML) {
-					navigatorContent = new NavigatorContent();
-					navigatorContent.percentWidth = 100;
-					navigatorContent.percentHeight = 100;
-					navigatorContent.label = "PREVIEW";
-					//navigatorContent.setStyle("backgroundColor", "#ff0000");
-					
-					iframe = new IFrame();
-					iframe.id = "iframe";
-					iframe.top = 20;
-					iframe.left = 20;
-					iframe.percentWidth = 100;
-					iframe.percentHeight = 100;
-					iframe.setStyle("backgroundColor", "#666666");
-					//iframe.setStyle("backgroundAlpha", 0);
-					
-					navigatorContent.addElement(iframe);
-					navigatorContent.validateNow();
-					documentsTagNavigator.addElement(navigatorContent);
 					
 					previewCreated = true;
 				}
@@ -149,12 +142,11 @@
 				//var displayList:ComponentDescription = DisplayObjectUtils.getDisplayList(radiate.document);
 				
 				if (previewType==Code.HTML) {
-					documentsTagNavigator.selectedIndex = 1;
-					iframe.content = event.value;
+					//documentsTagNavigator.selectedIndex = 1;
 					//radiate.isPreviewVisible = true;
 				}
 				else {
-					documentsTagNavigator.selectedIndex = 0;
+					//documentsTagNavigator.selectedIndex = 0;
 				}
 				
 				
@@ -165,10 +157,10 @@
 			 * */
 			protected function codeUpdatedHandler(event:RadiateEvent):void {
 				
-				if (iframe) { 
+				//if (iframe) { 
 					//documentsTagNavigator.selectedIndex = 1;
-					iframe.content = event.value;
-				}
+				//	iframe.content = event.value;
+				//}
 			}
 			
 		]]>
@@ -266,14 +258,19 @@
 							  height="100%"
 							  clipContent="true">
 					
+					<!-- PROJECT -->
+					<s:NavigatorContent label="PROJECTS"  >
+						<views:ProjectInspector width="100%" />
+					</s:NavigatorContent>
+					
 					<!-- COMPONENTS -->
 					<s:NavigatorContent label="COMPONENTS">
 						<views:Components height="100%" width="100%" />
 					</s:NavigatorContent>
 					
-					<!-- DISPLAY LIST -->
-					<s:NavigatorContent label="DOCUMENT"  >
-						<views:DisplayList width="100%" minHeight="220"/>
+					<!-- LAYERS -->
+					<s:NavigatorContent label="LAYERS"  >
+						<views:Layers width="100%" minHeight="180"/>
 					</s:NavigatorContent>
 					
 					<!-- HISTORY -->
@@ -337,8 +334,12 @@
 								 borderStyle="solid"
 								 width="100%"
 								 height="100%"
-								 selectedIndex="1">
+								 selectedIndex="0">
 					
+					<!-- DOCUMENTS -->
+					<s:NavigatorContent width="100%" height="100%" label="DOCUMENTS">
+						<views:DocumentsInspector height="100%" width="100%"/>
+					</s:NavigatorContent>
 					
 					<!-- LAYOUT CONSTRAINTS -->
 					<s:NavigatorContent label="LAYOUT">
@@ -375,7 +376,7 @@
 					
 					<!-- PROFILING -->
 					<s:NavigatorContent width="100%" height="100%" label="PROFILE">
-						<ns1:Profiling height="100%" width="100%"/>
+						<views:Profiling height="100%" width="100%"/>
 					</s:NavigatorContent>
 					
 				</mx:TabNavigator>
@@ -391,14 +392,17 @@
 			</s:Scroller>-->
 			
 			<!-- EXAMPLE APPLICATION -->
-			<mx:VDividedBox id="applicationGroup" width="100%" height="100%" >
+			<mx:VDividedBox id="documentsGroup" width="100%" height="100%" >
 		
 				
 				<mx:TabNavigator id="documentsTagNavigator" width="100%" height="100%"
 								  change="navigatorContent_changeHandler(event)">
-					<s:NavigatorContent width="100%" height="100%" label="DOCUMENT">
-						<components:Document id="document1" width="100%" height="100%" />
-					</s:NavigatorContent>
+					<!--<s:NavigatorContent width="100%" height="100%" label="HELL0!">
+						<ns1:StartPage id="startPage" width="100%" height="100%" />
+					</s:NavigatorContent>-->
+					<!--<s:NavigatorContent width="100%" height="100%" label="DOCUMENT">
+						<components:DocumentContainer id="document1" width="100%" height="100%" />
+					</s:NavigatorContent>-->
 					<!--<s:NavigatorContent width="100%" height="100%" label="PREVIEW" creationPolicy="all">
 						<flexiframe:IFrame id="iframe" 
 										   top="20"
@@ -460,6 +464,11 @@
 					<!-- DOCS INSPECTOR -->
 					<s:NavigatorContent width="100%" height="100%" label="DOCS">
 						<views:DocsInspector id="docsInspector" width="100%" height="100%" />
+					</s:NavigatorContent>
+				
+					<!-- FEATURE INSPECTOR -->
+					<s:NavigatorContent width="100%" height="100%" label="FEATURE">
+						<views:Features id="featureInspector" width="100%" height="100%" />
 					</s:NavigatorContent>
 				
 					

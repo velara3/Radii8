@@ -28,9 +28,16 @@ package com.flexcapacitor.views.supportClasses {
 		public var position:String;
 		public var display:String;
 		public var margin:String;
+		
 		public var paddingRight:String;
 		public var paddingLeft:String;
 		public var paddingTop:String;
 		public var paddingBottom:String;
+		
+		public var left:String;
+		public var top:String;
+		public var right:String;
+		public var bottom:String;
+		
 	}
 }

@@ -3,6 +3,7 @@
 package com.flexcapacitor.utils {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
+	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.DragData;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
@@ -19,7 +20,6 @@ package com.flexcapacitor.utils {
 	import flash.utils.Dictionary;
 	
 	import mx.collections.ArrayCollection;
-	import mx.containers.GridItem;
 	import mx.core.BitmapAsset;
 	import mx.core.DragSource;
 	import mx.core.FlexGlobals;
@@ -36,7 +36,6 @@ package com.flexcapacitor.utils {
 	import mx.utils.NameUtil;
 	
 	import spark.components.Application;
-	import spark.components.CheckBox;
 	import spark.components.Image;
 	import spark.components.SkinnableContainer;
 	import spark.components.supportClasses.GroupBase;
@@ -148,14 +147,15 @@ package com.flexcapacitor.utils {
 		 * @param event Mouse event from the mouse down event
 		 * @param draggedItem The item or data to be dragged. If null then this is the dragInitiator.
 		 * */
-		public function listenForDragBehavior(dragInitiator:IUIComponent, parentApplication:Application, event:MouseEvent, draggedItem:Object = null):void {
+		public function listenForDragBehavior(dragInitiator:IUIComponent, document:IDocument, event:MouseEvent, draggedItem:Object = null):void {
 			startingPoint = new Point();
 			this.dragInitiator = dragInitiator;
-			this.parentApplication = parentApplication;
+			this.parentApplication = Application(document.instance);
 			systemManager = parentApplication.systemManager;
 			topLevelApplication = Application(FlexGlobals.topLevelApplication);
 			
-			componentTree = DisplayObjectUtils.getDisplayList(parentApplication);
+			//componentTree = DisplayObjectUtils.getComponentDisplayList(documentApplication);
+			componentTree = document.description;
 			
 			// either the component to add or the component to move
 			if (arguments[3]) {
@@ -760,12 +760,6 @@ package com.flexcapacitor.utils {
 			
 			// check if target is a group
 			if (target is IVisualElementContainer) {
-				visualElementContainer = target as IVisualElementContainer;
-				groupBase = target as GroupBase;
-				skinnableContainer = target as SkinnableContainer;
-				//isGroup = groupBase!=null;
-				//isSkinnableContainer = skinnableContainer!=null;
-				layout = target.layout;
 				
 				dropIndex = -1;
 				
@@ -780,10 +774,22 @@ package com.flexcapacitor.utils {
 					target = parentApplication;
 				}
 				
+				visualElementContainer = target as IVisualElementContainer;
+				groupBase = target as GroupBase;
+				skinnableContainer = target as SkinnableContainer;
+				
+				//isGroup = groupBase!=null;
+				//isSkinnableContainer = skinnableContainer!=null;
+				
+				// ReferenceError: Error #1069: Property layout not found on mx.containers.TabNavigator and there is no default value.
+				layout = "layout" in target ? target.layout : null;
+				
+				
+				if (!layout) return null;
 				// we found a group
 				//dropTarget = target;
 		
-				
+				// TypeError: Error #1009: Cannot access a property or method of a null object reference.
 				// get drop indicator location
 				location = layout.calculateDropLocation(event);
 				
@@ -1087,12 +1093,18 @@ package com.flexcapacitor.utils {
 			var height:int;
 			
 			//sm = SystemManagerGlobals.topLevelSystemManagers[0];
+			
+			// THE Following code may be causing this error:
+			// TypeError: Error #1009: Cannot access a property or method of a null object reference.
+			//	at mx.managers.dragClasses::DragProxy/mouseUpHandler()[E:\dev\4.y\frameworks\projects\framework\src\mx\managers\dragClasses\DragProxy.as:640]
+
+			// it seems to happen when dragging and dropping rapidly
 			// stops the drop not accepted animation
 			var dragManagerImplementation:Object = mx.managers.DragManagerImpl.getInstance();
 			var dragProxy:Object = dragManagerImplementation.dragProxy;
 			//var startPoint:Point = new Point(dragProxy.startX, dragProxy.startY);
 			Object(dragManagerImplementation).endDrag(); 
-			
+			//DragManager.endDrag();
 			
 			if (dropLocation) {
 				

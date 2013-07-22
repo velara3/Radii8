@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" 
+		 minHeight="20"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.effects.status.supportClasses.StatusMessage;
+			import com.flexcapacitor.status.StatusManager;
+			import com.flexcapacitor.status.view.StatusMessage;
+			
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			[Bindable]
+			public var os:String;
+			
+			[Bindable]
+			public var browser:String;
+			
+			[Bindable]
+			public var player:String;
+			
+			[Bindable]
+			public var manufacturer:String;
+			
+			[Bindable]
+			public var cpu:String;
+			
+			[Bindable]
+			public var isDebugger:Boolean;
+			
+			[Bindable]
+			public var language:String;
+			
+			[Bindable]
+			public var supports32bit:String;
+			
+			[Bindable]
+			public var supports64bit:String;
+			
+			[Bindable]
+			public var touchscreenType:String;
+			
+			[Bindable]
+			public var isDebugSWF:Boolean;
+			
+			[Bindable]
+			public var flexSDK:String;
+			private var _target:*;
+			
+			public function get target():* {
+				return _target;
+			}
+			
+			/**
+			 * This is set automatically when a new target is selected
+			 * This can be any type. You must disable this component if the 
+			 * type is not what you can process.
+			 * */
+			[Bindable]
+			public function set target(value:*):void {
+				
+				// For example, if we only want to handle DisplayObjects we check for them here
+				if (!(value is DisplayObject)) {
+					_target = null;
+					enabled = false;
+					return;
+				}
+				else {
+					enabled = true;
+				}
+				
+				_target = DisplayObject(value);
+			}
+			
+			private var radiate:Radiate = Radiate.instance;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				
+				var cap:Object = Capabilities;
+				os = Capabilities.os;
+				manufacturer = Capabilities.manufacturer;
+				player = Capabilities.version;
+				isDebugger = Capabilities.isDebugger;
+				language = Capabilities.language;
+				
+				// in the future we should load in the swf in question
+				// and get the sdk version and if its a debug swf
+				//flexSDK = mx_internal::Version;
+				isDebugSWF = false; //new Error().getStackTrace().search(/:[0-9]+]$/m) > -1;
+				
+				
+				if (Object(Capabilities).hasOwnProperty("cpuArchitecture")) {
+					cpu = Capabilities['cpuArchitecture'];
+				}
+				else {
+					cpu = "";
+				}
+				
+				if (Object(Capabilities).hasOwnProperty("supports32BitProcesses")) {
+					supports32bit = Capabilities['supports32BitProcesses'];
+					supports64bit = Capabilities['supports64BitProcesses'];
+				}
+				else {
+					supports32bit = "";
+					supports64bit = "";
+				}
+				
+				if (Object(Capabilities).hasOwnProperty("touchscreenType")) {
+					touchscreenType = Capabilities['touchscreenType'];
+				}
+				else {
+					touchscreenType = "";
+				}
+				
+				if (ExternalInterface.available) {
+					browser = ExternalInterface.call("eval", "navigator.userAgent");
+				}
+				else {
+					browser = Capabilities.playerType;
+				}
+			}
+			
+			protected function featureRadioGroup_changeHandler(event:Event):void {
+				if (featureRadioButton.selected) {
+					currentState = "feature";
+				}
+				else {
+					currentState = "bug";
+				}
+			}
+			
+			
+			protected function sendButton_clickHandler(event:MouseEvent):void {
+				var message:Object = new Object();
+				
+				if (emailText.text=="" && emailText.prompt=="") {
+					StatusManager.show("Please enter your email before sending a message.");
+					return;
+				}
+				if (messageTextArea.text=="") {
+					StatusManager.show("Please enter a message.");
+					return;
+				}
+				
+				message.os = os;
+				message.browser = browser;
+				message.player = player;
+				message.manufacturer = manufacturer;
+				message.cpu = cpu;
+				message.isDebugger = isDebugger;
+				message.language = language;
+				message.supports32bit = supports32bit;
+				message.supports64bit = supports64bit;
+				message.touchscreen = touchscreenType;
+				//message.name = nameText.text;
+				message.email = emailText.text=="" ? emailText.prompt : emailText.text;
+				message.message = messageTextArea.text;
+
+				feedbackService.send(message);
+			}
+			
+			protected function feedbackService_resultHandler(event:ResultEvent):void {
+				var result:String = event.result as String;
+				StatusManager.show("Message sent!");
+				//nameText.text = "";
+				emailText.prompt = emailText.text!="" ? emailText.text : emailText.prompt;
+				emailText.text = "";
+				messageTextArea.text = "";
+			}
+			
+			
+			protected function feedbackService_faultHandler(event:FaultEvent):void {
+				StatusManager.show("An error occurred! Message may not have been sent. Please email contact@radii8.com.", 6000);
+				//StatusManager.show("An error occurred! Message may not have been sent. \n\n" + event.fault.message);
+				Radiate.log.error(event.fault.message);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RadioButtonGroup id="featureRadioGroup" 
+							change="featureRadioGroup_changeHandler(event)"/>
+		
+		<s:HTTPService id="feedbackService"
+					   method="POST"
+					   fault="feedbackService_faultHandler(event)" 
+					   result="feedbackService_resultHandler(event)"
+					   url="http://www.radii8.com/support.php"/>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="feature"/>
+		<s:State name="bug"/>
+	</s:states>
+	
+	<s:VGroup left="0" right="0" 
+			  top="0"
+			  width="100%"
+			  height="100%"
+			  clipAndEnableScrolling="true" 
+			  paddingLeft="10" 
+			  paddingRight="10"
+			  paddingBottom="10"
+			  >
+			
+		<s:HGroup left="0" right="0" 
+				  width="100%"
+				  clipAndEnableScrolling="true" 
+				  paddingRight="10"
+				  verticalAlign="middle"
+				  >
+			
+			<s:Label text="Send as many feature request and bug reports as you like."/>
+			
+			<s:Spacer width="100%"/>
+			
+			<s:RadioButton id="featureRadioButton" 
+						   label="Feature"
+						   group="{featureRadioGroup}"
+						   selected="true"
+						   />
+			<s:RadioButton id="booleanDisabledRadioButton"
+						   label="Bug"
+						   group="{featureRadioGroup}"
+						   />
+			
+			<s:Button id="sendButton" 
+					  label="Send" 
+					  click="sendButton_clickHandler(event)"
+					  />
+	
+		</s:HGroup>
+		
+		<s:HGroup verticalAlign="middle">
+			<s:Label text="Your email:"/>
+	
+			<s:TextInput id="emailText" 
+						 minWidth="250"
+						 focusAlpha="0"
+						 borderColor="#cccccc"
+						 />
+		</s:HGroup>
+		
+		<s:HGroup left="0" right="0" 
+				  width="100%" height="100%"
+				  clipAndEnableScrolling="true" 
+				  paddingRight="10"
+				  verticalAlign="middle"
+				  >
+			<s:TextArea id="messageTextArea" 
+						focusColor="#585858"
+						focusAlpha="0"
+						width="50%" height="100%" 
+						borderColor="#cccccc"
+						paddingTop="8"
+						paddingBottom="8"
+						prompt.feature="Enter your feature and click send"
+						>
+				<s:keyFocusChange>
+					event.preventDefault();
+					event.currentTarget.insertText("\t");
+			    </s:keyFocusChange>
+				<s:prompt.bug>Summarize the problem and list the steps to reproduce.</s:prompt.bug>
+	
+				<s:text.bug>
+<![CDATA[Summary:
+
+
+Steps to reproduce:
+1. 
+2. 
+3. 
+
+Expected Result:
+
+
+Actual Result:
+
+
+]]></s:text.bug>
+			</s:TextArea>
+		
+			<s:TextArea id="helpTextArea" 
+						focusColor="#585858"
+						focusAlpha="0"
+						width="50%" height="100%" 
+						borderColor="#cccccc"
+						borderVisible="false"
+						paddingTop="8"
+						paddingBottom="8"
+						editable="false"
+						includeIn="bug"
+						fontStyle="italic"
+						color="#585858"
+						>
+				<s:text><![CDATA[Summarize the problem and list the steps to reproduce.
+
+Steps to reproduce:
+1. Add a button to the stage
+2. Set color on the button to red in the properties panel
+
+Expected Result:
+Button text is red
+
+Actual Result:
+Button text is blue]]></s:text>
+			</s:TextArea>
+		</s:HGroup>
+	</s:VGroup>
+	
+</s:Group>

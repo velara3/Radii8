@@ -11,6 +11,9 @@ package {
 		// EDIT
 		///////////////////////////////////////////////////////
 		
+		[Embed(source="assets/icons/general/NewFileBW.png")]
+		public static const newFile:Class;
+		
 		[Embed(source="assets/icons/general/CopyBW.png")]
 		public static const copy:Class;
 		
@@ -37,6 +40,12 @@ package {
 		
 		[Embed(source="assets/icons/general/arrow.png")]
 		public static const arrow:Class;
+		
+		[Embed(source="assets/icons/effects/tree_viewBW.png")]
+		public static const treeView:Class;
+		
+		[Embed(source="assets/icons/effects/tree_view_closeBW.png")]
+		public static const treeViewClosed:Class;
 		
 		
 		///////////////////////////////////////////////////////

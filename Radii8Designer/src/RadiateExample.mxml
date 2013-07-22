@@ -12,10 +12,7 @@
 			   width="100%" height="100%" 
 			   minWidth="800" minHeight="400"
 			   uncaughtError="uncaughtErrorHandler(event)" 
-			   preinitialize="ErrorText.show('application preinitialize')"
-			   initialize="ErrorText.show('application initialize')"
-			   creationComplete="ErrorText.show('creation complete')"
-			   applicationComplete="ErrorText.show('application initialize')"
+			   applicationComplete="application1_applicationCompleteHandler(event)"
 			   pageTitle="Radii8"
 			   >
 	
@@ -46,8 +43,12 @@
 		{
 			skinClass: ClassReference("com.flexcapacitor.skins.MinimalScrollerSkin");
 		}
+		
 		global {
 			fontFamily: Verdana;
+			selectionColor: #d8d8d8;
+			rollOverColor: #d8d8d8;
+			caretColor: #d8d8d8;
 		}
 		
 		mx|TabNavigator {
@@ -57,8 +58,15 @@
 		.tabStyle {
 			fontFamily:"Verdana";
 			fontSize:  10;
-			
 		}
+		
+
+		mx|ToolTip { 
+            fontSize: 10;
+			color: #585858;
+            backgroundColor: #FFFFFF;
+			cornerRadius: 2;
+        }
 	</fx:Style>
 	
 	<fx:Script>
@@ -66,7 +74,6 @@
 			import com.flexcapacitor.controller.Radiate;
 			
 			import mx.events.FlexEvent;
-			import mx.preloaders.ErrorText;
 			
 			private var remoteTestURL:String = "http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf";
 			private var testURL:String = "assets/test/AboutYou.swf";
@@ -125,8 +132,8 @@
 				currentState = "design";
 				validateNow();
 				remote.validateNow();
-				remote.document1.validateNow();
-				remote.document1.load();
+				//remote.document1.validateNow();
+				//remote.document1.load();
 			}
 			
 			protected function logo_clickHandler(event:MouseEvent):void {
@@ -161,7 +168,7 @@
 			}
 			
 			private function loadURL(url:String):void {
-				remote.document1.loadRemote(url, trustContent.selected, loadCompatible.selected);
+				//remote.document1.loadRemote(url, trustContent.selected, loadCompatible.selected);
 			}
 			
 			private function hideLoadControls():void {
@@ -192,6 +199,10 @@
 				hideLoadControls();
 			}
 			
+			protected function application1_applicationCompleteHandler(event:FlexEvent):void {
+				Radiate.getInstance().addDocument("Document 1");
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -202,8 +213,18 @@
 		</handlers:EventHandler>
 
 		<!--- hide about popup -->
-		<handlers:EventHandler target="{popUpGroup}" eventNames="['mouseDownOutside']">
+		<handlers:EventHandler target="{popUpGroup}" eventName="mouseDownOutside">
 			<popup:HidePopupAnchor target="{aboutPopUp}" />
+		</handlers:EventHandler>
+		
+		<!--- show about logo popup -->
+		<!--<handlers:EventHandler target="{logo}" eventName="click">
+			<popup:ShowPopupAnchor target="{logoPopUp}" hideIfOpen="true" />
+		</handlers:EventHandler>-->
+
+		<!--- hide about logo popup -->
+		<handlers:EventHandler target="{logoPopUpGroup}" eventName="mouseDownOutside">
+			<popup:HidePopupAnchor target="{logoPopUp}" />
 		</handlers:EventHandler>
 		
 		<!--- open more info URL -->
@@ -220,7 +241,10 @@
 		
 		<utils:MiniInspector showDisplayObjectOutlines="true"
 							 showRuler="false"
-							 showColorUnderMouse="false"/>
+							 showStyleInheritanceInformation="true"
+							 showAllStyleDeclarations="true"
+							 showColorUnderMouse="false"
+							 />
 	</fx:Declarations>
 	
 	<s:states>
@@ -251,8 +275,6 @@
 				All the panels and features you see are made possible and work together through this system. This is important because it allows any developer with Flex or ActionScript knowledge to create their own panels usually very quickly and modify the document in their own way. For example, you could add a panel that lets you add a drop shadow to an element on the stage or provide a UI to adjust blend mode of the selected component. Or you could create a States panel that lets you select and see the different states of a component. You could access this information with ActionScript code as easily as checking the Radiate.selectedTarget states property and showing those states in your UI. 
 				
 				As you can see there are many features that are missing or behaving incorrectly. Most are easily solved. This purpose of this demo to give you an early preview of where it's going and ideas for what it can be used for. 
-				
-				If you are giving it a run through work with the Button and Group elements for the most stability. 
 				
 				For more information check the blog and send emails to flexcapacitor@gmail.com.
 			</c:htmlText>
@@ -311,22 +333,48 @@
 	
 	<local:Remote id="remote" width="100%" height="100%" top="38" includeIn="design" />
 	
+	<s:PopUpAnchor id="logoPopUp" width="100" height="100" top="34" left="10" >
+		<s:Group id="logoPopUpGroup" 
+				 mouseEnabledWhereTransparent="true" 
+				 width="100" height="100" 
+				 >
+			<s:filters>
+				<s:DropShadowFilter distance="3" strength=".75"/>
+			</s:filters>
+			
+			
+			<s:Rect width="100%" height="100%" radiusX="8" radiusY="8">
+				<s:fill>
+					<s:SolidColor color="#ffffff" alpha=".9" />
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke color="#000000" pixelHinting="true" weight="0" />
+				</s:stroke>
+			</s:Rect>
+			
+			<s:BitmapImage id="logo2" 
+						   source="assets/images/logo2.png" 
+						   width="68" height="69"
+						   verticalCenter="0"
+						   horizontalCenter="0"
+						   >
+			</s:BitmapImage>
+		</s:Group>
+	</s:PopUpAnchor>
+		
 	<s:HGroup verticalAlign="middle" width="100%" height="28" paddingLeft="8" paddingRight="8"
 			  gap="8" 
 			  color="#DFDFDF"
 			  >
 		
-		<s:BitmapImage id="logo" 
+		<s:Image id="logo" 
 					   source="assets/images/logo20.png" 
 					   width="20" height="20"
 					   verticalAlign="middle" 
 					   horizontalAlign="center"
 					   includeInLayout="true"
 					   >
-			<!--<s:filters>
-				<s:GlowFilter blurX="2" blurY="2" knockout="false" strength="1" quality="4" color="#ffffff" />
-			</s:filters>-->
-		</s:BitmapImage>
+		</s:Image>
 		
 		<s:Spacer width="-6"/>
 		
@@ -404,6 +452,10 @@
 				<s:HGroup verticalAlign="middle">
 					<s:Label text="Build Date:" minWidth="100" /> 
 					<s:Label id="buildDate" text="{BUILD_DATE}" /> 
+				</s:HGroup>
+				<s:HGroup verticalAlign="middle">
+					<s:Label text="Build Time:" minWidth="100" /> 
+					<s:Label id="buildTime" text="{BUILD_TIME}" /> 
 				</s:HGroup>
 				<s:HGroup verticalAlign="middle">
 					<s:Label text="Build Number:" width="100" />

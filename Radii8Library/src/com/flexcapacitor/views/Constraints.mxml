@@ -18,7 +18,6 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.utils.TypeUtils;
 			
 			import mx.collections.ArrayList;
 			import mx.core.IVisualElement;
@@ -339,6 +338,7 @@
 				var checkbox:CheckBox = event.currentTarget as CheckBox;
 				var property:String;
 				
+				if (!target) return;
 				
 				if (combobox && combobox.selectedIndex != -1) { // not used
 					//TypeUtils.applyProperty(combobox, combobox.selectedItem.name, combobox.selectedItem.label, combobox.selectedItem.type);
@@ -1493,7 +1493,7 @@
 		</s:BorderContainer>
 
 	</s:BorderContainer>
-
+<!--
 	<s:Line left="23.5" right="23.5"
 			y="106" alpha=".5">
 		<s:stroke>
@@ -1506,19 +1506,22 @@
 		<s:stroke>
 			<s:SolidColorStroke/>
 		</s:stroke>
-	</s:Line>
+	</s:Line>-->
 	
-	<s:Label backgroundColor="#FFFFFF" 
-			 styleName="constraintStyles"
-			 horizontalCenter="0"
-			 text=" Size and Position " 
-			 y="5"/>
+	<s:Label left="0"
+			 y="5"
+			 text="Size and Position" 
+			 color="#585858"
+			 width="100%" 
+			 styleName="formItem" 
+			 />
 
-	<s:Label backgroundColor="#FFFFFF" 
-			 styleName="constraintStyles"
-			 horizontalCenter="0"
-			 text=" Constraints " 
+	<s:Label text="Constraints" 
+			 left="0"
 			 y="101"
+			 color="#585858"
+			 width="100%" 
+			 styleName="formItem" 
 			 />
 
 	<s:ComboBox id="layoutLayoutComboBox"

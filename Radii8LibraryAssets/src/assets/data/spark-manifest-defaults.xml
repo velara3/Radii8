@@ -99,6 +99,10 @@
     	<defaults text="Label"/>
     </component>
     
+	<component id="Link" class="mx.controls.LinkButton" include="true">
+    	<defaults label="Link"/>
+    </component>
+    
 	<component id="List" class="spark.components.List" include="false">
     	<defaults width="160" height="160" dataProvider="Item 1,Item 2,Item 3"/>
     </component>

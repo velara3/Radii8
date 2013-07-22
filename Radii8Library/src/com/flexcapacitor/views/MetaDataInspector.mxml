@@ -38,20 +38,22 @@
 			protected function propertySelectedHandler(event:RadiateEvent):void {
 				var metadata:MetaData = event.selectedItem as MetaData;
 				
-				codeModelTextArea.text = metadata.raw;
+				metadataTextArea.text = metadata.raw;
 			}
 			
 		]]>
 	</fx:Script>
 	
 	
-	<s:TextArea id="codeModelTextArea" 
+	<s:TextArea id="metadataTextArea" 
 				top="8"
 				focusColor="#585858"
 				width="100%" height="100%" 
 				fontFamily="Courier New"
 				borderVisible="false"
-				paddingTop="8">
+				paddingTop="8"
+				fontSize="13"
+				prompt="No metadata available. Select a property, style or event.">
 		<s:keyFocusChange>
 			event.preventDefault();
 			event.currentTarget.insertText("\t");

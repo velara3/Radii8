@@ -1,4 +1,7 @@
 package {
+	import mx.controls.LinkButton;
+	import mx.skins.spark.LinkButtonSkin;
+	
 	import spark.components.BorderContainer;
 	import spark.components.ButtonBar;
 	import spark.components.Grid;
@@ -178,8 +181,10 @@ package {
 		//Embed(source="assets/icons/spark/controls/LinkBar.png")]
 		//public static const LinkBarIcon:Class;
 		
-		//[Embed(source="assets/icons/spark/controls/LinkButton.png")]
-		//public static const LinkButtonIcon:Class;
+		[Embed(source="assets/icons/mx/controls/LinkButton.png")]
+		public static const LinkButtonIcon:Class;
+		public static var linkButton:LinkButton;
+		public static var linkButtonSkin:LinkButtonSkin;
 		
 		[Embed(source="assets/icons/spark/controls/List.png")]
 		public static const ListIcon:Class;

@@ -42,7 +42,6 @@
 			
 			import mx.core.FlexSprite;
 			import mx.core.IVisualElement;
-			import mx.core.ListenerTracker;
 			import mx.events.FlexEvent;
 			
 			
@@ -132,31 +131,33 @@
 			 * */
 			public function showEventListeners(sprite:FlexSprite): void {
 				this.sprite = sprite; 
-				grid.dataProvider = sprite != null ? sprite.eventListeners : null;
+				grid.dataProvider = sprite != null ? Object(sprite).eventListeners : null;
 				grid.selectedIndex = 0;
 				
 				if (grid.dataProvider.length>0) {
-					selectedTracker = grid.dataProvider[0] as ListenerTracker;
+					selectedTracker = grid.dataProvider[0];// as ListenerTracker;
 				}
 			}
 			
 			private var sprite:FlexSprite;
 			
-			public function removeListener(listener:ListenerTracker):void {
+			public function removeListener(listener:Object):void {
+			//public function removeListener(listener:ListenerTracker):void {
 				sprite.removeEventListener(listener.type, listener.listener, listener.useCapture);
 				
-				grid.dataProvider = sprite.eventListeners;
+				grid.dataProvider = Object(sprite).eventListeners;
 			}
 			
 			private function removeAll():void {
 				if (sprite) {
-					sprite.removeAllEventListeners();
-					grid.dataProvider = sprite.eventListeners;
+					Object(sprite).removeAllEventListeners();
+					grid.dataProvider = Object(sprite).eventListeners;
 				}
 			}
 			
 			[Bindable]
-			private var selectedTracker:ListenerTracker;
+			//private var selectedTracker:ListenerTracker;
+			private var selectedTracker:Object;
 		]]>
 	</fx:Script>
 		
@@ -170,8 +171,9 @@
 				 width="100%" 
 				 minWidth="100"
 				 minHeight="100"
-				 change="selectedTracker = grid.selectedItem as ListenerTracker"
+				 change="selectedTracker = grid.selectedItem"
 				 >
+				 <!--change="selectedTracker = grid.selectedItem as ListenerTracker"-->
 		<mx:columns>
 			<mx:DataGridColumn dataField="type" headerText="Type" />
 			<mx:DataGridColumn dataField="callingClassName" headerText="Added By" />
@@ -179,7 +181,8 @@
 			<mx:DataGridColumn dataField="type" headerText="" width="50" >
 				<mx:itemRenderer>
 					<fx:Component>
-						<mx:Button label="Remove" click="outerDocument.removeListener(data as mx.core.ListenerTracker)" />
+						<!--<mx:Button label="Remove" click="outerDocument.removeListener(data as mx.core.ListenerTracker)" />-->
+						<mx:Button label="Remove" click="outerDocument.removeListener(data)" />
 					</fx:Component>
 				</mx:itemRenderer>
 			</mx:DataGridColumn>

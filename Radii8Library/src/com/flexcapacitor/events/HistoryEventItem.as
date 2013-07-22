@@ -18,6 +18,10 @@ package com.flexcapacitor.events {
 	 * */
 	public class HistoryEventItem {
 		
+		public static const ADD_ITEM:String = "addItem";
+		public static const REMOVE_ITEM:String = "removeItem";
+		public static const PROPERTY_CHANGE:String = "propertyChange";
+		public static const STYLE_CHANGE:String = "styleChange";
 		
 		public function HistoryEventItem() {
 			
@@ -41,7 +45,7 @@ package com.flexcapacitor.events {
 		/**
 		 * List of targets
 		 * */
-		public var targets:Array;
+		public var targets:Array = [];
 		
 		/**
 		 * Indicates if the property change has been reversed
@@ -68,6 +72,11 @@ package com.flexcapacitor.events {
 		/**
 		 * @copy mx.states.AddItems
 		 * */
+		public var removeItemsInstance:AddItems;
+		
+		/**
+		 * @copy mx.states.AddItems
+		 * */
 		public var reverseItemsInstance:AddItems;
 		
 		/**
@@ -78,13 +87,20 @@ package com.flexcapacitor.events {
 		/**
 		 * Stores the parents
 		 * */
+		public var reverseRemoveItemsDictionary:Dictionary = new Dictionary();
+		
+		/**
+		 * Stores the parents
+		 * */
 		public var reverseAddItemsDictionary:Dictionary = new Dictionary();
 		
 		/**
-		 * Called when item is removed from history
+		 * Called when item is removed from history. 
+		 * Needs to null out all references??? Does GC do that?
+		 * We are only nulling targets.
 		 * */
 		public function purge():void {
-			
+			targets = null;
 		}
 	}
 }

@@ -6,7 +6,7 @@
 		 minHeight="20"
 		 creationComplete="group1_creationCompleteHandler(event)">
 	
-	<!-- Width and height should be 100% -->
+	<!-- Width and height should be 100%?? -->
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;

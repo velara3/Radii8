@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/halo"
+				doubleClickEnabled="true"
+				doubleClick="itemrenderer1_doubleClickHandler(event)"
+				autoDrawBackground="true"
+				height="25">
+	
+	<fx:Metadata>
+		[HostComponent("spark.components.List")]
+	</fx:Metadata>
+	
+	<fx:Script>
+	<![CDATA[
+		import com.flexcapacitor.model.IDocument;
+		import com.flexcapacitor.model.IProject;
+		
+		import mx.events.FlexEvent;
+		
+		import spark.components.List;
+		import spark.components.supportClasses.ListBase;
+		
+		/**
+		 * 
+		 * */
+		override public function set data(value:Object):void {
+			super.data = value;
+			var project:IProject = value ? IProject(value) : null;
+			
+			if (project && labelDisplay) {
+				labelDisplay.text = project.name;
+			}
+			
+		}
+
+		
+		protected function dataChangeHandler():void {
+			//this.data = textInput.text;
+		    
+		    //dispatch the data update event
+		    var list:ListBase = this.owner as ListBase;
+			var project:IProject = IProject(data);
+			project.name = textInput.text;
+		    list.dataProvider.itemUpdated(project, "name", project.name, textInput.text); 
+			currentState = "normal";
+		}
+		
+		protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void {
+			currentState = "edit";
+			textInput.text = labelDisplay.text;
+		}
+		
+		override protected function getCurrentRendererState():String {
+			// if in edit state don't change unless 
+			if (currentState=="edit") return "edit";
+			
+			return super.getCurrentRendererState();
+		}
+		
+		protected function textInput_focusOutHandler(event:FocusEvent):void {
+			currentState = "normal";
+		}
+		
+	]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="hovered" />
+		<s:State name="selected" />
+		<s:State name="disabled" />
+		<s:State name="edit" enterState="textInput.setFocus()"/>
+	</s:states>
+	
+	<!--<s:Rect height="100%" width="100%">
+		<s:fill>
+			<s:SolidColor color="0xEEFFFF"
+						  alpha="0" 
+						  alpha.hovered="0.1" 
+						  alpha.selected="0.4" />
+		</s:fill>
+	</s:Rect>-->
+	
+	<s:Label id="labelDisplay" 
+			 height="100%"
+			 width="100%"
+			 verticalAlign="middle"
+			 itemCreationPolicy="immediate"
+			 paddingLeft="4"
+			 includeIn="hovered, normal, selected"/>
+	
+	<s:TextInput id="textInput" 
+				 includeIn="edit" 
+				 focusAlpha="0"
+				 enter="dataChangeHandler()" 
+				 focusOut="textInput_focusOutHandler(event)"
+				 width="100%" height="100%"/>
+</s:ItemRenderer>

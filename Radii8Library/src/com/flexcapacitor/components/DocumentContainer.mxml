@@ -8,16 +8,25 @@
 		 
 		 width="400" height="300"
 		 show="group1_showHandler(event)"
-		 creationComplete="initApp()"
-		 implements="com.flexcapacitor.components.IDocument" 
+		 creationComplete="creationComplete()"
+		 implements="com.flexcapacitor.components.IDocumentContainer" 
 		 >
+
+	<!-- 
+		WE SHOULD REFACTOR THIS
+	
+	-->
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.MXMLImporter;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
+			import mx.core.IVisualElement;
+			import mx.core.IVisualElementContainer;
 			import mx.events.FlexEvent;
 			import mx.events.ResizeEvent;
 			import mx.managers.SystemManager;
@@ -31,6 +40,9 @@
 			 * The document / application
 			 * */
 			public var targetApplication:Object;
+			
+			/*[Embed(source="assets/460/application.swf")]
+			public var embeddedApplication:Class*/
 			
 			private var _url:String = "assets/460/application.swf";
 			
@@ -79,6 +91,17 @@
 			 * */
 			public var applicationReady:Boolean;
 			
+			/**
+			 * 
+			 * */
+			public var codeAvailable:Boolean;
+			
+			/**
+			 * 
+			 * */
+			public var codeToLoad:String;
+			
+			
 			private var _componentDescription:ComponentDescription;
 
 			/**
@@ -91,10 +114,131 @@
 			/**
 			 * @private
 			 */
+			[Bindable]
 			public function set componentDescription(value:ComponentDescription):void {
 				_componentDescription = value;
 			}
+			
+			private var _documentDescription:IDocument;
 
+			public function get documentDescription():IDocument {
+				return _documentDescription;
+			}
+
+			/**
+			 * Reference to document description
+			 * */
+			[Bindable]
+			public function set documentDescription(value:IDocument):void {
+				if (_documentDescription == value) return;
+				_documentDescription = value;
+				
+				//load();
+			}
+			
+			private var _toolLayer:IVisualElementContainer;
+
+			public function get toolLayer():IVisualElementContainer {
+				return _toolLayer;
+			}
+
+			/**
+			 * Reference to the tool layer
+			 * */
+			[Bindable]
+			public function set toolLayer(value:IVisualElementContainer):void {
+				_toolLayer = value;
+			}
+
+			private var _canvasBorder:IVisualElementContainer;
+
+			public function get canvasBorder():IVisualElementContainer {
+				return _canvasBorder;
+			}
+
+			/**
+			 * Canvas border
+			 * */
+			[Bindable]
+			public function set canvasBorder(value:IVisualElementContainer):void {
+				_canvasBorder = value;
+			}
+
+			private var _canvasBackground:IVisualElementContainer;
+
+			/**
+			 * Reference to the canvas background
+			 * */
+			public function get canvasBackground():IVisualElementContainer {
+				return _canvasBackground;
+			}
+
+			public function set canvasBackground(value:IVisualElementContainer):void {
+				_canvasBackground = value;
+			}
+
+			private var _canvasScroller:Scroller;
+
+			public function get canvasScroller():Scroller {
+				return _canvasScroller;
+			}
+
+			/**
+			 * Canvas scroller
+			 * */
+			[Bindable]
+			public function set canvasScroller(value:Scroller):void {
+				_canvasScroller = value;
+			}
+
+			/**
+			 * 
+			 * */
+			public function importDocument(code:String):Boolean {
+				load();
+				codeToLoad = code;
+				codeAvailable = true;
+				return true;
+			}
+
+			/**
+			 * 
+			 * */
+			public function parseDocument(code:String):Boolean {
+				var xml:XML;
+				
+				
+				try {
+					xml = new XML(code);
+					
+					
+				}
+				catch (error:Error) {
+					
+				}
+				
+				var currentChildren:XMLList;
+				var child:XML;
+				var nodeName:String;
+				
+				if (xml) {
+					// loop through each item and create an instance 
+					// and set the properties and styles on it
+					/*currentChildren = xml.children();
+					while (child in currentChildren) {
+						nodeName = child.name();
+						
+					}*/
+					
+					//var mxmlLoader:MXMLImporter = new MXMLImporter( "testWindow", new XML( inSource ), canvasHolder  );
+					var mxmlLoader:MXMLImporter;
+					mxmlLoader = new MXMLImporter("testWindow", testModel, targetApplication as IVisualElement);
+				}
+				/*_toolTipChildren = new SystemChildrenList(this,
+                new QName(mx_internal, "topMostIndex"),
+                new QName(mx_internal, "toolTipIndex"));*/
+				return true;
+			}
 			
 			/**
 			 * 
@@ -117,18 +261,15 @@
 			 * the application.
 			 * We also do this so we can load in remote applications.
 			 * */
-			private function initApp():void {
+			private function creationComplete():void {
 				radiate = Radiate.getInstance();
-				radiate.toolLayer = toolLayer;
-				radiate.setCanvas(canvasBorder, canvasBackground, canvasScroller);
+				toolLayer = toolLayerInstance;
+				canvasBorder = canvasBorderInstance;
+				canvasBackground = canvasBackgroundInstance;
+				canvasScroller = canvasScrollerInstance;
+				//radiate.setCanvas(canvasBorder, canvasBackground, canvasScroller);				
 				
 				
-				
-				
-				
-				////////////////////////
-				/// WE SHOULD MOVE ALL OF THIS OUT OF THIS CLASS
-				///////////////////////
 				
 				systemManager.allowDomain("*");
 				
@@ -155,13 +296,13 @@
 				projectLoader.source = url;//URL.text; // "http://yourdomain.com/SubApp3.swf";
 				
 				//projectLoader.autoLoad = autoLoad;
-				load();
+				//load();
 				
 				//stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
 			}
 			
 			/**
-			 * Load URL
+			 * Load blank Spark Application SWF
 			 * */
 			public function load():void {
 				
@@ -254,20 +395,25 @@
 			 * 
 			 * */
 			protected function project_completeHandler(event:Event):void {
-				var loader:SWFLoader = event.currentTarget as SWFLoader;
+				//var loader:SWFLoader = event.currentTarget as SWFLoader;
 				/*
-				SecurityDomain 'http://www.radii8.com/demo2/RadiateExample.html?debug=true' tried to access incompatible context 'http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf'
-				SecurityError: Error #2121: Security sandbox violation: Loader.content: http://www.radii8.com/demo2/RadiateExample.swf/[[DYNAMIC]]/3 cannot access http://www.flexcapacitor.com/apps/urlcodec/URLCodec.swf. This may be worked around by calling Security.allowDomain.
+				SecurityDomain 'http://www.radii8.com/demo2/RadiateExample.html?debug=true' 
+				tried to access incompatible context 'http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf'
+				SecurityError: Error #2121: Security sandbox violation: Loader.content: 
+				http://www.radii8.com/demo2/RadiateExample.swf/[[DYNAMIC]]/3 cannot access 
+				http://www.flexcapacitor.com/apps/urlcodec/URLCodec.swf. This may be worked around by 
+				calling Security.allowDomain.
 
 				*/
-				var loaderClassName:String = NameUtil.getUnqualifiedClassName(loader.content);
-				
 				projectLoader.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
 				
-				if (loader.content is DisplayObject) {
+				var loaderClassName:String = NameUtil.getUnqualifiedClassName(projectLoader.content);
+				
+				
+				if (projectLoader.content is DisplayObject) {
 					//parentAllowsChild.selected = b.parentAllowsChild;
 					//childAllowsParent.selected = b.childAllowsParent;
-					targetSystemManager = loader.content as SystemManager;
+					targetSystemManager = projectLoader.content as SystemManager;
 					
 					targetSystemManager.addEventListener(FlexEvent.APPLICATION_COMPLETE, applicationComplete);
 					//LoaderInfo(targetApplication.loaderInfo).uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
@@ -288,6 +434,7 @@
 				//parentAllowsChild.selected = b.parentAllowsChild;
 				//childAllowsParent.selected = b.childAllowsParent;
 				
+				
 				targetSystemManager = loader as SystemManager;
 				targetApplication = loader.application;
 				
@@ -296,10 +443,20 @@
 				targetApplication.height = 500;
 				
 				updateBackgroundSize();
-				//validateNow();
 				
-				radiate.setDocument(targetApplication as IEventDispatcher);
+				documentDescription.instance = targetApplication;
+				
+				radiate.setDocument(documentDescription);
 				radiate.setTarget(targetApplication);
+				
+				codeAvailable = true;
+				
+				if (codeAvailable) {
+					validateNow();
+					parseDocument(codeToLoad);
+					codeAvailable = false;
+				}
+				
 				
 				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
 				//radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChange, false, 0, true);
@@ -383,50 +540,45 @@
 			}
 			
 			/**
-			 * 
-			 * */
-			protected function mainApplicationComplete(event:Event):void {
-				parentApplication.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
-				hideBusyIndicators();
-			}
-			
-			/**
-			 * 
+			 * Show busy indicatos
 			 * */
 			public function showBusyIndicators():void {
 				//fadeOutBusy.end();
 				//fadeInBusy.play();
+				
+				if (!loadingLabel || !toolLayer || !canvasBorder) return;
 				loadingLabel.visible =  true;
-				toolLayer.visible = false;
-				canvasBorder.visible = false;
+				IVisualElement(toolLayer).visible = false;
+				canvasBorderInstance.visible = false;
 			}
 			
 			/**
-			 * 
+			 * Hide busy indicators
 			 * */
 			public function hideBusyIndicators():void {
 				
+				if (!loadingLabel || !toolLayer || !canvasBorder) return;
 				loadingLabel.visible =  false;
-				toolLayer.visible = true;
-				canvasBorder.visible = true;
+				toolLayerInstance.visible = true;
+				canvasBorderInstance.visible = true;
 			}
 			
 			/**
-			 * 
+			 * Make sure we are showing the correct document
 			 * */
 			protected function group1_showHandler(event:FlexEvent):void {
-				if (radiate.document!=targetApplication) {
-					radiate.setDocument(targetApplication, true);
+				if (radiate.document!=documentDescription) {
+					radiate.setDocument(radiate.document, true);// maybe call update document here???
 				}
 				
-				//Radiate.log.info("Document SHOW event");
+				Radiate.log.info("Document SHOW event");
 			}
 			
 			/**
 			 * Reload blank app
 			 * */
 			public function reload():void {
-				initApp();
+				creationComplete();
 			}
 			
 			/**
@@ -434,6 +586,16 @@
 			 * */
 			private function removeErrorMessages():void {
 				
+				if (projectLoader && projectLoader.loaderInfo) {
+					projectLoader.loaderInfo.uncaughtErrorEvents.removeEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				}
+				
+				if (targetSystemManager) {
+					//parentAllowsChild.selected = b.parentAllowsChild;
+					//childAllowsParent.selected = b.childAllowsParent;
+					
+					targetSystemManager.removeEventListener(FlexEvent.APPLICATION_COMPLETE, applicationComplete);
+				}
 			}
 			
 			
@@ -457,7 +619,8 @@
 			}
 			
 			/**
-			 * 
+			 * Handles the clipping, scaling and sizing of the target application. 
+			 * Could be moved to update display list???
 			 * */
 			public function updateBackgroundSize():void {
 				//if (inUpdateBackgroundSize) return;
@@ -508,11 +671,11 @@
 				canvasBackgroundParent.percentWidth = 100;
 				canvasBackgroundParent.percentHeight = 100;
 				
-				canvasBackground.width = minimumWidth;//Math.max(canvasScroller.width, minimumWidth);
-				canvasBackground.height = minimumHeight;//Math.max(canvasScroller.height, minimumHeight);
+				canvasBackgroundInstance.width = minimumWidth;//Math.max(canvasScroller.width, minimumWidth);
+				canvasBackgroundInstance.height = minimumHeight;//Math.max(canvasScroller.height, minimumHeight);
 				
-				canvasBorder.width = scaledDocumentWidth;
-				canvasBorder.height = scaledDocumentHeight;
+				canvasBorderInstance.width = scaledDocumentWidth;
+				canvasBorderInstance.height = scaledDocumentHeight;
 				
 				projectLoader.width = scaledDocumentWidth;
 				projectLoader.height = scaledDocumentHeight;
@@ -592,11 +755,11 @@
 			}
 			
 			/**
-			 * 
+			 * Not used but probably should be
 			 * */
 			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
 				super.updateDisplayList(unscaledWidth, unscaledHeight);
-				
+				/*
 				var scrollWidth:int = canvasScroller.width;
 				var scrollHeight:int = canvasScroller.height;
 				var scaledWidth:int;
@@ -612,7 +775,7 @@
 				scaledHeight = targetApplication.height * targetApplication.scaleY; //getTextHeight();
 				
 				largerWidth = Math.max(scrollWidth, scaledWidth);
-				largerHeight = Math.max(scrollHeight, scaledHeight);
+				largerHeight = Math.max(scrollHeight, scaledHeight);*/
 				/*
 				if (scaledHeight<scrollHeight) {
 					borderContainer.verticalCenter = 0;
@@ -672,7 +835,7 @@
 			}
 
 			/**
-			 * 
+			 * Show borders for debugging layout of application
 			 * */
 			public function set showBorders(value:Boolean):void {
 				if (_showBorders == value) return;
@@ -680,19 +843,19 @@
 				
 				if (_showBorders) {
 					canvasBackgroundParent.setStyle("backgroundColor", 0xF00000);
-					canvasBackground.setStyle("backgroundColor", 0xFF0000);
-					canvasBorder.setStyle("backgroundColor", 0xFFF000);
-					toolLayer.setStyle("backgroundColor", 0xFFFF00);
+					canvasBackgroundInstance.setStyle("backgroundColor", 0xFF0000);
+					canvasBorderInstance.setStyle("backgroundColor", 0xFFF000);
+					toolLayerInstance.setStyle("backgroundColor", 0xFFFF00);
 					canvasBackgroundParent.setStyle("backgroundAlpha", 1);
-					canvasBackground.setStyle("backgroundAlpha", 1);
-					canvasBorder.setStyle("backgroundAlpha", 1);
-					toolLayer.setStyle("backgroundAlpha", 1);
+					canvasBackgroundInstance.setStyle("backgroundAlpha", 1);
+					canvasBorderInstance.setStyle("backgroundAlpha", 1);
+					toolLayerInstance.setStyle("backgroundAlpha", 1);
 				}
 				else {
 					canvasBackgroundParent.setStyle("backgroundAlpha", 0);
-					canvasBackground.setStyle("backgroundAlpha", 0);
-					canvasBorder.setStyle("backgroundAlpha", 0);
-					toolLayer.setStyle("backgroundAlpha", 0);
+					canvasBackgroundInstance.setStyle("backgroundAlpha", 0);
+					canvasBorderInstance.setStyle("backgroundAlpha", 0);
+					toolLayerInstance.setStyle("backgroundAlpha", 0);
 				}
 			}
 
@@ -732,6 +895,14 @@
 				target="{busyIndicator}" 
 				effectStart="busyIndicator.visible=true"
 				effectEnd="busyIndicator.visible=false"/>-->
+		
+		<fx:XML id="testModel" xmlns="">
+			<mx:MXML >
+				<s:Group x="15" y="50">
+				<s:Button label="Hello World" x="20" y="20" color="#ff0000"/>
+				</s:Group >
+			</mx:MXML>
+		</fx:XML>
 	</fx:Declarations>
 	
 	
@@ -749,7 +920,7 @@
 	</s:Rect>
 	
 	
-	<s:Scroller id="canvasScroller" 
+	<s:Scroller id="canvasScrollerInstance" 
 				left="20" 
 				right="0" 
 				top="20" 
@@ -784,7 +955,7 @@
 			
 			It may also be used for skinning with different devices. 
 			-->
-			<s:BorderContainer id="canvasBackground"
+			<s:BorderContainer id="canvasBackgroundInstance"
 							   borderVisible="false"
 							   backgroundAlpha="0"
 							   >
@@ -795,7 +966,7 @@
 				Without it the application or the application's system manager
 				may bleed over. 
 				-->
-				<s:BorderContainer id="canvasBorder" 
+				<s:BorderContainer id="canvasBorderInstance" 
 						 verticalCenter="0"
 						 horizontalCenter="0"
 						 backgroundAlpha="0"
@@ -813,7 +984,7 @@
 					
 				
 					<!--- 
-					This group contains the system manager and the empty application
+					This group contains the system manager and the blank application
 					-->
 					<s:SWFLoader id="projectLoader" 
 								 resize="projectLoader_resizeHandler(event)"
@@ -830,7 +1001,7 @@
 					This group is used to add visual elements above the application.
 					For example, selection and resizing borders. 
 					-->
-					<s:Group id="toolLayer" 
+					<s:Group id="toolLayerInstance" 
 							 mouseChildren="false" 
 							 mouseEnabled="false">
 						

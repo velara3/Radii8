@@ -2,6 +2,7 @@
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	
 	import flash.events.EventDispatcher;
@@ -74,21 +75,21 @@ package com.flexcapacitor.tools {
 		 * Document changed update. 
 		 * */
 		protected function documentChangeHandler(event:RadiateEvent):void {
-			updateDocument(event.selectedItem);
+			updateDocument(event.selectedItem as IDocument);
 			
 		}
 		
-		public function updateDocument(document:Object):void {
+		public function updateDocument(document:IDocument):void {
 			
 			// remove listeners
-			if (targetApplication && targetApplication!=document) {
+			if (targetApplication) {
 				targetApplication.removeEventListener(MouseEvent.CLICK, handleClick, true);
 				targetApplication.removeEventListener(MouseEvent.MOUSE_MOVE, handleMouseMove);
 				targetApplication.removeEventListener(MouseEvent.ROLL_OVER, rollOverHandler);
 				targetApplication.removeEventListener(MouseEvent.ROLL_OUT, rollOutHandler);
 			}
 			
-			targetApplication = document;
+			targetApplication = document ? document.instance : null;
 			
 			// add listeners
 			if (targetApplication) {

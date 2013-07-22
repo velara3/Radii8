@@ -13,9 +13,29 @@ package com.flexcapacitor.events {
 	public class RadiateEvent extends Event {
 		
 		/**
+		 * Dispatched when the project is created
+		 * */
+		public static const PROJECT_CREATED:String = "projectCreated";
+		
+		/**
+		 * Dispatched when the project is changed
+		 * */
+		public static const PROJECT_CHANGE:String = "projectChange";
+		
+		/**
 		 * Dispatched when the document is changed
 		 * */
 		public static const DOCUMENT_CHANGE:String = "documentChange";
+		
+		/**
+		 * Dispatched when the document is opening
+		 * */
+		public static const DOCUMENT_OPENING:String = "documentOpening";
+		
+		/**
+		 * Dispatched when the document is open
+		 * */
+		public static const DOCUMENT_OPEN:String = "documentOpen";
 		
 		/**
 		 * Dispatched when the canvas is changed
@@ -127,6 +147,7 @@ package com.flexcapacitor.events {
 		public var targets:Array;
 		public var tool:ITool;
 		public var previewType:String;
+		public var openInBrowser:Boolean;
 		public var color:uint;
 		public var invalid:Boolean;
 		public var isRollOver:Boolean;

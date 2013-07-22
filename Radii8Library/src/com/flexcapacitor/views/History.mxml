@@ -15,8 +15,8 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.HistoryEvent;
 			import com.flexcapacitor.events.HistoryEventItem;
-			import com.flexcapacitor.events.HistoryItem;
 			import com.flexcapacitor.events.RadiateEvent;
 			
 			import flash.utils.getTimer;
@@ -40,7 +40,7 @@
 			
 			private var radiate:Radiate = Radiate.instance;
 			
-			public var debug:Boolean;
+			public var debug:Boolean = false;
 			
 			private var _target:*;
 			
@@ -119,7 +119,7 @@
 					list.ensureIndexIsVisible(0);
 				}
 				
-				list.selectedIndex = Radiate.historyIndex;
+				//list.selectedIndex = Radiate.historyIndex;
 				
 				updateNavigationButtons();
 				if (debug) Radiate.log.info("4 SELECTED ITEM INDEX: " + list.selectedIndex);
@@ -129,8 +129,8 @@
 			 * Label for the history item
 			 * */
 			public function labelFunction(item:Object):String {
-				var historyItem:HistoryItem = item as HistoryItem;
-				var historyEvents:Array = historyItem.historyEvents;
+				var historyItem:HistoryEvent = item as HistoryEvent;
+				var historyEvents:Array = historyItem.historyEventItems;
 				var historyEvent:HistoryEventItem = historyEvents && historyEvents.length ? historyEvents[0] : null;
 				var label:String;
 				
@@ -186,48 +186,54 @@
 				}
 			}
 			
+			
+			public var updatingChanges:Boolean;
+			
 			/**
 			 * 
 			 * */
-			protected function changeHandler(event:IndexChangeEvent):void
-			{
+			protected function changeHandler(event:IndexChangeEvent):void {
 				if (debug) Radiate.log.info("SELECTED ITEM INDEX: " + list.selectedIndex);
+				if (debug && updatingChanges) Radiate.log.info("ALREADY APPLYING CHANGES. SELECTED ITEM INDEX: " + list.selectedIndex);
+					
+				if (updatingChanges) {
+					//event.preventDefault();
+					return;
+				}
 				var newIndex:int = event.newIndex;
 				var oldIndex:int = Radiate.historyIndex;
 				var dispatch:Boolean = false;
 				var time:int = getTimer();
 				var historyIndex:int;
 				var length:int;
-				/*
-				if (newIndex<oldIndex) {
-					length = oldIndex - newIndex;
-					for (var i:int;i<length;i++) {
-						historyIndex = Radiate.undo(dispatch);
-					}
-				}
-				else if (newIndex>oldIndex) {
-					length = oldIndex<0 ? newIndex+1 : newIndex - oldIndex;
-					for (var j:int;j<length;j++) {
-						historyIndex = Radiate.redo(dispatch);
-					}
-				}*/
+				
+				updatingChanges = true;
+				
+				//ensureIndexIsVisible(newIndex);
+				
+				if (debug) Radiate.log.info("goToHistoryIndex: " + newIndex);
+				
 				Radiate.goToHistoryIndex(newIndex);
 				//trace("changes:"+(getTimer()-time));
 				
-				list.selectedIndex = Radiate.historyIndex;
+				//list.selectedIndex = Radiate.historyIndex;
 				
-				ensureIndexIsVisible(newIndex);
 				
 				//Radiate.history.refresh();
 				
-				updateNavigationButtons();
+				//updateNavigationButtons();
+				
 				if (debug) Radiate.log.info("2 SELECTED ITEM INDEX: " + list.selectedIndex);
+				
+				updatingChanges = false;
+				
+				//ensureIndexIsVisible(newIndex);
 			}
 			
 			
 			public function updateNavigationButtons():void {
 				var historyIndex:int = Radiate.historyIndex;
-				var totalItems:int = Radiate.history.length;
+				var totalItems:int = Radiate.history ? Radiate.history.length : 0;
 				var hasItems:Boolean = totalItems>0;
 				
 				// has forward history
@@ -248,21 +254,18 @@
 			}
 			
 			/**
-			 * 
-			 * */
-			protected function historyChangeHandler(event:Event):void {
-				if (debug) Radiate.log.info("HISTORY CHANGE");
-				ensureIndexIsVisible(Radiate.historyIndex);
-				updateNavigationButtons();
-			}
-			
-			/**
 			 * Document change handler. Clear history
 			 * */
 			protected function documentChangeHandler(event:Event):void {
 				if (debug) Radiate.log.info("DOCUMENT CHANGE");
 				
-				Radiate.removeAllHistory();
+				list.selectedIndex = Radiate.historyIndex;
+				
+				scrollToBottom();
+				
+				updateNavigationButtons();
+				
+				// Radiate.removeAllHistory();
 			}
 			
 			/**
@@ -270,8 +273,13 @@
 			 * */
 			public function ensureIndexIsVisible(index:int=0):void {
 				
-				list.ensureIndexIsVisible(index);
-				list.validateNow();
+				if (index!=-1) {
+					list.ensureIndexIsVisible(index);
+				}
+				else {
+					list.dataGroup.verticalScrollPosition = 0;
+				}
+				//list.validateNow();
 				//list.ensureIndexIsVisible(index);
 				//list.validateNow();
 			}
@@ -296,23 +304,65 @@
 				var i:int;
 				
 				//trace("revert start: " + time);
+				
 				// it is 22 times faster to not dispatch events until the end
 				// each change takes 85ms per change with dispatch events 
-				// and 2.58 without
-				//Radiate.undo(dispatch); 
+				// and 2.58ms without
 				
 				Radiate.goToHistoryIndex(-1);
 				
-				//trace("revert start: " + (getTimer()-time));
-				list.selectedIndex = -1;
-				
-				ensureIndexIsVisible(0);
+				//ensureIndexIsVisible(0);
 				
 				//Radiate.history.refresh();
 				
-				updateNavigationButtons();
+				//trace("revert start: " + (getTimer()-time));
+				//list.selectedIndex = -1;
+				
+				//Radiate.history.refresh();
+				
+				//updateNavigationButtons();
 				if (debug) Radiate.log.info("5 SELECTED ITEM INDEX: " + list.selectedIndex);
 			}
+			
+			protected function list_valueCommitHandler(event:FlexEvent):void {
+				//Radiate.log.info("Value commit. Index : " + list.selectedIndex);
+				//Radiate.log.info("History Index : " + Radiate.historyIndex);
+				
+				if (list.selectedIndex!= Radiate.historyIndex) {
+					//list.selectedIndex = Radiate.historyIndex;
+					//Radiate.history.refresh();
+					//Radiate.log.info("History OUT OF SYNC");
+				}
+			}
+			
+			protected function list_caretChangeHandler(event:IndexChangeEvent):void {
+				//Radiate.log.info("Caret changed. Index : " + list.selectedIndex);
+				//Radiate.log.info("History Index : " + Radiate.historyIndex);
+			}
+			
+			/**
+			 * History changed. Select the last applied item in the history array. 
+			 * */
+			protected function historyChangeHandler(event:Event):void {
+				if (debug) Radiate.log.info("HISTORY CHANGE");
+				
+				//Radiate.log.info("historyChangeHandler. Index : " + list.selectedIndex);
+				//Radiate.log.info("History Index : " + Radiate.historyIndex);
+				
+				// must call validate now since history.refresh() may have been called
+				list.validateNow();
+				
+				if (Radiate.historyIndex==-1) {
+					list.selectedItem = null;
+				}
+				else {
+					list.selectedIndex = Radiate.historyIndex;
+				}
+				
+				ensureIndexIsVisible(Radiate.historyIndex);
+				updateNavigationButtons();
+			}
+			
 			
 		]]>
 	</fx:Script>
@@ -328,12 +378,12 @@
 				focusAlpha="0"
 				minHeight="20"
 				width="100%" height="100%"
-				interactionMode="mouse"
-				selectedIndex="{Radiate.historyIndex}"
 				dataProvider="{Radiate.history}" 
 				labelFunction="labelFunction"
 				borderVisible="false"
 				change="changeHandler(event)"
+				valueCommit="list_valueCommitHandler(event)"
+				caretChange="list_caretChangeHandler(event)"
 				itemRenderer="com.flexcapacitor.views.renderers.HistoryItemRenderer"
 				>
 			
@@ -350,7 +400,7 @@
 									   buttonMode="true"
 									   data=""
 									   click="revertHandler(event)" />
-		
+									   
 		<controls:HorizontalLine top="22" 
 								 strokeColor="#000000" 
 								 alpha=".15"

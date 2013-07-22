@@ -12,6 +12,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.Device;
+			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.tools.ITool;
 			
 			import mx.events.FlexEvent;
@@ -174,15 +175,16 @@
 			 * Update portrait setting
 			 * */
 			public function updatePortraitCheckbox():void {
-				var document:DisplayObject = radiate.document as DisplayObject;
+				var document:IDocument = radiate.document;
+				var documentInstance:DisplayObject = document ? document.instance as DisplayObject : null;
 				var portrait:Boolean;
 				
-				if (document &&
-					document.width<document.height) {
+				if (documentInstance &&
+					documentInstance.width<documentInstance.height) {
 					portraitEnabledCheckbox.selected= true;
 					portraitEnabledCheckbox.enabled = true;
 				}
-				else if (document.width==document.height) {
+				else if (documentInstance && documentInstance.width==documentInstance.height) {
 					portraitEnabledCheckbox.enabled = false;
 				}
 				else {
@@ -196,14 +198,16 @@
 			 * 
 			 * */
 			public function updateDocumentSize():void {
+				var document:IDocument = radiate.document;
 				var device:Device = sizesComboBox.selectedItem as Device;
 				var object:Object = {};
 				var applied:Boolean;
+				var displayObject:DisplayObject = document ? document.instance as DisplayObject : null;
 				
 				
 				if (!showDevicesList) {
-					var values:Object = {width:Object(radiate.document).height,height:Object(radiate.document).width};
-					Radiate.setProperties(radiate.document, properties, values);
+					var values:Object = {width:displayObject.height, height:displayObject.width};
+					Radiate.setProperties(displayObject, properties, values);
 					return;
 				}
 				
@@ -214,20 +218,20 @@
 					object.width = device.resolutionWidth;
 					object.height = device.resolutionHeight;
 					
-					applied = Radiate.setProperties(radiate.document, properties, object);
+					applied = Radiate.setProperties(displayObject, properties, object);
 				}
 				else {
 					if (portraitEnabledCheckbox.selected) {
 						object.width = device.usableWidthPortrait;
 						object.height = device.usableHeightPortrait;
 						
-						applied = Radiate.setProperties(radiate.document, properties, object, device.name);
+						applied = Radiate.setProperties(displayObject, properties, object, device.name);
 					}
 					else {
 						object.width = device.usableWidthLandscape;
 						object.height = device.usableHeightLandscape;
 						
-						applied = Radiate.setProperties(radiate.document, properties, object, device.name);
+						applied = Radiate.setProperties(displayObject, properties, object, device.name);
 					}
 				}
 			}

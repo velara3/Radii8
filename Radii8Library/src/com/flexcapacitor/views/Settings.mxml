@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+				  xmlns:s="library://ns.adobe.com/flex/spark"
+				  xmlns:c="com.flexcapacitor.controls.*" 
+				  xmlns:handlers="com.flexcapacitor.handlers.*" 
+				  xmlns:settings="com.flexcapacitor.effects.settings.*" 
+				  xmlns:core="com.flexcapacitor.effects.core.*" 
+				  xmlns:form="com.flexcapacitor.effects.form.*" 
+				  xmlns:form1="com.flexcapacitor.form.*" 
+				  xmlns:vo="com.flexcapacitor.form.vo.*"
+				  xmlns:view="com.flexcapacitor.effects.view.*" 
+				  xmlns:states="com.flexcapacitor.effects.states.*" 
+				  xmlns:debugging="com.flexcapacitor.effects.debugging.*" 
+				  xmlns:components="components.*"
+				  creationComplete="group1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				var info:Object = systemManager.info();
+			}
+			
+			/**
+			 * Applies the settings
+			 * */
+			public function updateSettings():void {
+				settingsData = settingsEffect.data;
+				liveDragging = settingsData.liveDragging;
+				showLevelsGraph = settingsData.showLevelsGraph;
+				showFullScreen = settingsData.launchInFullScreen;
+				showFontList = settingsData.showFontList;
+				showLevelsControls = settingsData.showLevelsControls;
+				showResolutionScale = settingsData.showResolutionScale;
+				showPerformanceInfo = settingsData.showMetrics;
+				showReadTutorial = settingsData.showReadTutorial==null ? true : false;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<fx:Object 	id="settingsData"/>
+		<fx:Boolean id="liveDragging">false</fx:Boolean>
+		<fx:Boolean id="showReadTutorial">true</fx:Boolean>
+		<fx:Boolean id="showResolutionScale">false</fx:Boolean>
+		<fx:Boolean id="showLevelsControls">false</fx:Boolean>
+		<fx:Boolean id="showLevelsGraph">true</fx:Boolean>
+		<fx:Boolean id="showFullScreen">false</fx:Boolean>
+		<fx:Boolean id="showFontList">false</fx:Boolean>
+		<fx:Boolean id="showPerformanceInfo">false</fx:Boolean>
+		
+		
+		<handlers:EventHandler eventName="settingsUpdated" 
+							   target="{IEventDispatcher(parentApplication)}">
+			
+			<core:PlayEffect target="{settingsEffect}"/>
+			<core:CallMethod method="updateSettings"/>
+			
+		</handlers:EventHandler>
+		
+		
+		<!-- GET SETTINGS -->
+		<handlers:EventHandler id="getSettingsHandler" 
+							   target="{this}" 
+							   eventNames="{[
+							   'creationComplete',
+							   'settingsUpdated']}" 
+							   >
+			
+			<settings:GetSettings id="settingsEffect" >
+				<settings:valueNotSetEffect>
+					<s:Sequence>
+						<core:Cancel cancelAncestorEffects="true"/>
+					</s:Sequence>
+				</settings:valueNotSetEffect>
+				<settings:valueSetEffect>
+					<s:Sequence>
+						<core:CallMethod method="updateSettings"/>
+					</s:Sequence>
+				</settings:valueSetEffect>
+			</settings:GetSettings>
+			
+		</handlers:EventHandler>
+		
+		<!-- GET SETTINGS -->
+		<handlers:EventHandler eventName="creationComplete" target="{this}">
+			
+			<settings:GetSettings />
+			
+			<core:CopyPreviousToNext />
+			
+			<form:SetFormValues formAdapter="{formAdapter}" useDefaultValues="true"/>
+			
+		</handlers:EventHandler>
+		
+		
+		<!-- UPDATE SETTINGS -->
+		<handlers:EventHandler eventName="change" 
+							   targets="{[
+							   liveDraggingSupportForm,
+							   showLevelsControlsForm,
+							   showFontListForm,
+							   showLevelsGraphForm,
+							   showResolutionScaleForm,
+							   showMetricsForm]}"
+							   redispatchToTarget="{parentApplication as IEventDispatcher}"
+							   dispatchName="settingsUpdated"
+							   redispatchDuring="after"
+							   bubbles="true">
+			
+			<form:GetFormElementsValues formAdapter="{formAdapter}" />
+			
+			<core:CopyPreviousToNext />
+			
+			<settings:SaveSettings saveImmediately="true"/>
+			
+			<!--<debugging:Trace message="end of settings sequence"/>-->
+			
+		</handlers:EventHandler>
+		
+		
+		<!-- FEEDBACK VIEW -->
+		<!--<handlers:EventHandler eventName="click" 
+							   target="{feedbackButton}">
+			<states:ChangeStates target="{ownerComponent}" state="feedback"/>
+		</handlers:EventHandler>-->
+		
+		<!--
+		* TO SET THE FORM COMPONENTS TO DATA
+		* 
+		* Add form adapter in declarations
+		* Add form elements to form adapter default tag
+		* Add form components
+		* 
+		* In the form elements set
+		* - target component - id of UI Component, such as myTextInput
+		* - target component property - property on target component that contains the property value, such as "text"
+		* - data - is the variable that has the object that will be edited (set in form adapter)
+		* - data property - name of property on the data object that the target component gets the value from and sets its own value to 
+		* - default value, default index, default selected - default value if target data is null
+		* 
+		* Call "Set form values" effect
+		-->
+		<form1:FormAdapter id="formAdapter">
+			
+			<vo:FormElement targetComponent="{liveDraggingSupportForm}"
+							targetComponentProperty="selected"
+							dataProperty="liveDragging"
+							defaultSelected="false"/>
+			<vo:FormElement targetComponent="{showLevelsGraphForm}"
+							targetComponentProperty="selected"
+							dataProperty="showLevelsGraph"
+							defaultSelected="true"/>
+			<vo:FormElement targetComponent="{showFontListForm}"
+							targetComponentProperty="selected"
+							dataProperty="showFontList"
+							defaultSelected="false"/>
+			<vo:FormElement targetComponent="{showLevelsControlsForm}"
+							targetComponentProperty="selected"
+							dataProperty="showLevelsControls"
+							defaultSelected="false"/>
+			<vo:FormElement targetComponent="{showResolutionScaleForm}"
+							targetComponentProperty="selected"
+							dataProperty="showResolutionScale"
+							defaultSelected="false"/>
+			<vo:FormElement targetComponent="{showMetricsForm}"
+							targetComponentProperty="selected"
+							dataProperty="showMetrics"
+							defaultSelected="false"/>
+		</form1:FormAdapter>
+		
+		<!--
+		* TO GET FORM COMPONENTS VALUES 
+		* 
+		* Add form components
+		* Add form adapter in declarations
+		* Add form elements to form adapter default tag
+		* 
+		* - target component - id of UI Component, such as TextInput
+		* - target component property - property on target component that contains the property value, such as "text"
+		* - data - is the variable that has the object that will be edited (set in form adapter or effect)
+		* - data property - name of property on the data object that the target component gets the value from and sets its own value to 
+		* - default value, default index, default selected - default value if any of target UI component
+		* 
+		* Add "Get form values" effect
+		* Set effect data property to data object
+		-->
+		
+		<fx:Object id="ownerComponent"/>
+		<c:SimpleFormLayout id="simpleFormLayout"/>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="landscape" />
+		<s:State name="portrait" />
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="0" paddingRight="0" />
+	</s:layout>
+
+	
+	<s:Scroller id="adjustmentsScroller"
+				width="100%" height="100%" 
+				left="20">
+			
+		<s:VGroup width="100%" height="100%" paddingLeft="20" paddingTop="10" gap="12">
+			
+			<c:FormItemComponent id="liveDraggingSupportForm" 
+										  label="Live Dragging" 
+										  helpLabelPosition="vertical"
+										  helpLabel="Changes are applied as you move the sliders."
+										  simpleFormLayout="{simpleFormLayout}"
+										  />
+			
+			<c:FormItemComponent id="showLevelsGraphForm" 
+										  label="Show Levels Graph" 
+										  helpLabelPosition="vertical"
+										  helpLabel="Shows a histogram of the image levels."
+										  simpleFormLayout="{simpleFormLayout}"
+										  />
+			
+			<c:FormItemComponent id="showLevelsControlsForm" 
+										  label="Show Levels Controls" 
+										  helpLabelPosition="vertical"
+										  helpLabel="Shows an alternate level control."
+										  simpleFormLayout="{simpleFormLayout}"
+										  />
+			
+			<c:FormItemComponent id="showResolutionScaleForm" 
+										  label="Show Resolution Scale" 
+										  helpLabelPosition="vertical"
+										  helpLabel="Shows slider to adjust height."
+										  simpleFormLayout="{simpleFormLayout}"
+										  />
+			
+			<c:FormItemComponent id="showFontListForm" 
+										  label="Show Font List" 
+										  helpLabelPosition="vertical"
+										  helpLabel="Shows a list of available fixed width fonts."
+										  simpleFormLayout="{simpleFormLayout}"
+										  />
+			
+			<c:FormItemComponent id="showMetricsForm" 
+										  label="Show Metrics" 
+										  helpLabelPosition="vertical"
+										  helpLabel="Shows performance metrics."
+										  simpleFormLayout="{simpleFormLayout}"
+										  />
+
+		</s:VGroup>
+	</s:Scroller>
+</s:Group>

@@ -15,6 +15,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.model.IDocument;
 			
 			import mx.core.mx_internal;
 			import mx.events.DragEvent;
@@ -113,7 +114,8 @@
 			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
 			{
 				super.updateDisplayList(unscaledWidth, unscaledHeight);
-				
+				var radiate:Radiate = Radiate.getInstance();
+				var documentDescription:IDocument = radiate.document;
 				//graphics.clear();
 				/*
 				was showing previous selection like the graphics weren't cleared
@@ -131,7 +133,7 @@
 				// hide or show background fill
 				if (showSelectionFill) {
 					
-					if (Radiate.instance.document == data && !showSelectionFillOnDocument) {
+					if (documentDescription && documentDescription.instance == data && !showSelectionFillOnDocument) {
 						selectionFill.visible = false;
 					}
 					else {
@@ -145,7 +147,7 @@
 				// hide or show label
 				if (showSelectionLabel) {
 				
-					if (Radiate.instance.document == data && !showSelectionLabelOnDocument) {
+					if (documentDescription && documentDescription.instance == data && !showSelectionLabelOnDocument) {
 						labelDisplay.visible = false;
 					}
 					else {

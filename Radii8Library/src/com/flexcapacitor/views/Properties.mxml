@@ -7,7 +7,7 @@
 		 xmlns:collections="com.flexcapacitor.effects.collections.*"
 		 xmlns:components="com.flexcapacitor.components.*" 
 		 
-		 minWidth="200" 
+		 minWidth="100" 
 		 minHeight="100"
 		 creationComplete="group1_creationCompleteHandler(event)" 
 		 >
@@ -683,7 +683,7 @@
 			
 			protected function targetValueText_keyUpHandler(event:KeyboardEvent):void {
 				
-				if (event.keyCode==Keyboard.ENTER) {
+				if (event.keyCode==Keyboard.ENTER && !event.shiftKey) {
 					setTargetValue();
 					event.preventDefault();
 				}
@@ -774,7 +774,7 @@
 			public function updateSubComponentsValue():void {
 				var item:XML = propertiesGrid.selectedItem as XML;
 				var actualValue:*;
-				var isStyle:int;
+				var isStyle:Boolean;
 				var type:String;
 				var enumeration:Array;
 				var format:String;
@@ -789,7 +789,7 @@
 					nodename = item.name();
 					
 					if (nodename=="metadata") {
-						isStyle = 1;
+						isStyle = true;
 						propertyObject = new StyleMetaData(item, target);
 					}
 					else if (nodename=="accessor") {
@@ -819,19 +819,21 @@
 						else if (value=="false") {
 							booleanDisabledRadioButton.selected = true;
 						}
+						
+						booleanClearStyleButton.visible = isStyle;
 					}
 					else if (format=="Color") {
 						currentState = COLOR_STATE;
 						colorChooser.selectedColor = value;
 						targetValueText.text = value;
-						clearColorButton.visible = isStyle==1;
+						clearColorButton.visible = isStyle;
 					}
 					else if (enumeration && enumeration.length>0) {
 						currentState = FORMATS_STATE;
 						formatsCollection.source = enumeration;
 						formatCombobox.selectedItem = propertyObject.value;
 						targetValueText.text = value;
-						clearFormatButton.visible = isStyle==1;
+						clearFormatButton.visible = isStyle;
 					}
 					else if (type=="Number") {
 						currentState = NUMBER_STATE;
@@ -865,11 +867,13 @@
 						}
 						
 						targetValueText.text = value;
+						booleanNumberStyleButton.visible = isStyle;
 					}
 					else {
 						actualValue = Radiate.getTypedValue(targetValueText.text, type);
 						currentState = TEXT_STATE;
-						targetValueText.text= item.value;
+						targetValueText.text= propertyObject.value;
+						booleanTextStyleButton.visible = isStyle;
 					}
 				
 					
@@ -1149,8 +1153,8 @@
 	<mx:VDividedBox id="verticalContainer" 
 					width="100%" height="100%"
 					top="0"
-					left="4" 
-					right="4" 
+					left="8" 
+					right="8" 
 					bottom="4"
 					>
 		
@@ -1160,10 +1164,10 @@
 				 >
 					
 			<c:SearchTextInput id="filterInput" 
-							   left="4" right="4" top="0" 
+							   left="0" right="0" top="0" 
 							   width="100%"
 							   minWidth="60" 
-							   borderAlpha="0" 
+							   borderAlpha="0.2" 
 							   color="#2F3030" 
 							   focusAlpha="0" 
 							   fontWeight="normal" 
@@ -1181,7 +1185,7 @@
 		</s:Group>
 		
 		<c:DataGrid id="propertiesGrid"
-					borderAlpha="0"
+					borderAlpha="0.2"
 					height="100%" 
 					width="100%"
 					minWidth="80"
@@ -1275,104 +1279,113 @@
 		</c:DataGrid>
 		
 		
-		<!-- TEXT OPTION -->
-		<s:TextArea id="targetValueText" 
-					includeIn="text"
-					itemCreationPolicy="immediate"
-					minHeight="32" 
-					width="100%" 
-					heightInLines="2" 
-					skinClass="spark.skins.spark.TextAreaSkin"
-					
-					
-					visible="{propertiesGrid.selectedIndex>=0}"
-					includeInLayout="{propertiesGrid.selectedIndex>=0}"
-					
-					keyUp="targetValueText_keyUpHandler(event)"
-					changing="targetValueText_changingHandler(event)"
-					>
-		</s:TextArea>
-		
-		
-		<!-- COLOR OPTION -->
-		<s:Group width="100%"
-				 height="24"
-				 includeIn="color"
-				 itemCreationPolicy="immediate"
-				 >
-			<components:ColorChooser id="colorChooser" returnType="hexidecimalHash" 
-									 change="colorChooser_changeHandler(event)"/>
+		<s:Group height="28" minHeight="28" width="100%"
+				 clipAndEnableScrolling="true">
 			
-			<s:Button id="clearColorButton" 
-					  skinClass="com.flexcapacitor.skins.ClearButton"
-					  click="clearStyleButton_clickHandler(event)"
-					  right="0" 
-					  verticalCenter="0"/>
+			<!-- TEXT OPTION -->
+			<s:Group width="100%"
+					 height="100%"
+					 includeIn="text"
+					 itemCreationPolicy="immediate"
+					 >
+				<s:TextArea id="targetValueText" 
+							width="100%" 
+							height="100%"
+							borderAlpha="0.2" 
+							skinClass="spark.skins.spark.TextAreaSkin"
+							keyUp="targetValueText_keyUpHandler(event)"
+							changing="targetValueText_changingHandler(event)"
+							>
+				</s:TextArea>
+				
+				<s:Button id="booleanTextStyleButton" 
+						  skinClass="com.flexcapacitor.skins.ClearButton"
+						  click="clearStyleButton_clickHandler(event)"
+						  right="0" 
+						  verticalCenter="0"/>
+			</s:Group>
+			
+			
+			<!-- COLOR OPTION -->
+			<s:Group width="100%"
+					 height="24"
+					 includeIn="color"
+					 itemCreationPolicy="immediate"
+					 >
+				<components:ColorChooser id="colorChooser" returnType="hexidecimalHash" 
+										 change="colorChooser_changeHandler(event)"/>
+				
+				<s:Button id="clearColorButton" 
+						  skinClass="com.flexcapacitor.skins.ClearButton"
+						  click="clearStyleButton_clickHandler(event)"
+						  right="0" 
+						  verticalCenter="0"/>
+			</s:Group>
+			
+			
+			<!-- CHOICES OPTION -->
+			<s:HGroup width="100%"
+					 height="24"
+					 includeIn="formats"
+					 itemCreationPolicy="immediate"
+					 >
+				<s:DropDownList id="formatCombobox" 
+								width="100%"
+								change="formatCombobox_changeHandler(event)"
+								dataProvider="{formatsCollection}"/>
+				<s:Button id="clearFormatButton" 
+						  skinClass="com.flexcapacitor.skins.ClearButton"
+						  click="clearStyleButton_clickHandler(event)"
+						  right="0" 
+						  verticalCenter="0"/>
+			</s:HGroup>
+			
+			
+			<!-- NUMBERS -->
+			<s:HGroup width="100%"
+					 height="24"
+					 includeIn="number"
+					 itemCreationPolicy="immediate"
+					 >
+				<s:NumericStepper id="numericStepper" 
+								  width="100%"
+								  valueFormatFunction="formatNumericStepper"
+								  change="numericStepper_changeHandler(event)"/>
+				<s:Button id="booleanNumberStyleButton" 
+						  skinClass="com.flexcapacitor.skins.ClearButton"
+						  click="clearStyleButton_clickHandler(event)"
+						  right="0" 
+						  verticalCenter="0"
+						  />
+			</s:HGroup>
+			
+			
+			<!-- BOOLEAN OPTIONS -->
+			<s:HGroup width="100%"
+					 height="24"
+					 minHeight="24"
+					 includeIn="boolean"
+					 itemCreationPolicy="immediate"
+					 verticalAlign="middle"
+					 >
+				
+				<s:RadioButton id="booleanEnabledRadioButton" 
+							   label="True"
+							   group="{booleanGroup}"
+							   />
+				<s:RadioButton id="booleanDisabledRadioButton"
+							   label="False"
+							   group="{booleanGroup}"
+							   />
+				
+				<s:Spacer width="100%"/>
+				
+				<s:Button id="booleanClearStyleButton" 
+						  skinClass="com.flexcapacitor.skins.ClearButton"
+						  click="clearStyleButton_clickHandler(event)"
+						  />
+			</s:HGroup>
 		</s:Group>
-		
-		
-		<!-- CHOICES OPTION -->
-		<s:HGroup width="100%"
-				 height="24"
-				 minHeight="35"
-				 includeIn="formats"
-				 itemCreationPolicy="immediate"
-				 >
-			<s:DropDownList id="formatCombobox" 
-							width="100%"
-							change="formatCombobox_changeHandler(event)"
-							dataProvider="{formatsCollection}"/>
-			<s:Button id="clearFormatButton" 
-					  skinClass="com.flexcapacitor.skins.ClearButton"
-					  click="clearStyleButton_clickHandler(event)"
-					  right="0" 
-					  verticalCenter="0"/>
-		</s:HGroup>
-		
-		<!-- CHOICES OPTION -->
-		<s:HGroup width="100%"
-				 height="24"
-				 minHeight="35"
-				 includeIn="number"
-				 itemCreationPolicy="immediate"
-				 >
-			<s:NumericStepper id="numericStepper" 
-							  width="100%"
-							  valueFormatFunction="formatNumericStepper"
-							  change="numericStepper_changeHandler(event)"/>
-			<s:Button skinClass="com.flexcapacitor.skins.ClearButton"
-					  click="clearStyleButton_clickHandler(event)"
-					  right="0" 
-					  verticalCenter="0"
-					  />
-		</s:HGroup>
-		
-		
-		<!-- BOOLEAN OPTIONS -->
-		<s:HGroup width="100%"
-				 height="24"
-				 minHeight="24"
-				 includeIn="boolean"
-				 itemCreationPolicy="immediate"
-				 verticalAlign="middle"
-				 >
-			
-			<s:RadioButton id="booleanEnabledRadioButton" 
-						   label="True"
-						   group="{booleanGroup}"
-						   />
-			<s:RadioButton id="booleanDisabledRadioButton"
-						   label="False"
-						   group="{booleanGroup}"
-						   />
-			
-			<s:Spacer width="100%"/>
-			
-			<s:Button skinClass="com.flexcapacitor.skins.ClearButton"
-					  click="clearStyleButton_clickHandler(event)"
-					  right="0" 
-					  verticalCenter="0"/>
-		</s:HGroup>
 		
 	</mx:VDividedBox>
 	

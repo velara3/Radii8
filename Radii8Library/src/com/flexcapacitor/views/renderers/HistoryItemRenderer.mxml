@@ -9,18 +9,18 @@
 				useHandCursor="true"
 				buttonMode="true"
 				>
-						
+	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.events.HistoryItem;
+			import com.flexcapacitor.events.HistoryEvent;
 			
-			public var historyItem:HistoryItem;
+			public var historyItem:HistoryEvent;
 			
 			override public function set data(value:Object):void {
 				super.data = value;
 				
 				if (value) {
-					historyItem = value as HistoryItem;
+					historyItem = value as HistoryEvent;
 					
 					//rowGroup.enabled = !historyItem.reversed;
 					//Radiate.log.info("updating row "  + itemIndex + " :" + label + " . Enabled " + rowGroup.enabled);

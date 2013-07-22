@@ -40,6 +40,7 @@
 			}
 			
 			public var lastURL:String;
+			public var declaredBy:String;
 			 
 			protected function propertySelectedHandler(event:RadiateEvent):void {
 				var metadata:MetaData = MetaData(event.selectedItem);
@@ -48,6 +49,7 @@
 				var prefix:String = "";
 				
 				lastURL  = Radiate.getURLToHelp(metadata);
+				declaredBy = metadata.declaredBy;
 				
 				if (!isVisible || !showDocsCheckbox.selected) {
 					
@@ -84,7 +86,13 @@
 					else {
 						docsFrame.source = lastURL;
 					}
-					textURL.text = lastURL;
+					
+					if (showURL.selected) {
+						textURL.text = lastURL;
+					}
+					else {
+						textURL.text = declaredBy;
+					}
 				}
 				else {
 					docsFrame.source = "about:blank";
@@ -93,7 +101,12 @@
 			}
 			
 			protected function showURL_changeHandler(event:Event):void {
-				textURL.visible = textURL.includeInLayout = !textURL.visible;
+				if (showURL.selected) {
+					textURL.text = lastURL;
+				}
+				else {
+					textURL.text = declaredBy;
+				}
 			}
 			
 		]]>
@@ -109,11 +122,9 @@
 					 width="100%" 
 					 color="#A6a5a5" 
 					 borderColor="#A5A5A5"
-					 visible="false"
-					 includeInLayout="false"/>
-		<s:Spacer width="100%"
-					 visible="{!textURL.visible}"
-					 includeInLayout="{!textURL.visible}"/>
+					 borderVisible="false"
+					 focusAlpha="0"
+					 prompt="No documentation available. Select a property, style or event."/>
 		<s:CheckBox id="showURL" label="Show URL" 
 					change="showURL_changeHandler(event)"/>
 		<s:CheckBox id="openInSeparateWindow" label="Open in Window" 

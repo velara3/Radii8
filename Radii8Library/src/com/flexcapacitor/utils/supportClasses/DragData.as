@@ -34,6 +34,7 @@ package com.flexcapacitor.utils.supportClasses {
 		public var description:ComponentDescription;
 		public var dropLocation:DropLocation;
 		public var dropIndex:int;
+		public var dropPoint:Point;
 		public var layout:LayoutBase;
 	}
 }

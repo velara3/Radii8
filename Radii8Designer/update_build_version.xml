@@ -20,26 +20,39 @@
 	<target name="main">
 	
 		<propertyset id="tdate"></propertyset>
-		
+		<propertyset id="ttime"></propertyset>
+
 		<tstamp>
-			<format property="tdate" pattern="yyyyMMdd"/>
+			<format property="tdate" pattern="yyyy-MM-dd"/>
+		</tstamp>
+	
+		<tstamp>
+			<format property="ttime" pattern="hh:mm aa"/>
 		</tstamp>
 		
 		<buildnumber file="build.number"/>
 		
-		<echo>Updating version to current datetime: ${tdate}</echo>
+		<echo>Updating version to current date: ${tdate} and time: ${ttime}</echo>
 		
 		<replaceregexp byline="true">
-			<regexp pattern="public static const BUILD_DATE: String = \'([0-9]+)'"/>
-			<substitution expression="public static const BUILD_DATE: String = '${tdate}'"/>
+			<regexp pattern='public static const BUILD_DATE:String = "([0-9-]+)"'/>
+			<substitution expression='public static const BUILD_DATE:String = "${tdate}"'/>
 			<fileset dir="src">
 				<include name="build.as"/>
 			</fileset>
 		</replaceregexp>
 		
 		<replaceregexp byline="true">
-			<regexp pattern="public static const BUILD_NUMBER: String = \'([0-9\.]+)'"/>
-			<substitution expression="public static const BUILD_NUMBER: String = '${build.number}'"/>
+			<regexp pattern='public static const BUILD_TIME:String = "([0-9:PMA ]+)"'/>
+			<substitution expression='public static const BUILD_TIME:String = "${ttime}"'/>
+			<fileset dir="src">
+				<include name="build.as"/>
+			</fileset>
+		</replaceregexp>
+		
+		<replaceregexp byline="true">
+			<regexp pattern='public static const BUILD_NUMBER:String = "([0-9\.]+)"'/>
+			<substitution expression='public static const BUILD_NUMBER:String = "${build.number}"'/>
 			<fileset dir="src">
 				<include name="build.as"/>
 			</fileset>

@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300">
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 paddingLeft="10"
+		 width="400" height="300">
 	
-	<s:Group >
-		<s:Label top="10" left="10" width="100%">
-			<s:text>Welcome to the Radiate demo. There are many features shown here (many incomplete) but the main one that I would like you to notice is the history feature (via the History Panel). The Radiate class has static methods that allow you to get or set a target, change properties, move an element, select an element and so on. All the panels you see here are using these API's to modify the selected element or document in some way. 
-				
-				All the panels and features you see are made possible and work together through this system. This is important because it allows any developer with Flex knowledge to create their own panels usually very quickly and modify the document in their own way. For example, you could add a panel that lets you add a drop shadow to an element on the stage or provide a UI to adjust an existing one. Or you could create a States panel that lets you select and see the different states of a component. You could access this information with ActionScript code as easy as checking the Radiate.selectedTarget states property and showing those states in your UI. 
-				
-				As you can see there are many features that are missing or behaving incorrectly. Most are easily solved. This purpose of this demo to give you an early preview of where it's going and ideas for what it can be used for. 
-				
-				If you are giving it a run through add and test only with the Button and Group, VGroup and HGroup components. 
-				
-				For more information check the blog and send emails to flexcapacitor@gmail.com.
-			</s:text>
-		</s:Label>
-	</s:Group>
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			
+			private var radiate:Radiate;
+			
+			protected function label1_clickHandler(event:MouseEvent):void {
+				radiate = Radiate.getInstance();
+				radiate.createProject("New Project", true, true);
+			}
+		]]>
+	</fx:Script>
 	
-	<s:Label text="New Project"/>
 	
-	<s:Label text="Load Test Project"/>
+	<s:Label text="New Document" click="label1_clickHandler(event)"/>
 	
-</s:Group>
+	<s:Label text="Recent Projects"/>
+	
+</s:VGroup>

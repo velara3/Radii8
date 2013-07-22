@@ -37,7 +37,7 @@
 			 * If the font size is 10 px and max position is 200 lines 
 			 * since 2000/10.   
 			 * */
-			public var maxScrollPosition:int = 2000; 
+			public var maxScrollPosition:int = 3000; 
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				
@@ -99,7 +99,7 @@
 				top="12"
 				width="100%" height="100%"
 				tabFocusEnabled="false"
-				fontSize="11"
+				fontSize="12"
 				focusAlpha="0"
 				fontFamily="Courier New"
 				borderVisible="false"
