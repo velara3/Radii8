@@ -38,6 +38,7 @@ package com.flexcapacitor.controller {
 	import mx.containers.GridItem;
 	import mx.containers.GridRow;
 	import mx.containers.TabNavigator;
+	import mx.controls.LinkButton;
 	import mx.core.ClassFactory;
 	import mx.core.DeferredInstanceFromFunction;
 	import mx.core.IVisualElement;
@@ -2907,8 +2908,8 @@ package com.flexcapacitor.controller {
 				
 				// check for changes before dispatching
 				instance.dispatchRemoveItemsEvent(items, changes, null);
-				
-				setTargets(instance.document, true);
+				// select application - could be causing errors - should select previous targets??
+				setTargets(instance.document.instance, true);
 				
 				return REMOVED; // we assume moved if it got this far - needs more checking
 			}
@@ -3009,6 +3010,10 @@ package com.flexcapacitor.controller {
 				if ("textDisplay" in component && component.textDisplay) {
 					component.textDisplay.enabled = false;
 				}
+			}
+			
+			if (component is LinkButton) {
+				LinkButton(component).useHandCursor = false;
 			}
 			/*
 			if (component is IFlexDisplayObject) {

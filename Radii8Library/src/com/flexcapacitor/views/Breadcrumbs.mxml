@@ -13,6 +13,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.VisualElementVO;
 			import com.flexcapacitor.utils.InspectorUtils;
 			
@@ -134,7 +135,7 @@
 			}
 			
 			private function createBreadCrumbTrail():void {
-				var parentDocument:Object = radiate.document;
+				var parentDocument:IDocument = radiate.document;
 				var lastElement:IVisualElement;
 				var newScrollPosition:int;
 				var displayItems:Array;
@@ -145,8 +146,8 @@
 				}
 				
 				componentsTree.length = 0;
-				
-				componentsTree = InspectorUtils.getVisualElementsArray(target, componentsTree, maxDepth, parentDocument);
+				if (target is IDocument) target = parentDocument.instance;
+				componentsTree = InspectorUtils.getVisualElementsArray(target, componentsTree, maxDepth, parentDocument.instance);
 				//DisplayObjectUtils.walkUpTree(target, processTree);
 				
 				if (!componentsTree) {

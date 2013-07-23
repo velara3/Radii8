@@ -1,0 +1,9416 @@
+{
+  "mapping": [
+    {
+      "originalName": "existingItem",
+      "newName": "\u003d_"
+    },
+    {
+      "originalName": "removeTargetEventListeners",
+      "newName": "\"\u003e"
+    },
+    {
+      "originalName": "displayListTree_dragDropHandler",
+      "newName": "7C"
+    },
+    {
+      "originalName": "minThumbWidth",
+      "newName": "+L"
+    },
+    {
+      "originalName": "DocumentContainer",
+      "newName": "^?"
+    },
+    {
+      "originalName": "Selection__icon",
+      "newName": "2V"
+    },
+    {
+      "originalName": "___EditableProjectRenderer_ItemRenderer1_doubleClick",
+      "newName": "3\u003d"
+    },
+    {
+      "originalName": "group1_addedToStageHandler",
+      "newName": "\u003ek"
+    },
+    {
+      "originalName": "documentsPreviewDictionary",
+      "newName": "\u003d7"
+    },
+    {
+      "originalName": "colorTextInput_focusOutHandler",
+      "newName": "\u00270"
+    },
+    {
+      "originalName": "event",
+      "newName": "5H"
+    },
+    {
+      "originalName": "rootSystemManagerTree",
+      "newName": ",]"
+    },
+    {
+      "originalName": "createXMLItem",
+      "newName": "7o"
+    },
+    {
+      "originalName": "getUniqueValues",
+      "newName": "\";"
+    },
+    {
+      "originalName": "__messageTextArea_keyFocusChange",
+      "newName": "\u003dn"
+    },
+    {
+      "originalName": "spanUnderlinePatternReplace",
+      "newName": "?\""
+    },
+    {
+      "originalName": "_Properties_NumericStepper1_i",
+      "newName": "84"
+    },
+    {
+      "originalName": "leftTrimForChars",
+      "newName": ",j"
+    },
+    {
+      "originalName": "__metadataTextArea_keyFocusChange",
+      "newName": "?X"
+    },
+    {
+      "originalName": "restoreDefaultScale",
+      "newName": "4F"
+    },
+    {
+      "originalName": "dispatchTargetChangeEvent",
+      "newName": "+p"
+    },
+    {
+      "originalName": "_eventNames",
+      "newName": "[+"
+    },
+    {
+      "originalName": "anchorPatternReplace",
+      "newName": "?s"
+    },
+    {
+      "originalName": "isHorizontal",
+      "newName": "#N"
+    },
+    {
+      "originalName": "_1579952849fileReference",
+      "newName": "\"_"
+    },
+    {
+      "originalName": "keyboardEventNames",
+      "newName": "@b"
+    },
+    {
+      "originalName": "RENDER_DEDUCTION",
+      "newName": "[b"
+    },
+    {
+      "originalName": "Rasterize",
+      "newName": "0Z"
+    },
+    {
+      "originalName": "CLEAR_CACHE_INTERVAL",
+      "newName": "7\u003c"
+    },
+    {
+      "originalName": "asyncStop",
+      "newName": "\u003cT"
+    },
+    {
+      "originalName": "PropertiesInnerClass0",
+      "newName": "]@"
+    },
+    {
+      "originalName": "compareStrictEquality",
+      "newName": "18"
+    },
+    {
+      "originalName": "m",
+      "newName": "\u0026\u003e"
+    },
+    {
+      "originalName": "j",
+      "newName": "\"@"
+    },
+    {
+      "originalName": "k",
+      "newName": "\u0027["
+    },
+    {
+      "originalName": "ISelectionGroup",
+      "newName": "\"S"
+    },
+    {
+      "originalName": "i",
+      "newName": "9\u003c"
+    },
+    {
+      "originalName": "TypeUtils",
+      "newName": "\u00278"
+    },
+    {
+      "originalName": "formatCombobox_changeHandler",
+      "newName": "@h"
+    },
+    {
+      "originalName": "getDescribeType",
+      "newName": "+W"
+    },
+    {
+      "originalName": "Breadcrumbs",
+      "newName": "4K"
+    },
+    {
+      "originalName": "combineRGB",
+      "newName": "-F"
+    },
+    {
+      "originalName": "clipboard",
+      "newName": " g"
+    },
+    {
+      "originalName": "targetValueText_changingHandler",
+      "newName": "#%"
+    },
+    {
+      "originalName": "_RadiateExample_BitmapImage1_i",
+      "newName": "!m"
+    },
+    {
+      "originalName": "textFlowTextChanged",
+      "newName": "-7"
+    },
+    {
+      "originalName": "_tool",
+      "newName": "8I"
+    },
+    {
+      "originalName": "editorType_changeHandler",
+      "newName": "%I"
+    },
+    {
+      "originalName": "_ImagePreview_Rect1_c",
+      "newName": "2N"
+    },
+    {
+      "originalName": "rightTrimForChar",
+      "newName": "[A"
+    },
+    {
+      "originalName": "TOOL_CHANGE",
+      "newName": "\u0026,"
+    },
+    {
+      "originalName": "IDocumentContainer",
+      "newName": "-H"
+    },
+    {
+      "originalName": "codeAvailable",
+      "newName": "0_"
+    },
+    {
+      "originalName": "getTotalAllocatedPlayerMemory",
+      "newName": "\u003dj"
+    },
+    {
+      "originalName": "_SizesInspector_ArrayCollection1_i",
+      "newName": "!@"
+    },
+    {
+      "originalName": "__list_change",
+      "newName": "?\u003e"
+    },
+    {
+      "originalName": "_Constraints_SolidColorStroke1_i",
+      "newName": "#Z"
+    },
+    {
+      "originalName": "codeToLoad",
+      "newName": "#V"
+    },
+    {
+      "originalName": "pr_chunkPattern",
+      "newName": "#["
+    },
+    {
+      "originalName": "raw",
+      "newName": "\u003d$"
+    },
+    {
+      "originalName": "keepReference",
+      "newName": "]Y"
+    },
+    {
+      "originalName": "addMediaPatternReplace",
+      "newName": "+D"
+    },
+    {
+      "originalName": "extractRed",
+      "newName": "5V"
+    },
+    {
+      "originalName": "handleMouseDown",
+      "newName": "\u003eN"
+    },
+    {
+      "originalName": "OBJECT_FIELD_NAME",
+      "newName": "-6"
+    },
+    {
+      "originalName": "replaceTo",
+      "newName": "8m"
+    },
+    {
+      "originalName": "getVerticalPositionHTML",
+      "newName": "5+"
+    },
+    {
+      "originalName": "_RadiateExample_bindingsSetup",
+      "newName": "\u003cD"
+    },
+    {
+      "originalName": "updatePortraitCheckbox",
+      "newName": " 5"
+    },
+    {
+      "originalName": "setFPSUpdate",
+      "newName": "#R"
+    },
+    {
+      "originalName": "getAllStyleDeclarationsDetails",
+      "newName": "]F"
+    },
+    {
+      "originalName": "startsWith",
+      "newName": "7?"
+    },
+    {
+      "originalName": "componentTarget",
+      "newName": "\u0026H"
+    },
+    {
+      "originalName": "showAvailablePlayerMemory",
+      "newName": ";6"
+    },
+    {
+      "originalName": "INDEX_NOT_FOUND",
+      "newName": "4V"
+    },
+    {
+      "originalName": "emphasizedStartPattern",
+      "newName": ";U"
+    },
+    {
+      "originalName": "getFontInformationDetails",
+      "newName": "@]"
+    },
+    {
+      "originalName": "containsKey",
+      "newName": "]W"
+    },
+    {
+      "originalName": "MetaData",
+      "newName": "@$"
+    },
+    {
+      "originalName": "toInitials",
+      "newName": " F"
+    },
+    {
+      "originalName": "applicationIcon",
+      "newName": "^G"
+    },
+    {
+      "originalName": "_enable",
+      "newName": "1u"
+    },
+    {
+      "originalName": "EventHandlerBase",
+      "newName": ",;"
+    },
+    {
+      "originalName": "_Snapshot_String1_i",
+      "newName": "8_"
+    },
+    {
+      "originalName": "AS3VEC_SUFFIX",
+      "newName": "95"
+    },
+    {
+      "originalName": "_SearchExpression_ImageButton1_i",
+      "newName": "^_"
+    },
+    {
+      "originalName": "purge",
+      "newName": "`L"
+    },
+    {
+      "originalName": "___Layers_Group1_creationComplete",
+      "newName": ",b"
+    },
+    {
+      "originalName": "EVENT_START",
+      "newName": " 2"
+    },
+    {
+      "originalName": "incIdx",
+      "newName": "!3"
+    },
+    {
+      "originalName": "_historyIndex",
+      "newName": "\u00263"
+    },
+    {
+      "originalName": "hasControllerEffects",
+      "newName": "1i"
+    },
+    {
+      "originalName": "interfaceMethodParameters",
+      "newName": "#P"
+    },
+    {
+      "originalName": "canvasBackgroundParent_resizeHandler",
+      "newName": "-9"
+    },
+    {
+      "originalName": "STRING_UINT_COLOR_TYPE",
+      "newName": "-G"
+    },
+    {
+      "originalName": "_StatusMessage_Label1_i",
+      "newName": "\"C"
+    },
+    {
+      "originalName": "__iconImage_ioError",
+      "newName": "?e"
+    },
+    {
+      "originalName": "dropLayout",
+      "newName": "\"]"
+    },
+    {
+      "originalName": "componentIcon",
+      "newName": "1K"
+    },
+    {
+      "originalName": "imageTagSourceReplace",
+      "newName": "+o"
+    },
+    {
+      "originalName": "tests",
+      "newName": "3E"
+    },
+    {
+      "originalName": "VideoDisplayIcon",
+      "newName": "-`"
+    },
+    {
+      "originalName": "divisionLineDistance",
+      "newName": ";X"
+    },
+    {
+      "originalName": "getTotalAllocatedApplicationMemory",
+      "newName": "1V"
+    },
+    {
+      "originalName": "com.flexcapacitor.utils.supportClasses",
+      "newName": "[d"
+    },
+    {
+      "originalName": "com.flexcapacitor.performance.controls",
+      "newName": "@-"
+    },
+    {
+      "originalName": "_Profiling_SolidColor1_c",
+      "newName": "\u0026^"
+    },
+    {
+      "originalName": "setRootEffectToTarget",
+      "newName": "#4"
+    },
+    {
+      "originalName": "rightPad",
+      "newName": "?h"
+    },
+    {
+      "originalName": "_minContainerWidth",
+      "newName": "^\u003d"
+    },
+    {
+      "originalName": "isDocumentSelected",
+      "newName": "+H"
+    },
+    {
+      "originalName": "editor_updateCompleteHandler",
+      "newName": "7p"
+    },
+    {
+      "originalName": "updateVerticalCenterConstraint",
+      "newName": "\"O"
+    },
+    {
+      "originalName": "splitSourceAttributes",
+      "newName": "45"
+    },
+    {
+      "originalName": "HScrollBarIcon",
+      "newName": "`\""
+    },
+    {
+      "originalName": "scaleToFit",
+      "newName": "%0"
+    },
+    {
+      "originalName": "_ProjectInspector_ArrayCollection1_i",
+      "newName": "5N"
+    },
+    {
+      "originalName": "initialDocument",
+      "newName": "!;"
+    },
+    {
+      "originalName": "getHorizontalPositionHTML",
+      "newName": "?q"
+    },
+    {
+      "originalName": "JSON_NAME",
+      "newName": "54"
+    },
+    {
+      "originalName": "wrap",
+      "newName": "`8"
+    },
+    {
+      "originalName": "screenshot",
+      "newName": "1["
+    },
+    {
+      "originalName": "__pieChartSeriesEffect_effectEnd",
+      "newName": "\"k"
+    },
+    {
+      "originalName": "clearDataSet",
+      "newName": "8c"
+    },
+    {
+      "originalName": "clearButtonSkin",
+      "newName": "\u0026$"
+    },
+    {
+      "originalName": "invalidBitmapDataEffect",
+      "newName": "6"
+    },
+    {
+      "originalName": "EncodeToPNGInstance",
+      "newName": "3A"
+    },
+    {
+      "originalName": "methodMatchesInClass",
+      "newName": "#s"
+    },
+    {
+      "originalName": "desetDocuments",
+      "newName": "\u003eL"
+    },
+    {
+      "originalName": "getHistoryItemAtIndex",
+      "newName": "1T"
+    },
+    {
+      "originalName": "isDropTargetOwner",
+      "newName": " i"
+    },
+    {
+      "originalName": "borderContainer",
+      "newName": "^N"
+    },
+    {
+      "originalName": "pr_ampEnt",
+      "newName": "47"
+    },
+    {
+      "originalName": "respondInCapturePhase",
+      "newName": "`!"
+    },
+    {
+      "originalName": "handleDragDrop",
+      "newName": "\u0026["
+    },
+    {
+      "originalName": "codeTimer",
+      "newName": "83"
+    },
+    {
+      "originalName": "isAssignableFrom",
+      "newName": ",,"
+    },
+    {
+      "originalName": "desetTargets",
+      "newName": "]\u003c"
+    },
+    {
+      "originalName": "toolChangeHandler",
+      "newName": "@;"
+    },
+    {
+      "originalName": "_Events_NumberFormatter1_i",
+      "newName": "\u003cs"
+    },
+    {
+      "originalName": "com.flexcapacitor.model",
+      "newName": "14"
+    },
+    {
+      "originalName": "updateDisplay",
+      "newName": "9P"
+    },
+    {
+      "originalName": "LinkButtonIcon",
+      "newName": "!"
+    },
+    {
+      "originalName": "targetSubPropertyName",
+      "newName": ";E"
+    },
+    {
+      "originalName": "OVERRIDE",
+      "newName": "\"\u003c"
+    },
+    {
+      "originalName": "_showSelectionFill",
+      "newName": "3\u003c"
+    },
+    {
+      "originalName": "changesAvailable",
+      "newName": "#"
+    },
+    {
+      "originalName": "_clearButtonSkin_Rect1_i",
+      "newName": "\"B"
+    },
+    {
+      "originalName": "effectCancelHandler",
+      "newName": "?G"
+    },
+    {
+      "originalName": "_History_bindingsSetup",
+      "newName": "\u003dO"
+    },
+    {
+      "originalName": "ShowPopupAnchor",
+      "newName": "]7"
+    },
+    {
+      "originalName": "_showSelection",
+      "newName": "!%"
+    },
+    {
+      "originalName": "substringBetween",
+      "newName": "\u003d%"
+    },
+    {
+      "originalName": "_Breadcrumbs_bindingsSetup",
+      "newName": "^A"
+    },
+    {
+      "originalName": "hasEffects",
+      "newName": "\u0027L"
+    },
+    {
+      "originalName": "___Snapshot_Group1_creationComplete",
+      "newName": "7V"
+    },
+    {
+      "originalName": "navigatorContent_changeHandler",
+      "newName": "-"
+    },
+    {
+      "originalName": "containsAnyStrictEquality",
+      "newName": "9l"
+    },
+    {
+      "originalName": "PR_MARKUP_LEXER",
+      "newName": "2p"
+    },
+    {
+      "originalName": "newProjectIcon_clickHandler",
+      "newName": "\u0027f"
+    },
+    {
+      "originalName": "_Remote_DocsInspector1_i",
+      "newName": "\u003c\u0027"
+    },
+    {
+      "originalName": "StatusManager",
+      "newName": ",n"
+    },
+    {
+      "originalName": "__showLabel_change",
+      "newName": "1r"
+    },
+    {
+      "originalName": "CONTROLLER_EFFECT_START",
+      "newName": "8$"
+    },
+    {
+      "originalName": "SelectionInspector",
+      "newName": "?!"
+    },
+    {
+      "originalName": "mxTextAreaChangeHandler",
+      "newName": " D"
+    },
+    {
+      "originalName": "compareEquality",
+      "newName": "\u00274"
+    },
+    {
+      "originalName": "nPatterns",
+      "newName": "!s"
+    },
+    {
+      "originalName": "goToCurrentPosition",
+      "newName": "15"
+    },
+    {
+      "originalName": "firstPage",
+      "newName": "\u003cO"
+    },
+    {
+      "originalName": "__chartSeriesEffect_effectEnd",
+      "newName": "#\u0027"
+    },
+    {
+      "originalName": "IllegalStateError",
+      "newName": "@A"
+    },
+    {
+      "originalName": "removeLength",
+      "newName": "2o"
+    },
+    {
+      "originalName": "textArea_changeHandler",
+      "newName": "\u003d5"
+    },
+    {
+      "originalName": "getTextTypeFilter",
+      "newName": "9Z"
+    },
+    {
+      "originalName": "verticalPositions",
+      "newName": "86"
+    },
+    {
+      "originalName": "updateDocuments",
+      "newName": "4b"
+    },
+    {
+      "originalName": "Code",
+      "newName": "\"E"
+    },
+    {
+      "originalName": "END_OF_UNDO_HISTORY",
+      "newName": "?R"
+    },
+    {
+      "originalName": "zoomInspector",
+      "newName": " q"
+    },
+    {
+      "originalName": "compositionDoneEvent",
+      "newName": "@^"
+    },
+    {
+      "originalName": "_project",
+      "newName": "`e"
+    },
+    {
+      "originalName": "updateTargetDimensionsLayout",
+      "newName": "^l"
+    },
+    {
+      "originalName": "tabWidth",
+      "newName": "4C"
+    },
+    {
+      "originalName": "_Components_ClassFactory1_c",
+      "newName": "\u003co"
+    },
+    {
+      "originalName": "timeoutEffect",
+      "newName": " c"
+    },
+    {
+      "originalName": "addComponentType",
+      "newName": "\"$"
+    },
+    {
+      "originalName": "GridHeaderRendererInnerClass0",
+      "newName": "66"
+    },
+    {
+      "originalName": "lastTarget",
+      "newName": "5\""
+    },
+    {
+      "originalName": "getTypedValue",
+      "newName": " S"
+    },
+    {
+      "originalName": "_Code_IFrame1_i",
+      "newName": ";4"
+    },
+    {
+      "originalName": "BEGINNING_OF_UNDO_HISTORY",
+      "newName": "!P"
+    },
+    {
+      "originalName": "showSelectionRectangle",
+      "newName": "\"#"
+    },
+    {
+      "originalName": "updateHorizontalCenterConstraint",
+      "newName": "5#"
+    },
+    {
+      "originalName": "lastEffectPlayedIndex",
+      "newName": "9$"
+    },
+    {
+      "originalName": "makeTabExpander",
+      "newName": "@\u0027"
+    },
+    {
+      "originalName": "colorSelectedHandler",
+      "newName": "]G"
+    },
+    {
+      "originalName": "descriptions",
+      "newName": "6q"
+    },
+    {
+      "originalName": "__formatCombobox_change",
+      "newName": "6R"
+    },
+    {
+      "originalName": "pr_ltEnt",
+      "newName": "\u0026m"
+    },
+    {
+      "originalName": "showDocsCheckbox_changeHandler",
+      "newName": ";T"
+    },
+    {
+      "originalName": "prespace",
+      "newName": "\u0027P"
+    },
+    {
+      "originalName": "TitleWindowIcon",
+      "newName": "34"
+    },
+    {
+      "originalName": "isBasicLayout",
+      "newName": "#Q"
+    },
+    {
+      "originalName": "showDisplayObjectInformation",
+      "newName": "\u003ds"
+    },
+    {
+      "originalName": "_enumCreated",
+      "newName": "9f"
+    },
+    {
+      "originalName": "GridColumnHeaderGroupIcon",
+      "newName": "\"+"
+    },
+    {
+      "originalName": "encoderFilter",
+      "newName": "!\u003d"
+    },
+    {
+      "originalName": "getCentered",
+      "newName": "[\u0026"
+    },
+    {
+      "originalName": "goToPage",
+      "newName": "`f"
+    },
+    {
+      "originalName": "recursiveCancel",
+      "newName": "\"q"
+    },
+    {
+      "originalName": "HidePopupAnchor",
+      "newName": "2P"
+    },
+    {
+      "originalName": "__filterInput_enter",
+      "newName": "\"\u003d"
+    },
+    {
+      "originalName": "CODE_UPDATED",
+      "newName": "9b"
+    },
+    {
+      "originalName": "_SearchExpression_bindingsSetup",
+      "newName": "[h"
+    },
+    {
+      "originalName": "setTargetValue",
+      "newName": ",-"
+    },
+    {
+      "originalName": "closeAllNodes_clickHandler",
+      "newName": "+u"
+    },
+    {
+      "originalName": "isNotBlank",
+      "newName": "%$"
+    },
+    {
+      "originalName": "itemrenderer1_doubleClickHandler",
+      "newName": "+1"
+    },
+    {
+      "originalName": "REMOVE_ITEM",
+      "newName": "-p"
+    },
+    {
+      "originalName": "NONE_STATE",
+      "newName": "+["
+    },
+    {
+      "originalName": "keyDownHandlerTopSystemManager",
+      "newName": "2L"
+    },
+    {
+      "originalName": "showID",
+      "newName": "+\""
+    },
+    {
+      "originalName": "___Constraints_Group1_creationComplete",
+      "newName": "%+"
+    },
+    {
+      "originalName": "_Features_TextInput1_i",
+      "newName": "7$"
+    },
+    {
+      "originalName": "_selectionBorderColor",
+      "newName": "\u003cK"
+    },
+    {
+      "originalName": "indexOfEquality",
+      "newName": "7D"
+    },
+    {
+      "originalName": "_Remote_Properties1_c",
+      "newName": "\u0027H"
+    },
+    {
+      "originalName": "EditableDocumentRenderer",
+      "newName": ";A"
+    },
+    {
+      "originalName": "redispatchDuring",
+      "newName": "0h"
+    },
+    {
+      "originalName": "mediaHandlerLocation",
+      "newName": "?U"
+    },
+    {
+      "originalName": "_Remote_MetaDataInspector1_i",
+      "newName": "!i"
+    },
+    {
+      "originalName": "_namePopUp_SolidColorStroke1_c",
+      "newName": "\"\u0026"
+    },
+    {
+      "originalName": "onApplication",
+      "newName": "\u00260"
+    },
+    {
+      "originalName": "defaultIfEmpty",
+      "newName": "0N"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.collections.supportClasses",
+      "newName": "28"
+    },
+    {
+      "originalName": "_classInfo",
+      "newName": "+\u003c"
+    },
+    {
+      "originalName": "defaultCursorID",
+      "newName": "?@"
+    },
+    {
+      "originalName": "targetEffectIndices",
+      "newName": "\u0027n"
+    },
+    {
+      "originalName": "pr_commentPrefix",
+      "newName": "`J"
+    },
+    {
+      "originalName": "PromptSaveAs",
+      "newName": "8q"
+    },
+    {
+      "originalName": "featureRadioGroup_changeHandler",
+      "newName": "^X"
+    },
+    {
+      "originalName": "stylesPattern",
+      "newName": "\u003c["
+    },
+    {
+      "originalName": "closeEffect",
+      "newName": " I"
+    },
+    {
+      "originalName": "getMXMLOutputString",
+      "newName": ",A"
+    },
+    {
+      "originalName": "_Layers_VerticalLayout1_c",
+      "newName": ";Z"
+    },
+    {
+      "originalName": "CheckBoxIcon",
+      "newName": "[9"
+    },
+    {
+      "originalName": "updateHeightProperty",
+      "newName": "71"
+    },
+    {
+      "originalName": "handleMouseMove",
+      "newName": "?#"
+    },
+    {
+      "originalName": "DEFAULT_FACTORY",
+      "newName": "2]"
+    },
+    {
+      "originalName": "containsEquals",
+      "newName": "\u00275"
+    },
+    {
+      "originalName": "offsetEnd",
+      "newName": "7\u0026"
+    },
+    {
+      "originalName": "updateComponentDisplayList",
+      "newName": "6F"
+    },
+    {
+      "originalName": "setElementSize",
+      "newName": "6!"
+    },
+    {
+      "originalName": "_HistoryItemRenderer_SolidColorStroke1_c",
+      "newName": "@m"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.navigation",
+      "newName": "!4"
+    },
+    {
+      "originalName": "_ColorChooser_bindingsSetup",
+      "newName": "`o"
+    },
+    {
+      "originalName": "IllegalArgumentError",
+      "newName": "`6"
+    },
+    {
+      "originalName": "dispatchTargetPropertyEditEvent",
+      "newName": "\u003dV"
+    },
+    {
+      "originalName": "getDocumentAtIndex",
+      "newName": ";p"
+    },
+    {
+      "originalName": "_HistoryItemRenderer_HorizontalLine1_i",
+      "newName": "-_"
+    },
+    {
+      "originalName": "updateText",
+      "newName": "+n"
+    },
+    {
+      "originalName": "setStaticController",
+      "newName": "^"
+    },
+    {
+      "originalName": "addKeyBoardHandler",
+      "newName": "8k"
+    },
+    {
+      "originalName": "substringBeforeLast",
+      "newName": "]S"
+    },
+    {
+      "originalName": "Properties",
+      "newName": "^F"
+    },
+    {
+      "originalName": "_describeTypeJSON",
+      "newName": "#3"
+    },
+    {
+      "originalName": "dispatchAddEvent",
+      "newName": "^H"
+    },
+    {
+      "originalName": "tokenizeMarkup",
+      "newName": "7B"
+    },
+    {
+      "originalName": "browserXMLValidationScript",
+      "newName": "#l"
+    },
+    {
+      "originalName": "titleize",
+      "newName": ";c"
+    },
+    {
+      "originalName": "addItemHandler",
+      "newName": " Z"
+    },
+    {
+      "originalName": "newlineRe",
+      "newName": "#B"
+    },
+    {
+      "originalName": "paddingHorizontal",
+      "newName": "\u0026!"
+    },
+    {
+      "originalName": "subdivisions",
+      "newName": "[P"
+    },
+    {
+      "originalName": "getGroupFromElement",
+      "newName": "+K"
+    },
+    {
+      "originalName": "resetCharts",
+      "newName": "7["
+    },
+    {
+      "originalName": "enableDragBehaviorOnDisplayList",
+      "newName": "!j"
+    },
+    {
+      "originalName": "removeHistoryItem",
+      "newName": "\"1"
+    },
+    {
+      "originalName": "showBusyIndicators",
+      "newName": "%a"
+    },
+    {
+      "originalName": "InspectorEvent",
+      "newName": "9N"
+    },
+    {
+      "originalName": "prevChapter",
+      "newName": "6A"
+    },
+    {
+      "originalName": "TabBarIcon",
+      "newName": "`N"
+    },
+    {
+      "originalName": "_Profiling_ColumnChart1_i",
+      "newName": "13"
+    },
+    {
+      "originalName": "mouseDownInsideEffect",
+      "newName": "-4"
+    },
+    {
+      "originalName": "_Components_VerticalLayout1_c",
+      "newName": "`1"
+    },
+    {
+      "originalName": "hideLoadControls",
+      "newName": "@o"
+    },
+    {
+      "originalName": "updateBackgroundSize",
+      "newName": "!L"
+    },
+    {
+      "originalName": "containsStrictEquality",
+      "newName": "@X"
+    },
+    {
+      "originalName": "showParentDocument",
+      "newName": "17"
+    },
+    {
+      "originalName": "colorPreviewHandler",
+      "newName": "0@"
+    },
+    {
+      "originalName": "_RedrawRegions_ToggleEffects1_c",
+      "newName": " \u003d"
+    },
+    {
+      "originalName": "CopyToClipboardInstance",
+      "newName": "`U"
+    },
+    {
+      "originalName": "overridesLabelFunction",
+      "newName": "38"
+    },
+    {
+      "originalName": "containerMargin",
+      "newName": "\"3"
+    },
+    {
+      "originalName": "firstIndexPF",
+      "newName": "\u003c`"
+    },
+    {
+      "originalName": "getDocumentPreview",
+      "newName": "\u003e#"
+    },
+    {
+      "originalName": "_searchButtonSkin_Group1_i",
+      "newName": "@"
+    },
+    {
+      "originalName": "changesCollection",
+      "newName": "5B"
+    },
+    {
+      "originalName": "postDisplayObject",
+      "newName": "]r"
+    },
+    {
+      "originalName": "backgroundFillAlpha",
+      "newName": "\u003cW"
+    },
+    {
+      "originalName": "offscreen",
+      "newName": "\u0026_"
+    },
+    {
+      "originalName": "toolManifestDefaults",
+      "newName": "3i"
+    },
+    {
+      "originalName": "textinput1_enterHandler",
+      "newName": " L"
+    },
+    {
+      "originalName": "dispatchRemoveItemsEvent",
+      "newName": "##"
+    },
+    {
+      "originalName": "PromptSaveAsInstance",
+      "newName": "\u003e\u003c"
+    },
+    {
+      "originalName": "invokeCopyToClipboard",
+      "newName": "2\u003e"
+    },
+    {
+      "originalName": "target",
+      "newName": "\u0027e"
+    },
+    {
+      "originalName": "CANVAS_CHANGE",
+      "newName": "\u003d\u003c"
+    },
+    {
+      "originalName": "endsWith",
+      "newName": ",#"
+    },
+    {
+      "originalName": "_Properties_ColorChooser1_i",
+      "newName": "6;"
+    },
+    {
+      "originalName": "updateTool",
+      "newName": "6b"
+    },
+    {
+      "originalName": "average",
+      "newName": "6]"
+    },
+    {
+      "originalName": "displayList",
+      "newName": "\"8"
+    },
+    {
+      "originalName": "previousEffectDistance",
+      "newName": "\"G"
+    },
+    {
+      "originalName": "lineCount",
+      "newName": "%\u003e"
+    },
+    {
+      "originalName": "_Remote_Features1_i",
+      "newName": "]-"
+    },
+    {
+      "originalName": "concatenateMetaDataXMLItems",
+      "newName": "?;"
+    },
+    {
+      "originalName": "_RadiateExample_Image1_i",
+      "newName": "2G"
+    },
+    {
+      "originalName": "targetGroupLayout",
+      "newName": "%d"
+    },
+    {
+      "originalName": "toggleSortDirection",
+      "newName": "`g"
+    },
+    {
+      "originalName": "newFile",
+      "newName": " A"
+    },
+    {
+      "originalName": "___EditableDocumentRenderer_ItemRenderer1_doubleClick",
+      "newName": "^\u0027"
+    },
+    {
+      "originalName": "rightPadChar",
+      "newName": "-g"
+    },
+    {
+      "originalName": "displayInHex",
+      "newName": "]p"
+    },
+    {
+      "originalName": "isPercent",
+      "newName": "%^"
+    },
+    {
+      "originalName": "reverseItemsInstance",
+      "newName": "%8"
+    },
+    {
+      "originalName": "skinIcon",
+      "newName": "?\u003c"
+    },
+    {
+      "originalName": "PR_TAB_WIDTH",
+      "newName": "\"p"
+    },
+    {
+      "originalName": "dictionaryKeysOfType",
+      "newName": "#\u003d"
+    },
+    {
+      "originalName": "decreaseScale",
+      "newName": " -"
+    },
+    {
+      "originalName": "__openInSeparateWindow_change",
+      "newName": "!?"
+    },
+    {
+      "originalName": "HSliderIcon",
+      "newName": "\u0026]"
+    },
+    {
+      "originalName": "_EditableProjectRenderer_TextInput1_i",
+      "newName": "39"
+    },
+    {
+      "originalName": "clearForm",
+      "newName": "#q"
+    },
+    {
+      "originalName": "lineAlpha",
+      "newName": "-T"
+    },
+    {
+      "originalName": "activeXPlayerTypeEffect",
+      "newName": "%\u0026"
+    },
+    {
+      "originalName": "addMediaPattern",
+      "newName": "6D"
+    },
+    {
+      "originalName": "timestampPoolCount",
+      "newName": "5A"
+    },
+    {
+      "originalName": "__resyncButton_click",
+      "newName": "8U"
+    },
+    {
+      "originalName": "keyDownHandlerSandboxRoot",
+      "newName": "%!"
+    },
+    {
+      "originalName": "UINT_COLOR_TYPE",
+      "newName": "!\""
+    },
+    {
+      "originalName": "restorePreviousDuration",
+      "newName": "8O"
+    },
+    {
+      "originalName": "handleDragOver",
+      "newName": "6\u003c"
+    },
+    {
+      "originalName": "htmlToText",
+      "newName": "\u0027_"
+    },
+    {
+      "originalName": "nextEffectDistance",
+      "newName": "5t"
+    },
+    {
+      "originalName": "imagesWithoutIdsPattern",
+      "newName": "#0"
+    },
+    {
+      "originalName": "removeErrorMessages",
+      "newName": "\u0026b"
+    },
+    {
+      "originalName": "addChangeHandler",
+      "newName": "51"
+    },
+    {
+      "originalName": "_States_VGroup1_c",
+      "newName": "%c"
+    },
+    {
+      "originalName": "FilterCollectionInstance",
+      "newName": "+B"
+    },
+    {
+      "originalName": "_searchButtonSkin_Path1_c",
+      "newName": "5j"
+    },
+    {
+      "originalName": "showAllStyleDeclarations",
+      "newName": "2;"
+    },
+    {
+      "originalName": "keywords",
+      "newName": " Y"
+    },
+    {
+      "originalName": "_177205491profileData",
+      "newName": "5,"
+    },
+    {
+      "originalName": "updateSelectedItem",
+      "newName": "4N"
+    },
+    {
+      "originalName": "updateRightConstraint",
+      "newName": "0V"
+    },
+    {
+      "originalName": "VSliderIcon",
+      "newName": "1\u003e"
+    },
+    {
+      "originalName": "_startCode",
+      "newName": "-%"
+    },
+    {
+      "originalName": "removeItemEquals",
+      "newName": " e"
+    },
+    {
+      "originalName": "codeType_changeHandler",
+      "newName": "\u0026M"
+    },
+    {
+      "originalName": "playEffectEndHandler",
+      "newName": "?J"
+    },
+    {
+      "originalName": "SCALE_CHANGE",
+      "newName": "2K"
+    },
+    {
+      "originalName": "addMouseEvents",
+      "newName": "[c"
+    },
+    {
+      "originalName": "typeDescription",
+      "newName": "#+"
+    },
+    {
+      "originalName": "__sparkTextArea_change",
+      "newName": "1A"
+    },
+    {
+      "originalName": "_ClearButton_Rect1_i",
+      "newName": "@!"
+    },
+    {
+      "originalName": "uncaughtErrorHandler",
+      "newName": "!q"
+    },
+    {
+      "originalName": "inRecomputeContainers",
+      "newName": "8["
+    },
+    {
+      "originalName": "resolvePropertyChain",
+      "newName": "2W"
+    },
+    {
+      "originalName": "getComponentDisplayList2",
+      "newName": "#J"
+    },
+    {
+      "originalName": "__layoutLayoutComboBox_change",
+      "newName": ",d"
+    },
+    {
+      "originalName": "getToolDescription",
+      "newName": "\u0027G"
+    },
+    {
+      "originalName": "RUBY_KEYWORDS",
+      "newName": ";?"
+    },
+    {
+      "originalName": "charInLine",
+      "newName": "#b"
+    },
+    {
+      "originalName": "fallBackToTraceConsole",
+      "newName": " O"
+    },
+    {
+      "originalName": "updateBaselineConstraint",
+      "newName": "?j"
+    },
+    {
+      "originalName": "accessorMatchesInClass",
+      "newName": "%?"
+    },
+    {
+      "originalName": "getTotalRowCount",
+      "newName": "\u003e9"
+    },
+    {
+      "originalName": "preventChange",
+      "newName": ";h"
+    },
+    {
+      "originalName": "setStaticState",
+      "newName": ";e"
+    },
+    {
+      "originalName": "BLOCK",
+      "newName": "5@"
+    },
+    {
+      "originalName": "setRightConstraint",
+      "newName": "4L"
+    },
+    {
+      "originalName": "__displayListTree_change",
+      "newName": "%6"
+    },
+    {
+      "originalName": "scaleChangeHandler",
+      "newName": "\u003ck"
+    },
+    {
+      "originalName": "showBorders",
+      "newName": "#A"
+    },
+    {
+      "originalName": "MOVED",
+      "newName": "\u003c?"
+    },
+    {
+      "originalName": "borderContainerSkin",
+      "newName": "59"
+    },
+    {
+      "originalName": "rulerPopUp",
+      "newName": "`;"
+    },
+    {
+      "originalName": "_TargetSelectionGroup_bindingsSetup",
+      "newName": ",\u0027"
+    },
+    {
+      "originalName": "updateScrollBarPosition",
+      "newName": "@c"
+    },
+    {
+      "originalName": "popUpDisplayGroup",
+      "newName": "\u0026F"
+    },
+    {
+      "originalName": "colorPicker_changeHandler",
+      "newName": "!O"
+    },
+    {
+      "originalName": "addItemChangeHandler",
+      "newName": "8F"
+    },
+    {
+      "originalName": "componentItemByID",
+      "newName": " $"
+    },
+    {
+      "originalName": "_Properties_RadioButtonGroup1_i",
+      "newName": "\u003cd"
+    },
+    {
+      "originalName": "replaceEmphasizedTags",
+      "newName": "?3"
+    },
+    {
+      "originalName": "_States_Group2_c",
+      "newName": "#D"
+    },
+    {
+      "originalName": "syntaxHighlighter",
+      "newName": " @"
+    },
+    {
+      "originalName": "reload",
+      "newName": "-8"
+    },
+    {
+      "originalName": "_SizesInspector_DropDownList1_i",
+      "newName": "3@"
+    },
+    {
+      "originalName": "_descriptionsDictionary",
+      "newName": "5Y"
+    },
+    {
+      "originalName": "_ImageButtonSkin_Range1_i",
+      "newName": "@a"
+    },
+    {
+      "originalName": "isValidXML",
+      "newName": "@_"
+    },
+    {
+      "originalName": "fontLookup",
+      "newName": "5C"
+    },
+    {
+      "originalName": "hideBusyIndicators",
+      "newName": "7d"
+    },
+    {
+      "originalName": "setBottomConstraint",
+      "newName": "\u0026c"
+    },
+    {
+      "originalName": "_StatusMessage_Array4_c",
+      "newName": "7L"
+    },
+    {
+      "originalName": "statusMessageProperties",
+      "newName": "`-"
+    },
+    {
+      "originalName": "getSizeByScaleMode",
+      "newName": "\u0026p"
+    },
+    {
+      "originalName": "getInspectorInstance",
+      "newName": "4S"
+    },
+    {
+      "originalName": "StatusMessageClass",
+      "newName": "?,"
+    },
+    {
+      "originalName": "AccessorMetaData",
+      "newName": "+\u003e"
+    },
+    {
+      "originalName": "currentValue",
+      "newName": "!c"
+    },
+    {
+      "originalName": "stripEnd",
+      "newName": "+T"
+    },
+    {
+      "originalName": "indexOfAnyBut",
+      "newName": "?K"
+    },
+    {
+      "originalName": "substringBefore",
+      "newName": "5M"
+    },
+    {
+      "originalName": "_containerWidth",
+      "newName": "6\u0026"
+    },
+    {
+      "originalName": "aceEditorCreated",
+      "newName": "\u0027\""
+    },
+    {
+      "originalName": "TARGET_CHANGE",
+      "newName": "\"?"
+    },
+    {
+      "originalName": "_strokeWeight",
+      "newName": "3`"
+    },
+    {
+      "originalName": "dragListener",
+      "newName": "%G"
+    },
+    {
+      "originalName": "replaceEmptyBlockQoutes",
+      "newName": "9["
+    },
+    {
+      "originalName": "targetApplication",
+      "newName": ";!"
+    },
+    {
+      "originalName": "leftPadChar",
+      "newName": "2$"
+    },
+    {
+      "originalName": "clearFPSUpdate",
+      "newName": " T"
+    },
+    {
+      "originalName": "lineColor",
+      "newName": "8V"
+    },
+    {
+      "originalName": "clearCacheInterval",
+      "newName": "]P"
+    },
+    {
+      "originalName": "TEXT_STATE",
+      "newName": "\u003dq"
+    },
+    {
+      "originalName": "getComponentFromElement",
+      "newName": "9E"
+    },
+    {
+      "originalName": "EVENT_END",
+      "newName": "2e"
+    },
+    {
+      "originalName": "rect",
+      "newName": "9!"
+    },
+    {
+      "originalName": "DropDownListIcon",
+      "newName": "6M"
+    },
+    {
+      "originalName": "supportMultitest",
+      "newName": "62"
+    },
+    {
+      "originalName": "dispatchTargetClearEvent",
+      "newName": "4t"
+    },
+    {
+      "originalName": "PERCENT_WIDTH",
+      "newName": "2B"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.debugging.supportClasses",
+      "newName": "9D"
+    },
+    {
+      "originalName": "originalColor",
+      "newName": ";;"
+    },
+    {
+      "originalName": "getClassNameOrID",
+      "newName": "7M"
+    },
+    {
+      "originalName": "__tools_updateComplete",
+      "newName": "]9"
+    },
+    {
+      "originalName": "parentEffect",
+      "newName": "0G"
+    },
+    {
+      "originalName": "__projectLoader_securityError",
+      "newName": "]5"
+    },
+    {
+      "originalName": "VisualElementVO",
+      "newName": ";["
+    },
+    {
+      "originalName": "scrollerCornerButton_clickHandler",
+      "newName": "`S"
+    },
+    {
+      "originalName": "IHandler",
+      "newName": "7g"
+    },
+    {
+      "originalName": "_Remote_Breadcrumbs1_c",
+      "newName": "6X"
+    },
+    {
+      "originalName": "__consoleTextArea_change",
+      "newName": "]j"
+    },
+    {
+      "originalName": "selectedState",
+      "newName": ",o"
+    },
+    {
+      "originalName": "_Components_Label1_i",
+      "newName": "[6"
+    },
+    {
+      "originalName": "_targetClassName",
+      "newName": "\u003eS"
+    },
+    {
+      "originalName": "__editor_resize",
+      "newName": ";\u003c"
+    },
+    {
+      "originalName": "_pageCount",
+      "newName": "`4"
+    },
+    {
+      "originalName": "componentTree",
+      "newName": "6\u003d"
+    },
+    {
+      "originalName": "_Remote_History1_i",
+      "newName": "\u0026B"
+    },
+    {
+      "originalName": "isExplicitInstanceOf",
+      "newName": "48"
+    },
+    {
+      "originalName": "PROPERTY_EDIT",
+      "newName": "7m"
+    },
+    {
+      "originalName": "styleLiteralIdentifierPuncRecognizer",
+      "newName": "2["
+    },
+    {
+      "originalName": "setElementPosition",
+      "newName": "@V"
+    },
+    {
+      "originalName": "getPrecision",
+      "newName": "`Q"
+    },
+    {
+      "originalName": "closeLabel_clickHandler",
+      "newName": "!k"
+    },
+    {
+      "originalName": "OpenURLInstance",
+      "newName": "]i"
+    },
+    {
+      "originalName": "ClassUtils",
+      "newName": "\"l"
+    },
+    {
+      "originalName": "_Properties_bindingsSetup",
+      "newName": "+4"
+    },
+    {
+      "originalName": "Components",
+      "newName": "\u003c_"
+    },
+    {
+      "originalName": "Ruler",
+      "newName": "9\u0026"
+    },
+    {
+      "originalName": "__displayListTree_mouseDown",
+      "newName": "\u003dK"
+    },
+    {
+      "originalName": "_currentPage",
+      "newName": "1h"
+    },
+    {
+      "originalName": "getComponentPath",
+      "newName": ";3"
+    },
+    {
+      "originalName": "_curPosition",
+      "newName": "\u0026"
+    },
+    {
+      "originalName": "interfaceMethod",
+      "newName": "2q"
+    },
+    {
+      "originalName": "toolDescription",
+      "newName": "^I"
+    },
+    {
+      "originalName": "loadProject_clickHandler",
+      "newName": "43"
+    },
+    {
+      "originalName": "document",
+      "newName": ";B"
+    },
+    {
+      "originalName": "LabelIcon",
+      "newName": "1G"
+    },
+    {
+      "originalName": "getMouseCursorID",
+      "newName": "`I"
+    },
+    {
+      "originalName": "__list_caretChange",
+      "newName": "?^"
+    },
+    {
+      "originalName": "addImageMediaHandler",
+      "newName": "\u003dQ"
+    },
+    {
+      "originalName": "com.flexcapacitor.status.view",
+      "newName": ",C"
+    },
+    {
+      "originalName": "LESS_THAN",
+      "newName": "%u"
+    },
+    {
+      "originalName": "PlayerType",
+      "newName": "-q"
+    },
+    {
+      "originalName": "backgroundFillColor",
+      "newName": "+5"
+    },
+    {
+      "originalName": "emphasizedEndPattern",
+      "newName": "\u003do"
+    },
+    {
+      "originalName": "INT_COLOR_TYPE",
+      "newName": "]D"
+    },
+    {
+      "originalName": "ImageButtonSkin",
+      "newName": "^]"
+    },
+    {
+      "originalName": "actions",
+      "newName": "\u0027c"
+    },
+    {
+      "originalName": "minThumbHeight",
+      "newName": "\u003d+"
+    },
+    {
+      "originalName": "inheritingStylesList",
+      "newName": "^Z"
+    },
+    {
+      "originalName": "VARIABLE_ELEMENT_NAME",
+      "newName": " 4"
+    },
+    {
+      "originalName": "ActionEffect",
+      "newName": "\u0027#"
+    },
+    {
+      "originalName": "moveToNextEffectImmediately",
+      "newName": "-1"
+    },
+    {
+      "originalName": "__actualSize_click",
+      "newName": "\u0027\u003c"
+    },
+    {
+      "originalName": "getAvailableTest",
+      "newName": ",G"
+    },
+    {
+      "originalName": "_pageList",
+      "newName": "8\u0027"
+    },
+    {
+      "originalName": "clearStyle",
+      "newName": "-e"
+    },
+    {
+      "originalName": "superClass",
+      "newName": ",6"
+    },
+    {
+      "originalName": "popUpBackgroundTransparentGrid",
+      "newName": ",3"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.supportClasses",
+      "newName": "!h"
+    },
+    {
+      "originalName": "STYLE_CHANGE",
+      "newName": ",e"
+    },
+    {
+      "originalName": "__fadeEffect_effectEnd",
+      "newName": "#8"
+    },
+    {
+      "originalName": "weekListener",
+      "newName": "3$"
+    },
+    {
+      "originalName": "Device",
+      "newName": "\u003dU"
+    },
+    {
+      "originalName": "arrayContains",
+      "newName": "@d"
+    },
+    {
+      "originalName": "fontInfoCollection",
+      "newName": "`\u003e"
+    },
+    {
+      "originalName": "rightTrim",
+      "newName": "%2"
+    },
+    {
+      "originalName": "className",
+      "newName": "0\u003c"
+    },
+    {
+      "originalName": "__updateCodeLive_change",
+      "newName": "\u003ee"
+    },
+    {
+      "originalName": "__displayListTree_itemOpen",
+      "newName": "[U"
+    },
+    {
+      "originalName": "componentsTree",
+      "newName": ",$"
+    },
+    {
+      "originalName": "lastComponentItem",
+      "newName": "^K"
+    },
+    {
+      "originalName": "_Snapshot_HGroup1_c",
+      "newName": "%Q"
+    },
+    {
+      "originalName": "getMembers",
+      "newName": "-\u003c"
+    },
+    {
+      "originalName": "setDocuments",
+      "newName": "#2"
+    },
+    {
+      "originalName": "waitForHandlers",
+      "newName": "5b"
+    },
+    {
+      "originalName": "graphicStatusChangeEvent",
+      "newName": "@2"
+    },
+    {
+      "originalName": "_disableHistoryManagement",
+      "newName": "-Z"
+    },
+    {
+      "originalName": "__nameInput_enter",
+      "newName": "\u003c0"
+    },
+    {
+      "originalName": "applyPropertiesToTargetHandler",
+      "newName": "^f"
+    },
+    {
+      "originalName": "moveDownOnNextDownArrow",
+      "newName": "8T"
+    },
+    {
+      "originalName": "keyCodes",
+      "newName": ",7"
+    },
+    {
+      "originalName": "lastMarkText",
+      "newName": "]?"
+    },
+    {
+      "originalName": "getImplementedInterfaceNames",
+      "newName": "35"
+    },
+    {
+      "originalName": "com.flexcapacitor.views",
+      "newName": "0n"
+    },
+    {
+      "originalName": "platformID",
+      "newName": "4P"
+    },
+    {
+      "originalName": "cancelAll",
+      "newName": "`^"
+    },
+    {
+      "originalName": "_FrameSkin_BasicLayout1_c",
+      "newName": "9t"
+    },
+    {
+      "originalName": "handleDragDropComplete",
+      "newName": "3c"
+    },
+    {
+      "originalName": "ITypeDescription",
+      "newName": "["
+    },
+    {
+      "originalName": "__rowGroup_mouseDown",
+      "newName": ";l"
+    },
+    {
+      "originalName": "PERCENT_HEIGHT",
+      "newName": " \u0026"
+    },
+    {
+      "originalName": "setCanvas",
+      "newName": "\u003c2"
+    },
+    {
+      "originalName": "removeFirstOccurance",
+      "newName": "#t"
+    },
+    {
+      "originalName": "compareTo",
+      "newName": "[\u003e"
+    },
+    {
+      "originalName": "XML_NAME",
+      "newName": "`K"
+    },
+    {
+      "originalName": "Access",
+      "newName": "]c"
+    },
+    {
+      "originalName": "__showURL_change",
+      "newName": "?0"
+    },
+    {
+      "originalName": "GridHeaderRenderer",
+      "newName": "@["
+    },
+    {
+      "originalName": "componentItem",
+      "newName": "+!"
+    },
+    {
+      "originalName": "fadeEffect_effectEndHandler",
+      "newName": "90"
+    },
+    {
+      "originalName": "updateComponentStyles",
+      "newName": "7`"
+    },
+    {
+      "originalName": "traceMessages",
+      "newName": "?a"
+    },
+    {
+      "originalName": "canvasBorder_resizeHandler",
+      "newName": "3"
+    },
+    {
+      "originalName": "__sendButton_click",
+      "newName": "%;"
+    },
+    {
+      "originalName": "_History_SolidColorStroke1_c",
+      "newName": "`s"
+    },
+    {
+      "originalName": "length",
+      "newName": "\u003cU"
+    },
+    {
+      "originalName": "replaceUnderlineSpan",
+      "newName": "]I"
+    },
+    {
+      "originalName": "_history",
+      "newName": "5g"
+    },
+    {
+      "originalName": "updateSubComponentsValue",
+      "newName": "#7"
+    },
+    {
+      "originalName": "com.flexcapacitor.components",
+      "newName": "\u0026Q"
+    },
+    {
+      "originalName": "endPreviousEffectIfPlaying",
+      "newName": "1+"
+    },
+    {
+      "originalName": "__projectLoader_init",
+      "newName": "\u003e!"
+    },
+    {
+      "originalName": "_Remote_bindingsSetup",
+      "newName": "6i"
+    },
+    {
+      "originalName": "checkmark",
+      "newName": "\u0026A"
+    },
+    {
+      "originalName": "autoCenter",
+      "newName": "\"b"
+    },
+    {
+      "originalName": "Zoom_ZoomOutCursor",
+      "newName": "\u0026+"
+    },
+    {
+      "originalName": "_containerHeight",
+      "newName": "\u003e\u0027"
+    },
+    {
+      "originalName": "isNoCodeTag",
+      "newName": "%e"
+    },
+    {
+      "originalName": "pr_quotEnt",
+      "newName": "3L"
+    },
+    {
+      "originalName": "parseProperties",
+      "newName": "16"
+    },
+    {
+      "originalName": "DURING",
+      "newName": "4"
+    },
+    {
+      "originalName": "showConsoleDividerMarks",
+      "newName": "\u0027"
+    },
+    {
+      "originalName": "_ColorChooser_TextInput1_i",
+      "newName": "12"
+    },
+    {
+      "originalName": "parseScript",
+      "newName": "+a"
+    },
+    {
+      "originalName": "___Console_ImageButton1_click",
+      "newName": "5W"
+    },
+    {
+      "originalName": "targetValueText_keyUpHandler",
+      "newName": "9+"
+    },
+    {
+      "originalName": "_page",
+      "newName": "^%"
+    },
+    {
+      "originalName": "BOOLEAN_FIELD_NAME",
+      "newName": "?%"
+    },
+    {
+      "originalName": "ITool",
+      "newName": "58"
+    },
+    {
+      "originalName": "messageBox",
+      "newName": "2M"
+    },
+    {
+      "originalName": "scaleStops",
+      "newName": "9T"
+    },
+    {
+      "originalName": "exportProject",
+      "newName": "[0"
+    },
+    {
+      "originalName": "removeItemStrictEquality",
+      "newName": "2\u003d"
+    },
+    {
+      "originalName": "property",
+      "newName": "\u0026r"
+    },
+    {
+      "originalName": "_Remote_ProjectInspector1_c",
+      "newName": "+F"
+    },
+    {
+      "originalName": "helpPositions",
+      "newName": ",q"
+    },
+    {
+      "originalName": "traceFileURL",
+      "newName": "\"Y"
+    },
+    {
+      "originalName": "_Remote_SolidColor1_c",
+      "newName": "\u003c\u0026"
+    },
+    {
+      "originalName": "testURL",
+      "newName": "25"
+    },
+    {
+      "originalName": "FormHeadingIcon",
+      "newName": "3s"
+    },
+    {
+      "originalName": "getURLToHelp",
+      "newName": "\u0027F"
+    },
+    {
+      "originalName": "clearTargetDimensions",
+      "newName": "[`"
+    },
+    {
+      "originalName": "navigatorContent",
+      "newName": "^e"
+    },
+    {
+      "originalName": "populatePropertiesGrid",
+      "newName": "]%"
+    },
+    {
+      "originalName": "colorTransform",
+      "newName": ",B"
+    },
+    {
+      "originalName": "isBlank",
+      "newName": "-2"
+    },
+    {
+      "originalName": "_divisions",
+      "newName": "\u003dR"
+    },
+    {
+      "originalName": "plugInPlayerTypeEffect",
+      "newName": "\u003e4"
+    },
+    {
+      "originalName": "moveChangeHandler",
+      "newName": "@6"
+    },
+    {
+      "originalName": "_EyeDropperInspector_Array1_i",
+      "newName": "1"
+    },
+    {
+      "originalName": "newDocumentIcon_clickHandler",
+      "newName": "!0"
+    },
+    {
+      "originalName": "removeAllItemsStrictEquality",
+      "newName": "9R"
+    },
+    {
+      "originalName": "scrollToTheBottom",
+      "newName": "2`"
+    },
+    {
+      "originalName": "ProfileTest",
+      "newName": "8!"
+    },
+    {
+      "originalName": "getFullyQualifiedImplementedInterfaceNames",
+      "newName": "]a"
+    },
+    {
+      "originalName": "getPreviousHistoryIndex",
+      "newName": "\""
+    },
+    {
+      "originalName": "changeItem",
+      "newName": "\u0027t"
+    },
+    {
+      "originalName": "propertiesGrid_keyUpHandler",
+      "newName": "?N"
+    },
+    {
+      "originalName": "findComponentItemInParentItemByName",
+      "newName": "6$"
+    },
+    {
+      "originalName": "imagesWithoutIdsPatternReplace",
+      "newName": "32"
+    },
+    {
+      "originalName": "ACTIVEX",
+      "newName": "\"^"
+    },
+    {
+      "originalName": "org.as3commons.lang",
+      "newName": "+j"
+    },
+    {
+      "originalName": "getPreviousEffect",
+      "newName": "]["
+    },
+    {
+      "originalName": "initializeProperties",
+      "newName": "]k"
+    },
+    {
+      "originalName": "lastMark",
+      "newName": "]n"
+    },
+    {
+      "originalName": "__resetLabel_click",
+      "newName": "[s"
+    },
+    {
+      "originalName": "endsWithIgnoreCase",
+      "newName": "+i"
+    },
+    {
+      "originalName": "__projectLoader_ioError",
+      "newName": "^-"
+    },
+    {
+      "originalName": "scheduleDisableChange",
+      "newName": "4-"
+    },
+    {
+      "originalName": "mouseUpOutsideHandler",
+      "newName": "]4"
+    },
+    {
+      "originalName": "conditions",
+      "newName": "0D"
+    },
+    {
+      "originalName": "sortDisplayByDepth",
+      "newName": "3a"
+    },
+    {
+      "originalName": "getToolByName",
+      "newName": "4T"
+    },
+    {
+      "originalName": "temp",
+      "newName": "\u003eK"
+    },
+    {
+      "originalName": "pr_lt",
+      "newName": "5h"
+    },
+    {
+      "originalName": "getEffectByIndex",
+      "newName": "+0"
+    },
+    {
+      "originalName": "BOCU_1",
+      "newName": "0r"
+    },
+    {
+      "originalName": "chartSeriesDurationChanged",
+      "newName": "-o"
+    },
+    {
+      "originalName": "_EyeDropperInspector_HorizontalLayout1_c",
+      "newName": "\u003eA"
+    },
+    {
+      "originalName": "_Remote_Constraints1_c",
+      "newName": "%\u003c"
+    },
+    {
+      "originalName": "STRING_UINT_TYPE",
+      "newName": "3O"
+    },
+    {
+      "originalName": "popUpBackground",
+      "newName": "^t"
+    },
+    {
+      "originalName": "_Code_ArrayList1_c",
+      "newName": "?$"
+    },
+    {
+      "originalName": "maxCount",
+      "newName": "[n"
+    },
+    {
+      "originalName": "addHistoryItem",
+      "newName": "0I"
+    },
+    {
+      "originalName": "_EyeDropperInspector_ImageButton1_i",
+      "newName": "`2"
+    },
+    {
+      "originalName": "_Layers_ClassFactory1_c",
+      "newName": "\u003dm"
+    },
+    {
+      "originalName": "_Features_VGroup1_c",
+      "newName": "\u0027i"
+    },
+    {
+      "originalName": "playcount",
+      "newName": "\u0027l"
+    },
+    {
+      "originalName": "applicationDomain",
+      "newName": "\u003eP"
+    },
+    {
+      "originalName": "nonInheritingStylesList",
+      "newName": "9_"
+    },
+    {
+      "originalName": "fallthroughStylePatterns",
+      "newName": "5X"
+    },
+    {
+      "originalName": "codeInPlaceComplete",
+      "newName": "1a"
+    },
+    {
+      "originalName": "getDisplayList",
+      "newName": "5L"
+    },
+    {
+      "originalName": "scroller_resizeHandler",
+      "newName": "]d"
+    },
+    {
+      "originalName": "containsOnly",
+      "newName": "\u003cY"
+    },
+    {
+      "originalName": "trailingSpaceRe",
+      "newName": "2t"
+    },
+    {
+      "originalName": "getSystemFreeMemory",
+      "newName": "^1"
+    },
+    {
+      "originalName": "setTarget",
+      "newName": "\u003d,"
+    },
+    {
+      "originalName": "pr_gt",
+      "newName": "-#"
+    },
+    {
+      "originalName": "REQUEST_PREVIEW",
+      "newName": "!U"
+    },
+    {
+      "originalName": "_EyeDropperInspector_bindingsSetup",
+      "newName": "1D"
+    },
+    {
+      "originalName": "updateZoomInComboBox",
+      "newName": "\u003eC"
+    },
+    {
+      "originalName": "duplicateItems",
+      "newName": "7c"
+    },
+    {
+      "originalName": "_RedrawRegions_HideRedrawRegions1_c",
+      "newName": "9S"
+    },
+    {
+      "originalName": "hasHorizontalConstraints",
+      "newName": "4Z"
+    },
+    {
+      "originalName": "dataChangeHandler",
+      "newName": "\u003em"
+    },
+    {
+      "originalName": "_Snapshot_Rasterize1_i",
+      "newName": "-r"
+    },
+    {
+      "originalName": "getIdentifier",
+      "newName": "2F"
+    },
+    {
+      "originalName": "requireCTRLKey",
+      "newName": "%s"
+    },
+    {
+      "originalName": "groupsLabelFunction",
+      "newName": ",U"
+    },
+    {
+      "originalName": "_Components_ArrayCollection1_i",
+      "newName": "\u003e\""
+    },
+    {
+      "originalName": "tools_changeHandler",
+      "newName": ",a"
+    },
+    {
+      "originalName": "runTestScript",
+      "newName": "\u0027a"
+    },
+    {
+      "originalName": "DataGroupIcon",
+      "newName": "+q"
+    },
+    {
+      "originalName": "targetChangeHandler",
+      "newName": "?4"
+    },
+    {
+      "originalName": "com.flexcapacitor.views.renderers",
+      "newName": "8%"
+    },
+    {
+      "originalName": "mouseDownOutsidePopUpHandler",
+      "newName": "?m"
+    },
+    {
+      "originalName": "_StatusMessage_HorizontalLayout1_c",
+      "newName": "!G"
+    },
+    {
+      "originalName": "_Remote_FrameRate1_c",
+      "newName": "7\u003d"
+    },
+    {
+      "originalName": "spanUnderlinePatternEmpty",
+      "newName": "\u003cn"
+    },
+    {
+      "originalName": "PROJECT_CHANGE",
+      "newName": "08"
+    },
+    {
+      "originalName": "ANDROID",
+      "newName": "+"
+    },
+    {
+      "originalName": "name",
+      "newName": "\u003e7"
+    },
+    {
+      "originalName": "previewCreated",
+      "newName": "6@"
+    },
+    {
+      "originalName": "__appURL_enter",
+      "newName": "!Z"
+    },
+    {
+      "originalName": "___EditableDocumentRenderer_State5_enterState",
+      "newName": "%%"
+    },
+    {
+      "originalName": "displayListTree_itemOpenHandler",
+      "newName": "61"
+    },
+    {
+      "originalName": "selectedTest",
+      "newName": "+b"
+    },
+    {
+      "originalName": "scrollIntoView",
+      "newName": "6I"
+    },
+    {
+      "originalName": "targetPropertyName",
+      "newName": "3r"
+    },
+    {
+      "originalName": "PERL_KEYWORDS",
+      "newName": "^\u003c"
+    },
+    {
+      "originalName": "BOOLEAN_STATE",
+      "newName": ";W"
+    },
+    {
+      "originalName": "throwErrorOnNoData",
+      "newName": ",K"
+    },
+    {
+      "originalName": "splitTagAttributes",
+      "newName": "0j"
+    },
+    {
+      "originalName": "__showDocsCheckbox_change",
+      "newName": "99"
+    },
+    {
+      "originalName": "desclenPF",
+      "newName": ";N"
+    },
+    {
+      "originalName": "replaceUnderlineSpanWithUnderlineTag",
+      "newName": "+3"
+    },
+    {
+      "originalName": "__projectLoader_open",
+      "newName": "`b"
+    },
+    {
+      "originalName": "createChildFromMXMLNode",
+      "newName": "9U"
+    },
+    {
+      "originalName": "notableApplicationProperties",
+      "newName": "\u003cq"
+    },
+    {
+      "originalName": "linkButtonSkin",
+      "newName": "\u003eM"
+    },
+    {
+      "originalName": "PR_SOURCE",
+      "newName": "\"0"
+    },
+    {
+      "originalName": "drawSelection",
+      "newName": "\u003c3"
+    },
+    {
+      "originalName": "isOverDocument",
+      "newName": "@S"
+    },
+    {
+      "originalName": "_RedrawRegions_BlackAndWhiteFilter1_c",
+      "newName": "0H"
+    },
+    {
+      "originalName": "getDocumentForApplication",
+      "newName": ",8"
+    },
+    {
+      "originalName": "parentEffectInstance",
+      "newName": "%1"
+    },
+    {
+      "originalName": "remoteTestURL",
+      "newName": "%T"
+    },
+    {
+      "originalName": "getTopTargetCoordinateSpace",
+      "newName": ",4"
+    },
+    {
+      "originalName": "DOCUMENT_OPENING",
+      "newName": "\u0027\u0026"
+    },
+    {
+      "originalName": "showCurrentlyUsedPlayerMemory",
+      "newName": "\u003c1"
+    },
+    {
+      "originalName": "changeOrientation_changeHandler",
+      "newName": "57"
+    },
+    {
+      "originalName": "_ClearButton_Ellipse1_c",
+      "newName": ";H"
+    },
+    {
+      "originalName": "updateTargetValue",
+      "newName": "\u003c^"
+    },
+    {
+      "originalName": "addStylesToClass",
+      "newName": "4$"
+    },
+    {
+      "originalName": "_ZoomInspector_ArrayList1_c",
+      "newName": "\u003dI"
+    },
+    {
+      "originalName": "_HistoryItemRenderer_HGroup1_i",
+      "newName": "2-"
+    },
+    {
+      "originalName": "mainHtml",
+      "newName": "4i"
+    },
+    {
+      "originalName": "updatePropertyChangeValue",
+      "newName": "\u003eU"
+    },
+    {
+      "originalName": "valueString",
+      "newName": "[g"
+    },
+    {
+      "originalName": "mouseTarget",
+      "newName": "7G"
+    },
+    {
+      "originalName": "playControllerEffect",
+      "newName": "\u003eO"
+    },
+    {
+      "originalName": "verticalOffset",
+      "newName": "2,"
+    },
+    {
+      "originalName": "_bindingEventDispatcher",
+      "newName": "?8"
+    },
+    {
+      "originalName": "displayCorrectWidth",
+      "newName": "\"J"
+    },
+    {
+      "originalName": "convertFullyQualifiedName",
+      "newName": "+2"
+    },
+    {
+      "originalName": "sourceCodeIdx",
+      "newName": ";s"
+    },
+    {
+      "originalName": "selectHandler",
+      "newName": "?S"
+    },
+    {
+      "originalName": "list_dragStartHandler",
+      "newName": "6Y"
+    },
+    {
+      "originalName": "INT_TYPE",
+      "newName": "^7"
+    },
+    {
+      "originalName": "isTrue",
+      "newName": "[8"
+    },
+    {
+      "originalName": "visibleButtonGroup_clickHandler",
+      "newName": "9W"
+    },
+    {
+      "originalName": "_ChangeHistory_Spacer1_c",
+      "newName": "\"a"
+    },
+    {
+      "originalName": "getPackageName",
+      "newName": "6J"
+    },
+    {
+      "originalName": "CRIMSON_EDITOR_CSS",
+      "newName": "\u003c$"
+    },
+    {
+      "originalName": "tokenizeToArray",
+      "newName": "7i"
+    },
+    {
+      "originalName": "projectChangeHandler",
+      "newName": "+_"
+    },
+    {
+      "originalName": "PseudoThread",
+      "newName": "\u0027\u003d"
+    },
+    {
+      "originalName": "filterInput_enterHandler",
+      "newName": "\"-"
+    },
+    {
+      "originalName": "PLUGIN",
+      "newName": "?V"
+    },
+    {
+      "originalName": "_Remote_HGroup1_c",
+      "newName": "7Y"
+    },
+    {
+      "originalName": "canvasBackground_resizeHandler",
+      "newName": "\u0027`"
+    },
+    {
+      "originalName": "minimumValue",
+      "newName": "%M"
+    },
+    {
+      "originalName": "loader_complete",
+      "newName": "]Z"
+    },
+    {
+      "originalName": "type",
+      "newName": "^L"
+    },
+    {
+      "originalName": "percentProxy",
+      "newName": "4H"
+    },
+    {
+      "originalName": "definedInline",
+      "newName": "6N"
+    },
+    {
+      "originalName": "drawHorizontal",
+      "newName": "2T"
+    },
+    {
+      "originalName": "getNextEffect",
+      "newName": "\"M"
+    },
+    {
+      "originalName": "CPP_KEYWORDS",
+      "newName": "7I"
+    },
+    {
+      "originalName": "selectedColorAsInt",
+      "newName": "\u003cC"
+    },
+    {
+      "originalName": "RadiateEvent",
+      "newName": "2Q"
+    },
+    {
+      "originalName": "ShowPopupAnchorInstance",
+      "newName": ";n"
+    },
+    {
+      "originalName": "showLabel_changeHandler",
+      "newName": " M"
+    },
+    {
+      "originalName": "addToolType",
+      "newName": "[%"
+    },
+    {
+      "originalName": "mouseDownOutsideEffect",
+      "newName": "-P"
+    },
+    {
+      "originalName": "_PropertiesInnerClass0_Label1_i",
+      "newName": "\u003eb"
+    },
+    {
+      "originalName": "targetPropertyIndex",
+      "newName": "\u0026S"
+    },
+    {
+      "originalName": "___EditableProjectRenderer_State5_enterState",
+      "newName": "7\""
+    },
+    {
+      "originalName": "nonInheritingStyles",
+      "newName": "+V"
+    },
+    {
+      "originalName": "CLEAR_TEXT",
+      "newName": "@W"
+    },
+    {
+      "originalName": "GroupOptions",
+      "newName": "@5"
+    },
+    {
+      "originalName": "getSuperClass",
+      "newName": "?r"
+    },
+    {
+      "originalName": "_Profiling_bindingsSetup",
+      "newName": "1O"
+    },
+    {
+      "originalName": "codeUpdatedHandler",
+      "newName": "7#"
+    },
+    {
+      "originalName": "findEmptyBlockQuotesPattern",
+      "newName": "21"
+    },
+    {
+      "originalName": "mouseUpInsideHandler",
+      "newName": ";-"
+    },
+    {
+      "originalName": "lastTargetCandidate",
+      "newName": "02"
+    },
+    {
+      "originalName": "__container_click",
+      "newName": ";F"
+    },
+    {
+      "originalName": "isDocumentOpen",
+      "newName": "\u00265"
+    },
+    {
+      "originalName": "deselectedTarget",
+      "newName": "%p"
+    },
+    {
+      "originalName": "updateFPS",
+      "newName": "8N"
+    },
+    {
+      "originalName": "_SearchExpression_DropShadowFilter1_c",
+      "newName": "\"V"
+    },
+    {
+      "originalName": "showURL_changeHandler",
+      "newName": "9Y"
+    },
+    {
+      "originalName": "__list_dragStart",
+      "newName": "@7"
+    },
+    {
+      "originalName": "getWrapperTag",
+      "newName": " ;"
+    },
+    {
+      "originalName": "DisplayObjectUtils",
+      "newName": "4R"
+    },
+    {
+      "originalName": "changes",
+      "newName": ";j"
+    },
+    {
+      "originalName": "containsAnyWithComparisonFunction",
+      "newName": "5["
+    },
+    {
+      "originalName": "_subdivisionToDivisionLineHeightRatio",
+      "newName": "9j"
+    },
+    {
+      "originalName": "sourceAndExtractedTags",
+      "newName": "1t"
+    },
+    {
+      "originalName": "setItemContents",
+      "newName": "8a"
+    },
+    {
+      "originalName": "RasterizeInstance",
+      "newName": "\u0027Y"
+    },
+    {
+      "originalName": "createDevicesList",
+      "newName": "5"
+    },
+    {
+      "originalName": "removeGroupMouseSupport",
+      "newName": " ^"
+    },
+    {
+      "originalName": "_Tools_List1_i",
+      "newName": "`D"
+    },
+    {
+      "originalName": "DataItem",
+      "newName": "10"
+    },
+    {
+      "originalName": "regexpPrecederPattern",
+      "newName": "^c"
+    },
+    {
+      "originalName": "_canvasScroller",
+      "newName": " t"
+    },
+    {
+      "originalName": "_Remote_Rect1_c",
+      "newName": "`F"
+    },
+    {
+      "originalName": "changeCount",
+      "newName": "[p"
+    },
+    {
+      "originalName": "PR_TAG_LEXER",
+      "newName": "[f"
+    },
+    {
+      "originalName": "replaceMultipleBreaks",
+      "newName": " \u0027"
+    },
+    {
+      "originalName": "designDocument",
+      "newName": ",0"
+    },
+    {
+      "originalName": "getAndroidEquivalentPosition",
+      "newName": "\u003c\u003e"
+    },
+    {
+      "originalName": "_DocumentContainer_SWFLoader1_i",
+      "newName": "#$"
+    },
+    {
+      "originalName": "selectDocumentAtIndex",
+      "newName": "?"
+    },
+    {
+      "originalName": "__sizesComboBox_change",
+      "newName": "^d"
+    },
+    {
+      "originalName": "playEffect",
+      "newName": "\u0027p"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.navigation.supportClasses",
+      "newName": "@\u003c"
+    },
+    {
+      "originalName": "hasText",
+      "newName": "1H"
+    },
+    {
+      "originalName": "_keyCodes",
+      "newName": "+c"
+    },
+    {
+      "originalName": "zoomComboBox_doubleClickHandler",
+      "newName": "#f"
+    },
+    {
+      "originalName": "anchorPattern",
+      "newName": "3o"
+    },
+    {
+      "originalName": "getScale",
+      "newName": "52"
+    },
+    {
+      "originalName": "statesFound",
+      "newName": "%#"
+    },
+    {
+      "originalName": "_namePopUp_Rect1_c",
+      "newName": "]\u003d"
+    },
+    {
+      "originalName": "getImageTypeFilter",
+      "newName": ",!"
+    },
+    {
+      "originalName": "getSuperClassName",
+      "newName": "7,"
+    },
+    {
+      "originalName": "fixNewlines",
+      "newName": "?\u0027"
+    },
+    {
+      "originalName": "_Remote_StylesInit_done",
+      "newName": "5\u003d"
+    },
+    {
+      "originalName": "Tools",
+      "newName": "9\u0027"
+    },
+    {
+      "originalName": "_HistoryItemRenderer_bindingsSetup",
+      "newName": "79"
+    },
+    {
+      "originalName": "isPrivateClass",
+      "newName": "6k"
+    },
+    {
+      "originalName": "PR",
+      "newName": "8B"
+    },
+    {
+      "originalName": "_scriptContext",
+      "newName": " u"
+    },
+    {
+      "originalName": "COLOR_PREVIEW",
+      "newName": "\u003cm"
+    },
+    {
+      "originalName": "_Remote_Console1_c",
+      "newName": "\u003dP"
+    },
+    {
+      "originalName": "updateMouseCursor",
+      "newName": "8f"
+    },
+    {
+      "originalName": "HidePopupAnchorInstance",
+      "newName": "]f"
+    },
+    {
+      "originalName": "isAlpha",
+      "newName": "30"
+    },
+    {
+      "originalName": "dispatchPropertySelected",
+      "newName": "+d"
+    },
+    {
+      "originalName": "_Events_StylesInit_done",
+      "newName": "8r"
+    },
+    {
+      "originalName": "Events",
+      "newName": "]+"
+    },
+    {
+      "originalName": "showTotalAllocatedPlayerMemory",
+      "newName": "-]"
+    },
+    {
+      "originalName": "scheduleDataChange",
+      "newName": ",5"
+    },
+    {
+      "originalName": "targetsCollection",
+      "newName": "4h"
+    },
+    {
+      "originalName": "eventNames",
+      "newName": ";a"
+    },
+    {
+      "originalName": "strongStartPattern",
+      "newName": " f"
+    },
+    {
+      "originalName": "_Profiling_ArrayCollection1_i",
+      "newName": ";]"
+    },
+    {
+      "originalName": "underlineStartPattern",
+      "newName": "4r"
+    },
+    {
+      "originalName": "maxDepth",
+      "newName": "2I"
+    },
+    {
+      "originalName": "popUpTimeout",
+      "newName": "2A"
+    },
+    {
+      "originalName": "_showBusyIndicator",
+      "newName": "\u0026j"
+    },
+    {
+      "originalName": "Styles",
+      "newName": "3["
+    },
+    {
+      "originalName": "HorizontalLine",
+      "newName": ";_"
+    },
+    {
+      "originalName": "locationPosition",
+      "newName": "?p"
+    },
+    {
+      "originalName": "lenPF",
+      "newName": ",%"
+    },
+    {
+      "originalName": "timestampsArray",
+      "newName": "@f"
+    },
+    {
+      "originalName": "__clearFormatButton_click",
+      "newName": "\u003df"
+    },
+    {
+      "originalName": "MOUSE_DOWN_INSIDE",
+      "newName": "\u003d\u0026"
+    },
+    {
+      "originalName": "copyToClipboard",
+      "newName": "\u003dM"
+    },
+    {
+      "originalName": "_ZoomInspector_HorizontalLayout1_c",
+      "newName": "%k"
+    },
+    {
+      "originalName": "__newProjectIcon_click",
+      "newName": "8#"
+    },
+    {
+      "originalName": "removeHandlers",
+      "newName": "\u0027J"
+    },
+    {
+      "originalName": "sourceDecorator",
+      "newName": "\u003dY"
+    },
+    {
+      "originalName": "hideDragInitiatorOnDrag",
+      "newName": "3W"
+    },
+    {
+      "originalName": "getLinkedClassName",
+      "newName": "-A"
+    },
+    {
+      "originalName": "cssString",
+      "newName": "+]"
+    },
+    {
+      "originalName": "includeEmbeddedFontDetails",
+      "newName": "`?"
+    },
+    {
+      "originalName": "PROPERTIES_ESCAPE_MAP",
+      "newName": "01"
+    },
+    {
+      "originalName": "_documents",
+      "newName": "\u003cM"
+    },
+    {
+      "originalName": "setTool",
+      "newName": "5P"
+    },
+    {
+      "originalName": "_1973792410addedXMLValidationToPage",
+      "newName": "4B"
+    },
+    {
+      "originalName": "HideRedrawRegionsInstance",
+      "newName": "7"
+    },
+    {
+      "originalName": "_ChangeHistory_bindingsSetup",
+      "newName": "!l"
+    },
+    {
+      "originalName": "Console",
+      "newName": ";t"
+    },
+    {
+      "originalName": "_f",
+      "newName": ";%"
+    },
+    {
+      "originalName": "EFFECT_CANCEL",
+      "newName": ";2"
+    },
+    {
+      "originalName": "getCurrentlyUsedPlayerMemory",
+      "newName": "1$"
+    },
+    {
+      "originalName": "filterInput_clearTextHandler",
+      "newName": "`\u0027"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.popup.supportClasses",
+      "newName": "[D"
+    },
+    {
+      "originalName": "_DocumentsInspector_List1_i",
+      "newName": "31"
+    },
+    {
+      "originalName": "findComponentItemInParentItemByElement",
+      "newName": "[j"
+    },
+    {
+      "originalName": "getDescription",
+      "newName": "9J"
+    },
+    {
+      "originalName": "_DocsInspector_HGroup1_c",
+      "newName": "-\u003d"
+    },
+    {
+      "originalName": "_Remote_StylesInit",
+      "newName": "\"N"
+    },
+    {
+      "originalName": "___Components_Group1_creationComplete",
+      "newName": "^0"
+    },
+    {
+      "originalName": "_namePopUp_HorizontalLayout1_c",
+      "newName": "-j"
+    },
+    {
+      "originalName": "_FrameSkin_SolidColor1_i",
+      "newName": "40"
+    },
+    {
+      "originalName": "setVerticalCenterConstraint",
+      "newName": "\u0026%"
+    },
+    {
+      "originalName": "drawMinimumHitArea",
+      "newName": " 6"
+    },
+    {
+      "originalName": "removeLastOccurance",
+      "newName": "?g"
+    },
+    {
+      "originalName": "startOrSpaceRe",
+      "newName": "6G"
+    },
+    {
+      "originalName": "Assert",
+      "newName": "]h"
+    },
+    {
+      "originalName": "CopyPreviousToNext",
+      "newName": ";C"
+    },
+    {
+      "originalName": "bitmapData",
+      "newName": "94"
+    },
+    {
+      "originalName": "FormIcon",
+      "newName": "?n"
+    },
+    {
+      "originalName": "initializeMulticall",
+      "newName": "@?"
+    },
+    {
+      "originalName": "closePopUp",
+      "newName": "!\u003c"
+    },
+    {
+      "originalName": "_RedrawRegions_bindingsSetup",
+      "newName": "\u003cf"
+    },
+    {
+      "originalName": "com.flexcapacitor.graphics",
+      "newName": "\u00261"
+    },
+    {
+      "originalName": "strip",
+      "newName": "\u003e,"
+    },
+    {
+      "originalName": "ObjectIterator",
+      "newName": "+Y"
+    },
+    {
+      "originalName": "getNextHistoryIndex",
+      "newName": "\u003de"
+    },
+    {
+      "originalName": "showDeferredMessages",
+      "newName": " 8"
+    },
+    {
+      "originalName": "___Properties_Group1_creationComplete",
+      "newName": "`_"
+    },
+    {
+      "originalName": "_namePopUp_Group2_c",
+      "newName": "?E"
+    },
+    {
+      "originalName": "sizeComboBox_doubleClickHandler",
+      "newName": "?k"
+    },
+    {
+      "originalName": "dispatchColorPreviewEvent",
+      "newName": "#M"
+    },
+    {
+      "originalName": "getBorderString",
+      "newName": "4\u003d"
+    },
+    {
+      "originalName": "walkDownTree",
+      "newName": "3V"
+    },
+    {
+      "originalName": "getClassName",
+      "newName": "+;"
+    },
+    {
+      "originalName": "_Properties_TextArea1_i",
+      "newName": "7^"
+    },
+    {
+      "originalName": "getFirstParentComponentItemFromComponentTreeByDisplayObject",
+      "newName": "[4"
+    },
+    {
+      "originalName": "saveData",
+      "newName": ",m"
+    },
+    {
+      "originalName": "valueType",
+      "newName": "[\""
+    },
+    {
+      "originalName": "indexOfStrictEquality",
+      "newName": "`\u0026"
+    },
+    {
+      "originalName": "applySymbolColor",
+      "newName": "`\u003c"
+    },
+    {
+      "originalName": "getHTMLButton_clickHandler",
+      "newName": "1k"
+    },
+    {
+      "originalName": "IEquals",
+      "newName": "?-"
+    },
+    {
+      "originalName": "list_caretChangeHandler",
+      "newName": "\u0027k"
+    },
+    {
+      "originalName": "previewButton_clickHandler",
+      "newName": "!d"
+    },
+    {
+      "originalName": "showUniversalStyles",
+      "newName": "%4"
+    },
+    {
+      "originalName": "pprintArgs",
+      "newName": ";#"
+    },
+    {
+      "originalName": "MARGIN_VERTICAL_CENTER",
+      "newName": "4@"
+    },
+    {
+      "originalName": "__focusOutHandler2_eventStart",
+      "newName": "`k"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.clipboard.supportClasses",
+      "newName": "\u00266"
+    },
+    {
+      "originalName": "fn",
+      "newName": "#o"
+    },
+    {
+      "originalName": "fileExtension",
+      "newName": "\u003d0"
+    },
+    {
+      "originalName": "setProject",
+      "newName": "]t"
+    },
+    {
+      "originalName": "MobileSkin",
+      "newName": "+N"
+    },
+    {
+      "originalName": "showSelectionBoxOnApplication",
+      "newName": "2g"
+    },
+    {
+      "originalName": "_Breadcrumbs_ClassFactory1_c",
+      "newName": "\u0026#"
+    },
+    {
+      "originalName": "_ProjectInspector_VerticalLayout1_c",
+      "newName": "`"
+    },
+    {
+      "originalName": "editor_resizeHandler",
+      "newName": "\u003dB"
+    },
+    {
+      "originalName": "keyEvent",
+      "newName": "??"
+    },
+    {
+      "originalName": "substringAfter",
+      "newName": "`5"
+    },
+    {
+      "originalName": "ADD_ERROR",
+      "newName": "@@"
+    },
+    {
+      "originalName": "__editorType_change",
+      "newName": ",E"
+    },
+    {
+      "originalName": "_clazz",
+      "newName": "\u0026G"
+    },
+    {
+      "originalName": "_containerMargin",
+      "newName": "^n"
+    },
+    {
+      "originalName": "_DocumentContainer_Label1_i",
+      "newName": "#1"
+    },
+    {
+      "originalName": "_Layers_Group2_c",
+      "newName": "0?"
+    },
+    {
+      "originalName": "updateView",
+      "newName": "[Z"
+    },
+    {
+      "originalName": "maximumValue",
+      "newName": " \""
+    },
+    {
+      "originalName": "selectionTool",
+      "newName": " o"
+    },
+    {
+      "originalName": "wrapInPreview",
+      "newName": "@\u003d"
+    },
+    {
+      "originalName": "loadURL",
+      "newName": "^@"
+    },
+    {
+      "originalName": "isSkinnableContainer",
+      "newName": ";5"
+    },
+    {
+      "originalName": "extractGreen",
+      "newName": "-C"
+    },
+    {
+      "originalName": "containsAnyEquality",
+      "newName": "%`"
+    },
+    {
+      "originalName": "___Memory_Group1_creationComplete",
+      "newName": "7-"
+    },
+    {
+      "originalName": "TypeDescriptionKind",
+      "newName": "2+"
+    },
+    {
+      "originalName": "listenForDragBehavior",
+      "newName": "[X"
+    },
+    {
+      "originalName": "RedrawRegions",
+      "newName": "[\u003d"
+    },
+    {
+      "originalName": "___Breadcrumbs_Group1_creationComplete",
+      "newName": "@s"
+    },
+    {
+      "originalName": "_typeDescriptionCache",
+      "newName": "3X"
+    },
+    {
+      "originalName": "actualSize_clickHandler",
+      "newName": "1\u0026"
+    },
+    {
+      "originalName": "delayTimeout",
+      "newName": "60"
+    },
+    {
+      "originalName": "targetGroup",
+      "newName": "\"%"
+    },
+    {
+      "originalName": "pr_quot",
+      "newName": ",k"
+    },
+    {
+      "originalName": "bitmapCaptureClient",
+      "newName": "\u0026O"
+    },
+    {
+      "originalName": "defaultSortFunction",
+      "newName": "6Z"
+    },
+    {
+      "originalName": "rootComponent",
+      "newName": "]1"
+    },
+    {
+      "originalName": "selectedColorAsHex",
+      "newName": "[1"
+    },
+    {
+      "originalName": "DataGridIcon",
+      "newName": "4_"
+    },
+    {
+      "originalName": "imageTagSourceFind",
+      "newName": "8+"
+    },
+    {
+      "originalName": "MAC_BREAK",
+      "newName": "\u0027C"
+    },
+    {
+      "originalName": "_sequenceInternal",
+      "newName": "%P"
+    },
+    {
+      "originalName": "getParentUIComponentName",
+      "newName": "`B"
+    },
+    {
+      "originalName": "deleteFromString",
+      "newName": "8d"
+    },
+    {
+      "originalName": "MARGIN_HORIZONTAL_CENTER",
+      "newName": "8o"
+    },
+    {
+      "originalName": "getVisualElementContainerFromElement",
+      "newName": "\u003d6"
+    },
+    {
+      "originalName": "_Code_String3_i",
+      "newName": "^5"
+    },
+    {
+      "originalName": "_HorizontalLine_bindingsSetup",
+      "newName": "^+"
+    },
+    {
+      "originalName": "stageY",
+      "newName": "1L"
+    },
+    {
+      "originalName": "stageX",
+      "newName": "8s"
+    },
+    {
+      "originalName": "BlackAndWhiteFilter",
+      "newName": "3!"
+    },
+    {
+      "originalName": "isWordChar",
+      "newName": "%A"
+    },
+    {
+      "originalName": "_console",
+      "newName": ";\u0027"
+    },
+    {
+      "originalName": "History",
+      "newName": "``"
+    },
+    {
+      "originalName": "net.anirudh.as3syntaxhighlight",
+      "newName": "\u00264"
+    },
+    {
+      "originalName": "disable",
+      "newName": ";Y"
+    },
+    {
+      "originalName": "arrayToVector",
+      "newName": "80"
+    },
+    {
+      "originalName": "_Events_bindingsSetup",
+      "newName": "#i"
+    },
+    {
+      "originalName": "updateTreeHeight",
+      "newName": "9`"
+    },
+    {
+      "originalName": "isVisualElementContainer",
+      "newName": "3S"
+    },
+    {
+      "originalName": "dispatchPreviewEvent",
+      "newName": "\u003e$"
+    },
+    {
+      "originalName": "_Memory_Label1_i",
+      "newName": ",_"
+    },
+    {
+      "originalName": "showSelection_changeHandler",
+      "newName": "7+"
+    },
+    {
+      "originalName": "transform3D",
+      "newName": "`W"
+    },
+    {
+      "originalName": "padString",
+      "newName": "?Q"
+    },
+    {
+      "originalName": "NUMBER_CLASSNAME",
+      "newName": "-d"
+    },
+    {
+      "originalName": "_HistoryItemRenderer_Path1_c",
+      "newName": "\u003e3"
+    },
+    {
+      "originalName": "SpinnerIcon",
+      "newName": "+$"
+    },
+    {
+      "originalName": "getNameString",
+      "newName": "6h"
+    },
+    {
+      "originalName": "getParentUIComponent",
+      "newName": "\u003dh"
+    },
+    {
+      "originalName": "recombineTagsAndDecorations",
+      "newName": "-u"
+    },
+    {
+      "originalName": "getArrayFromObject",
+      "newName": "4a"
+    },
+    {
+      "originalName": "traceHandler",
+      "newName": "\u003c;"
+    },
+    {
+      "originalName": "duplicateChanges",
+      "newName": "11"
+    },
+    {
+      "originalName": "_replaceLinebreaksWithBreaks",
+      "newName": "`p"
+    },
+    {
+      "originalName": "traceFunction",
+      "newName": "\u003c\u003d"
+    },
+    {
+      "originalName": "errorFunction",
+      "newName": "0!"
+    },
+    {
+      "originalName": "invokeSaveAsDialog",
+      "newName": "3g"
+    },
+    {
+      "originalName": "ToolsInnerClass0",
+      "newName": "1Q"
+    },
+    {
+      "originalName": "isInterface",
+      "newName": "9a"
+    },
+    {
+      "originalName": "interfaze",
+      "newName": "`%"
+    },
+    {
+      "originalName": "logo_clickHandler",
+      "newName": "3C"
+    },
+    {
+      "originalName": "deleteKeys",
+      "newName": "\u003d`"
+    },
+    {
+      "originalName": "__feedbackService_result",
+      "newName": "@q"
+    },
+    {
+      "originalName": "containsAllEquals",
+      "newName": "97"
+    },
+    {
+      "originalName": "walkLayoutTree",
+      "newName": "!F"
+    },
+    {
+      "originalName": "applicationReady",
+      "newName": "#r"
+    },
+    {
+      "originalName": "__expandAllNodes_click",
+      "newName": "+8"
+    },
+    {
+      "originalName": "ToggleButtonIcon",
+      "newName": "!S"
+    },
+    {
+      "originalName": "createDictionary",
+      "newName": "6j"
+    },
+    {
+      "originalName": "_SearchExpression_VerticalLayout1_c",
+      "newName": "\u003c!"
+    },
+    {
+      "originalName": "PADDING_RIGHT_DEFAULTDPI",
+      "newName": "2"
+    },
+    {
+      "originalName": "ALL_KEYWORDS",
+      "newName": "9c"
+    },
+    {
+      "originalName": "setDragManagerOffset",
+      "newName": "%\""
+    },
+    {
+      "originalName": "rogueStops",
+      "newName": " J"
+    },
+    {
+      "originalName": "_FrameSkin_Group1_i",
+      "newName": "@Q"
+    },
+    {
+      "originalName": "item",
+      "newName": "^["
+    },
+    {
+      "originalName": "allowDomainHandler",
+      "newName": "#h"
+    },
+    {
+      "originalName": "dispatchPropertySelectedEvent",
+      "newName": "2r"
+    },
+    {
+      "originalName": "historyEventItem",
+      "newName": "0\u003d"
+    },
+    {
+      "originalName": "measuredDefaultHeight",
+      "newName": "-\u0027"
+    },
+    {
+      "originalName": "UINT_TYPE",
+      "newName": "85"
+    },
+    {
+      "originalName": "containsAllStrictEquality",
+      "newName": "2h"
+    },
+    {
+      "originalName": "ListIcon",
+      "newName": "67"
+    },
+    {
+      "originalName": "getImageCount",
+      "newName": "`a"
+    },
+    {
+      "originalName": "value",
+      "newName": "`h"
+    },
+    {
+      "originalName": "WIN_BREAK",
+      "newName": "?]"
+    },
+    {
+      "originalName": "ZoomInspector",
+      "newName": "2s"
+    },
+    {
+      "originalName": "Size",
+      "newName": "8A"
+    },
+    {
+      "originalName": "abbreviate",
+      "newName": "\u0027\u003e"
+    },
+    {
+      "originalName": "_Code_Label1_i",
+      "newName": "9s"
+    },
+    {
+      "originalName": "__layoutLayoutComboBox_focusOut",
+      "newName": "?O"
+    },
+    {
+      "originalName": "_DocsInspector_TextInput1_i",
+      "newName": "@n"
+    },
+    {
+      "originalName": "showListDropIndicator",
+      "newName": "3R"
+    },
+    {
+      "originalName": "PROPERTY_SELECTED",
+      "newName": "#_"
+    },
+    {
+      "originalName": "_Constraints_ArrayList1_c",
+      "newName": "?W"
+    },
+    {
+      "originalName": "chartSeriesEffect_effectEndHandler",
+      "newName": "\"o"
+    },
+    {
+      "originalName": "LayersDataDescriptor",
+      "newName": ",g"
+    },
+    {
+      "originalName": "defaultItemRenderer",
+      "newName": "\u0026g"
+    },
+    {
+      "originalName": "_ZoomInspector_ComboBox1_i",
+      "newName": "\u0026\""
+    },
+    {
+      "originalName": "__consoleTextArea_valueCommit",
+      "newName": "\"f"
+    },
+    {
+      "originalName": "findLineBreaksPattern",
+      "newName": "]]"
+    },
+    {
+      "originalName": "getNameFromFullyQualifiedName",
+      "newName": "]M"
+    },
+    {
+      "originalName": "visibleButtonGroup_mouseDownHandler",
+      "newName": "\u003ep"
+    },
+    {
+      "originalName": "clearButtonWidth",
+      "newName": "9o"
+    },
+    {
+      "originalName": "updateDataGridPropertyValue",
+      "newName": "-W"
+    },
+    {
+      "originalName": "___SizesInspector_Group1_creationComplete",
+      "newName": "+l"
+    },
+    {
+      "originalName": "UINT_STATE",
+      "newName": "-!"
+    },
+    {
+      "originalName": "updateCodeLive_changeHandler",
+      "newName": "\u0027o"
+    },
+    {
+      "originalName": "multicallInitialized",
+      "newName": ";"
+    },
+    {
+      "originalName": "ANALYSIS_COMPLETE",
+      "newName": "9p"
+    },
+    {
+      "originalName": "Selection",
+      "newName": "%3"
+    },
+    {
+      "originalName": "replaceUnderlineTags",
+      "newName": "78"
+    },
+    {
+      "originalName": "StringUtils",
+      "newName": "\u003cp"
+    },
+    {
+      "originalName": "isOnServer",
+      "newName": " N"
+    },
+    {
+      "originalName": "gridDoubleClickHandler",
+      "newName": "6d"
+    },
+    {
+      "originalName": "styleAlignPatternReplace",
+      "newName": "1?"
+    },
+    {
+      "originalName": "_keyboardEventNames",
+      "newName": "[7"
+    },
+    {
+      "originalName": "showRightToLeft",
+      "newName": "0k"
+    },
+    {
+      "originalName": "leftTrim",
+      "newName": "!\u003e"
+    },
+    {
+      "originalName": "quoteReg",
+      "newName": "5S"
+    },
+    {
+      "originalName": "showDropShadow",
+      "newName": "6^"
+    },
+    {
+      "originalName": "convertFromConstraint",
+      "newName": "\u003eZ"
+    },
+    {
+      "originalName": "rulerStartingPoint",
+      "newName": "!B"
+    },
+    {
+      "originalName": "getParentEffectCount",
+      "newName": "\u003d]"
+    },
+    {
+      "originalName": "Layers",
+      "newName": "+\u0026"
+    },
+    {
+      "originalName": "highlightCode",
+      "newName": "\"5"
+    },
+    {
+      "originalName": "SearchTextInputSkin",
+      "newName": "`i"
+    },
+    {
+      "originalName": "_fadeInDuration",
+      "newName": "1,"
+    },
+    {
+      "originalName": "_Profiling_Label1_i",
+      "newName": "6?"
+    },
+    {
+      "originalName": "selectionChangeEvent",
+      "newName": "7Q"
+    },
+    {
+      "originalName": "isInformalImplementationOf",
+      "newName": "0F"
+    },
+    {
+      "originalName": "SortCollectionInstance",
+      "newName": "[L"
+    },
+    {
+      "originalName": "_ImageButtonSkin_Rect1_i",
+      "newName": "\"s"
+    },
+    {
+      "originalName": "lastUpdateTime",
+      "newName": "[O"
+    },
+    {
+      "originalName": "_RadiateExample_StylesInit",
+      "newName": "4q"
+    },
+    {
+      "originalName": "groupMouseDownHandler",
+      "newName": "9?"
+    },
+    {
+      "originalName": "HISTORY_CHANGE",
+      "newName": "9q"
+    },
+    {
+      "originalName": "fontFamily",
+      "newName": "\u0026P"
+    },
+    {
+      "originalName": "getImageSource",
+      "newName": "]"
+    },
+    {
+      "originalName": "testStarted",
+      "newName": "[\u003c"
+    },
+    {
+      "originalName": "sourceText",
+      "newName": "+m"
+    },
+    {
+      "originalName": "_byteArray",
+      "newName": "\u003e0"
+    },
+    {
+      "originalName": "privateTest",
+      "newName": "^2"
+    },
+    {
+      "originalName": "sizesPositions",
+      "newName": "]Q"
+    },
+    {
+      "originalName": "JSCRIPT_KEYWORDS",
+      "newName": "0#"
+    },
+    {
+      "originalName": "dragStartTolerance",
+      "newName": " n"
+    },
+    {
+      "originalName": "metaType",
+      "newName": ";d"
+    },
+    {
+      "originalName": "isFlex3",
+      "newName": "8Q"
+    },
+    {
+      "originalName": "com.flexcapacitor.status.supportClasses",
+      "newName": "@I"
+    },
+    {
+      "originalName": "__editorType_initialize",
+      "newName": "!a"
+    },
+    {
+      "originalName": "metaName",
+      "newName": "41"
+    },
+    {
+      "originalName": "removeImagesIdsPattern",
+      "newName": " G"
+    },
+    {
+      "originalName": "VScrollBarIcon",
+      "newName": "44"
+    },
+    {
+      "originalName": "removeMouseHandlers",
+      "newName": "?A"
+    },
+    {
+      "originalName": "project_completeHandler",
+      "newName": "!,"
+    },
+    {
+      "originalName": "getSizeString",
+      "newName": "!I"
+    },
+    {
+      "originalName": "_Features_bindingsSetup",
+      "newName": ",Y"
+    },
+    {
+      "originalName": "sourceCodeHtml",
+      "newName": "\u00272"
+    },
+    {
+      "originalName": "_displayList",
+      "newName": "0U"
+    },
+    {
+      "originalName": "bitmap",
+      "newName": "-n"
+    },
+    {
+      "originalName": "_TargetSelectionGroup_SolidColorStroke1_c",
+      "newName": "5T"
+    },
+    {
+      "originalName": "xml",
+      "newName": "^6"
+    },
+    {
+      "originalName": "finish",
+      "newName": ",\""
+    },
+    {
+      "originalName": "FLOW_CONTROL_KEYWORDS",
+      "newName": "9^"
+    },
+    {
+      "originalName": "drawVertical",
+      "newName": "6m"
+    },
+    {
+      "originalName": "rotateLastTime",
+      "newName": "\u0027E"
+    },
+    {
+      "originalName": "applyProperty",
+      "newName": "]R"
+    },
+    {
+      "originalName": "_ZoomInspector_Button1_i",
+      "newName": "7T"
+    },
+    {
+      "originalName": "groupBase",
+      "newName": "2\u003c"
+    },
+    {
+      "originalName": "_History_List1_i",
+      "newName": "1g"
+    },
+    {
+      "originalName": "_searchButtonSkin_Rect1_i",
+      "newName": "9I"
+    },
+    {
+      "originalName": "tabExpander",
+      "newName": "\u0026W"
+    },
+    {
+      "originalName": "HideRedrawRegions",
+      "newName": "3-"
+    },
+    {
+      "originalName": "timerInterval",
+      "newName": "\u003eT"
+    },
+    {
+      "originalName": "dispatchActionEvent",
+      "newName": "\"K"
+    },
+    {
+      "originalName": "splitStringAndCommentTokens",
+      "newName": "6%"
+    },
+    {
+      "originalName": "_DocumentContainer_Scroller1_i",
+      "newName": "4Q"
+    },
+    {
+      "originalName": "updateDocumentation",
+      "newName": "5q"
+    },
+    {
+      "originalName": "__feedbackService_fault",
+      "newName": ";\u0026"
+    },
+    {
+      "originalName": "rasterizeDisplayObject",
+      "newName": "-b"
+    },
+    {
+      "originalName": "clearTarget",
+      "newName": "3\u0026"
+    },
+    {
+      "originalName": "compareToIgnoreCase",
+      "newName": "2\u0027"
+    },
+    {
+      "originalName": "getFullyQualifiedSuperClassName",
+      "newName": "5_"
+    },
+    {
+      "originalName": "___Console_Group1_creationComplete",
+      "newName": "\"6"
+    },
+    {
+      "originalName": "allowNullData",
+      "newName": "3D"
+    },
+    {
+      "originalName": "enterDebuggerOnEvent",
+      "newName": "\u0026o"
+    },
+    {
+      "originalName": "EXTERNAL",
+      "newName": "03"
+    },
+    {
+      "originalName": "PR_STRING",
+      "newName": "1M"
+    },
+    {
+      "originalName": "EncodeToPNG",
+      "newName": "[^"
+    },
+    {
+      "originalName": "consoleTextArea_valueCommitHandler",
+      "newName": "#I"
+    },
+    {
+      "originalName": "extractBlue",
+      "newName": "#9"
+    },
+    {
+      "originalName": "getMethods",
+      "newName": "\u0026\u003c"
+    },
+    {
+      "originalName": "description_clickHandler",
+      "newName": "6W"
+    },
+    {
+      "originalName": "displayListTree_itemCloseHandler",
+      "newName": "89"
+    },
+    {
+      "originalName": "margin",
+      "newName": "`#"
+    },
+    {
+      "originalName": "_ColorChooser_HorizontalLayout1_c",
+      "newName": "9C"
+    },
+    {
+      "originalName": "MOVE_ITEM",
+      "newName": "\u003dG"
+    },
+    {
+      "originalName": "removeItemEquality",
+      "newName": ",`"
+    },
+    {
+      "originalName": "HistoryEvent",
+      "newName": "[3"
+    },
+    {
+      "originalName": "_poolCount",
+      "newName": "0e"
+    },
+    {
+      "originalName": "sourceCodeArr",
+      "newName": "36"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.core.supportClasses",
+      "newName": "2C"
+    },
+    {
+      "originalName": "getElementPreferredWidth",
+      "newName": "6g"
+    },
+    {
+      "originalName": "timestampPool",
+      "newName": "\u003d9"
+    },
+    {
+      "originalName": "chompString",
+      "newName": "70"
+    },
+    {
+      "originalName": "DragDropEvent",
+      "newName": "87"
+    },
+    {
+      "originalName": "closeOnMouseDownInside",
+      "newName": "\u0027g"
+    },
+    {
+      "originalName": "_popUp_TextArea1_i",
+      "newName": "0^"
+    },
+    {
+      "originalName": "showDocument",
+      "newName": "^p"
+    },
+    {
+      "originalName": "showHeirarchyAscending",
+      "newName": "\u00277"
+    },
+    {
+      "originalName": "ShowRedrawRegionsInstance",
+      "newName": "[R"
+    },
+    {
+      "originalName": "includeSkins",
+      "newName": "1#"
+    },
+    {
+      "originalName": "getStyleInheritance",
+      "newName": " b"
+    },
+    {
+      "originalName": "removeArray",
+      "newName": "];"
+    },
+    {
+      "originalName": "_chartSeriesDuration",
+      "newName": "7s"
+    },
+    {
+      "originalName": "OpenPopUp",
+      "newName": "!9"
+    },
+    {
+      "originalName": "HEXIDECIMAL_HASH_TYPE",
+      "newName": "8S"
+    },
+    {
+      "originalName": "getColorUnderMouse",
+      "newName": "@N"
+    },
+    {
+      "originalName": "_DocumentsInspector_HGroup1_c",
+      "newName": "^3"
+    },
+    {
+      "originalName": "getComponentType",
+      "newName": "[T"
+    },
+    {
+      "originalName": "PaginationText",
+      "newName": ",+"
+    },
+    {
+      "originalName": "dispatchCanvasChangeEvent",
+      "newName": ";o"
+    },
+    {
+      "originalName": "getTest",
+      "newName": ";$"
+    },
+    {
+      "originalName": "_SearchExpression_TextArea1_i",
+      "newName": "8J"
+    },
+    {
+      "originalName": "reversePathOrder",
+      "newName": ",R"
+    },
+    {
+      "originalName": "getDisplayLis",
+      "newName": "\u003eY"
+    },
+    {
+      "originalName": "removeComponentType",
+      "newName": "%E"
+    },
+    {
+      "originalName": "getChildByIds",
+      "newName": "^^"
+    },
+    {
+      "originalName": "hideIfOpen",
+      "newName": ",2"
+    },
+    {
+      "originalName": "_StatusMessage_Sequence1_i",
+      "newName": "^O"
+    },
+    {
+      "originalName": "convertIntToHex",
+      "newName": "3T"
+    },
+    {
+      "originalName": "notWs",
+      "newName": "`,"
+    },
+    {
+      "originalName": "StyleMetaData",
+      "newName": "1B"
+    },
+    {
+      "originalName": "addRemoveInterval",
+      "newName": "[Y"
+    },
+    {
+      "originalName": "showStyleInheritanceInformation",
+      "newName": "\u003c6"
+    },
+    {
+      "originalName": "exactMatch",
+      "newName": "@K"
+    },
+    {
+      "originalName": "eventsList",
+      "newName": "\u003cc"
+    },
+    {
+      "originalName": "_DocumentContainer_bindingsSetup",
+      "newName": "0l"
+    },
+    {
+      "originalName": "ComponentDefinition",
+      "newName": "!_"
+    },
+    {
+      "originalName": "pr_nbspEnt",
+      "newName": "\u003eJ"
+    },
+    {
+      "originalName": "_EditableDocumentRenderer_TextInput1_i",
+      "newName": "1\u003c"
+    },
+    {
+      "originalName": "textFlowText",
+      "newName": ",W"
+    },
+    {
+      "originalName": "prettyPrintAsync",
+      "newName": "1_"
+    },
+    {
+      "originalName": "getHTMLOutputString",
+      "newName": "6\u0027"
+    },
+    {
+      "originalName": "enableDrag",
+      "newName": "+G"
+    },
+    {
+      "originalName": "__list_click",
+      "newName": "@M"
+    },
+    {
+      "originalName": "setDocument",
+      "newName": "1E"
+    },
+    {
+      "originalName": "_toolLayer",
+      "newName": "\u0027D"
+    },
+    {
+      "originalName": "settingProperties",
+      "newName": "2@"
+    },
+    {
+      "originalName": "_ProjectInspector_List1_i",
+      "newName": "@r"
+    },
+    {
+      "originalName": "toDictionary",
+      "newName": ";S"
+    },
+    {
+      "originalName": "object",
+      "newName": "4I"
+    },
+    {
+      "originalName": "createComponentForAdd",
+      "newName": "[K"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.popup",
+      "newName": "#O"
+    },
+    {
+      "originalName": "getGreatestVisibilityDisplayList",
+      "newName": "\u003eX"
+    },
+    {
+      "originalName": "STRING_FIELD_NAME",
+      "newName": "+9"
+    },
+    {
+      "originalName": "RadiateLogTarget",
+      "newName": "-B"
+    },
+    {
+      "originalName": "inspectValue",
+      "newName": "!R"
+    },
+    {
+      "originalName": "_Constraints_StylesInit",
+      "newName": "\"W"
+    },
+    {
+      "originalName": "enableBackgroundCrossFade",
+      "newName": ";Q"
+    },
+    {
+      "originalName": "DEFAULT_SYMBOL_COLOR_VALUE",
+      "newName": "9B"
+    },
+    {
+      "originalName": "_Remote_ToolInspector1_c",
+      "newName": "+C"
+    },
+    {
+      "originalName": "propertyType",
+      "newName": "`$"
+    },
+    {
+      "originalName": "startingPoint",
+      "newName": "\u003dN"
+    },
+    {
+      "originalName": "nameInput_enterHandler",
+      "newName": "\u003ct"
+    },
+    {
+      "originalName": "PlayerTypeInstance",
+      "newName": "6#"
+    },
+    {
+      "originalName": "walkUpLayoutTree",
+      "newName": "]q"
+    },
+    {
+      "originalName": "shortcuts",
+      "newName": "0-"
+    },
+    {
+      "originalName": "_History_ClassFactory1_c",
+      "newName": "\u0026k"
+    },
+    {
+      "originalName": "ShowStatusMessageInstance",
+      "newName": "\u0027h"
+    },
+    {
+      "originalName": "indexOfDifference",
+      "newName": "\u003d@"
+    },
+    {
+      "originalName": "__closeLabel_click",
+      "newName": "\u003dr"
+    },
+    {
+      "originalName": "RadiateReferences",
+      "newName": "\u003ca"
+    },
+    {
+      "originalName": "toggleEnable",
+      "newName": " +"
+    },
+    {
+      "originalName": "getVisualElementPath",
+      "newName": "!2"
+    },
+    {
+      "originalName": "_Remote_HDividedBox1_c",
+      "newName": "#T"
+    },
+    {
+      "originalName": "multipleSelection",
+      "newName": "73"
+    },
+    {
+      "originalName": "addHistoryEvents",
+      "newName": "\u003eG"
+    },
+    {
+      "originalName": "eventsGrid_clickHandler",
+      "newName": "?`"
+    },
+    {
+      "originalName": "_containersToShow",
+      "newName": "\u003dH"
+    },
+    {
+      "originalName": "effectTimeoutHandler",
+      "newName": "[$"
+    },
+    {
+      "originalName": "createComponentTreeFromElement",
+      "newName": " ?"
+    },
+    {
+      "originalName": "getGreatestVisibility",
+      "newName": "5\u003e"
+    },
+    {
+      "originalName": "measuredDefaultWidth",
+      "newName": "`7"
+    },
+    {
+      "originalName": "_subdivisions",
+      "newName": "[?"
+    },
+    {
+      "originalName": "_States_Scroller1_c",
+      "newName": "\u003dk"
+    },
+    {
+      "originalName": "classes",
+      "newName": "?C"
+    },
+    {
+      "originalName": "getSnapshot",
+      "newName": ",c"
+    },
+    {
+      "originalName": "MXMLLoaderArray",
+      "newName": "\u003d^"
+    },
+    {
+      "originalName": "deferredInstanceFromFunction",
+      "newName": ";V"
+    },
+    {
+      "originalName": "filterPropertyChangeHandler",
+      "newName": "\u003e\u003e"
+    },
+    {
+      "originalName": "useSymbolColor",
+      "newName": "\u003e6"
+    },
+    {
+      "originalName": "createToolsList",
+      "newName": "%,"
+    },
+    {
+      "originalName": "handleScrollChanges",
+      "newName": "^\""
+    },
+    {
+      "originalName": "_SearchTextInputSkin_RichEditableText1_i",
+      "newName": "98"
+    },
+    {
+      "originalName": "removeAllItemsEquals",
+      "newName": "5i"
+    },
+    {
+      "originalName": "_RedrawRegions_SolidColorStroke1_c",
+      "newName": "8\u003e"
+    },
+    {
+      "originalName": "change",
+      "newName": "6["
+    },
+    {
+      "originalName": "subdivisionToDivisionLineRatio",
+      "newName": "%K"
+    },
+    {
+      "originalName": "sparkManifestDefaults",
+      "newName": "\u003cR"
+    },
+    {
+      "originalName": "tools_updateCompleteHandler",
+      "newName": "@i"
+    },
+    {
+      "originalName": "showLoadControls",
+      "newName": "9\""
+    },
+    {
+      "originalName": "_projects",
+      "newName": " \u003e"
+    },
+    {
+      "originalName": "Inspector",
+      "newName": " #"
+    },
+    {
+      "originalName": "getTargetInComponentDisplayList",
+      "newName": "\"m"
+    },
+    {
+      "originalName": "__loadLabel_click",
+      "newName": "\u0026\u003d"
+    },
+    {
+      "originalName": "setTargets",
+      "newName": "\u0027b"
+    },
+    {
+      "originalName": "fromValue",
+      "newName": ",?"
+    },
+    {
+      "originalName": "node",
+      "newName": "-?"
+    },
+    {
+      "originalName": "SkinnableDataContainerIcon",
+      "newName": "82"
+    },
+    {
+      "originalName": "_Remote_ChangeHistory1_c",
+      "newName": "[Q"
+    },
+    {
+      "originalName": "isPreviewVisible",
+      "newName": "`T"
+    },
+    {
+      "originalName": "_Snapshot_bindingsSetup",
+      "newName": "-+"
+    },
+    {
+      "originalName": "targetsUnderPoint",
+      "newName": "7!"
+    },
+    {
+      "originalName": "project_ioErrorHandler",
+      "newName": "4%"
+    },
+    {
+      "originalName": "pr_tagNameRe",
+      "newName": "\u0026q"
+    },
+    {
+      "originalName": "getTypeDescriptionForClass",
+      "newName": "\u003eQ"
+    },
+    {
+      "originalName": "removeFileListeners",
+      "newName": "%U"
+    },
+    {
+      "originalName": "application1_applicationCompleteHandler",
+      "newName": "4`"
+    },
+    {
+      "originalName": "decPos",
+      "newName": "@U"
+    },
+    {
+      "originalName": "_Remote_Components1_c",
+      "newName": "?L"
+    },
+    {
+      "originalName": "___History_Group1_creationComplete",
+      "newName": "7q"
+    },
+    {
+      "originalName": "CSHARP_KEYWORDS",
+      "newName": "+6"
+    },
+    {
+      "originalName": "___Code_Button3_click",
+      "newName": "\u0026;"
+    },
+    {
+      "originalName": "drawBitmapData",
+      "newName": "!X"
+    },
+    {
+      "originalName": "_StatusMessage_bindingsSetup",
+      "newName": "\u003cb"
+    },
+    {
+      "originalName": "com.flexcapacitor.handlers",
+      "newName": "7l"
+    },
+    {
+      "originalName": "createBreadCrumbTrail",
+      "newName": "53"
+    },
+    {
+      "originalName": "capturingBitmap",
+      "newName": "4d"
+    },
+    {
+      "originalName": "swfRoot",
+      "newName": "\u0027U"
+    },
+    {
+      "originalName": "isAlphanumeric",
+      "newName": "\u0027T"
+    },
+    {
+      "originalName": "fillRect",
+      "newName": "-c"
+    },
+    {
+      "originalName": "axisLabelFunction",
+      "newName": "1N"
+    },
+    {
+      "originalName": "addImageIds",
+      "newName": "\u003d\u003e"
+    },
+    {
+      "originalName": "RichTextIcon",
+      "newName": "\u003d-"
+    },
+    {
+      "originalName": "createPool",
+      "newName": "\u003e1"
+    },
+    {
+      "originalName": "IIterator",
+      "newName": "3Z"
+    },
+    {
+      "originalName": "isAlphaSpace",
+      "newName": "%f"
+    },
+    {
+      "originalName": "addGroupListeners",
+      "newName": "?H"
+    },
+    {
+      "originalName": "_RadiateExample_Array7_c",
+      "newName": ",f"
+    },
+    {
+      "originalName": "handleTargetChange",
+      "newName": "\u0026C"
+    },
+    {
+      "originalName": "_Layers_bindingsSetup",
+      "newName": ",F"
+    },
+    {
+      "originalName": "showEmbeddedFontInformation",
+      "newName": "\u003di"
+    },
+    {
+      "originalName": "_History_HorizontalLine1_c",
+      "newName": "`j"
+    },
+    {
+      "originalName": "__sizesComboBox_doubleClick",
+      "newName": "?l"
+    },
+    {
+      "originalName": "wordSet",
+      "newName": "\u003d?"
+    },
+    {
+      "originalName": "DragManagerUtil",
+      "newName": "!]"
+    },
+    {
+      "originalName": "expandAllNodes_clickHandler",
+      "newName": " Q"
+    },
+    {
+      "originalName": "reinitializeInstance",
+      "newName": "2Z"
+    },
+    {
+      "originalName": "asyncRunning",
+      "newName": "-i"
+    },
+    {
+      "originalName": "__mxTextArea_change",
+      "newName": "-X"
+    },
+    {
+      "originalName": "__tools_change",
+      "newName": "\u003dJ"
+    },
+    {
+      "originalName": "pageView",
+      "newName": "8D"
+    },
+    {
+      "originalName": "showDeviceFontInformation",
+      "newName": "\u003e@"
+    },
+    {
+      "originalName": "localDivision",
+      "newName": "\u003eo"
+    },
+    {
+      "originalName": "_popUp_bindingsSetup",
+      "newName": "5$"
+    },
+    {
+      "originalName": "updateProjects",
+      "newName": "#?"
+    },
+    {
+      "originalName": "removeDuplicates",
+      "newName": "[C"
+    },
+    {
+      "originalName": "_Remote_VerticalLayout1_c",
+      "newName": "-f"
+    },
+    {
+      "originalName": "_Features_Spacer1_c",
+      "newName": "1;"
+    },
+    {
+      "originalName": "ArrayUtils",
+      "newName": "3,"
+    },
+    {
+      "originalName": "playControllerEffectDuring",
+      "newName": "#K"
+    },
+    {
+      "originalName": "parseDocument",
+      "newName": "-t"
+    },
+    {
+      "originalName": "buttonBarSkin",
+      "newName": "+S"
+    },
+    {
+      "originalName": "snapshot",
+      "newName": "\u003c9"
+    },
+    {
+      "originalName": "isTile",
+      "newName": "4G"
+    },
+    {
+      "originalName": "PYTHON_KEYWORDS",
+      "newName": "6+"
+    },
+    {
+      "originalName": "SizesInspector",
+      "newName": "\u003dD"
+    },
+    {
+      "originalName": "_Constraints_SolidColor1_c",
+      "newName": ",M"
+    },
+    {
+      "originalName": "___Features_Group1_creationComplete",
+      "newName": "@B"
+    },
+    {
+      "originalName": "handleClick",
+      "newName": "#,"
+    },
+    {
+      "originalName": "updateComponentProperties",
+      "newName": "6f"
+    },
+    {
+      "originalName": "selectOnFocusIn",
+      "newName": "0g"
+    },
+    {
+      "originalName": "standAlonePlayerTypeEffect",
+      "newName": "%W"
+    },
+    {
+      "originalName": "__displayListTree_dragComplete",
+      "newName": "+\u0027"
+    },
+    {
+      "originalName": "removeEnd",
+      "newName": "]\""
+    },
+    {
+      "originalName": "removeAllItemsWithRemoveFunction",
+      "newName": "\"j"
+    },
+    {
+      "originalName": "_defaultItemRenderer_Label1_i",
+      "newName": "1j"
+    },
+    {
+      "originalName": "action",
+      "newName": "04"
+    },
+    {
+      "originalName": "_HistoryItemRenderer_Label1_i",
+      "newName": "2D"
+    },
+    {
+      "originalName": "inspectable",
+      "newName": "\u003c\u003c"
+    },
+    {
+      "originalName": "itemsList",
+      "newName": "]O"
+    },
+    {
+      "originalName": "nonInheritedValue",
+      "newName": "%n"
+    },
+    {
+      "originalName": "drawLines",
+      "newName": "^J"
+    },
+    {
+      "originalName": "PR_TAG",
+      "newName": "0$"
+    },
+    {
+      "originalName": "leftTrimForChar",
+      "newName": "%L"
+    },
+    {
+      "originalName": "replaceStrongTags",
+      "newName": "1`"
+    },
+    {
+      "originalName": "getTypeDescription",
+      "newName": ";+"
+    },
+    {
+      "originalName": "noDataEffect",
+      "newName": "2\""
+    },
+    {
+      "originalName": "__list_valueCommit",
+      "newName": "#`"
+    },
+    {
+      "originalName": "scale",
+      "newName": "?f"
+    },
+    {
+      "originalName": "SearchExpression",
+      "newName": "`]"
+    },
+    {
+      "originalName": "isNumeric",
+      "newName": "]U"
+    },
+    {
+      "originalName": "notAbstract",
+      "newName": "\u0027?"
+    },
+    {
+      "originalName": "SearchTextInput",
+      "newName": "0a"
+    },
+    {
+      "originalName": "_Code_ImageButton1_i",
+      "newName": "9h"
+    },
+    {
+      "originalName": "ComboBoxIcon",
+      "newName": "\u0027]"
+    },
+    {
+      "originalName": "_Breadcrumbs_Group2_c",
+      "newName": "\u003eq"
+    },
+    {
+      "originalName": "getHistoryIndex",
+      "newName": "7\u0027"
+    },
+    {
+      "originalName": "newClass",
+      "newName": "1p"
+    },
+    {
+      "originalName": "totalPagesChangeHandler",
+      "newName": "-Y"
+    },
+    {
+      "originalName": "_Components_Spacer1_c",
+      "newName": "2b"
+    },
+    {
+      "originalName": "_ChangeHistory_ImageButton1_i",
+      "newName": "37"
+    },
+    {
+      "originalName": "___EyeDropperInspector_Group1_creationComplete",
+      "newName": "\u00276"
+    },
+    {
+      "originalName": "__textInput_enter",
+      "newName": "\u0026K"
+    },
+    {
+      "originalName": "list_changeHandler",
+      "newName": "\u003d4"
+    },
+    {
+      "originalName": "REMOVE_ITEM_DESCRIPTION",
+      "newName": "[\u0027"
+    },
+    {
+      "originalName": "UTF_EBCDIC",
+      "newName": "\u003c-"
+    },
+    {
+      "originalName": "eyeDropperTool",
+      "newName": "^\u0026"
+    },
+    {
+      "originalName": "___LayersInnerClass0_MXTreeItemRenderer1_creationComplete",
+      "newName": "]_"
+    },
+    {
+      "originalName": "_Layers_Spacer1_c",
+      "newName": "#F"
+    },
+    {
+      "originalName": "NO_DATA",
+      "newName": "\u0027q"
+    },
+    {
+      "originalName": "ComponentDescription",
+      "newName": "\u003es"
+    },
+    {
+      "originalName": "_actions",
+      "newName": "\"t"
+    },
+    {
+      "originalName": "timeout",
+      "newName": "-m"
+    },
+    {
+      "originalName": "updateTarget",
+      "newName": "[o"
+    },
+    {
+      "originalName": "group2_creationCompleteHandler",
+      "newName": "-S"
+    },
+    {
+      "originalName": "setTopConstraint",
+      "newName": "%O"
+    },
+    {
+      "originalName": "historyEventItems",
+      "newName": "1F"
+    },
+    {
+      "originalName": "__portraitEnabledCheckbox_change",
+      "newName": "`q"
+    },
+    {
+      "originalName": "project_openHandler",
+      "newName": "\u003d\u0027"
+    },
+    {
+      "originalName": "VGroupIcon",
+      "newName": "2^"
+    },
+    {
+      "originalName": "forInstance",
+      "newName": ";K"
+    },
+    {
+      "originalName": "SH_KEYWORDS",
+      "newName": "-k"
+    },
+    {
+      "originalName": "styles",
+      "newName": "1!"
+    },
+    {
+      "originalName": "paddingVertical",
+      "newName": "+E"
+    },
+    {
+      "originalName": "addItemsInstance",
+      "newName": "8-"
+    },
+    {
+      "originalName": "updateState",
+      "newName": "\"`"
+    },
+    {
+      "originalName": "rogueStarts",
+      "newName": "7a"
+    },
+    {
+      "originalName": "colorMatrix",
+      "newName": " 3"
+    },
+    {
+      "originalName": "ToggleEffectsInstance",
+      "newName": "\u003e;"
+    },
+    {
+      "originalName": "updateSizeInComboBox",
+      "newName": "!!"
+    },
+    {
+      "originalName": "projectCreatedHandler",
+      "newName": ";,"
+    },
+    {
+      "originalName": "RadioButtonGroupIcon",
+      "newName": "4U"
+    },
+    {
+      "originalName": "changeSrcToSource",
+      "newName": "\u003cg"
+    },
+    {
+      "originalName": "_Remote_SizesInspector1_c",
+      "newName": "27"
+    },
+    {
+      "originalName": "setLeftConstraint",
+      "newName": "\u0027;"
+    },
+    {
+      "originalName": "getSpriteSnapshot",
+      "newName": "]C"
+    },
+    {
+      "originalName": "_ProjectInspector_ClassFactory1_c",
+      "newName": "6t"
+    },
+    {
+      "originalName": "arrPF",
+      "newName": "`+"
+    },
+    {
+      "originalName": "getTextAreaCode",
+      "newName": "6\""
+    },
+    {
+      "originalName": "targetsList",
+      "newName": "@\""
+    },
+    {
+      "originalName": "addDocument",
+      "newName": "\u0026`"
+    },
+    {
+      "originalName": "EyeDropperInspector",
+      "newName": "8\u003d"
+    },
+    {
+      "originalName": "DocsInspector",
+      "newName": "2!"
+    },
+    {
+      "originalName": "PACKAGE_CLASS_SEPARATOR",
+      "newName": "7r"
+    },
+    {
+      "originalName": "borderWeight",
+      "newName": "@l"
+    },
+    {
+      "originalName": "getDocumentName",
+      "newName": "2#"
+    },
+    {
+      "originalName": "addDropShadow",
+      "newName": "[k"
+    },
+    {
+      "originalName": "setSelectionLaterHandler",
+      "newName": "9%"
+    },
+    {
+      "originalName": "toggleButtonSkin",
+      "newName": "9i"
+    },
+    {
+      "originalName": "CodePrettyPrint",
+      "newName": " H"
+    },
+    {
+      "originalName": "spanUnderlinePatternEmptyReplace",
+      "newName": "\u0026e"
+    },
+    {
+      "originalName": "_ProjectInspector_Spacer1_c",
+      "newName": "\"H"
+    },
+    {
+      "originalName": "skinPart",
+      "newName": "88"
+    },
+    {
+      "originalName": "toolsUpdatedHandler",
+      "newName": "#L"
+    },
+    {
+      "originalName": "__featureRadioGroup_change",
+      "newName": "49"
+    },
+    {
+      "originalName": "BorderContainerIcon",
+      "newName": "5E"
+    },
+    {
+      "originalName": "componentPathSeparator",
+      "newName": "^#"
+    },
+    {
+      "originalName": "parentName",
+      "newName": "+Z"
+    },
+    {
+      "originalName": "_canvasBorder",
+      "newName": "0L"
+    },
+    {
+      "originalName": "propertyName",
+      "newName": "3Q"
+    },
+    {
+      "originalName": "booleanGroup_changeHandler",
+      "newName": "^g"
+    },
+    {
+      "originalName": "feedbackService_faultHandler",
+      "newName": "`V"
+    },
+    {
+      "originalName": "_Remote_States1_c",
+      "newName": "9F"
+    },
+    {
+      "originalName": "hasByteOrderMarker",
+      "newName": "\u00271"
+    },
+    {
+      "originalName": "getValueType",
+      "newName": "92"
+    },
+    {
+      "originalName": "_DocumentsInspector_Spacer1_c",
+      "newName": "`9"
+    },
+    {
+      "originalName": "_ids",
+      "newName": "8Y"
+    },
+    {
+      "originalName": "opt_langExtension",
+      "newName": " X"
+    },
+    {
+      "originalName": "INT_STATE",
+      "newName": "!J"
+    },
+    {
+      "originalName": "RELATIVE",
+      "newName": "4+"
+    },
+    {
+      "originalName": "isDropTargetParent",
+      "newName": "@#"
+    },
+    {
+      "originalName": "interfaceParameter",
+      "newName": "-\u003e"
+    },
+    {
+      "originalName": "getParentDocumentName",
+      "newName": "#c"
+    },
+    {
+      "originalName": "_dataProviderProperties",
+      "newName": "[#"
+    },
+    {
+      "originalName": "_TargetSelectionGroup_SolidColor1_c",
+      "newName": "%7"
+    },
+    {
+      "originalName": "toInstance",
+      "newName": "!7"
+    },
+    {
+      "originalName": "previewType",
+      "newName": "\"h"
+    },
+    {
+      "originalName": "___DocsInspector_Group1_creationComplete",
+      "newName": "\u003cS"
+    },
+    {
+      "originalName": "showSearchPattern",
+      "newName": "\u0026t"
+    },
+    {
+      "originalName": "_visualElement",
+      "newName": "?B"
+    },
+    {
+      "originalName": "insertScript",
+      "newName": "-["
+    },
+    {
+      "originalName": "containsNone",
+      "newName": "0P"
+    },
+    {
+      "originalName": "_ChangeHistory_CopyPreviousToNext1_c",
+      "newName": "-^"
+    },
+    {
+      "originalName": "pr_amp",
+      "newName": ";I"
+    },
+    {
+      "originalName": "colorTextInput_keyUpHandler",
+      "newName": "9g"
+    },
+    {
+      "originalName": "ShowStatusMessage",
+      "newName": "3\""
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.display.supportClasses",
+      "newName": "!["
+    },
+    {
+      "originalName": "ImagePreview",
+      "newName": "50"
+    },
+    {
+      "originalName": "_selectedTool",
+      "newName": "8i"
+    },
+    {
+      "originalName": "project_securityErrorHandler",
+      "newName": "\u003c%"
+    },
+    {
+      "originalName": "currentData",
+      "newName": "^s"
+    },
+    {
+      "originalName": "notNull",
+      "newName": "\u0026T"
+    },
+    {
+      "originalName": "___SearchExpression_Group1_creationComplete",
+      "newName": "-;"
+    },
+    {
+      "originalName": "ToggleEffects",
+      "newName": "`0"
+    },
+    {
+      "originalName": "getAppliedPropertiesFromHistory",
+      "newName": "],"
+    },
+    {
+      "originalName": "PR_SOURCE_CHUNK_PARTS",
+      "newName": "3B"
+    },
+    {
+      "originalName": "temporaryBitmap",
+      "newName": "\u003ea"
+    },
+    {
+      "originalName": "showClearIcon",
+      "newName": "\u0026N"
+    },
+    {
+      "originalName": "mouseRulerMoveHandler",
+      "newName": "0\u003e"
+    },
+    {
+      "originalName": "customItem",
+      "newName": "%"
+    },
+    {
+      "originalName": "options",
+      "newName": ",Q"
+    },
+    {
+      "originalName": "propertiesGrid_itemEditEndHandler",
+      "newName": "^`"
+    },
+    {
+      "originalName": "indexOfWithComparisonFunction",
+      "newName": "\u00268"
+    },
+    {
+      "originalName": "group1_showHandler",
+      "newName": "-M"
+    },
+    {
+      "originalName": "Timestamp",
+      "newName": "8H"
+    },
+    {
+      "originalName": "BEGINNING_OF_HISTORY",
+      "newName": "3u"
+    },
+    {
+      "originalName": "_initCode",
+      "newName": "#j"
+    },
+    {
+      "originalName": "interfaceAccessor",
+      "newName": "\u003eW"
+    },
+    {
+      "originalName": "deleteKey",
+      "newName": "]3"
+    },
+    {
+      "originalName": "FrameSkin",
+      "newName": "^R"
+    },
+    {
+      "originalName": "styleNotDefined",
+      "newName": "\u0026L"
+    },
+    {
+      "originalName": "chunksLen",
+      "newName": "]K"
+    },
+    {
+      "originalName": "doPrettyPrint",
+      "newName": "?+"
+    },
+    {
+      "originalName": "__canvasBorderInstance_resize",
+      "newName": "2\u0026"
+    },
+    {
+      "originalName": "updateDropTargetLocation",
+      "newName": "`H"
+    },
+    {
+      "originalName": "LayoutLines",
+      "newName": "?5"
+    },
+    {
+      "originalName": "skin",
+      "newName": "3N"
+    },
+    {
+      "originalName": "documentPadding",
+      "newName": "@1"
+    },
+    {
+      "originalName": "getImageMatches",
+      "newName": "]8"
+    },
+    {
+      "originalName": "_showSelectionLabel",
+      "newName": "5F"
+    },
+    {
+      "originalName": "recomputeContainers",
+      "newName": "56"
+    },
+    {
+      "originalName": "DocumentsInspector",
+      "newName": "`r"
+    },
+    {
+      "originalName": "getItemsByType",
+      "newName": "3n"
+    },
+    {
+      "originalName": "_Snapshot_OpenPopUp1_i",
+      "newName": "\"9"
+    },
+    {
+      "originalName": "pathFormat",
+      "newName": "`d"
+    },
+    {
+      "originalName": "_DocumentContainer_XML1_i",
+      "newName": "?t"
+    },
+    {
+      "originalName": "horizontalOffset",
+      "newName": "42"
+    },
+    {
+      "originalName": "_Remote_Memory1_c",
+      "newName": "8,"
+    },
+    {
+      "originalName": "_Constraints_StylesInit_done",
+      "newName": "\"i"
+    },
+    {
+      "originalName": "_Events_VDividedBox1_i",
+      "newName": "\u003cI"
+    },
+    {
+      "originalName": "mark",
+      "newName": "6P"
+    },
+    {
+      "originalName": "loadRemote",
+      "newName": "+I"
+    },
+    {
+      "originalName": "showRequestedFrameRate",
+      "newName": "3p"
+    },
+    {
+      "originalName": "originalValueType",
+      "newName": "8?"
+    },
+    {
+      "originalName": "getContainerUnderPoint",
+      "newName": "1X"
+    },
+    {
+      "originalName": "displayListTree_dragCompleteHandler",
+      "newName": "%S"
+    },
+    {
+      "originalName": "baseCode",
+      "newName": ",\u003d"
+    },
+    {
+      "originalName": "exportXML",
+      "newName": "\u003c8"
+    },
+    {
+      "originalName": "saveEffect",
+      "newName": "\u0027^"
+    },
+    {
+      "originalName": "com.flexcapacitor.filters",
+      "newName": "\u003cV"
+    },
+    {
+      "originalName": "spanUnderlinePattern",
+      "newName": " m"
+    },
+    {
+      "originalName": "getVisualElementsArray",
+      "newName": " d"
+    },
+    {
+      "originalName": "describedTypeXML",
+      "newName": "+`"
+    },
+    {
+      "originalName": "HTMLFormatterTLF",
+      "newName": "6\u003e"
+    },
+    {
+      "originalName": "_profileData",
+      "newName": "!p"
+    },
+    {
+      "originalName": "pageChangeHandler",
+      "newName": "0O"
+    },
+    {
+      "originalName": "_GridHeaderRenderer_SolidColor1_i",
+      "newName": "%t"
+    },
+    {
+      "originalName": "_GridHeaderRenderer_ClassFactory1_i",
+      "newName": "`t"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.file",
+      "newName": "7O"
+    },
+    {
+      "originalName": "_Layers_Tree1_i",
+      "newName": "2f"
+    },
+    {
+      "originalName": "toolTipPopUp",
+      "newName": "[N"
+    },
+    {
+      "originalName": "processKeyDownEvent",
+      "newName": "2U"
+    },
+    {
+      "originalName": "deleteWhitespace",
+      "newName": "\u003cj"
+    },
+    {
+      "originalName": "continueAfterEvent",
+      "newName": "3\u0027"
+    },
+    {
+      "originalName": "getAndroidOutputString",
+      "newName": "`R"
+    },
+    {
+      "originalName": "createPropertyChange",
+      "newName": "3F"
+    },
+    {
+      "originalName": "clearOnTargetChange",
+      "newName": "0;"
+    },
+    {
+      "originalName": "DragData",
+      "newName": "7f"
+    },
+    {
+      "originalName": "openInBrowser",
+      "newName": "!o"
+    },
+    {
+      "originalName": "removeAllComponents",
+      "newName": "\u003eh"
+    },
+    {
+      "originalName": "describedTypeRecord",
+      "newName": ";D"
+    },
+    {
+      "originalName": "C_KEYWORDS",
+      "newName": "!$"
+    },
+    {
+      "originalName": "_ImagePreview_bindingsSetup",
+      "newName": "93"
+    },
+    {
+      "originalName": "__newDocumentIcon_click",
+      "newName": "0\""
+    },
+    {
+      "originalName": "ELEMENT",
+      "newName": "5p"
+    },
+    {
+      "originalName": "eyeDropperColorValue",
+      "newName": "@P"
+    },
+    {
+      "originalName": "wrapCharacter",
+      "newName": "@%"
+    },
+    {
+      "originalName": "_ChangeHistory_HGroup1_c",
+      "newName": "-J"
+    },
+    {
+      "originalName": "letters",
+      "newName": "^U"
+    },
+    {
+      "originalName": "REGEXP_PRECEDER_PATTERN",
+      "newName": "9L"
+    },
+    {
+      "originalName": "handleToolChange",
+      "newName": "\u003ej"
+    },
+    {
+      "originalName": "regExpSearchFlags",
+      "newName": "8L"
+    },
+    {
+      "originalName": "keyEventPreventDefaulted",
+      "newName": "+#"
+    },
+    {
+      "originalName": "MetaDataInspector",
+      "newName": "1-"
+    },
+    {
+      "originalName": "_Snapshot_ImageButton1_i",
+      "newName": "]l"
+    },
+    {
+      "originalName": "__projectLoader_unload",
+      "newName": "\u003cJ"
+    },
+    {
+      "originalName": "_ImageButtonSkin_SolidColor1_i",
+      "newName": "]X"
+    },
+    {
+      "originalName": "popUpIsDisplaying",
+      "newName": "`n"
+    },
+    {
+      "originalName": "srclenPF",
+      "newName": "!u"
+    },
+    {
+      "originalName": "BUILD_TIME",
+      "newName": "\u0027$"
+    },
+    {
+      "originalName": "com.flexcapacitor.data.chart",
+      "newName": "9H"
+    },
+    {
+      "originalName": "CONSTRUCTOR_FIELD_NAME",
+      "newName": "4n"
+    },
+    {
+      "originalName": "showFooterConsoleDividerMarks",
+      "newName": "0M"
+    },
+    {
+      "originalName": "_History_HGroup1_c",
+      "newName": "!\u0027"
+    },
+    {
+      "originalName": "Zoom_ZoomInCursor",
+      "newName": "\u003d;"
+    },
+    {
+      "originalName": "com.flexcapacitor.events",
+      "newName": "3_"
+    },
+    {
+      "originalName": "_showSelectionFillOnDocument",
+      "newName": "3e"
+    },
+    {
+      "originalName": "_Remote_RedrawRegions1_c",
+      "newName": "%X"
+    },
+    {
+      "originalName": "displayListTree_changeHandler",
+      "newName": "7J"
+    },
+    {
+      "originalName": "keepEvent",
+      "newName": "+P"
+    },
+    {
+      "originalName": "zoomInCursorID",
+      "newName": "74"
+    },
+    {
+      "originalName": "_110545371tools",
+      "newName": "\u0026?"
+    },
+    {
+      "originalName": "com.flexcapacitor.views.supportClasses",
+      "newName": "\u00279"
+    },
+    {
+      "originalName": "_Components_List1_i",
+      "newName": "2l"
+    },
+    {
+      "originalName": "openInSeparateWindow_changeHandler",
+      "newName": "3H"
+    },
+    {
+      "originalName": "mouseWheelDelta",
+      "newName": "]B"
+    },
+    {
+      "originalName": "_classFactory",
+      "newName": "0u"
+    },
+    {
+      "originalName": "timeoutInterval",
+      "newName": "\u003e8"
+    },
+    {
+      "originalName": "_staticBindingEventDispatcher",
+      "newName": "8g"
+    },
+    {
+      "originalName": "dragData",
+      "newName": ";J"
+    },
+    {
+      "originalName": "PerformanceMeter",
+      "newName": "`l"
+    },
+    {
+      "originalName": "documentOpeningHandler",
+      "newName": "3P"
+    },
+    {
+      "originalName": "strokeWeight",
+      "newName": "5n"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.file.supportClasses",
+      "newName": "75"
+    },
+    {
+      "originalName": "_Properties_DropDownList1_i",
+      "newName": "5D"
+    },
+    {
+      "originalName": "COLOR_STATE",
+      "newName": "\u003e^"
+    },
+    {
+      "originalName": "___States_Group1_creationComplete",
+      "newName": ",\u003c"
+    },
+    {
+      "originalName": "ensureLastItemVisible",
+      "newName": "@T"
+    },
+    {
+      "originalName": "getBitmapDataSnapshot",
+      "newName": "3?"
+    },
+    {
+      "originalName": "CopyPreviousToNextInstance",
+      "newName": "!6"
+    },
+    {
+      "originalName": "GroupIcon",
+      "newName": "06"
+    },
+    {
+      "originalName": "style",
+      "newName": "\u0027Q"
+    },
+    {
+      "originalName": "isGroup",
+      "newName": "9V"
+    },
+    {
+      "originalName": "isImplementationOf",
+      "newName": "!N"
+    },
+    {
+      "originalName": "_Snapshot_Spacer1_c",
+      "newName": "\u0026D"
+    },
+    {
+      "originalName": "sendButton_clickHandler",
+      "newName": "\u003c5"
+    },
+    {
+      "originalName": "displayTarget",
+      "newName": ";O"
+    },
+    {
+      "originalName": "targetSystemManager",
+      "newName": "7h"
+    },
+    {
+      "originalName": "message",
+      "newName": "6,"
+    },
+    {
+      "originalName": "_namePopUp_DropShadowFilter1_c",
+      "newName": "3\u003e"
+    },
+    {
+      "originalName": "DragStripIcon",
+      "newName": "^;"
+    },
+    {
+      "originalName": "delayEffectEnd",
+      "newName": "^q"
+    },
+    {
+      "originalName": "findElementByName",
+      "newName": "9O"
+    },
+    {
+      "originalName": "strongEndPattern",
+      "newName": "\u0026V"
+    },
+    {
+      "originalName": "deleteSpaces",
+      "newName": "\u003d8"
+    },
+    {
+      "originalName": "___History_HistoryItemRenderer1_click",
+      "newName": "-Q"
+    },
+    {
+      "originalName": "closeOnMouseDownOutside",
+      "newName": "3k"
+    },
+    {
+      "originalName": "fitSizeButton_clickHandler",
+      "newName": "?d"
+    },
+    {
+      "originalName": "frameCount",
+      "newName": "7R"
+    },
+    {
+      "originalName": "_Snapshot_CopyPreviousToNext1_c",
+      "newName": "3l"
+    },
+    {
+      "originalName": "displayListTree_mouseDownHandler",
+      "newName": ";@"
+    },
+    {
+      "originalName": "TextAreaIcon",
+      "newName": "\u003d\u003d"
+    },
+    {
+      "originalName": "nthIndexOf",
+      "newName": "7j"
+    },
+    {
+      "originalName": "Remote",
+      "newName": " W"
+    },
+    {
+      "originalName": "performanceTestText",
+      "newName": "-I"
+    },
+    {
+      "originalName": "decorateSource",
+      "newName": "\u003e\u0026"
+    },
+    {
+      "originalName": "safeRemove",
+      "newName": "1J"
+    },
+    {
+      "originalName": "_Profiling_BasicLayout1_c",
+      "newName": "]s"
+    },
+    {
+      "originalName": "TileGroupIcon",
+      "newName": "^k"
+    },
+    {
+      "originalName": "checkTarget",
+      "newName": "+\u003d"
+    },
+    {
+      "originalName": "_264500798reversed",
+      "newName": " %"
+    },
+    {
+      "originalName": "successEffect",
+      "newName": "0\u0026"
+    },
+    {
+      "originalName": "shortcutStylePatterns",
+      "newName": "-D"
+    },
+    {
+      "originalName": "styleIsColor",
+      "newName": "@j"
+    },
+    {
+      "originalName": "HistoryItemRenderer",
+      "newName": "5K"
+    },
+    {
+      "originalName": "FACTORY_FUNCTION",
+      "newName": "-$"
+    },
+    {
+      "originalName": "__scrollerCornerButton_click",
+      "newName": "`G"
+    },
+    {
+      "originalName": "_targetAncestor",
+      "newName": "]\u0026"
+    },
+    {
+      "originalName": "showTotalAllocatedMemoryOfAIRApplication",
+      "newName": "\u003eI"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.core",
+      "newName": "\u00262"
+    },
+    {
+      "originalName": "_namePopUp_TextInput1_i",
+      "newName": ";7"
+    },
+    {
+      "originalName": "_DocumentsInspector_VerticalLayout1_c",
+      "newName": "6L"
+    },
+    {
+      "originalName": "_SizesInspector_VerticalLayout1_c",
+      "newName": "5O"
+    },
+    {
+      "originalName": "openDocument",
+      "newName": "+^"
+    },
+    {
+      "originalName": "lastDuration",
+      "newName": " p"
+    },
+    {
+      "originalName": "updateOnUpdateComplete",
+      "newName": "]0"
+    },
+    {
+      "originalName": "packageIcon",
+      "newName": "?2"
+    },
+    {
+      "originalName": "aboutLabel_clickHandler",
+      "newName": ",D"
+    },
+    {
+      "originalName": "componentItemByName",
+      "newName": "1Y"
+    },
+    {
+      "originalName": "stripStart",
+      "newName": "^b"
+    },
+    {
+      "originalName": "hasVerticalConstraints",
+      "newName": "3;"
+    },
+    {
+      "originalName": "_Constraints_ComboBox1_i",
+      "newName": "6U"
+    },
+    {
+      "originalName": "ProjectInspector",
+      "newName": "^,"
+    },
+    {
+      "originalName": "__displayListTree_itemClose",
+      "newName": "!b"
+    },
+    {
+      "originalName": "popUpDisplayImage",
+      "newName": "1W"
+    },
+    {
+      "originalName": "MXMLImporterEvent",
+      "newName": "\u003c,"
+    },
+    {
+      "originalName": "isStyle",
+      "newName": "9-"
+    },
+    {
+      "originalName": "handlingKeyCode",
+      "newName": "0f"
+    },
+    {
+      "originalName": "replaceOnce",
+      "newName": "?9"
+    },
+    {
+      "originalName": "_Tools_ClassFactory1_c",
+      "newName": "-s"
+    },
+    {
+      "originalName": "pseudoDone",
+      "newName": "%Z"
+    },
+    {
+      "originalName": "substringAfterLast",
+      "newName": "4\u003e"
+    },
+    {
+      "originalName": "selectedStateName",
+      "newName": "6s"
+    },
+    {
+      "originalName": "HistoryEventItem",
+      "newName": "3+"
+    },
+    {
+      "originalName": "trimToNull",
+      "newName": ";\u003d"
+    },
+    {
+      "originalName": "selectedTarget",
+      "newName": "\u003cQ"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.display",
+      "newName": "26"
+    },
+    {
+      "originalName": "processFormattedCodeAsync",
+      "newName": "7F"
+    },
+    {
+      "originalName": "documentsDictionary",
+      "newName": "^\u003e"
+    },
+    {
+      "originalName": "BlackArrowIcon",
+      "newName": "0A"
+    },
+    {
+      "originalName": "walkUpTree",
+      "newName": "%H"
+    },
+    {
+      "originalName": "eventsGrid_selectionChangeHandler",
+      "newName": ";\""
+    },
+    {
+      "originalName": "setProjects",
+      "newName": "?c"
+    },
+    {
+      "originalName": "showGlobalStyles",
+      "newName": "\u0027s"
+    },
+    {
+      "originalName": "useMinimumHitArea",
+      "newName": ",\u0026"
+    },
+    {
+      "originalName": "__projectLoader_httpStatus",
+      "newName": "%R"
+    },
+    {
+      "originalName": "addMouseHandler",
+      "newName": "9K"
+    },
+    {
+      "originalName": "pfinit",
+      "newName": "9r"
+    },
+    {
+      "originalName": "updateDocumentSize",
+      "newName": ";M"
+    },
+    {
+      "originalName": "eyeDropperInspector",
+      "newName": "9\u003d"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.status.supportClasses",
+      "newName": "\u003ch"
+    },
+    {
+      "originalName": "_validate",
+      "newName": "0["
+    },
+    {
+      "originalName": "getLength",
+      "newName": ";P"
+    },
+    {
+      "originalName": "needUpdate",
+      "newName": "\u003eE"
+    },
+    {
+      "originalName": "showBusyIcon",
+      "newName": "\u003cr"
+    },
+    {
+      "originalName": "DictionaryUtils",
+      "newName": "76"
+    },
+    {
+      "originalName": "resyncButton_clickHandler",
+      "newName": "8\u0026"
+    },
+    {
+      "originalName": "columnCountThresholds",
+      "newName": "!M"
+    },
+    {
+      "originalName": "getFullyQualifiedClassName",
+      "newName": ";i"
+    },
+    {
+      "originalName": "cancelHandler",
+      "newName": "\u003dg"
+    },
+    {
+      "originalName": "VectorUtils",
+      "newName": "@g"
+    },
+    {
+      "originalName": "ADD_ITEM_DESCRIPTION",
+      "newName": " R"
+    },
+    {
+      "originalName": "colorThread",
+      "newName": "^T"
+    },
+    {
+      "originalName": "__projectLoader_progress",
+      "newName": "9,"
+    },
+    {
+      "originalName": "createReverseAddItems",
+      "newName": ";G"
+    },
+    {
+      "originalName": "ImageIcon",
+      "newName": "[F"
+    },
+    {
+      "originalName": "application",
+      "newName": "!H"
+    },
+    {
+      "originalName": "setSize",
+      "newName": "\u003ef"
+    },
+    {
+      "originalName": "_ProjectInspector_ImageButton1_i",
+      "newName": "!E"
+    },
+    {
+      "originalName": "updateWidthProperty",
+      "newName": "0K"
+    },
+    {
+      "originalName": "usingSkinStates",
+      "newName": "\u003en"
+    },
+    {
+      "originalName": "EventHandler",
+      "newName": "\"["
+    },
+    {
+      "originalName": "__filterInput_keyUp",
+      "newName": "#\u003e"
+    },
+    {
+      "originalName": "_commandIndex",
+      "newName": "%B"
+    },
+    {
+      "originalName": "rightTrimForChars",
+      "newName": "-O"
+    },
+    {
+      "originalName": "replaceStyleAlignTags",
+      "newName": "\u0027M"
+    },
+    {
+      "originalName": "targetLength",
+      "newName": "-@"
+    },
+    {
+      "originalName": "treeViewClosed",
+      "newName": " ]"
+    },
+    {
+      "originalName": "setLoggingTarget",
+      "newName": "\"\u0027"
+    },
+    {
+      "originalName": "buttonUpFilters",
+      "newName": "2O"
+    },
+    {
+      "originalName": "langHandlerRegistry",
+      "newName": "7H"
+    },
+    {
+      "originalName": "includePreviewCode",
+      "newName": " 9"
+    },
+    {
+      "originalName": "getDocumentCode",
+      "newName": "7W"
+    },
+    {
+      "originalName": "getColorInHex",
+      "newName": "6Q"
+    },
+    {
+      "originalName": "uncapitalize",
+      "newName": "1m"
+    },
+    {
+      "originalName": "_wrap",
+      "newName": "\","
+    },
+    {
+      "originalName": "__booleanClearStyleButton_click",
+      "newName": ",H"
+    },
+    {
+      "originalName": "keyDownHandlerCapture",
+      "newName": "\u003e`"
+    },
+    {
+      "originalName": "_canvasBackground",
+      "newName": ",S"
+    },
+    {
+      "originalName": "methodName",
+      "newName": "\u003e_"
+    },
+    {
+      "originalName": "isSubclassOf",
+      "newName": "6H"
+    },
+    {
+      "originalName": "_SearchTextInputSkin_bindingsSetup",
+      "newName": "!1"
+    },
+    {
+      "originalName": "_ImagePreview_SolidColor1_c",
+      "newName": "\"2"
+    },
+    {
+      "originalName": "dropLocation",
+      "newName": ",r"
+    },
+    {
+      "originalName": "__forwardButton_click",
+      "newName": "\u003et"
+    },
+    {
+      "originalName": "findDropTarget",
+      "newName": "2?"
+    },
+    {
+      "originalName": "renderingMode",
+      "newName": "\u003dA"
+    },
+    {
+      "originalName": "EditableProjectRenderer",
+      "newName": "8P"
+    },
+    {
+      "originalName": "ComponentsInnerClass0",
+      "newName": "9]"
+    },
+    {
+      "originalName": "PR_ATTRIB_NAME",
+      "newName": "@\u0026"
+    },
+    {
+      "originalName": "clearButtonHandler",
+      "newName": "4#"
+    },
+    {
+      "originalName": "tagPos",
+      "newName": "5-"
+    },
+    {
+      "originalName": "highlightDelay",
+      "newName": "@k"
+    },
+    {
+      "originalName": "mouseUpPopUpHandler",
+      "newName": "]L"
+    },
+    {
+      "originalName": "propertiesGrid_selectionChangeHandler",
+      "newName": " j"
+    },
+    {
+      "originalName": "INVALID_TARGET",
+      "newName": "\"7"
+    },
+    {
+      "originalName": "doNotClose",
+      "newName": "[["
+    },
+    {
+      "originalName": "multitest",
+      "newName": "%_"
+    },
+    {
+      "originalName": "_EditableProjectRenderer_Label1_i",
+      "newName": "-N"
+    },
+    {
+      "originalName": "arrayElementType",
+      "newName": "+Q"
+    },
+    {
+      "originalName": "createPropertyChanges",
+      "newName": "\u0026\u0027"
+    },
+    {
+      "originalName": "_DocumentsInspector_ArrayCollection1_i",
+      "newName": "\u003db"
+    },
+    {
+      "originalName": "_FrameRate_FrameRate1_c",
+      "newName": "8W"
+    },
+    {
+      "originalName": "_Features_Button1_i",
+      "newName": "8h"
+    },
+    {
+      "originalName": "removeAllItems",
+      "newName": "!^"
+    },
+    {
+      "originalName": "_Components_bindingsSetup",
+      "newName": "+U"
+    },
+    {
+      "originalName": "rootDisplayObject",
+      "newName": "\u0027+"
+    },
+    {
+      "originalName": "project_httpStatusHandler",
+      "newName": " B"
+    },
+    {
+      "originalName": "_DocumentsInspector_bindingsSetup",
+      "newName": "!#"
+    },
+    {
+      "originalName": "dispatchProjectChangeEvent",
+      "newName": "[S"
+    },
+    {
+      "originalName": "containsAllEquality",
+      "newName": ",X"
+    },
+    {
+      "originalName": "__booleanNumberStyleButton_click",
+      "newName": "1]"
+    },
+    {
+      "originalName": "treeView",
+      "newName": "6_"
+    },
+    {
+      "originalName": "getByteOrderMarkerType",
+      "newName": "@D"
+    },
+    {
+      "originalName": "storedMessages",
+      "newName": "\u003d!"
+    },
+    {
+      "originalName": "ButtonIcon",
+      "newName": ",t"
+    },
+    {
+      "originalName": "centerButton_clickHandler",
+      "newName": "`X"
+    },
+    {
+      "originalName": "setVisibilityFlag",
+      "newName": "+h"
+    },
+    {
+      "originalName": "attribToHtml",
+      "newName": "0q"
+    },
+    {
+      "originalName": "getElementChildrenArray",
+      "newName": "%J"
+    },
+    {
+      "originalName": "markNameMaxWidth",
+      "newName": " E"
+    },
+    {
+      "originalName": "setItemCDATA",
+      "newName": "`P"
+    },
+    {
+      "originalName": "pupUpDisplayTime",
+      "newName": "\u0026f"
+    },
+    {
+      "originalName": "scrollToBottom",
+      "newName": ",V"
+    },
+    {
+      "originalName": "_colorMatrix",
+      "newName": "46"
+    },
+    {
+      "originalName": "selectTargetOnHistoryChange",
+      "newName": "+s"
+    },
+    {
+      "originalName": "typeDescriptionKind",
+      "newName": "\u003er"
+    },
+    {
+      "originalName": "result",
+      "newName": "%o"
+    },
+    {
+      "originalName": "wrapInCDATA",
+      "newName": "24"
+    },
+    {
+      "originalName": "iconImage_ioErrorHandler",
+      "newName": ",N"
+    },
+    {
+      "originalName": "updateAppScrollPosition",
+      "newName": "\u003c]"
+    },
+    {
+      "originalName": "GB_18030",
+      "newName": "\u003c4"
+    },
+    {
+      "originalName": "OpenURL",
+      "newName": "77"
+    },
+    {
+      "originalName": "removeDragListeners",
+      "newName": "1\""
+    },
+    {
+      "originalName": "settingEditorText",
+      "newName": "\u003e]"
+    },
+    {
+      "originalName": "closeAllItems",
+      "newName": "\"P"
+    },
+    {
+      "originalName": "setTextareaCode",
+      "newName": "]b"
+    },
+    {
+      "originalName": "isFontFaceEmbeddedCFF",
+      "newName": "\"g"
+    },
+    {
+      "originalName": "vectorToArray",
+      "newName": "0+"
+    },
+    {
+      "originalName": "_showBorders",
+      "newName": "%]"
+    },
+    {
+      "originalName": "describedType",
+      "newName": "5Q"
+    },
+    {
+      "originalName": "getDocumentIndex",
+      "newName": "#H"
+    },
+    {
+      "originalName": "project_unloadHandler",
+      "newName": "4;"
+    },
+    {
+      "originalName": "ScrollerIcon",
+      "newName": "3]"
+    },
+    {
+      "originalName": "html",
+      "newName": "3Y"
+    },
+    {
+      "originalName": "getAvailableTimestamp",
+      "newName": "\u0027j"
+    },
+    {
+      "originalName": "_RedrawRegions_ShowRedrawRegions1_c",
+      "newName": "+@"
+    },
+    {
+      "originalName": "mainDecorations",
+      "newName": "68"
+    },
+    {
+      "originalName": "__displayListTree_dragDrop",
+      "newName": "0s"
+    },
+    {
+      "originalName": "interfaceAccessors",
+      "newName": "\u0027-"
+    },
+    {
+      "originalName": "lexInt",
+      "newName": "[J"
+    },
+    {
+      "originalName": "updateDocument",
+      "newName": "\u003cL"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.clipboard",
+      "newName": "1s"
+    },
+    {
+      "originalName": "RADIATE_LOG",
+      "newName": "]e"
+    },
+    {
+      "originalName": "list_valueCommitHandler",
+      "newName": "\u003eR"
+    },
+    {
+      "originalName": "_RadiateExample_VGroup1_c",
+      "newName": "\u003c#"
+    },
+    {
+      "originalName": "decorateMarkup",
+      "newName": "4\u003c"
+    },
+    {
+      "originalName": "__sparkTextArea_keyFocusChange",
+      "newName": "\u003eH"
+    },
+    {
+      "originalName": "visibleGroupClicked",
+      "newName": "@F"
+    },
+    {
+      "originalName": "SortCollection",
+      "newName": "7n"
+    },
+    {
+      "originalName": "pfasyncrunning",
+      "newName": "@Z"
+    },
+    {
+      "originalName": "ToolInspector",
+      "newName": "]`"
+    },
+    {
+      "originalName": "_SizesInspector_HorizontalLayout1_c",
+      "newName": "9X"
+    },
+    {
+      "originalName": "_951510359console",
+      "newName": "5o"
+    },
+    {
+      "originalName": "clearStyleButton_clickHandler",
+      "newName": "3G"
+    },
+    {
+      "originalName": "_Remote_ZoomInspector1_c",
+      "newName": "2u"
+    },
+    {
+      "originalName": "isValidFileName",
+      "newName": "#Y"
+    },
+    {
+      "originalName": "_Remote_Layers1_c",
+      "newName": "1Z"
+    },
+    {
+      "originalName": "isAlphanumericSpace",
+      "newName": "?\u003d"
+    },
+    {
+      "originalName": "topLeftEdgePoint",
+      "newName": "?6"
+    },
+    {
+      "originalName": "leftPad",
+      "newName": "\u00267"
+    },
+    {
+      "originalName": "maintainFocus",
+      "newName": "6E"
+    },
+    {
+      "originalName": "textValue",
+      "newName": "^9"
+    },
+    {
+      "originalName": "feedbackService_resultHandler",
+      "newName": ",\u003e"
+    },
+    {
+      "originalName": "com.flexcapacitor.skins.minimalScroller",
+      "newName": "4X"
+    },
+    {
+      "originalName": "OpenPopUpInstance",
+      "newName": "#u"
+    },
+    {
+      "originalName": "buildHTML",
+      "newName": "#6"
+    },
+    {
+      "originalName": "equalsIgnoreCase",
+      "newName": "%\u003d"
+    },
+    {
+      "originalName": "copyConstraints",
+      "newName": "4?"
+    },
+    {
+      "originalName": "PR_DECLARATION",
+      "newName": "\u003cE"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.bitmap.supportClasses",
+      "newName": "^V"
+    },
+    {
+      "originalName": "emitTextUpTo",
+      "newName": "@J"
+    },
+    {
+      "originalName": "isRoot",
+      "newName": "2_"
+    },
+    {
+      "originalName": "MOBILE_THEME_DARK_COLOR",
+      "newName": ";g"
+    },
+    {
+      "originalName": "radioButtonSkin",
+      "newName": "4!"
+    },
+    {
+      "originalName": "___Tools_Group1_creationComplete",
+      "newName": "#U"
+    },
+    {
+      "originalName": "__booleanTextStyleButton_click",
+      "newName": "6S"
+    },
+    {
+      "originalName": "INLINE",
+      "newName": "`3"
+    },
+    {
+      "originalName": "unmarshall",
+      "newName": "[i"
+    },
+    {
+      "originalName": "FrameRate",
+      "newName": "7b"
+    },
+    {
+      "originalName": "tabBarSkin",
+      "newName": "+%"
+    },
+    {
+      "originalName": "searchPropertyInput_enterHandler",
+      "newName": "2%"
+    },
+    {
+      "originalName": "__mxTextArea_keyUp",
+      "newName": "%Y"
+    },
+    {
+      "originalName": "com.flexcapacitor.formatters",
+      "newName": "6O"
+    },
+    {
+      "originalName": "_ProjectInspector_bindingsSetup",
+      "newName": "!V"
+    },
+    {
+      "originalName": "PanelIcon",
+      "newName": "+f"
+    },
+    {
+      "originalName": "containsAnyEquals",
+      "newName": "5%"
+    },
+    {
+      "originalName": "getHighlightBitmapCapture",
+      "newName": "5k"
+    },
+    {
+      "originalName": "ObjectUtils",
+      "newName": "[q"
+    },
+    {
+      "originalName": "WhiteArrowIcon",
+      "newName": "\u0026I"
+    },
+    {
+      "originalName": "poolCount",
+      "newName": "`M"
+    },
+    {
+      "originalName": "BUILD_DATE",
+      "newName": "-l"
+    },
+    {
+      "originalName": "dragManagerInstance",
+      "newName": "@,"
+    },
+    {
+      "originalName": "HEXIDECIMAL_COLOR_TYPE",
+      "newName": "[r"
+    },
+    {
+      "originalName": "_GridHeaderRenderer_Label1_i",
+      "newName": "\u003dW"
+    },
+    {
+      "originalName": "containsValue",
+      "newName": "@\u003e"
+    },
+    {
+      "originalName": "mouseDownLocation",
+      "newName": "5\u0027"
+    },
+    {
+      "originalName": "getElementPreferredHeight",
+      "newName": "]\u003e"
+    },
+    {
+      "originalName": "ClassNotFoundError",
+      "newName": "5`"
+    },
+    {
+      "originalName": "nestedXML",
+      "newName": "2S"
+    },
+    {
+      "originalName": "pr_brPrefix",
+      "newName": "#G"
+    },
+    {
+      "originalName": "pseudoThread",
+      "newName": "3#"
+    },
+    {
+      "originalName": "moduleIcon",
+      "newName": "#-"
+    },
+    {
+      "originalName": "createHistoryEvents",
+      "newName": "@4"
+    },
+    {
+      "originalName": "showMousePositionLines",
+      "newName": "#\u0026"
+    },
+    {
+      "originalName": "imageTagSource",
+      "newName": "\u003d2"
+    },
+    {
+      "originalName": "_RadiateExample_TextInput1_i",
+      "newName": "7S"
+    },
+    {
+      "originalName": "_ZoomInspector_VerticalLayout1_c",
+      "newName": "^E"
+    },
+    {
+      "originalName": "docsURL",
+      "newName": "\u003d#"
+    },
+    {
+      "originalName": "_ColorChooser_ColorPicker1_i",
+      "newName": "7K"
+    },
+    {
+      "originalName": "_namePopUp_SolidColor1_c",
+      "newName": "]N"
+    },
+    {
+      "originalName": "debugHelper",
+      "newName": "2X"
+    },
+    {
+      "originalName": "CONTROLLER_EFFECT_END",
+      "newName": "1@"
+    },
+    {
+      "originalName": "TargetSelectionGroup",
+      "newName": "8t"
+    },
+    {
+      "originalName": "replaceLinebreaksWithBreaks",
+      "newName": "\u003cX"
+    },
+    {
+      "originalName": "addAt",
+      "newName": "\u0027%"
+    },
+    {
+      "originalName": "getNumProperties",
+      "newName": "8E"
+    },
+    {
+      "originalName": "clearDescribeTypeCache",
+      "newName": "00"
+    },
+    {
+      "originalName": "inheritingStyles",
+      "newName": "+7"
+    },
+    {
+      "originalName": "errorEffect",
+      "newName": "\u003dF"
+    },
+    {
+      "originalName": "_SelectionInspector_HorizontalLayout1_c",
+      "newName": "1C"
+    },
+    {
+      "originalName": "includeExpression",
+      "newName": "%F"
+    },
+    {
+      "originalName": "drawResultsToSprite",
+      "newName": "\u0026l"
+    },
+    {
+      "originalName": "characterIsDigit",
+      "newName": "8Z"
+    },
+    {
+      "originalName": "_Breadcrumbs_HorizontalLayout1_c",
+      "newName": "5R"
+    },
+    {
+      "originalName": "_SearchExpression_HGroup1_c",
+      "newName": "?o"
+    },
+    {
+      "originalName": "MXMLImporter",
+      "newName": "\u003dL"
+    },
+    {
+      "originalName": "forName",
+      "newName": "\"r"
+    },
+    {
+      "originalName": "ChangeHistory",
+      "newName": "^4"
+    },
+    {
+      "originalName": "currentDecoration",
+      "newName": "]J"
+    },
+    {
+      "originalName": "_Properties_NumberFormatter1_i",
+      "newName": "\u003eV"
+    },
+    {
+      "originalName": "com.flexcapacitor.controls.supportClasses",
+      "newName": " `"
+    },
+    {
+      "originalName": "removeOncePlayed",
+      "newName": "3t"
+    },
+    {
+      "originalName": "FILENAME_CHARS_NOT_ALLOWED",
+      "newName": "\u003d"
+    },
+    {
+      "originalName": "dispatchDocumentChangeEvent",
+      "newName": ";\u003e"
+    },
+    {
+      "originalName": "dispatchScaleChangeEvent",
+      "newName": ",l"
+    },
+    {
+      "originalName": "tokenizeToVector",
+      "newName": "7U"
+    },
+    {
+      "originalName": "getEffectIndex",
+      "newName": "\u0026J"
+    },
+    {
+      "originalName": "_Breadcrumbs_List1_i",
+      "newName": "7k"
+    },
+    {
+      "originalName": "__colorPicker_change",
+      "newName": "\u0027Z"
+    },
+    {
+      "originalName": "_Events_StylesInit",
+      "newName": "3J"
+    },
+    {
+      "originalName": "getClassNameAndPackage",
+      "newName": "8^"
+    },
+    {
+      "originalName": "__clearColorButton_click",
+      "newName": "6V"
+    },
+    {
+      "originalName": "filterDisplayObjectChangeHandler",
+      "newName": "3M"
+    },
+    {
+      "originalName": "__clickHandler_eventStart",
+      "newName": "#^"
+    },
+    {
+      "originalName": "showSelection_clickHandler",
+      "newName": "@8"
+    },
+    {
+      "originalName": "verticalAxisLabelFunction",
+      "newName": "0Q"
+    },
+    {
+      "originalName": "targetChangeEvent",
+      "newName": "1e"
+    },
+    {
+      "originalName": "parameterMatchesInClass",
+      "newName": "#\""
+    },
+    {
+      "originalName": "REGEX_LITERAL",
+      "newName": "2J"
+    },
+    {
+      "originalName": "styleAlignPattern",
+      "newName": " l"
+    },
+    {
+      "originalName": "DOCUMENT_CHANGE",
+      "newName": "`E"
+    },
+    {
+      "originalName": "objectPropertiesList",
+      "newName": "\u0027O"
+    },
+    {
+      "originalName": "removeFirstTest",
+      "newName": "-,"
+    },
+    {
+      "originalName": "privateTimestamp",
+      "newName": ",J"
+    },
+    {
+      "originalName": "DEFAULT_ESCAPE_MAP",
+      "newName": "1o"
+    },
+    {
+      "originalName": "dispatchDocumentSizeChangeEvent",
+      "newName": "8\u003c"
+    },
+    {
+      "originalName": "selectedColorAsHexAndHash",
+      "newName": "%b"
+    },
+    {
+      "originalName": "offsetStart",
+      "newName": "6e"
+    },
+    {
+      "originalName": "constraintHandler",
+      "newName": "\u003d3"
+    },
+    {
+      "originalName": "_documentDescription",
+      "newName": "@E"
+    },
+    {
+      "originalName": "_RedrawRegions_SolidColor1_c",
+      "newName": "`O"
+    },
+    {
+      "originalName": "list1_changeHandler",
+      "newName": "?\u0026"
+    },
+    {
+      "originalName": "_DocsInspector_IFrame1_i",
+      "newName": "9"
+    },
+    {
+      "originalName": "getToolByType",
+      "newName": "5G"
+    },
+    {
+      "originalName": "getBitmapAssetSnapshot",
+      "newName": "#m"
+    },
+    {
+      "originalName": "States",
+      "newName": "5e"
+    },
+    {
+      "originalName": "IStatusMessage",
+      "newName": "!C"
+    },
+    {
+      "originalName": "getColorAsType",
+      "newName": "6B"
+    },
+    {
+      "originalName": "adjacentSpaceRe",
+      "newName": "-R"
+    },
+    {
+      "originalName": "INVALID_BITMAP_DATA",
+      "newName": "\u003cG"
+    },
+    {
+      "originalName": "factory",
+      "newName": "?D"
+    },
+    {
+      "originalName": "FORMATS_STATE",
+      "newName": "23"
+    },
+    {
+      "originalName": "_2081261232statistic",
+      "newName": "%D"
+    },
+    {
+      "originalName": "extractTags",
+      "newName": "%C"
+    },
+    {
+      "originalName": "ordinalIndexOf",
+      "newName": "4\""
+    },
+    {
+      "originalName": "_SizesInspector_bindingsSetup",
+      "newName": "]o"
+    },
+    {
+      "originalName": "findBreaksPattern",
+      "newName": "7E"
+    },
+    {
+      "originalName": "getTotalAllocatedMemoryOfAllFlashInstancesRunningInTheBrowser",
+      "newName": "\u003ce"
+    },
+    {
+      "originalName": "displayListTree_dragOverHandler",
+      "newName": "91"
+    },
+    {
+      "originalName": "targetDescription",
+      "newName": "#k"
+    },
+    {
+      "originalName": "generateChartData",
+      "newName": ",^"
+    },
+    {
+      "originalName": "setBaselineConstraint",
+      "newName": "6l"
+    },
+    {
+      "originalName": "lastPage",
+      "newName": "%V"
+    },
+    {
+      "originalName": "onEnterFrame",
+      "newName": "\"!"
+    },
+    {
+      "originalName": "targetClassName",
+      "newName": "\u0026Y"
+    },
+    {
+      "originalName": "__enterHandler_eventStart",
+      "newName": "0%"
+    },
+    {
+      "originalName": "_3565976tool",
+      "newName": "\u003e-"
+    },
+    {
+      "originalName": "httpErrorHandler",
+      "newName": "#g"
+    },
+    {
+      "originalName": "encloseInCDATA",
+      "newName": "4\u0027"
+    },
+    {
+      "originalName": "_1242721193metadataTextArea",
+      "newName": "7e"
+    },
+    {
+      "originalName": "__overrides_change",
+      "newName": "2d"
+    },
+    {
+      "originalName": "insertValidationScript",
+      "newName": "\u003cF"
+    },
+    {
+      "originalName": "_Tools_TileLayout1_c",
+      "newName": "2H"
+    },
+    {
+      "originalName": "chapters",
+      "newName": "\u003c7"
+    },
+    {
+      "originalName": "dispatchToolChangeEvent",
+      "newName": "6`"
+    },
+    {
+      "originalName": "getAndroidEquivalentSize",
+      "newName": "0m"
+    },
+    {
+      "originalName": "removeListeners",
+      "newName": "\u0027\u0027"
+    },
+    {
+      "originalName": "__textInput_focusOut",
+      "newName": "0"
+    },
+    {
+      "originalName": "isRollOver",
+      "newName": "2E"
+    },
+    {
+      "originalName": "___Events_Group1_creationComplete",
+      "newName": "7_"
+    },
+    {
+      "originalName": "SUCCESS",
+      "newName": "#X"
+    },
+    {
+      "originalName": "scaleDisplayObject",
+      "newName": "4M"
+    },
+    {
+      "originalName": "getClassParameterFromFullyQualifiedName",
+      "newName": "#!"
+    },
+    {
+      "originalName": "replaceStyles",
+      "newName": "0c"
+    },
+    {
+      "originalName": "zoomOutCursorID",
+      "newName": ";q"
+    },
+    {
+      "originalName": "RadioButtonIcon",
+      "newName": "5J"
+    },
+    {
+      "originalName": "_Features_HTTPService1_i",
+      "newName": " V"
+    },
+    {
+      "originalName": "NumericStepperIcon",
+      "newName": "0S"
+    },
+    {
+      "originalName": "Features",
+      "newName": "1P"
+    },
+    {
+      "originalName": "consoleTextArea_changeHandler",
+      "newName": " a"
+    },
+    {
+      "originalName": "com.flexcapacitor.performance",
+      "newName": "\u003d1"
+    },
+    {
+      "originalName": "linkButton",
+      "newName": "5!"
+    },
+    {
+      "originalName": "_Remote_DocumentsInspector1_c",
+      "newName": "!f"
+    },
+    {
+      "originalName": "panelsLabelFunction",
+      "newName": "7]"
+    },
+    {
+      "originalName": "renderHandler",
+      "newName": " 0"
+    },
+    {
+      "originalName": "_FrameSkin_DropShadowFilter1_i",
+      "newName": "#W"
+    },
+    {
+      "originalName": "__fitSizeButton_click",
+      "newName": "\u0027V"
+    },
+    {
+      "originalName": "implementationOf",
+      "newName": "@Y"
+    },
+    {
+      "originalName": "getStyleDeclarationDisplayName",
+      "newName": "[W"
+    },
+    {
+      "originalName": "addAllIgnoreNull",
+      "newName": "#E"
+    },
+    {
+      "originalName": "___Remote_Group1_creationComplete",
+      "newName": "?I"
+    },
+    {
+      "originalName": "isPropertyStyle",
+      "newName": "#\u003c"
+    },
+    {
+      "originalName": "FilterCollection",
+      "newName": "2i"
+    },
+    {
+      "originalName": "loadTestProject_clickHandler",
+      "newName": "7X"
+    },
+    {
+      "originalName": "includeIDinPath",
+      "newName": "\u003ed"
+    },
+    {
+      "originalName": "updatedHTMLText",
+      "newName": "\u003cB"
+    },
+    {
+      "originalName": "prettyPrintAsyncWorker",
+      "newName": "\u0027R"
+    },
+    {
+      "originalName": "thumbSkinClass",
+      "newName": "#;"
+    },
+    {
+      "originalName": "getByName",
+      "newName": "2m"
+    },
+    {
+      "originalName": "com.flexcapacitor.skins",
+      "newName": "\u003eD"
+    },
+    {
+      "originalName": "startsWithIgnoreCase",
+      "newName": " 7"
+    },
+    {
+      "originalName": "displayCorrectHeight",
+      "newName": "\u003e?"
+    },
+    {
+      "originalName": "sourcePropertyIndex",
+      "newName": "[t"
+    },
+    {
+      "originalName": "performanceMarkText",
+      "newName": "69"
+    },
+    {
+      "originalName": "formatNumericStepper",
+      "newName": "9m"
+    },
+    {
+      "originalName": "_States_bindingsSetup",
+      "newName": "+J"
+    },
+    {
+      "originalName": "revertHandler",
+      "newName": "-h"
+    },
+    {
+      "originalName": "IDocument",
+      "newName": "\"\""
+    },
+    {
+      "originalName": "removeAt",
+      "newName": "4m"
+    },
+    {
+      "originalName": "_SizesInspector_CheckBox1_i",
+      "newName": "19"
+    },
+    {
+      "originalName": "interfaceMethods",
+      "newName": "5\u0026"
+    },
+    {
+      "originalName": "setHeight",
+      "newName": "\"U"
+    },
+    {
+      "originalName": "com.flexcapacitor.controller",
+      "newName": "\u0027W"
+    },
+    {
+      "originalName": "activeInvalidations",
+      "newName": "0o"
+    },
+    {
+      "originalName": "findTargetInDisplayList",
+      "newName": ",["
+    },
+    {
+      "originalName": "getRegExpSearchPattern",
+      "newName": "[E"
+    },
+    {
+      "originalName": "INLINE_BLOCK",
+      "newName": "^8"
+    },
+    {
+      "originalName": "_Console_TextArea1_i",
+      "newName": "5d"
+    },
+    {
+      "originalName": "_popUp_Object1_i",
+      "newName": "]!"
+    },
+    {
+      "originalName": "applyChanges",
+      "newName": "\u0027!"
+    },
+    {
+      "originalName": "PAGE_COUNT_CHANGE",
+      "newName": "-U"
+    },
+    {
+      "originalName": "removeItemsInstance",
+      "newName": "8K"
+    },
+    {
+      "originalName": "_componentDescription",
+      "newName": "`Z"
+    },
+    {
+      "originalName": "_Console_bindingsSetup",
+      "newName": "7@"
+    },
+    {
+      "originalName": "historyChangeHandler",
+      "newName": "8j"
+    },
+    {
+      "originalName": "extendsLength",
+      "newName": "7\u003e"
+    },
+    {
+      "originalName": "fileReference_complete",
+      "newName": "%i"
+    },
+    {
+      "originalName": "_RadiateExample_Remote1_i",
+      "newName": "09"
+    },
+    {
+      "originalName": "project_progressHandler",
+      "newName": "[a"
+    },
+    {
+      "originalName": "_TargetSelectionGroup_Label1_i",
+      "newName": "1\u003d"
+    },
+    {
+      "originalName": "inheritedValue",
+      "newName": "\u0026n"
+    },
+    {
+      "originalName": "padLeft",
+      "newName": "-5"
+    },
+    {
+      "originalName": "PAD_LIMIT",
+      "newName": " U"
+    },
+    {
+      "originalName": "_RedrawRegions_Group2_i",
+      "newName": "6T"
+    },
+    {
+      "originalName": "_Code_Spacer1_c",
+      "newName": "+-"
+    },
+    {
+      "originalName": "containsAllWithComparisonFunction",
+      "newName": "!5"
+    },
+    {
+      "originalName": "_ProjectInspector_HGroup1_c",
+      "newName": "29"
+    },
+    {
+      "originalName": "_clearButtonSkin_Ellipse1_c",
+      "newName": "1f"
+    },
+    {
+      "originalName": "currentVal",
+      "newName": "\u003dp"
+    },
+    {
+      "originalName": "removeHistoryEvent",
+      "newName": ";R"
+    },
+    {
+      "originalName": "enableGroupMouseHandler",
+      "newName": "%-"
+    },
+    {
+      "originalName": "sourceSubPropertyName",
+      "newName": "\u003e\u003d"
+    },
+    {
+      "originalName": "HORIZONTAL_CENTER",
+      "newName": "%5"
+    },
+    {
+      "originalName": "isApplication",
+      "newName": "\"T"
+    },
+    {
+      "originalName": "SyntaxHighlighter",
+      "newName": "\u003dd"
+    },
+    {
+      "originalName": "PR_NOCODE",
+      "newName": "?P"
+    },
+    {
+      "originalName": "addGroupMouseSupport",
+      "newName": "]^"
+    },
+    {
+      "originalName": "getIdentifierOrName",
+      "newName": "5U"
+    },
+    {
+      "originalName": "showRuler",
+      "newName": "!r"
+    },
+    {
+      "originalName": "_commands",
+      "newName": "++"
+    },
+    {
+      "originalName": "dispatchEventForAnchors",
+      "newName": "#e"
+    },
+    {
+      "originalName": "parentClass",
+      "newName": "4g"
+    },
+    {
+      "originalName": "completeFn",
+      "newName": "1\u0027"
+    },
+    {
+      "originalName": "instanceOf",
+      "newName": "-3"
+    },
+    {
+      "originalName": "RichEditableTextIcon",
+      "newName": "\u0026a"
+    },
+    {
+      "originalName": "_Remote_Snapshot1_c",
+      "newName": "%9"
+    },
+    {
+      "originalName": "imageTag",
+      "newName": "?Z"
+    },
+    {
+      "originalName": "_tests",
+      "newName": "8`"
+    },
+    {
+      "originalName": "DESKTOP",
+      "newName": ",i"
+    },
+    {
+      "originalName": "updateNavigationButtons",
+      "newName": "#a"
+    },
+    {
+      "originalName": "__colorTextInput_keyUp",
+      "newName": "4e"
+    },
+    {
+      "originalName": "Snapshot",
+      "newName": "3^"
+    },
+    {
+      "originalName": "targetItem",
+      "newName": "`\u003d"
+    },
+    {
+      "originalName": "TypeDescriptor",
+      "newName": "?1"
+    },
+    {
+      "originalName": "_multitest",
+      "newName": "`["
+    },
+    {
+      "originalName": "extendsClass",
+      "newName": "+r"
+    },
+    {
+      "originalName": "preventDefaultKeyboardEvent",
+      "newName": "5]"
+    },
+    {
+      "originalName": "createSimpleLexer",
+      "newName": "[B"
+    },
+    {
+      "originalName": "projectLoader_resizeHandler",
+      "newName": "]V"
+    },
+    {
+      "originalName": "__filterInput_clearText",
+      "newName": "8\""
+    },
+    {
+      "originalName": "_MetaDataInspector_TextArea1_i",
+      "newName": "3b"
+    },
+    {
+      "originalName": "colorAsUint",
+      "newName": "4^"
+    },
+    {
+      "originalName": "__getHTMLButton_click",
+      "newName": "%\u0027"
+    },
+    {
+      "originalName": "generateData",
+      "newName": " r"
+    },
+    {
+      "originalName": "_ColorChooser_ImageButton1_i",
+      "newName": " s"
+    },
+    {
+      "originalName": "adjustMouseOffset",
+      "newName": "1%"
+    },
+    {
+      "originalName": "profileStartTime",
+      "newName": "%j"
+    },
+    {
+      "originalName": "getImageHTML",
+      "newName": "8e"
+    },
+    {
+      "originalName": "_Code_bindingsSetup",
+      "newName": "\"4"
+    },
+    {
+      "originalName": "lastWasSpace",
+      "newName": "\u003dZ"
+    },
+    {
+      "originalName": "staticInstance",
+      "newName": "%N"
+    },
+    {
+      "originalName": "codePrettyPrint",
+      "newName": "96"
+    },
+    {
+      "originalName": "createComponentList",
+      "newName": "@R"
+    },
+    {
+      "originalName": "pr_cdataPrefix",
+      "newName": "\u003ci"
+    },
+    {
+      "originalName": "_GridHeaderRenderer_HGroup1_c",
+      "newName": "5r"
+    },
+    {
+      "originalName": "_SearchTextInputSkin_SolidColorStroke1_i",
+      "newName": "8"
+    },
+    {
+      "originalName": "__canvasScrollerInstance_resize",
+      "newName": "\u003cA"
+    },
+    {
+      "originalName": "condition",
+      "newName": "\u003eB"
+    },
+    {
+      "originalName": "registerLangHandler",
+      "newName": "9Q"
+    },
+    {
+      "originalName": "keyboardEventHandler",
+      "newName": "-\u0026"
+    },
+    {
+      "originalName": "url",
+      "newName": ";1"
+    },
+    {
+      "originalName": "render",
+      "newName": "@O"
+    },
+    {
+      "originalName": "debugHandlers",
+      "newName": "[V"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.collections",
+      "newName": "4p"
+    },
+    {
+      "originalName": "decorations",
+      "newName": "^$"
+    },
+    {
+      "originalName": "clearCacheIntervalEnabled",
+      "newName": ",I"
+    },
+    {
+      "originalName": "IProject",
+      "newName": ";9"
+    },
+    {
+      "originalName": "_GridHeaderRenderer_bindingsSetup",
+      "newName": "\u0026R"
+    },
+    {
+      "originalName": "selectedTool",
+      "newName": "[_"
+    },
+    {
+      "originalName": "_dataIndex",
+      "newName": "3j"
+    },
+    {
+      "originalName": "showHeirarchy",
+      "newName": "\u003dt"
+    },
+    {
+      "originalName": "serializable",
+      "newName": "9n"
+    },
+    {
+      "originalName": "compareRight",
+      "newName": "^Q"
+    },
+    {
+      "originalName": "namePopUp",
+      "newName": "[e"
+    },
+    {
+      "originalName": "___MetaDataInspector_Group1_creationComplete",
+      "newName": "[G"
+    },
+    {
+      "originalName": "_instanceInfo",
+      "newName": "^D"
+    },
+    {
+      "originalName": "rowGroupMouseDownHandler",
+      "newName": "\u0027X"
+    },
+    {
+      "originalName": "buttonHandler",
+      "newName": "0B"
+    },
+    {
+      "originalName": "modalBlurAmount",
+      "newName": "+M"
+    },
+    {
+      "originalName": "uploadCompleteDataHandler",
+      "newName": "\u0026d"
+    },
+    {
+      "originalName": "removeStart",
+      "newName": "4]"
+    },
+    {
+      "originalName": "selectionGroup",
+      "newName": "@9"
+    },
+    {
+      "originalName": "dividerMarks",
+      "newName": "4s"
+    },
+    {
+      "originalName": "divisions",
+      "newName": "^r"
+    },
+    {
+      "originalName": "getImplementedInterfaces",
+      "newName": ",Z"
+    },
+    {
+      "originalName": "searchButtonSkin",
+      "newName": "5s"
+    },
+    {
+      "originalName": "___SelectionInspector_Group1_creationComplete",
+      "newName": "8R"
+    },
+    {
+      "originalName": "_RedrawRegions_DropShadowFilter1_c",
+      "newName": "!`"
+    },
+    {
+      "originalName": "EyeDropper",
+      "newName": ";r"
+    },
+    {
+      "originalName": "popUpLabel",
+      "newName": "\u003c@"
+    },
+    {
+      "originalName": "statusMessageClass",
+      "newName": "\"I"
+    },
+    {
+      "originalName": "_embed_mxml_Assets_swf___brokenImage_1131017430",
+      "newName": "6a"
+    },
+    {
+      "originalName": "_FrameSkin_SolidColorStroke1_i",
+      "newName": "+X"
+    },
+    {
+      "originalName": "subclassOf",
+      "newName": "#S"
+    },
+    {
+      "originalName": "radioButton",
+      "newName": "`Y"
+    },
+    {
+      "originalName": "setProperties",
+      "newName": "4O"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.debugging",
+      "newName": ",s"
+    },
+    {
+      "originalName": "findElementByID",
+      "newName": "0R"
+    },
+    {
+      "originalName": "LayersInnerClass0",
+      "newName": "+A"
+    },
+    {
+      "originalName": "CallMethod",
+      "newName": "0Y"
+    },
+    {
+      "originalName": "stepInto",
+      "newName": "\u0027B"
+    },
+    {
+      "originalName": "mouseLocationLines",
+      "newName": "7;"
+    },
+    {
+      "originalName": "isSame",
+      "newName": "64"
+    },
+    {
+      "originalName": "createProject",
+      "newName": "0C"
+    },
+    {
+      "originalName": "COMMON_KEYWORDS",
+      "newName": "\u00269"
+    },
+    {
+      "originalName": "intFn",
+      "newName": "33"
+    },
+    {
+      "originalName": "getAbsoluteSnapshot",
+      "newName": "\u003dT"
+    },
+    {
+      "originalName": "_Features_RadioButtonGroup1_i",
+      "newName": "6n"
+    },
+    {
+      "originalName": "firstNodePF",
+      "newName": "\u0026Z"
+    },
+    {
+      "originalName": "removeItemWithComparisonFunction",
+      "newName": "]T"
+    },
+    {
+      "originalName": "prettyPrintStopAsyc",
+      "newName": "\u0027N"
+    },
+    {
+      "originalName": "__actualSizeButton_click",
+      "newName": "^W"
+    },
+    {
+      "originalName": "HGroupIcon",
+      "newName": "+g"
+    },
+    {
+      "originalName": "interfaceInstanceInfo",
+      "newName": "+?"
+    },
+    {
+      "originalName": "InspectorUtils",
+      "newName": "7Z"
+    },
+    {
+      "originalName": "ColorChooser",
+      "newName": " _"
+    },
+    {
+      "originalName": "addIgnoreNull",
+      "newName": "[@"
+    },
+    {
+      "originalName": "__zoomComboBox_doubleClick",
+      "newName": "0\u0027"
+    },
+    {
+      "originalName": "itemsLength",
+      "newName": "[I"
+    },
+    {
+      "originalName": "testForErrors",
+      "newName": "-E"
+    },
+    {
+      "originalName": "PADDING_BOTTOM_DEFAULTDPI",
+      "newName": "!e"
+    },
+    {
+      "originalName": "_History_HistoryItemRenderer1_c",
+      "newName": "\u003c+"
+    },
+    {
+      "originalName": "clearTextAreaHandler",
+      "newName": "4W"
+    },
+    {
+      "originalName": "LayoutDebugHelper",
+      "newName": "!8"
+    },
+    {
+      "originalName": "format",
+      "newName": "`@"
+    },
+    {
+      "originalName": "_BreadcrumbsInnerClass0_Label1_i",
+      "newName": "]m"
+    },
+    {
+      "originalName": "DPI",
+      "newName": "65"
+    },
+    {
+      "originalName": "_popUp_Array1_c",
+      "newName": "^h"
+    },
+    {
+      "originalName": "_Constraints_bindingsSetup",
+      "newName": "3h"
+    },
+    {
+      "originalName": "classMethodParameters",
+      "newName": "3f"
+    },
+    {
+      "originalName": "showTotalAllocatedMemoryOfAllFlashInstancesRunningInTheBrowser",
+      "newName": "7t"
+    },
+    {
+      "originalName": "loadForCompatibility",
+      "newName": "!t"
+    },
+    {
+      "originalName": "DOT",
+      "newName": "1n"
+    },
+    {
+      "originalName": "_maxContainerWidth",
+      "newName": "5f"
+    },
+    {
+      "originalName": "hiddenHeaderHeight",
+      "newName": "#@"
+    },
+    {
+      "originalName": "__focusInEventHandler_eventStart",
+      "newName": "0J"
+    },
+    {
+      "originalName": "output",
+      "newName": "#p"
+    },
+    {
+      "originalName": "reverseAddItemsDictionary",
+      "newName": "2R"
+    },
+    {
+      "originalName": "componentStates",
+      "newName": "4c"
+    },
+    {
+      "originalName": "existingItemsLength",
+      "newName": "4Y"
+    },
+    {
+      "originalName": "pool",
+      "newName": "@t"
+    },
+    {
+      "originalName": "testString",
+      "newName": ",T"
+    },
+    {
+      "originalName": "lineThickness",
+      "newName": "\"c"
+    },
+    {
+      "originalName": "timedValue",
+      "newName": "5?"
+    },
+    {
+      "originalName": "removeGroupListeners",
+      "newName": "#]"
+    },
+    {
+      "originalName": "_showSelectionLabelOnDocument",
+      "newName": "05"
+    },
+    {
+      "originalName": "historyItem",
+      "newName": "5;"
+    },
+    {
+      "originalName": "findComponentItemInParentItemByID",
+      "newName": "[2"
+    },
+    {
+      "originalName": "pr_gtEnt",
+      "newName": "1q"
+    },
+    {
+      "originalName": "updateVisibleControls",
+      "newName": "2Y"
+    },
+    {
+      "originalName": "keyboardEventName",
+      "newName": "\u0027A"
+    },
+    {
+      "originalName": "popUpBorder",
+      "newName": "9G"
+    },
+    {
+      "originalName": "goToHistoryIndex",
+      "newName": "\u003dE"
+    },
+    {
+      "originalName": "__displayListTree_dragOver",
+      "newName": "%l"
+    },
+    {
+      "originalName": "hasFactory",
+      "newName": "8@"
+    },
+    {
+      "originalName": "openDecoration",
+      "newName": "8X"
+    },
+    {
+      "originalName": "codePFComplete",
+      "newName": "4l"
+    },
+    {
+      "originalName": "indexOfEquals",
+      "newName": "\u0026h"
+    },
+    {
+      "originalName": "setTriggerEvent",
+      "newName": ",h"
+    },
+    {
+      "originalName": "_wrapCharacter",
+      "newName": "0,"
+    },
+    {
+      "originalName": "updateProfileBindings",
+      "newName": "5c"
+    },
+    {
+      "originalName": "_poolTimestamps",
+      "newName": "^a"
+    },
+    {
+      "originalName": "thread",
+      "newName": "8G"
+    },
+    {
+      "originalName": "outputIdx",
+      "newName": "9;"
+    },
+    {
+      "originalName": "__centerButton_click",
+      "newName": "20"
+    },
+    {
+      "originalName": "DRAG_DROP_COMPLETE",
+      "newName": "8n"
+    },
+    {
+      "originalName": "containsEquality",
+      "newName": "%@"
+    },
+    {
+      "originalName": "_textFlowText",
+      "newName": "^B"
+    },
+    {
+      "originalName": "dispatchProjectCreatedEvent",
+      "newName": "--"
+    },
+    {
+      "originalName": "capitalize",
+      "newName": "3K"
+    },
+    {
+      "originalName": "effects",
+      "newName": "`A"
+    },
+    {
+      "originalName": "_divisionTickDistance",
+      "newName": "4["
+    },
+    {
+      "originalName": "_Code_HGroup1_c",
+      "newName": "@p"
+    },
+    {
+      "originalName": "Zoom__icon",
+      "newName": "[,"
+    },
+    {
+      "originalName": "IDocumentExporter",
+      "newName": "7P"
+    },
+    {
+      "originalName": "removeAllHandlers",
+      "newName": "\u003cP"
+    },
+    {
+      "originalName": "copyDocument",
+      "newName": " K"
+    },
+    {
+      "originalName": "radiateReferences",
+      "newName": "0p"
+    },
+    {
+      "originalName": "clearClipboard",
+      "newName": "[M"
+    },
+    {
+      "originalName": "targets",
+      "newName": "\"d"
+    },
+    {
+      "originalName": "chomp",
+      "newName": "\u0027S"
+    },
+    {
+      "originalName": "EventMetaData",
+      "newName": "3m"
+    },
+    {
+      "originalName": "mediaHandlerParameter",
+      "newName": "0`"
+    },
+    {
+      "originalName": "removeImagesIdsPatternReplace",
+      "newName": ","
+    },
+    {
+      "originalName": "EFFECT_TIMEOUT",
+      "newName": " \u003c"
+    },
+    {
+      "originalName": "selector",
+      "newName": "6-"
+    },
+    {
+      "originalName": "BreadcrumbsInnerClass0",
+      "newName": "^P"
+    },
+    {
+      "originalName": "isPartOfSequence",
+      "newName": "0E"
+    },
+    {
+      "originalName": "defaultGridItemRenderer",
+      "newName": "+e"
+    },
+    {
+      "originalName": "setChapter",
+      "newName": ",P"
+    },
+    {
+      "originalName": "ButtonBarIcon",
+      "newName": "3q"
+    },
+    {
+      "originalName": "applicationGroups",
+      "newName": "0i"
+    },
+    {
+      "originalName": "showDisplayObjectOutlines",
+      "newName": "\u0026s"
+    },
+    {
+      "originalName": "traceFileNativePath",
+      "newName": "8M"
+    },
+    {
+      "originalName": "sizeSelectionGroup",
+      "newName": "?F"
+    },
+    {
+      "originalName": "numericStepper_changeHandler",
+      "newName": "]E"
+    },
+    {
+      "originalName": "prevPage",
+      "newName": "6C"
+    },
+    {
+      "originalName": "replaceListItems",
+      "newName": "\u003cZ"
+    },
+    {
+      "originalName": "_HorizontalLine_int1_i",
+      "newName": "\u003cN"
+    },
+    {
+      "originalName": "_ZoomInspector_bindingsSetup",
+      "newName": "4A"
+    },
+    {
+      "originalName": "showColorUnderMouse",
+      "newName": "\u003d\""
+    },
+    {
+      "originalName": "pfasyncstop",
+      "newName": "!A"
+    },
+    {
+      "originalName": "lastCount",
+      "newName": "]g"
+    },
+    {
+      "originalName": "containsIgnoreCase",
+      "newName": "@L"
+    },
+    {
+      "originalName": "getCorrectType",
+      "newName": " ["
+    },
+    {
+      "originalName": "HIGHLIGHT",
+      "newName": "3d"
+    },
+    {
+      "originalName": "desktopPlayerTypeEffect",
+      "newName": "\u003eg"
+    },
+    {
+      "originalName": "__zoomComboBox_change",
+      "newName": "2c"
+    },
+    {
+      "originalName": "getSuperClassPackage",
+      "newName": "0b"
+    },
+    {
+      "originalName": "increaseScale",
+      "newName": "6p"
+    },
+    {
+      "originalName": "selectionInspector",
+      "newName": "8l"
+    },
+    {
+      "originalName": "getValues",
+      "newName": "@+"
+    },
+    {
+      "originalName": "PADDING_VERTICAL_DEFAULTDPI",
+      "newName": "\u0027d"
+    },
+    {
+      "originalName": "PADDING_HORIZONTAL_DEFAULTDPI",
+      "newName": "-K"
+    },
+    {
+      "originalName": "DOCUMENT_SIZE_CHANGE",
+      "newName": "+k"
+    },
+    {
+      "originalName": "moveItemsInstance",
+      "newName": "7N"
+    },
+    {
+      "originalName": "__colorChooser_change",
+      "newName": "5I"
+    },
+    {
+      "originalName": "updateYProperty",
+      "newName": "0T"
+    },
+    {
+      "originalName": "CallMethodInstance",
+      "newName": "\"A"
+    },
+    {
+      "originalName": "outputTag",
+      "newName": "]\u0027"
+    },
+    {
+      "originalName": "replaceAt",
+      "newName": "1l"
+    },
+    {
+      "originalName": "__showSelection_click",
+      "newName": "\u003c"
+    },
+    {
+      "originalName": "isTLF",
+      "newName": "4D"
+    },
+    {
+      "originalName": "CopyToClipboard",
+      "newName": "4E"
+    },
+    {
+      "originalName": "removeDragDisplayObjects",
+      "newName": "6o"
+    },
+    {
+      "originalName": "dispatchCodeUpdatedEvent",
+      "newName": "?_"
+    },
+    {
+      "originalName": "selectInputText",
+      "newName": ",u"
+    },
+    {
+      "originalName": "_EditableDocumentRenderer_Label1_i",
+      "newName": "\u003dC"
+    },
+    {
+      "originalName": "findTargetUnderPoint",
+      "newName": "\u003el"
+    },
+    {
+      "originalName": "_namePopUp_Label1_c",
+      "newName": "+O"
+    },
+    {
+      "originalName": "pr_aposEnt",
+      "newName": "\"Z"
+    },
+    {
+      "originalName": "_containerFormat",
+      "newName": "6c"
+    },
+    {
+      "originalName": "___ZoomInspector_Group1_creationComplete",
+      "newName": "\u003ec"
+    },
+    {
+      "originalName": "profileTest",
+      "newName": "[-"
+    },
+    {
+      "originalName": "_Remote_Events1_c",
+      "newName": "!g"
+    },
+    {
+      "originalName": "seperator",
+      "newName": ";f"
+    },
+    {
+      "originalName": "deviceManifestDefaults",
+      "newName": "2n"
+    },
+    {
+      "originalName": "EyeDropper_Cursor",
+      "newName": "^j"
+    },
+    {
+      "originalName": "_EyeDropperInspector_BlackAndWhiteFilter1_c",
+      "newName": ",1"
+    },
+    {
+      "originalName": "Profiling",
+      "newName": "%g"
+    },
+    {
+      "originalName": "__numericStepper_change",
+      "newName": ",p"
+    },
+    {
+      "originalName": "isNumericSpace",
+      "newName": "22"
+    },
+    {
+      "originalName": "documentSizeChangeHandler",
+      "newName": "[H"
+    },
+    {
+      "originalName": "addDragListeners",
+      "newName": "2k"
+    },
+    {
+      "originalName": "com.flexcapacitor.logging",
+      "newName": "5\u003c"
+    },
+    {
+      "originalName": "setHorizontalCenterConstraint",
+      "newName": "\u003cl"
+    },
+    {
+      "originalName": "traceMessage",
+      "newName": "\u003da"
+    },
+    {
+      "originalName": "getComponentFromDisplayObject",
+      "newName": "6K"
+    },
+    {
+      "originalName": "underlineEndPattern",
+      "newName": "%["
+    },
+    {
+      "originalName": "updateBottomConstraint",
+      "newName": "@G"
+    },
+    {
+      "originalName": "itemRendererIcon",
+      "newName": "[;"
+    },
+    {
+      "originalName": "GRID_ITEM_EDITOR_SESSION_SAVING",
+      "newName": ",@"
+    },
+    {
+      "originalName": "loadNewProject_clickHandler",
+      "newName": "?M"
+    },
+    {
+      "originalName": "lastMarkDifference",
+      "newName": "]$"
+    },
+    {
+      "originalName": "nextChapter",
+      "newName": "5m"
+    },
+    {
+      "originalName": "codeStylePF",
+      "newName": "9A"
+    },
+    {
+      "originalName": "filterInput_keyUpHandler",
+      "newName": "\u0026E"
+    },
+    {
+      "originalName": "openAllItems",
+      "newName": "\u0027I"
+    },
+    {
+      "originalName": "_Layers_HGroup1_c",
+      "newName": "8C"
+    },
+    {
+      "originalName": "traceTree",
+      "newName": "9e"
+    },
+    {
+      "originalName": "isNotEmpty",
+      "newName": "5^"
+    },
+    {
+      "originalName": "blackWhiteMatrix",
+      "newName": "#n"
+    },
+    {
+      "originalName": "JAVA_KEYWORDS",
+      "newName": "@0"
+    },
+    {
+      "originalName": "historyEventsDictionary",
+      "newName": "8b"
+    },
+    {
+      "originalName": "reverseRemoveItemsDictionary",
+      "newName": "1I"
+    },
+    {
+      "originalName": "_clearCacheIntervalEnabled",
+      "newName": "4o"
+    },
+    {
+      "originalName": "nonBlocking",
+      "newName": "\u003dc"
+    },
+    {
+      "originalName": "setScale",
+      "newName": "\u0026@"
+    },
+    {
+      "originalName": "SPACES",
+      "newName": "\u003e5"
+    },
+    {
+      "originalName": "SAME_PARENT",
+      "newName": ";L"
+    },
+    {
+      "originalName": "getComponentDetails",
+      "newName": "\u003dS"
+    },
+    {
+      "originalName": "containsAll",
+      "newName": ";k"
+    },
+    {
+      "originalName": "inUpdateBackgroundSize",
+      "newName": "4J"
+    },
+    {
+      "originalName": "invalidTargetEffect",
+      "newName": "@C"
+    },
+    {
+      "originalName": "COLOR_SELECTED",
+      "newName": "[l"
+    },
+    {
+      "originalName": "PROJECT_CREATED",
+      "newName": "+t"
+    },
+    {
+      "originalName": "handlePropertyChange",
+      "newName": "\u0027m"
+    },
+    {
+      "originalName": "externalPlayerTypeEffect",
+      "newName": "1R"
+    },
+    {
+      "originalName": "threadThis",
+      "newName": "4f"
+    },
+    {
+      "originalName": "__showSelection_change",
+      "newName": "7A"
+    },
+    {
+      "originalName": "keyUpHandlerSandboxRoot",
+      "newName": " C"
+    },
+    {
+      "originalName": "countMatches",
+      "newName": "\u003e"
+    },
+    {
+      "originalName": "getFullyQualifiedName",
+      "newName": "%h"
+    },
+    {
+      "originalName": "addRulerHandlers",
+      "newName": "!K"
+    },
+    {
+      "originalName": "com.flexcapacitor.managers.layoutClasses",
+      "newName": "\"e"
+    },
+    {
+      "originalName": "ImageButtonSkin__embed_mxml_Assets_swf___brokenImage_1131017430",
+      "newName": "!\u0026"
+    },
+    {
+      "originalName": "containsAny",
+      "newName": "\u0026X"
+    },
+    {
+      "originalName": "dispatchErrorEvent",
+      "newName": " P"
+    },
+    {
+      "originalName": "documentChangeHandler",
+      "newName": "\u003cH"
+    },
+    {
+      "originalName": "trimToEmpty",
+      "newName": ";m"
+    },
+    {
+      "originalName": "replaceLinebreaks",
+      "newName": "!-"
+    },
+    {
+      "originalName": "SAVE",
+      "newName": "]6"
+    },
+    {
+      "originalName": "prettyPrintOne",
+      "newName": "-L"
+    },
+    {
+      "originalName": "TOOLS_UPDATED",
+      "newName": "\u003eF"
+    },
+    {
+      "originalName": "zoomTool",
+      "newName": "1b"
+    },
+    {
+      "originalName": "updateLeftConstraint",
+      "newName": "#5"
+    },
+    {
+      "originalName": "CUSTOM_ITEM_SORT_CHARACTER",
+      "newName": "^S"
+    },
+    {
+      "originalName": "__backButton_click",
+      "newName": "9k"
+    },
+    {
+      "originalName": "dispatchColorSelectedEvent",
+      "newName": "1U"
+    },
+    {
+      "originalName": "list",
+      "newName": "\u0026U"
+    },
+    {
+      "originalName": "compareEquals",
+      "newName": "@H"
+    },
+    {
+      "originalName": "dispatchDocumentOpeningEvent",
+      "newName": ";^"
+    },
+    {
+      "originalName": "PR_ATTRIB_VALUE",
+      "newName": "\u003ei"
+    },
+    {
+      "originalName": "STANDALONE",
+      "newName": "6r"
+    },
+    {
+      "originalName": "_Layers_Scroller1_i",
+      "newName": "@`"
+    },
+    {
+      "originalName": "dispatchDocumentOpenEvent",
+      "newName": "1c"
+    },
+    {
+      "originalName": "___ToolInspector_Group1_creationComplete",
+      "newName": "9d"
+    },
+    {
+      "originalName": "isPreviewDocumentVisible",
+      "newName": "0]"
+    },
+    {
+      "originalName": "handlingKeyEvent",
+      "newName": "4\u0026"
+    },
+    {
+      "originalName": "__codeType_change",
+      "newName": "%m"
+    },
+    {
+      "originalName": "___ProjectInspector_Group1_creationComplete",
+      "newName": "0t"
+    },
+    {
+      "originalName": "__closeAllNodes_click",
+      "newName": "\u003c\""
+    },
+    {
+      "originalName": "incBy",
+      "newName": ";0"
+    },
+    {
+      "originalName": "horizontalPositions",
+      "newName": "\u003dX"
+    },
+    {
+      "originalName": "setValueOnNode",
+      "newName": "]#"
+    },
+    {
+      "originalName": "centerApplication",
+      "newName": "-a"
+    },
+    {
+      "originalName": "StatusMessage",
+      "newName": ";`"
+    },
+    {
+      "originalName": "HEXIDECIMAL_TYPE",
+      "newName": "^!"
+    },
+    {
+      "originalName": "backgroundImageAlpha",
+      "newName": "55"
+    },
+    {
+      "originalName": "documentsTabNavigator",
+      "newName": "\u003d["
+    },
+    {
+      "originalName": "updatingChanges",
+      "newName": "`m"
+    },
+    {
+      "originalName": "data",
+      "newName": "%r"
+    },
+    {
+      "originalName": "NUMBER_STATE",
+      "newName": "[5"
+    },
+    {
+      "originalName": "addFileListeners",
+      "newName": "@3"
+    },
+    {
+      "originalName": "modalDuration",
+      "newName": "\u003e%"
+    },
+    {
+      "originalName": "indexOfAny",
+      "newName": "\u0026-"
+    },
+    {
+      "originalName": "setFocusOnSelect",
+      "newName": "\u0027@"
+    },
+    {
+      "originalName": "getNextOrClosePopUp",
+      "newName": "!T"
+    },
+    {
+      "originalName": "_Properties_VDividedBox1_i",
+      "newName": "07"
+    },
+    {
+      "originalName": "_SearchTextInputSkin_Label1_i",
+      "newName": "2j"
+    },
+    {
+      "originalName": "codeHighlightInPlace",
+      "newName": ",9"
+    },
+    {
+      "originalName": "_layoutDebugHelper",
+      "newName": "\u003e2"
+    },
+    {
+      "originalName": "__colorTextInput_focusOut",
+      "newName": "\u0026i"
+    },
+    {
+      "originalName": "getFontFamilyEmbedded",
+      "newName": "9M"
+    },
+    {
+      "originalName": "ShowRedrawRegions",
+      "newName": "+R"
+    },
+    {
+      "originalName": "_namePopUp_bindingsSetup",
+      "newName": "]2"
+    },
+    {
+      "originalName": "removeAllHistory",
+      "newName": "-0"
+    },
+    {
+      "originalName": "EyeDropper__icon",
+      "newName": "[m"
+    },
+    {
+      "originalName": "sizeChangedHandler",
+      "newName": " ,"
+    },
+    {
+      "originalName": "arrayItemsOfType",
+      "newName": "9\u003e"
+    },
+    {
+      "originalName": "splitNonStringNonCommentTokens",
+      "newName": "?Y"
+    },
+    {
+      "originalName": "findPropertyChangeHandler",
+      "newName": "1d"
+    },
+    {
+      "originalName": "zoomComboBox_changeHandler",
+      "newName": "-V"
+    },
+    {
+      "originalName": "tileGroup",
+      "newName": "0X"
+    },
+    {
+      "originalName": "exportJSON",
+      "newName": "63"
+    },
+    {
+      "originalName": "Memory",
+      "newName": "9@"
+    },
+    {
+      "originalName": "existingItems",
+      "newName": "\u003e["
+    },
+    {
+      "originalName": "_Remote_Profiling1_c",
+      "newName": "!+"
+    },
+    {
+      "originalName": "__projectLoader_complete",
+      "newName": "8p"
+    },
+    {
+      "originalName": "dataArray",
+      "newName": " 1"
+    },
+    {
+      "originalName": "convertToConstraint",
+      "newName": "\u0026\u0026"
+    },
+    {
+      "originalName": "___DocumentsInspector_Group1_creationComplete",
+      "newName": "?T"
+    },
+    {
+      "originalName": "keepEventTargets",
+      "newName": "5a"
+    },
+    {
+      "originalName": "showMessage_profileDataUpdateHandler",
+      "newName": "[]"
+    },
+    {
+      "originalName": "propertySelectedHandler",
+      "newName": "1S"
+    },
+    {
+      "originalName": "_RadiateExample_PaginationText1_c",
+      "newName": "^i"
+    },
+    {
+      "originalName": "due",
+      "newName": "1^"
+    },
+    {
+      "originalName": "com.flexcapacitor.effects.bitmap",
+      "newName": "8]"
+    },
+    {
+      "originalName": "storeMessages",
+      "newName": "^m"
+    },
+    {
+      "originalName": "ClearButton",
+      "newName": " !"
+    },
+    {
+      "originalName": "targetSelectionGroup",
+      "newName": "!Y"
+    },
+    {
+      "originalName": "removeAllItemsEquality",
+      "newName": "?["
+    },
+    {
+      "originalName": "SAME_OWNER",
+      "newName": "9#"
+    },
+    {
+      "originalName": "extractedTags",
+      "newName": "\"Q"
+    },
+    {
+      "originalName": "sizeComboBox_changeHandler",
+      "newName": "\u0027K"
+    },
+    {
+      "originalName": "characterIsWhitespace",
+      "newName": "!W"
+    },
+    {
+      "originalName": "targetParentDocument",
+      "newName": "]H"
+    },
+    {
+      "originalName": "mxTextArea_keyUpHandler",
+      "newName": "\"n"
+    },
+    {
+      "originalName": "HEXIDECIMAL_HASH_COLOR_TYPE",
+      "newName": "3U"
+    },
+    {
+      "originalName": "mouseRulerUpHandler",
+      "newName": "+,"
+    },
+    {
+      "originalName": "_DocumentsInspector_ImageButton1_i",
+      "newName": "\u0027r"
+    },
+    {
+      "originalName": "showConsoleHandler",
+      "newName": "4,"
+    },
+    {
+      "originalName": "getParameters",
+      "newName": "\u0026u"
+    },
+    {
+      "originalName": "setTargetProperty",
+      "newName": "\"u"
+    },
+    {
+      "originalName": "getStyleDetails",
+      "newName": "\"D"
+    },
+    {
+      "originalName": "toggleButton",
+      "newName": "#d"
+    },
+    {
+      "originalName": "removeDuplicateItems",
+      "newName": ",L"
+    },
+    {
+      "originalName": "buttonBar",
+      "newName": "`c"
+    },
+    {
+      "originalName": "_StatusMessage_BorderContainer1_i",
+      "newName": "\"R"
+    },
+    {
+      "originalName": "sourcePropertyName",
+      "newName": "2a"
+    },
+    {
+      "originalName": "redispatch",
+      "newName": "8;"
+    },
+    {
+      "originalName": "dispatchHistoryChangeEvent",
+      "newName": "-\""
+    },
+    {
+      "originalName": "codeStyle",
+      "newName": "0d"
+    },
+    {
+      "originalName": "SkinnableContainerIcon",
+      "newName": "^o"
+    },
+    {
+      "originalName": "REMOVE_ERROR",
+      "newName": "^C"
+    },
+    {
+      "originalName": "dictionary",
+      "newName": "\"L"
+    },
+    {
+      "originalName": "__projectLoader_resize",
+      "newName": "3I"
+    },
+    {
+      "originalName": "ADD_ITEM",
+      "newName": "!n"
+    },
+    {
+      "originalName": "splitSourceNodes",
+      "newName": "!Q"
+    },
+    {
+      "originalName": "minimumStyleNamePadding",
+      "newName": "\u003e+"
+    },
+    {
+      "originalName": "addKeyListenersToStage",
+      "newName": "0W"
+    },
+    {
+      "originalName": "NUMBER_COLOR_TYPE",
+      "newName": "5Z"
+    },
+    {
+      "originalName": "uniqueIdentity",
+      "newName": "@e"
+    },
+    {
+      "originalName": "TextInputIcon",
+      "newName": "?i"
+    },
+    {
+      "originalName": "getKeys",
+      "newName": ";8"
+    },
+    {
+      "originalName": "defaultLogTarget",
+      "newName": "81"
+    },
+    {
+      "originalName": "_History_VerticalLayout1_c",
+      "newName": "72"
+    },
+    {
+      "originalName": "_History_Spacer1_c",
+      "newName": "[!"
+    },
+    {
+      "originalName": "updateTopConstraint",
+      "newName": "?7"
+    },
+    {
+      "originalName": "properties",
+      "newName": "\u0027,"
+    },
+    {
+      "originalName": "trustContent",
+      "newName": "4j"
+    },
+    {
+      "originalName": "MARGIN_CENTER",
+      "newName": ";b"
+    },
+    {
+      "originalName": "importantProperties",
+      "newName": "\u0027u"
+    },
+    {
+      "originalName": "colorChooser_changeHandler",
+      "newName": "\"F"
+    },
+    {
+      "originalName": "MinimalScrollerSkin",
+      "newName": "7%"
+    },
+    {
+      "originalName": "project_initHandler",
+      "newName": "#C"
+    },
+    {
+      "originalName": "_Constraints_Rect1_c",
+      "newName": " h"
+    },
+    {
+      "originalName": "_Remote_Code1_i",
+      "newName": "^M"
+    },
+    {
+      "originalName": "__booleanGroup_change",
+      "newName": "\u00273"
+    },
+    {
+      "originalName": "MOBILE_THEME_LIGHT_COLOR",
+      "newName": "]A"
+    },
+    {
+      "originalName": "org.as3commons.lang.typedescription",
+      "newName": "%q"
+    },
+    {
+      "originalName": "naturalCompare",
+      "newName": "!D"
+    },
+    {
+      "originalName": "VERTICAL_CENTER",
+      "newName": "5l"
+    },
+    {
+      "originalName": "updateXProperty",
+      "newName": "`C"
+    },
+    {
+      "originalName": "currentChapter",
+      "newName": " k"
+    },
+    {
+      "originalName": "_RadiateExample_StylesInit_done",
+      "newName": "4k"
+    },
+    {
+      "originalName": "DOCUMENT_OPEN",
+      "newName": "3%"
+    },
+    {
+      "originalName": "requestPreviewHandler",
+      "newName": "\"X"
+    },
+    {
+      "originalName": "addRemoveLastTime",
+      "newName": "?b"
+    },
+    {
+      "originalName": "context",
+      "newName": "^Y"
+    },
+    {
+      "originalName": "getComponentDisplayList",
+      "newName": ",O"
+    },
+    {
+      "originalName": "_Remote_SearchExpression1_c",
+      "newName": "\u003dl"
+    }
+  ]
+}

@@ -232,7 +232,7 @@
 					
 					//var mxmlLoader:MXMLImporter = new MXMLImporter( "testWindow", new XML( inSource ), canvasHolder  );
 					var mxmlLoader:MXMLImporter;
-					mxmlLoader = new MXMLImporter("testWindow", testModel, targetApplication as IVisualElement);
+					//mxmlLoader = new MXMLImporter("testWindow", testModel, targetApplication as IVisualElement);
 				}
 				/*_toolTipChildren = new SystemChildrenList(this,
                 new QName(mx_internal, "topMostIndex"),

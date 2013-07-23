@@ -1792,15 +1792,6 @@
 				 color="#A6a5a5" 
 				 />
 		
-		<s:ButtonBar id="editorType" 
-					 requireSelection="true"
-					 selectedIndex="0"
-					 labelField="name"
-					 initialize="editorType.dataProvider = new ArrayList(states);editorType.selectedIndex = 0;"
-					 change="editorType_changeHandler(event)">
-		</s:ButtonBar>
-		
-		
 		<s:Spacer width="100%"/>
 		
 		<s:CheckBox id="updateCodeLive" 
@@ -1844,6 +1835,14 @@
 					<fx:String>{ANDROID}</fx:String>
 				</s:ArrayList>
 			</s:dataProvider>
+		</s:ButtonBar>
+		
+		<s:ButtonBar id="editorType" 
+					 requireSelection="true"
+					 selectedIndex="0"
+					 labelField="name"
+					 initialize="editorType.dataProvider = new ArrayList(states);editorType.selectedIndex = 0;"
+					 change="editorType_changeHandler(event)">
 		</s:ButtonBar>
 		
 		<c:ImageButton id="copyIcon" 

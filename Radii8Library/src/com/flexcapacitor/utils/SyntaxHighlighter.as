@@ -3,6 +3,7 @@ package com.flexcapacitor.utils {
 	import flash.events.TimerEvent;
 	import flash.text.StyleSheet;
 	import flash.utils.Timer;
+	import flash.utils.getTimer;
 	
 	import mx.controls.TextArea;
 	import mx.controls.textClasses.TextRange;
@@ -100,12 +101,16 @@ package com.flexcapacitor.utils {
 		    codeTimer.reset();
 		    // wait for some time to see if we need to highlight or not
 		    codeTimer.start();
+			//trace("start highlighting gettimer="  + getTimer());
+			
+			doPrettyPrint();
 		}
 		
 		/**
 		 * 
 		 * */
 		private function doPrettyPrint(event:TimerEvent=null):void {
+			//trace("start doPrettyPrint gettimer="  + getTimer());
 		    if (!codeStyle) {
 		        codeStyle = new StyleSheet();
 		        codePrettyPrint = new CodePrettyPrint();
@@ -124,6 +129,7 @@ package com.flexcapacitor.utils {
 		        return;
 		    }
 			
+			//trace("start code in place gettimer="  + getTimer());
 		    codeHighlightInPlace();
 		    
 		}

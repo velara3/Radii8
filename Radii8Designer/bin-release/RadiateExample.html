@@ -28,6 +28,74 @@
             #flashContent { display:none; }
         </style>
         
+        <!-- NORMALIZE -->
+		<link rel="stylesheet" href="css/normalize/2.1.2/normalize.css"/>
+
+        <!-- ACE editor -->
+        <script src="../src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+        
+        <script>
+
+        function createEditor(flashID) {
+		    ace_editor = ace.edit("editor");
+		    ace_editor.setTheme("ace/theme/crimson_editor");
+		    ace_editor.getSession().setMode("ace/mode/html");
+		    ace_editor.setShowFoldWidgets(false);
+		    ace_editor.setShowPrintMargin(false);
+		    ace_editor.renderer.setShowGutter(false);
+		    //ace_editor.onFocus = function() { ace_editor.setReadOnly(false);};
+		    
+			ace_editor.__defineGetter__("$readOnly", function(){return false})
+			ace_editor.__defineSetter__("$readOnly", function(val){
+			    console.log("read only changed!!!");
+			})
+		    ace_editor.setReadOnly(false);
+		    ace_editor.setReadOnly(true);
+		    ace_editor.setReadOnly(false);
+		    
+		    ace_editor.getSession().on('change', function(e) {
+			    editorChange(flashID);
+			});
+			
+			//ace_editor.getSession().selection.on('changeCursor', function(e) {
+			//	cursorChange(flashID);
+			//});
+		    return "created";
+		}
+		
+		function setEditorText(value) {
+		    ace_editor.setValue(value);
+		    ace_editor.selection.clearSelection();
+		    ace_editor.navigateFileStart();
+		    ace_editor.setReadOnly(false);
+		    return value;
+		}
+		
+		function getEditorText() {
+		    return ace_editor.getValue();
+		}
+		
+		function editorChange(flashID) {
+			console.log("text changed");
+			var value = ace_editor.getValue();
+			var flash = document.getElementById(flashID);
+			ace_editor.setReadOnly(false);
+			flash.editorChange(value);
+		}
+		
+		function cursorChange(flashID) {
+			console.log("cursor changed");
+			ace_editor.setReadOnly(false);
+			var flash = document.getElementById(flashID);
+			flash.cursorChange();
+		}
+		
+		function resizeEditor() {
+			console.log("editor resized");
+			ace_editor.resize();
+		}
+		</script>
+		
         <!-- Enable Browser History by replacing useBrowserHistory tokens with two hyphens -->
         <!-- BEGIN Browser History required section -->
         <link rel="stylesheet" type="text/css" href="history/history.css" />
@@ -106,6 +174,6 @@
                 </object>
                 <!--<![endif]-->
             </object>
-        </noscript>     
+        </noscript>
    </body>
 </html>
