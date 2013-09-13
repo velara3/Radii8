@@ -21,7 +21,7 @@
 	654
 	252
 	53,549
-	faith - the rescuers
+	
 	
 			   preloader="com.flexcapacitor.preloader.SparkPreloader"
 	-
@@ -33,7 +33,14 @@
 	always be there for them. We're not sure how pricing might work, but we do know that we'd 
 	like our users to be our customers, not our product.
 	
+	thoughts on html design and development process and export
+	http://24ways.org/2009/make-your-mockup-in-markup/
+	http://www.sitepoint.com/forums/showthread.php?869812-Exactly-How-To-make-pixel-perfect-HTML-CSS-from-PNG-PSD
+	http://elliotnash.me/why-designers-are-talking-about-the-wrong-thing?utm_source=buffer&utm_campaign=Buffer&utm_content=buffer970d2&utm_medium=twitter
+	http://lifehacker.com/5974605/learn-beginner-and-advanced-htmlcss-skills-for-free
+	http://learn.shayhowe.com/html-css/box-model
 	-->
+	
 	<fx:Style>
 		@namespace s "library://ns.adobe.com/flex/spark";
 		@namespace mx "library://ns.adobe.com/flex/mx";
@@ -45,7 +52,7 @@
 		}
 		
 		global {
-			fontFamily: Verdana;
+			fontFamily: Arial;
 			selectionColor: #d8d8d8;
 			rollOverColor: #d8d8d8;
 			caretColor: #d8d8d8;

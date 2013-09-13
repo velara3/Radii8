@@ -88,7 +88,9 @@
 				
 				item = tools.selectedItem as ComponentDescription;
 				
-				radiate.setTool(item.instance as ITool);
+				if (item) {
+					radiate.setTool(item.instance as ITool);
+				}
 			}
 			
 		]]>
@@ -108,7 +110,7 @@
 			rollOverColor="#D9D9D9"
 			>
 		<s:layout>
-			<s:TileLayout  />
+			<s:TileLayout horizontalGap="2" verticalGap="2" />
 		</s:layout>
 		
 		<s:itemRenderer>

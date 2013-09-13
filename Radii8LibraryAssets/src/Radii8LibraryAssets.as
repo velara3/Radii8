@@ -17,10 +17,10 @@ package {
 		[Embed(source="assets/icons/general/CopyBW.png")]
 		public static const copy:Class;
 		
-		[Embed(source="assets/icons/general/undo.png")]
+		[Embed(source="assets/icons/general/undo2.png")]
 		public static const undo:Class;
 		
-		[Embed(source="assets/icons/general/redo.png")]
+		[Embed(source="assets/icons/general/redo2.png")]
 		public static const redo:Class;
 		
 		[Embed(source="assets/icons/general/EditBW.png")]

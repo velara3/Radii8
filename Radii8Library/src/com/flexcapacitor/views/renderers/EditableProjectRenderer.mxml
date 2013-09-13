@@ -5,7 +5,7 @@
 				doubleClickEnabled="true"
 				doubleClick="itemrenderer1_doubleClickHandler(event)"
 				autoDrawBackground="true"
-				height="25">
+				height="22">
 	
 	<fx:Metadata>
 		[HostComponent("spark.components.List")]
@@ -13,10 +13,7 @@
 	
 	<fx:Script>
 	<![CDATA[
-		import com.flexcapacitor.model.IDocument;
 		import com.flexcapacitor.model.IProject;
-		
-		import mx.events.FlexEvent;
 		
 		import spark.components.List;
 		import spark.components.supportClasses.ListBase;

@@ -207,7 +207,7 @@
 	</fx:Script>
 	
 	<s:VGroup width="100%" height="100%" paddingLeft="6" paddingRight="6" paddingBottom="6">
-		<s:Label text="No states available" 
+		<s:Label text="No states defined" 
 				 color="#585858"
 				 alpha="1"
 				 fontStyle="italic"
@@ -234,13 +234,22 @@
 		<s:Label text="OVERRIDES" 
 				 color="#585858"
 				 alpha="1"
-				 visible="{overridesCollection.length!=0}"
 				 width="100%" 
 				 styleName="formItem" 
 				 />
 		
 		<s:Scroller width="100%" height="100%" >
 			<s:Group width="100%"  >
+				
+				<s:Label text="No overrides defined" 
+						 color="#585858"
+						 alpha="1"
+						 fontStyle="italic"
+						 backgroundColor="#ffffff" 
+						 backgroundAlpha="1"
+						 visible="{statesCollection.length==0}"
+						 includeInLayout="{statesCollection.length==0}"
+						 />
 				
 				<s:List id="overrides" 
 						minHeight="40"

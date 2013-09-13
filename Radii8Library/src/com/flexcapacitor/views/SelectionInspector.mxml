@@ -17,6 +17,9 @@
 			
 			public var radiate:Radiate;
 			public var tool:ITool;
+
+			[Bindable]
+			public var selectionTool:Selection;
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
@@ -35,9 +38,10 @@
 				
 				if (toolDescription && toolDescription.instance 
 					&& toolDescription.instance is Selection) {
-					var selectionTool:Selection = Selection(toolDescription.instance);
+					selectionTool = Selection(toolDescription.instance);
 					showSelection.selected = selectionTool.showSelection;
 					showLabel.selected = selectionTool.showSelectionLabel;
+					
 				}
 			}
 			
@@ -75,11 +79,13 @@
 	</fx:Script>
 	
 	<s:layout>
-		<s:HorizontalLayout paddingLeft="4" />
+		<s:HorizontalLayout paddingLeft="4" verticalAlign="baseline"/>
 	</s:layout>
 	
 	
 	<s:CheckBox id="showSelection" label="Show Selection" change="showSelection_changeHandler(event)"/>
 	<s:CheckBox id="showLabel" label="Show Label" change="showLabel_changeHandler(event)"/>
+	<s:Label text="Drop Location: " paddingLeft="4"/>
+	<s:Label id="dropLocation" text="{selectionTool.dragLocation}"/>
 
 </s:Group>

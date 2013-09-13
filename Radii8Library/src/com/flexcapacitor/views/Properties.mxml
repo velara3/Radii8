@@ -1175,12 +1175,12 @@
 							   enter="searchPropertyInput_enterHandler(event)"
 							   keyUp="filterInput_keyUpHandler(event)"
 							   />
-			<s:HGroup width="100%" top="32" left="4" >
+			<s:HGroup width="100%" top="32" left="4" verticalAlign="baseline">
 				<s:CheckBox id="showAllItemsOnEmpty" label="All" selected="true"/>
 				<s:CheckBox id="caseSensitive" label="Case" selected="false"/>
 				<s:CheckBox id="searchAtStart" label="At start" selected="false"/>
 				<s:Spacer width="100%"/>
-				<s:Label text="{filteredPropertiesCollection.length}"/>
+				<s:Label text="Results: {filteredPropertiesCollection.length}"/>
 			</s:HGroup>
 		</s:Group>
 		

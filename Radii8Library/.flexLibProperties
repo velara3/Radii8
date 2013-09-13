@@ -23,6 +23,7 @@
     <classEntry path="com.flexcapacitor.views.renderers.EditableDocumentRenderer"/>
     <classEntry path="com.flexcapacitor.views.renderers.HistoryItemRenderer"/>
     <classEntry path="com.flexcapacitor.views.supportClasses.Styles"/>
+    <classEntry path="com.flexcapacitor.views.PublishWindow"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

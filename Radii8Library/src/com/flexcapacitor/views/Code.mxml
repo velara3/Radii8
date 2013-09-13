@@ -229,7 +229,7 @@
 			 * */
 			public function getVerticalPositionHTML(instance:IVisualElement, propertyModel:Styles, stylesValue:String = "", isBasicLayout:Boolean = true):String {
 				
-				if (!isBasicLayout) return "";
+				if (!isBasicLayout) return stylesValue;
 				
 				if (instance.verticalCenter!=null) {
 					stylesValue += "display:block;margin:" + instance.verticalCenter + " auto;";
@@ -273,7 +273,7 @@
 			 * */
 			public function getHorizontalPositionHTML(instance:IVisualElement, propertyModel:Styles, stylesValue:String = "", isBasicLayout:Boolean = true):String {
 				
-				if (!isBasicLayout) return "";
+				if (!isBasicLayout) return stylesValue;
 				
 				if (instance.horizontalCenter!=null) {
 					stylesValue += "display:block;margin:" + instance.horizontalCenter + " auto;";
@@ -509,6 +509,8 @@
 							output += "height:" + (component.instance.height + 40) + "px;";
 							output += "background-color:#666666;\">";*/
 							output += "<div " + properties;
+							//output = getNameString(component.instance, output);
+							output += properties ? " " : "";
 							styleValue = styleValue.replace("absolute", "relative");
 							styles.position = Styles.ABSOLUTE;
 							styleValue += "width:" + component.instance.width+ "px;";
@@ -519,7 +521,7 @@
 							styleValue += "left:8px;top:14px;";
 							styleValue += "background-color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("backgroundColor"), true) + ";";
 							//output += properties ? " " : "";
-							output += "style=\"" + styleValue + "\">";
+							output += " style=\"" + styleValue + "\">";
 							output += contentToken;
 							//output += "\n </div>\n</div>";
 							output += "\n</div>";
@@ -527,6 +529,8 @@
 						else {
 							//output = "<div style=\"position: absolute;width:100%;height:100%;background-color:#666666;\">";
 							output = "<div " + properties;
+							//output = getNameString(component.instance, output);
+							output += properties ? " " : "";
 							styleValue += "width:" + component.instance.width+ "px;";
 							styleValue += "height:" + component.instance.height+ "px;";
 							styleValue += "border:1px solid black";
@@ -543,11 +547,11 @@
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<div " + properties;
 						output = getNameString(component.instance, output);
+						output += properties ? " " : "";
 						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 						
 						//styleValue += "width:" + component.instance.width+ "px;";
 						//styleValue += "height:" + component.instance.height+ "px;";
-						output += properties ? " " : "";
 						output += " style=\"" + styleValue + "\">";
 						output += contentToken;
 						output += "\n" + tabs + "</div>";
@@ -559,11 +563,12 @@
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<div " + properties;
 						output = getNameString(component.instance, output);
+						output += properties ? " " : "";
 						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 						styleValue += getBorderString(component.instance as BorderContainer);
+						//styleValue += getColorString(component.instance as BorderContainer);
 						//styles += component.instance as BorderContainer);
 						
-						output += properties ? " " : "";
 						output += " style=\"" + styleValue + "\">";
 						output += contentToken;
 						output += "\n" + tabs + "</div>";
@@ -576,6 +581,7 @@
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<div " + properties;
 						output = getNameString(component.instance, output);
+						
 						//styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 						if (component.name=="HGroup") {
 							styleValue += "width:" + Math.max(HGroup(component.instance).contentWidth, component.instance.width)+ "px;";
@@ -594,9 +600,10 @@
 					else if (htmlName=="button" || htmlName=="togglebutton") {
 						htmlName = "button";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						output += "<input type=\"" + htmlName.toLowerCase() + "\" "  + properties;
-						output += properties ? " " : "";
+						output += "<input " + properties;
 						output = getNameString(component.instance, output);
+						output += " type=\"" + htmlName.toLowerCase() + "\" "  + properties;
+						output += properties ? " " : "";
 						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
@@ -610,20 +617,23 @@
 						if (component.instance.label!="") {
 							output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 							output += "<label";
+							output = getNameString(component.instance, output) + "_Label";
 							styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 							//styleValue += "width:" + (component.instance.width + 6)+ "px;";
 							//styleValue += "height:" + component.instance.height+ "px;";
 							styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 							styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 							output += " style=\"" + styleValue + "\">";
-							output += "<input type=\"" + htmlName.toLowerCase() + "\" " ;
+							output += "<input ";
 							output = getNameString(component.instance, output);
+							output += " type=\"" + htmlName.toLowerCase() + "\" ";
 							output += "/>" ;
 						}
 						else {
 							output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-							output += "<input type=\"" + htmlName.toLowerCase() + "\" " + properties;
+							output += "<input " + properties;
 							output = getNameString(component.instance, output);
+							output += " type=\"" + htmlName.toLowerCase() + "\" " + properties;
 							//styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 							output += " style=\"" + styles + "\"/>";
 						}
@@ -668,8 +678,9 @@
 					else if (htmlName=="textinput") {
 						htmlName = "input";
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						output += "<input type=\"input\" "  + properties;
+						output += "<input ";
 						output = getNameString(component.instance, output);
+						output += " type=\"input\" "  + properties;
 						//styleValue += "width:" + component.instance.width+ "px;";
 						//styleValue += "height:" + component.instance.height+ "px;";
 						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
@@ -1151,21 +1162,39 @@
 			/**
 			 * Get border and background styles of a border container
 			 * */
-			public function getBorderString(borderContainer:IStyleClient):String {
+			public function getBorderString(element:IStyleClient):String {
 				var value:String = "";
 				
-				if (borderContainer.getStyle("backgroundAlpha")!=0) {
-					value += "background-color:" + DisplayObjectUtils.getColorInHex(borderContainer.getStyle("backgroundColor"), true) + ";";
-					value += "background-alpha:" + borderContainer.getStyle("backgroundAlpha") + ";";
+				if (element.getStyle("backgroundAlpha")!=0) {
+					value += "background-color:" + DisplayObjectUtils.getColorInHex(element.getStyle("backgroundColor"), true) + ";";
+					value += "background-alpha:" + element.getStyle("backgroundAlpha") + ";";
 				}
 				
-				if (borderContainer.getStyle("borderVisible")) {
-					value += "border-width:" + borderContainer.getStyle("borderWeight") + "px;";
+				if (element.getStyle("borderVisible")) {
+					value += "border-width:" + element.getStyle("borderWeight") + "px;";
 					value += "border-style:solid;";
 					
-					if (borderContainer.getStyle("borderColor")!==undefined) {
-						value += "border-color:" + DisplayObjectUtils.getColorInHex(borderContainer.getStyle("borderColor"), true) + ";";
+					if (element.getStyle("borderColor")!==undefined) {
+						value += "border-color:" + DisplayObjectUtils.getColorInHex(element.getStyle("borderColor"), true) + ";";
 					}
+				}
+				
+				if (element.getStyle("color")!==undefined) {
+					value += "color:" + DisplayObjectUtils.getColorInHex(element.getStyle("color"), true) + ";";
+				}
+				
+				return value;
+				
+			}
+			
+			/**
+			 * Get color styles of an element
+			 * */
+			public function getColorString(element:IStyleClient):String {
+				var value:String = "";
+				
+				if (element.getStyle("color")!==undefined) {
+					value += "color:" + DisplayObjectUtils.getColorInHex(element.getStyle("color"), true) + ";";
 				}
 				
 				return value;
@@ -1579,7 +1608,7 @@
 			 * Put the generated code into a text area
 			 * */
 			public function setTextareaCode(value:String):void {
-				var functionName:String = "createEditor";
+				var createEditor:String = "createEditor";
 				var result:Object;
 				
 				if (currentState=="normal") {
@@ -1601,9 +1630,10 @@
 				else if (currentState=="editor") {
 					
 					if (!aceEditorCreated) {
-						editor.content = "<div id='editor' style='display:block;position:absolute;top:0px;left:0px;right:0px;bottom:0px;height:100%;'></div>";
+						editor.content = "<div id='editor1' style='display:block;position:absolute;top:0px;left:0px;right:0px;bottom:0px;height:100%;width:100%'></div>";
+						//editor.content = " ";
 						editor.validateNow();
-						result = ExternalInterface.call(functionName, ExternalInterface.objectID);
+						result = ExternalInterface.call(createEditor, "editor0", ExternalInterface.objectID);
 						ExternalInterface.addCallback("editorChange", editorChange);
 						ExternalInterface.addCallback("cursorChange", cursorChange);
 	                	aceEditorCreated = true;
@@ -1649,6 +1679,9 @@
 					targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(radiate.document.instance, componentTree);
 				}
 				
+				if (targetDescription==null || radiate.target == componentTree.instance) {
+					targetDescription = componentTree;
+				}
 				
 				var output:String = "<div style=\"position:absolute;";
 				//output += "width:" + (component.instance.width + 40) + "px;";
@@ -1768,7 +1801,6 @@
 	<flexiframe:IFrame id="editor" 
 					   top="28" left="0"
 					   width="100%" height="100%" 
-					   overlayDetection="true"
 					   includeIn="editor"
 					   resize="editor_resizeHandler(event)"
 					   >

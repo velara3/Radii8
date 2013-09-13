@@ -99,7 +99,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Reference to the document
 		 * */
-		public var parentApplication:Application;
+		public var targetApplication:Application;
 		
 		public var selectionGroup:ItemRenderer = new TargetSelectionGroup();
 		public var mouseLocationLines:IFlexDisplayObject = new ListDropIndicator();
@@ -110,6 +110,10 @@ package com.flexcapacitor.utils {
 		
 		[Bindable] 
 		public var dropTargetName:String;
+		
+		/**
+		 * X and Y location of dragged object
+		 * */
 		[Bindable] 
 		public var dropTargetLocation:String;
 		
@@ -150,8 +154,8 @@ package com.flexcapacitor.utils {
 		public function listenForDragBehavior(dragInitiator:IUIComponent, document:IDocument, event:MouseEvent, draggedItem:Object = null):void {
 			startingPoint = new Point();
 			this.dragInitiator = dragInitiator;
-			this.parentApplication = Application(document.instance);
-			systemManager = parentApplication.systemManager;
+			this.targetApplication = Application(document.instance);
+			systemManager = targetApplication.systemManager;
 			topLevelApplication = Application(FlexGlobals.topLevelApplication);
 			
 			//componentTree = DisplayObjectUtils.getComponentDisplayList(documentApplication);
@@ -196,7 +200,10 @@ package com.flexcapacitor.utils {
 		 * */
 		private function updateDropTargetLocation(x:int, y:int):void {
 			var out:String = x + "x" + y;
-			
+			// Find the registration point of the owner
+	        /*var sandboxRoot:DisplayObject = systemManager.getSandboxRoot();
+	        var regPoint:Point = owner.localToGlobal(new Point());
+	        regPoint = sandboxRoot.globalToLocal(regPoint);*/
 			if (dropTargetLocation!=out) {
 				dropTargetLocation = x + "x" + y;
 			}
@@ -216,7 +223,7 @@ package com.flexcapacitor.utils {
 			if (dragToleranceMet) {
 				dragInitiator.visible = hideDragInitiatorOnDrag ? false : true; // hide from view
 				removeMouseHandlers(dragInitiator);
-				startDrag(dragInitiator, parentApplication, event);
+				startDrag(dragInitiator, targetApplication, event);
 			}
 			
 		}
@@ -224,18 +231,18 @@ package com.flexcapacitor.utils {
 		/**
 		 * Start dragging
 		 * */
-		public function startDrag(dragInitiator:IUIComponent, parentApplication:Application, event:MouseEvent):void {
+		public function startDrag(dragInitiator:IUIComponent, application:Application, event:MouseEvent):void {
 			var dragSource:DragSource = new DragSource();
 			var distanceFromLeft:int;
 			var distanceFromTop:int;
 			var snapshot:BitmapAsset;
 
 			this.dragInitiator = dragInitiator;
-			this.parentApplication = parentApplication;
-			this.systemManager = parentApplication.systemManager;
+			this.targetApplication = application;
+			this.systemManager = application.systemManager;
 			
 			// set the object that will listen for drag events
-			dragListener = DisplayObjectContainer(parentApplication);
+			dragListener = DisplayObjectContainer(application);
 			
 			distanceFromLeft = dragInitiator.localToGlobal(new Point).x;
 			distanceFromTop = dragInitiator.localToGlobal(new Point).y;
@@ -246,7 +253,7 @@ package com.flexcapacitor.utils {
 			
 			updateDropTargetLocation(event.stageX, event.stageY);
 			
-			addGroupListeners(parentApplication);
+			addGroupListeners(application);
 			addDragListeners(dragInitiator, dragListener);
 			
 			// creates an instance of the bounding box that will be shown around the drop target
@@ -270,7 +277,8 @@ package com.flexcapacitor.utils {
 				mouseLocationLines.visible = false;
 			}
 			
-			// SecurityError: Error #2123: Security sandbox violation: BitmapData.draw: http://www.radii8.com/debug-build/RadiateExample.swf cannot access http://www.google.com/intl/en_com/images/srpr/logo3w.png. No policy files granted access.
+			// SecurityError: Error #2123: Security sandbox violation: 
+			//BitmapData.draw: http://www.radii8.com/debug-build/RadiateExample.swf cannot access http://www.google.com/intl/en_com/images/srpr/logo3w.png. No policy files granted access.
 			if (dragInitiator is Image && !Image(dragInitiator).trustedSource) {
 				snapshot = null;
 			}
@@ -439,7 +447,7 @@ package com.flexcapacitor.utils {
 			}
 			*/
 			
-			dragData = findDropTarget(event);
+			dragData = findDropTarget(event, true, targetApplication.scaleX);
 			
 			if (dragData==null) return;
 			
@@ -542,7 +550,7 @@ package com.flexcapacitor.utils {
 					
 					if (dropLocation) {
 						//DragManager.acceptDragDrop(parentApplication);
-						DragManager.acceptDragDrop(parentApplication);
+						DragManager.acceptDragDrop(targetApplication);
 						
 						// Create the dropIndicator instance. The layout will take care of
 						// parenting, sizing, positioning and validating the dropIndicator.
@@ -642,7 +650,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Find the target under mouse pointer
 		 * */
-		public function findDropTarget(event:DragEvent, dragOver:Boolean = true):DragData {
+		public function findDropTarget(event:DragEvent, draggingOver:Boolean = true, applicationScale:Number = 1):DragData {
 			/*var eventTarget:FlexSprite = FlexSprite(event.target); */
 			var visualElementContainer:IVisualElementContainer;
 			var skinnableContainer:SkinnableContainer;
@@ -668,7 +676,9 @@ package com.flexcapacitor.utils {
 			
 			// get targets under mouse pointer
 			if (adjustMouseOffset) {
-				topLeftEdgePoint = new Point(event.stageX-offset.x, event.stageY-offset.y);
+				var adjustedX:Number = event.stageX-(offset.x * applicationScale);
+				var adjustedY:Number = event.stageY-(offset.y * applicationScale);
+				topLeftEdgePoint = new Point(adjustedX, adjustedY);
 			}
 			else {
 				topLeftEdgePoint = new Point(event.stageX, event.stageY);
@@ -698,7 +708,7 @@ package com.flexcapacitor.utils {
 			for (var i:int;i<targetsLength;i++) {
 				target = targetsUnderPoint[i];
 				// if parent application does not contain the target
-				if (!parentApplication.contains(DisplayObject(target))) {
+				if (!targetApplication.contains(DisplayObject(target))) {
 					continue;
 				}
 				
@@ -726,10 +736,9 @@ package com.flexcapacitor.utils {
 			
 			// check if target is self
 			if (target==draggedItem) {
-				target = parentApplication;
+				target = targetApplication;
 				if (debug) Radiate.log.info("Cannot drag onto self");
-				
-				if (dragOver) return null;
+				if (draggingOver) return null;
 				//continue;
 			}
 			
@@ -737,24 +746,25 @@ package com.flexcapacitor.utils {
 			if (target && "contains" in draggedItem && 
 				draggedItem.contains(target)) {
 				if (debug) Radiate.log.info("Cannot drag into child of self");
-				if (dragOver) return null;
+				if (draggingOver) return null;
 				//return null;
 			}
 			
 			// this shouldn't be here but if document is not set then we get all sorts of targets
-			if (target && target != parentApplication && 
-				!parentApplication.contains(DisplayObject(target))) {
-				if (debug) Radiate.log.info("Parent application doesn't contain target");
-				if (dragOver) return null;
+			if (target && 
+				target != targetApplication && 
+				!targetApplication.contains(DisplayObject(target))) {
+				if (debug) Radiate.log.info("Target application doesn't contain drop target");
+				if (draggingOver) return null;
 				//return null;
 			}
 			
 			// still no target then we are on the application (most likely)
 			if (!target) {
-				target = parentApplication;
+				target = targetApplication;
 			}
 			
-			if (target==parentApplication) {
+			if (target==targetApplication) {
 				isApplication = true;
 			}
 			
@@ -766,12 +776,12 @@ package com.flexcapacitor.utils {
 				// skip skins
 				if (target is Skin && !includeSkins) {
 					//throw new Error("target cannot be a skin");
-					target = parentApplication;
+					target = targetApplication;
 				}
 				
 				// skip skins (for groups in checkbox skin for example)
 				if ("owner" in target && target.owner is Skin && !includeSkins) {
-					target = parentApplication;
+					target = targetApplication;
 				}
 				
 				visualElementContainer = target as IVisualElementContainer;
@@ -1034,7 +1044,7 @@ package com.flexcapacitor.utils {
 			
 			removeDragListeners(dragListener);
 			removeDragDisplayObjects();
-			removeGroupListeners(parentApplication);
+			removeGroupListeners(targetApplication);
 			
 			// Hide if previously showing
 			if (dropLayout) {
@@ -1267,7 +1277,7 @@ package com.flexcapacitor.utils {
 		protected function dragCompleteHandler(event:DragEvent):void {
 			removeDragListeners(dragListener);
 			removeDragDisplayObjects();
-			removeGroupListeners(parentApplication);
+			removeGroupListeners(targetApplication);
 			event.currentTarget.removeEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);	
 		}
 		
@@ -1345,7 +1355,7 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (dropIndicatorInstance is IVisualElement) {
-				IVisualElement(dropIndicatorInstance).owner = parentApplication;
+				IVisualElement(dropIndicatorInstance).owner = targetApplication;
 			}
 			
 			// Set it in the layout
@@ -1553,7 +1563,7 @@ package com.flexcapacitor.utils {
 				target = targetsUnderPoint[i];
 				//trace(i + " of " + length+ " target:"+NameUtil.getUnqualifiedClassName(target));
 				
-				if (parentApplication.contains(DisplayObject(target))) {
+				if (targetApplication.contains(DisplayObject(target))) {
 					//trace(i + " parent application is " + parentApplication);
 					//trace(i + " parent application contains " + target);
 				}
@@ -1602,7 +1612,7 @@ package com.flexcapacitor.utils {
 			
 			if (!dropTarget) {
 				//trace("Group not found. Setting to application");
-				dropTarget = parentApplication;
+				dropTarget = targetApplication;
 			}
 			else {
 				//trace("Target found. Target is " + targetCandidate);

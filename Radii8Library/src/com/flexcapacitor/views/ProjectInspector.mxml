@@ -4,6 +4,8 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:views="com.flexcapacitor.views.*"
 		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:fc="com.flexcapacitor.effects.popup.*"
+		 xmlns:e="com.flexcapacitor.handlers.*"
 		 
 		 width="200" height="100%"
 		 creationComplete="creationCompleteHandler(event)" 
@@ -77,11 +79,20 @@
 					radiate.setProject(project);
 				}
 			}
+			
+			protected function publishButton_clickHandler(event:MouseEvent):void {
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
 		<s:ArrayCollection id="projects" source="{radiate.projects}"/>
+		
+		<e:EventHandler eventName="click" target="{publishButton}">
+			<fc:OpenPopUp popUpType="{PublishWindow}" />
+		</e:EventHandler>
 	</fx:Declarations>
 	
 	<s:layout>
@@ -107,6 +118,8 @@
 			 minHeight="24"
 			 verticalAlign="middle"
 			 >
+		<s:Button id="publishButton" 
+				  label="Publish" />
 		<s:Spacer width="100%"/>
 		<c:ImageButton id="newProjectIcon" 
 					   source="{Radii8LibraryAssets.newFile}" 

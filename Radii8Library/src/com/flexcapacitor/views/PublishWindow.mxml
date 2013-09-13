@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:handlers="com.flexcapacitor.handlers.*" 
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   
+			   width="400" height="300"
+			   title="Publish"
+			   >
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler target="{publishButton}" eventName="click">
+			<fc:ClosePopUp popUp="{this}" />
+		</handlers:EventHandler>
+	</fx:Declarations>
+	
+		<s:Label x="15" y="15" text="Publish location:" fontWeight="bold"/>
+	
+		<s:HGroup x="14" y="31">
+			<s:RadioButton x="91" label="Local" y="128" selected="true"/>
+			<s:RadioButton x="190" label="Server" y="130"/>
+		</s:HGroup>
+
+		<s:Label x="15" y="65" text="Publishing is not supported at this time. " fontWeight="bold"/>
+		<!--<s:Label x="15" y="85" text="This window will eventually publish the HTML to a server." fontWeight="bold"/>-->
+	
+		<s:Label x="15" y="85" text="Use the code view to use the generated code." fontWeight="bold"/>
+		
+	
+		<s:Button id="publishButton" label="Publish" right="10" bottom="10"/>
+</s:Panel>

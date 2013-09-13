@@ -160,7 +160,7 @@ package com.flexcapacitor.tools {
 			
 			_showSelectionLabel = value;
 			
-			updateTarget(lastTarget);
+			updateSelectionAroundTarget(lastTarget);
 		}
 		
 		private var _selectionBorderColor:uint = 0x2da6e9;
@@ -174,7 +174,7 @@ package com.flexcapacitor.tools {
 			
 			_selectionBorderColor = value;
 			
-			updateTarget(lastTarget);
+			updateSelectionAroundTarget(lastTarget);
 		}
 
 		public var showSelectionLabelOnDocument:Boolean = false;
@@ -184,6 +184,12 @@ package com.flexcapacitor.tools {
 		public var enableDrag:Boolean = true;
 		public var toolLayer:IVisualElementContainer;
 		public var updateOnUpdateComplete:Boolean = false;
+		
+		/**
+		 * X and Y coordinates of dragged object relative to the target application
+		 * */
+		[Bindable]
+		public var dragLocation:String;
 		
 		/**
 		 * Enable this tool. 
@@ -196,11 +202,11 @@ package com.flexcapacitor.tools {
 			}
 			
 			// handle events last so that we get correct size
-			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
-			radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
-			radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
-			radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
-			radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChangeHandler, false, EventPriority.DEFAULT_HANDLER, true);
+			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
+			radiate.addEventListener(RadiateEvent.TARGET_CHANGE, 		targetChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
+			radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, 		propertyChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
+			radiate.addEventListener(RadiateEvent.SCALE_CHANGE, 		scaleChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
+			radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 		}
 		
 		/**
@@ -345,21 +351,21 @@ package com.flexcapacitor.tools {
 		 * 
 		 * */
 		protected function propertyChangeHandler(event:RadiateEvent):void {
-			updateTarget(event.selectedItem);
+			updateSelectionAroundTarget(event.selectedItem);
 		}
 		
 		/**
 		 * 
 		 * */
 		protected function scaleChangeHandler(event:RadiateEvent):void {
-			updateTarget(event.selectedItem);
+			updateSelectionAroundTarget(event.selectedItem);
 		}
 		
 		/**
 		 * 
 		 * */
 		protected function targetChangeHandler(event:RadiateEvent):void {
-			updateTarget(event.selectedItem);
+			updateSelectionAroundTarget(event.selectedItem);
 		}
 		
 		/**
@@ -393,14 +399,14 @@ package com.flexcapacitor.tools {
 			
 			// this can go into an infinite loop if tool layer is causing update events
 			if (updateOnUpdateComplete) {
-				updateTarget(event.currentTarget);
+				updateSelectionAroundTarget(event.currentTarget);
 			}
 		}
 	
 		/**
 		 * Updates selection around the target
 		 * */
-		public function updateTarget(target:Object):void {
+		public function updateSelectionAroundTarget(target:Object):void {
 			
 			if (lastTarget && lastTarget is Image) {
 				lastTarget.removeEventListener(FlexEvent.READY, setSelectionLaterHandler);
@@ -411,11 +417,11 @@ package com.flexcapacitor.tools {
 			
 			lastTarget = target;
 			
-			if (lastTarget && lastTarget is Image) {
-				lastTarget.addEventListener(FlexEvent.READY, setSelectionLaterHandler, false, 0, true);
-				lastTarget.addEventListener(Event.COMPLETE, setSelectionLaterHandler, false, 0, true);
-				lastTarget.addEventListener(IOErrorEvent.IO_ERROR, setSelectionLaterHandler, false, 0, true);
-				lastTarget.addEventListener(SecurityErrorEvent.SECURITY_ERROR, setSelectionLaterHandler, false, 0, true);
+			if (target && target is Image) {
+				target.addEventListener(FlexEvent.READY, setSelectionLaterHandler, false, 0, true);
+				target.addEventListener(Event.COMPLETE, setSelectionLaterHandler, false, 0, true);
+				target.addEventListener(IOErrorEvent.IO_ERROR, setSelectionLaterHandler, false, 0, true);
+				target.addEventListener(SecurityErrorEvent.SECURITY_ERROR, setSelectionLaterHandler, false, 0, true);
 			}
 			
 			
@@ -569,7 +575,7 @@ package com.flexcapacitor.tools {
 				
 				// draw selection rectangle
 				if (showSelection) {
-					updateTarget(target);
+					updateSelectionAroundTarget(target);
 				}
 			}
 			
@@ -582,6 +588,7 @@ package com.flexcapacitor.tools {
 			//Radiate.log.info("Selection Drag Drop");
 			var target:Object = dragManagerInstance.draggedItem;
 			// trace("Drag over")
+			dragLocation = dragManagerInstance.dropTargetLocation;
 			
 			
 		}
@@ -597,8 +604,6 @@ package com.flexcapacitor.tools {
 			var target:Object = dragManagerInstance.draggedItem;
 			
 			
-			// CHECKING FOR ROGUE EVENT LISTENERS BEING ADDED TO THE TARGET
-			// SOME ARE ADDED BY CONSTRAINTS PANEL
 			
 			// clean up
 			if (target.hasEventListener(MouseEvent.MOUSE_UP)) {
@@ -622,14 +627,15 @@ package com.flexcapacitor.tools {
 			}
 			
 			if (showSelection) {
-				updateTarget(target);
+				updateSelectionAroundTarget(target);
 			}
 			
 			// set focus to component to handle keyboard events
-			if (target is UIComponent){
+			if (setFocusOnSelect && target is UIComponent){
 				target.setFocus();
 			}
 			
+			dragLocation = "";
 			
 			dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
 			dragManagerInstance.removeEventListener(DragDropEvent.DRAG_OVER, handleDragOver);
@@ -671,7 +677,7 @@ package com.flexcapacitor.tools {
 			
 			// draw selection rectangle
 			if (showSelection) {
-				updateTarget(target);
+				updateSelectionAroundTarget(target);
 			}
 			
 			// draw selection rectangle
@@ -1376,7 +1382,7 @@ package com.flexcapacitor.tools {
 			// we are referencing the 
 			if (radiate.targets.indexOf(lastTarget)!=-1) {
 				radiate.target.validateNow();
-				updateTarget(radiate.target);
+				updateSelectionAroundTarget(radiate.target);
 			}
 			
 			
