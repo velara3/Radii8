@@ -17,6 +17,9 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.MetaData;
+			import com.flexcapacitor.utils.SyntaxHighlighter;
+			
+			import flash.utils.getTimer;
 			
 			import mx.events.FlexEvent;
 			
@@ -24,6 +27,10 @@
 			 * Reference to Radiate
 			 * */
 			public var radiate:Radiate;
+			
+			public var syntaxHighlighter:SyntaxHighlighter;
+			
+			public var rawData:String;
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
@@ -37,15 +44,41 @@
 			
 			protected function propertySelectedHandler(event:RadiateEvent):void {
 				var metadata:MetaData = event.selectedItem as MetaData;
+				var newData:String;
 				
-				metadataTextArea.text = metadata.raw;
+				//trace("property change event");
+				
+				newData = metadata.raw;
+				if (rawData==newData) {
+					//trace("data hasn't changed");
+					return;
+				}
+				rawData = newData;
+				mxTextArea.text = rawData;
+				mxTextAreaChangeHandler();
+			}
+			
+			private function mxTextAreaChangeHandler():void {
+				//trace("change handler:" + getTimer())
+				if (!syntaxHighlighter) {
+					syntaxHighlighter = new SyntaxHighlighter(mxTextArea);
+					syntaxHighlighter.timerInterval = 20;
+					syntaxHighlighter.cssString = SyntaxHighlighter.CRIMSON_EDITOR_CSS;
+					syntaxHighlighter.addEventListener(Event.COMPLETE, completeHandler, false, 0, true);
+				}
+				
+				syntaxHighlighter.highlightCode();
+			}
+			
+			protected function completeHandler(event:Event):void {
+				//trace("complete event:" + getTimer());
 			}
 			
 		]]>
 	</fx:Script>
 	
 	
-	<s:TextArea id="metadataTextArea" 
+	<!--<s:TextArea id="metadataTextArea" 
 				top="8"
 				focusColor="#585858"
 				width="100%" height="100%" 
@@ -58,7 +91,19 @@
 			event.preventDefault();
 			event.currentTarget.insertText("\t");
         </s:keyFocusChange>
-	</s:TextArea>
+	</s:TextArea>-->
 	
 	
+	
+	<mx:TextArea id="mxTextArea"  
+				 top="8"
+				 focusAlpha="0"
+				 fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
+				 borderVisible="false"
+				 paddingTop="8"
+				 fontSize="12"
+				 width="100%" height="100%"
+				 editable="false"
+				 leading="0"
+				 />
 </s:Group>

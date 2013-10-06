@@ -608,7 +608,7 @@
 						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 						output += " style=\"" + styleValue + "\"";
-						output += " class=\"button\"";
+						output += " class=\"buttonSkin\"";
 						
 						output += " value=\"" + component.instance.label + "\"/>";
 						output += getWrapperTag(wrapperTag, true);
@@ -616,7 +616,7 @@
 					else if (htmlName=="checkbox") {
 						if (component.instance.label!="") {
 							output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-							output += "<label";
+							output += "<label ";
 							output = getNameString(component.instance, output) + "_Label";
 							styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 							//styleValue += "width:" + (component.instance.width + 6)+ "px;";
@@ -1616,6 +1616,11 @@
 					aceEditorCreated = false; // temp for now
 				}
 				else if (currentState=="highlight") {
+					
+					if (mxTextArea.text==value) {
+						return;
+					}
+					
 					mxTextArea.text = value;
 
 					if (!syntaxHighlighter) {
@@ -1738,6 +1743,17 @@
 		<fx:String id="css">
 			<![CDATA[]]>
 		</fx:String>
+		
+		
+		<!-- If you use .button it causes sizing issues where the size of the button is 0 
+		Firefox: 
+		Paste the following code into the editor after all other html code (from style tag to style tag).
+		And the class of the HTML button is set to class="button"
+		
+		Fix: 
+		Rename "button" to "buttonSkin" and set class="buttonSkin". In time this will point to actual skins and defined styles.
+		Look at buttonCSS2. 
+		-->
 		<fx:String id="buttonCSS">
 			<![CDATA[
 <style>
@@ -1753,6 +1769,26 @@
 
 .button:active {
 	background: url(assets/svg/button_skin_down.svg) 0 0 no-repeat;
+}
+</style>]]>
+		</fx:String>
+		
+		<fx:String id="buttonCSS2">
+			<![CDATA[
+<style>
+.buttonSkin {
+	background: url(assets/svg/button_skin_up.svg) 0 0 no-repeat;
+	border: 0px;
+}
+
+.buttonSkin:hover {
+	background: url(assets/svg/button_skin_over.svg) 0 0 no-repeat;
+	border: 0px;
+}
+
+.buttonSkin:active {
+	background: url(assets/svg/button_skin_down.svg) 0 0 no-repeat;
+	border: 0px;
 }
 </style>]]>
 		</fx:String>

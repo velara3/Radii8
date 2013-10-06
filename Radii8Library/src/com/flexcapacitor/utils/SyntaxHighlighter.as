@@ -1,5 +1,7 @@
 
 package com.flexcapacitor.utils {
+	import flash.events.Event;
+	import flash.events.EventDispatcher;
 	import flash.events.TimerEvent;
 	import flash.text.StyleSheet;
 	import flash.utils.Timer;
@@ -11,10 +13,21 @@ package com.flexcapacitor.utils {
 	import net.anirudh.as3syntaxhighlight.CodePrettyPrint;
 	import net.anirudh.as3syntaxhighlight.PseudoThread;
 	
+	
+	[Event(name="complete")]
+	
 	/**
-	 * Adds syntax highlighting to the text area
+	 * Adds syntax highlighting to the text area. 
+	 * 
+	 * This class wraps around the AS3SyntaxHighlighter
+	 * and makes it easier to setup the text area. 
+	 * 
+	 * This class is incomplete it appears. 
+	 * Some code may be from the example projects.
+	 * 
+	 * http://code.google.com/p/as3syntaxhighlight/
 	 * */
-	public class SyntaxHighlighter {
+	public class SyntaxHighlighter extends EventDispatcher {
 		
 		/**
 		 * spl = "var" or "function" token
@@ -71,8 +84,11 @@ package com.flexcapacitor.utils {
 		
 		public var debug:Boolean;
 		
+		public var dispatchEvents:Boolean = true;
+		
 		/**
-		 * Interval in milliseconds to wait before
+		 * Interval in milliseconds to wait before.
+		 * Not sure this is working.
 		 * */
 		public var timerInterval:int = 200;
 		
@@ -224,10 +240,18 @@ package com.flexcapacitor.utils {
 		
 		private function codePFComplete():void {
 			asyncCodeState = "";
+			
+			if (dispatchEvents) {
+				dispatchEvent(new Event(Event.COMPLETE));
+			}
 		}
 		
 		private function codeInPlaceComplete():void {	
 		    asyncCodeState = "Coloring...";
+			
+			if (dispatchEvents && hasEventListener(Event.OPEN)) {
+				dispatchEvent(new Event(Event.OPEN));
+			}
 			
 		    if (pfasyncrunning) {
 		        pfasyncstop = true;
@@ -252,6 +276,9 @@ package com.flexcapacitor.utils {
 		    asyncCodeState = "Lexing...";
 		    codePrettyPrint.prettyPrintAsync(textarea.text, null, codeInPlaceComplete, lexInt, textarea.systemManager);
 		    
+			if (dispatchEvents) {
+				dispatchEvent(new Event(Event.INIT));
+			}
 		}
 	}
 }
