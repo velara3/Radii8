@@ -164,6 +164,11 @@
 						if (css) {
 							output = output + "\n" + css;
 						}
+						
+						if (useSVGButtonClass) {
+							output = output + "\n" + buttonCSS2;
+						}
+						
 					}
 					else if (codeType.selectedItem==ANDROID) {
 						output = getAndroidOutputString(targetDescription, true, "", true);
@@ -385,6 +390,7 @@
 				var wrapperTag:String = "";
 				var wrapperTagStyles:String = "";
 				var properties:String = "";
+				var outlineStyle:String;
 				var output:String = "";
 				var type:String = "";
 				var instance:Object;
@@ -394,8 +400,8 @@
 				var gap:int;
 				
 				
-				
 				styles.position = Styles.ABSOLUTE;
+				outlineStyle = "outline:1px solid red;";
 				
 				// get layout positioning
 				if (component.parent && component.parent.instance is IVisualElementContainer) {
@@ -403,13 +409,17 @@
 					if (component.parent.instance.layout is HorizontalLayout) {
 						isHorizontalLayout = true;
 						styleValue = styleValue.replace("absolute", "relative");
-						styleValue += "vertical-align: middle;";
+						styleValue += "vertical-align:middle;";
 						styles.position = Styles.RELATIVE;
 						index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
 						numElements = GroupBase(component.parent.instance).numElements;
-						wrapperTagStyles += "display:inline;";
-						wrapperStyles.display = Styles.INLINE_BLOCK;
+						wrapperTagStyles += hasExplicitSizeSet(component.instance as IVisualElement) ? "display:inline-block;" : "display:inline;";
+						wrapperStyles.display = hasExplicitSizeSet(component.instance as IVisualElement) ? Styles.INLINE_BLOCK : Styles.INLINE;
 						gap = HorizontalLayout(component.parent.instance.layout).gap - 4;
+						
+						if (showBorders) {
+							styleValue += outlineStyle;
+						}
 						
 						if (index<numElements-1 && numElements>1) {
 							wrapperTagStyles += "padding-right:" + gap + "px";
@@ -426,9 +436,13 @@
 						styles.position = Styles.RELATIVE;
 						index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
 						numElements = GroupBase(component.parent.instance).numElements;
-						wrapperTagStyles += "display:inline;";
-						wrapperStyles.display = Styles.INLINE;
+						wrapperTagStyles += hasExplicitSizeSet(component.instance as IVisualElement) ? "display:inline-block;" : "display:inline;";
+						wrapperStyles.display = hasExplicitSizeSet(component.instance as IVisualElement) ? Styles.INLINE_BLOCK : Styles.INLINE;
 						gap = TileLayout(component.parent.instance.layout).horizontalGap - 4;
+						
+						if (showBorders) {
+							styleValue += outlineStyle;
+						}
 						
 						if (index<numElements-1 && numElements>1) {
 							wrapperTagStyles += "padding-right:" + gap + "px";
@@ -446,6 +460,10 @@
 						numElements = GroupBase(component.parent.instance).numElements;
 						gap = VerticalLayout(component.parent.instance.layout).gap;
 						
+						if (showBorders) {
+							styleValue += outlineStyle;
+						}
+						
 						if (index<numElements-1 && numElements>1) {
 							wrapperTagStyles += "padding-bottom:" + gap + "px";
 							wrapperStyles.paddingBottom =  gap + "px";
@@ -456,6 +474,11 @@
 					
 					else if (component.parent.instance.layout is BasicLayout) {
 						isBasicLayout = true;
+						
+						
+						if (showBorders) {
+							styleValue += outlineStyle;
+						}
 						//styleValue = styleValue.replace("absolute", "relative");
 						//styles.position = Styles.RELATIVE;
 						/*index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
@@ -716,6 +739,7 @@
 						//styleValue += "width:" + component.instance.width+ "px;";
 						//styleValue += "height:" + component.instance.height+ "px;";
 						styleValue = getSizeString(component.instance as IVisualElement, styleValue);
+						//styleValue += wrapperTagStyles;
 						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 						//styles += getBorderString(component.instance as IStyleClient);
@@ -1217,20 +1241,46 @@
 				return propertyValue;
 			}
 			
+			/**
+			 * Checks if size is explicitly set
+			 * If explicit width is set then we should use inline-block 
+			 * because inline does not respect width and height
+			 * */
+			public function hasExplicitSizeSet(instance:IVisualElement):Boolean {
+				
+				if ("explicitWidth" in instance && Object(instance).explicitWidth!=null) {
+					return true;
+				}
+				else if ("explicitHeight" in instance && Object(instance).explicitHeight!=null) {
+					return true;
+				}
+				
+				return false;
+			}
 			
 			/**
 			 * Get width and height styles
+			 * If explicit width is set then we should use inline-block 
+			 * because inline does not respect width and height
 			 * */
 			public function getSizeString(instance:IVisualElement, styleValue:String = ""):String {
+				var hasExplicitSize:Boolean;
+				var hasBorder:Boolean;
+				var border:int;
+				
+				if (instance is IStyleClient && IStyleClient(instance).getStyle("borderWeight")) {
+					
+				}
 				
 				if (!isNaN(instance.percentWidth)) {
 					styleValue += "width:" + instance.percentWidth + "%;";
 				}
 				else if ("explicitWidth" in instance && Object(instance).explicitWidth!=null) {
 					styleValue += "width:" + instance.width + "px;";
+					hasExplicitSize = true;
 				}
 				else {
-					styleValue += "width:" + instance.width + "px;";
+					//styleValue += "width:" + instance.width + "px;";
 				}
 				
 				if (!isNaN(instance.percentHeight)) {
@@ -1238,9 +1288,14 @@
 				}
 				else if ("explicitHeight" in instance && Object(instance).explicitHeight!=null) {
 					styleValue += "height:" + instance.height + "px;";
+					hasExplicitSize = true;
 				}
 				else {
-					styleValue += "height:" + instance.height + "px;";
+					//styleValue += "height:" + instance.height + "px;";
+				}
+				
+				if (hasExplicitSize) {
+					styleValue += "display:" + Styles.INLINE_BLOCK + ";";
 				}
 				
 				return styleValue;
@@ -1420,6 +1475,18 @@
 			 * */
 			[Bindable]
 			public var isCodeModifiedByUser:Boolean;
+			
+			/**
+			 * Show borders around HTML elements
+			 * */
+			[Bindable]
+			public var showBorders:Boolean;
+			
+			/**
+			 * Use SVG button class
+			 * */
+			[Bindable]
+			public var useSVGButtonClass:Boolean = true;
 			
 			/**
 			 * 
@@ -1713,6 +1780,16 @@
 				trace(htmlText);
 			}
 			
+			protected function showBorders_clickHandler(event:MouseEvent):void {
+				showBorders = showBordersCheckbox.selected;
+				update(true);
+			}
+			
+			protected function useSVGButtonClassCheckbox_changeHandler(event:Event):void {
+				useSVGButtonClass = useSVGButtonClassCheckbox.selected;
+				update(true);
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1741,7 +1818,26 @@
 			<![CDATA[]]>
 		</fx:String>
 		<fx:String id="css">
-			<![CDATA[]]>
+			<![CDATA[
+<style>
+*, *:before, *:after {
+  -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+ }
+
+</style>]]>
+		</fx:String>
+		
+		<!--- cause all padding and borders to be inside width and height 
+		http://www.paulirish.com/2012/box-sizing-border-box-ftw/
+		-->
+		<fx:String id="borderBoxCSS">
+			<![CDATA[
+<style>
+*, *:before, *:after {
+  -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+ }
+
+</style>]]>
 		</fx:String>
 		
 		
@@ -1773,6 +1869,7 @@
 </style>]]>
 		</fx:String>
 		
+		
 		<fx:String id="buttonCSS2">
 			<![CDATA[
 <style>
@@ -1802,7 +1899,7 @@
 	
 	
 	<s:TextArea id="sparkTextArea" 
-				top="28"
+				top="50"
 				focusColor="#585858"
 				width="100%" height="100%" 
 				fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
@@ -1819,7 +1916,7 @@
 	</s:TextArea>
 	
 	<mx:TextArea id="mxTextArea"  
-				 top="28"
+				 top="50"
 				 focusAlpha="0"
 				 fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
 				 borderVisible="false"
@@ -1835,7 +1932,7 @@
 	
 	
 	<flexiframe:IFrame id="editor" 
-					   top="28" left="0"
+					   top="50" left="0"
 					   width="100%" height="100%" 
 					   includeIn="editor"
 					   resize="editor_resizeHandler(event)"
@@ -1850,11 +1947,6 @@
 			  verticalAlign="baseline"
 			  >
 
-		<s:Button id="getHTMLButton" 
-				  label="GetHTML" 
-				  click="getHTMLButton_clickHandler(event)"
-				  includeInLayout="false"
-				  />
 		<s:Label id="targetNameLabel" 
 				 minWidth="150"
 				 color="#A6a5a5" 
@@ -1862,35 +1954,6 @@
 		
 		<s:Spacer width="100%"/>
 		
-		<s:CheckBox id="updateCodeLive" 
-					selected="true"
-					label="Update Live"
-					visible="{codeType.selectedItem==HTML}" 
-					includeInLayout="{codeType.selectedItem==HTML}" 
-					change="updateCodeLive_changeHandler(event)"/>
-		
-		
-		<s:CheckBox id="openInSeparateWindow" label="Open in Window" 
-					visible="{codeType.selectedItem=='htmll'}" 
-					includeInLayout="{codeType.selectedItem=='htmll'}" 
-					change="openInSeparateWindow_changeHandler(event)"/>
-		
-		
-		<s:CheckBox id="showSelection" 
-					selected="false"
-					label="Show Selection"
-					click="showSelection_clickHandler(event)"/>
-		
-		<s:Button id="resyncButton" 
-				  label="Resync" 
-				  visible="{isCodeModifiedByUser}" 
-				  click="resyncButton_clickHandler(event)"
-				  />
-		
-		<s:Button label="Preview" 
-				  visible="{codeType.selectedItem==HTML}" 
-				  includeInLayout="{codeType.selectedItem==HTML}" 
-				  click="previewButton_clickHandler(event)"/>
 		
 		
 		<s:ButtonBar id="codeType" 
@@ -1917,8 +1980,71 @@
 					   source="{Radii8LibraryAssets.copy}" 
 					   toolTip="Copy the code to the Clipboard"
 					   verticalAlign="middle"
+					   useHandCursor="true"
 					   />
 	</s:HGroup>
 	
+	
+	
+	<s:HGroup left="0" right="0" 
+			  top="28"
+			  width="100%"
+			  clipAndEnableScrolling="true" 
+			  paddingLeft="6" 
+			  paddingRight="10"
+			  verticalAlign="baseline"
+			  >
+		
+		<s:Button id="getHTMLButton" 
+				  label="GetHTML" 
+				  click="getHTMLButton_clickHandler(event)"
+				  includeInLayout="false"
+				  />
+		
+		<s:Spacer width="100%"/>
+		
+		<s:CheckBox id="openInSeparateWindow" 
+					label="Open in Window" 
+					visible="{codeType.selectedItem=='htmll'}" 
+					includeInLayout="{codeType.selectedItem=='htmll'}" 
+					change="openInSeparateWindow_changeHandler(event)"/>
+		
+		<s:CheckBox id="useSVGButtonClassCheckbox" 
+					label="Use SVG Button" 
+					visible="{codeType.selectedItem=='htmll'}" 
+					includeInLayout="{codeType.selectedItem=='htmll'}" 
+					change="useSVGButtonClassCheckbox_changeHandler(event)"/>
+		
+		<s:CheckBox id="updateCodeLive" 
+					selected="true"
+					label="Update Live"
+					visible="{codeType.selectedItem==HTML}" 
+					includeInLayout="{codeType.selectedItem==HTML}" 
+					change="updateCodeLive_changeHandler(event)"/>
+	
+		<s:CheckBox id="showSelection" 
+					selected="false"
+					label="Show Selected Item"
+					visible="false"
+					includeInLayout="false"
+					click="showSelection_clickHandler(event)"/>
+		
+		<s:CheckBox id="showBordersCheckbox" 
+					selected="false"
+					label="Show Borders"
+					click="showBorders_clickHandler(event)"/>
+		
+		<s:Button id="resyncButton" 
+				  label="Resync" 
+				  enabled="{isCodeModifiedByUser}" 
+				  click="resyncButton_clickHandler(event)"
+				  />
+		
+		<s:Button label="Preview" 
+				  visible="{codeType.selectedItem==HTML}" 
+				  includeInLayout="{codeType.selectedItem==HTML}" 
+				  click="previewButton_clickHandler(event)"/>
+		
+	</s:HGroup>
 	
 </s:Group>
