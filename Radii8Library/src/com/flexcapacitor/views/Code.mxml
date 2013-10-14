@@ -169,6 +169,11 @@
 							output = output + "\n" + buttonCSS2;
 						}
 						
+						if (showFullHTMLPageSource) {
+							output = html5boilerplate.replace("<!--content-->", output);
+						}
+							
+						
 					}
 					else if (codeType.selectedItem==ANDROID) {
 						output = getAndroidOutputString(targetDescription, true, "", true);
@@ -1489,6 +1494,12 @@
 			public var useSVGButtonClass:Boolean = true;
 			
 			/**
+			 * Show full HTML page source
+			 * */
+			[Bindable]
+			public var showFullHTMLPageSource:Boolean = false;
+			
+			/**
 			 * 
 			 * */
 			protected function resyncButton_clickHandler(event:MouseEvent):void {
@@ -1551,6 +1562,7 @@
 			}
 			
 			private var aceEditorCreated:Boolean;
+			private var aceEditorVisible:Boolean;
 				
 			/**
 			 * Get a tag with less than or greater than wrapped around it. 
@@ -1680,7 +1692,7 @@
 				
 				if (currentState=="normal") {
 					sparkTextArea.text = value;
-					aceEditorCreated = false; // temp for now
+					aceEditorVisible = false; // temp for now
 				}
 				else if (currentState=="highlight") {
 					
@@ -1697,7 +1709,7 @@
 					}
 					
 					syntaxHighlighter.highlightCode();
-					aceEditorCreated = false; // temp for now
+					aceEditorVisible = false; // temp for now
 				}
 				else if (currentState=="editor") {
 					
@@ -1708,7 +1720,7 @@
 						result = ExternalInterface.call(createEditor, "editor0", ExternalInterface.objectID);
 						ExternalInterface.addCallback("editorChange", editorChange);
 						ExternalInterface.addCallback("cursorChange", cursorChange);
-	                	aceEditorCreated = true;
+	                	//aceEditorCreated = true;
 					}
 					
 					settingEditorText = true;
@@ -1790,6 +1802,11 @@
 				update(true);
 			}
 			
+			protected function showFullHTMLCheckbox_clickHandler(event:MouseEvent):void {
+				showFullHTMLPageSource = showFullHTMLCheckbox.selected;
+				update(true);
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1812,6 +1829,51 @@
 			</clipboard:CopyToClipboard>
 			
 		</handlers:EventHandler>
+		
+		<fx:String id="html5boilerplate">
+<![CDATA[<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+
+        <link rel="stylesheet" href="css/normalize.css">
+        <link rel="stylesheet" href="css/main.css">
+        <script src="js/vendor/modernizr-2.6.2.min.js"></script>
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+
+        <!--content-->
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.2.min.js"><\/script>')</script>
+        <script src="js/plugins.js"></script>
+        <script src="js/main.js"></script>
+
+        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+        <script>
+            (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+            function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+            e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+            e.src='//www.google-analytics.com/analytics.js';
+            r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+            ga('create','UA-XXXXX-X');ga('send','pageview');
+        </script>
+    </body>
+</html>
+]]>
+		</fx:String>
 		
 			<!--<![CDATA[<link rel="stylesheet" href="css/normalize/2.1.2/normalize.css"/>]]>-->
 		<fx:String id="stylesheets">
@@ -1976,12 +2038,6 @@
 					 change="editorType_changeHandler(event)">
 		</s:ButtonBar>
 		
-		<c:ImageButton id="copyIcon" 
-					   source="{Radii8LibraryAssets.copy}" 
-					   toolTip="Copy the code to the Clipboard"
-					   verticalAlign="middle"
-					   useHandCursor="true"
-					   />
 	</s:HGroup>
 	
 	
@@ -2029,9 +2085,16 @@
 					includeInLayout="false"
 					click="showSelection_clickHandler(event)"/>
 		
+		<s:CheckBox id="showFullHTMLCheckbox" 
+					selected="false"
+					label="Show Full HTML"
+					visible="true"
+					includeInLayout="true"
+					click="showFullHTMLCheckbox_clickHandler(event)"/>
+		
 		<s:CheckBox id="showBordersCheckbox" 
 					selected="false"
-					label="Show Borders"
+					label="Show Outlines"
 					click="showBorders_clickHandler(event)"/>
 		
 		<s:Button id="resyncButton" 
@@ -2045,6 +2108,12 @@
 				  includeInLayout="{codeType.selectedItem==HTML}" 
 				  click="previewButton_clickHandler(event)"/>
 		
+		<c:ImageButton id="copyIcon" 
+					   source="{Radii8LibraryAssets.copy}" 
+					   toolTip="Copy the code to the Clipboard"
+					   verticalAlign="middle"
+					   useHandCursor="true"
+					   />
 	</s:HGroup>
 	
 </s:Group>

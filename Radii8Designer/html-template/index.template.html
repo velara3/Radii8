@@ -44,6 +44,11 @@
 		    ace_editor.setShowPrintMargin(false);
 		    ace_editor.renderer.setShowGutter(false);
 		    ace_editor.getSession().setUseWrapMode(true);
+		    // in firefox on mac editor stops working after placing cursor 
+		    // in different location with mouse (second time)
+		    // clicking on flash object then clicking back into editor 
+		    // allows typing again until placing cursor in another location
+		    // and you must click the flash object again. works in safari.
 		    //ace_editor.onFocus = function() { ace_editor.setReadOnly(false);};
 		    /*
 			ace_editor.__defineGetter__("$readOnly", function(){return false})
@@ -54,9 +59,9 @@
 		    ace_editor.setReadOnly(true);*/
 		    ace_editor.setReadOnly(false);
 		    
-		    //ace_editor.getSession().on('change', function(e) {
-			//    editorChange(flashID);
-			//});
+		    ace_editor.getSession().on('change', function(e) {
+			    editorChange(flashID);
+			});
 			
 			//ace_editor.getSession().selection.on('changeCursor', function(e) {
 			//	cursorChange(flashID);
@@ -106,7 +111,14 @@
 		}
 		
 		function beforeUnloadHandler() {
-    		return "Are you sure you want to navigate away?";
+			var testing = window.location.search.substr(1).indexOf("debug=true");
+			
+			if (testing==-1) {
+    			return "Are you sure you want to navigate away?";
+    		}
+    		else {
+    			//return false;
+    		}
 		}
 		
 		function onloadHandler() {

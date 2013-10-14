@@ -188,7 +188,8 @@ package com.flexcapacitor.utils {
 			startingPoint.x = event.stageX;
 			startingPoint.y = event.stageY;
 			
-			updateDropTargetLocation(event.stageX, event.stageY);
+			
+			updateDropTargetLocation(targetApplication, event);
 			
 			dragInitiator.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
 			swfRoot.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
@@ -198,14 +199,33 @@ package com.flexcapacitor.utils {
 		 * Updates the drop target location property with the x and y values of the dragged item.
 		 * Format is "XxY", so for example, "100x50".
 		 * */
-		private function updateDropTargetLocation(x:int, y:int):void {
-			var out:String = x + "x" + y;
+		private function updateDropTargetLocation(rootDisplayObject:DisplayObject, event:MouseEvent):void {
+			var mousePoint:Point = new Point(event.stageX, event.stageY);
+			var applicationLocationPoint:Point = DisplayObject(rootDisplayObject).localToGlobal(new Point());
+			
+			//var point2:Point = new Point(-event.stageX, -event.stageY);
+			//var newPoint:Point = DisplayObject(rootDisplayObject).localToGlobal(mousePoint);
+			//var newPoint1:Point = DisplayObject(rootDisplayObject).localToGlobal(point2);
+			
+			// this one works 
+			//var newPoint3:Point = DisplayObject(rootDisplayObject).globalToLocal(mousePoint);
+			//var newPoint4:Point = DisplayObject(rootDisplayObject).globalToLocal(point2);
+			
+			var newX:Number = mousePoint.x - applicationLocationPoint.x - offset.x;
+			var newY:Number = mousePoint.y - applicationLocationPoint.y - offset.y;
+			//var newX2:Number = targetApplication.contentMouseX - offset.x;
+			//var newY2:Number = targetApplication.contentMouseY - offset.y;
+			
+			var out:String = newX + "x" + newY;
 			// Find the registration point of the owner
 	        /*var sandboxRoot:DisplayObject = systemManager.getSandboxRoot();
 	        var regPoint:Point = owner.localToGlobal(new Point());
 	        regPoint = sandboxRoot.globalToLocal(regPoint);*/
+	        //var regPoint:Point = rootDisplayObject.localToGlobal(new Point());
+	        //regPoint = rootDisplayObject.globalToLocal(regPoint);
+			
 			if (dropTargetLocation!=out) {
-				dropTargetLocation = x + "x" + y;
+				dropTargetLocation = out;
 			}
 		}
 		
@@ -218,7 +238,7 @@ package com.flexcapacitor.utils {
 			dragToleranceMet = Math.abs(startingPoint.x - event.stageX) >= dragStartTolerance;
 			dragToleranceMet = !dragToleranceMet ? Math.abs(startingPoint.y - event.stageY)  >= dragStartTolerance: true;
 			
-			updateDropTargetLocation(event.stageX, event.stageY);
+			updateDropTargetLocation(targetApplication, event);
 			
 			if (dragToleranceMet) {
 				dragInitiator.visible = hideDragInitiatorOnDrag ? false : true; // hide from view
@@ -251,7 +271,7 @@ package com.flexcapacitor.utils {
 			offset.x = event.stageX - distanceFromLeft;
 			offset.y = event.stageY - distanceFromTop;
 			
-			updateDropTargetLocation(event.stageX, event.stageY);
+			updateDropTargetLocation(targetApplication, event);
 			
 			addGroupListeners(application);
 			addDragListeners(dragInitiator, dragListener);
@@ -692,7 +712,7 @@ package com.flexcapacitor.utils {
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
 			// update location properties
-			updateDropTargetLocation(event.stageX, event.stageY);
+			updateDropTargetLocation(targetApplication, event);
 			
 			/*if (target is mx.containers.GridItem) {
 				trace("break");
