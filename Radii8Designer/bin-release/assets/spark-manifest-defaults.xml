@@ -24,7 +24,7 @@
     </component>
     
     <component id="Button" class="spark.components.Button">
-    	<defaults width="70" height="21" label="Label"/>
+    	<defaults width="70" height="22" label="Label"/>
     </component>
     
     <component id="ButtonBar" class="spark.components.ButtonBar" include="true">

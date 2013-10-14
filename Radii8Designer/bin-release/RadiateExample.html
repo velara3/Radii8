@@ -36,21 +36,27 @@
         
         <script>
 
-        function createEditor(flashID) {
-		    ace_editor = ace.edit("editor");
+        function createEditor(editorName, flashID) {
+		    ace_editor = ace.edit(editorName);
 		    ace_editor.setTheme("ace/theme/crimson_editor");
 		    ace_editor.getSession().setMode("ace/mode/html");
 		    ace_editor.setShowFoldWidgets(false);
 		    ace_editor.setShowPrintMargin(false);
 		    ace_editor.renderer.setShowGutter(false);
+		    ace_editor.getSession().setUseWrapMode(true);
+		    // in firefox on mac editor stops working after placing cursor 
+		    // in different location with mouse (second time)
+		    // clicking on flash object then clicking back into editor 
+		    // allows typing again until placing cursor in another location
+		    // and you must click the flash object again. works in safari.
 		    //ace_editor.onFocus = function() { ace_editor.setReadOnly(false);};
-		    
+		    /*
 			ace_editor.__defineGetter__("$readOnly", function(){return false})
 			ace_editor.__defineSetter__("$readOnly", function(val){
 			    console.log("read only changed!!!");
 			})
 		    ace_editor.setReadOnly(false);
-		    ace_editor.setReadOnly(true);
+		    ace_editor.setReadOnly(true);*/
 		    ace_editor.setReadOnly(false);
 		    
 		    ace_editor.getSession().on('change', function(e) {
@@ -60,6 +66,8 @@
 			//ace_editor.getSession().selection.on('changeCursor', function(e) {
 			//	cursorChange(flashID);
 			//});
+			
+		    //ace_editor.renderer.$keepTextAreaAtCursor = false;
 		    return "created";
 		}
 		
@@ -90,10 +98,33 @@
 			flash.cursorChange();
 		}
 		
+		function wordWrapChange(flashID, enabled) {
+			console.log("word wrap changed");
+		    ace_editor.getSession().setUseWrapMode(enabled);
+			//var flash = document.getElementById(flashID);
+			//flash.wordWrapChange();
+		}
+		
 		function resizeEditor() {
 			console.log("editor resized");
 			ace_editor.resize();
 		}
+		
+		function beforeUnloadHandler() {
+			var testing = window.location.search.substr(1).indexOf("debug=true");
+			
+			if (testing==-1) {
+    			return "Are you sure you want to navigate away?";
+    		}
+    		else {
+    			//return false;
+    		}
+		}
+		
+		function onloadHandler() {
+			window.onbeforeunload = beforeUnloadHandler;
+		}
+		
 		</script>
 		
         <!-- Enable Browser History by replacing useBrowserHistory tokens with two hyphens -->
@@ -128,7 +159,7 @@
             swfobject.createCSS("#flashContent", "display:block;text-align:left;");
         </script>
     </head>
-    <body>
+    <body onload="onloadHandler()">
         <!-- SWFObject's dynamic embed method replaces this alternative HTML content with Flash content when enough 
              JavaScript and Flash plug-in support is available. The div is initially hidden so that it doesn't show
              when JavaScript is disabled.
