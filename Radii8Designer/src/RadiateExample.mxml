@@ -33,12 +33,16 @@
 	always be there for them. We're not sure how pricing might work, but we do know that we'd 
 	like our users to be our customers, not our product.
 	
-	thoughts on html design and development process and export
+	
+	Readings for new developers
+	Thoughts on html design and development process and export
 	http://24ways.org/2009/make-your-mockup-in-markup/
 	http://www.sitepoint.com/forums/showthread.php?869812-Exactly-How-To-make-pixel-perfect-HTML-CSS-from-PNG-PSD
 	http://elliotnash.me/why-designers-are-talking-about-the-wrong-thing?utm_source=buffer&utm_campaign=Buffer&utm_content=buffer970d2&utm_medium=twitter
 	http://lifehacker.com/5974605/learn-beginner-and-advanced-htmlcss-skills-for-free
 	http://learn.shayhowe.com/html-css/box-model
+	http://bradfrostweb.com/blog/post/development-is-design/?utm_source=buffer&utm_campaign=Buffer&utm_content=buffer27075&utm_medium=twitter
+	
 	-->
 	
 	<fx:Style>
@@ -248,8 +252,8 @@
 		
 		<utils:MiniInspector showDisplayObjectOutlines="true"
 							 showRuler="false"
-							 showStyleInheritanceInformation="true"
-							 showAllStyleDeclarations="true"
+							 showStyleInheritanceInformation="false"
+							 showAllStyleDeclarations="false"
 							 showColorUnderMouse="false"
 							 />
 	</fx:Declarations>

@@ -17,7 +17,58 @@
 	
 	<!-- 
 	
+	*******************************
+	Code highlighting 
+	*******************************
+	Currently there are 3 editors, a spark textarea with no 
+	syntax highlighting, a mx text area with syntax highlighting
+	but some redraw issues and no undo or redo support and 
+	an html based editor called ace editor that is awesome
+	but has a bug in firefox where the code cannot be edited. 
+	when it becomes uneditable you have to click on the flex 
+	application and then click back into the editor. 
+	it also does not resize correctly but that may be a 
+	flex issue. it also is being erased when hidden and revealed.
+	
+	
+	*******************************
+	Writing code 
+	*******************************
+	the code editor only shows the code of the selection or document.
+	it is not yet tied to the component to allow the user to enter 
+	code and have it be retained. 
+	
+	in the future there may be a second code window to show or edit the 
+	code of the selected event. this would listen for an event like 
+	the property or style selected event that the metadata panel uses.
+	and / or there may be a option to show all document code or 
+	only event code. 
+	
+	what most likely will happen is that this panel will be used to show
+	the selected objects generated code and or the event code. 
+	then there would be full sized editors that open up in new 
+	tabs that show the complete document code. or for purposes of 
+	split view this would continue to server both purposes. 
+	
+	
+	*******************************
+	Generating Code: 
+	*******************************
+	this is the second or third iteration of generating source code
+	but it is inadequate.  
+	there is code already started in the ComponentDecription class that
+	should be better. the component description would have a static 
+	property called exporter. this would be a class that would be 
+	used to generate the code. it would return the correct code through 
+	the componentDescription.toString() method. 
+	
+	There would be a HTML exporter, MXML exporter and so on. 
+	
+	Currently the properties and the styles are not set on the 
+	componentDescription instance. This is why we are using the current 
+	method. 
 	-->
+	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
@@ -145,6 +196,8 @@
 				
 				
 				if (targetDescription) {
+					
+					// see the top of this document on how to generate source code
 					getAppliedPropertiesFromHistory(targetDescription);
 					
 					
@@ -1664,6 +1717,7 @@
 			[Bindable]
 			public var sourceCode:String;
 			
+			public var lastMXTextAreaValue:String;
 			
 			public var syntaxHighlighter:SyntaxHighlighter;
 			
@@ -1696,11 +1750,12 @@
 				}
 				else if (currentState=="highlight") {
 					
-					if (mxTextArea.text==value) {
+					if (lastMXTextAreaValue==value) {
 						return;
 					}
 					
 					mxTextArea.text = value;
+					lastMXTextAreaValue = value;
 
 					if (!syntaxHighlighter) {
 						syntaxHighlighter = new SyntaxHighlighter(mxTextArea);
@@ -1720,7 +1775,7 @@
 						result = ExternalInterface.call(createEditor, "editor0", ExternalInterface.objectID);
 						ExternalInterface.addCallback("editorChange", editorChange);
 						ExternalInterface.addCallback("cursorChange", cursorChange);
-	                	//aceEditorCreated = true;
+	                	aceEditorCreated = true;
 					}
 					
 					settingEditorText = true;
@@ -1961,7 +2016,7 @@
 	
 	
 	<s:TextArea id="sparkTextArea" 
-				top="50"
+				top="55"
 				focusColor="#585858"
 				width="100%" height="100%" 
 				fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
@@ -2013,43 +2068,6 @@
 				 minWidth="150"
 				 color="#A6a5a5" 
 				 />
-		
-		<s:Spacer width="100%"/>
-		
-		
-		
-		<s:ButtonBar id="codeType" 
-						selectedIndex="1"
-						change="codeType_changeHandler(event)">
-			<s:dataProvider>
-				<s:ArrayList>
-					<fx:String>{MXML}</fx:String>
-					<fx:String>{HTML}</fx:String>
-					<fx:String>{ANDROID}</fx:String>
-				</s:ArrayList>
-			</s:dataProvider>
-		</s:ButtonBar>
-		
-		<s:ButtonBar id="editorType" 
-					 requireSelection="true"
-					 selectedIndex="0"
-					 labelField="name"
-					 initialize="editorType.dataProvider = new ArrayList(states);editorType.selectedIndex = 0;"
-					 change="editorType_changeHandler(event)">
-		</s:ButtonBar>
-		
-	</s:HGroup>
-	
-	
-	
-	<s:HGroup left="0" right="0" 
-			  top="28"
-			  width="100%"
-			  clipAndEnableScrolling="true" 
-			  paddingLeft="6" 
-			  paddingRight="10"
-			  verticalAlign="baseline"
-			  >
 		
 		<s:Button id="getHTMLButton" 
 				  label="GetHTML" 
@@ -2103,9 +2121,8 @@
 				  click="resyncButton_clickHandler(event)"
 				  />
 		
-		<s:Button label="Preview" 
-				  visible="{codeType.selectedItem==HTML}" 
-				  includeInLayout="{codeType.selectedItem==HTML}" 
+		<s:Button label="Preview HTML" 
+				  enabled="{codeType.selectedItem==HTML}" 
 				  click="previewButton_clickHandler(event)"/>
 		
 		<c:ImageButton id="copyIcon" 
@@ -2114,6 +2131,69 @@
 					   verticalAlign="middle"
 					   useHandCursor="true"
 					   />
+	</s:HGroup>
+	
+	
+	
+	<s:HGroup left="0" right="0" 
+			  top="28"
+			  width="100%"
+			  clipAndEnableScrolling="true" 
+			  paddingLeft="6" 
+			  paddingRight="10"
+			  verticalAlign="baseline"
+			  >
+		
+		
+		<s:Label minWidth="150"
+				 color="#A6a5a5"
+				 includeIn="editor"
+				 text="This editor cannot edit in Firefox"
+				 />
+		
+		<s:Label minWidth="150"
+				 color="#A6a5a5"
+				 includeIn="highlight"
+				 text="This editor has no undo or redo"
+				 />
+		
+		
+		<s:Label minWidth="150"
+				 color="#A6a5a5"
+				 includeIn="normal"
+				 text="This editor has no syntax highlighting"
+				 />
+		
+		<s:Spacer width="100%"/>
+		
+		<s:Label text="Editor type:"
+				 color="#A6a5a5" 
+				 />
+		
+		<s:ButtonBar id="editorType" 
+					 requireSelection="true"
+					 selectedIndex="0"
+					 labelField="name"
+					 initialize="editorType.dataProvider = new ArrayList(states);editorType.selectedIndex = 0;"
+					 change="editorType_changeHandler(event)">
+		</s:ButtonBar>
+		
+		<s:Label text="Language type:"
+				 color="#A6a5a5" 
+				 />
+		
+		
+		<s:ButtonBar id="codeType" 
+						selectedIndex="1"
+						change="codeType_changeHandler(event)">
+			<s:dataProvider>
+				<s:ArrayList>
+					<fx:String>{MXML}</fx:String>
+					<fx:String>{HTML}</fx:String>
+					<fx:String>{ANDROID}</fx:String>
+				</s:ArrayList>
+			</s:dataProvider>
+		</s:ButtonBar>
 	</s:HGroup>
 	
 </s:Group>

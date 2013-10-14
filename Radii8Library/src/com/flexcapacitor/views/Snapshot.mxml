@@ -116,12 +116,15 @@
 		</handlers:EventHandler>
 		
 		<!-- PREVIEW -->
-		<popup:OpenPopUp id="openPopUp" 
-						 duration="250"
-						 showDropShadow="true"
-						 popUpType="{ImagePreview}"
-						 closeOnMouseDownInside="true"
-						 options="{{data:rasterize.bitmapData}}"/>
+		<handlers:EventHandler eventName="click" 
+							   target="{preview}">
+			<popup:OpenPopUp id="openPopUp" 
+							 modalDuration="250"
+							 showDropShadow="true"
+							 popUpType="{ImagePreview}"
+							 closeOnMouseDownInside="true"
+							 options="{{data:rasterize.bitmapData}}"/>
+		</handlers:EventHandler>
 		
 		
 		<fx:Component className="ImagePreview">
@@ -169,10 +172,10 @@
 		<!--<s:TextInput paste="group1_pasteHandler(event)"/>-->
 		<controls:ImageButton id="preview" 
 							  source="assets/images/components/Image.png"
-							  mouseUpEffect="{openPopUp}"
 							  includeInLayout="{Boolean(rasterize.bitmapData)}"
 							  visible="{Boolean(rasterize.bitmapData)}"
 							  />
+<!--							  mouseUpEffect="{openPopUp}"-->
 		
 	</s:HGroup>
 	

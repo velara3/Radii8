@@ -237,7 +237,7 @@
 						<inspectors:Selection height="100%" width="100%" />-->
 			
 			
-			<mx:VDividedBox width="300" height="100%">
+			<mx:VDividedBox width="350" height="100%">
 				<!--<s:layout>
 					<s:VerticalLayout gap="0" />
 				</s:layout>-->

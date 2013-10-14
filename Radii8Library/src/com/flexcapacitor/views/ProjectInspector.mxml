@@ -91,7 +91,7 @@
 		<s:ArrayCollection id="projects" source="{radiate.projects}"/>
 		
 		<e:EventHandler eventName="click" target="{publishButton}">
-			<fc:OpenPopUp popUpType="{PublishWindow}" />
+			<fc:OpenPopUp popUpType="{PublishWindow}" modalDuration="250"/>
 		</e:EventHandler>
 	</fx:Declarations>
 	
