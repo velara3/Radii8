@@ -378,7 +378,7 @@
 				
 				for (var propertyName:String in properties) {
 					value = properties[propertyName];
-					if (value===undefined) {
+					if (value===undefined || value==null) {
 						continue;
 					}
 					output += " ";
@@ -387,7 +387,7 @@
 				
 				for (var styleName:String in styles) {
 					value = styles[styleName];
-					if (value===undefined) {
+					if (value===undefined || value==null) {
 						continue;
 					}
 					output += " ";

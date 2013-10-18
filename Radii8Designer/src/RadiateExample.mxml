@@ -85,6 +85,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			
 			import mx.events.FlexEvent;
+			import mx.managers.LayoutManager;
 			
 			private var remoteTestURL:String = "http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf";
 			private var testURL:String = "assets/test/AboutYou.swf";
@@ -212,6 +213,7 @@
 			
 			protected function application1_applicationCompleteHandler(event:FlexEvent):void {
 				Radiate.getInstance().addDocument("Document 1");
+				LayoutManager.getInstance().usePhasedInstantiation = false;
 			}
 			
 		]]>

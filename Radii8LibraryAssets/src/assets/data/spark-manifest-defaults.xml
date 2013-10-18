@@ -92,7 +92,7 @@
     </component>
     
     <component id="Image" class="spark.components.Image">
-    	<defaults width="36" height="36" source="assets/images/components/Image.png"/>
+    	<defaults width="36" height="36" source="assets/images/components/Image.png" scaleMode="stretch"/>
     </component>
      
     <component id="Label" class="spark.components.Label">

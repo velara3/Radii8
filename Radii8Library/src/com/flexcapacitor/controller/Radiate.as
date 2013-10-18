@@ -3564,13 +3564,18 @@ package com.flexcapacitor.controller {
 		 * The property change object sets the property "reversed" to 
 		 * true.
 		 * Going too fast causes some issues (call validateNow somewhere)?
+		 * I think the issue with RangeError: Index 2 is out of range.
+		 * is that the History List does not always do the first item in the 
+		 * List. So we need to add a first item that does nothing, like a
+		 * open history event. 
 		 * */
 		public static function undo(dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true):int {
 			var changeIndex:int = getPreviousHistoryIndex(); // index of next change to undo 
 			var currentIndex:int = getHistoryIndex();
 			var historyLength:int = history.length;
 			var historyEvent:HistoryEventItem;
-			var currentDocument:Object = instance.document.instance;
+			var currentDocument:IDocument = instance.document;
+			var currentTargetDocument:Application = currentDocument.instance as Application;
 			var setStartValues:Boolean = true;
 			var historyItem:HistoryEvent;
 			var affectsDocument:Boolean;
@@ -3613,7 +3618,7 @@ package com.flexcapacitor.controller {
 				historyEvent = historyEvents[i];
 				addItems = historyEvent.addItemsInstance;
 				action = historyEvent.action;//==RadiateEvent.MOVE_ITEM && addItems ? RadiateEvent.MOVE_ITEM : RadiateEvent.PROPERTY_CHANGE;
-				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentDocument)!=-1;
+				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentTargetDocument)!=-1;
 				
 				// undo the add
 				if (action==RadiateEvent.ADD_ITEM) {
@@ -3654,10 +3659,17 @@ package com.flexcapacitor.controller {
 						
 						// check if it's remove items or property changes
 						if (reverseItems) {
+							isInvalid = LayoutManager.getInstance().isInvalid();
+							if (isInvalid) {
+								LayoutManager.getInstance().validateNow();
+								LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 1.") : 0;
+							}
+							
 							addItems.remove(null);
 							isInvalid = LayoutManager.getInstance().isInvalid();
 							if (isInvalid) {
 								LayoutManager.getInstance().validateNow();
+								LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 2.") : 0;
 							}
 							reverseItems.apply(reverseItems.destination as UIComponent);
 							
@@ -3688,6 +3700,7 @@ package com.flexcapacitor.controller {
 					isInvalid = LayoutManager.getInstance().isInvalid();
 					if (isInvalid) {
 						LayoutManager.getInstance().validateNow();
+						LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 3") : 0;
 					}
 					addItems.apply(addItems.destination as UIComponent);
 					historyEvent.reversed = true;
@@ -3719,7 +3732,7 @@ package com.flexcapacitor.controller {
 						instance.setTarget(HistoryEvent(history.getItemAt(currentIndex-1)).targets, true);
 					}
 					else {
-						instance.setTarget(currentDocument, true);
+						instance.setTarget(currentTargetDocument, true);
 					}
 				}
 				else if (removed) {
@@ -3748,6 +3761,7 @@ package com.flexcapacitor.controller {
 		public static function redo(dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true):int {
 			var currentDocument:IDocument = instance.document;
 			var historyCollection:ArrayCollection = currentDocument.history;
+			var currentTargetDocument:Application = currentDocument.instance as Application; // should be typed
 			var historyLength:int = historyCollection.length;
 			var changeIndex:int = getNextHistoryIndex();
 			var currentIndex:int = getHistoryIndex();
@@ -3756,11 +3770,18 @@ package com.flexcapacitor.controller {
 			var affectsDocument:Boolean;
 			var setStartValues:Boolean;
 			var historyEvents:Array;
-			var eventsLength:int;
 			var addItems:AddItems;
+			var isInvalid:Boolean;
+			var eventsLength:int;
 			var remove:Boolean;
-			//var change:Object;
 			var action:String;
+			
+			
+			// need to make sure everything is validated first
+			// think about doing the following:
+			// LayoutManager.getInstance().usePhasedInstantiation = false;
+			// LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid. Needs a fix.") : 0;
+			// also use in undo()
 			
 			// no changes made
 			if (!historyLength) {
@@ -3788,10 +3809,15 @@ package com.flexcapacitor.controller {
 				
 				addItems = historyEvent.addItemsInstance;
 				action = historyEvent.action;
-				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentDocument)!=-1;
+				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentTargetDocument)!=-1;
 
 				
 				if (action==RadiateEvent.ADD_ITEM) {
+					isInvalid = LayoutManager.getInstance().isInvalid();
+					if (isInvalid) {
+						LayoutManager.getInstance().validateNow();
+						LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 4.") : 0;
+					}
 					// redo the add
 					addItems.apply(addItems.destination as UIComponent);
 					historyEvent.reversed = false;
@@ -3804,6 +3830,15 @@ package com.flexcapacitor.controller {
 				else if (action==RadiateEvent.MOVE_ITEM) {
 					// redo the move
 					if (addItems) {
+						
+						// RangeError: Index 2 is out of range. 
+						// we must validate
+						isInvalid = LayoutManager.getInstance().isInvalid();
+						if (isInvalid) {
+							LayoutManager.getInstance().validateNow();
+							LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 5") : 0;
+						}
+						
 						addItems.apply(addItems.destination as UIComponent);
 						historyEvent.reversed = false;
 						
@@ -3824,6 +3859,13 @@ package com.flexcapacitor.controller {
 					
 				}
 				else if (action==RadiateEvent.REMOVE_ITEM) {
+					
+					isInvalid = LayoutManager.getInstance().isInvalid();
+					if (isInvalid) {
+						LayoutManager.getInstance().validateNow();
+						LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 6") : 0;
+					}
+					
 					// redo the remove
 					addItems.remove(addItems.destination as UIComponent);
 					historyEvent.reversed = false;
@@ -3849,7 +3891,7 @@ package com.flexcapacitor.controller {
 			// select target
 			if (selectTargetOnHistoryChange) {
 				if (remove) {
-					instance.setTargets(currentDocument, true);
+					instance.setTargets(currentTargetDocument, true);
 				}
 				else {
 					instance.setTargets(historyEvent.targets, true);
