@@ -216,5 +216,35 @@
                 <!--<![endif]-->
             </object>
         </noscript>
+        
+        <script type="text/javascript">
+        <!--
+        //var iframe = document.createElement('iframe');
+		//var html = '<body>Foo</body>';
+		//iframe.src = 'data:text/html;charset=utf-8,' + encodeURI(html);
+		//document.body.appendChild(iframe);
+		-->
+        </script>
+        <script type="text/javascript">
+        //var iframe = document.createElement('iframe');
+        //iframe.id="wordpressthing";
+        //iframe.width = "100%";
+		//iframe.src = "http://www.radii8.com/blog/wp-admin/post.php?post=212&action=edit";
+		//iframe.style="display:none";
+		//document.body.appendChild(iframe);
+        </script>
+        <iframe id="wordpressthing" width="100%" style="display:none"></iframe>
+        <input type="button" value="Show/Hide" onclick="document.getElementById('wordpressthing').style.display = document.getElementById('wordpressthing').style.display=='none' ? 'block' : 'none';" ></input>
+        <input type="button" value="Edit post" onclick="document.getElementById('wordpressthing').src = 'http://www.radii8.com/blog/wp-admin/post.php?post='+postIdInput.value+'&action=edit'" ></input>
+        <input id="postIdInput" type="input" value="212" ></input>
+        <input type="button" value="Add new" onclick="document.getElementById('wordpressthing').src = 'http://www.radii8.com/blog/wp-admin/post-new.php'" ></input>
+        <input type="button" value="Save Draft" onclick="document.getElementById('wordpressthing').contentDocument.getElementById('save-post').click()" ></input>
+        <input type="button" value="Preview" onclick="document.getElementById('wordpressthing').contentDocument.getElementById('post-preview').click()" ></input>
+        <input type="button" value="Publish" onclick="document.getElementById('wordpressthing').contentDocument.getElementById('publish').click()" ></input>
+        <input type="button" value="Get Title" onclick="console.log(document.getElementById('wordpressthing').contentDocument.getElementById('title').value)" ></input>
+        <input type="button" value="Get Content" onclick="console.log(document.getElementById('wordpressthing').contentDocument.getElementById('content').value)" ></input>
+        <input type="button" value="Get Post ID" onclick="console.log(document.getElementById('wordpressthing').contentDocument.getElementById('post_ID').value)" ></input>
+        <input type="button" value="Update Title" onclick="document.getElementById('wordpressthing').contentDocument.getElementById('title').value = 'NEW VALUE!!'" ></input>
+        <input type="button" value="Update Content" onclick="document.getElementById('wordpressthing').contentDocument.getElementById('content').value = 'NEW Content!!'" ></input>
    </body>
 </html>
