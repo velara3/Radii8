@@ -97,8 +97,8 @@ package com.flexcapacitor.tools {
 			
 			//radiate.document.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
 			
-			if (radiate.document) {
-				updateDocument(radiate.document);
+			if (radiate.selectedDocument) {
+				updateDocument(radiate.selectedDocument);
 			}
 			
 			zoomInCursorID = radiate.getMouseCursorID(this, "ZoomInCursor");

@@ -17,12 +17,12 @@ package {
 		///////////////////////////////////////////////////////
 		
 		/**
-		 * var xml:XML = new XML(new Radii8LibraryDeviceAssets.deviceManifestDefaults());
+		 * var xml:XML = new XML(new Radii8LibraryDeviceAssets.devicesManifestDefaults());
 		 * // get list of device items
 		 * items = XML(xml).device;
 		 * */
 		[Embed(source="/assets/data/devices-manifest-defaults.xml", mimeType="application/octet-stream")]
-		public static const deviceManifestDefaults:Class;
+		public static const devicesManifestDefaults:Class;
 		
 		
 		///////////////////////////////////////////////////////

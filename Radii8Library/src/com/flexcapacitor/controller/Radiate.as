@@ -2,34 +2,66 @@
 package com.flexcapacitor.controller {
 	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.components.IDocumentContainer;
+	import com.flexcapacitor.effects.core.CallMethod;
 	import com.flexcapacitor.events.HistoryEvent;
 	import com.flexcapacitor.events.HistoryEventItem;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.logging.RadiateLogTarget;
+	import com.flexcapacitor.model.AttachmentData;
 	import com.flexcapacitor.model.Device;
 	import com.flexcapacitor.model.Document;
+	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.EventMetaData;
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.IDocumentData;
+	import com.flexcapacitor.model.IDocumentMetaData;
 	import com.flexcapacitor.model.IProject;
+	import com.flexcapacitor.model.IProjectData;
+	import com.flexcapacitor.model.ISavable;
+	import com.flexcapacitor.model.ImageData;
+	import com.flexcapacitor.model.InspectableClass;
+	import com.flexcapacitor.model.InspectorData;
 	import com.flexcapacitor.model.MetaData;
 	import com.flexcapacitor.model.Project;
+	import com.flexcapacitor.model.SaveResultsEvent;
+	import com.flexcapacitor.model.SavedData;
+	import com.flexcapacitor.model.Settings;
 	import com.flexcapacitor.model.StyleMetaData;
+	import com.flexcapacitor.services.IServiceEvent;
+	import com.flexcapacitor.services.WPAttachmentService;
+	import com.flexcapacitor.services.WPService;
+	import com.flexcapacitor.services.WPServiceEvent;
 	import com.flexcapacitor.tools.ITool;
+	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
+	import com.flexcapacitor.utils.SharedObjectUtils;
 	import com.flexcapacitor.utils.TypeUtils;
+	import com.flexcapacitor.utils.XMLUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+	import com.flexcapacitor.views.IInspector;
 	import com.google.code.flexiframe.IFrame;
 	
+	import flash.desktop.Clipboard;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
+	import flash.display.IBitmapDrawable;
+	import flash.events.ErrorEvent;
+	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
+	import flash.events.IOErrorEvent;
+	import flash.events.SecurityErrorEvent;
+	import flash.external.ExternalInterface;
 	import flash.geom.Point;
+	import flash.globalization.DateTimeStyle;
+	import flash.net.FileReference;
+	import flash.net.SharedObject;
 	import flash.system.ApplicationDomain;
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursorData;
+	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
@@ -41,19 +73,26 @@ package com.flexcapacitor.controller {
 	import mx.controls.LinkButton;
 	import mx.core.ClassFactory;
 	import mx.core.DeferredInstanceFromFunction;
+	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
 	import mx.core.mx_internal;
 	import mx.effects.effectClasses.PropertyChanges;
+	import mx.graphics.ImageSnapshot;
 	import mx.graphics.SolidColor;
 	import mx.logging.AbstractTarget;
 	import mx.logging.ILogger;
 	import mx.logging.Log;
+	import mx.logging.LogEventLevel;
 	import mx.managers.ILayoutManager;
 	import mx.managers.LayoutManager;
+	import mx.printing.FlexPrintJob;
+	import mx.printing.FlexPrintJobScaleType;
 	import mx.states.AddItems;
+	import mx.styles.IStyleClient;
 	import mx.utils.ArrayUtil;
+	import mx.utils.ObjectUtil;
 	
 	import spark.components.Application;
 	import spark.components.BorderContainer;
@@ -70,7 +109,9 @@ package com.flexcapacitor.controller {
 	import spark.core.ContentCache;
 	import spark.core.IViewport;
 	import spark.effects.SetAction;
+	import spark.formatters.DateTimeFormatter;
 	import spark.layouts.BasicLayout;
+	import spark.primitives.BitmapImage;
 	import spark.primitives.Rect;
 	import spark.skins.spark.DefaultGridItemRenderer;
 	
@@ -79,6 +120,16 @@ package com.flexcapacitor.controller {
 	import org.as3commons.lang.ObjectUtils;
 	
 	use namespace mx_internal;
+	
+	/**
+	 * Dispatched when a register results are received
+	 * */
+	[Event(name="registerResults", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when a print job is cancelled
+	 * */
+	[Event(name="printCancelled", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when an item is added to the target
@@ -116,9 +167,19 @@ package com.flexcapacitor.controller {
 	[Event(name="documentOpen", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
+	 * Dispatched when a document is renamed
+	 * */
+	[Event(name="documentRename", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
 	 * Dispatched when the project is changed
 	 * */
 	[Event(name="projectChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when the project is deleted
+	 * */
+	[Event(name="projectDeletedResults", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the project is created
@@ -126,9 +187,12 @@ package com.flexcapacitor.controller {
 	[Event(name="projectCreated", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
-	 * Dispatched when a property on the target is changed
+	 * Dispatched when a property on the target is changed. 
+	 * Using propertyChanged instead of propertyChange because of error with bindable
+	 * tag using propertyChange:
+	 * TypeError: Error #1034: Type Coercion failed: cannot convert mx.events::PropertyChangeEvent@11d2187b1 to com.flexcapacitor.events.RadiateEvent.
 	 * */
-	[Event(name="propertyChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="propertyChanged", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a property is selected on the target
@@ -191,6 +255,11 @@ package com.flexcapacitor.controller {
 	[Event(name="colorSelected", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
+	 * Dispatched when an object is selected 
+	 * */
+	[Event(name="objectSelected", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	
+	/**
 	 * Dispatches events when the target or targets property changes or is about to change. 
 	 * This class supports an Undo / Redo history. The architecture is loosely based on 
 	 * the structure found in the Effects classes. 
@@ -216,6 +285,8 @@ package com.flexcapacitor.controller {
 		public static const ADD_ERROR:String = "addError";
 		public static const REMOVE_ERROR:String = "removeError";
 		public static const RADIATE_LOG:String = "radiate";
+		public static const LOGGED_IN:String = "loggedIn";
+		public static const LOGGED_OUT:String = "loggedOut";
 		
 		public function Radiate(s:SINGLEDOUBLE) {
 			super(target as IEventDispatcher);
@@ -224,7 +295,7 @@ package com.flexcapacitor.controller {
 			setLoggingTarget(defaultLogTarget);
 			
 			
-			// initialize
+			// initialize - maybe call on startup() instead
 			initialize();
 		}
 		
@@ -289,6 +360,337 @@ package com.flexcapacitor.controller {
 		 * */
 		public static var radiateReferences:RadiateReferences;
 		
+		/**
+		 * If true then importing document
+		 * */
+		public static var importingDocument:Boolean;
+		
+		/**
+		 * Upload attachment
+		 * */
+		public var uploadAttachmentService:WPAttachmentService;
+		
+		/**
+		 * Service to get list of attachments
+		 * */
+		public var getAttachmentsService:WPService;
+		
+		/**
+		 * Service to get list of projects
+		 * */
+		public var getProjectsService:WPService;
+		
+		/**
+		 * Service to delete attachment
+		 * */
+		public var deleteAttachmentService:WPService;
+		
+		/**
+		 * Service to delete document
+		 * */
+		public var deleteDocumentService:WPService;
+		
+		/**
+		 * Service to delete project
+		 * */
+		public var deleteProjectService:WPService;
+		
+		/**
+		 * Service to request reset the password
+		 * */
+		public var lostPasswordService:WPService;
+		
+		/**
+		 * Service to change the password
+		 * */
+		public var changePasswordService:WPService;
+		
+		/**
+		 * Service to login
+		 * */
+		public var loginService:WPService;
+		
+		/**
+		 * Service to logout
+		 * */
+		public var logoutService:WPService;
+		
+		/**
+		 * Service to register
+		 * */
+		public var registerService:WPService;
+		
+		/**
+		 * Service to check if user is logged in
+		 * */
+		public var getLoggedInStatusService:WPService;
+		
+		/**
+		 * Set to true when a document is being saved to the server
+		 * */
+		[Bindable]
+		public var saveDocumentInProgress:Boolean;
+		
+		/**
+		 * Set to true when project is being saved to the server
+		 * */
+		[Bindable]
+		public var saveProjectInProgress:Boolean;
+		
+		/**
+		 * Set to true when checking if user is logged in
+		 * */
+		[Bindable]
+		public var getLoggedInStatusInProgress:Boolean;
+		
+		/**
+		 * Set to true when lost password call is made
+		 * */
+		[Bindable]
+		public var lostPasswordInProgress:Boolean;
+		
+		/**
+		 * Set to true when changing password
+		 * */
+		[Bindable]
+		public var changePasswordInProgress:Boolean;
+		
+		/**
+		 * Set to true when registering
+		 * */
+		[Bindable]
+		public var registerInProgress:Boolean;
+		
+		/**
+		 * Set to true when logging in
+		 * */
+		[Bindable]
+		public var loginInProgress:Boolean;
+		
+		/**
+		 * Set to true when logging out
+		 * */
+		[Bindable]
+		public var logoutInProgress:Boolean;
+		
+		/**
+		 * Set to true when deleting a project
+		 * */
+		[Bindable]
+		public var deleteProjectInProgress:Boolean;
+		
+		/**
+		 * Set to true when deleting a document
+		 * */
+		[Bindable]
+		public var deleteDocumentInProgress:Boolean;
+		
+		/**
+		 * Set to true when deleting an attachment
+		 * */
+		[Bindable]
+		public var deleteAttachmentInProgress:Boolean;
+		
+		/**
+		 * Set to true when getting list of attachments
+		 * */
+		[Bindable]
+		public var getAttachmentsInProgress:Boolean;
+		
+		/**
+		 * Set to true when uploading an attachment
+		 * */
+		[Bindable]
+		public var uploadAttachmentInProgress:Boolean;
+		
+		/**
+		 * Set to true when getting list of projects
+		 * */
+		[Bindable]
+		public var getProjectsInProgress:Boolean;
+		
+		/**
+		 * Is user logged in
+		 * */
+		[Bindable]
+		public var isUserLoggedIn:Boolean;
+		
+		/**
+		 * Default storage location for save and load. 
+		 * */
+		[Bindable]
+		public var defaultStorageLocation:String;
+		
+		/**
+		 * Can user connect to the service
+		 * */
+		[Bindable]
+		public var isUserConnected:Boolean;
+		
+		/**
+		 * Avatar of user
+		 * */
+		[Bindable]
+		public var userAvatar:String = "assets/images/icons/gravatar.png";
+		
+		/**
+		 * Path to default avatar of user (from Gravatar)
+		 * Gravatars icons don't work locally so using path. 
+		 * Default - http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=96
+		 * local - assets/images/icons/gravatar.png
+		 * */
+		[Bindable]
+		public var defaultUserAvatarPath:String = "assets/images/icons/gravatar.png";
+		
+		/**
+		 * User info
+		 * */
+		[Bindable]
+		public var user:Object;
+		
+		/**
+		 * User id
+		 * */
+		[Bindable]
+		public var userID:int = -1;
+		
+		/**
+		 * User sites
+		 * */
+		[Bindable]
+		public var userSites:Array = [];
+		
+		/**
+		 * User site path
+		 * */
+		[Bindable]
+		public var userSitePath:String;
+		
+		/**
+		 * User display name
+		 * */
+		[Bindable]
+		public var userDisplayName:String = "guest";
+		
+		/**
+		 * Last save date
+		 * */
+		[Bindable]
+		public var lastSaveDate:String;
+		
+		/**
+		 * Cut data
+		 * */
+		public var cutData:Object;
+		
+		/**
+		 * Cut data
+		 * */
+		public var copiedData:Object;
+		
+		/**
+		 * Auto save locations
+		 * */
+		[Bindable]
+		public var autoSaveLocations:String;
+		
+		private var _enableAutoSave:Boolean;
+
+		[Bindable]
+		/**
+		 * Auto save enabled
+		 * */
+		public function get enableAutoSave():Boolean {
+			return _enableAutoSave;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set enableAutoSave(value:Boolean):void {
+			_enableAutoSave = value;
+			
+			
+			if (value) {
+				if (!autoSaveEffect) {
+					autoSaveEffect =  new CallMethod();
+					autoSaveEffect.method = autoSaveHandler;
+					autoSaveEffect.repeatCount = 0;
+					autoSaveEffect.repeatDelay = autoSaveInterval;
+				}
+				if (!autoSaveEffect.isPlaying) {
+					autoSaveEffect.play();
+				}
+			}
+			else {
+				autoSaveEffect.stop();
+			}
+		}
+		
+		/**
+		 * Interval to check to save project
+		 * */
+		public var autoSaveInterval:int = 30000;
+		
+		/**
+		 * Effect to auto save
+		 * */
+		public var autoSaveEffect:CallMethod;
+		
+		/**
+		 * Handle auto saving 
+		 * */
+		public function autoSaveHandler():void {
+			var length:int;
+			var iDocumentData:IDocumentData;
+			var i:int;
+			
+			// save documents
+			length = documents.length;
+			for (i=0;i<length;i++) {
+				iDocumentData = documents[i] as IDocumentData;
+				if (iDocumentData.isChanged) {
+					iDocumentData.save();
+				}
+			}
+			
+			// save projects
+			length = projects.length;
+			for (i=0;i<length;i++) {
+				iDocumentData = projects[i] as IDocumentData;
+				if (iDocumentData.isChanged) {
+					iDocumentData.save();
+				}
+			}
+			
+			// save attachments
+			length = assets.length;
+			for (i=0;i<length;i++) {
+				iDocumentData = assets[i] as IDocumentData;
+				if (iDocumentData.isChanged) {
+					//iDocumentData.save();
+				}
+			}
+		}
+
+		/**
+		 * Build number
+		 * */
+		[Bindable]
+		public var buildNumber:String;
+		
+		/**
+		 * Build date
+		 * */
+		[Bindable]
+		public var buildDate:String;
+		
+		/**
+		 * Build time
+		 * */
+		[Bindable]
+		public var buildTime:String;
+		
 		//----------------------------------
 		//
 		//  Events Management
@@ -296,9 +698,207 @@ package com.flexcapacitor.controller {
 		//----------------------------------
 		
 		/**
+		 * Dispatch attachments received event
+		 * */
+		public function dispatchGetProjectsListResultsEvent(data:Object):void {
+			var projectsListResultEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECTS_LIST_RECEIVED);
+			
+			if (hasEventListener(RadiateEvent.PROJECTS_LIST_RECEIVED)) {
+				projectsListResultEvent.data = data;
+				dispatchEvent(projectsListResultEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch print cancelled event
+		 * */
+		public function dispatchPrintCancelledEvent(data:Object, printJob:FlexPrintJob):void {
+			var printCancelledEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PRINT_CANCELLED);
+			
+			if (hasEventListener(RadiateEvent.PRINT_CANCELLED)) {
+				printCancelledEvent.data = data;
+				printCancelledEvent.selectedItem = printJob;
+				dispatchEvent(printCancelledEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch print complete event
+		 * */
+		public function dispatchPrintCompleteEvent(data:Object, printJob:FlexPrintJob):void {
+			var printCompleteEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PRINT_COMPLETE);
+			
+			if (hasEventListener(RadiateEvent.PRINT_COMPLETE)) {
+				printCompleteEvent.data = data;
+				printCompleteEvent.selectedItem = printJob;
+				dispatchEvent(printCompleteEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch attachments received event
+		 * */
+		public function dispatchLoginStatusEvent(loggedIn:Boolean, data:Object):void {
+			var loggedInStatusEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOGGED_IN_STATUS);
+			
+			if (hasEventListener(RadiateEvent.LOGGED_IN_STATUS)) {
+				loggedInStatusEvent.status = loggedIn ? LOGGED_IN : LOGGED_OUT;
+				loggedInStatusEvent.data = data;
+				dispatchEvent(loggedInStatusEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch attachments received event
+		 * */
+		public function dispatchAttachmentsResultsEvent(successful:Boolean, attachments:Array):void {
+			var attachmentsReceivedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ATTACHMENTS_RECEIVED, false, false, attachments);
+			
+			if (hasEventListener(RadiateEvent.ATTACHMENTS_RECEIVED)) {
+				attachmentsReceivedEvent.successful = successful;
+				attachmentsReceivedEvent.status = successful ? "ok" : "fault";
+				attachmentsReceivedEvent.targets = ArrayUtil.toArray(attachments);
+				dispatchEvent(attachmentsReceivedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch upload attachment received event
+		 * */
+		public function dispatchUploadAttachmentResultsEvent(successful:Boolean, attachments:Array, data:Object):void {
+			var uploadAttachmentEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ATTACHMENT_UPLOADED, false, false);
+			
+			if (hasEventListener(RadiateEvent.ATTACHMENT_UPLOADED)) {
+				uploadAttachmentEvent.successful = successful;
+				uploadAttachmentEvent.status = successful ? "ok" : "fault";
+				uploadAttachmentEvent.data = attachments;
+				uploadAttachmentEvent.selectedItem = data;
+				dispatchEvent(uploadAttachmentEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch login results event
+		 * */
+		public function dispatchLoginResultsEvent(successful:Boolean, data:Object):void {
+			var loginResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOGIN_RESULTS);
+			
+			if (hasEventListener(RadiateEvent.LOGIN_RESULTS)) {
+				loginResultsEvent.data = data;
+				loginResultsEvent.successful = successful;
+				dispatchEvent(loginResultsEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch logout results event
+		 * */
+		public function dispatchLogoutResultsEvent(successful:Boolean, data:Object):void {
+			var logoutResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOGOUT_RESULTS);
+			
+			if (hasEventListener(RadiateEvent.LOGOUT_RESULTS)) {
+				logoutResultsEvent.data = data;
+				logoutResultsEvent.successful = successful;
+				dispatchEvent(logoutResultsEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch register results event
+		 * */
+		public function dispatchRegisterResultsEvent(successful:Boolean, data:Object):void {
+			var registerResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.REGISTER_RESULTS);
+			
+			if (hasEventListener(RadiateEvent.REGISTER_RESULTS)) {
+				registerResultsEvent.data = data;
+				registerResultsEvent.successful = successful;
+				dispatchEvent(registerResultsEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch change password results event
+		 * */
+		public function dispatchChangePasswordResultsEvent(successful:Boolean, data:Object):void {
+			var changePasswordResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.CHANGE_PASSWORD_RESULTS);
+			
+			if (hasEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS)) {
+				changePasswordResultsEvent.data = data;
+				changePasswordResultsEvent.successful = successful;
+				dispatchEvent(changePasswordResultsEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch lost password results event
+		 * */
+		public function dispatchLostPasswordResultsEvent(successful:Boolean, data:Object):void {
+			var lostPasswordResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOST_PASSWORD_RESULTS);
+			
+			if (hasEventListener(RadiateEvent.LOST_PASSWORD_RESULTS)) {
+				lostPasswordResultsEvent.data = data;
+				lostPasswordResultsEvent.successful = successful;
+				dispatchEvent(lostPasswordResultsEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch project deleted results event
+		 * */
+		public function dispatchProjectDeletedEvent(successful:Boolean, data:Object):void {
+			var deleteProjectResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_DELETED);
+			
+			if (hasEventListener(RadiateEvent.PROJECT_DELETED)) {
+				deleteProjectResultsEvent.data = data;
+				deleteProjectResultsEvent.successful = successful;
+				deleteProjectResultsEvent.status = successful ? "ok" : "error";
+				dispatchEvent(deleteProjectResultsEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document deleted results event
+		 * */
+		public function dispatchDocumentDeletedEvent(successful:Boolean, data:Object):void {
+			var deleteDocumentResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_DELETED);
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_DELETED)) {
+				deleteDocumentResultsEvent.data = data;
+				deleteDocumentResultsEvent.successful = successful;
+				deleteDocumentResultsEvent.status = successful ? "ok" : "error";
+				dispatchEvent(deleteDocumentResultsEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch asset added event
+		 * */
+		public function dispatchAssetAddedEvent(data:Object):void {
+			var assetAddedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ASSET_ADDED);
+			
+			if (hasEventListener(RadiateEvent.ASSET_ADDED)) {
+				assetAddedEvent.data = data;
+				dispatchEvent(assetAddedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch asset removed event
+		 * */
+		public function dispatchAssetRemovedEvent(data:IDocumentData, successful:Boolean = true):void {
+			var assetRemovedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ASSET_REMOVED);
+			
+			if (hasEventListener(RadiateEvent.ASSET_REMOVED)) {
+				assetRemovedEvent.data = data;
+				dispatchEvent(assetRemovedEvent);
+			}
+		}
+		
+		/**
 		 * Dispatch target change event
 		 * */
 		public function dispatchTargetChangeEvent(target:*, multipleSelection:Boolean = false):void {
+			if (importingDocument) return;
 			var targetChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.TARGET_CHANGE, false, false, target, null, null, multipleSelection);
 			
 			if (hasEventListener(RadiateEvent.TARGET_CHANGE)) {
@@ -439,9 +1039,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch property change event
 		 * */
 		public function dispatchPropertyChangeEvent(target:*, changes:Array, properties:Array, multipleSelection:Boolean = false):void {
-			var propertyChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROPERTY_CHANGE, false, false, target, changes, properties, multipleSelection);
+			if (importingDocument) return;
+			var propertyChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROPERTY_CHANGED, false, false, target, changes, properties, multipleSelection);
 			
-			if (hasEventListener(RadiateEvent.PROPERTY_CHANGE)) {
+			if (hasEventListener(RadiateEvent.PROPERTY_CHANGED)) {
 				propertyChangeEvent.properties = properties;
 				propertyChangeEvent.changes = changes;
 				propertyChangeEvent.multipleSelection = multipleSelection;
@@ -452,9 +1053,21 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Dispatch object selected event
+		 * */
+		public function dispatchObjectSelectedEvent(target:*):void {
+			var objectSelectedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.OBJECT_SELECTED, false, false, target);
+			
+			if (hasEventListener(RadiateEvent.OBJECT_SELECTED)) {
+				dispatchEvent(objectSelectedEvent);
+			}
+		}
+		
+		/**
 		 * Dispatch add items event
 		 * */
 		public function dispatchAddEvent(target:*, changes:Array, properties:Array, multipleSelection:Boolean = false):void {
+			if (importingDocument) return;
 			var event:RadiateEvent = new RadiateEvent(RadiateEvent.ADD_ITEM, false, false, target, changes, properties, multipleSelection);
 			var length:int = changes ? changes.length : 0;
 			
@@ -479,7 +1092,8 @@ package com.flexcapacitor.controller {
 		 * Dispatch add items event
 		 * */
 		public function dispatchMoveEvent(target:*, changes:Array, properties:Array, multipleSelection:Boolean = false):void {
-			var event:RadiateEvent = new RadiateEvent(RadiateEvent.ADD_ITEM, false, false, target, changes, properties, multipleSelection);
+			if (importingDocument) return;
+			var event:RadiateEvent = new RadiateEvent(RadiateEvent.MOVE_ITEM, false, false, target, changes, properties, multipleSelection);
 			var length:int = changes ? changes.length : 0;
 			
 			if (hasEventListener(RadiateEvent.MOVE_ITEM)) {
@@ -503,7 +1117,7 @@ package com.flexcapacitor.controller {
 		 * Dispatch remove items event
 		 * */
 		public function dispatchRemoveItemsEvent(target:*, changes:Array, properties:*, multipleSelection:Boolean = false):void {
-			var event:RadiateEvent = new RadiateEvent(RadiateEvent.ADD_ITEM, false, false, target, changes, properties, multipleSelection);
+			var event:RadiateEvent = new RadiateEvent(RadiateEvent.REMOVE_ITEM, false, false, target, changes, properties, multipleSelection);
 			var length:int = changes ? changes.length : 0;
 			
 			if (hasEventListener(RadiateEvent.REMOVE_ITEM)) {
@@ -537,7 +1151,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch document change event
 		 * */
-		public function dispatchDocumentChangeEvent(document:Object):void {
+		public function dispatchDocumentChangeEvent(document:IDocument):void {
 			var documentChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_CHANGE, false, false, document);
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_CHANGE)) {
@@ -546,9 +1160,42 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Dispatch document rename event
+		 * */
+		public function dispatchDocumentRenameEvent(document:IDocument, name:String):void {
+			var documentRenameEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_RENAME, false, false, document);
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_RENAME)) {
+				dispatchEvent(documentRenameEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch project rename event
+		 * */
+		public function dispatchProjectRenameEvent(project:IProject, name:String):void {
+			var projectRenameEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_RENAME, false, false, project);
+			
+			if (hasEventListener(RadiateEvent.PROJECT_RENAME)) {
+				dispatchEvent(projectRenameEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch documents set
+		 * */
+		public function dispatchDocumentsSetEvent(documents:Array):void {
+			var documentChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENTS_SET, false, false, documents);
+			
+			if (hasEventListener(RadiateEvent.DOCUMENTS_SET)) {
+				dispatchEvent(documentChangeEvent);
+			}
+		}
+		
+		/**
 		 * Dispatch document opening event
 		 * */
-		public function dispatchDocumentOpeningEvent(document:Object, isPreview:Boolean = false):Boolean {
+		public function dispatchDocumentOpeningEvent(document:IDocument, isPreview:Boolean = false):Boolean {
 			var documentOpeningEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_OPENING, false, true, document);
 			var dispatched:Boolean;
 			
@@ -562,18 +1209,134 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch document open event
 		 * */
-		public function dispatchDocumentOpenEvent(document:Object):void {
-			var documentOpenEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_OPEN, false, false, document);
+		public function dispatchDocumentOpenEvent(document:IDocument):void {
+			var documentOpenEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_OPEN, false, false);
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_OPEN)) {
+				documentOpenEvent.selectedItem = document;
 				dispatchEvent(documentOpenEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document removed event
+		 * */
+		public function dispatchDocumentRemovedEvent(document:IDocument, successful:Boolean = true):void {
+			var documentRemovedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_REMOVED, false, false);
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_REMOVED)) {
+				documentRemovedEvent.successful = successful;
+				documentRemovedEvent.selectedItem = document;
+				dispatchEvent(documentRemovedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document save as complete event
+		 * */
+		public function dispatchProjectSavedEvent(project:IProject):void {
+			var projectSaveEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_SAVED, false, false);
+			
+			if (hasEventListener(RadiateEvent.PROJECT_SAVED)) {
+				
+				projectSaveEvent.selectedItem = project;
+				dispatchEvent(projectSaveEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document save complete event
+		 * */
+		public function dispatchDocumentSaveCompleteEvent(document:IDocument):void {
+			var documentSaveAsCompleteEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SAVE_COMPLETE, false, false, document);
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE)) {
+				dispatchEvent(documentSaveAsCompleteEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document not saved event
+		 * */
+		public function dispatchDocumentSaveFaultEvent(document:IDocument):void {
+			var documentSaveFaultEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SAVE_FAULT, false, false, document);
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_SAVE_FAULT)) {
+				dispatchEvent(documentSaveFaultEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document save as cancel event
+		 * */
+		public function dispatchDocumentSaveAsCancelEvent(document:IDocument):void {
+			var documentSaveAsCancelEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, false, false, document);
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL)) {
+				dispatchEvent(documentSaveAsCancelEvent);
+			}
+		}
+		
+		
+		/**
+		 * Dispatch document add event
+		 * */
+		public function dispatchDocumentAddedEvent(document:IDocument):void {
+			var documentAddedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_ADDED, false, false, document, null, null);
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_ADDED)) {
+				dispatchEvent(documentAddedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch project closing event
+		 * */
+		public function dispatchProjectClosingEvent(project:IProject):void {
+			var projectClosingEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_CLOSING, false, false, project, null, null);
+			
+			if (hasEventListener(RadiateEvent.PROJECT_CLOSING)) {
+				dispatchEvent(projectClosingEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch project closed event
+		 * */
+		public function dispatchProjectOpenedEvent(project:IProject):void {
+			var projectOpenedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_OPENED, false, false, project, null, null);
+			
+			if (hasEventListener(RadiateEvent.PROJECT_OPENED)) {
+				dispatchEvent(projectOpenedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch project closed event
+		 * */
+		public function dispatchProjectClosedEvent(project:IProject):void {
+			var projectClosedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_CLOSED, false, false, project, null, null);
+			
+			if (hasEventListener(RadiateEvent.PROJECT_CLOSED)) {
+				dispatchEvent(projectClosedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch project removed event
+		 * */
+		public function dispatchProjectRemovedEvent(project:IProject):void {
+			var projectRemovedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_REMOVED, false, false, project, null, null);
+			
+			if (hasEventListener(RadiateEvent.PROJECT_REMOVED)) {
+				dispatchEvent(projectRemovedEvent);
 			}
 		}
 		
 		/**
 		 * Dispatch project change event
 		 * */
-		public function dispatchProjectChangeEvent(project:Object, multipleSelection:Boolean = false):void {
+		public function dispatchProjectChangeEvent(project:IProject, multipleSelection:Boolean = false):void {
 			var projectChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_CHANGE, false, false, project, null, null, multipleSelection);
 			
 			if (hasEventListener(RadiateEvent.PROJECT_CHANGE)) {
@@ -582,9 +1345,31 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Dispatch projects set event
+		 * */
+		public function dispatchProjectsSetEvent(projects:Array, multipleSelection:Boolean = false):void {
+			var projectChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECTS_SET, false, false, projects, null, null, multipleSelection);
+			
+			if (hasEventListener(RadiateEvent.PROJECTS_SET)) {
+				dispatchEvent(projectChangeEvent);
+			}
+		}
+		
+		/**
 		 * Dispatch project created event
 		 * */
-		public function dispatchProjectCreatedEvent(project:Object):void {
+		public function dispatchProjectAddedEvent(project:IProject):void {
+			var projectCreatedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_ADDED, false, false, project, null, null);
+			
+			if (hasEventListener(RadiateEvent.PROJECT_ADDED)) {
+				dispatchEvent(projectCreatedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch project created event
+		 * */
+		public function dispatchProjectCreatedEvent(project:IProject):void {
 			var projectCreatedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_CREATED, false, false, project, null, null);
 			
 			if (hasEventListener(RadiateEvent.PROJECT_CREATED)) {
@@ -614,10 +1399,14 @@ package com.flexcapacitor.controller {
 			// Log only messages for the classes in the mx.rpc.* and 
 			// mx.messaging packages.
 			//logTarget.filters=["mx.rpc.*","mx.messaging.*"];
+			//var filters:Array = ["mx.rpc.*", "mx.messaging.*"];
+			//var filters:Array = ["mx.rpc.*", "mx.messaging.*"];
 			
 			// Begin logging.
 			if (target) {
 				logTarget = target;
+				//logTarget.filters = filters;
+				logTarget.level = LogEventLevel.ALL;
 				Log.addTarget(target);
 			}
 			
@@ -632,31 +1421,51 @@ package com.flexcapacitor.controller {
 			if (consoleObject) {
 				console = consoleObject;
 			}
+			
 		}
 		
 		/**
 		 * Creates the list of components and tools.
 		 * */
 		public static function initialize():void {
+			var componentsXML:XML 	= new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
+			var toolsXML:XML 		= new XML(new Radii8LibraryToolAssets.toolsManifestDefaults());
+			var inspectorsXML:XML 	= new XML(new Radii8LibraryInspectorAssets.inspectorsManifestDefaults());
+			var devicesXML:XML		= new XML(new Radii8LibraryDeviceAssets.devicesManifestDefaults());
 			
+			createSettingsData();
+
+			createSavedData();
 			
-			createComponentList();
+			createComponentList(componentsXML);
 			
-			createToolsList();
+			createInspectorsList(inspectorsXML);
 			
-			createDevicesList();
+			createToolsList(toolsXML);
+			
+			createDevicesList(devicesXML);
+		}
+		
+		/**
+		 * Startup 
+		 * */
+		public static function startup():void {
+			
+			//ExternalInterface.call("Radiate.getInstance");
+			ExternalInterface.call("Radiate.instance.setFlashInstance", ExternalInterface.objectID);
+			
+			//instance.getLoggedInStatus();
 		}
 		
 		/**
 		 * Creates the list of components.
 		 * */
-		public static function createComponentList():void {
-			var xml:XML;
+		public static function createComponentList(xml:XML):void {
 			var length:uint;
 			var items:XMLList;
 			var className:String;
 			var skinClassName:String;
-			var inspectorClassName:String;
+			var inspectors:Array;
 			var hasDefinition:Boolean;
 			var classType:Object;
 			var includeItem:Boolean;
@@ -666,9 +1475,6 @@ package com.flexcapacitor.controller {
 			var propertyName:String;
 			var item:XML;
 			
-			
-			
-			xml = new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
 			
 			// get list of component classes 
 			items = XML(xml).component;
@@ -681,11 +1487,10 @@ package com.flexcapacitor.controller {
 				var name:String = String(item.id);
 				className = item.attribute("class");
 				skinClassName = item.attribute("skinClass");
-				inspectorClassName = item.attribute("inspector");
+				//inspectors = item.inspector;
 				
 				includeItem = item.attribute("include")=="false" ? false : true;
 				
-				if (!includeItem) continue;
 				
 				
 				// check that definitions exist in domain
@@ -725,7 +1530,7 @@ package com.flexcapacitor.controller {
 								}
 							}
 							
-							addComponentType(item.@id, className, classType, inspectorClassName, null, defaults);
+							addComponentType(item.@id, className, classType, inspectors, null, defaults, null, includeItem);
 						}
 						else {
 							log.error("Component skin class, '" + skinClassName + "' not found for '" + className + "'.");
@@ -747,11 +1552,87 @@ package com.flexcapacitor.controller {
 			// componentDescriptions should now be populated
 		}
 		
+		/**
+		 * Creates the list of inspectors.
+		 * */
+		public static function createInspectorsList(xml:XML):void {
+			var length:uint;
+			var inspectorsLength:uint;
+			var items:XMLList;
+			var className:String;
+			var skinClassName:String;
+			var inspectorClassName:String;
+			var hasDefinition:Boolean;
+			var classType:Object;
+			var includeItem:Boolean;
+			var attributes:XMLList;
+			var attributesLength:int;
+			var defaults:Object;
+			var propertyName:String;
+			var item:XML;
+			var inspectorItems:XMLList;
+			var inspector:XML;
+			var inspectableClass:InspectableClass;
+			var inspectorData:InspectorData;
+			
+			
+			// get list of inspector classes 
+			items = XML(xml).item;
+			
+			length = items.length();
+			
+			// add inspectable classes to the dictionary
+			for (var i:int;i<length;i++) {
+				inspectableClass = new InspectableClass(items[i]);
+				className = inspectableClass.className;
+				
+				if (inspectableClassesDictionary[className]==null) {
+					inspectableClassesDictionary[className] = inspectableClass;
+				}
+				else {
+					log.warn("Inspectable class, '" + className + "', was listed more than once during import.");
+				}
+					
+			}
+			
+			// check that definitions exist in domain
+			for each (inspectableClass in inspectableClassesDictionary) {
+			
+				length = inspectableClass.inspectors.length;
+				j = 0;
+				
+				for (var j:int;j<length;j++) {
+					inspectorData = inspectableClass.inspectors[j];
+					className = inspectorData.className;
+					
+					if (inspectorsDictionary[className]==null) {
+						
+						hasDefinition = ApplicationDomain.currentDomain.hasDefinition(className);
+						
+						if (hasDefinition) {
+							classType = ApplicationDomain.currentDomain.getDefinition(className);
+						}
+						else {
+							log.error("Inspector class not found: " + className);
+						}
+						
+						// not passing in classType now since we may load it in later dynamically
+						addInspectorType(inspectorData.name, className, null, inspectorData.icon, defaults);
+					}
+					else {
+						//log.warn("Inspector class: " + className + ", is already in the dictionary");
+					}
+				}
+			}
+			
+			// inspectorsInstancesDictionary should now be populated
+		}
+		
 		
 		/**
 		 * Creates the list of tools.
 		 * */
-		public static function createToolsList():void {
+		public static function createToolsList(xml:XML):void {
 			var inspectorClassName:String;
 			var hasDefinition:Boolean;
 			var toolClassDefinition:Object;
@@ -766,7 +1647,6 @@ package com.flexcapacitor.controller {
 			var attributesLength:int;
 			var defaults:Object;
 			var propertyName:String;
-			var xml:XML;
 			var toolInstance:ITool;
 			var inspectorInstance:UIComponent;
 			var name:String;
@@ -783,9 +1663,6 @@ package com.flexcapacitor.controller {
 			var cursorX:int;
 			var cursorY:int;
 			var item:XML;
-			
-			
-			xml = new XML(new Radii8LibraryToolAssets.toolManifestDefaults());
 			
 			// get list of tool classes 
 			items = XML(xml).tool;
@@ -924,13 +1801,12 @@ package com.flexcapacitor.controller {
 		/**
 		 * Creates the list of devices.
 		 * */
-		public static function createDevicesList():void {
+		public static function createDevicesList(xml:XML):void {
 			var includeItem:Boolean;
 			var items:XMLList;
 			var length:uint;
 			var name:String;
 			var item:XML;
-			var xml:XML;
 			var device:Device;
 			var type:String;
 			
@@ -941,7 +1817,6 @@ package com.flexcapacitor.controller {
 			const USABLE_WIDTH_LANDSCAPE:String = "usableWidthLandscape";
 			const USABLE_HEIGHT_LANDSCAPE:String = "usableHeightLandscape";
 			
-			xml = new XML(new Radii8LibraryDeviceAssets.deviceManifestDefaults());
 			
 			// get list of device classes 
 			items = XML(xml).size;
@@ -981,7 +1856,7 @@ package com.flexcapacitor.controller {
 				
 			}
 			
-			// componentDescriptions should now be populated
+			// deviceDescriptions should now be populated
 		}
 		
 		/**
@@ -1082,22 +1957,22 @@ package com.flexcapacitor.controller {
 		//  project
 		//----------------------------------
 		
-		private var _project:IProject;
+		private var _selectedProject:IProject;
 		
 		/**
 		 * Reference to the current project
 		 * */
-		public function get project():IProject {
-			return _project;
+		public function get selectedProject():IProject {
+			return _selectedProject;
 		}
 		
 		/**
 		 *  @private
 		 */
 		[Bindable(event="projectChange")]
-		public function set project(value:IProject):void {
-			if (value==_project) return;
-			_project = value;
+		public function set selectedProject(value:IProject):void {
+			if (value==_selectedProject) return;
+			_selectedProject = value;
 			
 		}
 		
@@ -1105,39 +1980,56 @@ package com.flexcapacitor.controller {
 		//  document
 		//----------------------------------
 		
+		private var _documentsTabNavigator:TabNavigator;
+
 		/**
 		 * Reference to the tab navigator that creates documents
 		 * */
-		public var documentsTabNavigator:TabNavigator;
+		public function get documentsTabNavigator():TabNavigator {
+			return _documentsTabNavigator;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set documentsTabNavigator(value:TabNavigator):void {
+			_documentsTabNavigator = value;
+		}
+
 		
 		/**
 		 * Reference to the tab that the document belongs to
 		 * */
-		public var documentsDictionary:Dictionary = new Dictionary(true);
+		public var documentsContainerDictionary:Dictionary = new Dictionary(true);
 		
 		/**
 		 * Reference to the tab that the document preview belongs to
 		 * */
 		public var documentsPreviewDictionary:Dictionary = new Dictionary(true);
 		
-		private var _document:IDocument;
+		private var _selectedDocument:IDocument;
 		
 		/**
 		 * Get the current document.
 		 * */
-		public function get document():IDocument {
-			return _document;
+		public function get selectedDocument():IDocument {
+			return _selectedDocument;
 		}
 		
 		/**
 		 *  @private
 		 */
 		[Bindable(event="documentChange")]
-		public function set document(value:IDocument):void {
-			if (value==_document) return;
-			_document = value;
+		public function set selectedDocument(value:IDocument):void {
+			if (value==_selectedDocument) return;
+			_selectedDocument = value;
 		}
 		
+		/**
+		 * Templates for creating new projects or documents
+		 * */
+		[Bindable]
+		public var templates:Array;
 		
 		//----------------------------------
 		//  documents
@@ -1160,7 +2052,9 @@ package com.flexcapacitor.controller {
 		 * Selected documents
 		 *  @private
 		 * */
+		[Bindable]
 		public function set documents(value:Array):void {
+			// the following comments are old possibly irrelevant...
 			// remove listeners from previous documents
 			var n:int = _documents.length;
 			
@@ -1194,6 +2088,12 @@ package com.flexcapacitor.controller {
 		//  projects
 		//----------------------------------
 		
+		
+		/**
+		 * Reference to the projects belongs to
+		 * */
+		public var projectsDictionary:Dictionary = new Dictionary(true);
+		
 		/**
 		 *  @private
 		 *  Storage for the projects property.
@@ -1216,6 +2116,35 @@ package com.flexcapacitor.controller {
 			_projects = value;
 			
 		}
+		
+		private var _attachments:Array = [];
+
+		/**
+		 * Attachments
+		 * */
+		[Bindable]
+		public function get attachments():Array {
+			return _attachments;
+		}
+
+		public function set attachments(value:Array):void {
+			_attachments = value;
+		}
+		
+		private var _assets:ArrayCollection = new ArrayCollection();
+
+		/**
+		 * Assets
+		 * */
+		[Bindable]
+		public function get assets():ArrayCollection {
+			return _assets;
+		}
+
+		public function set assets(value:ArrayCollection):void {
+			_assets = value;
+		}
+
 		
 		private var _toolLayer:IVisualElementContainer;
 
@@ -1248,11 +2177,33 @@ package com.flexcapacitor.controller {
 		
 		private static var _console:Object;
 		
+		public static var SETTINGS_DATA_NAME:String = "settingsData";
+		public static var SAVED_DATA_NAME:String 	= "savedData";
+		public static var WP_HOST:String = "http://www.radii8.com";
+		public static var WP_PATH:String = "/r8m/";
+		public static var WP_USER_PATH:String = "";
+		public static var DEFAULT_DOCUMENT_WIDTH:int = 800;
+		public static var DEFAULT_DOCUMENT_HEIGHT:int = 792;
+		
+		public static function getWPURL():String {
+			return WP_HOST + WP_PATH + WP_USER_PATH;
+		}
+		
 		/**
 		 * Is true when preview is visible. This is manually set. 
 		 * Needs refactoring. 
 		 * */
 		public var isPreviewVisible:Boolean;
+		
+		/**
+		 * Settings 
+		 * */
+		public static var settings:Settings;
+		
+		/**
+		 * Settings 
+		 * */
+		public static var savedData:SavedData;
 		
 		/**
 		 * Collection of mouse cursors that can be added or removed to 
@@ -1408,6 +2359,131 @@ package com.flexcapacitor.controller {
 		
 		//----------------------------------
 		//
+		//  Inspector Management
+		// 
+		//----------------------------------
+		
+		/**
+		 * Collection of inspectors that can be added or removed to 
+		 * */
+		[Bindable]
+		public static var inspectorsDescriptions:ArrayCollection = new ArrayCollection();
+		
+		/**
+		 * Dictionary of classes that have inspectors
+		 * */
+		[Bindable]
+		public static var inspectableClassesDictionary:Dictionary = new Dictionary();
+		
+		/**
+		 * Dictionary of instances of inspectors searched by class name
+		 * */
+		[Bindable]
+		public static var inspectorsDictionary:Dictionary = new Dictionary();
+		
+		/**
+		 * Add the named inspector class to the list of available inspectors
+		 * */
+		public static function addInspectorType(name:String, className:String, classType:Object, icon:Object = null, defaults:Object=null):Boolean {
+			var inspectorData:InspectorData;
+			
+			if (inspectorsDictionary[className]==null) {
+				inspectorData = new InspectorData();
+				inspectorData.name = name==null ? className : name;
+				inspectorData.className = className;
+				inspectorData.classType = classType;
+				inspectorData.icon = icon;
+				inspectorData.defaults = defaults;
+				inspectorsDictionary[className] = inspectorData;
+			}
+			
+			
+			return true;
+		}
+		
+		/**
+		 * Gets inspector classes or null if the definition is not found.
+		 * */
+		public function getInspectableClassData(className:String):InspectableClass {
+			var inspectableClass:InspectableClass = inspectableClassesDictionary[className];
+			
+			return inspectableClass;
+		}
+		
+		/**
+		 * Gets an instance of the inspector class or null if the definition is not found.
+		 * */
+		public function getInspectorInstance(className:String):IInspector {
+			var inspectorData:InspectorData = inspectorsDictionary[className];
+			
+			if (inspectorData) {
+				if (inspectorData.instance) {
+					return inspectorData.instance;
+				}
+				
+				var instance:IInspector = inspectorData.getInstance();
+				
+				return instance;
+			
+			}
+
+			return null;
+		}
+		
+		/**
+		 * Gets an instance of the inspector class or null if the definition is not found.
+		 * */
+		public function getInspector(target:Object, domain:ApplicationDomain = null):IInspector {
+			var className:String;
+			
+			if (target) {
+				className = ClassUtils.getQualifiedClassName(target);
+				
+				var instance:IInspector = getInspectorInstance(className);
+				
+				return instance;
+			}
+
+			return null;
+		}
+		
+		/**
+		 * Gets array of inspector data for the given fully qualified class or object
+		 * */
+		public function getInspectors(target:Object):Array {
+			var className:String;
+			var inspectors:Array;
+			var inspectorDataArray:Array;
+			var inspectableClass:InspectableClass;
+			var length:int;
+			
+			if (target==null) return [];
+			
+			if (target is Object) {
+				className = ClassUtils.getQualifiedClassName(target);
+				
+				if (target is Application) {
+					className = ClassUtils.getSuperClassName(target);
+				}
+			}
+			
+			if (target is String) {
+				className = String(target);
+			}
+			
+			className = className ? className.split("::").join(".") : className;
+			
+			inspectableClass = getInspectableClassData(className);
+			
+			if (inspectableClass) {
+				return inspectableClass.inspectors;
+			}
+
+			return [];
+		}
+		
+		//----------------------------------
+		//
 		//  Scale Management
 		// 
 		//----------------------------------
@@ -1426,7 +2502,7 @@ package com.flexcapacitor.controller {
 			
 		
 			if (isNaN(valueFrom)) {
-				currentScale = Number(DisplayObject(document.instance).scaleX.toFixed(4));
+				currentScale = Number(DisplayObject(selectedDocument.instance).scaleX.toFixed(4));
 			}
 			else {
 				currentScale = valueFrom;
@@ -1459,7 +2535,7 @@ package com.flexcapacitor.controller {
 			var currentScale:Number;
 		
 			if (isNaN(valueFrom)) {
-				currentScale = Number(DisplayObject(document.instance).scaleX.toFixed(4));
+				currentScale = Number(DisplayObject(selectedDocument.instance).scaleX.toFixed(4));
 			}
 			else {
 				currentScale = valueFrom;
@@ -1489,12 +2565,13 @@ package com.flexcapacitor.controller {
 		 * */
 		public function setScale(value:Number, dispatchEvent:Boolean = true):void {
 			
-			if (document && !isNaN(value) && value>0) {
-				DisplayObject(document.instance).scaleX = value;
-				DisplayObject(document.instance).scaleY = value;
+			if (selectedDocument && !isNaN(value) && value>0) {
+				//DisplayObject(selectedDocument.instance).scaleX = value;
+				//DisplayObject(selectedDocument.instance).scaleY = value;
+				selectedDocument.scale = value;
 				
 				if (dispatchEvent) {
-					dispatchScaleChangeEvent(document, value, value);
+					dispatchScaleChangeEvent(selectedDocument, value, value);
 				}
 			}
 		}
@@ -1504,8 +2581,8 @@ package com.flexcapacitor.controller {
 		 * */
 		public function getScale():Number {
 			
-			if (document && document.instance && "scaleX" in document.instance) {
-				return Math.max(document.instance.scaleX, document.instance.scaleY);
+			if (selectedDocument && selectedDocument.instance && "scaleX" in selectedDocument.instance) {
+				return Math.max(selectedDocument.instance.scaleX, selectedDocument.instance.scaleY);
 			}
 			
 			return NaN;
@@ -1517,7 +2594,7 @@ package com.flexcapacitor.controller {
 		public function centerApplication(vertically:Boolean = true, verticallyTop:Boolean = true, totalDocumentPadding:int = 0):void {
 			if (!canvasScroller) return;
 			var viewport:IViewport = canvasScroller.viewport;
-			var documentVisualElement:IVisualElement = IVisualElement(document.instance);
+			var documentVisualElement:IVisualElement = IVisualElement(selectedDocument.instance);
 			//var contentHeight:int = viewport.contentHeight * getScale();
 			//var contentWidth:int = viewport.contentWidth * getScale();
 			// get document size NOT scroll content size
@@ -1572,7 +2649,7 @@ package com.flexcapacitor.controller {
 		 * Restores the scale of the target application to 100%.
 		 * */
 		public function restoreDefaultScale(dispatchEvent:Boolean = true):void {
-			if (document) {
+			if (selectedDocument) {
 				setScale(1, dispatchEvent);
 			}
 		}
@@ -1588,7 +2665,7 @@ package com.flexcapacitor.controller {
 			var widthScale:Number;
 			var heightScale:Number;
 			var newScale:Number;
-			var documentVisualElement:IVisualElement = document ? document.instance as IVisualElement : null;
+			var documentVisualElement:IVisualElement = selectedDocument ? selectedDocument.instance as IVisualElement : null;
 			
 			if (documentVisualElement) {
 			
@@ -1705,7 +2782,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add the named component class to the list of available components
 		 * */
-		public static function addComponentType(name:String, className:String, classType:Object, inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null):Boolean {
+		public static function addComponentType(name:String, className:String, classType:Object, inspectors:Array = null, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null, enabled:Boolean = true):Boolean {
 			var definition:ComponentDefinition;
 			var length:uint = componentDefinitions.length;
 			var item:ComponentDefinition;
@@ -1729,7 +2806,8 @@ package com.flexcapacitor.controller {
 			definition.classType = classType;
 			definition.defaultStyles = defaultStyles;
 			definition.defaultProperties = defaultProperties;
-			definition.inspectorClassName = inspectorClassName;
+			definition.inspectors = inspectors;
+			definition.enabled = enabled;
 			
 			componentDefinitions.addItem(definition);
 			
@@ -1782,6 +2860,42 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Get the component by class name
+		 * */
+		public static function getDynamicComponentType(className:String, fullyQualified:Boolean = false):ComponentDefinition {
+			var definition:ComponentDefinition;
+			var length:uint = componentDefinitions.length;
+			var item:ComponentDefinition;
+			
+			for (var i:uint;i<length;i++) {
+				item = ComponentDefinition(componentDefinitions.getItemAt(i));
+				
+				if (fullyQualified) {
+					if (item && item.className==className) {
+						return item;
+					}
+				}
+				else {
+					if (item && item.name==className) {
+						return item;
+					}
+				}
+			}
+			
+			
+			var hasDefinition:Boolean = ApplicationDomain.currentDomain.hasDefinition(className);
+			
+			
+			if (hasDefinition) {
+				addComponentType(className, className, null, null);
+				item = getComponentType(className, fullyQualified);
+				return item;
+			}
+			
+			return null;
+		}
+		
+		/**
 		 * Removes all components. If components were removed then returns true. 
 		 * */
 		public static function removeAllComponents():Boolean {
@@ -1793,6 +2907,99 @@ package com.flexcapacitor.controller {
 			}
 			
 			return false;
+		}
+		
+		/**
+		 * Add an asset
+		 * */
+		public function addAssets(data:Array, dispatchEvents:Boolean = true):void {
+			var length:int;
+			var added:Boolean;
+			
+			if (data) {
+				length = data.length;
+				
+				for (var i:int;i<length;i++) {
+					addAsset(data[i], dispatchEvents);
+				}
+				
+			}
+			
+		}
+		
+		/**
+		 * Add an asset
+		 * */
+		public function addAsset(data:DocumentData, dispatchEvent:Boolean = true):void {
+			var length:int = assets.length;
+			var found:Boolean;
+			var item:DocumentData;
+			
+			for (var i:int;i<length;i++) {
+				item = assets.getItemAt(i) as DocumentData;
+				
+				if (item.id==data.id && item.id!=null) {
+					found = true;
+					break;
+				}
+			}
+			
+			if (!found) {
+				assets.addItem(data);
+			}
+			
+			if (!found && dispatchEvent) {
+				dispatchAssetAddedEvent(data);
+			}
+		}
+		
+		/**
+		 * Remove an asset
+		 * */
+		public function removeAsset(iDocumentData:IDocumentData, locations:String = null, dispatchEvents:Boolean = true):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var remote:Boolean = getIsRemoteLocation(locations);
+			var index:int = assets.getItemIndex(iDocumentData);
+			var removedInternally:Boolean;
+			
+			if (index!=-1) {
+				assets.removeItemAt(index);
+				removedInternally = true;
+			}
+			
+			if (remote && iDocumentData && iDocumentData.id) { 
+				// we need to create service
+				if (deleteAttachmentService==null) {
+					deleteAttachmentService = new WPService();
+					deleteAttachmentService.addEventListener(WPService.RESULT, deleteDocumentResultsHandler, false, 0, true);
+					deleteAttachmentService.addEventListener(WPService.FAULT, deleteDocumentFaultHandler, false, 0, true);
+				}
+				
+				deleteAttachmentService.host = getWPURL();
+				
+				deleteDocumentInProgress = true;
+				
+				deleteAttachmentService.deleteAttachment(int(iDocumentData.id), true);
+			}
+			/*else if (remote) { // document not saved yet because no ID
+				
+				if (dispatchEvents) {
+					dispatchAssetRemovedEvent(iDocumentData, removedInternally);
+					return removedInternally;
+				}
+			}
+			else {
+	
+				if (dispatchEvents) {
+					dispatchAssetRemovedEvent(iDocumentData, removedInternally);
+					return removedInternally;
+				}
+
+			}*/
+			
+			dispatchAssetRemovedEvent(iDocumentData, removedInternally);
+			
+			return removedInternally;
 		}
 		
 		/**
@@ -1831,7 +3038,7 @@ package com.flexcapacitor.controller {
 		 * Sets the document
 		 * */
 		public function setProject(value:IProject, dispatchEvent:Boolean = true, cause:String = ""):void {
-			_project = value;
+			selectedProject = value;
 			/*if (_projects.length == 1 && projects==value) return;
 			
 			_projects = null;// without this, the contents of the array would change across all instances
@@ -1842,7 +3049,7 @@ package com.flexcapacitor.controller {
 			}*/
 			
 			if (dispatchEvent) {
-				instance.dispatchProjectChangeEvent(project);
+				instance.dispatchProjectChangeEvent(selectedProject);
 			}
 			
 		}
@@ -1880,9 +3087,8 @@ package com.flexcapacitor.controller {
 			_projects = value;
 			
 			if (dispatchEvent) {
-				instance.dispatchProjectChangeEvent(projects);
+				instance.dispatchProjectsSetEvent(projects);
 			}
-			
 			
 		}
 		
@@ -1890,11 +3096,12 @@ package com.flexcapacitor.controller {
 		 * Sets the current document
 		 * */
 		public function setDocument(value:IDocument, dispatchEvent:Boolean = true, cause:String = ""):void {
-			if (document != value) {
-				document = value;
+			
+			if (selectedDocument != value) {
+				selectedDocument = value;
 			}
 			
-			var container:IDocumentContainer = documentsDictionary[value] as IDocumentContainer;
+			var container:IDocumentContainer = documentsContainerDictionary[value] as IDocumentContainer;
 			
 			if (container) {
 				toolLayer = container.toolLayer;
@@ -1903,11 +3110,12 @@ package com.flexcapacitor.controller {
 				canvasScroller = container.canvasScroller;
 			}
 			
-			history = document ? document.history : null;
+			history = selectedDocument ? selectedDocument.history : null;
 			history ? history.refresh() : void;
+			historyIndex = getHistoryIndex();
 			
 			if (dispatchEvent) {
-				instance.dispatchDocumentChangeEvent(document);
+				instance.dispatchDocumentChangeEvent(selectedDocument);
 			}
 			
 		}
@@ -1945,7 +3153,7 @@ package com.flexcapacitor.controller {
 			_documents = value;
 			
 			if (dispatchEvent) {
-				instance.dispatchDocumentChangeEvent(documents);
+				instance.dispatchDocumentsSetEvent(documents);
 			}
 			
 			
@@ -2087,26 +3295,142 @@ package com.flexcapacitor.controller {
 		 * Gets the display list of the current document
 		 * */
 		public static function getComponentDisplayList():ComponentDescription {
-			return IDocumentContainer(instance.document).componentDescription;
+			return IDocumentContainer(instance.selectedDocument).componentDescription;
+		}
+		
+		//----------------------------------
+		//  Clipboard
+		//----------------------------------
+		
+		/**
+		 * Cut item
+		 * */
+		public function cutItem(item:Object):void {
+			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
+			cutData = item;
+			copiedData = null;
 		}
 		
 		/**
-		 * Gets the display list of the current document
+		 * Copy item
 		 * */
-		public static function importDocument(code:String):Boolean {
-			var xml:XML;
-			var result:Boolean;
+		public function copyItem(item:Object, format:String = null, handler:Function = null):void {
+			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
+			cutData = null;
+			copiedData = item;
 			
-			try {
-				xml = new XML(code);
-				result = IDocumentContainer(instance.document).importDocument(code);
+			var clipboard:Clipboard = Clipboard.generalClipboard;
+			var serializable:Boolean = true;
+			
+			format = format ? format : "Object";
+			handler = handler!=null ? handler : setClipboardDataHandler;
+			
+			if (true) {
+				clipboard.clear();
+			}
 				
+			try {
+				
+				if (item is String) {
+					clipboard.setDataHandler(format, handler, serializable);
+				}
+				else {
+					clipboard.setDataHandler(format, handler, serializable);
+				}
+				
+				/*
+				if (action.successEffect) {
+					playEffect(action.successEffect);
+				}
+				
+				if (action.hasEventListener(CopyToClipboard.SUCCESS)) {
+					dispatchActionEvent(new Event(CopyToClipboard.SUCCESS));
+				}*/
 			}
-			catch (error:Error) {
-				return error.message;
+			catch (error:ErrorEvent) {
+				
+				/*
+				if (action.errorEffect) {
+					playEffect(action.errorEffect);
+				}
+				
+				if (action.hasEventListener(CopyToClipboard.ERROR)) {
+					dispatchActionEvent(new Event(CopyToClipboard.ERROR));
+				}*/
+			}
+		}
+		
+		/**
+		 * Set clipboard data handler
+		 * */
+		public function setClipboardDataHandler():* {
+			/*Format	Return Type
+			ClipboardFormats.TEXT_FORMAT	String
+			ClipboardFormats.HTML_FORMAT	String
+			ClipboardFormats.URL_FORMAT	String (AIR only)
+			ClipboardFormats.RICH_TEXT_FORMAT	ByteArray
+			ClipboardFormats.BITMAP_FORMAT	BitmapData (AIR only)
+			ClipboardFormats.FILE_LIST_FORMAT	Array of File (AIR only)
+			ClipboardFormats.FILE_PROMISE_LIST_FORMAT	Array of File (AIR only)
+			Custom format name	Non-void*/
+			
+			
+			
+			if (copiedData) {
+				return copiedData;
+			}
+			else if (cutData) {
+				return cutData;
 			}
 			
-			return result;
+			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
+		}
+		
+		/**
+		 * Copy item
+		 * */
+		public function pasteItem(destination:Object):void {
+			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
+		}
+		
+		/**
+		 * Set attributes on a component object
+		 * */
+		public static function setAttributesOnComponent(elementInstance:Object, node:XML, dispatchEvents:Boolean = false):void {
+			var attributeName:String;
+			var elementName:String = node.localName();
+			//var domain:ApplicationDomain = ApplicationDomain.currentDomain;
+			//var componentDefinition:ComponentDefinition = Radiate.getComponentType(elementName);
+			//var className:String =componentDefinition ? componentDefinition.className :null;
+			//var classType:Class = componentDefinition ? componentDefinition.classType as Class :null;
+			//var elementInstance:Object = componentDescription.instance;
+			
+			
+			for each (var attribute:XML in node.attributes()) {
+				attributeName = attribute.name().toString();
+				//Radiate.log.info(" found attribute: " + attributeName); 
+				
+				
+				// TODO we should check if an attribute is an property, style or event using the component definition
+				// We can do it this way now since we are only working with styles and properties
+				
+				
+				// check if property 
+				if (attributeName in elementInstance) {
+					
+					//Radiate.log.info(" setting property: " + attributeName);
+					setProperty(elementInstance, attributeName, attribute.toString(), null, false, dispatchEvents);
+				 	
+				}
+				
+				// could be style or event
+				else {
+					if (elementInstance is IStyleClient) {
+						//Radiate.log.info(" setting style: " + attributeName);
+						setStyle(elementInstance, attributeName, attribute.toString(), null, false, dispatchEvents);
+					}
+				}
+			}
 		}
 		
 		/**
@@ -2130,7 +3454,7 @@ package com.flexcapacitor.controller {
 		 * <pre>Radiate.setProperty(myButton, "x", 40);</pre>
 		 * <pre>Radiate.setProperty([myButton,myButton2], "x", 40);</pre>
 		 * */
-		public static function setStyle(target:Object, style:String, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
+		public static function setStyle(target:Object, style:String, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var targets:Array = ArrayUtil.toArray(target);
 			var styleChanges:Array;
 			var historyEvents:Array;
@@ -2152,7 +3476,9 @@ package com.flexcapacitor.controller {
 				
 				addHistoryEvents(historyEvents, description);
 				
-				instance.dispatchPropertyChangeEvent(targets, styleChanges, ArrayUtil.toArray(style));
+				if (dispatchEvents) {
+					instance.dispatchPropertyChangeEvent(targets, styleChanges, ArrayUtil.toArray(style));
+				}
 				return true;
 			}
 			
@@ -2167,7 +3493,7 @@ package com.flexcapacitor.controller {
 		 * <pre>Radiate.setProperty(myButton, "x", 40);</pre>
 		 * <pre>Radiate.setProperty([myButton,myButton2], "x", 40);</pre>
 		 * */
-		public static function setProperty(target:Object, property:String, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
+		public static function setProperty(target:Object, property:String, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var targets:Array = ArrayUtil.toArray(target);
 			var propertyChanges:Array;
 			var historyEvents:Array;
@@ -2190,10 +3516,14 @@ package com.flexcapacitor.controller {
 				
 				updateComponentProperties(targets, propertyChanges);
 				
-				instance.dispatchPropertyChangeEvent(targets, propertyChanges, ArrayUtil.toArray(property));
+				if (dispatchEvents) {
+					instance.dispatchPropertyChangeEvent(targets, propertyChanges, ArrayUtil.toArray(property));
+				}
 				
-				if (targets.indexOf(instance.document)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, [property])) {
-					instance.dispatchDocumentSizeChangeEvent(targets);
+				if (dispatchEvents) {
+					if (targets.indexOf(instance.selectedDocument.instance)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, [property])) {
+						instance.dispatchDocumentSizeChangeEvent(targets);
+					}
 				}
 				
 				return true;
@@ -2245,7 +3575,7 @@ package com.flexcapacitor.controller {
 				
 				instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties);
 				
-				if (targets.indexOf(instance.document)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, properties)) {
+				if (targets.indexOf(instance.selectedDocument)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, properties)) {
 					instance.dispatchDocumentSizeChangeEvent(targets);
 				}
 				return true;
@@ -2308,7 +3638,7 @@ package com.flexcapacitor.controller {
 			
 			for (var i:int;i<targetLength;i++) {
 				target = targets[i];
-				descriptor = instance.document.descriptionsDictionary[target];
+				descriptor = instance.selectedDocument.descriptionsDictionary[target];
 				
 				for (var j:int=0;j<changesLength;j++) {
 					propertyChange = propertyChanges[j];
@@ -2333,7 +3663,7 @@ package com.flexcapacitor.controller {
 			
 			for (var i:int;i<targetLength;i++) {
 				target = targets[i];
-				descriptor = instance.document.descriptionsDictionary[target];
+				descriptor = instance.selectedDocument.descriptionsDictionary[target];
 				
 				for (var j:int=0;j<changesLength;j++) {
 					propertyChange = propertyChanges[j];
@@ -2598,7 +3928,7 @@ package com.flexcapacitor.controller {
 					moveItems.apply(moveItems.destination as UIComponent);
 					
 					if (moveItems.destination is SkinnableContainer && !SkinnableContainer(moveItems.destination).deferredContentCreated) {
-						Radiate.log.error("Not added because deferred content not created.");
+						//Radiate.log.error("Not added because deferred content not created.");
 						var factory:DeferredInstanceFromFunction = new DeferredInstanceFromFunction(deferredInstanceFromFunction);
 						SkinnableContainer(moveItems.destination).mxmlContentFactory = factory;
 						SkinnableContainer(moveItems.destination).createDeferredContent();
@@ -2869,6 +4199,11 @@ package com.flexcapacitor.controller {
 				}
 			}*/
 			
+			if (visualElement is Application) {
+				log.info("You can't remove the design view");
+				return REMOVE_ERROR;
+			}
+			
 			var destination:Object = item.owner;
 			var index:int = destination.getElementIndex(visualElement);
 			var position:String;
@@ -2909,7 +4244,7 @@ package com.flexcapacitor.controller {
 				// check for changes before dispatching
 				instance.dispatchRemoveItemsEvent(items, changes, null);
 				// select application - could be causing errors - should select previous targets??
-				setTargets(instance.document.instance, true);
+				setTargets(instance.selectedDocument.instance, true);
 				
 				return REMOVED; // we assume moved if it got this far - needs more checking
 			}
@@ -2936,7 +4271,7 @@ package com.flexcapacitor.controller {
 		 * Creates an instance of the component in the descriptor and sets the 
 		 * default properties.
 		 * */
-		public static function createComponentForAdd(item:ComponentDefinition, setDefaults:Boolean = true):Object {
+		public static function createComponentForAdd(iDocument:IDocument, item:ComponentDefinition, setDefaults:Boolean = true):Object {
 			var classFactory:ClassFactory;
 			var component:Object;
 			var componentDescription:ComponentDescription = new ComponentDescription();
@@ -2947,13 +4282,19 @@ package com.flexcapacitor.controller {
 			if (setDefaults) {
 				classFactory.properties = item.defaultProperties;
 				componentDescription.properties = item.defaultProperties;
+				componentDescription.defaultProperties = item.defaultProperties;
 			}
 			
 			component = classFactory.newInstance();
 			
-			instance.document.descriptionsDictionary[component] = componentDescription;
+			for (var property:String in item.defaultProperties) {
+				setProperty(component, property, [item.defaultProperties[property]]);
+			}
 			
 			componentDescription.instance = component;
+			componentDescription.name = item.name;
+			
+			iDocument.descriptionsDictionary[component] = componentDescription;
 			
 			if (component is Label) {
 				
@@ -3040,7 +4381,7 @@ package com.flexcapacitor.controller {
 		 * Exports an XML string for a project
 		 * */
 		public function exportProject(project:IProject, format:String = "String"):String {
-			var projectString:String = project.toXMLString();
+			var projectString:String = project.toString();
 			
 			return projectString;
 		}
@@ -3048,84 +4389,647 @@ package com.flexcapacitor.controller {
 		/**
 		 * Creates a project
 		 * */
-		public function createProject(name:String = "Project", open:Boolean = false, dispatchEvents:Boolean = true):IProject {
-			var project:IProject = new Project();
-			//var document:IDocument = new Document();
+		public function createProject(name:String = null):IProject {
+			var newProject:IProject = new Project();
 			
-			project.name = name;
-			//project.addDocument(document);
+			newProject.name = name ? name : "Project "  + Project.nameIndex;
+			newProject.host = getWPURL();
 			
-			projects.push(project);
+			return newProject;
+		}
+		
+		
+		// Error #1047: Parameter initializer unknown or is not a compile-time constant.
+		// Occassionally a 1047 error shows up. 
+		// This is from using a static var in the parameter as the default 
+		// and is an error in FB - run clean and it will go away
+		
+		/**
+		 * Adds a project to the projects array. We should remove open project behavior. 
+		 * */
+		public function addProject(newProject:IProject, open:Boolean = false, locations:String = null, dispatchEvents:Boolean = true):IProject {
+			var found:Boolean = doesProjectExist(newProject.uid);
 			
-			if (!this.project) {
-				setProject(project, dispatchEvents);
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			
+			if (!found) {
+				projects.push(newProject);
+			}
+			else {
+				return newProject;
 			}
 			
-			if (dispatchEvents) {
-				dispatchProjectCreatedEvent(project);
-			}
-			
-			/*if (open) {
-				openDocument(document, false, null, dispatchEvent);
+			// if no projects exist select the first one
+			/*if (!selectedProject) {
+				setProject(newProject, dispatchEvents);
 			}*/
 			
-			if (open && dispatchEvents) {
-				dispatchProjectChangeEvent(project);
+			if (dispatchEvents) {
+				dispatchProjectAddedEvent(newProject);
 			}
-			
-			return project;
+
+			if (open) {
+				openProject(newProject, locations, dispatchEvents);// TODO project opened or changed
+			}
+
+			return newProject;
 		}
 		
 		/**
-		 * Creates a project
+		 * Opens the project. Right now this does not do much. 
 		 * */
-		public function addDocument(name:String = "Document", type:Class = null, open:Boolean = true, dispatchEvents:Boolean = false):IDocument {
-			var document:IDocument = type ? new type() : new Document();
-			document.name = name;
+		public function openProject(iProject:IProject, locations:String = null, dispatchEvents:Boolean = true):Object {
+			var isAlreadyOpen:Boolean;
 			
-			if (!project) {
-				createProject();
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			
+			isAlreadyOpen = isProjectOpen(iProject);
+			
+			/*
+			if (dispatchEvents) {
+				dispatchProjectChangeEvent(iProject);
+			}*/
+			
+			if (iProject as EventDispatcher) {
+				EventDispatcher(iProject).addEventListener(Project.PROJECT_OPENED, projectOpenResultHandler, false, 0, true);
 			}
 			
-			project.addDocument(document);
+			// TODO open project documents
+			iProject.open(locations);
 			
-			if (open) {
-				openDocument(document, false, null, dispatchEvents);
+			if (isAlreadyOpen) {
+				//setProject(iProject, dispatchEvents);
+				return true;
+			}
+			else {
+				iProject.isOpen = true;
 			}
 			
-			return document;
+			
+			// show project
+			//setProject(iProject, dispatchEvents);
+			
+			return true;
+		}
+		
+		/**
+		 * Project opened result handler
+		 * */
+		public function projectOpenResultHandler(event:Event):void {
+			var iProject:IProject = event.currentTarget as IProject;
+			
+			// add assets
+			addAssets(iProject.assets);
+			
+			if (iProject is EventDispatcher) {
+				EventDispatcher(iProject).removeEventListener(Project.PROJECT_OPENED, projectOpenResultHandler);
+			}
+			
+			dispatchProjectOpenedEvent(iProject);
+		}
+		
+		/**
+		 * Opens the project. Right now this does not do much. 
+		 * */
+		public function openProjectFromMetaData(iProject:IProject, locations:String = null, dispatchEvents:Boolean = true):Object {
+			var isAlreadyOpen:Boolean;
+			
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			
+			isAlreadyOpen = isProjectOpen(iProject);
+			
+			/*
+			if (dispatchEvents) {
+				dispatchProjectChangeEvent(iProject);
+			}*/
+			
+			if (iProject as EventDispatcher) {
+				EventDispatcher(iProject).addEventListener(Project.PROJECT_OPENED, projectOpenResultHandler, false, 0, true);
+			}
+			
+			// TODO open project documents
+			iProject.openFromMetaData(locations);
+			
+			if (isAlreadyOpen) {
+				//setProject(iProject, dispatchEvents);
+				return true;
+			}
+			else {
+				iProject.isOpen = true;
+			}
+			
+			
+			// show project
+			//setProject(iProject, dispatchEvents);
+			
+			return true;
+		}
+		
+		/**
+		 * Checks if project is open.
+		 * */
+		public function isProjectOpen(iProject:IProject):Boolean {
+			
+			return iProject.isOpen;
+		}
+		
+		/**
+		 * Closes project if open.
+		 * */
+		public function closeProject(iProject:IProject, dispatchEvents:Boolean = true):Boolean {
+			var length:int = iProject.documents.length;
+			
+			if (dispatchEvents) {
+				dispatchProjectClosingEvent(iProject);
+			}
+			
+			for (var i:int=length;i--;) {
+				closeDocument(IDocument(iProject.documents[i]));
+				//removeDocument(IDocument(iProject.documents[i]));
+			}
+			
+			iProject.close();
+			
+			if (dispatchEvents) {
+				dispatchProjectClosedEvent(iProject);
+			}
+			
+			return false;			
+		}
+		
+		/**
+		 * Removes a project from the projects array. TODO Remove from server
+		 * */
+		public function removeProject(iProject:IProject, locations:String = null, dispatchEvents:Boolean = true):Boolean {
+			// 1047: Parameter initializer unknown or is not a compile-time constant.
+			// Occassionally a 1047 error shows up. 
+			// This is from using a static var in the parameter as the default 
+			// and is an error in FB - run clean and it will go away
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			
+			var projectIndex:int = projects.indexOf(iProject);
+			var removedProject:IProject;
+			var remote:Boolean = getIsRemoteLocation(locations);
+			
+			if (projectIndex!=-1) {
+				var removedProjects:Array = projects.splice(projectIndex, 1);
+				
+				if (removedProjects[0]==iProject) {
+					log.info("Project removed successfully");
+					
+					var length:int = iProject.documents.length;
+					
+					for (var i:int=length;i--;) {
+						removeDocument(IDocument(iProject.documents[i]), locations, dispatchEvents);
+					}
+				}
+				
+			}
+		
+			if (remote && iProject && iProject.id) { 
+				// we need to create service
+				if (deleteProjectService==null) {
+					var service:WPService = new WPService();
+					service = new WPService();
+					service.host = getWPURL();
+					service.addEventListener(WPService.RESULT, deleteProjectResultsHandler, false, 0, true);
+					service.addEventListener(WPService.FAULT, deleteProjectFaultHandler, false, 0, true);
+					deleteProjectService = service;
+				}
+				
+				deleteProjectInProgress = true;
+				
+				deleteProjectService.id = iProject.id;
+				deleteProjectService.deletePost();
+			}
+			else if (remote) {
+				if (dispatchEvents) {
+					dispatchProjectRemovedEvent(iProject);
+					dispatchProjectDeletedEvent(true, iProject);
+				}
+				return false;
+			}
+			
+			// get first or last open document and select the project it's part of
+			if (!selectedProject) {
+				// to do
+			}
+
+			if (!remote && dispatchEvents) {
+				dispatchProjectRemovedEvent(iProject);
+			}
+			
+
+			return true;
+		}
+		
+		/**
+		 * Create project from project data
+		 * */
+		public function createProjectFromData(projectData:IProjectData):IProject {
+			var newProject:IProject = createProject();
+			newProject.unmarshall(projectData);
+			
+			return newProject;
+		}
+		
+		/**
+		 * Create project from project XML data
+		 * */
+		public function createProjectFromXML(projectData:XML):IProject {
+			var newProject:IProject = createProject();
+			newProject.unmarshall(projectData);
+			
+			return newProject;
+		}
+		
+		/**
+		 * Create document from document data
+		 * */
+		public function createDocumentDataFromMetaData(documentData:IDocumentMetaData, overwrite:Boolean = false):IDocumentData {
+			var newDocument:IDocumentData = new DocumentData();
+			newDocument.unmarshall(documentData);
+			
+			return newDocument;
+		}
+		
+		/**
+		 * Create document from document data
+		 * */
+		public function createDocumentFromData(documentData:IDocumentData, overwrite:Boolean = false):IDocument {
+			var newDocument:IDocument = createDocument(documentData.name, documentData.type);
+			newDocument.unmarshall(documentData);
+			
+			return newDocument;
+		}
+		
+		/**
+		 * Create document from document meta data
+		 * */
+		public function createDocumentFromMetaData(documentMetaData:IDocumentMetaData, overwrite:Boolean = false):IDocument {
+			var documentData:IDocumentData = createDocumentDataFromMetaData(documentMetaData, overwrite);
+			var iDocument:IDocument = createDocumentFromData(documentData, overwrite);
+			
+			return iDocument;
+		}
+		
+		/**
+		 * Open saved documents if they exist or open a blank document
+		 * */
+		public function openInitialProjects():void {
+			/*
+			if (savedData && (savedData.projects.length>0 || savedData.documents.length>0)) {
+				restoreSavedData(savedData);
+			}
+			else {
+				createBlankDemoDocument();
+			}
+			*/
+			
+			if (!isUserLoggedIn) {
+				if (savedData && (savedData.projects.length>0 || savedData.documents.length>0)) {
+					openLocalProjects(savedData);
+				}
+				else {
+					createBlankDemoDocument();
+				}
+			}
+			else {
+				getProjects();
+				getAttachments();
+			}
+		}
+		
+		/**
+		 * Creates a blank project
+		 * */
+		public function createBlankDemoDocument(name:String = null, type:Class = null, open:Boolean = true, dispatchEvents:Boolean = false, select:Boolean = true):IDocument {
+			var newProject:IProject;
+			var newDocument:IDocument;
+			
+			newProject = createProject(); // create project
+			addProject(newProject);       // add to projects array - shows up in application
+			
+			newDocument = createDocument(); // create document
+			addDocument(newDocument, newProject); // add to project and documents array - shows up in application
+			
+			openProject(newProject); // should open documents - maybe we should do all previous steps in this function???
+			openDocument(newDocument, true, true); // add to application and parse source code if any
+			
+			setProject(newProject); // selects project 
+			
+			return newDocument;
+		}
+		
+		/**
+		 * Creates a document
+		 * */
+		public function createDocument(name:String = null, Type:Object = null, project:IProject = null):IDocument {
+			var hasDefinition:Boolean;
+			var DocumentType:Object;
+			var iDocument:IDocument;
+			
+			if (Type is String && Type!="null" && Type!="") {
+				hasDefinition = ApplicationDomain.currentDomain.hasDefinition(String(Type));
+				DocumentType = Document;
+				
+				if (hasDefinition) {
+					DocumentType = ApplicationDomain.currentDomain.getDefinition(String(Type));
+					iDocument = new DocumentType();
+				}
+				else {
+					throw new Error("Type specified, '" + String(Type) + "' to create document is not found");
+				}
+			}
+			else if (Type is Class) {
+				iDocument = new Type();
+			}
+			else {
+				iDocument = new Document();
+			}
+			
+			iDocument.name = name ? name : "Document";
+			iDocument.host = getWPURL();
+			//document.documentData = document.marshall();
+			return iDocument;
+		}
+		
+		/**
+		 * Adds a document to a project if set and adds it to the documents array
+		 * */
+		public function addDocument(iDocument:IDocument, project:IProject = null, overwrite:Boolean = false, dispatchEvents:Boolean = true):IDocument {
+			var documentAlreadyExists:Boolean;
+			var length:int;
+			var documentAdded:Boolean;
+			
+			documentAlreadyExists = doesDocumentExist(iDocument.uid);
+			
+			// if not added already add to documents array
+			if (!documentAlreadyExists) {
+				documents.push(iDocument);
+				documentAdded = true;
+			}
+			
+			if (documentAlreadyExists && overwrite) {
+				// check dates
+				// remove from documents
+				// remove from projects
+				// add to documents
+				// add to projects
+				var documentToRemove:IDocument = getDocumentByUID(iDocument.uid);
+				removeDocument(documentToRemove, DocumentData.LOCAL_LOCATION);// this is deleting the document
+				// should there be a remove (internally) and delete method?
+				
+				//throw new Error("Document overwrite is not implemented yet");
+			}
+			
+			if (project) {
+				project.addDocument(iDocument, overwrite);
+			}
+			
+			if (documentAdded && dispatchEvents) {
+				dispatchDocumentAddedEvent(iDocument);
+			}
+			
+			return iDocument;
+		}
+		
+		/**
+		 * Reverts a document to its open state
+		 * */
+		public function revertDocument(iDocument:IDocument, dispatchEvents:Boolean = true):Boolean {
+			
+			// TODO
+			return false;
+		}
+		
+		/**
+		 * Removes a document from the documents array
+		 * */
+		public function removeDocument(iDocument:IDocument, locations:String = null, dispatchEvents:Boolean = true):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var parentProject:IProject = iDocument.project;
+			var documentsIndex:int = parentProject.documents.indexOf(iDocument);
+			var removedDocument:IDocument;
+			var remote:Boolean = getIsRemoteLocation(locations);
+			
+			if (documentsIndex!=-1) {
+				// add remove document to project
+				var removedDocuments:Array = parentProject.documents.splice(documentsIndex, 1);
+				
+				if (removedDocuments[0]==iDocument) {
+					//log.info("Document removed successfully");
+				}
+			}
+			
+			closeDocument(iDocument);
+			// check if document is open in tab navigator
+			/*if (isDocumentOpen(iDocument)) {
+				var closed:Boolean = closeDocument(iDocument);
+				log.info("Closed " + iDocument.name);
+			}*/
+			
+			if (remote && iDocument && iDocument.id) { 
+				// we need to create service
+				if (deleteDocumentService==null) {
+					deleteDocumentService = new WPService();
+					deleteDocumentService.addEventListener(WPService.RESULT, deleteDocumentResultsHandler, false, 0, true);
+					deleteDocumentService.addEventListener(WPService.FAULT, deleteDocumentFaultHandler, false, 0, true);
+				}
+				
+				deleteDocumentService.host = getWPURL();
+				
+				deleteDocumentInProgress = true;
+				
+				deleteDocumentService.id = iDocument.id
+				deleteDocumentService.deletePost();
+			}
+			else if (remote) { // document not saved yet
+				
+				if (dispatchEvents) {
+					dispatchDocumentRemovedEvent(iDocument);
+					return true;
+				}
+			}
+			else {
+	
+				if (dispatchEvents) {
+					dispatchDocumentRemovedEvent(iDocument);
+				}
+
+			}
+			
+			// get first or last open document and select the project it's part of
+			if (!this.selectedDocument) {
+				// to do
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Opens the document from it's document data. If the document is already open it selects it. 
+		 * 
+		 * It returns the document container. 
+		 * */
+		public function openDocumentByData(data:IDocumentData, showDocument:Boolean = true, dispatchEvents:Boolean = true):Object {
+			var iDocument:IDocument = getDocumentByUID(data.uid);
+			
+			if (!iDocument) {
+				iDocument = createDocumentFromData(data);
+			}
+			
+			var result:Boolean = openDocument(iDocument, showDocument, dispatchEvents);
+			
+			return result;
+		}
+		
+		/**
+		 * Print
+		 * */
+		public function print(data:Object, scaleType:String = FlexPrintJobScaleType.MATCH_WIDTH, printAsBitmap:Boolean = false):Object {
+			var flexPrintJob:FlexPrintJob = new FlexPrintJob();
+			var printableObject:IUIComponent;
+			var scaleX:Number;
+			var scaleY:Number;
+			
+			if (data is IDocument) {
+				printableObject = IUIComponent(IDocument(data).instance)
+			}
+			else if (data is IUIComponent) {
+				printableObject = IUIComponent(data);
+			}
+			else {
+				Radiate.log.error("Printing failed: Object is not of accepted type.");
+				return false;
+			}
+			
+			if (data && "scaleX" in data) {
+				scaleX = data.scaleX;
+				scaleY = data.scaleY;
+			}
+			
+			flexPrintJob.printAsBitmap = printAsBitmap;
+			
+			if (printAsBitmap && data is IBitmapDrawable) {
+				var imageBitmapData:BitmapData = ImageSnapshot.captureBitmapData(IBitmapDrawable(data));
+				var bitmapImage:BitmapImage = new BitmapImage();
+                bitmapImage.source = new Bitmap(imageBitmapData);
+				//data = bitmapImage;
+			}
+			
+			// show OS print dialog
+			// printJobStarted is false if user cancels OS print dialog
+			var printJobStarted:Boolean = flexPrintJob.start();
+			
+			
+			// if user cancels print job and we continue then the stage disappears! 
+			// so we exit out (ie we don't do the try statement)
+			// workaround if we set the scale it reappears 
+			// so, scaleX and scaleY are set to NaN on the object when we try to print and it fails
+			if (!printJobStarted) {
+				log.error("Print job was not started");
+				dispatchPrintCancelledEvent(data, flexPrintJob);
+				return false;
+			}
+			
+			try {
+				//log.info("Print width and height: " + flexPrintJob.pageWidth + "x" + flexPrintJob.pageHeight);
+				flexPrintJob.addObject(printableObject, scaleType);
+				flexPrintJob.send();
+				dispatchPrintCompleteEvent(data, flexPrintJob);
+			}
+			catch(e:Error) {
+				// CHECK scale X and scale Y to see if they are null - see above
+				if (data && "scaleX" in data && data.scaleX!=scaleX) {
+					data.scaleX = scaleX;
+					data.scaleY = scaleY;
+				}
+				
+				// Printing failed: Error #2057: The page could not be added to the print job.
+				Radiate.log.error("Printing failed: " + e.message);
+				
+				// TODO this should be print error event
+				dispatchPrintCancelledEvent(data, flexPrintJob);
+				return false;
+			} 
+			
+			return true;
+		}
+		
+		/**
+		 * Import code. 
+		 * 
+		 * TODO: 
+		 * - import mxml code to new document
+		 * - import mxml code to existing document ovewrite current document
+		 * - import document xml (wraps mxml application) 
+		 * - import mxml to a container or group
+		 * */
+		public function importMXMLDocument(project:IProject, iDocument:IDocument, container:IVisualElement, code:String, dispatchEvents:Boolean = true):Boolean {
+			var result:Object;
+			var newDocument:Boolean;
+			
+			if (!iDocument) {
+				iDocument = createDocument();
+				newDocument = true;
+				
+				if (project) {
+					addDocument(iDocument, project);
+				}
+			}
+			
+			
+			if (!newDocument) {
+				iDocument.parseSource(code, container);
+			}
+			else {
+				iDocument.source = code;
+				result = openDocument(iDocument, true, dispatchEvents);
+			}
+			
+			return result;
 		}
 		
 		/**
 		 * Opens the document. If the document is already open it selects it. 
+		 * When the document loads (it's a blank application swf) then the mxml is parsed. Check the DocumentContainer class.  
 		 * 
 		 * It returns the document container. 
 		 * */
-		public function openDocument(document:IDocument, isPreview:Boolean = false, containerType:Class = null, dispatchEvents:Boolean = true):Object {
+		public function openDocument(iDocument:IDocument, showDocumentInTab:Boolean = true, dispatchEvents:Boolean = true):Object {
 			var documentContainer:DocumentContainer;
 			var navigatorContent:NavigatorContent;
-			var isOpen:Boolean;
-			var index:int;
-			var iframe:IFrame;
-			var containerTypeInstance:Object;
-			var container:Object;
 			var openingEventDispatched:Boolean;
+			var containerTypeInstance:Object;
+			var isAlreadyOpen:Boolean;
+			var container:Object;
 			var documentIndex:int;
+			var previewName:String;
+			var index:int;
 			
-			isOpen = isDocumentOpen(document, isPreview);
+			isAlreadyOpen = isDocumentOpen(iDocument);
 			
 			if (dispatchEvents) {
-				openingEventDispatched = dispatchDocumentOpeningEvent(document, isPreview);
+				openingEventDispatched = dispatchDocumentOpeningEvent(iDocument);
+				
 				if (!openingEventDispatched) {
 					//return false;
 				}
 			}
 			
-			if (isOpen) {
-				index = getDocumentIndex(document, isPreview);
-				selectDocumentAtIndex(index, false); // the next call will dispatch events
-				setDocument(document, dispatchEvents);
-				return isPreview ? documentsPreviewDictionary[document] : documentsDictionary[document];
+			if (isAlreadyOpen) {
+				index = getDocumentTabIndex(iDocument);
+				
+				if (showDocumentInTab) {
+					//showDocument(iDocument, false, false); // the next call will dispatch events
+					showDocument(iDocument, false, dispatchEvents); // the next call will dispatch events
+					setDocument(iDocument, dispatchEvents);
+				}
+				return documentsContainerDictionary[iDocument];
+			}
+			else {
+				iDocument.open();
 			}
 			
 			// TypeError: Error #1034: Type Coercion failed: cannot convert 
@@ -3134,83 +5038,291 @@ package com.flexcapacitor.controller {
 			navigatorContent = new NavigatorContent();
 			navigatorContent.percentWidth = 100;
 			navigatorContent.percentHeight = 100;
-			navigatorContent.label = document.name ? document.name : "Untitled";
 			
-			if (isPreview) {
+			navigatorContent.label = iDocument.name ? iDocument.name : "Untitled";
+			
+			
+			if (iDocument.containerType==null) {
+				documentContainer = new DocumentContainer();
+				documentContainer.percentWidth = 100;
+				documentContainer.percentHeight = 100;
 				
-				// show HTML page
-				if (containerType) {
-					containerTypeInstance = new containerType();
-					containerTypeInstance.id = document.name ? document.name : iframe.name;
-					containerTypeInstance.percentWidth = 100;
-					containerTypeInstance.percentHeight = 100;
-					
-					navigatorContent.addElement(containerTypeInstance as IVisualElement);
-					documentsPreviewDictionary[document] = containerTypeInstance;
-				}
-				else {
-					iframe = new IFrame();
-					iframe.id = document.name ? document.name : iframe.name;
-					iframe.percentWidth = 100;
-					iframe.percentHeight = 100;
-					iframe.top = 20;
-					iframe.left = 20;
-					iframe.setStyle("backgroundColor", "#666666");
-					
-					navigatorContent.addElement(iframe);
-					documentsPreviewDictionary[document] = iframe;
-				}
+				documentsContainerDictionary[iDocument] = documentContainer;
+				navigatorContent.addElement(documentContainer);
+				documentContainer.iDocument = IDocument(iDocument);
 			}
-			
-			// not a preview
 			else {
-				if (containerType) {
-					containerTypeInstance = new containerType();
-					//containerTypeInstance.id = document.name ? document.name : "";
-					containerTypeInstance.percentWidth = 100;
-					containerTypeInstance.percentHeight = 100;
-					
-					documentsDictionary[document] = containerTypeInstance;
-					navigatorContent.addElement(containerTypeInstance as IVisualElement);
-				}
-				else {
-					documentContainer = new DocumentContainer();
-					documentContainer.percentWidth = 100;
-					documentContainer.percentHeight = 100;
-					
-					documentsDictionary[document] = documentContainer;
-					navigatorContent.addElement(documentContainer);
-					documentContainer.documentDescription = IDocument(document);
-				}
+				// custom container
+				containerTypeInstance = new iDocument.containerType();
+				//containerTypeInstance.id = document.name ? document.name : "";
+				containerTypeInstance.percentWidth = 100;
+				containerTypeInstance.percentHeight = 100;
+				
+				documentsContainerDictionary[iDocument] = containerTypeInstance;
+				navigatorContent.addElement(containerTypeInstance as IVisualElement);
+				containerTypeInstance.iDocument = IDocument(iDocument);
 			}
-			
-			documentIndex = !isPreview ? 0 : getDocumentIndex(document) + 1;
-			documentsTabNavigator.addElementAt(navigatorContent, documentIndex); 
+		
+			if (documentsTabNavigator) {
+				//documentIndex = !isPreview ? 0 : getDocumentIndex(document) + 1;
+				documentsTabNavigator.addElement(navigatorContent);
+			}
+			documentIndex = getDocumentTabIndex(iDocument);
 			
 			// show document
-			selectDocumentAtIndex(documentIndex, dispatchEvents);
-			setDocument(document, dispatchEvents);
+			if (showDocumentInTab) {
+				showDocument(iDocument, false, dispatchEvents);
+				setDocument(iDocument, dispatchEvents);
+			}
 			
-			return isPreview ? documentsPreviewDictionary[document] : documentsDictionary[document];
+			return documentsContainerDictionary[iDocument];
 		}
-
 		
 		/**
-		 * Checks if document is open.
+		 * Opens a preview of the document. If the document is already open it selects it. 
+		 * 
+		 * It returns the document container. 
+		 * */
+		public function openDocumentPreview(iDocument:IDocument, showDocument:Boolean = false, dispatchEvents:Boolean = true):Object {
+			var documentContainer:DocumentContainer;
+			var navigatorContent:NavigatorContent;
+			var isAlreadyOpen:Boolean;
+			var index:int;
+			var iframe:IFrame;
+			var containerTypeInstance:Object;
+			var container:Object;
+			var openingEventDispatched:Boolean;
+			var documentIndex:int;
+			var previewName:String;
+			
+			isAlreadyOpen = isDocumentPreviewOpen(iDocument);
+			
+			if (dispatchEvents) {
+				openingEventDispatched = dispatchDocumentOpeningEvent(iDocument, true);
+				if (!openingEventDispatched) {
+					//return false;
+				}
+			}
+			
+			if (isAlreadyOpen) {
+				index = getDocumentPreviewIndex(iDocument);
+				
+				if (showDocument) {
+					showDocumentAtIndex(index, false); // the next call will dispatch events
+					setDocument(iDocument, dispatchEvents);
+				}
+				return documentsPreviewDictionary[iDocument];
+			}
+			else {
+				iDocument.isPreviewOpen = true;
+			}
+			
+			// TypeError: Error #1034: Type Coercion failed: cannot convert 
+			// com.flexcapacitor.components::DocumentContainer@114065851 to 
+			// mx.core.INavigatorContent
+			navigatorContent = new NavigatorContent();
+			navigatorContent.percentWidth = 100;
+			navigatorContent.percentHeight = 100;
+			
+			navigatorContent.label = iDocument.name ? iDocument.name : "Untitled";
+			
+			previewName = iDocument.name + " HTML";
+			navigatorContent.label = previewName;
+			
+			if (iDocument.containerType) {
+				containerTypeInstance = new iDocument.containerType();
+				containerTypeInstance.id = iDocument.name ? iDocument.name : iframe.name; // should we be setting id like this?
+				containerTypeInstance.percentWidth = 100;
+				containerTypeInstance.percentHeight = 100;
+				
+				navigatorContent.addElement(containerTypeInstance as IVisualElement);
+				documentsPreviewDictionary[iDocument] = containerTypeInstance;
+			}
+			else {
+				// show HTML page
+				iframe = new IFrame();
+				iframe.id = iDocument.name ? iDocument.name : iframe.name; // should we be setting id like this?
+				iframe.percentWidth = 100;
+				iframe.percentHeight = 100;
+				iframe.top = 20;
+				iframe.left = 20;
+				iframe.setStyle("backgroundColor", "#666666");
+				
+				navigatorContent.addElement(iframe);
+				documentsPreviewDictionary[iDocument] = iframe;
+			}
+			
+			
+			// if preview add after original document location
+			documentIndex = getDocumentTabIndex(iDocument) + 1; // add after
+			documentsTabNavigator.addElementAt(navigatorContent, documentIndex);
+			
+			// show document
+			if (showDocument) {
+				showDocumentAtIndex(documentIndex, dispatchEvents);
+				setDocument(iDocument, dispatchEvents);
+			}
+			
+			return documentsPreviewDictionary[iDocument];
+		}
+		
+		/**
+		 * Checks if a document preview is open.
 		 * @see isDocumentSelected
 		 * */
-		public function isDocumentOpen(document:Object, isPreview:Boolean = false):Boolean {
+		public function isDocumentPreviewOpen(document:IDocument):Boolean {
 			var openTabs:Array = documentsTabNavigator.getChildren();
 			var tabCount:int = openTabs.length;
 			var tab:NavigatorContent;
 			var tabContent:Object;
-			var documentContainer:Object = isPreview ? documentsPreviewDictionary[document] : documentsDictionary[document];
+			var documentContainer:Object = documentsPreviewDictionary[document];
 			
 			for (var i:int;i<tabCount;i++) {
 				tab = NavigatorContent(documentsTabNavigator.getChildAt(i));
 				tabContent = tab.numElements ? tab.getElementAt(0) : null;
 				
 				if (tabContent && tabContent==documentContainer) {
+					return true;
+				}
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Checks if document is open.
+		 * @see isDocumentSelected
+		 * */
+		public function isDocumentOpen(document:IDocument, isPreview:Boolean = false):Boolean {
+			var openTabs:Array;
+			var tabCount:int;
+			var tab:NavigatorContent;
+			var tabContent:Object;
+			var documentContainer:Object;
+			
+			if (!documentsTabNavigator) {
+				return false;
+			}
+			
+			openTabs = documentsTabNavigator.getChildren();
+			tabCount = openTabs.length;
+			documentContainer = isPreview ? documentsPreviewDictionary[document] : documentsContainerDictionary[document];
+			
+			for (var i:int;i<tabCount;i++) {
+				tab = NavigatorContent(documentsTabNavigator.getChildAt(i));
+				tabContent = tab.numElements ? tab.getElementAt(0) : null;
+				
+				if (tabContent && tabContent==documentContainer) {
+					return true;
+				}
+			}
+			
+			return false;
+			
+		}
+		
+		/**
+		 * Closes the current visible document regardless if it is a preview or not. 
+		 * @see isDocumentSelected
+		 * */
+		public function closeVisibleDocument():Boolean {
+			
+			var selectedDocument:IDocument = getDocumentAtIndex(documentsTabNavigator.selectedIndex);
+			var isPreview:Boolean = isPreviewDocumentVisible();
+			
+			return closeDocument(selectedDocument, isPreview);
+			
+		}
+		
+		/**
+		 * Closes document if open.
+		 * @see isDocumentSelected
+		 * */
+		public function closeDocument(iDocument:IDocument, isPreview:Boolean = false):Boolean {
+			var openTabs:Array = documentsTabNavigator.getChildren();
+			var tabCount:int = openTabs.length;
+			var navigatorContent:NavigatorContent;
+			var navigatorContentDocumentContainer:Object;
+			var documentContainer:Object = isPreview ? documentsPreviewDictionary[iDocument] : documentsContainerDictionary[iDocument];
+			
+			
+			// third attempt
+			
+			
+			// second attempt
+			
+			if (documentContainer && documentContainer.owner) {
+				// ArgumentError: Error #2025: The supplied DisplayObject must be a child of the caller.
+				// 	at flash.display::DisplayObjectContainer/getChildIndex()
+				//var index:int = documentsTabNavigator.getChildIndex(documentContainer.owner as DisplayObject);
+				var contains:Boolean = documentsTabNavigator.contains(documentContainer.owner as DisplayObject);
+				
+				if (contains) {
+					documentsTabNavigator.removeChild(documentContainer.owner);
+					
+					// close previews when the main document is closed
+					if (!isPreview) {
+						documentContainer = documentsPreviewDictionary[iDocument];
+						
+						if (documentContainer) {
+							documentsTabNavigator.removeChild(documentContainer.owner);
+						}
+						
+						iDocument.close();
+						//removeDocument(iDocument);
+						
+						//var documentContainer:Object = isPreview ? documentsPreviewDictionary[iDocument] : documentsDictionary[iDocument];
+						
+						delete documentsContainerDictionary[iDocument];
+						delete documentsPreviewDictionary[iDocument];
+					}
+					else {
+						delete documentsPreviewDictionary[iDocument];
+					}
+					
+					if (isPreview) {
+						// TODO we must remove HTML from IFrame (inline css from previous iframes previews affects current preview)
+					}
+					
+					documentsTabNavigator.validateNow();
+					
+				}
+			}
+			
+			
+			return true;
+			// first attempt
+			//log.info("Closing " + iDocument.name);
+			for (var i:int;i<tabCount;i++) {
+				navigatorContent = NavigatorContent(documentsTabNavigator.getChildAt(i));
+				navigatorContentDocumentContainer = navigatorContent.numElements ? navigatorContent.getElementAt(0) : null;
+				//log.info(" Checking tab " + tab.label);
+				
+				if (iDocument.name==navigatorContent.label) {
+					//log.info(" Name Match " + iDocument.name);
+					if (IDocumentContainer(navigatorContentDocumentContainer).iDocument==iDocument) {
+						documentsTabNavigator.removeChild(navigatorContent);
+						documentsTabNavigator.validateNow();
+						
+						return true;
+					}
+				}
+				
+				
+				// oddly enough after we remove one child using the code below (note: see update)
+				// the documentContainer in the documentsDictionary is no longer 
+				// connected with the correct document data 
+				// if we do this one at a time and remove one per second 
+				// then it works but not many documents at a time (see removeProject)
+				// so instead we are checking by name and then document reference 
+				// in the code above this
+				
+				// Update: May have spoken too soon - could be problem because document 
+				// was used as a variable name and it scoped to document on the UIComponent class :(
+				
+				if (navigatorContentDocumentContainer && navigatorContentDocumentContainer==documentContainer) {
+					documentsTabNavigator.removeChild(navigatorContent);
+					documentsTabNavigator.validateNow();
 					return true;
 				}
 			}
@@ -3228,7 +5340,7 @@ package com.flexcapacitor.controller {
 			var tab:NavigatorContent;
 			var tabContent:Object;
 			var documentIndex:int = -1;
-			var documentContainer:Object = isPreview ? documentsPreviewDictionary[document] : documentsDictionary[document];
+			var documentContainer:Object = isPreview ? documentsPreviewDictionary[document] : documentsContainerDictionary[document];
 			
 			for (var i:int;i<tabCount;i++) {
 				tab = NavigatorContent(documentsTabNavigator.getChildAt(i));
@@ -3250,13 +5362,50 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Get visible document in documents tab navigator
+		 * */
+		public function getVisibleDocument():IDocument {
+			var selectedTab:NavigatorContent = documentsTabNavigator ? documentsTabNavigator.selectedChild as NavigatorContent : null;
+			var tabContent:Object = selectedTab && selectedTab.numElements ? selectedTab.getElementAt(0) : null;
+			
+			if (tabContent is IDocumentContainer) {
+				var iDocument:IDocument = IDocumentContainer(tabContent).iDocument;
+				return iDocument;
+			}
+			
+			return null;
+		}
+		
+		/**
 		 * Get the index of the document in documents tab navigator
 		 * */
-		public function getDocumentIndex(document:Object, isPreview:Boolean = false):int {
+		public function getDocumentTabIndex(document:Object, isPreview:Boolean = false):int {
 			var openTabs:Array = documentsTabNavigator.getChildren();
 			var tabCount:int = openTabs.length;
 			var tab:NavigatorContent;
-			var documentContainer:Object = isPreview ? documentsPreviewDictionary[document] : documentsDictionary[document];
+			var documentContainer:Object = isPreview ? documentsPreviewDictionary[document] : documentsContainerDictionary[document];
+			var tabContent:Object;
+			
+			for (var i:int;i<tabCount;i++) {
+				tab = NavigatorContent(documentsTabNavigator.getChildAt(i));
+				tabContent = tab.numElements ? tab.getElementAt(0) : null;
+				
+				if (tabContent && tabContent==documentContainer) {
+					return i;
+				}
+			}
+			
+			return -1;
+		}
+		
+		/**
+		 * Get the index of the document preview in documents tab navigator
+		 * */
+		public function getDocumentPreviewIndex(document:Object):int {
+			var openTabs:Array = documentsTabNavigator.getChildren();
+			var tabCount:int = openTabs.length;
+			var tab:NavigatorContent;
+			var documentContainer:Object = documentsPreviewDictionary[document];
 			var tabContent:Object;
 			
 			for (var i:int;i<tabCount;i++) {
@@ -3277,7 +5426,7 @@ package com.flexcapacitor.controller {
 		public function getDocumentForApplication(application:Application):IDocument {
 			var document:IDocument;
 			
-			for each (document in documentsDictionary) {
+			for each (document in documentsContainerDictionary) {
 				if (document.instance === application) {
 					return document;
 					break;
@@ -3287,9 +5436,10 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Gets the container for the document preview. 
+		 * Gets the document container for the document preview. 
 		 * For example, a document can be previewed as an HTML page. 
-		 * If we want to the document is previewing HTML then it gets the container of the preview.
+		 * If we want to get the document that is previewing HTML then 
+		 * we need to get the container of the preview.
 		 * */
 		public function getDocumentPreview(document:Object):Object {
 			var documentContainer:Object = documentsPreviewDictionary[document];
@@ -3315,9 +5465,24 @@ package com.flexcapacitor.controller {
 		
 		
 		/**
+		 * Selects the document in the tab navigator
+		 * */
+		public function showDocument(iDocumentData:IDocumentData, isPreview:Boolean = false, dispatchEvent:Boolean = true):Boolean {
+			var documentIndex:int = getDocumentTabIndex(iDocumentData, isPreview);
+			var result:Boolean;
+			
+			if (documentIndex!=-1) {
+				result = showDocumentAtIndex(documentIndex, dispatchEvent);
+			}
+			
+			return result;
+		}
+		
+		
+		/**
 		 * Selects the document at the specifed index
 		 * */
-		public function selectDocumentAtIndex(index:int, dispatchEvent:Boolean = true):Boolean {
+		public function showDocumentAtIndex(index:int, dispatchEvent:Boolean = true):Boolean {
 			var openTabs:Array = documentsTabNavigator.getChildren();
 			var tabCount:int = openTabs.length;
 			var tab:NavigatorContent;
@@ -3327,11 +5492,11 @@ package com.flexcapacitor.controller {
 			documentsTabNavigator.selectedIndex = index;
 			
 			tab = NavigatorContent(documentsTabNavigator.selectedChild);
-			tabContent = tab.numElements ? tab.getElementAt(0) : null;
+			tabContent = tab && tab.numElements ? tab.getElementAt(0) : null;
 			
 			if (tabContent && tabContent is DocumentContainer && dispatchEvent) {
 				document = getDocumentAtIndex(index);
-				dispatchDocumentChangeEvent(DocumentContainer(tabContent).documentDescription);
+				dispatchDocumentChangeEvent(DocumentContainer(tabContent).iDocument);
 			}
 			
 			return documentsTabNavigator.selectedIndex == index;
@@ -3347,11 +5512,15 @@ package com.flexcapacitor.controller {
 			var tabContent:Object;
 			var document:IDocument;
 			
+			if (index<0) {
+				return null;
+			}
+			
 			tab = index < openTabs.length ? openTabs[index] : null;
 			tabContent = tab.numElements ? tab.getElementAt(0) : null;
 	
-			for (var key:* in documentsDictionary) {
-				if (documentsDictionary[key] === tabContent) {
+			for (var key:* in documentsContainerDictionary) {
+				if (documentsContainerDictionary[key] === tabContent) {
 					return key;
 				}
 			}
@@ -3368,129 +5537,2092 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Apply changes to targets. You do not call this. Set properties through setProperties method. 
-		 * 
-		 * @param setStartValues applies the start values rather 
-		 * than applying the end values
-		 * 
-		 * @param property string or array of strings containing the 
-		 * names of the properties to set or null if setting styles
-		 * 
-		 * @param style string or araray of strings containing the 
-		 * names of the styles to set or null if setting properties
+		 * Get document by UID
 		 * */
-		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, setStartValues:Boolean=false):Boolean {
-			var length:int = changes ? changes.length : 0;
-			var effect:SetAction = new SetAction();
-			var onlyPropertyChanges:Array = [];
-			var directApply:Boolean = true;
-			var isStyle:Boolean = style && style.length>0;
+		public function getDocumentByUID(id:String):IDocument {
+			var length:int = documents.length;
+			var iDocument:IDocument;
 			
 			for (var i:int;i<length;i++) {
-				if (changes[i] is PropertyChanges) { 
-					onlyPropertyChanges.push(changes[i]);
-				}
-			}
-			
-			effect.targets = targets;
-			effect.propertyChangesArray = onlyPropertyChanges;
-			
-			if (isStyle) {
-				effect.property = style;
-			}
-			
-			effect.relevantProperties = ArrayUtil.toArray(property);
-			effect.relevantStyles = ArrayUtil.toArray(style);
-			
-			// this works for styles and properties
-			// note: the property applyActualDimensions is used to enable width and height values to stick
-			if (directApply) {
-				effect.applyEndValuesWhenDone = false;
-				effect.applyActualDimensions = false;
+				iDocument = IDocument(documents[i]);
 				
-				if (setStartValues) {
-					effect.applyStartValues(onlyPropertyChanges, targets);
+				if (id==iDocument.uid) {
+					return iDocument;
 				}
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Check if document exists in documents array
+		 * */
+		public function doesDocumentExist(id:String):Boolean {
+			var length:int = documents.length;
+			var iDocument:IDocument;
+			
+			for (var i:int;i<length;i++) {
+				iDocument = IDocument(documents[i]);
+				
+				if (id==iDocument.uid) {
+					return true;
+				}
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Check if project exists in projects array. Pass in the UID not ID.
+		 * */
+		public function doesProjectExist(uid:String):Boolean {
+			var length:int = projects.length;
+			var iProject:IProject;
+			
+			for (var i:int;i<length;i++) {
+				iProject = IProject(projects[i]);
+				
+				if (uid==iProject.uid) {
+					return true;
+				}
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Get project by UID
+		 * */
+		public function getProjectByUID(id:String):IProject {
+			var length:int = projects.length;
+			var iProject:IProject;
+			
+			for (var i:int;i<length;i++) {
+				iProject = IProject(projects[i]);
+				
+				if (id==iProject.uid) {
+					return iProject;
+				}
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Get first project that owns this document
+		 * */
+		public function getDocumentProject(iDocument:IDocument):IProject {
+			var projectsList:Array = getDocumentProjects(iDocument);
+			var iProject:IProject;
+			
+			if (projectsList.length>0) {
+				iProject = projectsList.shift();
+			}
+			
+			return iProject;
+		}
+		
+		/**
+		 * Get a list of projects that own this document
+		 * */
+		public function getDocumentProjects(iDocument:IDocument):Array {
+			var documentsLength:int;
+			var projectDocument:IDocument;
+			var projectLength:int = projects.length;
+			var iProject:IProject;
+			var projectDocuments:Array;
+			var projectsList:Array = [];
+			
+			for (var A:int;A<length;A++) {
+				iProject = IProject(projects[A]);
+				projectDocuments = iProject.documents;
+				
+				for (var B:int;B<documentsLength;B++) {
+					projectDocument = IDocument(projectDocuments[B]);
+					
+					if (projectDocuments.uid==iDocument.uid) {
+						projectsList.push(iProject);
+					}
+				}
+			}
+			
+			return projectsList;
+		}
+		
+		
+		/**
+		 * Rename document
+		 * */
+		public function renameDocument(iDocument:IDocument, name:String):void {
+			var tab:NavigatorContent;
+			
+			// todo check if name already exists
+			iDocument.name = name;
+			tab = getNavigatorByDocument(iDocument);
+			if (tab) {
+				tab.label = iDocument.name;
+			}
+			dispatchDocumentRenameEvent(iDocument, name);
+		}
+		
+		/**
+		 * 
+		 * */
+		public function getNavigatorByDocument(iDocument:IDocument, isPreview:Boolean = false):NavigatorContent {
+			var openTabs:Array = documentsTabNavigator.getChildren();
+			var tabCount:int = openTabs.length;
+			var tab:NavigatorContent;
+			var tabContent:Object;
+			var documentContainer:Object = isPreview ? documentsPreviewDictionary[iDocument] : documentsContainerDictionary[iDocument];
+			
+			for (var i:int;i<tabCount;i++) {
+				tab = NavigatorContent(documentsTabNavigator.getChildAt(i));
+				tabContent = tab.numElements ? tab.getElementAt(0) : null;
+				
+				if (tabContent && tabContent==documentContainer) {
+					return tab;
+				}
+			}
+			
+			return null;
+		}
+		
+		
+		//----------------------------------
+		//
+		//  Persistant Data Management
+		// 
+		//----------------------------------
+		
+		/**
+		 * Creates the saved data
+		 * */
+		public static function createSavedData():Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				so = SharedObject(result);
+				
+				if (so.data) {
+					if (SAVED_DATA_NAME in so.data && so.data[SAVED_DATA_NAME]!=null) {
+						savedData = SavedData(so.data[SAVED_DATA_NAME]);
+						//log.info("createSavedData:"+ObjectUtil.toString(savedData));
+					}
+					// does not contain property
+					else {
+						savedData = new SavedData();
+					}
+				}
+				// data is null
 				else {
-					effect.applyEndValues(onlyPropertyChanges, targets);
+					savedData = new SavedData();
 				}
-				
-				// Revalidate after applying
-				LayoutManager.getInstance().validateNow();
 			}
-				
-				// this works for properties but not styles
-				// the style value is restored at the end
 			else {
+				log.error("Could not get saved data. " + ObjectUtil.toString(result));
+			}
+			
+			return true;
+		}
+		
+		
+		/**
+		 * Creates the settings data
+		 * */
+		public static function createSettingsData():Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				so = SharedObject(result);
 				
-				effect.applyEndValuesWhenDone = false;
-				effect.play(targets, setStartValues);
-				effect.playReversed = false;
-				effect.end();
-				LayoutManager.getInstance().validateNow();
+				if (so.data) {
+					if (SETTINGS_DATA_NAME in so.data && so.data[SETTINGS_DATA_NAME]!=null) {
+						settings = Settings(so.data[SETTINGS_DATA_NAME]);
+					}
+					// does not contain settings property
+					else {
+						settings = new Settings();
+					}
+				}
+				// data is null
+				else {
+					settings = new Settings();
+				}
+			}
+			else {
+				log.error("Could not get saved settings data. " + ObjectUtil.toString(result));
 			}
 			
 			return true;
 		}
 		
 		/**
-		 * Removes properties changes for null or same value targets
-		 * @private
-		 */
-		public static function stripUnchangedValues(propChanges:Array):Array {
+		 * Get saved data
+		 * */
+		public function getSavedData():Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
+			var so:SharedObject;
 			
-			// Go through and remove any before/after values that are the same.
-			for (var i:int = 0; i < propChanges.length; i++) {
-				if (propChanges[i].stripUnchangedValues == false)
-					continue;
+			var data:SavedData;
+			
+			if (result is SharedObject) {
+				so = SharedObject(result);
 				
-				for (var prop:Object in propChanges[i].start) {
-					if ((propChanges[i].start[prop] ==
-						propChanges[i].end[prop]) ||
-						(typeof(propChanges[i].start[prop]) == "number" &&
-							typeof(propChanges[i].end[prop])== "number" &&
-							isNaN(propChanges[i].start[prop]) &&
-							isNaN(propChanges[i].end[prop])))
-					{
-						delete propChanges[i].start[prop];
-						delete propChanges[i].end[prop];
+				if (so.data) {
+					if (SAVED_DATA_NAME in so.data) {
+						data = SavedData(so.data[SAVED_DATA_NAME]);
+						
+						openLocalProjects(data);
+					}
+				}
+			}
+			else {
+				log.error("Could not get saved data. " + ObjectUtil.toString(result));
+			}
+			
+			return result;
+		}
+		
+		/**
+		 * Create new document. 
+		 * */
+		public function createNewDocument(name:String = null, type:Object = null, project:IProject = null):void {
+			var newDocument:IDocument;
+			var length:int;
+			
+			newDocument = createDocument(name, type);
+			addDocument(newDocument, selectedProject, true, true);
+			openDocument(newDocument, true);
+			/*
+			
+			if (project) {
+				project.addDocument(iDocument, overwrite);
+			}
+			
+			if (documentAdded && dispatchEvents) {
+				dispatchDocumentAddedEvent(iDocument);
+			}
+			
+			if (!selectedProject) {
+				project = createProject(); // create project
+				addProject(project);       // add to projects array - shows up in application
+			}
+			else {
+				project = selectedProject;
+			}
+			
+			newDocument = createDocument(name, type); // create document
+			addDocument(newDocument, project); // add to project and documents array - shows up in application
+			
+			//openProject(newProject); // should open documents - maybe we should do all previous steps in this function???
+			openDocument(newDocument, true, true); // add to application and parse source code if any
+			
+			setProject(project); // selects project 
+			setDocument(newDocument);*/
+		}
+		
+		/**
+		 * Create new project. 
+		 * */
+		public function createNewProject(name:String = null, type:Object = null, project:IProject = null):void {
+			var newProject:IProject;
+			
+			newProject = createProject(); // create project
+			addProject(newProject);       // add to projects array - shows up in application
+			
+			openProject(newProject); // should open documents - maybe we should do all previous steps in this function???
+			
+			setProject(newProject); // selects project 
+			
+		}
+		
+		/**
+		 * Create and add saved documents of array of type IDocumentData. 
+		 * */
+		public function createAndAddDocumentsData(documentsData:Array, add:Boolean = true):Array {
+			var potentialDocuments:Array = [];
+			var iDocumentMetaData:IDocumentMetaData;
+			var iDocumentData:IDocumentData;
+			var iDocument:IDocument;
+			var length:int;
+				
+			// get documents and add them to the documents array
+			
+			// TRYING TO NOT create documents until they are needed
+			// but then we have issues when we want to save
+			if (documentsData && documentsData.length>0) {
+				length = documentsData.length;
+				
+				for (var i:int;i<length;i++) {
+					// TypeError: Error #1034: Type Coercion failed: cannot convert com.flexcapacitor.model::DocumentMetaData
+					// to com.flexcapacitor.model.IDocumentData. check export and marshall options
+					// saved as wrong data type
+					iDocumentData = IDocumentData(documentsData[i]);
+					
+					// document doesn't exist - add it
+					if (getDocumentByUID(iDocumentData.uid)==null) {
+						iDocument = createDocumentFromData(iDocumentData);
+						potentialDocuments.push(iDocument);
+						
+						if (add) {
+							addDocument(iDocument);
+						}
+					}
+					else {
+						log.info("Document " + iDocumentData.name + " is already open.");
 					}
 				}
 			}
 			
-			return propChanges;
+			return potentialDocuments;
 		}
 		
-		
-		
 		/**
-		 * Checks if changes are available. 
+		 * Create projects from array of type IProjectData
 		 * */
-		public static function changesAvailable(changes:Array):Boolean {
-			var length:int = changes.length;
-			var changesAvailable:Boolean;
-			var item:PropertyChanges;
-			var name:String;
+		public function createAndAddProjectsData(projectsData:Array, add:Boolean = true):Array {
+			var iProjectData:IProjectData;
+			var potentialProjects:Array = [];
+			var length:int;
+			var iProject:IProject;
 			
-			for (var i:int;i<length;i++) {
-				if (!(changes[i] is PropertyChanges)) continue;
+			// get projects and add them to the projects array
+			if (projectsData && projectsData.length>0) {
+				length = projectsData.length;
 				
-				item = changes[i];
-				
-				for (name in item.start) {
-					changesAvailable = true;
-					return true;
-				}
-				
-				for (name in item.end) {
-					changesAvailable = true;
-					return true;
+				for (var i:int;i<length;i++) {
+					iProjectData = IProjectData(projectsData[i]);
+					
+					// project doesn't exist - add it
+					if (getProjectByUID(iProjectData.uid)==null) {
+						iProject = createProjectFromData(iProjectData);
+						potentialProjects.push(iProject);
+						
+						if (add) {
+							addProject(iProject);
+						}
+					}
+					else {
+						log.info("Project " + iProjectData.name + " is already open.");
+					}
+					
 				}
 			}
 			
-			return changesAvailable;
+			return potentialProjects;
 		}
 		
+		/**
+		 * Restores projects and documents from local store
+		 * Add all saved projects to projects array
+		 * Add all saved documents to documents array
+		 * Add documents to projects
+		 * Open previously open projects
+		 * Open previously open documents
+		 * Select previously selected project
+		 * Select previously selected document
+		 * */
+		public function openLocalProjects(data:SavedData):void {
+			var projectsDataArray:Array;
+			var potentialProjects:Array  = [];
+			var potentialDocuments:Array = [];
+			var savedDocumentsDataArray:Array;
+			var potentialProjectsLength:int;
+			var iProject:IProject;
+			
+			/*
+			var iProjectData:IProjectData;
+			var iDocumentData:IDocumentData;
+			var iDocumentMetaData:IDocumentMetaData;
+			var iDocument:IDocument;
+			var iProjectDocument:IDocument;
+			var iProjectDocumentsArray:Array;
+			var iProjectDocumentsLength:int;
+			var potentialDocumentsLength:int;
+			var documentsDataArrayLength:int;*/
+			
+			// get list of projects and list of documents
+			if (data) {
+				
+				// get projects and add them to the projects array
+				projectsDataArray = data.projects;
+				potentialProjects = createAndAddProjectsData(data.projects);
+				
+				// get documents and add them to the documents array
+				// TRYING TO NOT create documents until they are needed
+				// but then we have issues when we want to save or export
+				createAndAddDocumentsData(data.documents);
+				//savedDocumentsDataArray = data.documents; // should be potential documents?
+				
+
+				// go through projects and add documents to them
+				if (potentialProjects.length>0) {
+					potentialProjectsLength = potentialProjects.length;
+					
+					// loop through potentialProjectsLength objects
+					for (var i:int;i<length;i++) {
+						iProject = IProject(potentialProjects[i]);
+						
+						iProject.importDocumentInstances(documents);
+					}
+				}
+				
+				
+				openPreviouslyOpenProjects();
+				openPreviouslyOpenDocuments();
+				showPreviouslyOpenProject();
+				showPreviouslyOpenDocument();
+				
+			}
+			else {
+				// no saved data
+				log.info("No saved data to restore");
+			}
+			
+		}
+		
+		/**
+		 * Show previously opened project
+		 * */
+		public function showPreviouslyOpenProject():void {
+			var iProject:IProject;
+			
+			// Select last selected project
+			if (settings.selectedProject) {
+				iProject = getProjectByUID(settings.selectedProject.uid);
+				
+				if (iProject && iProject.isOpen) {
+					log.info("Opening selected project " + iProject.name);
+					setProject(iProject);
+				}
+			}
+			else {
+				if (selectedProject==null && projects && projects.length>0) {
+					setProject(projects[0]);
+				}
+			}
+		}
+		
+		/**
+		 * Show previously opened document
+		 * */
+		public function showPreviouslyOpenDocument():void {
+			var openDocuments:Array = settings.openDocuments;
+			var iDocumentMetaData:IDocumentMetaData;
+			var iDocument:IDocument;
+			
+			// Showing previously selected document
+			if (settings.selectedDocument) {
+				iDocument = getDocumentByUID(settings.selectedDocument.uid);
+				
+				if (iDocument && iDocument.isOpen) {
+					log.info("Showing previously selected document " + iDocument.name);
+					showDocument(iDocument);
+					setDocument(iDocument);
+				}
+			}
+		}
+		
+		/**
+		 * Open previously opened documents
+		 * */
+		public function openPreviouslyOpenDocuments(project:IProject = null):void {
+			var openDocuments:Array = settings.openDocuments;
+			var iDocumentMetaData:IDocumentMetaData;
+			var iDocument:IDocument;
+			
+			// open previously opened documents
+			for (var i:int;i<openDocuments.length;i++) {
+				iDocumentMetaData = IDocumentMetaData(openDocuments[i]);
+				
+				iDocument = getDocumentByUID(iDocumentMetaData.uid);
+				
+				if (iDocument) {
+					
+					if (project && project.documents.indexOf(iDocument)!=-1) {
+						log.info("Opening project document " + iDocument.name);
+						openDocument(iDocument, false, true);
+					}
+					else if (project==null) {
+						log.info("Opening document " + iDocument.name);
+						openDocument(iDocument, false, true);
+					}
+				}
+				
+			}
+		}
+		
+		/**
+		 * Open previously opened projects
+		 * */
+		public function openPreviouslyOpenProjects(locations:String = null):void {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var openProjects:Array = settings.openProjects;
+			var iProject:IProject;
+			var iProjectData:IProjectData;
+			var openItemlength:int = openProjects.length;
+			
+			// open previously opened projects
+			for (var i:int;i<openItemlength;i++) {
+				iProjectData = IProjectData(openProjects[i]);
+				iProject = getProjectByUID(iProjectData.uid);
+				
+				if (iProject) {
+					log.info("Opening project " + iProject.name);
+					openProject(iProject, locations, true);
+				}
+			}
+		}
+		
+		/**
+		 * Get saved settings data
+		 * */
+		public function getSettingsData():Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				so = SharedObject(result);
+				
+				if (so.data) {
+					if (SETTINGS_DATA_NAME in so.data) {
+						settings = Settings(so.data[SETTINGS_DATA_NAME]);
+					}
+				}
+			}
+			else {
+				log.error("Could not get saved data. " + ObjectUtil.toString(result));
+			}
+			
+			return result;
+		}
+		
+		/**
+		 * Removed saved data
+		 * */
+		public function removeSavedData():Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				so = SharedObject(result);
+				
+				if (so.data) {
+					if (SAVED_DATA_NAME in so.data) {
+						so.clear();
+						log.info("Cleared saved data");
+					}
+				}
+			}
+			else {
+				log.error("Could not remove saved data. " + ObjectUtil.toString(result));
+			}
+			
+			return result;
+		}
+		
+		/**
+		 * Removed saved settings
+		 * */
+		public function removeSavedSettings():Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				so = SharedObject(result);
+				
+				if (so.data) {
+					if (SETTINGS_DATA_NAME in so.data) {
+						so.clear(); // this clears the whole thing
+						log.info("Cleared settings data");
+					}
+				}
+			}
+			else {
+				log.error("Could not remove settings data. " + ObjectUtil.toString(result));
+			}
+			
+			return result;
+		}
+		
+		
+		/**
+		 * Save settings data
+		 * */
+		public function saveSettings():Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				updateSettingsBeforeSave();
+				so = SharedObject(result);
+				so.setProperty(SETTINGS_DATA_NAME, settings);
+				so.flush();
+				
+				//log.info("Saved Serrinfo: "+ ObjectUtil.toString(so.data));
+			}
+			else {
+				log.error("Could not save data. " + ObjectUtil.toString(result));
+				return false;
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Save all projects and documents locally and remotely.
+		 * 
+		 * NOT FINISHED
+		 * */
+		public function save(locations:String = null, options:Object = null):void {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var local:Boolean = getIsLocalLocation(locations);
+			var remote:Boolean = getIsRemoteLocation(locations);
+			var localResult:Boolean;
+			
+			if (local) {
+				local = saveProject(selectedProject, DocumentData.LOCAL_LOCATION);
+			}
+			
+			if (remote) {
+				if (remote && selectedProject is ISavable) {
+					saveProjectInProgress = true
+					ISavable(selectedProject).save(DocumentData.REMOTE_LOCATION, options);
+					
+					if (selectedProject is Project) {
+						Project(selectedProject).addEventListener(SaveResultsEvent.SAVE_RESULTS, projectSaveResults, false, 0, true);
+					}
+				}
+			}
+			
+			if (local) {
+				// saved local successful
+				if (localResult) {
+					
+				}
+				else {
+					// unsuccessful
+				}
+			}
+			
+			
+			if (remote) {
+				if (remote) {
+					
+				}
+				else {
+					
+				}
+			}
+			
+		}
+		
+		/**
+		 * Save data
+		 * */
+		public function saveDataLocally():Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				updateSavedDataBeforeSave();
+				so = SharedObject(result);
+				so.setProperty(SAVED_DATA_NAME, savedData);
+				
+				try {
+					so.flush();
+				}
+				catch (error:Error) {
+					log.error(error.message);
+					return false;
+				}
+				
+			}
+			else {
+				log.error("Could not save data. " + ObjectUtil.toString(result));
+				return false;
+			}
+			
+			return true;
+		}
+
+		
+		/**
+		 * Project saved handler
+		 * */
+		public function projectSaveResults(event:IServiceEvent):void {
+			var project:IProject = IProject(Event(event).currentTarget);
+			saveProjectInProgress = false;
+			
+			if (project is EventDispatcher) {
+				EventDispatcher(project).removeEventListener(SaveResultsEvent.SAVE_RESULTS, projectSaveResults);
+			}
+			
+			setLastSaveDate();
+			
+			dispatchProjectSavedEvent(IProject(Event(event).currentTarget));
+		}
+		
+		/**
+		 * Formatter for dates
+		 * */
+		public var dateFormatter:DateTimeFormatter = new DateTimeFormatter();
+		
+		/**
+		 * Sets the last save date 
+		 * */
+		public function setLastSaveDate(date:Date = null):void {
+			dateFormatter.dateStyle = DateTimeStyle.MEDIUM;
+			if (!date) date = new Date();
+			lastSaveDate = dateFormatter.format(date);
+		}
+
+		/**
+		 * Save project
+		 * */
+		public function saveProject(project:IProject, locations:String = null):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			
+			//if (isUserLoggedIn && isUserConnected) {
+			
+			saveProjectInProgress = false;
+			project.save(locations);
+			//}
+			
+			if (project is EventDispatcher) {
+				EventDispatcher(project).addEventListener(SaveResultsEvent.SAVE_RESULTS, projectSaveResults, false, 0, true);
+			}
+			
+			// TODO add support to save after response from server 
+			// because ID's may have been added from new documents
+			var locallySaved:Boolean = saveProjectLocally(project);
+			//project.saveCompleteCallback = saveData;
+			return true;
+		}
+
+		/**
+		 * Save project locally
+		 * */
+		public function saveProjectLocally(project:IProject, saveProjectDocuments:Boolean = true):Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				// todo - implement saveProjectDocuments
+				updateSaveDataForProject(project);
+				
+				so = SharedObject(result);
+				so.setProperty(SAVED_DATA_NAME, savedData);
+				so.flush();
+				//log.info("Saved Data: " + ObjectUtil.toString(so.data));
+			}
+			else {
+				log.error("Could not save data. " + ObjectUtil.toString(result));
+				//return false;
+			}
+			
+			return true;
+		}
+
+		/**
+		 * Save document. Uses constants, DocumentData.LOCAL_LOCATION, DocumentData.REMOTE_LOCATION, etc
+		 * Separate them by ",". 
+		 * */
+		public function saveDocument(iDocument:IDocument, locations:String = null, options:Object = null):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var saveLocally:Boolean = getIsLocalLocation(locations);
+			var saveRemote:Boolean = getIsRemoteLocation(locations);
+			var saveLocallySuccessful:Boolean;
+			
+			if (saveRemote && iDocument && iDocument is EventDispatcher) {
+				EventDispatcher(iDocument).addEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler, false, 0, true);
+			}
+			
+			saveLocallySuccessful = iDocument.save(locations, options);
+			// TODO add support to save after response from server 
+			// because ID's may have been added from new documents
+			//saveData();
+			//document.saveCompleteCallback = saveData;
+			//saveDocumentLocally(document);
+			return saveLocallySuccessful;
+		}
+		
+		/**
+		 * Returns true if location includes local shared object
+		 * */
+		public function getIsLocalLocation(value:String):Boolean {
+			return value ? value.indexOf(DocumentData.LOCAL_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
+		}
+		
+		/**
+		 * Returns true if location includes remote
+		 * */
+		public function getIsRemoteLocation(value:String):Boolean {
+			return value ? value.indexOf(DocumentData.REMOTE_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
+		}
+		
+		/**
+		 * Returns true if location includes file system
+		 * */
+		public function getIsFileLocation(value:String):Boolean {
+			return value ? value.indexOf(DocumentData.FILE_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
+		}
+		
+		/**
+		 * Returns true if location includes a database
+		 * */
+		public function getIsDataBaseLocation(value:String):Boolean {
+			return value ? value.indexOf(DocumentData.FILE_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
+		}
+		
+		/**
+		 * Handles results from document save
+		 * */
+		protected function documentSaveResultsHandler(event:SaveResultsEvent):void {
+			var document:IDocument = IDocument(event.currentTarget);
+			
+			if (document is Document) {
+				Document(document).removeEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler);
+			}
+			
+			setLastSaveDate();
+			
+			if (event.successful) {
+				dispatchDocumentSaveCompleteEvent(document);
+			}
+			else {
+				dispatchDocumentSaveFaultEvent(document);
+			}
+		}
+		
+		/**
+		 * Save document
+		 * */
+		public function saveAllDocuments(saveLocations:String = ""):Boolean {
+			var document:IDocument;
+			var project:IProject;
+			var length:int = documents.length;
+			
+			for (var i:int;i<length;i++) {
+				document = documents[i];
+				
+				if (document.isChanged) {
+					document.save(saveLocations);
+					// TODO add support to save after response from server 
+					// because ID's may have been added from new documents
+					//saveData();
+					//document.saveCompleteCallback = saveData;
+					saveDocumentLocally(document);
+				}
+			}
+			
+			length = projects.length;
+			for (i = 0;i<length;i++) {
+				project = projects[i];
+				
+				if (project.isChanged) {
+					project.save();
+					// TODO add support to save after response from server 
+					// because ID's may have been added from new documents
+					//saveData();
+					//document.saveCompleteCallback = saveData;
+					saveProjectLocally(project);
+				}
+			}
+			
+			return true;
+		}
+
+		/**
+		 * Save document as
+		 * */
+		public function saveDocumentAs(document:IDocument, extension:String = "html"):void {
+			/*
+			document.save();
+			// TODO add support to save after response from server 
+			// because ID's may have been added from new documents
+			//saveData();
+			//document.saveCompleteCallback = saveData;
+			saveDocumentLocally(document);*/
+			//return true;
+		}
+
+		/**
+		 * Save file as
+		 * */
+		public function saveFileAs(data:Object, name:String = "", extension:String = "html"):FileReference {
+			var fileName:String = name==null ? "" : name;
+			fileName = fileName.indexOf(".")==-1 && extension ? fileName + "." + extension : fileName;
+			
+			// FOR SAVING A FILE (save as) WE MAY NOT NEED ALL THE LISTENERS WE ARE ADDING
+			// add listeners
+			var fileReference:FileReference = new FileReference();
+			addFileListeners(fileReference);
+			
+			fileReference.save(data, fileName);
+			
+			return fileReference;
+		}
+		
+		/**
+		 * Adds file save as listeners
+		 * */
+		public function addFileListeners(dispatcher:IEventDispatcher):void {
+			dispatcher.addEventListener(Event.CANCEL, cancelFileSaveAsHandler, false, 0, true);
+			dispatcher.addEventListener(Event.COMPLETE, completeFileSaveAsHandler, false, 0, true);
+		}
+		
+		/**
+		 * Removes file save as listeners
+		 * */
+		public function removeFileListeners(dispatcher:IEventDispatcher):void {
+			dispatcher.removeEventListener(Event.CANCEL, cancelFileSaveAsHandler);
+			dispatcher.removeEventListener(Event.COMPLETE, completeFileSaveAsHandler);
+		}
+		
+		/**
+		 * File save as complete
+		 * */
+		public function completeFileSaveAsHandler(event:Event):void {
+			removeFileListeners(event.currentTarget as IEventDispatcher);
+			
+			dispatchDocumentSaveCompleteEvent(selectedDocument);
+		}
+		
+		/**
+		 * Cancel file save as
+		 * */
+		public function cancelFileSaveAsHandler(event:Event):void {
+			removeFileListeners(event.currentTarget as IEventDispatcher);
+			
+			dispatchDocumentSaveAsCancelEvent(selectedDocument);
+		}
+		
+		/**
+		 * Get document locally
+		 * */
+		public function getDocumentLocally(iDocumentData:IDocumentData):IDocumentData {
+			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				so = SharedObject(result);
+				//var data:Object = savedData;
+				var documentsArray:Array = so.data.savedData.documents;
+				var length:int = documentsArray.length;
+				var documentData:IDocumentData;
+				var found:Boolean;
+				var foundIndex:int = -1;
+				
+				for (var i:int;i<length;i++) {
+					documentData = IDocumentData(documentsArray[i]);
+					
+					if (documentData.uid == iDocumentData.uid) {
+						found = true;
+						foundIndex = i;
+						
+						break;
+					}
+				}
+				
+				return documentData;
+			}
+			else {
+				log.error("Could not get saved data. " + ObjectUtil.toString(result));
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Save document locally
+		 * */
+		public function saveDocumentLocally(document:IDocumentData):Boolean {
+			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
+			var so:SharedObject;
+			
+			if (result is SharedObject) {
+				updateSaveDataForDocument(document);
+				so = SharedObject(result);
+				so.setProperty(SAVED_DATA_NAME, savedData);
+				so.flush();
+				//log.info("Saved Data: " + ObjectUtil.toString(so.data));
+			}
+			else {
+				log.error("Could not save data. " + ObjectUtil.toString(result));
+				//return false;
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Get settings
+		 * */
+		public function getSettings():Boolean {
+			
+			return true;
+		}
+		
+		/**
+		 * Get the latest settings and copy them into the settings object
+		 * */
+		public function updateSettingsBeforeSave():Settings {
+			// get selected document
+			// get selected project
+			// get open projects
+			// get open documents
+			// get all documents
+			// get all projects
+			// save workspace settings
+			// save preferences settings
+			
+			settings.lastOpened 		= new Date().time;
+			//settings.modified 		= new Date().time;
+			
+			settings.openDocuments 		= getOpenDocumentsSaveData(true);
+			settings.openProjects 		= getOpenProjectsSaveData(true);
+
+			settings.selectedProject 	= selectedProject ? selectedProject.toMetaData() : null;
+			settings.selectedDocument 	= selectedDocument ? selectedDocument.toMetaData() : null;
+			
+			settings.saveCount++;
+			
+			return settings;
+		}
+		
+		/**
+		 * Get the latest project and document data.
+		 * */
+		public function updateSavedDataBeforeSave():SavedData {
+			// get selected document
+			// get selected project
+			// get open projects
+			// get open documents
+			// get all documents
+			// get all projects
+			// save workspace settings
+			// save preferences settings
+			
+			savedData.modified 		= new Date().time;
+			//settings.modified 		= new Date().time;
+			savedData.documents 	= getSaveDataForAllDocuments();
+			savedData.projects 		= getSaveDataForAllProjects();
+			savedData.saveCount++;
+			//savedData.resources 	= getResources();
+			
+			return savedData;
+		}
+		
+		/**
+		 * Get projects 
+		 * */
+		public function getProjects(status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
+			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			
+			
+			if (loadRemote) {
+				// we need to create service
+				if (getProjectsService==null) {
+					var service:WPService = new WPService();
+					service = new WPService();
+					service.host = getWPURL();
+					service.addEventListener(WPService.RESULT, getProjectsResultsHandler, false, 0, true);
+					service.addEventListener(WPService.FAULT, getProjectsFaultHandler, false, 0, true);
+					getProjectsService = service;
+				}
+				
+				getProjectsInProgress = true;
+				
+				getProjectsService.getProjects(status, count);
+			}
+			
+			if (loadLocally) {
+				
+			}
+		}
+		
+		/**
+		 * Get projects by user ID
+		 * */
+		public function getProjectsByUser(id:int, status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			if (status==null) status = WPService.STATUS_ANY;
+			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
+			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			
+			
+			if (loadRemote) {
+				// we need to create service
+				if (getProjectsService==null) {
+					var service:WPService = new WPService();
+					service = new WPService();
+					service.host = getWPURL();
+					service.addEventListener(WPService.RESULT, getProjectsResultsHandler, false, 0, true);
+					service.addEventListener(WPService.FAULT, getProjectsFaultHandler, false, 0, true);
+					getProjectsService = service;
+				}
+				
+				getProjectsInProgress = true;
+				
+				getProjectsService.getProjectsByUser(id, status, count);
+				
+			}
+			
+			if (loadLocally) {
+				
+			}
+		}
+		
+		
+		/**
+		 * Login user 
+		 * */
+		public function login(username:String, password:String):void {
+			
+			// we need to create service
+			if (loginService==null) {
+				loginService = new WPService();
+				loginService.addEventListener(WPService.RESULT, loginResultsHandler, false, 0, true);
+				loginService.addEventListener(WPService.FAULT, loginFaultHandler, false, 0, true);
+			}
+			
+			loginService.host = getWPURL();
+				
+			loginInProgress = true;
+			
+			loginService.loginUser(username, password);
+			
+		}
+		
+		/**
+		 * Logout user 
+		 * */
+		public function logout():void {
+			
+			// we need to create service
+			if (logoutService==null) {
+				logoutService = new WPService();
+				logoutService.addEventListener(WPService.RESULT, logoutResultsHandler, false, 0, true);
+				logoutService.addEventListener(WPService.FAULT, logoutFaultHandler, false, 0, true);
+			}
+			
+			logoutService.host = getWPURL();
+			
+			logoutInProgress = true;
+			
+			logoutService.logoutUser();
+			
+		}
+		
+		/**
+		 * Register user 
+		 * */
+		public function register(username:String, email:String):void {
+			
+			// we need to create service
+			if (registerService==null) {
+				registerService = new WPService();
+				registerService.addEventListener(WPService.RESULT, registerResultsHandler, false, 0, true);
+				registerService.addEventListener(WPService.FAULT, registerFaultHandler, false, 0, true);
+			}
+			
+			registerService.host = getWPURL();
+			
+			registerInProgress = true;
+			
+			registerService.registerUser(username, email);
+			
+		}
+		
+		/**
+		 * Register site 
+		 * */
+		public function registerSite(blogName:String = "", blogTitle:String = "", isPublic:Boolean = false):void {
+			
+			// we need to create service
+			if (registerService==null) {
+				registerService = new WPService();
+				registerService.addEventListener(WPService.RESULT, registerResultsHandler, false, 0, true);
+				registerService.addEventListener(WPService.FAULT, registerFaultHandler, false, 0, true);
+			}
+			
+			registerService.host = getWPURL();
+			
+			registerInProgress = true;
+			
+			registerService.registerSite(blogName, blogTitle, isPublic);
+			
+		}
+		
+		/**
+		 * Register user and site 
+		 * */
+		public function registerUserAndSite(username:String, email:String, blogName:String = "", blogTitle:String = "", isPublic:Boolean = false):void {
+			
+			// we need to create service
+			if (registerService==null) {
+				registerService = new WPService();
+				registerService.addEventListener(WPService.RESULT, registerResultsHandler, false, 0, true);
+				registerService.addEventListener(WPService.FAULT, registerFaultHandler, false, 0, true);
+			}
+			
+			registerService.host = getWPURL();
+			
+			registerInProgress = true;
+			
+			registerService.registerUserAndSite(username, email, blogName, blogTitle, isPublic);
+			
+		}
+		
+		/**
+		 * Request lost password. Sends an email with instructions. 
+		 * @param username or email address
+		 * */
+		public function lostPassword(usernameOrEmail:String):void {
+			
+			// we need to create service
+			if (lostPasswordService==null) {
+				lostPasswordService = new WPService();
+				lostPasswordService.addEventListener(WPService.RESULT, lostPasswordResultsHandler, false, 0, true);
+				lostPasswordService.addEventListener(WPService.FAULT, lostPasswordFaultHandler, false, 0, true);
+			}
+			
+			lostPasswordService.host = getWPURL();
+				
+			lostPasswordInProgress = true;
+			
+			lostPasswordService.lostPassword(usernameOrEmail);
+			
+		}
+		
+		/**
+		 * Reset or change password
+		 * */
+		public function changePassword(key:String, username:String, password:String, password2:String):void {
+			
+			// we need to create service
+			if (changePasswordService==null) {
+				changePasswordService = new WPService();
+				changePasswordService.addEventListener(WPService.RESULT, changePasswordResultsHandler, false, 0, true);
+				changePasswordService.addEventListener(WPService.FAULT, changePasswordFaultHandler, false, 0, true);
+			}
+			
+			changePasswordService.host = getWPURL();
+				
+			changePasswordInProgress = true;
+			
+			changePasswordService.resetPassword(key, username, password, password2);
+			
+		}
+		
+		/**
+		 * Get images from the server
+		 * */
+		public function getAttachments(id:int = 0):void {
+			// get selected document
+			
+			// we need to create service
+			if (getAttachmentsService==null) {
+				getAttachmentsService = new WPService();
+				getAttachmentsService.addEventListener(WPService.RESULT, getAttachmentsResultsHandler, false, 0, true);
+				getAttachmentsService.addEventListener(WPService.FAULT, getAttachmentsFaultHandler, false, 0, true);
+			}
+			
+			getAttachmentsService.host = getWPURL();
+			
+			if (id!=0) {
+				getAttachmentsService.id = String(id);
+			}
+			
+			getAttachmentsInProgress = true;
+			
+			
+			getAttachmentsService.getAttachments(id);
+		}
+		
+		/**
+		 * Upload image to the server
+		 * */
+		public function uploadAttachment(data:Object, id:String, fileName:String = null, dataField:String = null, contentType:String = null):void {
+			// get selected document
+			
+			// we need to create service
+			if (uploadAttachmentService==null) {
+				uploadAttachmentService = new WPAttachmentService();
+				uploadAttachmentService.addEventListener(WPService.RESULT, uploadAttachmentResultsHandler, false, 0, true);
+				uploadAttachmentService.addEventListener(WPService.FAULT, uploadAttachmentFaultHandler, false, 0, true);
+				//uploadAttachmentService = service;
+			}
+			
+			uploadAttachmentService.host = getWPURL();
+		
+			if (id!=null) {
+				uploadAttachmentService.id = id;
+			}
+			
+			uploadAttachmentInProgress = true;
+			
+			if (data is FileReference) {
+				uploadAttachmentService.file = data as FileReference;
+				uploadAttachmentService.uploadAttachment();
+			}
+			else if (data) {
+				uploadAttachmentService.fileData = data as ByteArray;
+				
+				if (fileName) {
+					uploadAttachmentService.fileName = fileName;
+				}
+				
+				if (dataField) {
+					uploadAttachmentService.dataField = dataField;
+				}
+				
+				if (contentType) {
+					uploadAttachmentService.contentType = contentType;
+				}
+				
+				uploadAttachmentService.uploadAttachment();
+			}
+			else {
+				Radiate.log.warn("No data or file is available for upload. Please select the file to upload.");
+			}
+			
+		}
+		
+		/**
+		 * Get projects
+		 * */
+		public function getLoggedInStatus():void {
+			// get selected document
+			var service:WPService;
+			
+			// we need to create service
+			if (getProjectsService==null) {
+				service = new WPService();
+				service.host = getWPURL();
+				service.addEventListener(WPService.RESULT, getLoggedInStatusResult, false, 0, true);
+				service.addEventListener(WPService.FAULT, getLoggedInStatusFault, false, 0, true);
+				getLoggedInStatusService = service;
+			}
+			
+			getLoggedInStatusInProgress = true;
+			
+			getLoggedInStatusService.getLoggedInUser();
+		}
+		
+		/**
+		 * Handles result to check if user is logged in 
+		 * */
+		protected function getLoggedInStatusResult(event:WPServiceEvent):void {
+			isUserConnected = true;
+			var data:Object = event.data;
+
+			updateUserInfo(data);
+			
+			getLoggedInStatusInProgress = false;
+			
+			dispatchLoginStatusEvent(isUserLoggedIn, data);
+		}
+		
+		/**
+		 * Updates the user information from data object from the server
+		 * */
+		public function updateUserInfo(data:Object):void {
+			
+			if (data && data is Object) {
+				isUserLoggedIn = data.loggedIn;
+				userAvatar = data.avatar;
+				userDisplayName = data.displayName ? data.displayName : "guest";
+				userID = data.id;
+				user = data;
+				
+				if ("blogs" in user) {
+					//userSites = user.blogs;
+					userSites = [];
+					for each (var blog:Object in user.blogs) {
+						userSites.push(blog);
+					}
+					
+					if (userSites.length>0) {
+						userSitePath = userSites[0].path;
+						WP_USER_PATH = userSitePath;
+						WP_USER_PATH = WP_USER_PATH.replace(WP_PATH, "");
+					}
+					else {
+						userSitePath = "";
+						WP_USER_PATH = "";
+					}
+				}
+			}
+		}
+		
+		/**
+		 * Handles fault when checking if user is logged in
+		 * */
+		protected function getLoggedInStatusFault(event:WPServiceEvent):void {
+			var data:Object = event.data;
+			isUserConnected = false;
+			//isUserLoggedIn = false;
+			
+			getLoggedInStatusInProgress = false;
+			
+			dispatchLoginStatusEvent(isUserLoggedIn, data);
+		}
+		
+		/**
+		 * Results from call to get projects
+		 * */
+		public function getProjectsResultsHandler(event:IServiceEvent):void {
+			
+			//Radiate.log.info("Retrieved list of projects");
+			
+			var data:Object = event.data;
+			
+			getProjectsInProgress = false;
+			
+			dispatchGetProjectsListResultsEvent(data);
+		}
+		
+		/**
+		 * Open list of projects. Need to eventually convert from wordpress post data object to type classes.
+		 * See getAttachmentsResultsHandler() 
+		 * */
+		public function openProjectsFromData(projectsData:Array):void {
+			var length:int;
+			var post:Object;
+			var project:IProject
+			var xml:XML;
+			var isValid:Boolean;
+			var firstProject:IProject;
+			var potentialProjects:Array;
+			
+			length = projectsData.count;
+			
+			for (var i:int;i<length;i++) {
+				post = potentialProjects.posts[i];
+				isValid = XMLUtils.isValidXML(post.content);
+				
+				if (isValid) {
+					xml = new XML(post.content);
+					project = createProjectFromXML(xml);
+					addProject(project);
+					potentialProjects.push(project);
+				}
+				else {
+					log.info("Could not import project:" + post.title);
+				}
+			}
+			
+			
+			//potentialProjects = addSavedProjects(data.projects);
+			
+			if (potentialProjects.length>0) {
+				openProject(potentialProjects[0]);
+				setProject(potentialProjects[0]);
+			}
+		}
+		
+		/**
+		 * Result from save fault
+		 * */
+		public function getProjectsFaultHandler(event:IServiceEvent):void {
+			var data:Object = event.data;
+			Radiate.log.info("Could not get list of projects");
+			
+			getProjectsInProgress = false;
+			
+			dispatchGetProjectsListResultsEvent(data);
+		}
+		
+		/**
+		 * Result get attachments
+		 * */
+		public function getAttachmentsResultsHandler(event:IServiceEvent):void {
+			Radiate.log.info("Retrieved list of attachments");
+			var data:Object = event.data;
+			var potentialAttachments:Array = [];
+			var length:int;
+			var object:Object;
+			var attachment:AttachmentData;
+			
+			if (data && data.count>0) {
+				length = data.count;
+				
+				for (var i:int;i<length;i++) {
+					object = data.attachments[i];
+					
+					if (String(object.mime_type).indexOf("image/")!=-1) {
+						attachment = new ImageData();
+						attachment.unmarshall(object);
+					}
+					else {
+						attachment = new AttachmentData();
+						attachment.unmarshall(object);
+					}
+					
+					potentialAttachments.push(attachment);
+				}
+			}
+			
+			getAttachmentsInProgress = false;
+			
+			attachments = potentialAttachments;
+			
+			dispatchAttachmentsResultsEvent(true, attachments);
+		}
+		
+		/**
+		 * Result from attachments fault
+		 * */
+		public function getAttachmentsFaultHandler(event:IServiceEvent):void {
+			
+			Radiate.log.info("Could not get list of attachments");
+			
+			getAttachmentsInProgress = false;
+			
+			//dispatchEvent(saveResultsEvent);
+			dispatchAttachmentsResultsEvent(false, []);
+		}
+		
+		/**
+		 * Result upload attachment
+		 * */
+		public function uploadAttachmentResultsHandler(event:IServiceEvent):void {
+			//Radiate.log.info("Upload attachment");
+			var data:Object = event.data;
+			var potentialAttachments:Array = [];
+			var successful:Boolean = data && data.status && data.status=="ok" ? true : false;
+			var length:int;
+			var object:Object;
+			var attachment:AttachmentData;
+			var attachments:Array = data && data.post && data.post.attachments ? data.post.attachments : []; 
+			
+			
+			if (attachments.length>0) {
+				length = attachments.length;
+				
+				for (var i:int;i<length;i++) {
+					object = attachments[i];
+					
+					if (String(object.mime_type).indexOf("image/")!=-1) {
+						attachment = new ImageData();
+						attachment.unmarshall(object);
+					}
+					else {
+						attachment = new AttachmentData();
+						attachment.unmarshall(object);
+					}
+					
+					potentialAttachments.push(attachment);
+				}
+			}
+			
+			//attachments = potentialAttachments;
+			
+			uploadAttachmentInProgress = false;
+			
+			dispatchUploadAttachmentResultsEvent(successful, potentialAttachments, data.post);
+		}
+		
+		/**
+		 * Result from upload attachment fault
+		 * */
+		public function uploadAttachmentFaultHandler(event:IServiceEvent):void {
+			Radiate.log.info("Upload attachment fault");
+			
+			uploadAttachmentInProgress = false;
+			
+			//dispatchEvent(saveResultsEvent);
+			dispatchUploadAttachmentResultsEvent(false, [], event.data);
+		}
+		
+		/**
+		 * Login results handler
+		 * */
+		public function loginResultsHandler(event:IServiceEvent):void {
+			Radiate.log.info("Login results");
+			var data:Object = event.data;
+			var loggedIn:Boolean;
+			
+			if (data && data is Object) {
+				
+				loggedIn = data.loggedIn==true;
+				
+				updateUserInfo(data);
+			}
+			
+			loginInProgress = false;
+			
+			
+			dispatchLoginResultsEvent(loggedIn, data);
+		}
+		
+		/**
+		 * Result from login fault
+		 * */
+		public function loginFaultHandler(event:IServiceEvent):void {
+			var data:Object = event.data;
+			
+			Radiate.log.info("Could not connect to the server to login. ");
+			
+			loginInProgress = false;
+			
+			dispatchLoginResultsEvent(false, data);
+		}
+		
+		/**
+		 * Logout results handler
+		 * */
+		public function logoutResultsHandler(event:IServiceEvent):void {
+			Radiate.log.info("Logout results");
+			var data:Object = event.data;
+			var loggedOut:Boolean;
+			
+			if (data && data is Object) {
+				
+				loggedOut = data.loggedIn==false;
+				
+				updateUserInfo(data);
+			}
+			
+			logoutInProgress = false;
+			
+			
+			dispatchLogoutResultsEvent(loggedOut, data);
+		}
+		
+		/**
+		 * Result from logout fault
+		 * */
+		public function logoutFaultHandler(event:IServiceEvent):void {
+			var data:Object = event.data;
+			
+			Radiate.log.info("Could not connect to the server to logout. ");
+			
+			logoutInProgress = false;
+			
+			dispatchLogoutResultsEvent(false, data);
+		}
+		
+		/**
+		 * Register results handler
+		 * */
+		public function registerResultsHandler(event:IServiceEvent):void {
+			Radiate.log.info("Register results");
+			var data:Object = event.data;
+			var successful:Boolean;
+			
+			if (data && data is Object && "created" in data) {
+				
+				successful = data.created;
+				
+			}
+			
+			registerInProgress = false;
+			
+			
+			dispatchRegisterResultsEvent(successful, data);
+		}
+		
+		/**
+		 * Result from register fault
+		 * */
+		public function registerFaultHandler(event:IServiceEvent):void {
+			var data:Object = event.data;
+			
+			Radiate.log.info("Could not connect to the server to register. ");
+			
+			registerInProgress = false;
+			
+			dispatchRegisterResultsEvent(false, data);
+		}
+		
+		/**
+		 * Register results handler
+		 * */
+		public function changePasswordResultsHandler(event:IServiceEvent):void {
+			Radiate.log.info("Change password results");
+			var data:Object = event.data;
+			var successful:Boolean;
+			
+			if (data && data is Object && "created" in data) {
+				
+				successful = data.created;
+				
+			}
+			
+			changePasswordInProgress = false;
+			
+			
+			dispatchChangePasswordResultsEvent(successful, data);
+		}
+		
+		/**
+		 * Result from change password fault
+		 * */
+		public function changePasswordFaultHandler(event:IServiceEvent):void {
+			var data:Object = event.data;
+			
+			Radiate.log.info("Could not connect to the server. " + event.faultEvent.toString());
+			
+			changePasswordInProgress = false;
+			
+			dispatchChangePasswordResultsEvent(false, data);
+		}
+		
+		/**
+		 * Lost password results handler
+		 * */
+		public function lostPasswordResultsHandler(event:IServiceEvent):void {
+			Radiate.log.info("Change password results");
+			var data:Object = event.data;
+			var successful:Boolean;
+			
+			if (data && data is Object && "created" in data) {
+				successful = data.created;
+			}
+			
+			lostPasswordInProgress = false;
+			
+			
+			dispatchLostPasswordResultsEvent(successful, data);
+		}
+		
+		/**
+		 * Result from lost password fault
+		 * */
+		public function lostPasswordFaultHandler(event:IServiceEvent):void {
+			var data:Object = event.data;
+			
+			Radiate.log.info("Could not connect to the server. " + event.faultEvent.toString());
+			
+			lostPasswordInProgress = false;
+			
+			dispatchLostPasswordResultsEvent(false, data);
+		}
+		
+		/**
+		 * Delete project results handler
+		 * */
+		public function deleteProjectResultsHandler(event:IServiceEvent):void {
+			Radiate.log.info("Delete project results");
+			var data:Object = event.data;
+			var status:Boolean;
+			var successful:Boolean;
+			var error:String;
+			var message:String;
+			
+			if (data && data is Object) {
+				//status = data.status==true;
+			}
+			
+			deleteProjectInProgress = false;
+			
+			if (data && data is Object && "status" in data) {
+				
+				successful = data.status!="error";
+			}
+			
+			//Include 'id' or 'slug' var in your request.
+			if (event.faultEvent is IOErrorEvent) {
+				message = "Are you connected to the internet? ";
+				
+				if (event.faultEvent is IOErrorEvent) {
+					message = IOErrorEvent(event.faultEvent).text;
+				}
+				else if (event.faultEvent is SecurityErrorEvent) {
+					
+					if (SecurityErrorEvent(event.faultEvent).errorID==2048) {
+						
+					}
+					
+					message += SecurityErrorEvent(event.faultEvent).text;
+				}
+			}
+			
+			
+			//dispatchProjectRemovedEvent(null);
+			
+			dispatchProjectDeletedEvent(successful, data);
+		}
+		
+		/**
+		 * Result from delete project fault
+		 * */
+		public function deleteProjectFaultHandler(event:IServiceEvent):void {
+			var data:Object = event.data;
+			
+			Radiate.log.info("Could not connect to the server to delete the project. ");
+			
+			deleteProjectInProgress = false;
+			
+			dispatchProjectDeletedEvent(false, data);
+		}
+		
+		/**
+		 * Delete document results handler
+		 * */
+		public function deleteDocumentResultsHandler(event:IServiceEvent):void {
+			Radiate.log.info("Delete document results");
+			var data:Object = event.data;
+			//var status:Boolean;
+			var successful:Boolean;
+			var error:String;
+			var message:String;
+			
+			
+			if (data && data is Object && "status" in data) {
+				successful = data.status!="error";
+			}
+			
+			deleteDocumentInProgress = false;
+			deleteAttachmentInProgress = false;
+			
+			//Include 'id' or 'slug' var in your request.
+			if (event.faultEvent is IOErrorEvent) {
+				message = "Are you connected to the internet? ";
+				
+				if (event.faultEvent is IOErrorEvent) {
+					message = IOErrorEvent(event.faultEvent).text;
+				}
+				else if (event.faultEvent is SecurityErrorEvent) {
+					
+					if (SecurityErrorEvent(event.faultEvent).errorID==2048) {
+						
+					}
+					
+					message += SecurityErrorEvent(event.faultEvent).text;
+				}
+			}
+			
+			//status = message;
+			
+			//dispatchDocumentRemovedEvent(null);
+			
+			dispatchDocumentDeletedEvent(successful, data);
+		}
+		
+		/**
+		 * Result from delete project fault
+		 * */
+		public function deleteDocumentFaultHandler(event:IServiceEvent):void {
+			var data:Object = event.data;
+			
+			Radiate.log.info("Could not connect to the server to delete the document. ");
+			
+			deleteDocumentInProgress = false;
+			
+			dispatchDocumentDeletedEvent(false, data);
+		}
+
+		
+		/**
+		 * Check if the project has changed and mark changed if it is. 
+		 * */
+		public function checkIfProjectHasChanged(iProject:IProject):Boolean {
+			
+			var isChanged:Boolean = iProject.checkProjectHasChanged();
+			
+			return isChanged;
+		}
+		
+		/**
+		 * Updates the saved data with the changes from the document passed in
+		 * */
+		public function updateSaveDataForDocument(iDocumentData:IDocumentData, metaData:Boolean = false):SavedData {
+			var documentsArray:Array = savedData.documents;
+			var length:int = documentsArray.length;
+			var documentMetaData:IDocumentMetaData;
+			var found:Boolean;
+			var foundIndex:int = -1;
+			
+			for (var i:int;i<length;i++) {
+				documentMetaData = IDocumentMetaData(documentsArray[i]);
+				//Radiate.log.info("Exporting document " + iDocument.name);
+				
+				if (documentMetaData.uid == iDocumentData.uid) {
+					found = true;
+					foundIndex = i;
+				}
+			}
+			
+			if (found) {
+				
+				if (metaData) {
+					documentsArray[foundIndex] = iDocumentData.toMetaData();
+				}
+				else {
+					documentsArray[foundIndex] = iDocumentData.marshall();
+				}
+			}
+			else {
+				if (metaData) {
+					documentsArray.push(iDocumentData.toMetaData());
+				}
+				else {
+					documentsArray.push(iDocumentData.marshall());
+				}
+			}
+			
+			
+			return savedData;
+		}
+		
+		/**
+		 * Updates the saved data with the changes from the project passed in
+		 * */
+		public function updateSaveDataForProject(iProject:IProject, metaData:Boolean = false):SavedData {
+			var projectsArray:Array = savedData.projects;
+			var length:int = projectsArray.length;
+			var documentMetaData:IDocumentMetaData;
+			var found:Boolean;
+			var foundIndex:int = -1;
+			
+			for (var i:int;i<length;i++) {
+				documentMetaData = IDocumentData(projectsArray[i]);
+				//Radiate.log.info("Exporting document " + iDocument.name);
+				
+				if (documentMetaData.uid == iProject.uid) {
+					found = true;
+					foundIndex = i;
+				}
+			}
+			
+			if (found) {
+				
+				if (metaData) {
+					projectsArray[foundIndex] = iProject.toMetaData();
+				}
+				else {
+					projectsArray[foundIndex] = iProject.marshall();
+				}
+			}
+			else {
+				if (metaData) {
+					projectsArray.push(iProject.toMetaData());
+				}
+				else {
+					projectsArray.push(iProject.marshall());
+				}
+			}
+			
+			
+			return savedData;
+		}
+		
+		/**
+		 * Get a list of documents. If open is set to true then gets only open documents.
+		 * */
+		public function getOpenDocumentsSaveData(metaData:Boolean = false):Array {
+			var documentsArray:Array = getSaveDataForAllDocuments(true, metaData);
+			return documentsArray;
+		}
+		
+		/**
+		 * Get a list of documents data for storage by project. If open is set to true then only returns open documents.
+		 * */
+		public function getDocumentsSaveDataByProject(project:IProject, open:Boolean = false):Array {
+			var documentsArray:Array = project.getSavableDocumentsData(open);
+			
+			return documentsArray;
+		}
+		
+		/**
+		 * Get a list of all documents data for storage. If open is set to 
+		 * true then only returns open documents.
+		 * */
+		public function getSaveDataForAllDocuments(open:Boolean = false, metaData:Boolean = false):Array {
+			var length:int = projects.length;
+			var documentsArray:Array = [];
+			var iProject:IProject;
+			
+			for (var i:int;i<length;i++) {
+				iProject = projects[i];
+				documentsArray = documentsArray.concat(iProject.getSavableDocumentsData(open, metaData));
+			}
+			
+			return documentsArray;
+		}
+		
+		
+		/**
+		 * Get a list of projects that are open. 
+		 * If meta data is true only returns meta data. 
+		 * */
+		public function getOpenProjectsSaveData(metaData:Boolean = false):Array {
+			var projectsArray:Array = getSaveDataForAllProjects(true, metaData);
+			
+			return projectsArray;
+		}
+		
+		/**
+		 * Get an array of projects serialized for storage. 
+		 * If open is set to true then only returns open projects.
+		 * If meta data is true then only returns meta data. 
+		 * */
+		public function getSaveDataForAllProjects(open:Boolean = false, metaData:Boolean = false):Array {
+			var projectsArray:Array = [];
+			var length:int = projects.length;
+			var iProject:IProject;
+			
+			for (var i:int; i < length; i++) {
+				iProject = IProject(projects[i]);
+				
+				if (open) {
+					if (iProject.isOpen) {
+						if (metaData) {
+							projectsArray.push(iProject.toMetaData());
+						}
+						else {
+							projectsArray.push(iProject.marshall());
+						}
+					}
+				}
+				else {
+					if (metaData) {
+						projectsArray.push(iProject.toMetaData());
+					}
+					else {
+						projectsArray.push(iProject.marshall());
+					}
+				}
+			}
+			
+			
+			return projectsArray;
+		}
+		
+		/**
+		 * Get an array of projects serialized for storage. 
+		 * If open is set to true then only returns open projects.
+		 * If meta data is true then only returns meta data. 
+		 * */
+		public function saveProjectsRemotely(open:Boolean = false):Array {
+			var projectsArray:Array = [];
+			var length:int = projects.length;
+			var iProject:IProject;
+			
+			for (var i:int; i < length; i++) {
+				iProject = IProject(projects[i]);
+				
+				if (open) {
+					if (iProject.isOpen) {
+						iProject.save();
+					}
+				}
+				else {
+					iProject.save();
+				}
+			}
+			
+			
+			return projectsArray;
+		}
 		
 		//----------------------------------
 		//
@@ -3500,7 +7632,13 @@ package com.flexcapacitor.controller {
 		
 		// NOTE: THIS IS WRITTEN THIS WAY TO WORK WITH FLEX STATES AND TRANSITIONS
 		// there is probably a better way but I am attempting to use the flex sdk's
-		// own code to apply changes 
+		// own code to apply changes. we could extract that code, create commands, 
+		// etc but it seemed less work and less room for error 
+		
+		// update oct 27: this could probably be moved to the document's own class
+		// and another way to do history management is create a sequence and 
+		// add actions to it (SetAction, AddItem, RemoveItem, etc)
+		// that would probably enable easy to use automation and playback 
 		
 		public static var REMOVE_ITEM_DESCRIPTION:String = "Remove";
 		public static var ADD_ITEM_DESCRIPTION:String = "Add";
@@ -3524,7 +7662,7 @@ package com.flexcapacitor.controller {
 		 * We may need to call validateNow somewhere and set usePhasedInstantiation?
 		 * */
 		public static function goToHistoryIndex(index:int, dispatchEvents:Boolean = false):int {
-			var document:IDocument = instance.document;
+			var document:IDocument = instance.selectedDocument;
 			var newIndex:int = index;
 			var oldIndex:int = historyIndex;
 			var time:int = getTimer();
@@ -3574,7 +7712,7 @@ package com.flexcapacitor.controller {
 			var currentIndex:int = getHistoryIndex();
 			var historyLength:int = history.length;
 			var historyEvent:HistoryEventItem;
-			var currentDocument:IDocument = instance.document;
+			var currentDocument:IDocument = instance.selectedDocument;
 			var currentTargetDocument:Application = currentDocument.instance as Application;
 			var setStartValues:Boolean = true;
 			var historyItem:HistoryEvent;
@@ -3711,7 +7849,7 @@ package com.flexcapacitor.controller {
 					}
 				}
 				// undo the property changes
-				else if (action==RadiateEvent.PROPERTY_CHANGE) {
+				else if (action==RadiateEvent.PROPERTY_CHANGED) {
 				
 					applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
 						setStartValues);
@@ -3759,7 +7897,7 @@ package com.flexcapacitor.controller {
 		 * Redo last change
 		 * */
 		public static function redo(dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true):int {
-			var currentDocument:IDocument = instance.document;
+			var currentDocument:IDocument = instance.selectedDocument;
 			var historyCollection:ArrayCollection = currentDocument.history;
 			var currentTargetDocument:Application = currentDocument.instance as Application; // should be typed
 			var historyLength:int = historyCollection.length;
@@ -3874,7 +8012,7 @@ package com.flexcapacitor.controller {
 						instance.dispatchRemoveItemsEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
 					}
 				}
-				else if (action==RadiateEvent.PROPERTY_CHANGE) {
+				else if (action==RadiateEvent.PROPERTY_CHANGED) {
 					applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
 						setStartValues);
 					historyEvent.reversed = false;
@@ -3911,6 +8049,129 @@ package com.flexcapacitor.controller {
 			return historyLength;
 		}
 		
+		/**
+		 * Apply changes to targets. You do not call this. Set properties through setProperties method. 
+		 * 
+		 * @param setStartValues applies the start values rather 
+		 * than applying the end values
+		 * 
+		 * @param property string or array of strings containing the 
+		 * names of the properties to set or null if setting styles
+		 * 
+		 * @param style string or araray of strings containing the 
+		 * names of the styles to set or null if setting properties
+		 * */
+		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, setStartValues:Boolean=false):Boolean {
+			var length:int = changes ? changes.length : 0;
+			var effect:SetAction = new SetAction();
+			var onlyPropertyChanges:Array = [];
+			var directApply:Boolean = true;
+			var isStyle:Boolean = style && style.length>0;
+			
+			for (var i:int;i<length;i++) {
+				if (changes[i] is PropertyChanges) { 
+					onlyPropertyChanges.push(changes[i]);
+				}
+			}
+			
+			effect.targets = targets;
+			effect.propertyChangesArray = onlyPropertyChanges;
+			
+			if (isStyle) {
+				effect.property = style;
+			}
+			
+			effect.relevantProperties = ArrayUtil.toArray(property);
+			effect.relevantStyles = ArrayUtil.toArray(style);
+			
+			// this works for styles and properties
+			// note: the property applyActualDimensions is used to enable width and height values to stick
+			if (directApply) {
+				effect.applyEndValuesWhenDone = false;
+				effect.applyActualDimensions = false;
+				
+				if (setStartValues) {
+					effect.applyStartValues(onlyPropertyChanges, targets);
+				}
+				else {
+					effect.applyEndValues(onlyPropertyChanges, targets);
+				}
+				
+				// Revalidate after applying
+				LayoutManager.getInstance().validateNow();
+			}
+				
+				// this works for properties but not styles
+				// the style value is restored at the end
+			else {
+				
+				effect.applyEndValuesWhenDone = false;
+				effect.play(targets, setStartValues);
+				effect.playReversed = false;
+				effect.end();
+				LayoutManager.getInstance().validateNow();
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Removes properties changes for null or same value targets
+		 * @private
+		 */
+		public static function stripUnchangedValues(propChanges:Array):Array {
+			
+			// Go through and remove any before/after values that are the same.
+			for (var i:int = 0; i < propChanges.length; i++) {
+				if (propChanges[i].stripUnchangedValues == false)
+					continue;
+				
+				for (var prop:Object in propChanges[i].start) {
+					if ((propChanges[i].start[prop] ==
+						propChanges[i].end[prop]) ||
+						(typeof(propChanges[i].start[prop]) == "number" &&
+							typeof(propChanges[i].end[prop])== "number" &&
+							isNaN(propChanges[i].start[prop]) &&
+							isNaN(propChanges[i].end[prop])))
+					{
+						delete propChanges[i].start[prop];
+						delete propChanges[i].end[prop];
+					}
+				}
+			}
+			
+			return propChanges;
+		}
+		
+		
+		
+		/**
+		 * Checks if changes are available. 
+		 * */
+		public static function changesAvailable(changes:Array):Boolean {
+			var length:int = changes.length;
+			var changesAvailable:Boolean;
+			var item:PropertyChanges;
+			var name:String;
+			
+			for (var i:int;i<length;i++) {
+				if (!(changes[i] is PropertyChanges)) continue;
+				
+				item = changes[i];
+				
+				for (name in item.start) {
+					changesAvailable = true;
+					return true;
+				}
+				
+				for (name in item.end) {
+					changesAvailable = true;
+					return true;
+				}
+			}
+			
+			return changesAvailable;
+		}
 		
 		//private static var _historyIndex:int = -1;
 		
@@ -3918,6 +8179,8 @@ package com.flexcapacitor.controller {
 		 * Selects the target on undo and redo
 		 * */
 		public static var selectTargetOnHistoryChange:Boolean = true;
+		
+		private static var _historyIndex:int = -1;
 
 		/**
 		 * Current history index. 
@@ -3934,18 +8197,58 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public static function get historyIndex():int {
-			var document:IDocument = instance.document;
-			return document ? document.historyIndex : -1;
+			
+			return _historyIndex;
+			//var document:IDocument = instance.selectedDocument;
+			//return document ? document.historyIndex : -1;
 		}
 
 		/**
 		 * @private
 		 */
 		public static function set historyIndex(value:int):void {
-			var document:IDocument = instance.document;
-			if (document.historyIndex==value) return;
-			document.historyIndex = value;
+			var document:IDocument = instance.selectedDocument;
+			if (document.historyIndex==value) {
+				//
+			}
+			else {
+				document.historyIndex = value;
+			}
+			
+			_historyIndex = value;
+			
+			var totalItems:int = history ? 
+				history.length : 0;
+			var hasItems:Boolean = totalItems>0;
+			
+			// has forward history
+			if (hasItems && historyIndex+1<totalItems) {
+				canRedo = true;
+			}
+			else {
+				canRedo = false;
+			}
+			
+			// has previous items
+			if (hasItems && historyIndex>-1) {
+				canUndo = true;
+			}
+			else {
+				canUndo = false;
+			}
 		}
+		
+		/**
+		 * Indicates if undo is available
+		 * */
+		[Bindable]
+		public static var canUndo:Boolean;
+		
+		/**
+		 * Indicates if redo is available
+		 * */
+		[Bindable]
+		public static var canRedo:Boolean;
 		
 		/**
 		 * Get the index of the next item that can be undone. 
@@ -3954,7 +8257,7 @@ package com.flexcapacitor.controller {
 		 * a zero based index. 
 		 * */
 		public static function getPreviousHistoryIndex():int {
-			var document:IDocument = instance.document;
+			var document:IDocument = instance.selectedDocument;
 			var length:int = document.history.length;
 			var historyItem:HistoryEvent;
 			var index:int;
@@ -3977,7 +8280,7 @@ package com.flexcapacitor.controller {
 		 * a zero based index. 
 		 * */
 		public static function getNextHistoryIndex():int {
-			var document:IDocument = instance.document;
+			var document:IDocument = instance.selectedDocument;
 			var length:int = document.history.length;
 			var historyItem:HistoryEvent;
 			var index:int;
@@ -3998,7 +8301,7 @@ package com.flexcapacitor.controller {
 		 * Get history index
 		 * */
 		public static function getHistoryIndex():int {
-			var document:IDocument = instance.document;
+			var document:IDocument = instance.selectedDocument;
 			var length:int = document ? document.history.length : 0;
 			var historyItem:HistoryEvent;
 			var index:int;
@@ -4019,7 +8322,7 @@ package com.flexcapacitor.controller {
 		 * Returns the history event by index
 		 * */
 		public function getHistoryItemAtIndex(index:int):HistoryEvent {
-			var document:IDocument = instance.document;
+			var document:IDocument = instance.selectedDocument;
 			var length:int = document ? document.history.length : 0;
 			var historyItem:HistoryEvent;
 			
@@ -4149,7 +8452,7 @@ package com.flexcapacitor.controller {
 		 * Creates a history event in the history 
 		 * Changes can contain a property or style changes or add items 
 		 * */
-		public static function createHistoryEvents(targets:Array, changes:Array, properties:*, styles:*, value:*, description:String = null, action:String="propertyChange", remove:Boolean = false):Array {
+		public static function createHistoryEvents(targets:Array, changes:Array, properties:*, styles:*, value:*, description:String = null, action:String=RadiateEvent.PROPERTY_CHANGED, remove:Boolean = false):Array {
 			var factory:ClassFactory = new ClassFactory(HistoryEventItem);
 			var historyEvent:HistoryEventItem;
 			var events:Array = [];
@@ -4321,7 +8624,7 @@ package com.flexcapacitor.controller {
 		 * Adds property change items to the history array
 		 * */
 		public static function addHistoryEvents(historyEvents:Array, description:String = null):void {
-			var document:IDocument = instance.document;
+			var document:IDocument = instance.selectedDocument;
 			var historyEvent:HistoryEvent;
 			var currentIndex:int = getHistoryIndex();
 			var length:int = document ? document.history.length : 0;
@@ -4359,6 +8662,8 @@ package com.flexcapacitor.controller {
 			
 			document.historyIndex = getHistoryIndex();
 			
+			historyIndex = getHistoryIndex();
+			
 			instance.dispatchHistoryChangeEvent(currentIndex+1, currentIndex);
 		}
 		
@@ -4366,7 +8671,7 @@ package com.flexcapacitor.controller {
 		 * Removes property change items in the history array
 		 * */
 		public static function removeHistoryItem(changes:Array):void {
-			var document:IDocument = instance.document;
+			var document:IDocument = instance.selectedDocument;
 			var currentIndex:int = getHistoryIndex();
 			
 			var itemIndex:int = document.history.getItemIndex(changes);
@@ -4375,6 +8680,7 @@ package com.flexcapacitor.controller {
 				document.history.removeItemAt(itemIndex);
 			}
 			
+			document.historyIndex = getHistoryIndex();
 			historyIndex = getHistoryIndex();
 			
 			instance.dispatchHistoryChangeEvent(currentIndex-1, currentIndex);
@@ -4385,11 +8691,18 @@ package com.flexcapacitor.controller {
 		 * Note: We should set the changes to null. 
 		 * */
 		public static function removeAllHistory():void {
-			var document:IDocument = instance.document;
+			var document:IDocument = instance.selectedDocument;
 			var currentIndex:int = getHistoryIndex();
 			document.history.removeAll();
 			document.history.refresh(); // we should loop through and run purge on each HistoryItem
 			instance.dispatchHistoryChangeEvent(-1, currentIndex);
+		}
+		
+		/**
+		 * Returns true if two objects are of the same class type
+		 * */
+		public function isSameClassType(target:Object, target1:Object):Boolean {
+			return ClassUtils.isSameClassType(target, target1);
 		}
 	}
 }

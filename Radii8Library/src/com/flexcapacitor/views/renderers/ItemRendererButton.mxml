@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/halo"
+				autoDrawBackground="true"
+				useHandCursor="true"
+				buttonMode="true"
+				height="22"
+				>
+	
+	<fx:Metadata>
+		[HostComponent("spark.components.List")]
+	</fx:Metadata>
+	
+	<fx:Script>
+	<![CDATA[
+		import spark.components.List;
+
+		
+		[Bindable]
+		public var iconSource:Object;
+	]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="hovered" />
+		<s:State name="selected" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<!--<s:Rect height="100%" width="100%">
+		<s:fill>
+			<s:SolidColor color="0xEEFFFF"
+						  alpha="0" 
+						  alpha.hovered="0.1" 
+						  alpha.selected="0.4" />
+		</s:fill>
+	</s:Rect>-->
+	
+	<s:BitmapImage id="icon" 
+				   source="{iconSource}"
+				   verticalCenter="0"
+				   left="5"
+				   >
+	</s:BitmapImage>
+	
+	
+	
+	<s:Label id="labelDisplay" 
+			 height="100%"
+			 width="100%"
+			 left="20"
+			 top="3"
+			 verticalAlign="middle"
+			 itemCreationPolicy="immediate"
+			 paddingLeft="5"
+			 paddingRight="5"
+			 includeIn="hovered, normal, selected, disabled"/>
+
+</s:ItemRenderer>

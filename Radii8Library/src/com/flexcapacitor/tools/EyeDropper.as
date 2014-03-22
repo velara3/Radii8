@@ -52,8 +52,8 @@ package com.flexcapacitor.tools {
 			
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
 			
-			if (radiate.document) {
-				updateDocument(radiate.document);
+			if (radiate.selectedDocument) {
+				updateDocument(radiate.selectedDocument);
 			}
 			
 			defaultCursorID = radiate.getMouseCursorID(this);

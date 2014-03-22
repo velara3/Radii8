@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXTreeItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  width="100%" 
+					  height="18" 
+					  autoDrawBackground="false"
+					  creationComplete="creationCompleteHandler(event)"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.controls.Tree;
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			import spark.components.Application;
+			
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				var item:ComponentDescription = value as ComponentDescription;
+				var path:String;
+				
+				if (item) {
+					if (item.icon) {
+						
+						if (item.icon!=iconImage.source) {
+							iconImage.source = item.icon;
+						}
+					}
+					else {
+						if (item.instance is Application) {
+							path = "assets/images/components/BorderContainer.png";
+						}
+						else {
+							path = "assets/images/components/" + item.name + ".png";
+						}
+						
+						if (path!=iconImage.source) {
+							iconImage.source = path;
+						}
+					}
+					
+					labelDisplay.text =  treeListData.label;
+					
+					if (item.instance && item.instance.visible) {
+						visibleGroup.visible = true;
+					}
+					else {
+						visibleGroup.visible = false;
+					}
+				}
+				
+				if (treeListData && treeListData.hasChildren) {
+					disclosureGroup.visible = true;
+				}
+				else {
+					disclosureGroup.visible = false;
+				}
+			}
+			
+			protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
+				iconImage.source = "assets/images/components/BorderContainer.png";
+				//Radiate.log.info("LayersRenderer: "+event.text);
+			}
+
+			protected function visibleGroupClicked():void {
+				var item:ComponentDescription = data as ComponentDescription;
+				var visible:Boolean = !item.instance.visible;
+				
+				item.instance.visible = visible;
+				item.visible = visible;
+				visibleGroup.visible = visible;
+				
+				var rootApplicationDescription:ComponentDescription = Tree(owner).dataProvider.getItemAt(0) as ComponentDescription;
+				var visibility:Boolean = DisplayObjectUtils.getGreatestVisibility(IVisualElement(item.instance), rootApplicationDescription); 
+				
+				DisplayObjectUtils.setVisibilityFlag(item, item.visible);
+				
+				//parentVisibleGroup.visible = !visibility;
+				
+			}
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				
+				if (_visibleButtonGroup) {
+					_visibleButtonGroup.addEventListener(MouseEvent.MOUSE_DOWN, visibleButtonGroup_mouseDownHandler);
+					_visibleButtonGroup.addEventListener(MouseEvent.CLICK, visibleButtonGroup_clickHandler);
+				}
+			}
+			
+			/**
+			 *  @private
+			 *  Handle special behavior when mouse down on the visible icon
+			 */
+			protected function visibleButtonGroup_mouseDownHandler(event:MouseEvent):void {
+				// stops selection of row
+				// however we still handle action in the click event
+				event.stopPropagation();
+			}
+			
+			/**
+			 *  @private
+			 *  Handle special behavior when clicking on the visible icon
+			 */
+			protected function visibleButtonGroup_clickHandler(event:MouseEvent):void {
+				visibleGroupClicked();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="selected"/>
+	</s:states>
+	
+	<s:Group width="100%" height="100%" left="0" right="2">
+		<s:Rect width="100%" height="100%" alpha="1">
+			<s:fill>
+				<s:SolidColor color="#f6f6f6"/>
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<s:HGroup left="0" 
+			  right="0"
+			  gap="2"
+			  verticalCenter="0"
+			  verticalAlign="middle">
+		
+		<s:Spacer width="0"/>
+		
+		<!--- visible -->
+		<s:Group id="_visibleButtonGroup" >
+			<!--- visible image -->
+			<s:BitmapImage id="visibleGroup" 
+						   contentLoader="{Radiate.contentCache}"
+						   source="{Radii8LibraryAssets.visible}" 
+						   left="0"
+						   verticalCenter="0"
+						   height="14"/>
+			
+			<!--- fade out visible image if parent is not visible -->
+			<s:Rect id="parentVisibleGroup" width="16" height="16" alpha="0.3" 
+					visible="{!ComponentDescription(data).parentVisible &amp;&amp; ComponentDescription(data).visible}">
+				<s:fill>
+					<s:SolidColor color="#666666"/>
+				</s:fill>
+			</s:Rect>
+			
+		</s:Group>
+	
+		<!--- divider -->
+		<s:Rect width="1" height="100%" 
+				visible="true" 
+				includeInLayout="true"
+				left="20"
+				>
+			<s:fill>
+				<s:SolidColor color="#d4d4d4"/>
+			</s:fill>
+		</s:Rect>
+		
+		<!--- lock -->
+		<s:Group includeInLayout="false" visible="false">
+			<s:Rect width="16" height="16" alpha=".1">
+				<s:fill>
+					<s:SolidColor color="#666666"/>
+				</s:fill>
+			</s:Rect>
+		</s:Group>
+		
+		<!--- divider -->
+		<s:Rect width="1" height="100%" visible="false" includeInLayout="false">
+			<s:fill>
+				<s:SolidColor color="#d4d4d4"/>
+			</s:fill>
+		</s:Rect>
+		
+		<s:Rect id="indentationSpacer" 
+				width="{treeListData.indent}" 
+				height="20" 
+				alpha="0.1">
+			<s:fill>
+				<s:SolidColor color="0xFFFFFF" />
+			</s:fill>
+		</s:Rect>
+		
+		<s:Group id="disclosureGroup">
+			<s:BitmapImage source="{treeListData.disclosureIcon}" 
+						   height="16" 
+						   visible="{treeListData.hasChildren}" />
+		</s:Group>
+		<s:BitmapImage id="iconImage" 
+					   source="{treeListData.icon}" 
+					   contentLoader="{Radiate.contentCache}"
+					   ioError="iconImage_ioErrorHandler(event)"
+					   width="16" height="16"/>
+		<s:Label id="labelDisplay" 
+				 fontSize="10"
+				 paddingLeft="3"
+				 typographicCase="lowercaseToSmallCaps"/>
+	</s:HGroup>
+</s:MXTreeItemRenderer>

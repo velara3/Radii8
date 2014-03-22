@@ -20,8 +20,8 @@ package com.flexcapacitor.events {
 		
 		public static const ADD_ITEM:String = "addItem";
 		public static const REMOVE_ITEM:String = "removeItem";
-		public static const PROPERTY_CHANGE:String = "propertyChange";
-		public static const STYLE_CHANGE:String = "styleChange";
+		public static const PROPERTY_CHANGE:String = "propertyChanged";
+		public static const STYLE_CHANGE:String = "styleChanged";
 		
 		public function HistoryEventItem() {
 			
@@ -61,7 +61,7 @@ package com.flexcapacitor.events {
 		/**
 		 * Description of the action this event contains
 		 * */
-		[Inspectable(enumeration="addItem,removeItem,propertyChange,styleChange")]
+		[Inspectable(enumeration="addItem,removeItem,propertyChanged,styleChanged")]
 		public var action:String;
 		
 		/**

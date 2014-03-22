@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:c="com.flexcapacitor.views.windows.*"
+			   xmlns:handlers="com.flexcapacitor.handlers.*"
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:windows="com.flexcapacitor.views.windows.*"
+			   
+			   title.project="Delete Project"
+			   title.document="Delete Document"
+			   title.resource="Delete Resource"
+			   
+			   creationComplete="panel1_creationCompleteHandler(event)" 
+			   >
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace c "com.flexcapacitor.controls.*";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace handlers "com.flexcapacitor.handlers.*";
+		@namespace fc "com.flexcapacitor.effects.popup.*";
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.IDocumentData;
+			import com.flexcapacitor.model.IProject;
+			
+			import mx.core.mx_internal;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			use namespace mx_internal;
+			
+			public static const DOCUMENT:String = "document";
+			public static const PROJECT:String = "project";
+			public static const RESOURCE:String = "resource";
+			
+			[Bindable]
+			public var documentData:IDocumentData;
+			
+			[Bindable]
+			public var documentName:String;
+			
+			/**
+			 * This needs to work better. Only listen for events when deleting remote not local. 
+			 * */
+			protected function deleteResource():void {
+				var localRemoveSuccessful:Boolean;
+				var isRemote:Boolean;
+				deleteWarningsLabel.text = "";
+				radiate = Radiate.getInstance();
+				
+				if (currentState==DOCUMENT) {
+					if (documentData==null) {
+						documentData = radiate.selectedDocument;
+					}
+					if (documentData) {
+						
+						if (documentData.id!=null) {
+							radiate.addEventListener(RadiateEvent.DOCUMENT_DELETED, deleteResultsHandler, false, 0, true);
+							isRemote = true;
+						}
+						
+						//radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, deleteResultsHandler, false, 0, true);
+						localRemoveSuccessful = radiate.removeDocument(IDocument(documentData));
+					}
+				}
+				else if (currentState==PROJECT) {
+					if (documentData==null) {
+						documentData = radiate.selectedProject;
+					}
+					
+					if (documentData) {
+						radiate.addEventListener(RadiateEvent.PROJECT_REMOVED, deleteResultsHandler, false, 0, true);
+						
+						if (documentData.id!=null) {
+							radiate.addEventListener(RadiateEvent.PROJECT_DELETED, deleteResultsHandler, false, 0, true);
+							isRemote = true;
+						}
+						
+						localRemoveSuccessful = radiate.removeProject(IProject(documentData));
+					}
+				}
+				else if (currentState==RESOURCE) {
+					if (documentData==null) {
+						//documentData = radiate.selectedDocument;
+					}
+					if (documentData) {
+						
+						if (documentData.id!=null) {
+							radiate.addEventListener(RadiateEvent.DOCUMENT_DELETED, deleteResultsHandler, false, 0, true);
+							isRemote = true;
+						}
+						
+						//radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, deleteResultsHandler, false, 0, true);
+						localRemoveSuccessful = radiate.removeAsset(IDocumentData(documentData));
+					}
+				}
+				
+				
+				
+				if (isRemote) {
+					infoLabel.text = "Deleting...";
+					inProgress = true;
+				}
+				else if (localRemoveSuccessful) {
+					playDeleteSuccessfulMessage();
+				}
+				else {
+					playDeleteNotSuccessfulMessage();
+				}
+			}
+			
+			/**
+			 * Sets the action to deleted, the label to deleted and closes the window after a second.
+			 * */
+			public function playDeleteSuccessfulMessage():void {
+				infoLabel.text = "Deleted!";
+				action = "Deleted";
+				closePopUp.startDelay = 1000;
+				closePopUp.play();
+			}
+			
+			/**
+			 * Display a message that the resource was not deleted.
+			 * */
+			public function playDeleteNotSuccessfulMessage():void {
+				infoLabel.text = "Item was not found. It may have already been deleted. ";
+				//action = "Deleted";
+				//closePopUp.startDelay = 1000;
+				//closePopUp.play();
+			}
+			
+			protected function deleteResultsHandler(event:RadiateEvent):void {
+				var data:Object = event.data;
+				var error:String;
+				var status:String = event.status;
+				var successful:Boolean = event.successful;
+				var message:String = "";
+				var iDocument:IDocument = event.selectedItem as IDocument;
+			
+				inProgress = false;
+				
+				if (event.type==RadiateEvent.PROJECT_DELETED) {
+					radiate.removeEventListener(RadiateEvent.PROJECT_DELETED, deleteResultsHandler);
+				}
+				
+				if (event.type==RadiateEvent.DOCUMENT_DELETED) {
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_DELETED, deleteResultsHandler);
+				}
+				
+				
+				
+				if (status=="error") {
+					
+					if (data && "error" in data) {
+						message += "Error. The item was not deleted. " + data.error + " ";
+					}
+					else {
+						message += "Error. The item was not deleted. It may have been deleted already. Resave the project. ";
+					}
+				}
+				else {
+					if (data==null && iDocument!=null && iDocument.id!=null) {
+						message += "Error. The item may have been deleted already. Reload or resave the project. ";
+					}
+				}
+				
+				
+				if (event.faultEvent) {
+					message += "Are you connected to the internet? ";
+					
+					if (event.faultEvent is IOErrorEvent) {
+						message += IOErrorEvent(event.faultEvent).text;
+					}
+					else if (event.faultEvent is SecurityErrorEvent) {
+						
+						if (SecurityErrorEvent(event.faultEvent).errorID==2048) {
+							
+						}
+						
+						message += SecurityErrorEvent(event.faultEvent).text;
+					}
+				}
+				
+				
+				deleteWarningsLabel.text = message;
+			
+				
+				if (successful) {
+					playDeleteSuccessfulMessage();
+				}
+				else {
+					infoLabel.text = "";
+				}
+			}
+			
+			protected function cancelButton_clickHandler(event:MouseEvent):void {
+				callLater(PopUpManager.removePopUp, [this]);
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				if (currentState==DOCUMENT) {
+					if (documentData==null) {
+						documentData = radiate.selectedDocument;
+					}
+				}
+				else if (currentState==PROJECT) {
+					if (documentData==null) {
+						documentData = radiate.selectedProject;
+					}
+				}
+				else if (currentState==RESOURCE) {
+					if (documentData==null) {
+						//documentData = radiate.selectedProject;
+					}
+				}
+			
+				if (documentData) {
+					documentName = documentData.name;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="clickNOT">
+			<fc:ClosePopUp id="closePopUp" popUp="{this}" />
+		</handlers:EventHandler>
+		
+		<!--- hide about popup -->
+		<!--<handlers:EventHandler targets="{importButton}" eventName="click">
+			<s:SetAction property="action" target="{this}" value="import"/>
+			<fc:ClosePopUp popUp="{this}"  />
+		</handlers:EventHandler>-->
+		
+		<fx:String id="action"></fx:String>
+		
+	</fx:Declarations>
+	
+	<c:states>
+		<s:State name="document"/>
+		<s:State name="project"/>
+		<s:State name="resource"/>
+	</c:states>
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20"
+				 gap="10"
+				 >
+		
+		<s:Label text="Are you sure you want to delete the project, '{documentName}'?" 
+				 fontSize="16" includeIn="project" width="100%"/>
+		<s:Label text="Are you sure you want to delete the document, '{documentName}'?" 
+				 fontSize="16" includeIn="document" width="100%"/>
+		<s:Label text="Are you sure you want to delete the resource, '{documentName}'?" 
+				 fontSize="16" includeIn="resource" width="100%"/>
+		
+		<s:Label id="deleteWarningsLabel" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"
+				 width="100%"/>
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			<s:Label id="infoLabel" text="" />
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Cancel" click="cancelButton_clickHandler(event)" />
+			<s:Button label="Delete" click="deleteResource()" />
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+	
+</windows:AnimatedPanelWindow>

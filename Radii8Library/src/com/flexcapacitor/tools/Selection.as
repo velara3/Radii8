@@ -3,6 +3,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.managers.layoutClasses.LayoutDebugHelper;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
@@ -28,6 +29,7 @@ package com.flexcapacitor.tools {
 	import mx.core.FlexGlobals;
 	import mx.core.FlexSprite;
 	import mx.core.IFlexDisplayObject;
+	import mx.core.ILayoutElement;
 	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
@@ -36,14 +38,18 @@ package com.flexcapacitor.tools {
 	import mx.events.PropertyChangeEvent;
 	import mx.managers.ISystemManager;
 	import mx.managers.PopUpManager;
+	import mx.managers.SystemManager;
 	import mx.managers.SystemManagerGlobals;
 	
-	import spark.components.Application;
+	import spark.components.DataGrid;
 	import spark.components.Image;
 	import spark.components.List;
 	import spark.components.Scroller;
+	import spark.components.TextArea;
+	import spark.components.VideoPlayer;
 	import spark.components.supportClasses.GroupBase;
 	import spark.components.supportClasses.ItemRenderer;
+	import spark.components.supportClasses.ListBase;
 	import spark.core.IGraphicElement;
 	import spark.skins.spark.ListDropIndicator;
 		
@@ -95,6 +101,7 @@ package com.flexcapacitor.tools {
 	 * - show property inspector
 	 * - show selection option
 	 * 
+	 * THERE ARE SECTIONS IN THIS CLASS THAT NEED TO BE REFACTORED
 	 * 
 	 * */
 	public class Selection extends FlexSprite implements ITool {
@@ -120,6 +127,12 @@ package com.flexcapacitor.tools {
 		 * Sets to focus for keyboard events. 
 		 * */
 		public var setFocusOnSelect:Boolean = true;
+		
+		/**
+		 * When an item is deleted or removed the selection is drawn just off stage
+		 * Set to true to clear the selection in this case
+		 * */
+		public var hideSelectionWhenOffStage:Boolean = true;
 		
 		private var _showSelection:Boolean = true;
 
@@ -178,7 +191,7 @@ package com.flexcapacitor.tools {
 		}
 
 		public var showSelectionLabelOnDocument:Boolean = false;
-		public var showSelectionFill:Boolean = true;
+		public var showSelectionFill:Boolean = false;
 		public var showSelectionFillOnDocument:Boolean = false;
 		public var lastTargetCandidate:Object;
 		public var enableDrag:Boolean = true;
@@ -197,20 +210,33 @@ package com.flexcapacitor.tools {
 		public function enable():void {
 			radiate = Radiate.getInstance();
 			
-			if (radiate.document) {
-				updateDocument(radiate.document);
+			if (radiate.selectedDocument) {
+				updateDocument(radiate.selectedDocument);
 			}
 			
 			// handle events last so that we get correct size
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.TARGET_CHANGE, 		targetChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
-			radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, 		propertyChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
+			radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, 	propertyChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.SCALE_CHANGE, 		scaleChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 		}
+	
+		/**
+		 * Disable this tool.
+		 * */
+		public function disable():void {
+			
+			removeTargetEventListeners();
+				
+			clearSelection();
+		}
+		
 		
 		/**
-		 * 
+		 * What a mess. Trying to listen for keyboard events. 
+		 * One thing we could do is set the focus to the stage when the document is 
+		 * first loaded or when the user selects a document by clicking on it's tab
 		 * */
 		public function updateDocument(document:IDocument):void {
 			var stage:Stage;
@@ -262,7 +288,7 @@ package com.flexcapacitor.tools {
 					*/
 					//targetApplication.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, false, 0, true);
 					//targetApplication.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, true, 0, true);
-					stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, true, 0, true);
+					stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, true, 0, true);
 					stage.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, true, 0, true);
 					//targetApplication.stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, false, 0, true);
 					//targetApplication.stage.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, false, 0, true);
@@ -306,7 +332,9 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * Remove event listeners
+		 * Remove event listeners. 
+		 * 
+		 * THIS NEEDS TO BE REFACTORED
 		 * */
 		public function removeTargetEventListeners():void {
 		
@@ -330,7 +358,7 @@ package com.flexcapacitor.tools {
 			
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
 			radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-			radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChangeHandler);
+			radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
 			
 			if (dragManagerInstance) {
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
@@ -427,21 +455,20 @@ package com.flexcapacitor.tools {
 			
 			if (showSelection && 
 				(target is IVisualElement || target is IGraphicElement)) {
-				drawSelection(target, toolLayer);
+				
+				if (hideSelectionWhenOffStage && "stage" in target && target.stage==null) {
+					clearSelection()
+				}
+				else {
+					drawSelection(target, toolLayer);
+				}
+				
+				
 			}
 			else {
 				clearSelection();
 			}
-		}
-	
-		/**
-		 * Disable this tool.
-		 * */
-		public function disable():void {
 			
-			removeTargetEventListeners();
-				
-			clearSelection();
 		}
 		
 		/**
@@ -478,6 +505,11 @@ package com.flexcapacitor.tools {
 		 * The background parent scroller
 		 * */
 		public var canvasScroller:Scroller;
+		
+		/**
+		 * Layout debug helper. Used to get the visible rectangle of the selected item
+		 * */
+		public var layoutDebugHelper:LayoutDebugHelper;
 		
 		/**
 		 * Add listeners to target
@@ -528,7 +560,7 @@ package com.flexcapacitor.tools {
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
 			// loop through items under point until we find one on the *component* tree
-			componentTree = radiate.document.description;
+			componentTree = radiate.selectedDocument.componentDescription;
 			
 			componentTreeLoop:
 			for (var i:int;i<length;i++) {
@@ -687,38 +719,10 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * Prevent system manager from taking our events
+		 * Prevent system manager from taking our events. 
+		 * This seems to be the only handler that is working of the three. 
 		 * */
-	    private function keyDownHandler(event:KeyboardEvent):void
-	    {
-			
-            switch (event.keyCode)
-            {
-                case Keyboard.UP:
-                case Keyboard.DOWN:
-                case Keyboard.PAGE_UP:
-                case Keyboard.PAGE_DOWN:
-                case Keyboard.HOME:
-                case Keyboard.END:
-                case Keyboard.LEFT:
-                case Keyboard.RIGHT:
-                case Keyboard.ENTER:
-                case Keyboard.DELETE:
-                {
-					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
-	                    event.stopImmediatePropagation();
-					}
-                    //event.stopImmediatePropagation();
-					//Radiate.log.info("Canceling key down");
-                }
-            }
-	    }
-		
-		
-		/**
-		 * Prevent system manager from taking our events
-		 * */
-	    private function keyDownHandlerTopSystemManager(event:KeyboardEvent):void
+	    private function keyDownHandlerStage(event:KeyboardEvent):void
 	    {
 			//Radiate.log.info("Key down: " + event.keyCode);
             switch (event.keyCode)
@@ -742,15 +746,46 @@ package com.flexcapacitor.tools {
 					}
 					//Radiate.log.info("Canceling key down");
                 }
+				case Keyboard.Z:
+				{
+					if ((targetApplication as DisplayObjectContainer).contains(event.target as DisplayObject)) {
+						if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
+							Radiate.undo(true);
+						}
+						else if (event.keyCode==Keyboard.Z && event.ctrlKey && event.shiftKey) {
+							
+							Radiate.redo(true);
+						}
+					}
+				}
+				case Keyboard.C:
+				{
+					if ((targetApplication as DisplayObjectContainer).contains(event.target as DisplayObject)) {
+						if (event.keyCode==Keyboard.C) {
+							radiate.copyItem(radiate.target);
+						}
+					}
+				}
+				case Keyboard.V:
+				{
+					if ((targetApplication as DisplayObjectContainer).contains(event.target as DisplayObject)) {
+						if (event.keyCode==Keyboard.V) {
+							Radiate.log.info("Paste not implemented");
+							//radiate.pasteItem(radiate.target);
+						}
+					}
+				}
             }
 	    }
 		
 		/**
+		 * ?????? NOT USED ??????
 		 * Prevent system manager from taking our events
 		 * */
-	    private function keyDownHandlerCapture(event:KeyboardEvent):void
+	    private function keyDownHandler(event:KeyboardEvent):void
 	    {
 			
+		 // ?????? NOT USED ??????
             switch (event.keyCode)
             {
                 case Keyboard.UP:
@@ -764,7 +799,39 @@ package com.flexcapacitor.tools {
                 case Keyboard.ENTER:
                 case Keyboard.DELETE:
                 {
-                    
+		 // ?????? NOT USED ??????
+					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
+	                    event.stopImmediatePropagation();
+					}
+                    //event.stopImmediatePropagation();
+					//Radiate.log.info("Canceling key down");
+                }
+            }
+	    }
+		
+		/**
+		 * ????? NOT USED ????
+		 * Prevent system manager from taking our events
+		 * */
+	    private function keyDownHandlerCapture(event:KeyboardEvent):void
+	    {
+			
+		 // ?????? NOT USED ??????
+            switch (event.keyCode)
+            {
+                case Keyboard.UP:
+                case Keyboard.DOWN:
+                case Keyboard.PAGE_UP:
+                case Keyboard.PAGE_DOWN:
+                case Keyboard.HOME:
+                case Keyboard.END:
+                case Keyboard.LEFT:
+                case Keyboard.RIGHT:
+                case Keyboard.ENTER:
+                case Keyboard.DELETE:
+                {
+                   
+		 // ?????? NOT USED ?????? 
 					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
 	                    event.stopImmediatePropagation();
 					}
@@ -829,6 +896,13 @@ package com.flexcapacitor.tools {
 			else if (event.keyCode==Keyboard.BACKSPACE || event.keyCode==Keyboard.DELETE) {
 				
 				Radiate.removeElement(radiate.targets);
+			}
+			else if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
+				Radiate.undo(true);
+			}
+			else if (event.keyCode==Keyboard.Z && event.ctrlKey && event.shiftKey) {
+				
+				Radiate.redo(true);
 			}
 			
 			if (applicable) {
@@ -961,6 +1035,10 @@ package com.flexcapacitor.tools {
 			var isEmbeddedCoordinateSpace:Boolean;
 			var isTargetInvalid:Boolean;
 			
+			if (!layoutDebugHelper) {
+				layoutDebugHelper = new LayoutDebugHelper();
+			}
+			
 			// get content width and height
 			if (target is GroupBase) {
 				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent;
@@ -1064,6 +1142,10 @@ package com.flexcapacitor.tools {
 			}
 			// get target bounds
 			else if (target is UIComponent) {
+				var targetRectangle:Rectangle = layoutDebugHelper.getRectangleBounds(target, toolLayer);
+				layoutDebugHelper.addElement(target as ILayoutElement);
+				// systemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+				
 				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent; 
 				
 				if (!localTargetSpace) {
@@ -1074,12 +1156,23 @@ package com.flexcapacitor.tools {
 					rectangle = UIComponent(target).getBounds(targetCoordinateSpace);
 				}
 				
-				// size and position fill
-				targetSelectionGroup.width = rectangle.width -1;
-				targetSelectionGroup.height = rectangle.height -1;
-				//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
-				targetSelectionGroup.x = rectangle.x;
-				targetSelectionGroup.y = rectangle.y;
+				// this is working the best so far - possibly use this instead of other code
+				if (target is ListBase || target is TextArea || target is DataGrid || target is VideoPlayer) {
+					// size and position fill
+					targetSelectionGroup.width = targetRectangle.width;
+					targetSelectionGroup.height = targetRectangle.height;
+					//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
+					targetSelectionGroup.x = targetRectangle.x;
+					targetSelectionGroup.y = targetRectangle.y;
+				}
+				else {
+					// size and position fill
+					targetSelectionGroup.width = rectangle.width -1;
+					targetSelectionGroup.height = rectangle.height -1;
+					//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
+					targetSelectionGroup.x = rectangle.x;
+					targetSelectionGroup.y = rectangle.y;
+				}
 				//trace("target is uicomponent");
 			}
 			// get target bounds
@@ -1375,13 +1468,14 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * When waiting for images to the display we need to update the selection after the image loads
+		 * When waiting for images to display we need to update the selection after the image loads
 		 * */
 		public function setSelectionLaterHandler(event:Event):void {
-			
+			var targets:Array = radiate.targets;
+			//trace("Event:"+event.type);
 			// we are referencing the 
-			if (radiate.targets.indexOf(lastTarget)!=-1) {
-				radiate.target.validateNow();
+			if (targets.indexOf(lastTarget)!=-1 && event.type==Event.COMPLETE) {
+				//radiate.target.validateNow();
 				updateSelectionAroundTarget(radiate.target);
 			}
 			

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<r:PropertiesGridRendererBase xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" 
+		xmlns:c="com.flexcapacitor.components.*"
+		xmlns:r="com.flexcapacitor.views.renderers.*"
+
+		clipAndEnableScrolling="true">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.skins.ClearButton;
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<fx:Boolean id="includeCopyIcon"/>
+		<fx:Boolean id="includeTextInput"/>
+	</fx:Declarations>
+	
+	<r:layout>
+		<s:HorizontalLayout />
+	</r:layout>
+	
+	<c:ColorChooser id="colorChooser" left="0" top="0" right="0" bottom="0"
+					returnType="hexidecimalHash" 
+					change="setTargetValue()"
+					includeTextInput="{includeTextInput}"
+					includeCopyIcon="{includeCopyIcon}"/>
+	<s:Button id="clearStyleButton" 
+			  skinClass="com.flexcapacitor.skins.ClearButton"
+			  click="setTargetValue(true)"
+			  right="0" 
+			  verticalCenter="0"/>
+	
+</r:PropertiesGridRendererBase>

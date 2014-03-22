@@ -1,0 +1,936 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:status="com.flexcapacitor.effects.status.*"
+		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*"
+		 xmlns:file="com.flexcapacitor.effects.file.*"
+		 xmlns:fc="com.flexcapacitor.effects.popup.*"
+		 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 
+		 width="400" height="300"
+		 >
+	
+	<!-- 
+	
+	The list of components to include come from spark-manifest-defaults.xml 
+	in Radii8LibrarySparkAssets. The include attribute must be set to true for them to be visible. 
+	
+	The component classes are included by creating a reference to them in Radii8LibrarySparkAssets.
+	
+	We create an instance of the class in the mouse down handler. 
+	
+	
+	-->
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.DragDropEvent;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.layoutClasses.LayoutDebugHelper;
+			import com.flexcapacitor.model.AttachmentData;
+			import com.flexcapacitor.model.DocumentData;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.ImageData;
+			import com.flexcapacitor.services.WPAttachmentService;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.DragManagerUtil;
+			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			import com.flexcapacitor.views.IInspector;
+			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
+			
+			import mx.core.ClassFactory;
+			import mx.events.DragEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.ISystemManager;
+			import mx.managers.SystemManagerGlobals;
+			
+			import spark.components.Application;
+			import spark.components.Group;
+			import spark.components.Image;
+			import spark.components.Label;
+			import spark.events.IndexChangeEvent;
+			import spark.primitives.BitmapImage;
+			
+			[Bindable]
+			private var radiate:Radiate;
+			
+			private var target:Object;
+			
+			private var dragManagerInstance:DragManagerUtil;
+			
+			public var selectedItem:Object;
+			
+			public var fileReference:FileReference;
+			
+			
+			/**
+			 *  
+			 * */
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				/*radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ASSET_ADDED, assetAdded, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved, false, 0, true);
+				
+				updateAssets();*/
+			}
+			
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ASSET_ADDED, assetAdded, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved, false, 0, true);
+				
+				updateAssets();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived);
+					radiate.removeEventListener(RadiateEvent.ASSET_ADDED, assetAdded);
+					radiate.removeEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved);
+				}
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void
+			{
+				target = event.selectedItem;
+			}
+			
+			/**
+			 * Listen for drag movement and start dragging if drag tolerance is met
+			 * */
+			public function rowGroupMouseDownHandler(event:MouseEvent, data:Object, itemIndex:int):void {
+				var classFactory:ClassFactory;
+				var item:ComponentDefinition;
+				var application:Application;
+				var component:Object;
+				var iDocument:IDocument = radiate.selectedDocument;
+				var rowGroup:Group;
+				
+				selectedItem = data;
+				
+				item = Radiate.getComponentType("Image");
+				
+				//dropTargetLabel.text = "";
+				
+				rowGroup = event.currentTarget as Group;
+				
+				//event.stopImmediatePropagation();
+				//list.dragEnabled = false;
+				
+				application = iDocument && iDocument.instance ? iDocument.instance as Application : null;
+				
+				if (!application) return;
+				
+				if (selectedItem is ImageData) {
+					// if we do this it doesn't show up in event history
+/*					if (ImageData(selectedItem).bitmapData) {
+						item.defaultProperties.source = selectedItem.bitmapData;
+					}
+					else if (ImageData(selectedItem).url) {
+						item.defaultProperties.source = selectedItem.url;
+					}*/
+				}
+				
+				component = Radiate.createComponentForAdd(iDocument, item);
+				
+				
+				if (!dragManagerInstance) {
+					dragManagerInstance = new DragManagerUtil();
+				}
+				
+				rowGroup.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				rowGroup.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+				
+				//dragManagerInstance.listenForDragBehavior(rowGroup, application, event, component);
+				dragManagerInstance.listenForDragBehavior(rowGroup, iDocument, event, component);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dragManagerInstance.addEventListener(DragEvent.DRAG_OVER, handleDragOver);
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				
+				// DRAG DROP 
+				// is continued in 
+				// DragManagerUtil.dragDropHandler()
+				
+				// and then in handleDragDrop() here
+			}
+			
+			/**
+			 * Remove mouse handlers from row
+			 * */
+			protected function mouseUpHandler(event:MouseEvent):void {
+				// we need a custom FlexSprite class to do this
+				/*if (event.currentTarget.eventListeners) {
+					event.currentTarget.removeAllEventListeners();
+				}*/
+				
+				//list.dragEnabled = true;
+				event.currentTarget.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				
+			}
+			
+			/**
+			 * Handles drag drop event. This is only the first part of adding to the stage. 
+			 * We can prevent automatic adding by calling event.preventDefault().
+			 * If we do not call preventDefault dragDropComplete is the next event to be called. 
+			 * */
+			protected function handleDragDrop(event:DragDropEvent):void
+			{
+				var component:Object = event.draggedItem;
+				
+				// if text based or combo box we need to prevent 
+				// interaction with cursor
+				
+				// UPDATE THIS IN DRAG DROP COMPLETE
+				/*
+				if (component is TextBase || component is SkinnableTextBase) {
+					component.mouseChildren = false;
+					
+					if ("textDisplay" in component && component.textDisplay) {
+						component.textDisplay.enabled = false;
+					}
+				}*/
+				
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				//dropTargetLabel.text = "Drag drop to:" + dragManagerInstance.dropTargetName;
+				
+				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
+			}
+
+		    private static var _layoutDebugHelper:LayoutDebugHelper;
+		    
+		    public static function get debugHelper():LayoutDebugHelper
+		    {
+		        if (!_layoutDebugHelper)
+		        {
+		            _layoutDebugHelper = new LayoutDebugHelper();
+		            _layoutDebugHelper.mouseEnabled = false;
+		            var sm:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0]
+		            sm.addChild(_layoutDebugHelper);
+		        }
+		        return _layoutDebugHelper;
+		    }
+			
+			private function deferredInstanceFromFunction():Array {
+				var label:Label = new Label();
+				return [label];
+			}
+			
+			/**
+			 * Dispatched after drag drop event. Drag drop can be canceled. If it
+			 * is not canceled this event happens. 
+			 * */
+			protected function handleDragDropComplete(event:DragDropEvent):void {
+				var o:LayoutDebugHelper = debugHelper;
+				var component:Object = event.draggedItem;
+				var image:Image = component as Image;
+				var attachmentData:AttachmentData = selectedItem as AttachmentData;
+				var imageData:ImageData = attachmentData as ImageData;
+				var path:String;
+				
+				if (image) {
+					//image.source = event.draggedItem;
+					
+					if (imageData is ImageData) {
+						path = imageData.url;
+						
+						if (path) {
+							image.width = undefined;
+							image.height = undefined;
+							//image.source = null;//force it to show up in change history
+							Radiate.setProperty(image, "source", path);
+						}
+						else if (imageData.bitmapData) {
+							Radiate.setProperty(image, "source", imageData.bitmapData);
+						}
+					}
+					else {
+						image.source = "";
+					}
+					
+				}
+				/*
+				// if text based or combo box we need to prevent 
+				// interaction with cursor
+				if (component is TextBase || component is SkinnableTextBase) {
+					component.mouseChildren = false;
+					
+					if ("textDisplay" in component && component.textDisplay) {
+						component.textDisplay.enabled = false;
+					}
+				}
+				
+				if (component is ComboBox) {
+					if ("textInput" in component && component.textInput.textDisplay) {
+						component.textInput.textDisplay.enabled = false;
+					}
+				}
+				
+				// we can't add elements if skinnablecontainer._deferredContentCreated is false
+				if (component is BorderContainer) {
+					var factory:DeferredInstanceFromFunction = new DeferredInstanceFromFunction(deferredInstanceFromFunction);
+					BorderContainer(component).mxmlContentFactory = factory;
+					//BorderContainer(component).initialize();
+					BorderContainer(component).createDeferredContent();
+					BorderContainer(component).removeAllElements();
+					
+					// we could probably also do this: 
+					//BorderContainer(component).addElement(new Button());
+					
+				}
+				
+				// we need a custom FlexSprite class to do this
+				// do this after drop
+				if ("eventListeners" in component && !(component is GroupBase)) {
+					component.removeAllEventListeners();
+				}*/
+				
+				//o.addElement(component as ILayoutElement);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				//dropTargetLabel.text = "Drag Complete to:" + dragManagerInstance.dropTargetName;
+				
+				
+				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
+			}
+			
+			protected function addItemHandler(event:RadiateEvent):void {
+				//trace("item addedd");
+				
+				//radiate.target = event.eventTarget;
+				
+			}
+			
+			protected function handleDragOver(event:Event):void {
+				
+				//Radiate.log.info("target: " + dragManagerInstance.lastTargetCandidate);
+				//dropTargetLabel.text = "Drag over: " + dragManagerInstance.dropTargetName;
+			}
+			
+			protected function list_dragStartHandler(event:DragEvent):void {
+				
+			}
+			
+			protected function attachmentsReceived(event:RadiateEvent):void {
+				var attachments:Array = event.targets as Array;
+				
+				libraryCollection.source = attachments;
+			}
+			
+
+			/**
+			 * Pressing enter would retrieve the style value.
+			 * 
+			 * This is no longer necessary since values are updated on property change events. 
+			 * */
+			protected function searchPropertyInput_enterHandler(event:FlexEvent):void {
+				var searchText:String = filterInput.text;
+				var item:XML;
+				
+			}
+			
+			/**
+			 * Move from search text input to properties grid on down arrow key
+			 * */
+			protected function filterInput_keyUpHandler(event:KeyboardEvent):void {
+				/*if (event.keyCode==Keyboard.DOWN) {
+					propertiesGrid.setFocus();
+					if (propertiesGrid.selectedIndex ==-1) {
+						propertiesGrid.setSelectedIndex(0);
+					}
+				}*/
+			}
+			
+			public var SMALL:String = "small";
+			public var MEDIUM:String = "medium";
+			public var FULL:String = "full";
+			public var THUMBNAIL:String = "thumbnail";
+
+			public var service:WPAttachmentService;
+			
+			protected function smallImage_clickHandler(event:MouseEvent):void {
+				var selectedItem:AttachmentData = list.selectedItem as AttachmentData;
+				var imageData:ImageData = selectedItem as ImageData;
+				
+				if (imageData) {
+					imageURLInput.text = imageData.smallURL;
+				}
+			}
+			
+			protected function thumbnailImage_clickHandler(event:MouseEvent):void {
+				setTextInputImageURL(THUMBNAIL);
+			}
+			
+			protected function fullImage_clickHandler(event:MouseEvent):void {
+				setTextInputImageURL(FULL);
+			}
+			
+			// "People are like the things they use the most"
+			// stereotype = women are better communicators. what??? women or men are better at what they use the most
+			
+			protected function mediumImage_clickHandler(event:MouseEvent):void {
+				
+				setTextInputImageURL(MEDIUM);
+			}
+			
+			/**
+			 * Set the URL 
+			 * */
+			public function setTextInputImageURL(value:String):void {
+				var selectedItem:AttachmentData = list.selectedItem as AttachmentData;
+				var imageData:ImageData = selectedItem as ImageData;
+				
+				if (imageData) {
+					
+					if (value==SMALL) {
+						imageURLInput.text = imageData.smallURL;
+					}
+					else if (value==MEDIUM) {
+						imageURLInput.text = imageData.mediumURL;
+					}
+					else if (value==FULL) {
+						imageURLInput.text = imageData.url;
+					}
+					else if (value==THUMBNAIL) {
+						imageURLInput.text = imageData.thumbnailURL;
+					}
+					
+					//imageURLInput.selectRange(imageURLInput.text.length, imageURLInput.text.length);
+					imageURLInput.appendText("");
+				}
+			}
+			
+			protected function list_changeHandler(event:IndexChangeEvent):void {
+				var selectedItem:AttachmentData = list.selectedItem as AttachmentData;
+				var imageData:ImageData = selectedItem as ImageData;
+				
+				if (imageData) {
+					setTextInputImageURL(FULL);
+				}
+				
+				if (selectedItem) {
+					radiate.dispatchObjectSelectedEvent(selectedItem);
+				}
+			}
+			
+			protected function openIcon_clickHandler(event:MouseEvent):void {
+				selectFileToUpload();
+			}
+			
+			/**
+			 * Select a file for upload
+			 * */
+			public function selectFileToUpload():void {
+				fileReference = new FileReference();
+				fileReference.browse();
+				fileReference.addEventListener(Event.SELECT, fileSelected, false, 0, true);
+				fileReference.addEventListener(Event.COMPLETE, fileComplete, false, 0, true);
+			}
+			
+			/**
+			 * File selected
+			 * */
+			protected function fileSelected(event:Event):void {
+				var byteArray:ByteArray = fileReference.data;
+				
+				fileReference.load();
+			}
+			
+			/**
+			 * File load complete
+			 * */
+			protected function fileComplete(event:Event):void {
+				var data:ImageData = new ImageData();
+				data.bitmapData;
+				
+			}
+			
+			/**
+			 * File load complete
+			 * */
+			protected function loadFile_completeHandler(event:Event):void {
+				
+				var data:ImageData = new ImageData();
+				data.bitmapData = loadFile.bitmapData;
+				data.byteArray = loadFile.data;
+				data.name = loadFile.currentFile.name;
+				data.contentType = loadFile.loaderContentType;
+				data.file = loadFile.currentFile;
+				
+				radiate.addAsset(data);
+				
+				list.selectedItem = data;
+				
+				//uploadAttachment(loadFile.fileReference);
+			}
+			
+			/**
+			 * Upload file
+			 * */
+			public function uploadFile(data:DocumentData):void {
+				
+				if (false && data && data.file) {
+					uploadAttachment(data.file);
+				}
+				else if (data) {
+					if (data.id==null) {
+						uploadAttachment(data);
+					}
+					else {
+						Radiate.log.warn("This item is already uploaded.");
+					}
+				}
+				else {
+					
+				}
+			}
+			
+			public var currentUpload:AttachmentData;
+			
+			/**
+			 * Create WP service and upload file
+			 * */
+			public function uploadAttachment(data:Object):void {
+				var postID:String;
+				var imageData:ImageData = data as ImageData;
+				var fileReference:FileReference = data as FileReference;
+				
+				radiate.addEventListener(RadiateEvent.ATTACHMENT_UPLOADED, uploadAttachmentResult, false, 0, true);
+
+				// upload attachment to project
+				postID = radiate.selectedProject ? radiate.selectedProject.id : null;
+				
+				// if project is not available for some reason upload to document
+				if (postID==null) {
+					postID = radiate.selectedDocument ? radiate.selectedDocument.id : null;
+				}
+				
+				if (postID==null) {
+					Radiate.log.info("Please save the document or project first.");
+				}
+				
+				if (fileReference) {
+					radiate.uploadAttachment(fileReference, postID);
+				}
+				else if (imageData) {
+					currentUpload = imageData;
+					radiate.uploadAttachment(imageData.byteArray, postID, imageData.name, null, imageData.contentType); // try to upload to an account not document
+				}
+			}
+			
+			protected function uploadAttachmentResult(event:RadiateEvent):void {
+				var attachments:Array = event.data as Array;
+				var data:Object = event.selectedItem;
+				var attachment:AttachmentData;
+				var containsName:Boolean;
+				var length:int = attachments.length;
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (event.successful) {
+					for (var i:int;i<length;i++) {
+						attachment = attachments[i];
+						containsName = currentUpload.name.indexOf(attachment.name)==0;
+						
+						if (attachment.name == currentUpload.name || containsName) {
+							currentUpload.unmarshall(attachment);
+							break;
+						}
+					}
+					
+					// might need to loop through all documents in project
+					DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData);
+				}
+				
+				// cause the list to update and rerender the rows
+				libraryCollection.refresh();
+			}
+			
+			public function replaceBitmapData(component:ComponentDescription):void {
+				var imageData:ImageData = currentUpload as ImageData;
+				var instance:Object;
+				
+				if (imageData) {
+					instance = component.instance;
+					
+					if (instance is Image || instance is BitmapImage) {
+						if (instance.source == imageData.bitmapData) {
+							Radiate.setProperty(instance, "source", imageData.url);
+						}
+					}
+				}
+			}
+			
+			protected function uploadAttachmentFault(event:RadiateEvent):void {
+				//var message:String = event.message;
+			}
+			
+			protected function refreshIcon_clickHandler(event:MouseEvent):void {
+				var postID:String = radiate.selectedProject ? radiate.selectedProject.id : null;
+				var id:int;
+				
+				if (postID==null) {
+					postID = radiate.selectedDocument ? radiate.selectedDocument.id : null;
+				}
+				if (postID==null) {
+					id = 0;
+				}
+				else {
+					id = int(postID);
+				}
+				
+				radiate.getAttachments(id);
+			}
+			
+			protected function assetAdded(event:Event):void {
+				updateAssets();
+			}
+			
+			protected function assetRemoved(event:Event):void {
+				updateAssets();
+			}
+			
+			private function updateAssets():void {
+				
+				// not sure why it's not deleteing the last item
+				if (radiate.assets.length==0) {
+					// RangeError: Index '-1' specified is out of bounds. 
+					// - when setting source to empty array before hand 
+					// - assets.source may be bound so when that array item is 
+					// - removed and then remove all is called it may not be found
+					// - calling refresh before calling remove all
+					libraryCollection.refresh();
+					libraryCollection.removeAll();
+				}
+				else {
+					libraryCollection.source = radiate.assets.source;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:ArrayCollection id="libraryCollection"/>
+		
+		<!-- SORT BY NAME -->
+		<handlers:EventHandler eventName="creationComplete" >
+			<collections:SortCollection target="{libraryCollection}" fields="{['name']}" />
+		</handlers:EventHandler>
+		
+		<!-- FILTER BY NAME -->
+		<handlers:EventHandler eventName="change" 
+							   targets="{[filterInput,showAllItemsOnEmpty,caseSensitive,searchAtStart]}"
+							   >
+			<collections:FilterCollection target="{libraryCollection}" 
+								   source="{filterInput}" 
+								   sourcePropertyName="text"
+								   fieldName="name"
+								   showAllItemsOnEmpty="{showAllItemsOnEmpty.selected}"
+								   caseSensitive="{caseSensitive.selected}"
+								   searchAtStart="{searchAtStart.selected}"
+								   />
+		</handlers:EventHandler>
+		
+		
+		<!-- COPY TO THE CLIPBOARD -->
+		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
+			
+			<clipboard:CopyToClipboard data="{imageURLInput.text}" targetAncestor="{this}" allowNullData="true">
+				<clipboard:successEffect>
+					<status:ShowStatusMessage message="URL copied to the clipboard"/>
+				</clipboard:successEffect>
+				<clipboard:noDataEffect>
+					<status:ShowStatusMessage message="Nothing to copy to the clipboard"/>
+				</clipboard:noDataEffect>
+				<clipboard:errorEffect>
+					<status:ShowStatusMessage message="An error occurred while attempting to copy to the clipboard"/>
+				</clipboard:errorEffect>
+			</clipboard:CopyToClipboard>
+			
+		</handlers:EventHandler>
+		
+		<!-- BROWSE FOR FILE --> 
+		<handlers:EventHandler eventName="click" target="{browseForFileIcon}">
+			<file:BrowseForFile id="browseForFile"
+								fileTypes="png,jpg,jpeg,gif"
+								targetAncestor="{this}"
+								allowMultipleSelection="false">
+				<file:selectionEffect>
+					<file:LoadFile id="loadFile" 
+								   loadIntoLoader="true"
+								   fileReference="{browseForFile.fileReference}"
+								   loaderComplete="loadFile_completeHandler(event)"
+								   >
+						
+					</file:LoadFile>
+				</file:selectionEffect>
+			</file:BrowseForFile>
+		</handlers:EventHandler>
+	  
+		<!-- SHOW DELETE RESOURCE POP UP -->
+		<handlers:EventHandler targets="{deleteAttachmentIcon}" eventName="click" 
+							   enabled="{list.selectedItem!=null}">
+			<fc:OpenPopUp id="openDeleteDocumentPopUp" 
+						  popUpType="{DeleteDocumentWindow}" 
+						  modalDuration="100" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="600"
+						  parent="{parentApplication}"
+						  popUpOptions="{{currentState:DeleteDocumentWindow.RESOURCE, documentData:list.selectedItem}}"
+						  />
+		</handlers:EventHandler>
+	</fx:Declarations>
+	
+	<!--
+	<s:Rect>
+		<s:fill>
+			<s:SolidColor color=""
+		</s:fill>
+	</s:Rect>-->
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingBottom="8"/>
+	</s:layout>
+	
+	<mx:VDividedBox id="verticalContainer" 
+					width="100%" height="100%"
+					top="0"
+					left="8" 
+					right="8" 
+					bottom="4"
+					>
+		
+		<s:Group height="24" 
+				 minHeight="24"
+				 maxHeight="60"
+				 width="100%" 
+				 >
+				
+			<c:SearchTextInput id="filterInput" 
+							   left="0" right="0" top="0" 
+							   width="100%"
+							   minWidth="60" 
+							   prompt="Search"
+							   styleName="inputStyles"
+							   enter="searchPropertyInput_enterHandler(event)"
+							   keyUp="filterInput_keyUpHandler(event)"
+							   />
+			
+			<s:HGroup width="100%" top="32" left="4" verticalAlign="baseline">
+				<s:CheckBox id="showAllItemsOnEmpty" label="All" selected="true"/>
+				<s:CheckBox id="caseSensitive" label="Case" selected="false"/>
+				<s:CheckBox id="searchAtStart" label="At start" selected="false"/>
+				<s:Spacer width="100%"/>
+				<s:Label text="Results: {libraryCollection.length}"/>
+			</s:HGroup>
+		</s:Group>
+		
+		
+		<s:List id="list" 
+				width="100%" 
+				height="100%"
+				labelField="name" 
+				dragEnabled="true"
+				borderVisible="false"
+				interactionMode="mouse"
+				requireSelection="true"
+				dataProvider="{libraryCollection}"
+				dragStart="list_dragStartHandler(event)"
+				change="list_changeHandler(event)"
+				>
+			<s:itemRenderer>
+				<fx:Component>
+					<s:ItemRenderer width="100%" height="100%" minHeight="22" >
+						<fx:Script>
+							<![CDATA[
+								import com.flexcapacitor.controller.Radiate;
+								import com.flexcapacitor.model.AttachmentData;
+								import com.flexcapacitor.model.ImageData;
+								
+								public var imageData:ImageData;
+								public var attachmentData:AttachmentData;
+								
+								override public function set data(value:Object):void {
+									super.data = value;
+									var path:String;
+									attachmentData = value as AttachmentData;
+									imageData = value as ImageData;
+									
+									if (data) {
+										
+										if (imageData) {
+											if (imageData.thumbnailURL) {
+												iconImage.source = imageData.thumbnailURL;
+											}
+											else if (imageData.bitmapData) {
+												iconImage.source = imageData.bitmapData;
+											}
+										}
+										
+									}
+								
+									// show the upload icon if not uploaded
+									if (attachmentData && attachmentData.id==null) {
+										uploadFileIcon.visible = true;
+										uploadFileIcon.enabled = true;
+									}
+									else {
+										uploadFileIcon.enabled = false;
+										uploadFileIcon.visible = false;
+									}
+								}
+								
+								protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
+									iconImage.source = "assets/images/components/BorderContainer.png";
+								}
+								
+								protected function groupMouseDownHandler(event:MouseEvent):void {
+									outerDocument.rowGroupMouseDownHandler(event, data, itemIndex);
+								}
+								
+								protected function iconImage_securityErrorHandler(event:SecurityErrorEvent):void {
+									Radiate.log.warn("Library: Icon not found");
+								}
+								
+								protected function uploadFileIcon_clickHandler(event:MouseEvent):void {
+									
+									if (!Radiate.getInstance().uploadAttachmentInProgress) {
+										uploadFileIcon.enabled = false;
+										outerDocument.uploadFile(attachmentData);
+									}
+								}
+								
+							]]>
+						</fx:Script>
+						
+						<s:HGroup id="rowGroup" 
+								  width="100%" 
+								  height="100%" 
+								  verticalAlign="middle"
+								  paddingLeft="5" 
+								  mouseEnabledWhereTransparent="true"
+								  mouseDown="groupMouseDownHandler(event)">
+							<s:Image id="iconImage"
+									 smooth="true"
+									 contentLoader="{Radiate.contentCache}"
+									 ioError="iconImage_ioErrorHandler(event)"
+									 securityError="iconImage_securityErrorHandler(event)"
+									 width="16" height="16"/>
+							<s:Label id="labelDisplay" 
+									 fontSize="11"/>
+							<s:Spacer width="100%"/>
+							<c:ImageButton id="uploadFileIcon" 
+									 source="{Radii8LibraryAssets.upload}" 
+									 toolTip="Upload"
+									 click="uploadFileIcon_clickHandler(event)"
+									 visible="false"
+									 />
+							<s:Spacer width="1"/>
+						</s:HGroup>
+						
+					</s:ItemRenderer>
+				</fx:Component>
+				
+			</s:itemRenderer>
+		</s:List>
+	
+		
+	</mx:VDividedBox>
+	
+	
+	<s:HGroup width="100%"
+			 height="24"
+			 minHeight="24"
+			 verticalAlign="middle"
+			 >
+		
+		<c:ImageButton id="browseForFileIcon" 
+				 source="{Radii8LibraryAssets.openFolder}" 
+				 toolTip="Add"
+				 />
+		
+		
+		<s:TextInput id="imageURLInput" 
+					   left="0" right="0" top="0" 
+					   width="100%"
+					   minWidth="60" 
+					   prompt=""
+					   styleName="inputStyles"
+					   />
+		
+		<s:HGroup verticalAlign="bottom">
+					
+			<s:BorderContainer id="thumnailImage" 
+							   width="12" height="12"
+							   backgroundColor="#cccccc"
+							   borderVisible="false"
+							   useHandCursor="true"
+							   buttonMode="true"
+							   toolTip="Thumbnail URL"
+							   click="thumbnailImage_clickHandler(event)"
+							   />
+			
+			<!--<s:BorderContainer id="smallImage" 
+							   width="12" height="12"
+							   backgroundColor="gray"
+							   borderVisible="false"
+							   useHandCursor="true"
+							   buttonMode="true"
+							   toolTip="Small Image URL"
+							   click="smallImage_clickHandler(event)"
+							   />-->
+			<s:BorderContainer id="mediumImage" 
+							   width="14" height="14"
+							   backgroundColor="#cccccc"
+							   borderVisible="false"
+							   useHandCursor="true"
+							   buttonMode="true"
+							   toolTip="Medium Image URL"
+							   click="mediumImage_clickHandler(event)"
+							   />
+			
+			<s:BorderContainer id="fullImage" 
+							   width="14" height="16"
+							   backgroundColor="#cccccc"
+							   borderVisible="false"
+							   useHandCursor="true"
+							   buttonMode="true"
+							   toolTip="Original Image URL"
+							   click="fullImage_clickHandler(event)"
+							   />
+			
+			
+		</s:HGroup>
+		<c:ImageButton id="copyIcon" 
+				 source="{Radii8LibraryAssets.copy}" 
+				 toolTip="Copy the image URL to the Clipboard"/>
+		
+		<c:ImageButton id="refreshIcon" 
+				 source="{Radii8LibraryAssets.refresh}" 
+				 toolTip="Refresh"
+				 click="refreshIcon_clickHandler(event)"/>
+		
+		<c:ImageButton id="deleteAttachmentIcon" 
+					   source="{Radii8LibraryAssets.trashCan}" 
+					   toolTip="Remove Attachment"
+					   />
+	</s:HGroup>	
+	
+	
+</s:Group>

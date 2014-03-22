@@ -5,10 +5,13 @@ package com.flexcapacitor.utils {
 	import flash.events.TimerEvent;
 	import flash.text.StyleSheet;
 	import flash.utils.Timer;
-	import flash.utils.getTimer;
 	
 	import mx.controls.TextArea;
 	import mx.controls.textClasses.TextRange;
+	
+	import spark.components.TextArea;
+	
+	import flashx.textLayout.formats.TextLayoutFormat;
 	
 	import net.anirudh.as3syntaxhighlight.CodePrettyPrint;
 	import net.anirudh.as3syntaxhighlight.PseudoThread;
@@ -60,8 +63,14 @@ package com.flexcapacitor.utils {
 			".atv {color: #880000;} " +
 			".dec {color: #660066;}";
 		
-		public function SyntaxHighlighter(textarea:TextArea = null) {
-			this.textarea = textarea;
+		public function SyntaxHighlighter(textarea:Object = null) {
+			
+			if (textarea is mx.controls.TextArea) {
+				this.mxTextArea = mx.controls.TextArea(textarea);
+			}
+			else if (textarea is spark.components.TextArea) {
+				this.sparkTextArea = spark.components.TextArea(textarea);
+			}
 		}
 		
 		//public var cssString:String =".spl {font-family:sandboxcode;color: #4f94cd;} .str { font-family:sandboxcode; color: #880000; } .kwd { font-family:sandboxcode; color: #000088; } .com { font-family:sandboxcode; color: #008800; } .typ { font-family:sandboxcode; color: #0068CF; } .lit { font-family:sandboxcode; color: #006666; } .pun { font-family:sandboxcode; color: #666600; } .pln { font-family:sandboxcode; color: #222222; } .tag { font-family:sandboxcode; color: #000088; } .atn { font-family:sandboxcode; color: #660066; } .atv { font-family:sandboxcode; color: #880000; } .dec { font-family:sandboxcode; color: #660066; } ";
@@ -93,10 +102,16 @@ package com.flexcapacitor.utils {
 		public var timerInterval:int = 200;
 		
 		/**
-		 * TextArea 
+		 * MX TextArea 
 		 * */
 		[Bindable]
-		public var textarea:TextArea; 
+		public var mxTextArea:mx.controls.TextArea; 
+		
+		/**
+		 * Spark TextArea 
+		 * */
+		[Bindable]
+		public var sparkTextArea:spark.components.TextArea; 
 		
 		[Bindable]
 		private var asyncCodeState:String;
@@ -135,13 +150,23 @@ package com.flexcapacitor.utils {
 		    
 		    if (codePrettyPrint.asyncRunning) {
 		        codePrettyPrint.prettyPrintStopAsyc = true;
-		        textarea.callLater(doPrettyPrint);
+				if (mxTextArea) {
+		        	mxTextArea.callLater(doPrettyPrint);
+				}
+				else if (sparkTextArea) {
+		        	sparkTextArea.callLater(doPrettyPrint);
+				}
 		        return;
 		    }
 		    
 		    if (pfasyncrunning) {
 		        pfasyncstop = true;
-		        textarea.callLater(doPrettyPrint);
+				if (mxTextArea) {
+		        	mxTextArea.callLater(doPrettyPrint);
+				}
+				else if (sparkTextArea) {
+		        	sparkTextArea.callLater(doPrettyPrint);
+				}
 		        return;
 		    }
 			
@@ -155,7 +180,7 @@ package com.flexcapacitor.utils {
 		    srclenPF = endIndex - startIndex;
 		    arrPF = codePrettyPrint.mainDecorations;
 		    lenPF = arrPF.length;
-		    desclenPF = textarea.text.length;
+		    desclenPF = mxTextArea ? mxTextArea.text.length : sparkTextArea.text.length;
 		    firstNodePF = false;
 		    firstIndexPF = 0;
 		    pfasyncrunning = false;
@@ -180,12 +205,22 @@ package com.flexcapacitor.utils {
 			
 		    if (debug) trace("color worker " + optIdx);
 		    var tr:TextRange;
+			var txtLayFmt:TextLayoutFormat;
 		    var thecolor:Object;
 		    var i:int = optIdx;
 			
 		    if ( i > 0 && i % 5 == 0 ) {
 		    	asyncCodeState = "Coloring (" + int((i / lenPF) * 100) + "%)...";
 		    }
+			
+			var textLength:int;
+			
+			if (mxTextArea) {
+	        	textLength = mxTextArea.text.length;
+			}
+			else if (sparkTextArea) {
+	        	textLength = sparkTextArea.text.length;
+			}
 			
 		    if ( i < lenPF ) {
 				
@@ -200,11 +235,23 @@ package com.flexcapacitor.utils {
 		        }
 				
 		        if ( i - 2 > 0 ) {
-		            if ( arrPF[i-2]  != arrPF[i] && arrPF[i] < textarea.text.length )
+		            if ( arrPF[i-2]  != arrPF[i] && arrPF[i] < textLength )
 		            {
-		            	tr = new TextRange(textarea, false, arrPF[i-2] + startIndex, arrPF[i] + startIndex);
-		            	thecolor = codeStylePF.getStyle("." + arrPF[i-1]).color;
-		            	tr.color = thecolor;
+						
+						
+						if (mxTextArea) {
+			            	tr = new TextRange(mxTextArea, false, arrPF[i-2] + startIndex, arrPF[i] + startIndex);
+			            	thecolor = codeStylePF.getStyle("." + arrPF[i-1]).color;
+							// RangeError: Error #2006: The supplied index is out of bounds.
+							// if we are not on the stage
+			            	tr.color = thecolor;
+						}
+						else if (sparkTextArea) {
+							//var txtLayFmt:TextLayoutFormat = sparkTextArea.getFormatOfRange(null, start, end);
+							txtLayFmt = sparkTextArea.getFormatOfRange(null, arrPF[i-2] + startIndex, arrPF[i] + startIndex);
+			            	txtLayFmt.color = codeStylePF.getStyle("." + arrPF[i-1]).color;
+			            	sparkTextArea.setFormatOfRange(txtLayFmt,  arrPF[i-2] + startIndex, arrPF[i] + startIndex);
+						}
 		            }
 		            
 		        }
@@ -217,12 +264,25 @@ package com.flexcapacitor.utils {
 		        i -= 2;
 				
 		        if ( arrPF[i] + startIndex < endIndex ) {
-		            tr = new TextRange(textarea, false, arrPF[i] + startIndex, endIndex);
-		            thecolor = codeStylePF.getStyle("." + arrPF[i+1]).color;            
-		            var totalLength:int = textarea.text.length;
+					
+					if (mxTextArea) {
+			            tr = new TextRange(mxTextArea, false, arrPF[i] + startIndex, endIndex);
+			            thecolor = codeStylePF.getStyle("." + arrPF[i+1]).color;
+					}
+					else if (sparkTextArea) {
+						txtLayFmt = sparkTextArea.getFormatOfRange(null, arrPF[i] + startIndex, endIndex);
+		            	txtLayFmt.color = codeStylePF.getStyle("." + arrPF[i-1]).color;
+					}
+					
+		            var totalLength:int = mxTextArea ? mxTextArea.text.length : sparkTextArea.text.length;
 					
 		            if ( totalLength >= endIndex ) {
-		            	tr.color = thecolor;
+						if (mxTextArea) {
+		            		tr.color = thecolor;
+						}
+						else if (sparkTextArea) {
+			            	sparkTextArea.setFormatOfRange(txtLayFmt,  arrPF[i] + startIndex, endIndex);
+						}
 					}
 		            
 		        }
@@ -255,14 +315,26 @@ package com.flexcapacitor.utils {
 			
 		    if (pfasyncrunning) {
 		        pfasyncstop = true;
-		        textarea.callLater(codeInPlaceComplete);
+				
+				if (mxTextArea) {
+		        	mxTextArea.callLater(codeInPlaceComplete);
+				}
+				else if (sparkTextArea) {
+		        	sparkTextArea.callLater(codeInPlaceComplete);
+				}
 		        return;
 		    }
 			
 		    asyncRunning = false;
 		    
-		    pfinit(0, textarea.length);
-		    colorThread = new PseudoThread(textarea.systemManager, processFormattedCodeAsync, this, [0, textarea.length, codePFComplete, 0], 3, 2);
+			if (mxTextArea) {
+			    pfinit(0, mxTextArea.text.length);
+			    colorThread = new PseudoThread(mxTextArea.systemManager, processFormattedCodeAsync, this, [0, mxTextArea.text.length, codePFComplete, 0], 3, 2);
+			}
+			else if (sparkTextArea) {
+			    pfinit(0, sparkTextArea.text.length);
+			    colorThread = new PseudoThread(sparkTextArea.systemManager, processFormattedCodeAsync, this, [0, sparkTextArea.text.length, codePFComplete, 0], 3, 2);
+			}
 		}
 		
 		private function lexInt(index:int, total:int):void {
@@ -274,7 +346,13 @@ package com.flexcapacitor.utils {
 		private function codeHighlightInPlace():void {
 		    asyncRunning = true;
 		    asyncCodeState = "Lexing...";
-		    codePrettyPrint.prettyPrintAsync(textarea.text, null, codeInPlaceComplete, lexInt, textarea.systemManager);
+			
+			if (mxTextArea) {
+		    	codePrettyPrint.prettyPrintAsync(mxTextArea.text, null, codeInPlaceComplete, lexInt, mxTextArea.systemManager);
+			}
+			else if (sparkTextArea) {
+		    	codePrettyPrint.prettyPrintAsync(sparkTextArea.text, null, codeInPlaceComplete, lexInt, sparkTextArea.systemManager);
+			}
 		    
 			if (dispatchEvents) {
 				dispatchEvent(new Event(Event.INIT));

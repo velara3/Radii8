@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600"
+			   creationComplete="application1_creationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.effects.popup.OpenPopUp;
+			import com.flexcapacitor.utils.StringUtils;
+			
+			import mx.core.IFlexDisplayObject;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			protected function showPopUp():void {
+				var myPopUp:MyPopUp = new MyPopUp();
+				PopUpManager.addPopUp(myPopUp as IFlexDisplayObject, this, true);
+				PopUpManager.centerPopUp(myPopUp);
+				
+				myPopUp.addEventListener(OpenPopUp.MOUSE_DOWN_OUTSIDE, mouseUpOutsideHandler, false, 0, true);
+			}
+			
+			private function mouseUpOutsideHandler(event:Event):void {
+				// does not create a flicker
+				PopUpManager.removePopUp(event.currentTarget as IFlexDisplayObject);
+				MyPopUp(event.currentTarget).removeEventListener(OpenPopUp.MOUSE_DOWN_OUTSIDE, mouseUpOutsideHandler);	
+			}
+		
+			protected function application1_creationCompleteHandler(event:FlexEvent):void {
+				var result:String = prettifyCamelCase("helloWorld");
+				var result2:String = prettifyCamelCase("hello_World");
+				var result3:String = prettifyCamelCase("hello-World");
+			}
+			
+		/**
+		 * Changes camel case to a human readable format. So helloWorld, hello-world and hello_world becomes "Hello World". 
+		 * */
+		public static function prettifyCamelCase(value:String=""):String {
+			var value:String = 'helloWorld';
+		    var output:String = "";
+			var len:int = value.length;
+			var char:String;
+			
+		    for (var i:int;i<len;i++) {
+				char = value.charAt(i);
+				
+		        if (i==0) {
+		            output += char.toUpperCase();
+		        }
+		        else if (char !== char.toLowerCase() && char === char.toUpperCase()) {
+		            output += " " + char;
+		        }
+		        else if (char == "-" || char == "_") {
+		            output += " ";
+		        }
+		        else {
+		            output += char;
+		        }
+		    }
+			
+			return output;
+		}
+		]]>
+	</fx:Script>
+	
+	
+	<fx:Declarations>
+		<fx:Component className="MyPopUp">
+			<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   resizeEffect="Resize"
+			   resize="panel1_resizeHandler(event)"
+			   creationCompleteEffect="{addedEffect}"
+			   removedEffect="{removedEffect}"
+			   width="400" height="200">
+				
+				<fx:Script>
+					<![CDATA[
+						import mx.events.ResizeEvent;
+						import mx.managers.PopUpManager;
+						
+			
+						protected function close():void {
+							// when called here creates a flicker effect 
+							// it looks like the pop up is faded out and removed 
+							// and then the removed effect is played
+							PopUpManager.removePopUp(this);
+						}
+						
+						protected function panel1_resizeHandler(event:ResizeEvent):void {
+							if (stage && !addedEffect.isPlaying) {
+								PopUpManager.centerPopUp(this);
+							}
+						}
+					]]>
+				</fx:Script>
+			
+				<fx:Declarations>
+					<s:Parallel id="removedEffect" target="{this}" >
+						<s:Scale3D scaleYTo="0" duration="1000" startDelay="0" disableLayout="false"
+								   autoCenterProjection="true" autoCenterTransform="true"/>
+						<s:Fade alphaFrom="1" alphaTo="0" duration="500" startDelay="50"/>
+					</s:Parallel>
+					
+					<s:Parallel id="addedEffect" target="{this}" >
+						<s:Scale3D scaleYFrom="0" scaleYTo="1" duration="250" disableLayout="false"
+								   autoCenterProjection="true" autoCenterTransform="true"/>
+						<s:Fade alphaFrom="0" alphaTo="1" duration="200"/>
+					</s:Parallel>
+	
+				</fx:Declarations>
+				
+				<s:Label horizontalCenter="0" verticalCenter="0" text="Hello World"/>
+				<s:Button horizontalCenter="0" verticalCenter="30" label="Close" click="close()"/>
+			</s:Panel>
+		</fx:Component>
+	</fx:Declarations>
+	
+	
+	<s:Button label="Show Pop Up" 
+			  horizontalCenter="0" verticalCenter="0"
+			  click="showPopUp()" 
+			  />
+</s:Application>

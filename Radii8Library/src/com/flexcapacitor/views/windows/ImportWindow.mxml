@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:c="com.flexcapacitor.views.*"
+			   xmlns:handlers="com.flexcapacitor.handlers.*"
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:windows="com.flexcapacitor.views.windows.*"
+			   
+			   title="Import"
+			   hide="animatedpanelwindow1_hideHandler(event)" 
+			   >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.SyntaxHighlighter;
+			import com.flexcapacitor.utils.XMLUtils;
+			
+			import mx.controls.Alert;
+			import mx.core.IVisualElement;
+			import mx.events.FlexEvent;
+			
+			public static const NEW_DOCUMENT:String = "newDocument";
+			public static const CURRENT_DOCUMENT:String = "currentDocument";
+			public static const CURRENT_SELECTION:String = "currentSelection";
+			public static const IMPORT:String = "import";
+			
+			private var _code:String;
+
+			public function get code():String {
+				
+				var text:String = mxTextArea.text;
+				return text;
+			}
+
+			public function set code(value:String):void {
+				_code = value;
+			}
+
+			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
+			
+			protected function changeHandler(event:Event):void {
+				
+				if (!syntaxHighlighter) {
+					syntaxHighlighter = new SyntaxHighlighter(mxTextArea);
+					syntaxHighlighter.timerInterval = 20;
+					syntaxHighlighter.cssString = SyntaxHighlighter.CRIMSON_EDITOR_CSS;
+				}
+				
+				syntaxHighlighter.highlightCode();
+				
+				var isValid:Boolean = XMLUtils.isValidXML(code);
+				
+				if (!isValid && code!="") {
+					var message:String = XMLUtils.validationError ? "Warning:" +  XMLUtils.validationError.message : warningMessage;
+					warningLabel_Ha.text = message;
+					warningLabel_Ha.visible = true;
+					warningLabel_Ha.includeInLayout = true;
+				}
+				else {
+					warningLabel_Ha.visible = false;
+					warningLabel_Ha.includeInLayout = false;
+				}
+				
+			}
+			
+			
+			/**
+			 * Import 
+			 * */
+			protected function importPopUp_closeHandler(event:Event):void {
+				var radiate:Radiate = Radiate.getInstance();
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				var type:String = importLocation.selectedValue as String;
+				
+				if (action==ImportWindow.IMPORT) {
+					if (type==ImportWindow.NEW_DOCUMENT) {
+						radiate.importMXMLDocument(radiate.selectedProject, null, null, code);
+					}
+					else if (type==ImportWindow.CURRENT_DOCUMENT && selectedDocument) {
+						radiate.importMXMLDocument(radiate.selectedProject, selectedDocument, null, code);
+					}
+					else if (type==ImportWindow.CURRENT_SELECTION && radiate.target is IVisualElement) {
+						if (radiate.target is IVisualElement) {
+							radiate.importMXMLDocument(radiate.selectedProject, selectedDocument, IVisualElement(radiate.target), code);
+						}
+						Alert.show("Please select a visual element");
+					}
+					else {
+						Alert.show("Please select a document");
+					}
+				}
+				
+				closePopUp.startDelay = 500;
+				closePopUp.play();
+			}
+			
+			public var syntaxHighlighter:SyntaxHighlighter;
+			
+			protected function animatedpanelwindow1_hideHandler(event:FlexEvent):void {
+				if (syntaxHighlighter) {
+					syntaxHighlighter.mxTextArea = null;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="click" setTriggerEvent="true">
+			<s:SetAction property="action" target="{this}" value="cancel"/>
+			<fc:ClosePopUp popUp="{this}"  />
+		</handlers:EventHandler>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{importButton}" eventName="click" setTriggerEvent="true">
+			<s:SetAction property="action" target="{this}" value="import"/>
+			<fc:ClosePopUp id="closePopUp" popUp="{this}"  />
+		</handlers:EventHandler>
+		
+		<fx:String id="action"></fx:String>
+		
+		<s:RadioButtonGroup id="importLocation"  />
+	</fx:Declarations>
+	
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20">
+		
+		<s:Label x="15" y="65" text="Paste in the MXML code below:" fontWeight="bold"/>
+		
+		<mx:TextArea id="mxTextArea"  
+					 focusAlpha="0"
+					 fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
+					 borderVisible="true"
+					 fontSize="12"
+					 width="100%" height="300"
+					 editable="true"
+					 leading="0"
+					 change="changeHandler(event)"
+					 />
+		
+		<s:HGroup x="14" y="31" width="100%" horizontalAlign="right">
+			<s:Label x="15" y="15" text="Import to:" fontWeight="bold"/>
+			<s:Spacer width="100%"/>
+			<s:RadioButton x="91" 
+						   y="128" 
+						   label="New Document" 
+						   selected="false" 
+						   group="{importLocation}"
+						   value="{NEW_DOCUMENT}"
+						   />
+			<s:RadioButton x="190" 
+						   y="130" 
+						   selected="true"
+						   label="Current Document" 
+						   group="{importLocation}"
+						   value="{CURRENT_DOCUMENT}"
+						   />
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="Selected Component" 
+						   group="{importLocation}"
+						   value="{CURRENT_SELECTION}"
+						   />
+		</s:HGroup>
+		
+		<s:Label id="warningLabel_Ha" 
+				 x="15" y="15" 
+				 text="Warning: XML is invalid" 
+				 fontWeight="bold" 
+				 color="red"
+				 includeInLayout="false"
+				 visible="false"
+				 width="100%"/>
+		
+		<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Cancel" />
+			<s:Button id="importButton" label="Import" />
+		</s:HGroup>
+	</s:VGroup>
+	
+</windows:AnimatedPanelWindow>

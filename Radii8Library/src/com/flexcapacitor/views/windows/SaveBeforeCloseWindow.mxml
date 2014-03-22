@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:c="com.flexcapacitor.views.windows.*"
+			   xmlns:handlers="com.flexcapacitor.handlers.*"
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:windows="com.flexcapacitor.views.windows.*"
+			   
+			   title.project="Save Project"
+			   title.document="Save Document"
+			   
+			   creationComplete="panel1_creationCompleteHandler(event)" 
+			   >
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace c "com.flexcapacitor.controls.*";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace handlers "com.flexcapacitor.handlers.*";
+		@namespace fc "com.flexcapacitor.effects.popup.*";
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.IDocumentData;
+			import com.flexcapacitor.model.IProject;
+			
+			import mx.core.mx_internal;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			use namespace mx_internal;
+			
+			public static const DOCUMENT:String = "document";
+			public static const PROJECT:String = "project";
+			
+			[Bindable]
+			public var documentData:IDocumentData;
+			
+			[Bindable]
+			public var documentName:String;
+			
+			protected function saveResource():void {
+				var canBeSaved:Boolean;
+				saveWarningsLabel.text = "";
+				radiate = Radiate.getInstance();
+				
+				if (currentState==DOCUMENT) {
+					if (documentData==null) {
+						documentData = radiate.selectedDocument;
+					}
+					if (documentData) {
+						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, saveResultsHandler, false, 0, true);
+						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_FAULT, saveResultsHandler, false, 0, true);
+						canBeSaved = radiate.saveDocument(IDocument(documentData));
+					}
+				}
+				else if (currentState==PROJECT) {
+					if (documentData==null) {
+						documentData = radiate.selectedProject;
+					}
+					
+					if (documentData) {
+						radiate.addEventListener(RadiateEvent.PROJECT_SAVED, saveResultsHandler, false, 0, true);
+						canBeSaved = radiate.saveProject(IProject(documentData));
+					}
+				}
+				
+				if (canBeSaved) {
+					infoLabel.text = "Saving...";
+					inProgress = true;
+				}
+				else {
+					//radiate.addEventListener(RadiateEvent.PROJECT_DELETED, deleteResultsHandler, false, 0, true);
+					//radiate.addEventListener(RadiateEvent.PROJECT_REMOVED, deleteResultsHandler, false, 0, true);
+				}
+			}
+			
+			protected function saveResultsHandler(event:RadiateEvent):void {
+				var data:Object = event.data;
+				var error:String;
+				var status:String = event.status;
+				var successful:Boolean = event.successful;
+				var message:String = "";
+				var iDocument:IDocument = event.selectedItem as IDocument;
+			
+				inProgress = false;
+				
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, saveResultsHandler);
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_FAULT, saveResultsHandler);
+				
+				if (data && data is Object && "status" in data) {
+					//closePopUp.startDelay = 250;
+					//closePopUp.play();
+				}
+				
+				if (status=="error") {
+					
+					if (data && "error" in data) {
+						message += "Error. The item was not saved. " + data.error + " ";
+					}
+					else {
+						message += "Error. The item was not saved.";
+					}
+				}
+				else {
+					if (data==null && iDocument!=null && iDocument.id!=null) {
+						message += "Error. The item may have been saved already. Reload or resave the project. ";
+					}
+				}
+				
+				
+				if (event.faultEvent) {
+					message += "Are you connected to the internet? ";
+					
+					if (event.faultEvent is IOErrorEvent) {
+						message += IOErrorEvent(event.faultEvent).text;
+					}
+					else if (event.faultEvent is SecurityErrorEvent) {
+						
+						if (SecurityErrorEvent(event.faultEvent).errorID==2048) {
+							
+						}
+						
+						message += SecurityErrorEvent(event.faultEvent).text;
+					}
+				}
+				
+				
+				saveWarningsLabel.text = message;
+			
+				
+				if (successful) {
+					infoLabel.text = "Saved";
+					closePopUp.startDelay = 500;
+					closePopUp.play();
+				}
+			}
+			
+			protected function cancelButton_clickHandler(event:MouseEvent):void {
+				callLater(PopUpManager.removePopUp, [this]);
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				if (currentState==DOCUMENT) {
+					if (documentData==null) {
+						documentData = radiate.selectedDocument;
+					}
+				}
+				else if (currentState==PROJECT) {
+					if (documentData==null) {
+						documentData = radiate.selectedProject;
+					}
+					
+				}
+			
+				if (documentData) {
+					documentName = documentData.name;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="clickNOT">
+			<fc:ClosePopUp id="closePopUp" popUp="{this}" />
+		</handlers:EventHandler>
+		
+		<!--- hide about popup -->
+		<!--<handlers:EventHandler targets="{importButton}" eventName="click">
+			<s:SetAction property="action" target="{this}" value="import"/>
+			<fc:ClosePopUp popUp="{this}"  />
+		</handlers:EventHandler>-->
+		
+		<fx:String id="action"></fx:String>
+		
+	</fx:Declarations>
+	
+	<c:states>
+		<s:State name="document"/>
+		<s:State name="project"/>
+	</c:states>
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20"
+				 gap="10"
+				 >
+		
+		<s:Label text="Are you sure you want to save the project, '{documentName}'?" 
+				 fontSize="16" includeIn="project"/>
+		<s:Label text="Are you sure you want to save the document, '{documentName}'?" 
+				 fontSize="16" includeIn="document"/>
+		
+		<s:Label id="saveWarningsLabel" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"
+				 width="100%"/>
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			<s:Label id="infoLabel" text="Saving..." 
+					 visible="{inProgress}"
+					 />
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Close" click="cancelButton_clickHandler(event)" />
+			<s:Button label="Save" click="saveResource()" />
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+	
+</windows:AnimatedPanelWindow>

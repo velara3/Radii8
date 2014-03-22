@@ -1,0 +1,1777 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:ns="http://ak33m.com/mxml"
+			   xmlns:fc="com.flexcapacitor.utils.*"
+			   xmlns:controls="com.flexcapacitor.controls.*"
+			   
+			   minWidth="800" 
+			   minHeight="600"
+			   
+			   applicationComplete="applicationCompleteHandler(event)"
+			   >
+	
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.services.WPService;
+			import com.flexcapacitor.services.WPServiceEvent;
+			
+			import flash.net.FileReference;
+			import flash.net.URLLoader;
+			import flash.net.URLLoaderDataFormat;
+			import flash.net.URLRequest;
+			import flash.net.URLRequestMethod;
+			import flash.net.URLVariables;
+			import flash.net.navigateToURL;
+			import flash.utils.getTimer;
+			
+			import mx.collections.ItemResponder;
+			import mx.events.FlexEvent;
+			import mx.rpc.AsyncToken;
+			import mx.utils.ObjectUtil;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.TextOperationEvent;
+			
+			import ru.inspirit.net.MultipartURLLoader;
+			import ru.inspirit.net.events.MultipartURLLoaderEvent;
+			
+			public var host:String = "";
+			
+			[Bindable]
+			public var urlregexp:String = "^[A-Za-z]+://[A-Za-z0-9-_]+\\.[A-Za-z0-9-_%&\?\/.=]+$";
+			[Bindable]
+			public var endpointregexp:String = "/[A-Za-z0-9-_%&\?\/.=]";
+		
+			public var time:int;
+			
+			[Bindable]
+			public var currentUserID:int;
+			
+			private var uploadPending:Boolean;
+			private var updatePending:Boolean;
+			private var updateCreatePost:Boolean;
+			
+			public var uploadRequest:URLRequest;
+
+			private var fileToUpload:FileReference;
+
+			private var multipartURLLoader:MultipartURLLoader;
+
+			private var testTextFileByteArray:ByteArray;
+
+			private var testBitmap:BitmapData;
+
+			private var testBitmapJPEGByteArray:ByteArray;
+			
+			public var service:WPService;
+			
+			/**
+			 * Login user 
+			 * */
+			public function loginUser():void {
+				log("Login user");
+				service.loginUser(usernameInput.text, passwordInput.text);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Logout user 
+			 * */
+			public function logoutUser():void {
+				log("Logout user");
+				service.logoutUser();
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Register user 
+			 * */
+			public function registerUser():void {
+				log("Register user");
+				service.registerUser(newUsernameInput.text, emailInput.text);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Register site 
+			 * */
+			public function registerSite():void {
+				log("Register site");
+				service.registerSite(newSiteNameInput.text, newSiteTitleInput.text, newSiteIsPublicCheckbox.selected);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Register user and site 
+			 * */
+			public function registerUserAndSite():void {
+				log("Register user and site");
+				service.registerUserAndSite(newSiteUsernameInput.text, newSiteEmailInput.text, newSiteNameInput.text, newSiteTitleInput.text, newSiteIsPublicCheckbox.selected);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Is multisite 
+			 * */
+			public function isMultiSite():void {
+				log("Is Multisite");
+				service.isMultiSite();
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Get current site
+			 * */
+			public function getCurrentSite():void {
+				log("Get current site");
+				service.getCurrentSite();
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			/**
+			 * Is subdomain installed
+			 * */
+			public function isSubDomainInstalled():void {
+				log("Is subdomain installed");
+				service.isSubDomainInstall();
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Is main site
+			 * */
+			public function isMainSite():void {
+				log("Is main site");
+				service.isMainSite();
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Lost password
+			 * */
+			public function lostPassword():void {
+				log("Lost password");
+				service.lostPassword(lostPasswordInput.text);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Reset password
+			 * */
+			public function resetPassword():void {
+				service.resetPassword(keyInput.text, resetUsernameInput.text, password1Input.text, password2Input.text);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Get JSON API plugin info 
+			 * */
+			public function getAPIInfo():void {
+				service.getAPIInfo();
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			public function updateTimeMatrixField(call:String, response:Boolean = false, portal:* = null, dimension:int = 3):void {
+				!response ? log() :-(1);
+				
+				if (!response) {
+					time = getTimer();
+					timeLabel.text = "Requesting... " + call;
+				}
+				else {
+					var currentTime:int = getTimer();
+					var timeLabelValue:String = "Time: " + String(currentTime-time) + "ms";
+					timeLabel.text = timeLabelValue;
+				}
+			}
+			
+			/**
+			 * Update post
+			 * */
+			public function updatePost(currentToken:String = null):void {
+				var object:URLVariables = new URLVariables();
+				object.id = idLabel.text;
+				object.status = statusDropdownList.selectedItem as String;
+				object.nonce = currentToken;
+				object.title = titleInput.text;
+				object.content = contentTextArea.text;
+				
+				service.addEventListener(WPServiceEvent.RESULT, onUpdateResultHandler);
+				service.addEventListener(WPServiceEvent.FAULT, onUpdateFaultHandler);
+				service.parameters = object;
+				service.updatePost();
+
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+				
+			}
+			
+			/**
+			 * Calls create post
+			 * */
+			public function createPost(currentToken:String = null):void {
+
+				var object:URLVariables = new URLVariables();
+				object.nonce = currentToken;
+				object.title = "New Post at " + new Date().toTimeString();
+				object.slug = slugLabel.text;
+				object.post_slug = slugLabel.text;
+				object.content = contentTextArea.text;
+				object.dev = 1;
+				object.categories = "project";
+				
+				service.parameters = object;
+				service.addEventListener(WPServiceEvent.RESULT, onCreatePostResult);
+				service.addEventListener(WPServiceEvent.FAULT, onCreatePostFault);
+				service.createPost();
+				
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Select a file for upload
+			 * */
+			public function selectFileToUpload():void {
+				
+				fileToUpload = new FileReference();
+				fileToUpload.browse();
+				fileToUpload.addEventListener(Event.SELECT, fileSelected);
+			}
+			
+			
+
+			/*
+			var data1:ByteArray = new ByteArray();
+data1.writeUTFBytes("This is a test text file");
+data1.position = 0;
+
+var bmp:BitmapData = new BitmapData(1000, 1000, false, 0x000000);
+bmp.perlinNoise(100, 80, 6, Math.floor(Math.random() * 10), false, true, 1);
+
+var j_encoder:JPGEncoder = new JPGEncoder(90);
+
+var img:ByteArray = j_encoder.encode(bmp);
+
+var ml:MultipartURLLoader = new MultipartURLLoader();
+ml.dataFormat = URLLoaderDataFormat.VARIABLES;
+
+ml.addEventListener(Event.COMPLETE, onReady);
+ml.addEventListener(MultipartURLLoaderEvent.DATA_PREPARE_PROGRESS, onWrite);
+ml.addEventListener(MultipartURLLoaderEvent.DATA_PREPARE_COMPLETE, onWriteEnd);
+
+function addDifferentFields(){
+	ml.addVariable('test', 'test variable');
+	ml.addFile(data1, 'text.txt', 'Filedata', 'text/plain');
+	ml.addFile(img, 'img.png', 'Filedata2');
+}
+
+function addMultiplyFiledata(){
+	ml.addVariable('test', 'test variable');
+	ml.addFile(data1, 'test1.txt', 'Filedata[]', 'text/plain');
+	ml.addFile(img, 'img.png', 'Filedata[]');
+}
+
+upload_btn.addEventListener(MouseEvent.CLICK, uploadData);
+async_ch.addEventListener(Event.CHANGE, onAsyncChange);
+
+function onAsyncChange(e:Event){
+	if(async_ch.selected){
+		upload_btn.label = 'Prepare';
+	} else {
+		upload_btn.label = 'Upload';
+	}
+}
+
+function uploadData(e:MouseEvent){
+	
+	//addMultiplyFiledata();
+	if(async_ch.selected && !ml.PREPARED){
+		addDifferentFields();
+		ml.load('test.php', true);
+		upload_btn.enabled = false;
+	} else if(async_ch.selected && ml.PREPARED){
+		ml.startLoad();
+	} else if(!async_ch.selected){
+		addDifferentFields();
+		ml.load('test.php');
+	}
+}
+
+function onReady(e:Event){
+	_txt.text = 'DATA UPLOADED';
+	//
+	// You can access loader returned data:
+	 var loader:URLLoader = MultipartURLLoader(e.currentTarget).loader;
+	 var data:URLVariables = new URLVariables( loader.data );
+	//
+	_txt.appendText('\nSERVER RESPONSE: ' + data.result);
+}
+
+function onWriteEnd(e:MultipartURLLoaderEvent):void {
+	_txt.appendText('\nDATA PREPARE COMPLETE');
+	upload_btn.label = 'Upload';
+	upload_btn.enabled = true;
+}
+
+function onWrite(e:MultipartURLLoaderEvent):void {
+	_txt.text = 'Prepare data: ' + e.bytesTotal + '/' + e.bytesWritten;
+}
+			
+			
+			*/
+			
+			
+			/**
+			 * Upload attachment second attempt
+			 * */
+			public function uploadAttachment(currentToken:String = null):void {
+				var object:URLVariables = new URLVariables();
+				object.nonce = currentToken;
+				object.title = "New Post at " + new Date().toTimeString();
+				object.slug = slugLabel.text;
+				object.post_slug = slugLabel.text;
+				object.content = contentTextArea.text;
+				object.dev = 1;
+				object.categories = "project";
+				
+				service.parameters = object;
+				
+				if (fileToUpload && fileToUpload.data) {
+					multipartURLLoader.addFile(fileToUpload.data, fileToUpload.name, 'attachment');
+					multipartURLLoader.load(url, asyncCheckbox.selected);
+					service.uploadAttachment();
+				}
+				else {
+					//multipartURLLoader.addFile(testBitmapJPEGByteArray, 'img.png', 'attachment');
+					log("Add media file");
+				}
+			
+				
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+				
+				
+				
+				return;
+				
+				
+				log("Upload attachment");
+				//var url:String = postsURLInput.text + "?json=update_post&controller=posts&method=update_post&dev=1";
+				var url:String = domainInput.text + "?json=posts/update_post";
+				var params:URLVariables;
+				
+				destinationURL.text = url;
+
+				multipartURLLoader.dataFormat = URLLoaderDataFormat.VARIABLES;
+				
+				multipartURLLoader.addEventListener(Event.COMPLETE, onReady);
+				multipartURLLoader.addEventListener(MultipartURLLoaderEvent.DATA_PREPARE_PROGRESS, onWrite);
+				multipartURLLoader.addEventListener(MultipartURLLoaderEvent.DATA_PREPARE_COMPLETE, onWriteEnd);
+				
+				
+				multipartURLLoader.addVariable("id", idLabel.text);
+				multipartURLLoader.addVariable("nonce", currentToken);
+				//multipartURLLoader.addFile(testTextFileByteArray, 'text.txt', 'Filedata', 'text/plain');
+				//multipartURLLoader.addFile(testBitmapJPEGByteArray, 'img.png', 'Filedata2');
+				
+				if (fileToUpload && fileToUpload.data) {
+					multipartURLLoader.addFile(fileToUpload.data, fileToUpload.name, 'attachment');
+					multipartURLLoader.load(url, asyncCheckbox.selected);
+				}
+				else {
+					//multipartURLLoader.addFile(testBitmapJPEGByteArray, 'img.png', 'attachment');
+					log("Add media file");
+				}
+			
+				//multipartURLLoader.addVariable('test', 'test variable');
+				//multipartURLLoader.addFile(data1, 'test1.txt', 'Filedata[]', 'text/plain');
+				//multipartURLLoader.addFile(img, 'img.png', 'Filedata[]');
+				
+				
+				
+				log();
+				time = getTimer();
+				uploadPending = false;
+					
+
+				
+			}
+			
+			
+			/*
+			public function addDifferentFields(){
+				multipartURLLoader.addVariable('test', 'test variable');
+				multipartURLLoader.addFile(data1, 'text.txt', 'Filedata', 'text/plain');
+				multipartURLLoader.addFile(img, 'img.png', 'Filedata2');
+			}
+			
+			public function addMultiplyFiledata(){
+				multipartURLLoader.addVariable('test', 'test variable');
+				multipartURLLoader.addFile(data1, 'test1.txt', 'Filedata[]', 'text/plain');
+				multipartURLLoader.addFile(img, 'img.png', 'Filedata[]');
+			}*/
+
+
+			/**
+			 * Upload async checkbox change
+			 * */
+			public function onAsyncChange(e:Event):void {
+				if(asyncCheckbox.selected){
+					//upload_btn.label = 'Prepare';
+				} else {
+					//upload_btn.label = 'Upload';
+				}
+			}
+		
+			/**
+			 * Upload data test
+			 * */
+			public function uploadData(e:MouseEvent):void {
+				
+				//addMultiplyFiledata();
+				if(asyncCheckbox.selected && !multipartURLLoader.PREPARED){
+					//addDifferentFields();
+					multipartURLLoader.load('test.php', true);
+					//upload_btn.enabled = false;
+				} else if(asyncCheckbox.selected && multipartURLLoader.PREPARED){
+					multipartURLLoader.startLoad();
+				} else if(!asyncCheckbox.selected){
+					//addDifferentFields();
+					multipartURLLoader.load('test.php');
+				}
+			}
+
+			/**
+			 * On upload complete ready 
+			 * */
+			public function onReady(e:Event):void {
+				log("Upload complete");
+				//resultTextArea.text = 'DATA UPLOADED';
+				
+				// You can access loader returned data:
+				 var loader:URLLoader = MultipartURLLoader(e.currentTarget).loader;
+				 var data:URLVariables = new URLVariables( loader.data );
+				 var result:String = (loader.data as String).toString();
+				 var item:Object = loader.data;
+				 
+				var currentTime:int = getTimer();
+				var timeLabelValue:String = "Time: " + String(currentTime-time) + "ms";
+				
+				
+				try {
+					item = JSON.parse(loader.data);
+					timeLabelValue += ". Parse time: " + String(getTimer()- currentTime) + "ms";
+					log(ObjectUtil.toString(item));
+				}
+				catch (e:Error) {
+					// Error #1132: Invalid JSON parse input.
+					log("ERROR:" + e.message);
+					return;
+				}
+				
+				if (item && item.post) {
+					updatePostForm(item);
+				}
+				
+				log(ObjectUtil.toString(item));
+				
+				//resultTextArea.text = ObjectUtil.toString(data);
+			}
+
+			/**
+			 * On write end
+			 * */
+			public function onWriteEnd(e:MultipartURLLoaderEvent):void {
+				resultsTextArea.appendText('\nDATA PREPARE COMPLETE');
+				//upload_btn.label = 'Upload';
+				//upload_btn.enabled = true;
+			}
+			
+			/**
+			 * On write start
+			 * */
+			public function onWrite(e:MultipartURLLoaderEvent):void {
+				log('Prepare data: ' + e.bytesTotal + '/' + e.bytesWritten);
+			}
+			
+			/**
+			 * Upload attachment first attempt
+			 * 
+			 * Doesn't work because login cookies are not sent 
+			 * by file.upload call. 
+			 * */
+			public function uploadAttachmentFirstAttempt(currentToken:String = null):void {
+				log("Upload attachment");
+				//var url:String = postsURLInput.text + "?json=update_post&controller=posts&method=update_post&dev=1";
+				var url:String = domainInput.text + "?json=posts/update_post";
+				var params:URLVariables;
+				
+				destinationURL.text = url;
+				
+				uploadRequest = new URLRequest();
+				uploadRequest.url = url;
+				params = new URLVariables();
+				params.id = idLabel.text;
+				params.nonce = currentToken;
+				params.title = titleInput.text + new Date().seconds;
+				uploadRequest.data = params;
+				uploadRequest.method = URLRequestMethod.POST;
+				
+				fileToUpload.addEventListener(ProgressEvent.PROGRESS , onUploadProgress);             
+				fileToUpload.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, onUploadComplete);
+				fileToUpload.addEventListener(IOErrorEvent.IO_ERROR, onUploadFileError);             
+				fileToUpload.upload(uploadRequest, "attachment");
+				fileToUpload.data==null ? log("select a file") : 0;
+				
+				log();
+				time = getTimer();
+				uploadPending = false;
+			}
+			
+			
+			/**
+			 * Get attachments
+			 * */
+			public function getAttachments():void {
+				//var url:String = domainInput.text + attachmentsQueryInput.text;
+				
+				service.getAttachments();
+				service.addEventListener(WPServiceEvent.RESULT, onGetAttachmentsHandler);
+				service.addEventListener(WPServiceEvent.FAULT, onGetAttachmentsFaultHandler);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+				
+			}
+			
+			/**
+			 * Get list of posts 
+			 * */
+			public function getPosts():void {
+				//var url:String = domainInput.text + postsQueryInput.text;
+				service.getPosts();
+				service.addEventListener(WPServiceEvent.RESULT, onGetPostsHandler);
+				service.addEventListener(WPServiceEvent.FAULT, onGetPostsFaultHandler);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Search list of posts 
+			 * */
+			public function searchPosts():void {
+				var url:String = domainInput.text + searchQueryInput.text;
+				service.getPosts();
+				service.addEventListener(WPServiceEvent.RESULT, onGetPostsHandler);
+				service.addEventListener(WPServiceEvent.FAULT, onGetPostsFaultHandler);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Is user logged in
+			 * */
+			public function isUserLoggedIn():void {
+				service.isUserLoggedIn();
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Get logged in user
+			 * */
+			public function getLoggedInUser():void {
+				service.getLoggedInUser();
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Get list of projects
+			 * */
+			public function getProjects():void {
+				//var url:String = domainInput.text + getProjectsQueryInput.text;
+				service.getProjects();
+				service.addEventListener(WPServiceEvent.RESULT, onGetPostsHandler);
+				service.addEventListener(WPServiceEvent.FAULT, onGetPostsFaultHandler);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Submit url just as it is
+			 * */
+			public function submitURL():void {
+				var url:String = destinationURL.text;
+				service.sendURL(url);
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Get list of categories
+			 * */
+			public function getCategories():void {
+				service.getCategories();
+				//service.addEventListener(WPServiceEvent.RESULT, onGenericResult);
+				//service.addEventListener(WPServiceEvent.FAULT, onGenericFault);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Get category
+			 * */
+			public function getCategory():void {
+				service.getCategory(getCategoryInput.text, getCategoryParentInput.text as int);
+				//service.addEventListener(WPServiceEvent.RESULT, onGenericResult);
+				//service.addEventListener(WPServiceEvent.FAULT, onGenericFault);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			/**
+			 * Create category
+			 * */
+			public function createCategory():void {
+				service.createCategory(createCategoryInput.text, createCategoryParentInput.text as int);
+				//service.addEventListener(WPServiceEvent.RESULT, onGenericResult);
+				//service.addEventListener(WPServiceEvent.FAULT, onGenericFault);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			
+			/**
+			 * Get posts by user
+			 * */
+			public function getPostsByUser():void {
+				if (postsByAuthorQueryInput.text!="") {
+					service.getPostsByUser(postsByAuthorQueryInput.text as int);
+					service.addEventListener(WPServiceEvent.RESULT, onGenericResult);
+					service.addEventListener(WPServiceEvent.FAULT, onGenericFault);
+					destinationURL.text = service.url;
+					updateTimeMatrixField(service.call);
+				}
+				else {
+					log("Please enter a user ID");
+				}
+			}
+			
+			
+			/**
+			 * Get posts by current author
+			 * */
+			public function getPostsByCurrentAuthor():void {
+				
+				if (currentUserID==-1) {
+					log("Login to continue");
+				}
+				service.getPostsByUser(currentUserID);
+				service.addEventListener(WPServiceEvent.RESULT, onGenericResult);
+				service.addEventListener(WPServiceEvent.FAULT, onGenericFault);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+			}
+			
+			
+			/**
+			 * Get Post 
+			 * */
+			public function getPost(requireLogin:Boolean = false):void {
+				service.getPostById(query_txt.text);
+				service.addEventListener(WPServiceEvent.RESULT, onGetPostResult);
+				service.addEventListener(WPServiceEvent.FAULT, onGetPostFault);
+				destinationURL.text = service.url;
+				updateTimeMatrixField(service.call);
+				
+			}
+			
+			/**
+			 * This is using the WordPress XMLRPC 
+			 * */
+			public function login (requireLogin:Boolean = true):void {
+				// This is the rpc call. Because the xmlrpc service used in this example 
+				// has functions with dots (.) in them the call function is used
+				// if there was no dot the call could be blogapi.getUserInfo ()
+				var token:AsyncToken;
+				
+				if (requireLogin) {
+					token = blogapi.call(call_txt.text, "", user_txt.text, password_txt.text);
+				}
+				else {
+					token = blogapi.call(call_txt.text, "");
+				}
+				
+				var tresponder:ItemResponder = new ItemResponder(this.showUserInfo, this.onFault);
+				
+				token.addResponder(tresponder);
+			}
+			
+			//----------------------------------
+			// 
+			// HANDLERS
+			//
+			//----------------------------------
+			
+			public function showUserInfo(event:WPServiceEvent, token:Object = null):void {
+				log("User: "+event.data.nickname + "User info result");
+			}
+			
+			public function onFault (event:WPServiceEvent, token:Object=null):void {
+				log(Object(event.faultEvent).faultString + " " + event.faultCode);
+			}
+			
+			/**
+			 * On generic result result
+			 * */
+			public function onGenericResult(event:WPServiceEvent, token:Object = null):void {
+				var result:String = event.text as String;
+				var object:Object;
+				log(result);
+				
+				var currentTime:int = getTimer();
+				var timeLabelValue:String = "Time: " + String(currentTime-time) + "ms";
+				
+				try {
+					object = JSON.parse(result);
+					timeLabelValue += ". Parse time: " + String(getTimer()- currentTime) + "ms";
+					log(ObjectUtil.toString(object));
+				}
+				catch (e:Error) {
+					// Error #1132: Invalid JSON parse input.
+					//resultTextArea.text = "ERROR:" + e.message;
+					log("ERROR:" + e.message);
+					log(e.message + "\n" + result);
+					
+				}
+				
+				timeLabel.text = timeLabelValue;
+				//resultTextArea.text = "User: "+event.result,"User info result";
+			}
+			
+			/**
+			 * On get post result
+			 * */
+			public function onGetPostResult (event:WPServiceEvent, token:Object = null):void {
+				service.removeEventListener(WPServiceEvent.RESULT, onGetPostResult);
+				service.removeEventListener(WPServiceEvent.FAULT, onGetPostFault);
+				updateTimeMatrixField(null, true);
+			}
+			
+			/**
+			 * On get post fault
+			 * */
+			public function onGetPostFault (event:WPServiceEvent, token:Object=null):void {
+				log(Object(event.faultEvent).faultString + "\n" + event.faultCode);
+				service.removeEventListener(WPServiceEvent.RESULT, onGetPostResult);
+				service.removeEventListener(WPServiceEvent.FAULT, onGetPostFault);
+				updateTimeMatrixField(null, true);
+			}
+			
+			/**
+			 * On generic post fault
+			 * */
+			public function onGenericFault (event:WPServiceEvent, token:Object=null):void {
+				log(Object(event.faultEvent).faultString + "\n" + event.faultCode);
+			}
+			
+			/**
+			 * On update result handler
+			 * */
+			public function onUpdateResultHandler (event:WPServiceEvent, token:Object = null):void {
+				var result:String = event.text as String;
+				var object:Object;
+				log(result);
+				
+				log("Update result handler");
+				
+				service.removeEventListener(WPServiceEvent.RESULT, onUpdateResultHandler);
+				service.removeEventListener(WPServiceEvent.FAULT, onUpdateFaultHandler);
+				
+				var currentTime:int = getTimer();
+				var timeLabelValue:String = "Time: " + String(currentTime-time) + "ms";
+				
+				try {
+					object = JSON.parse(result);
+					timeLabelValue += ". Parse time: " + String(getTimer()- currentTime) + "ms";
+					log(ObjectUtil.toString(object));
+				}
+				catch (e:Error) {
+					// Error #1132: Invalid JSON parse input.
+					log("ERROR:" + e.message);
+					log("ERROR:" + e.message);
+					return;
+				}
+				
+				timeLabel.text = timeLabelValue;
+				
+				if (object && object.post) {
+					titleInput.text = object.post.title;
+					contentTextArea.text = object.post.content;
+					//statusLabel.text = object.post.status;
+				}
+				
+				if (object && object.status=="error") {
+					if (object.error.indexOf("edit_post")!=-1) {
+						//resultTextArea.text = "ERROR:" + object.error;
+					}
+					else if (object.error.indexOf("get_nonce")!=-1) {
+						//resultTextArea.text = "ERROR:" + object.error;
+					}
+					else {
+						//resultTextArea.text = "ERROR:" + object.error;
+					}
+				}
+				
+				if (object && object.count) {
+					//resultTextArea.text = "May not have saved";
+				}
+				
+				//resultTextArea.text = "User: "+event.result,"User info result";
+			}
+			
+			
+			/**
+			 * On Get Info result handler
+			 * */
+			public function onGetInfoResult(event:WPServiceEvent):void {
+				var result:String = event.text as String;
+				var object:Object;
+				log(result);
+				
+				var currentTime:int = getTimer();
+				var timeLabelValue:String = "Time: " + String(currentTime-time) + "ms";
+				
+				try {
+					object = JSON.parse(result);
+					timeLabelValue += ". Parse time: " + String(getTimer()- currentTime) + "ms";
+					log(ObjectUtil.toString(object));
+				}
+				catch (e:Error) {
+					// Error #1132: Invalid JSON parse input.
+					log("ERROR:" + e.message);
+					return;
+				}
+				
+				timeLabel.text = timeLabelValue;
+				
+				if (object && object.posts) {
+					
+				}
+				
+				//resultTextArea.text = "User: "+event.result,"User info result";
+			}
+			
+			/**
+			 * On get info fault
+			 * */
+			public function onGetInfoFault(event:WPServiceEvent, token:Object=null):void {
+				log(Object(event.faultEvent).faultString + " " + event.faultCode);
+			}
+			
+			/**
+			 * On Create Post result
+			 * */
+			public function onCreatePostResult(event:WPServiceEvent):void {
+				var result:String = event.text as String;
+				var object:Object;
+				log(result);
+				log("Creating post result handler");
+				
+				var currentTime:int = getTimer();
+				var timeLabelValue:String = "Time: " + String(currentTime-time) + "ms";
+				
+				try {
+					object = JSON.parse(result);
+					timeLabelValue += ". Parse time: " + String(getTimer()- currentTime) + "ms";
+					log(ObjectUtil.toString(object));
+					
+					if (object && object.post) {
+						updatePostForm(object.post);
+					}
+				}
+				catch (e:Error) {
+					// Error #1132: Invalid JSON parse input.
+					log("ERROR:" + e.message);
+					log("ERROR:" + e.message);
+					return;
+				}
+				
+				timeLabel.text = timeLabelValue;
+				
+				service.removeEventListener(WPServiceEvent.RESULT, onCreatePostResult);
+				service.removeEventListener(WPServiceEvent.FAULT, onCreatePostFault);
+				
+				//resultTextArea.text = "User: "+event.result,"User info result";
+			}
+			
+			/**
+			 * On Create post fault
+			 * */
+			public function onCreatePostFault(event:WPServiceEvent, token:Object=null):void {
+				log(Object(event.faultEvent).faultString + " " + event.faultCode);
+				service.removeEventListener(WPServiceEvent.RESULT, onCreatePostResult);
+				service.removeEventListener(WPServiceEvent.FAULT, onCreatePostFault);
+			}
+			
+			/**
+			 * On get attachments
+			 * */
+			public function onGetAttachmentsHandler(event:WPServiceEvent):void {
+				log(service.results);
+				service.removeEventListener(WPServiceEvent.RESULT, onGetAttachmentsHandler);
+				service.removeEventListener(WPServiceEvent.FAULT, onGetAttachmentsFaultHandler);
+				updateTimeMatrixField(null, true);
+				
+				if (service.data) {
+					attachmentsCollection.source = service.data as Array;
+				}
+				
+				attachmentsList.selectedIndex = -1;
+				
+			}
+			
+			/**
+			 * On get posts fault
+			 * */
+			public function onGetPostsFaultHandler(event:WPServiceEvent, token:Object=null):void {
+				log(Object(event.faultEvent).faultString + " "+ event.faultCode);
+			}
+			
+			
+			/**
+			 * On Get Posts Result
+			 * */
+			public function onGetPostsHandler(event:WPServiceEvent):void {
+				var result:String = event.text as String;
+				var object:Object;
+				log(result);
+				
+				var currentTime:int = getTimer();
+				var timeLabelValue:String = "Time: " + String(currentTime-time) + "ms";
+				
+				try {
+					object = JSON.parse(result);
+					timeLabelValue += ". Parse time: " + String(getTimer()- currentTime) + "ms";
+					log(ObjectUtil.toString(object));
+				}
+				catch (e:Error) {
+					// Error #1132: Invalid JSON parse input.
+					log("ERROR:" + e.message);
+					log(e.message + "\n" + result);
+					//return;
+				}
+				
+				timeLabel.text = timeLabelValue;
+				
+				if (object && object is Object && object.posts) {
+					postsCollection.source = object.posts;
+					postsCountLabel.text = "" + object.count + " of " + object.count_total;
+					postsCountLabel.text += ". Pages: " + object.pages;
+				}
+				
+				postsList.selectedIndex = -1;
+				
+				//resultTextArea.text = "User: "+event.result,"User info result";
+			}
+			
+			/**
+			 * On get attachments fault
+			 * */
+			public function onGetAttachmentsFaultHandler(event:WPServiceEvent, token:Object=null):void {
+				log(Object(event.faultEvent).faultString + " " + event.faultCode);
+				service.removeEventListener(WPServiceEvent.RESULT, onGetAttachmentsHandler);
+				service.removeEventListener(WPServiceEvent.FAULT, onGetAttachmentsFaultHandler);
+			}
+			
+			/**
+			 * On Update fault
+			 * */
+			public function onUpdateFaultHandler (event:WPServiceEvent, token:Object=null):void {
+				log(Object(event.faultEvent).faultString + " " + event.faultCode);
+				service.removeEventListener(WPServiceEvent.RESULT, onUpdateResultHandler);
+				service.removeEventListener(WPServiceEvent.FAULT, onUpdateFaultHandler);
+			}
+			
+			/**
+			 * Posts list change handler
+			 * */
+			protected function postsList_changeHandler(event:IndexChangeEvent):void {
+				var item:Object = postsList.selectedItem;
+				log(ObjectUtil.toString(item));
+				updatePostForm(item);
+			}
+			
+			/**
+			 * Update form with post item
+			 * */
+			protected function updatePostForm(item:Object):void {
+				// log("Update form with selected post");
+				
+				if (item) {
+					authorLabel.text = item.author.name;
+					titleInput.text = item.title;
+					contentTextArea.text = item.content;
+					typeLabel.text = item.type;
+					dateLabel.text = item.date;
+					modifiedDateLabel.text = item.modified;
+					//statusLabel.text = item.status;
+					urlLabel.text = item.url;
+					//commentCountLabel.text = item.comment_count;
+					idLabel.text = item.id;
+					slugLabel.text = item.slug;
+					
+					attachmentsCollection.source = item.attachments;
+					categoriesCollection.source = item.categories;
+					commentsCollection.source = item.comments;
+					tagsCollection.source = item.tags;
+					
+					statusDropdownList.selectedItem = item.status;
+					attachmentPreview.source = null;
+					
+					var fields:Array = [];
+					
+					for (var property:String in item.custom_fields) {
+						fields.push({label:property,data:item.custom_fields[property]});
+					}
+					
+					customFieldsCollection.source = fields;
+				}
+				
+				attachmentsList.selectedIndex = -1;
+				categoriesList.selectedIndex = -1;
+				commentsList.selectedIndex = -1;
+				customFieldsList.selectedIndex = -1;
+				tagsList.selectedIndex = -1;
+			}
+			
+			/**
+			 * Attachment change handler
+			 * */
+			protected function attachmentsList_changeHandler(event:IndexChangeEvent):void {
+				var item:Object = attachmentsList.selectedItem;
+				var mimeType:String;
+				log(ObjectUtil.toString(item));
+				
+				if (item) {
+					mimeType = item.mime_type;
+					
+					if (mimeType=="image/png" || 
+						mimeType=="image/jpg"  ||
+						mimeType=="image/jpeg") {
+						attachmentPreview.source = item.url;
+					}
+				}
+			}
+			
+			/**
+			 * Categories list change handler
+			 * */
+			protected function categoriesList_changeHandler(event:IndexChangeEvent):void {
+				var item:Object = categoriesList.selectedItem;
+				log(ObjectUtil.toString(item));
+			}
+			
+			/**
+			 * Tags list change handler
+			 * */
+			protected function tagsList_changeHandler(event:IndexChangeEvent):void {
+				var item:Object = tagsList.selectedItem;
+				log(ObjectUtil.toString(item));
+			}
+			
+			/**
+			 * Custom fields list change handler
+			 * */
+			protected function customFieldsList_changeHandler(event:IndexChangeEvent):void {
+				var item:Object = customFieldsList.selectedItem;
+				log(ObjectUtil.toString(item));
+			}
+			
+			/**
+			 * File upload progress
+			 * */
+			protected function onUploadProgress(event:ProgressEvent):void {
+				log("Upload progress");
+			}
+			
+			/**
+			 * File upload complete
+			 * */
+			protected function onUploadComplete(event:DataEvent):void {
+				log("Upload complete");
+				var item:Object = event.text;
+				log(ObjectUtil.toString(item));
+			}
+			
+			/**
+			 * File upload error
+			 * */
+			protected function onUploadFileError(event:IOErrorEvent):void {
+				log("Upload file error");
+				
+			}
+			
+			/**
+			 * File selected
+			 * */
+			protected function fileSelected(event:Event):void {
+				var byteArray:ByteArray = fileToUpload.data;
+				
+				fileToUpload.load();
+			}
+			
+			protected function applicationCompleteHandler(event:FlexEvent):void {
+				// create WPService
+				
+				service = new WPService();
+				service.host = domainInput.text;
+				service.site = siteInput.text;
+				service.permalinkPath = permalinkPathInput.text;
+				service.addEventListener(WPServiceEvent.RESULT, onWPServiceResult, false, 0, true);
+				service.addEventListener(WPServiceEvent.FAULT, onWPServiceFault, false, 0, true);
+				
+				service.getLoggedInUser();
+				
+				// example of a text file
+				testTextFileByteArray = new ByteArray();
+				testTextFileByteArray.writeUTFBytes("This is a test text file");
+				testTextFileByteArray.position = 0;
+				
+				// example of a bitmap image
+				testBitmap = new BitmapData(1000, 1000, false, 0x000000);
+				testBitmap.perlinNoise(100, 80, 6, Math.floor(Math.random() * 10), false, true, 1);
+				/*
+				var j_encoder:JPEGEncoder = new JPEGEncoder(90);
+				testBitmapJPEGByteArray = j_encoder.encode(testBitmap);
+				*/
+				multipartURLLoader = new MultipartURLLoader();
+				
+				//ExternalInterface.call("Radiate.getInstance");
+				ExternalInterface.call("Radiate.instance.setFlashInstance", ExternalInterface.objectID);
+				ExternalInterface.addCallback("notLoggedIn", notLoggedIn);
+				ExternalInterface.addCallback("notOnServer", notOnServer);
+			}
+			
+			/**
+			 * Not logged in
+			 * */
+			public function notLoggedIn():void {
+				log("Not logged in. To save your work on the server you must register and then login.");
+			}
+			
+			/**
+			 * Not on same server
+			 * */
+			public function notOnServer():void {
+				log("Not running on the same server. This must be run on the same server.");
+			}
+			/**
+			 * 
+			 * */
+			protected function onWPServiceResult(event:WPServiceEvent):void {
+				
+				if (event.data) {
+					log(ObjectUtil.toString(event.data));
+				}
+				else {
+					log(event.text);
+				}
+				
+				if (service.call==WPServiceEvent.IS_USER_LOGGED_IN ||
+					service.call==WPServiceEvent.GET_LOGGED_IN_USER ||
+					service.call==WPServiceEvent.LOGIN_USER ||
+					service.call==WPServiceEvent.LOGOUT_USER) {
+					
+					if (event.data) {
+						userIcon.source = event.data.avatar;
+						userNameLabel.text = event.data.displayName;
+						
+					}
+				
+					if (service.updateSitePathOnLogin) {
+						siteInput.text = service.site;
+					}
+					
+				}
+				
+				updateTimeMatrixField(service.call, true);
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function onWPServiceFault(event:WPServiceEvent):void {
+				log(event.faultCode);
+				
+				updateTimeMatrixField(service.call, true);
+			}
+			/*
+			protected function onGetLoggedInHandler(event:WPServiceEvent):void {
+				
+			}
+			
+			protected function onGetLoggedInFaultHandler(event:WPServiceEvent):void {
+				
+			}*/
+			
+			protected function postsURLInput_changeHandler(event:TextOperationEvent):void {
+				host = domainInput.text;
+				service.host = host;
+			}
+			
+			protected function destinationURL_enterHandler(event:FlexEvent):void {
+				submitURL();
+			}
+			
+			protected function permalinkCheckbox_changeHandler(event:Event):void {
+				service.usePermalinks = permalinkCheckbox.selected;
+			}
+			
+			protected function permalinkPathInput_changeHandler(event:TextOperationEvent):void {
+				service.permalinkPath = permalinkPathInput.text;
+			}
+			
+			protected function siteInput_changeHandler(event:TextOperationEvent):void {
+				service.site = siteInput.text;
+			}
+			
+			public function log(value:String = ""):void {
+				resultsTextArea.text = value;
+			}
+			
+			protected function visitBlogLabel_clickHandler(event:MouseEvent):void {
+				var url:String = service.host + service.site;
+				navigateToURL(new URLRequest(url), "_blank");
+			}
+			
+			protected function redirectToUserSiteCheckbox_changeHandler(event:Event):void {
+				service.updateSitePathOnLogin = redirectToUserSiteCheckbox.selected;
+			}
+			
+		]]>
+	</fx:Script>
+
+	<fx:Declarations>
+		<!-- test user
+		http://www.radii8.com/blog
+		/xmlrpc.php
+		remote
+		iwtlVqJ251RTWha976Pa
+		-->
+		
+		
+		<!-- RPC Object -->
+		<ns:XMLRPCObject id="blogapi" 
+						 destination="{endpoint_txt.text}" 
+						 endpoint="{rooturl_txt.text}"/>
+		
+		
+		
+		<!-- JSON RPC Object -->
+		<s:HTTPService id="jsonAPI" />
+
+		<s:HTTPService id="jsonGetAttachmentsAPI" />
+		
+		<s:HTTPService id="jsonGenericAPI" />
+		
+		<s:ArrayCollection id="postsCollection" />
+		<s:ArrayCollection id="attachmentsCollection" />
+		<s:ArrayCollection id="commentsCollection" />
+		<s:ArrayCollection id="categoriesCollection" />
+		<s:ArrayCollection id="customFieldsCollection" />
+		<s:ArrayCollection id="tagsCollection" />
+		<s:ArrayCollection id="statusCollection">
+			<s:source>
+				<fx:String>draft</fx:String>
+				<fx:String>publish</fx:String>
+			</s:source>
+		</s:ArrayCollection>
+		
+		<!-- Validation -->
+		<mx:RegExpValidator id="regExpV" 
+							  expression="{urlregexp}" 
+							  flags="g"
+							  noMatchError="Please enter a valid URL" 
+							  property="text"
+							  source="{rooturl_txt}"/>
+		
+		<mx:RegExpValidator id="endpointregExpV" 
+							 expression="{endpointregexp}" 
+							 flags="g"
+							 noMatchError="Please enter a valid endpoint. It MUST start with a /"
+							 property="text" 
+							 source="{this.endpoint_txt}"/>
+
+		<fc:MiniInspector showDisplayObjectOutlines="true"/>
+	</fx:Declarations>
+	
+	
+	<!-- User Interface -  XMLRPC example-->
+	<mx:Panel width="380" left="0" top="20" visible="false">
+		<mx:Form x="0" y="0" width="350" >
+			<mx:FormHeading label="Blog Login" textAlign="left" />
+			<mx:FormItem label="Root URL">
+				<mx:TextInput id="rooturl_txt" text="http://www.radii8.com/blog"/>
+			</mx:FormItem>
+			<mx:FormItem label="Xmlrpc endpoint">
+				<mx:TextInput id="endpoint_txt" text="/xmlrpc.php"/>
+			</mx:FormItem>
+			<mx:FormItem label="Call">
+				<mx:TextInput id="call_txt" text="wp.getProfile"/>
+			</mx:FormItem>
+			<mx:FormItem label="Username">
+				<mx:TextInput id="user_txt" text="remote"/>
+			</mx:FormItem>
+			<mx:FormItem label="Password">
+				<mx:TextInput id="password_txt" displayAsPassword="true" text="H8C53JKaD0LDhEIp"/>
+			</mx:FormItem>
+			<mx:FormItem>
+				<mx:Button id="send_btn" label="Send" click="login();"/>
+				<mx:Button id="send_btn2" label="Send without Login" click="login(false);"/>
+			</mx:FormItem>
+		</mx:Form>
+	</mx:Panel>
+
+	<!-- User Interface -->
+	<s:VGroup id="containerVGRoup" left="20" top="70" width="100%" bottom="60" right="20">
+		<s:HGroup gap="16" width="100%" height="100%">
+					
+			<!-- POSTS -->
+			<mx:Panel left="20" top="40" height="{containerVGRoup.height}" verticalScrollPolicy="on">
+				<mx:Form x="0" y="0" width="350" height="100%">
+					
+					<mx:FormHeading label="REGISTER" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="newUsernameInput"
+									 text=""
+									 prompt="Username" 
+									 width="100%"/>
+						<s:TextInput id="emailInput"
+									 text=""
+									 prompt="EMail" 
+									 width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="registerButton" label="Register" click="registerUser();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="REGISTER SITE" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="newSiteUsernameInput"
+									 text=""
+									 prompt="Username" 
+									 width="100%"/>
+						<s:TextInput id="newSiteEmailInput"
+									 text=""
+									 prompt="EMail" 
+									 width="100%"/>
+						<s:TextInput id="newSiteNameInput"
+									 text=""
+									 prompt="Site name" 
+									 width="100%"/>
+						<s:TextInput id="newSiteTitleInput"
+									 text=""
+									 prompt="Site Title" 
+									 width="100%"/>
+						<s:CheckBox id="newSiteIsPublicCheckbox"
+									label="Is Public"
+									width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:HGroup>
+							<s:Button id="registerUserAndSiteButton" label="Register User and Site" click="registerUserAndSite();"/>
+							<s:Button id="registerSiteButton" label="Register Site" click="registerSite();"/>
+						</s:HGroup>
+						<s:TileGroup >
+							<s:Button id="isMultiSiteButton" label="Is Multi Site" click="isMultiSite();"/>
+							<s:Button id="isMainSiteButton" label="Is Main Site" click="isMainSite();"/>
+							<s:Button id="getCurrrentSiteButton" label="Get Current Site" click="getCurrentSite()"/>
+							<s:Button id="isSubDomainInstallButton" label="Is Sub Domain Install" click="isSubDomainInstalled()"/>
+						</s:TileGroup>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="LOGIN" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="usernameInput"
+									 text="remote"
+									 prompt="Username" 
+									 width="100%"/>
+						<s:TextInput id="passwordInput"
+									 text="iwtlVqJ251RTWha976Pa"
+									 displayAsPassword="true" 
+									 prompt="Password" 
+									 width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="loginButton" label="Login" click="loginUser();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="LOGOUT" textAlign="left"/>
+					<mx:FormItem>
+						<s:Button id="logoutButton" label="Logout" click="logoutUser();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="LOST PASSWORD" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="lostPasswordInput"
+									 text=""
+									 prompt="Username or email" 
+									 width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="lostPasswordButton" label="Lost Password" click="lostPassword();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="RESET PASSWORD" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="resetUsernameInput"
+									 text=""
+									 prompt="Username" 
+									 width="100%"/>
+						<s:TextInput id="keyInput"
+									 text=""
+									 prompt="Key" 
+									 width="100%"/>
+						<s:TextInput id="password1Input"
+									 text=""
+									 displayAsPassword="true"
+									 prompt="Password" 
+									 width="100%"/>
+						<s:TextInput id="password2Input"
+									 text=""
+									 displayAsPassword="true"
+									 prompt="Confirm password" 
+									 width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="resetPasswordButton" label="Reset Password" click="resetPassword();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="GET LOGGED IN USER" textAlign="left"/>
+					<mx:FormItem>
+						<s:Button id="getLoggedInUserButton" label="Get Logged In User" click="getLoggedInUser();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="IS USER LOGGED IN" textAlign="left"/>
+					<mx:FormItem>
+						<s:Button id="isUserLoggedInButton" label="Is User Logged In" click="isUserLoggedIn();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="GET INFO" textAlign="left"/>
+					<mx:FormItem>
+						<s:Button id="getInfoButton" label="Get Info" click="getAPIInfo();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="GET CATEGORIES" textAlign="left"/>
+					<mx:FormItem>
+						<s:Button id="getCategoriesButton" label="Get Categories" click="getCategories()"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="GET CATEGORY" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="getCategoryInput" text="" prompt="Name" width="100%"/>
+						<s:TextInput id="getCategoryParentInput" text="0" prompt="Parent" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="getCategoryButton" label="Get Category" click="getCategory();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="CREATE CATEGORY" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="createCategoryInput" text="" prompt="Name" width="100%"/>
+						<s:TextInput id="createCategoryParentInput" text="0" prompt="Parent" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="createCategoryButton" label="Create Category" click="createCategory();"/>
+					</mx:FormItem>
+					
+					<s:Group width="100%">
+						<controls:HorizontalLine />
+					</s:Group>
+					
+					
+					<mx:FormHeading label="GET PROJECTS" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="getProjectsQueryInput" text="?json=projects/get_projects&amp;status=any" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="getProjectsButton" label="Get Projects" click="getProjects();"/>
+					</mx:FormItem>
+					
+					
+					<mx:FormHeading label="SEARCH" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="searchQueryInput" text="?json=get_search_results&amp;search=" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="getSearchButton" label="Search" click="searchPosts();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="CREATE POST API" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="query2_txt" text="?json=create_post" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="createPostButton" label="Create Post" click="createPost();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="GET ATTACHMENTS" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="attachmentsQueryInput" text="?json=attachments/get_attachments&amp;parent=0" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="getAttachmentsButton" label="Get Attachments" click="getAttachments();"/>
+					</mx:FormItem>
+				
+					<mx:FormHeading label="GET POST" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="query_txt" text="?json=get_post&amp;id=212" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="getPostButton" label="Get Post" click="getPost();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="GET POSTS" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="postsQueryInput" text="?json=get_posts&amp;count=6" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="getPostsButton" label="Get Posts" click="getPosts();"/>
+					</mx:FormItem>
+					
+					
+					<mx:FormHeading label="GET POSTS BY AUTHOR" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="postsByAuthorQueryInput" text="?json=get_author_posts&amp;id=1" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="getPostsByAuthorButton" label="Get Posts By User" click="getPostsByUser();"/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="GET POSTS BY CURRENT AUTHOR" textAlign="left"/>
+					<mx:FormItem label="" width="100%">
+						<s:TextInput id="postsByCurrentAuthorQueryInput" text="?json=get_current_author" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="getPostsByCurrentAuthorButton" label="Get Posts by Current Author" click="getPostsByCurrentAuthor();"/>
+					</mx:FormItem>
+				</mx:Form>
+			</mx:Panel>
+			
+			
+		
+			<mx:Panel height="100%" width="100%" layout="vertical" 
+					  paddingLeft="10" paddingTop="10" paddingBottom="10" paddingRight="10">
+				
+				<mx:Form width="100%" height="100%">
+				
+					<mx:FormHeading label="RESPONSE" textAlign="left"/>
+					<mx:FormItem label="" width="100%" height="100%">
+						<s:TextArea id="resultsTextArea" 
+							prompt="Response data" 
+							width="100%" 
+							height="100%"/>
+						<s:HGroup width="100%">
+							<s:Label id="timeLabel"/>
+							<s:Spacer width="100%"/>
+							<s:Button label="Clear" click="log('')"/>
+						</s:HGroup>
+					</mx:FormItem>
+						
+					<mx:FormHeading label="POSTS" textAlign="left"/>
+					<mx:FormItem label="" width="100%" height="50%">
+						<s:List id="postsList" width="100%" height="160" 
+								dataProvider="{postsCollection}" 
+								labelField="title"
+								change="postsList_changeHandler(event)"/>
+						<s:Label id="postsCountLabel" />
+					</mx:FormItem>
+				</mx:Form>
+				
+			
+			</mx:Panel>
+					
+			<mx:Panel height="100%" layout="horizontal" width="100%">
+				<mx:Form x="0" y="0" width="100%" height="100%">
+					<mx:FormHeading label="POST" textAlign="left"/>
+					<mx:FormItem label="Title" width="100%">
+						<s:TextInput id="titleInput" text="" width="100%"/>
+					</mx:FormItem>
+					<mx:FormItem label="Content" width="100%">
+						<s:TextArea id="contentTextArea" text="" width="100%" heightInLines="5"/>
+					</mx:FormItem>
+					<mx:FormItem label="Status" width="100%">
+						<s:DropDownList id="statusDropdownList" 
+										dataProvider="{statusCollection}"/>
+					</mx:FormItem>
+					<mx:FormItem label="Author" width="100%">
+						<s:Label id="authorLabel" />
+					</mx:FormItem>
+					<mx:FormItem label="ID" width="100%">
+						<s:Label id="idLabel" />
+					</mx:FormItem>
+					<mx:FormItem label="Type" width="100%">
+						<s:Label id="typeLabel" />
+					</mx:FormItem>
+					<mx:FormItem label="URL" width="100%">
+						<s:Label id="urlLabel" />
+					</mx:FormItem>
+					<mx:FormItem label="Date" width="100%">
+						<s:Label id="dateLabel" />
+					</mx:FormItem>
+					<mx:FormItem label="Modified" width="100%">
+						<s:Label id="modifiedDateLabel" />
+					</mx:FormItem>
+					<!--<mx:FormItem label="Comment Count" width="100%">
+						<s:Label id="commentCountLabel" />
+					</mx:FormItem>-->
+					<mx:FormItem label="Slug" width="100%">
+						<s:Label id="slugLabel" />
+					</mx:FormItem>
+					<mx:FormItem label="Token" width="100%">
+						<s:Label id="updateTokenLabel" />
+					</mx:FormItem>
+					<mx:FormItem>
+						<s:Button id="updateButton" label="Update" click="updatePost();"/>
+						<s:Button id="addMediaButton" label="Add Media" click="selectFileToUpload();"/>
+						<s:HGroup>
+							<s:Button id="uploadAttachmentButton" label="Upload" click="uploadAttachment()"/>
+							<s:CheckBox id="asyncCheckbox" label="Asynchronous" change="onAsyncChange(event)" />
+						</s:HGroup>
+					</mx:FormItem>
+				</mx:Form>
+				
+				<mx:Form x="0" y="0" width="100%">
+					<mx:FormHeading label=" " textAlign="left"/>
+					<mx:FormHeading label="Categories" width="100%"/>
+					<mx:FormItem label="" width="100%">
+						<s:List id="categoriesList" 
+								height="46"
+								dataProvider="{categoriesCollection}"
+								minWidth="100"
+								width="100%"
+								labelField="title"
+								change="categoriesList_changeHandler(event)"
+								/>
+					</mx:FormItem>
+					<mx:FormHeading label="Tags" width="100%"/>
+					<mx:FormItem label="" width="100%">
+						<s:List id="tagsList" 
+								width="100%"
+								minWidth="100"
+								height="44"
+								dataProvider="{tagsCollection}"
+								labelField="title"
+								change="tagsList_changeHandler(event)"
+								/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="Custom" width="100%"/>
+					<mx:FormItem label="" width="100%">
+						<s:List id="customFieldsList" 
+								width="100%"
+								minWidth="100"
+								height="44"
+								dataProvider="{customFieldsCollection}"
+								change="customFieldsList_changeHandler(event)"
+								/>
+					</mx:FormItem>
+					
+					<mx:FormHeading label="Comments" width="100%"/>
+					<mx:FormItem label="" width="100%">
+						<s:List id="commentsList" 
+								width="100%"
+								minWidth="100"
+								height="44"
+								dataProvider="{commentsCollection}"
+								labelField="content"
+								/>
+					</mx:FormItem>
+				
+					<mx:FormHeading label="Attachments" width="100%"/>
+					<mx:FormItem label="" width="100%">
+						<s:List id="attachmentsList" 
+								width="150"
+								minWidth="100"
+								height="80"
+								dataProvider="{attachmentsCollection}"
+								labelField="title"
+								change="attachmentsList_changeHandler(event)"
+								/>
+						<s:Image id="attachmentPreview"
+								 width="150"
+								 height="100"
+								 showErrorSkin="true"
+								 smooth="true"
+								 enableLoadingState="true"
+								 />
+					</mx:FormItem>
+				
+				</mx:Form>
+			</mx:Panel>
+			
+		</s:HGroup>
+	</s:VGroup>
+	
+	<s:HGroup top="10" left="20" 
+			  right="20" 
+			  width="100%" verticalAlign="middle">
+		<s:Label text="Host URL:"/>
+		<s:TextInput id="domainInput" 
+					 text="http://www.radii8.com" 
+					 prompt="http://www.domain.com"
+					 minWidth="220" 
+					 change="postsURLInput_changeHandler(event)"/>
+		<s:TextInput id="siteInput" 
+					 text="/r8m/" 
+					 minWidth="10" 
+					 prompt="/blog/"
+					 change="siteInput_changeHandler(event)"
+					 />
+		<s:TextInput id="permalinkPathInput" 
+					 text="api/"
+					 prompt="api/"
+					 minWidth="10" 
+					 enabled="{permalinkCheckbox.selected}"
+					 change="permalinkPathInput_changeHandler(event)"/>
+		<s:CheckBox id="permalinkCheckbox" label="Permalink"
+					 change="permalinkCheckbox_changeHandler(event)"/>
+		<s:CheckBox id="redirectToUserSiteCheckbox" label="Redirect After Login"
+					 change="redirectToUserSiteCheckbox_changeHandler(event)"/>
+		<controls:Link id="visitBlogLabel4" text="Visit blog" click="visitBlogLabel_clickHandler(event)"/>
+		<s:Spacer width="100%"/>
+		<s:Label id="userNameLabel" />
+		<s:Image id="userIcon" width="24" height="24"/>
+	</s:HGroup>
+	
+	<s:HGroup top="40" left="20" 
+			  right="20" 
+			  width="100%" verticalAlign="middle">
+		<s:Label text="URL:"/>
+		<s:TextInput id="destinationURL" 
+					 prompt="Submitted URL" 
+					 width="100%"
+					 enter="submitURL();"
+					 />
+		
+		<s:Button id="submitURLButton" label="Submit" click="submitURL();"/>
+	</s:HGroup>
+	
+	
+
+</s:Application>

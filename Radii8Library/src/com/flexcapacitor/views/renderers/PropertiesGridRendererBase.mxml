@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:GridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					xmlns:s="library://ns.adobe.com/flex/spark" 
+					xmlns:mx="library://ns.adobe.com/flex/mx"
+					
+					clipAndEnableScrolling="true">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.components.ColorChooser;
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.model.AccessorMetaData;
+			import com.flexcapacitor.model.MetaData;
+			import com.flexcapacitor.model.StyleMetaData;
+			
+			import mx.collections.ArrayCollection;
+			
+			import spark.components.Button;
+			import spark.components.ComboBox;
+			import spark.components.DropDownList;
+			import spark.components.NumericStepper;
+			import spark.components.RadioButton;
+			import spark.components.RadioButtonGroup;
+			import spark.components.TextArea;
+			import spark.components.supportClasses.DropDownListBase;
+
+			
+			/**
+			 * Group radio buttons, usually boolean true and false values, are part of. 
+			 * */
+			public var booleanGroup:RadioButtonGroup;
+			
+			/**
+			 * Boolean true radio button value
+			 * */
+			public var booleanEnabledRadioButton:RadioButton;
+			
+			/**
+			 * Boolean false radio button value
+			 * */
+			public var booleanDisabledRadioButton:RadioButton;
+			
+			/**
+			 * Color chooser component
+			 * */
+			public var colorChooser:ColorChooser;
+			
+			/**
+			 * Numeric stepper value 
+			 * */
+			public var numericStepper:NumericStepper;
+			
+			/**
+			 * Combobox of choices
+			 * */
+			public var formatCombobox:ComboBox;
+			
+			/**
+			 * Drop down list of choices
+			 * */
+			public var formatDropDownList:DropDownList;
+			
+			/**
+			 * Text area for text values
+			 * */
+			public var targetValueText:TextArea;
+			
+			/**
+			 * Flag indicating if setting properties
+			 * */
+			public var settingProperties:Boolean;
+			
+			/**
+			 * Clear style button
+			 * */
+			public var clearStyleButton:Button;
+			
+			/**
+			 * Label field of combobox, drop down list or list
+			 * */
+			public var labelField:String;
+			
+			/**
+			 * Label function of combobox, drop down list or list
+			 * */
+			public var labelFunction:Function;
+			
+			
+			[Bindable]
+			public var labelWidth:int = 80;
+			
+			/**
+			 * Option to show clear button if style
+			 * */
+			public var showClearButton:Boolean = true;
+			
+			/**
+			 * If true the value to apply to the target is a field of the selected item
+			 * */
+			public var valueIsField:Boolean;
+			
+			/**
+			 * If true then the selected item is selected by the value of the target
+			 * */
+			public var fieldIsValue:Boolean;
+			
+			/**
+			 * Collection of choices for combobox, drop down list or list
+			 * */
+			[Bindable]
+			public var formatsCollection:ArrayCollection;
+
+			/**
+			 * Set data
+			 * */
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				if (data is AccessorMetaData) {
+					updateSubComponentsValue();
+				}
+				else if (data is StyleMetaData) {
+					updateSubComponentsValue();
+				}
+				else if (data is XML) {
+					updateSubComponentsValueXML();
+				}
+			}
+			
+			
+			/**
+			 * Set the property to the new value
+			 * */
+			public function setTargetValue(clearStyle:Boolean = false):void {
+				var item:XML = data as XML;
+				var target:Object = Radiate.getInstance().target; // does not support multiple targets yet
+				var actualValue:*;
+				var isStyle:int;
+				var styleIsColor:Boolean;
+				var valueSuccessfullyApplied:Boolean;
+				var propertyObject:MetaData;
+				var type:String;
+				var enumeration:Array;
+				var format:String;
+				var inherit:Boolean;
+				var property:String;
+				var value:String;
+				var nodename:String;
+				var access:String;
+				var textValue:String;
+				
+				if (item) {
+					nodename = item.name();
+					
+					if (nodename=="metadata") {
+						isStyle = 1;
+						propertyObject = new StyleMetaData(item, target);
+					}
+					else if (nodename=="accessor") {
+						propertyObject = new AccessorMetaData(item, target);
+					}
+					else {
+						propertyObject = new MetaData(item, target);
+					}
+					
+					
+				}
+				else if (data) {
+					propertyObject = data as MetaData;
+				}
+				
+				if (propertyObject is AccessorMetaData) {
+					access = AccessorMetaData(propertyObject).access;
+				}
+				else if (propertyObject is StyleMetaData) {
+					isStyle = 1;
+				}
+				
+				// since we try to capture values for history 
+				// ReferenceError: Error #1077: Illegal read of write-only property cacheHeuristic on application.
+				if (access=="writeonly") {
+					return;
+				}
+		
+				
+				// property or style was not found
+				if (!propertyObject) {
+					return;
+				}
+				
+				value = String(propertyObject.value);
+				textValue = propertyObject.textValue;
+				property = propertyObject.name;
+				type = propertyObject.type;
+				format = propertyObject.format;
+				enumeration = propertyObject.enumeration;
+				
+				/*
+				var type:Type = Type.forInstance(target);
+				var metadataItems:Array = type.metadata;
+				var b:Array = type.getMetadata("Style");
+				var metadata:Metadata = Metadata(metadataItems[0]);
+				var hasFormat:Boolean = metadata.hasArgumentWithKey("type");
+				var o:MetadataArgument = metadata.getArgument("type");
+				var xc:XML = MetadataUtils.getFromObject(target);*/
+				
+			
+				// dynamic way to set property or style in data grid
+				if (type=="Boolean" && booleanGroup) {
+					if (isStyle) {
+						actualValue = booleanGroup.selection==null ? undefined : booleanGroup.selection==booleanEnabledRadioButton;
+					}
+					else {
+						actualValue = booleanGroup.selection==booleanEnabledRadioButton;
+					}
+				}
+				// let SetAction convert 0xFF, #ff and red, ReD
+				else if (format=="Color") {
+					actualValue = colorChooser.selectedColor;
+				}
+				else if (type=="Number") {
+					actualValue = numericStepper.value;
+					
+					if (property.indexOf("lpha")!=-1) {//round down to two places
+						actualValue = int(actualValue*100)/100;
+					}
+				}
+				else if (type=="String" && enumeration && enumeration.length>0) {
+					
+					if (formatDropDownList) {
+						if (valueIsField && labelField) {
+							actualValue = formatDropDownList.selectedItem[labelField];
+						}
+						else {
+							actualValue = formatDropDownList.selectedItem;
+						}
+					}
+					else if (formatCombobox) {
+						if (valueIsField && labelField) {
+							actualValue = formatCombobox.selectedItem[labelField];
+						}
+						else {
+							actualValue = formatCombobox.selectedItem;
+						}
+					}
+				}
+				else {
+					actualValue = Radiate.getTypedValue(targetValueText.text, type);
+				}
+				
+				// do not auto update if setting properties
+				settingProperties = true;
+				
+				if (isStyle) {
+					if (clearStyle) {
+						valueSuccessfullyApplied = Radiate.clearStyle(target, property);
+					}
+					else {
+						valueSuccessfullyApplied = Radiate.setStyle(target, property, actualValue);
+					}
+				}
+				else {
+					valueSuccessfullyApplied = Radiate.setProperty(target, property, actualValue);
+				}
+				
+				settingProperties = false;
+			}
+			
+			/**
+			 * Get the value from the datagrid and 
+			 * show the correct sub component and
+			 * set it's value.
+			 * Depricated. Use non-XML data objects
+			 * */
+			public function updateSubComponentsValueXML():void {
+				var item:XML = data as XML;
+				var target:Object = Radiate.getInstance().target;
+				var actualValue:*;
+				var isStyle:Boolean;
+				var type:String;
+				var enumeration:Array;
+				var format:String;
+				var propertyObject:MetaData;
+				var property:String;
+				var value:String;
+				var nodename:String;
+				
+				if (!target) return;
+				
+				if (settingProperties) return;
+				
+				if (item) {
+					nodename = item.name();
+					
+					if (nodename=="metadata") {
+						isStyle = true;
+						propertyObject = new StyleMetaData(item, target);
+					}
+					else if (nodename=="accessor") {
+						propertyObject = new AccessorMetaData(item, target);
+					}
+					else {
+						propertyObject = new MetaData(item, target);
+					}
+					
+					// property or style not found!
+					if (!propertyObject) {
+						return;
+					}
+					
+					value = String(propertyObject.value);
+					property = propertyObject.name;
+					type = propertyObject.type;
+					format = propertyObject.format;
+					enumeration = propertyObject.enumeration;
+					
+					
+					if (type=="Boolean") {
+						booleanEnabledRadioButton.selected = false;
+						booleanDisabledRadioButton.selected = false;
+						
+						if (value=="true") {
+							booleanEnabledRadioButton.selected = true;
+						}
+						else if (value=="false") {
+							booleanDisabledRadioButton.selected = true;
+						}
+						
+						clearStyleButton.visible = isStyle;
+					}
+					else if (format=="Color") {
+						colorChooser.selectedColor = value;
+						clearStyleButton.visible = isStyle;
+					}
+					else if (enumeration && enumeration.length>0) {
+						if (!formatsCollection) formatsCollection = new ArrayCollection();
+						formatsCollection.source = enumeration;
+						formatCombobox.selectedItem = propertyObject.value;
+						clearStyleButton.visible = isStyle;
+					}
+					else if (type=="Number") {
+						numericStepper.value = propertyObject.value;
+						
+						if (!isNaN(propertyObject.minValue)) {
+							numericStepper.minimum = propertyObject.minValue;
+						}
+						else {
+							numericStepper.minimum = Number(int.MIN_VALUE);
+						}
+						if (!isNaN(propertyObject.maxValue)) {
+							numericStepper.maximum = propertyObject.maxValue;
+						}
+						else {
+							numericStepper.maximum = Number(int.MAX_VALUE);
+						}
+						
+						if (property.indexOf("lpha")!=-1) {
+							numericStepper.stepSize = .1;
+							
+							if (isNaN(propertyObject.minValue)) {
+								numericStepper.minimum = 0;
+							}
+							if (isNaN(propertyObject.maxValue)) {
+								numericStepper.maximum = 1;
+							}
+						}
+						else {
+							numericStepper.stepSize = 1;
+						}
+						
+						clearStyleButton.visible = isStyle;
+					}
+					else {
+						actualValue = Radiate.getTypedValue(targetValueText.text, type);
+						targetValueText.text= propertyObject.value;
+						clearStyleButton.visible = isStyle;
+					}
+				
+					
+					Radiate.getInstance().dispatchPropertySelectedEvent(property, propertyObject);
+				}
+				
+			}
+			
+			/**
+			 * Get the value from the target and 
+			 * show the correct inspector with the correct target value.
+			 * */
+			public function updateSubComponentsValue():void {
+				var target:Object = Radiate.getInstance().target;
+				var propertyObject:MetaData = data as MetaData;
+				var isStyle:Boolean = propertyObject is StyleMetaData;
+				var actualValue:*;
+				var type:String;
+				var enumeration:Array;
+				var format:String;
+				var property:String;
+				var value:String;
+				var nodename:String;
+				
+				//if (!target) return;
+				
+				if (settingProperties) return;
+				
+				if (data) {
+					
+					value = String(propertyObject.value);
+					value = propertyObject.textValue;
+					property = propertyObject.name;
+					type = propertyObject.type;
+					format = propertyObject.format;
+					enumeration = propertyObject.enumeration;
+					
+					if (showClearButton && isStyle) { 
+						clearStyleButton.visible = isStyle;
+					}
+					else {
+						clearStyleButton.visible = false;
+					}
+						
+					if (type=="Boolean") {
+						booleanEnabledRadioButton.selected = false;
+						booleanDisabledRadioButton.selected = false;
+						
+						if (value=="true") {
+							booleanEnabledRadioButton.selected = true;
+						}
+						else if (value=="false") {
+							booleanDisabledRadioButton.selected = true;
+						}
+						
+					}
+					else if (format=="Color") {
+						colorChooser.selectedColor = value;
+					}
+					else if ((enumeration && enumeration.length>0) || formatCombobox || formatDropDownList) {
+						
+						var dropDownListBase:DropDownListBase = formatCombobox ? formatCombobox : formatDropDownList;
+						
+						if (!formatsCollection) formatsCollection = new ArrayCollection();
+						formatsCollection.source = enumeration;
+						
+						if (labelField) dropDownListBase.labelField = labelField;
+						
+						if (labelFunction!=null) dropDownListBase.labelFunction = labelFunction;
+						
+						
+						if (fieldIsValue && labelField) {
+							var length:int = enumeration.length;
+							//var value:Object = propertyObject.value;
+							
+							for (var i:int;i<length;i++) {
+								var item:Object = enumeration[i];
+								if (value == item[labelField]) {
+									dropDownListBase.selectedItem = item;
+									break;
+								}
+							}
+							
+						}
+						else {
+							dropDownListBase.selectedItem = propertyObject.value;
+						}
+					}
+					else if (type=="Number") {
+						numericStepper.value = propertyObject.value;
+						
+						if (!isNaN(propertyObject.minValue)) {
+							numericStepper.minimum = propertyObject.minValue;
+						}
+						else {
+							numericStepper.minimum = Number(int.MIN_VALUE);
+						}
+						if (!isNaN(propertyObject.maxValue)) {
+							numericStepper.maximum = propertyObject.maxValue;
+						}
+						else {
+							numericStepper.maximum = Number(int.MAX_VALUE);
+						}
+						
+						if (property.indexOf("lpha")!=-1) {
+							numericStepper.stepSize = .1;
+							
+							if (isNaN(propertyObject.minValue)) {
+								numericStepper.minimum = 0;
+							}
+							if (isNaN(propertyObject.maxValue)) {
+								numericStepper.maximum = 1;
+							}
+						}
+						else {
+							numericStepper.stepSize = 1;
+						}
+						
+					}
+					else {
+						actualValue = Radiate.getTypedValue(targetValueText.text, type);
+						targetValueText.text = propertyObject.value;
+					}
+				
+					
+					Radiate.getInstance().dispatchPropertySelectedEvent(property, propertyObject);
+				}
+				
+			}
+		]]>
+	</fx:Script>
+	
+</s:GridItemRenderer>

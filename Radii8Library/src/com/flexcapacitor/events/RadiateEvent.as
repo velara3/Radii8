@@ -13,9 +13,79 @@ package com.flexcapacitor.events {
 	public class RadiateEvent extends Event {
 		
 		/**
+		 * Dispatched when an asset is removed
+		 * */
+		public static const ASSET_REMOVED:String = "assetRemoved";
+		
+		/**
+		 * Dispatched when an asset is added
+		 * */
+		public static const ASSET_ADDED:String = "assetAdded";
+		
+		/**
+		 * Dispatched when the login results are received
+		 * */
+		public static const LOGIN_RESULTS:String = "loginResults";
+		
+		/**
+		 * Dispatched when the logout results are received
+		 * */
+		public static const LOGOUT_RESULTS:String = "logoutResults";
+		
+		/**
+		 * Dispatched when the register results are received
+		 * */
+		public static const REGISTER_RESULTS:String = "registerResults";
+		
+		/**
+		 * Dispatched when the change password results are received
+		 * */
+		public static const CHANGE_PASSWORD_RESULTS:String = "changePasswordResults";
+		
+		/**
+		 * Dispatched when the lost password results are received
+		 * */
+		public static const LOST_PASSWORD_RESULTS:String = "lostPasswordResults";
+		
+		/**
 		 * Dispatched when the project is created
 		 * */
 		public static const PROJECT_CREATED:String = "projectCreated";
+		
+		/**
+		 * Dispatched when the project is deleted
+		 * */
+		public static const PROJECT_DELETED:String = "projectDeleted";
+		
+		/**
+		 * Dispatched when the project is added
+		 * */
+		public static const PROJECT_ADDED:String = "projectAdded";
+
+		/**
+		 * Dispatched when the project is removed
+		 * */
+		public static const PROJECT_REMOVED:String = "projectRemoved";
+
+		/**
+		 * Dispatched when the project is closing
+		 * */
+		public static const PROJECT_CLOSING:String = "projectClosing";
+
+		/**
+		 * Dispatched when the project is opened
+		 * */
+		public static const PROJECT_OPENED:String = "projectOpened";
+
+		/**
+		 * Dispatched when the project is closed
+		 * */
+		public static const PROJECT_CLOSED:String = "projectClosed";
+		
+		/**
+		 * Dispatched when the projects are set
+		 * */
+		public static const PROJECTS_SET:String = "projectsSet";
 		
 		/**
 		 * Dispatched when the project is changed
@@ -23,9 +93,64 @@ package com.flexcapacitor.events {
 		public static const PROJECT_CHANGE:String = "projectChange";
 		
 		/**
+		 * Dispatched when the project is saved
+		 * */
+		public static const PROJECT_SAVED:String = "projectSaved";
+		
+		/**
+		 * Dispatched when a list of projects are received
+		 * */
+		public static const PROJECTS_LIST_RECEIVED:String = "projectsListReceived";
+		
+		/**
+		 * Dispatched when the project name is changed
+		 * */
+		public static const PROJECT_RENAME:String = "projectRename";
+		
+		/**
+		 * Dispatched when the document name is changed
+		 * */
+		public static const DOCUMENT_RENAME:String = "documentRename";
+
+		/**
+		 * Dispatched when the document is removed
+		 * */
+		public static const DOCUMENT_REMOVED:String = "documentRemoved";
+		
+		/**
+		 * Dispatched when the document is deleted
+		 * */
+		public static const DOCUMENT_DELETED:String = "documentDeleted";
+		
+		/**
+		 * Dispatched when the document is added
+		 * */
+		public static const DOCUMENT_ADDED:String = "documentAdded";
+		
+		/**
+		 * Dispatched when the document save is complete
+		 * */
+		public static const DOCUMENT_SAVE_COMPLETE:String = "documentSaveComplete";
+		
+		/**
+		 * Dispatched when the document save is not complete
+		 * */
+		public static const DOCUMENT_SAVE_FAULT:String = "documentSaveFault";
+		
+		/**
+		 * Dispatched when the document save as is canceled
+		 * */
+		public static const DOCUMENT_SAVE_AS_CANCEL:String = "documentSaveAsCancel";
+		
+		/**
 		 * Dispatched when the document is changed
 		 * */
 		public static const DOCUMENT_CHANGE:String = "documentChange";
+		
+		/**
+		 * Dispatched when the documents are set
+		 * */
+		public static const DOCUMENTS_SET:String = "documentsSet";
 		
 		/**
 		 * Dispatched when the document is opening
@@ -41,6 +166,21 @@ package com.flexcapacitor.events {
 		 * Dispatched when the canvas is changed
 		 * */
 		public static const CANVAS_CHANGE:String = "canvasChange";
+		
+		/**
+		 * Dispatched when attachments are received
+		 * */
+		public static const ATTACHMENTS_RECEIVED:String = "attachmentsReceived";
+		
+		/**
+		 * Dispatched when attachment is uploaded
+		 * */
+		public static const ATTACHMENT_UPLOADED:String = "attachmentUploaded";
+		
+		/**
+		 * Dispatched when logged in status is received
+		 * */
+		public static const LOGGED_IN_STATUS:String = "loggedInStatus";
 		
 		/**
 		 * Dispatched when the target is changed
@@ -88,9 +228,14 @@ package com.flexcapacitor.events {
 		public static const REMOVE_ITEM:String = "removeItem";
 		
 		/**
+		 * Dispatched when an object is selected
+		 * */
+		public static const OBJECT_SELECTED:String = "objectSelected";
+		
+		/**
 		 * Dispatched when a property on the target is changed
 		 * */
-		public static const PROPERTY_CHANGE:String = "propertyChange";
+		public static const PROPERTY_CHANGED:String = "propertyChanged";
 		
 		/**
 		 * Dispatched when a property edit is requested
@@ -132,7 +277,18 @@ package com.flexcapacitor.events {
 		 * */
 		public static const TOOLS_UPDATED:String = "toolsUpdated";
 		
+		/**
+		 * Dispatched when print job is cancelled.
+		 * */
+		public static const PRINT_CANCELLED:String = "printCancelled";
 		
+		/**
+		 * Dispatched when print job is complete or sent to the printer.
+		 * */
+		public static const PRINT_COMPLETE:String = "printComplete";
+		
+		
+		public var data:Object;
 		public var selectedItem:Object;
 		public var property:String;
 		public var properties:Array;
@@ -153,9 +309,12 @@ package com.flexcapacitor.events {
 		public var isRollOver:Boolean;
 		public var scaleX:Number;
 		public var scaleY:Number;
+		public var status:String;
+		public var successful:Boolean;
+		public var faultEvent:Event;
 		
 		/**
-		 * Constructor.
+		 * Constructor. This is not up to date.
 		 * */
 		public function RadiateEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, 
 									 target:Object=null, changes:Array=null, properties:Array=null, 
@@ -168,8 +327,13 @@ package com.flexcapacitor.events {
 			this.value = value;
 			this.multipleSelection = multipleSelection;
 			this.tool = tool;
+			
+			// not kept up
 		}
 		
+		/**
+		 * This is not up to date.
+		 * */
 		override public function clone():Event {
 			throw new Error("do this");
 			return new RadiateEvent(type, bubbles, cancelable, selectedItem, changes, properties, value, multipleSelection, tool);

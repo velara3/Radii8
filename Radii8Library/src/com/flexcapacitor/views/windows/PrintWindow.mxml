@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow  xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:handlers="com.flexcapacitor.handlers.*" 
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:views="com.flexcapacitor.views.*"
+			   xmlns:c="com.flexcapacitor.views.*"
+			   
+			   title="Print"
+			   creationComplete="panel1_creationCompleteHandler(event)" xmlns:windows="com.flexcapacitor.views.windows.*"
+			   >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			
+			import mx.events.FlexEvent;
+			import mx.printing.FlexPrintJobScaleType;
+			
+			public static const CURRENT_DOCUMENT:String = "currentDocument";
+			public static const CURRENT_SELECTION:String = "currentSelection";
+			
+			
+			protected function printButton_clickHandler(event:MouseEvent):void {
+				var scaleType:String = scaleTypeGroup.selectedValue as String;
+				var imageType:Boolean = imageTypeGroup.selectedValue ? true : false;
+				
+				if (printableObjectGroup.selectedValue==CURRENT_DOCUMENT) {
+					radiate.print(radiate.selectedDocument, scaleType, imageType);
+				}
+				else if (printableObjectGroup.selectedValue==CURRENT_SELECTION) {
+					radiate.print(radiate.target, scaleType, imageType);
+				}
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.PRINT_CANCELLED, printCanceledHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PRINT_COMPLETE, printCompleteHandler, false, 0, true);
+			}
+			
+			protected function printCanceledHandler(event:Event):void {
+				//trace("print cancelled");
+			}
+			
+			protected function printCompleteHandler(event:Event):void {
+				//trace("print complete");
+				closeWindow.play();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="click">
+			<s:SetAction property="action" target="{this}" value="cancel"/>
+			<fc:ClosePopUp id="closeWindow" popUp="{this}"  />
+		</handlers:EventHandler>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{printButton}" eventName="click">
+			<s:SetAction property="action" target="{this}" value="print"/>
+			<!--<fc:ClosePopUp popUp="{this}"  />-->
+		</handlers:EventHandler>
+		
+		<fx:String id="action"></fx:String>
+		
+		<s:RadioButtonGroup id="printableObjectGroup"  />
+		<s:RadioButtonGroup id="scaleTypeGroup"  />
+		<s:RadioButtonGroup id="imageTypeGroup"  />
+	</fx:Declarations>
+	
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20">
+		
+		
+		<s:Label text="Select area to print" fontSize="12" styleName="textInputStyles"/>
+		
+		<s:HGroup x="14" y="31" width="100%" horizontalAlign="right">
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="Document" 
+						   group="{printableObjectGroup}"
+						   value="{CURRENT_DOCUMENT}"
+						   selected="true"
+						   />
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="Selection" 
+						   group="{printableObjectGroup}"
+						   value="{CURRENT_SELECTION}"
+						   />
+			<s:Spacer width="100%"/>
+		</s:HGroup>
+		
+		<s:Spacer height="1"/>
+		
+		<s:Label text="Select how to scale the content" fontSize="12" styleName="textInputStyles"/>
+		
+		<s:HGroup x="14" y="31" width="100%" horizontalAlign="right">
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="Match width" 
+						   group="{scaleTypeGroup}"
+						   value="{FlexPrintJobScaleType.MATCH_WIDTH}"
+						   selected="true"
+						   toolTip="(Default) Scales the object to fill the available page width. If the resulting object height exceeds the page height, the output spans multiple pages."
+						   />
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="Match height" 
+						   group="{scaleTypeGroup}"
+						   value="{FlexPrintJobScaleType.MATCH_HEIGHT}"
+						   toolTip="Scales the object to fill the available page height. If the resulting object width exceeds the page width, the output spans multiple pages."
+						   />
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="Fill page" 
+						   group="{scaleTypeGroup}"
+						   value="{FlexPrintJobScaleType.FILL_PAGE}"
+						   toolTip="Scales the object to fill at least one page completely; that is, it selects the larger of the MATCH_WIDTH or MATCH_HEIGHT scale types."
+						   />
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="None" 
+						   group="{scaleTypeGroup}"
+						   value="{FlexPrintJobScaleType.NONE}"
+						   toolTip="Does not scale the output. The printed page has the same dimensions as the object on the screen. If the object height, width, or both dimensions exceed the page width or height, the output spans multiple pages."
+						   />
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="Show all" 
+						   group="{scaleTypeGroup}"
+						   value="{FlexPrintJobScaleType.SHOW_ALL}"
+						   toolTip="Scales the object to fit on a single page, filling one dimension; that is, it selects the smaller of the MATCH_WIDTH or MATCH_HEIGHT scale types."
+						   />
+			<s:Spacer width="100%"/>
+		</s:HGroup>
+		
+		<s:Spacer height="1"/>
+		
+		<s:Label text="Print as a bitmap" fontSize="12" styleName="textInputStyles"/>
+		
+		<s:HGroup x="14" y="31" width="100%" horizontalAlign="right">
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="Print in vector" 
+						   group="{imageTypeGroup}"
+						   value="false"
+						   selected="true"
+						   toolTip="(Default) Prints in vector format. Text is selectable. "
+						   />
+			<s:RadioButton x="190" 
+						   y="130" 
+						   label="Print as bitmap" 
+						   group="{imageTypeGroup}"
+						   value="true"
+						   toolTip="Prints in a rasterized format. Text is not selectable."
+						   />
+			<s:Spacer width="100%"/>
+		</s:HGroup>
+		
+		<s:Spacer height="2"/>
+		
+		
+		<s:Label id="warningLabel" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"
+				 includeInLayout="false"
+				 visible="false"
+				 width="100%"/>
+		
+		<s:Label text="Notes" 
+				 fontSize="12" 
+				 fontWeight="bold"
+				 styleName="textInputStyles" 
+				 width="90%"/>
+		
+		<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
+			
+			<s:Label text="{scaleTypeGroup.selection.toolTip}" 
+					 fontSize="12" 
+					 styleName="textInputStyles" 
+					 width="100%"/>
+			<s:Spacer width="10%"/>
+			<s:Button id="cancelButton" label="Cancel" />
+			<s:Button id="printButton" label="Print" click="printButton_clickHandler(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+</windows:AnimatedPanelWindow >

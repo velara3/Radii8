@@ -93,7 +93,7 @@
 					<status:ShowStatusMessage message="Snapshot captured"/>
 				</display:successEffect>
 				<display:errorEffect>
-					<status:ShowStatusMessage message="An error occurred. {rasterize.errorEvent.text}"/>
+					<status:ShowStatusMessage message="An error occurred. {rasterize.errorEvent}"/>
 				</display:errorEffect>
 			</display:Rasterize>
 			
@@ -123,7 +123,7 @@
 							 showDropShadow="true"
 							 popUpType="{ImagePreview}"
 							 closeOnMouseDownInside="true"
-							 options="{{data:rasterize.bitmapData}}"/>
+							 data="{rasterize.bitmapData}"/>
 		</handlers:EventHandler>
 		
 		

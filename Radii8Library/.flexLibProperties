@@ -7,7 +7,6 @@
     <classEntry path="com.flexcapacitor.events.HistoryEvent"/>
     <classEntry path="com.flexcapacitor.model.Device"/>
     <classEntry path="com.flexcapacitor.model.IProject"/>
-    <classEntry path="com.flexcapacitor.model.MXMLExporter"/>
     <classEntry path="com.flexcapacitor.model.Project"/>
     <classEntry path="com.flexcapacitor.model.ProjectDataDescriptor"/>
     <classEntry path="com.flexcapacitor.model.Size"/>
@@ -23,7 +22,44 @@
     <classEntry path="com.flexcapacitor.views.renderers.EditableDocumentRenderer"/>
     <classEntry path="com.flexcapacitor.views.renderers.HistoryItemRenderer"/>
     <classEntry path="com.flexcapacitor.views.supportClasses.Styles"/>
-    <classEntry path="com.flexcapacitor.views.PublishWindow"/>
+    <classEntry path="com.flexcapacitor.views.windows.PublishWindow"/>
+    <classEntry path="com.flexcapacitor.utils.MXMLDocumentExporter"/>
+    <classEntry path="com.flexcapacitor.model.Settings"/>
+    <classEntry path="com.flexcapacitor.model.ISettings"/>
+    <classEntry path="com.flexcapacitor.managers.PersistantDataManager"/>
+    <classEntry path="com.flexcapacitor.model.ProjectMetaData"/>
+    <classEntry path="com.flexcapacitor.model.DocumentMetaData"/>
+    <classEntry path="com.flexcapacitor.model.SavedData"/>
+    <classEntry path="com.flexcapacitor.model.ISavedData"/>
+    <classEntry path="com.flexcapacitor.model.DocumentData"/>
+    <classEntry path="com.flexcapacitor.model.ProjectData"/>
+    <classEntry path="com.flexcapacitor.model.IProjectData"/>
+    <classEntry path="com.flexcapacitor.model.IDocumentData"/>
+    <classEntry path="com.flexcapacitor.model.IProjectMetaData"/>
+    <classEntry path="com.flexcapacitor.model.IDocumentMetaData"/>
+    <classEntry path="com.flexcapacitor.views.renderers.LayersRenderer"/>
+    <classEntry path="com.flexcapacitor.model.ISavable"/>
+    <classEntry path="com.flexcapacitor.model.ISavableService"/>
+    <classEntry path="com.flexcapacitor.model.SaveResultsEvent"/>
+    <classEntry path="com.flexcapacitor.controller.RadiateTest"/>
+    <classEntry path="com.flexcapacitor.model.ImageData"/>
+    <classEntry path="com.flexcapacitor.model.AttachmentData"/>
+    <classEntry path="com.flexcapacitor.utils.DocumentExporter"/>
+    <classEntry path="com.flexcapacitor.services.WPAttachmentService"/>
+    <classEntry path="com.riaspace.controls.AS3TextArea"/>
+    <classEntry path="com.flexcapacitor.skins.MenuItemSkin"/>
+    <classEntry path="com.flexcapacitor.skins.MenuBarButtonSkin"/>
+    <classEntry path="com.flexcapacitor.skins.PopUpButtonSkin"/>
+    <classEntry path="com.flexcapacitor.model.MenuItem"/>
+    <classEntry path="com.flexcapacitor.views.renderers.ColorPickerRenderer"/>
+    <classEntry path="com.flexcapacitor.views.renderers.PropertiesGridRendererBase"/>
+    <classEntry path="com.flexcapacitor.views.windows.AnimatedPanelWindow"/>
+    <classEntry path="com.flexcapacitor.model.InspectableClass"/>
+    <classEntry path="com.flexcapacitor.model.InspectorData"/>
+    <classEntry path="com.flexcapacitor.views.IInspector"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.Identity"/>
+    <classEntry path="com.flexcapacitor.views.Size"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.FontStyles"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

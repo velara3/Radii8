@@ -1,0 +1,477 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:filters="com.flexcapacitor.filters.*" 
+		 xmlns:controls="com.flexcapacitor.controls.*"
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*" 
+		 
+		 styleName="radiateInspector"
+		 width="100%" 
+		 minHeight="20"
+		 creationComplete="creationCompleteHandler(event)" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.HistoryEvent;
+			import com.flexcapacitor.events.HistoryEventItem;
+			import com.flexcapacitor.events.RadiateEvent;
+			
+			import flash.utils.getTimer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import spark.core.NavigationUnit;
+			import spark.events.IndexChangeEvent;
+			
+			/**
+			 * Not used. Possible use store sets of changes between targets
+			 * */
+			[Bindable]
+			public var history:ArrayCollection = new ArrayCollection();
+			
+			/**
+			 * When true removes all the items in the history when the target is null
+			 * */
+			public var clearOnTargetChange:Boolean = true;
+			
+			private var radiate:Radiate = Radiate.instance;
+			
+			public var debug:Boolean = false;
+			
+			private var _target:*;
+			
+			public function get target():* {
+				return _target;
+			}
+			
+			[Bindable]
+			public function set target(value:*):void {
+				_target = value;
+				
+				if (value==null) {
+					if (clearOnTargetChange) {
+						Radiate.removeAllHistory();
+					}
+				}
+			}
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
+				
+				
+				//Radiate.history.refresh();
+				
+				list.selectedIndex = Radiate.historyIndex;
+				
+				scrollToBottom();
+				
+				updateNavigationButtons();
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem;
+			}
+			
+			/**
+			 * 
+			 * */
+			public function redo():void {
+				var historyIndex:int = Radiate.redo(true);
+				
+				if (historyIndex>-1) {
+					list.ensureIndexIsVisible(historyIndex);
+				}
+				else {
+					list.ensureIndexIsVisible(0);
+				}
+				
+				
+				//Radiate.history.refresh();
+				
+				//list.selectedIndex = historyIndex;
+				
+				updateNavigationButtons();
+				
+				if (debug) Radiate.log.info("3 SELECTED ITEM INDEX: " + list.selectedIndex);
+			}
+			
+			/**
+			 * 
+			 * */
+			public function undo():void {
+				var historyIndex:int = Radiate.undo(true);
+				
+				//Radiate.history.refresh();
+				
+				if (historyIndex>-1) {
+					list.ensureIndexIsVisible(historyIndex);
+				}
+				else {
+					list.ensureIndexIsVisible(0);
+				}
+				
+				//list.selectedIndex = Radiate.historyIndex;
+				
+				updateNavigationButtons();
+				if (debug) Radiate.log.info("4 SELECTED ITEM INDEX: " + list.selectedIndex);
+			}
+			
+			/**
+			 * Label for the history item
+			 * */
+			public function labelFunction(item:Object):String {
+				var historyItem:HistoryEvent = item as HistoryEvent;
+				var historyEvents:Array = historyItem.historyEventItems;
+				var historyEvent:HistoryEventItem = historyEvents && historyEvents.length ? historyEvents[0] : null;
+				var label:String;
+				
+				
+				if (historyEvent.action==RadiateEvent.PROPERTY_CHANGED) {
+					if (historyEvent.properties.length) {
+						label = historyEvent.description || historyEvent.properties + " changed";
+					}
+					else {
+						label = historyEvent.description || historyEvent.styles + " changed";
+					}
+				}
+				else if (historyEvent.action==RadiateEvent.ADD_ITEM) {
+					label = historyEvent.description || "Item added";
+				}
+				else if (historyEvent.action==RadiateEvent.REMOVE_ITEM) {
+					label = historyEvent.description || "Item removed";
+				}
+				else if (historyEvent.action==RadiateEvent.MOVE_ITEM) {
+					label = historyEvent.description || "Moved";
+				}
+				else {
+					label = "Something Changed";
+				}
+				
+				if (!historyEvent) return "";
+				
+				return label;
+			}
+			
+			/**
+			 * Show the last item in the list
+			 * */
+			private function scrollToBottom():void {
+				// update the verticalScrollPosition to the end of the List
+				// virtual layout may require us to validate a few times
+				// code posted by a Flex SDK developer
+				var delta:Number = 0;
+				var count:int = 0;
+				var iterations:int = 10;
+				
+				while (count++ < iterations) {
+					list.validateNow();
+					delta = list.layout.getVerticalScrollPositionDelta(NavigationUnit.END);
+					list.layout.verticalScrollPosition += delta;
+					
+					if (delta == 0) {
+						break;
+					}
+				}
+			}
+			
+			protected function list1_clickHandler(event:MouseEvent):void {
+				if (list.selectedItem) {
+					//Radiate.history.refresh();
+				}
+			}
+			
+			
+			public var updatingChanges:Boolean;
+			
+			/**
+			 * 
+			 * */
+			protected function changeHandler(event:IndexChangeEvent):void {
+				if (debug) Radiate.log.info("SELECTED ITEM INDEX: " + list.selectedIndex);
+				if (debug && updatingChanges) Radiate.log.info("ALREADY APPLYING CHANGES. SELECTED ITEM INDEX: " + list.selectedIndex);
+					
+				if (updatingChanges) {
+					//event.preventDefault();
+					return;
+				}
+				var newIndex:int = event.newIndex;
+				var oldIndex:int = Radiate.historyIndex;
+				var dispatch:Boolean = false;
+				var time:int = getTimer();
+				var historyIndex:int;
+				var length:int;
+				
+				updatingChanges = true;
+				
+				//ensureIndexIsVisible(newIndex);
+				
+				if (debug) Radiate.log.info("goToHistoryIndex: " + newIndex);
+				
+				Radiate.goToHistoryIndex(newIndex);
+				//trace("changes:"+(getTimer()-time));
+				
+				//list.selectedIndex = Radiate.historyIndex;
+				
+				
+				//Radiate.history.refresh();
+				
+				//updateNavigationButtons();
+				
+				if (debug) Radiate.log.info("2 SELECTED ITEM INDEX: " + list.selectedIndex);
+				
+				updatingChanges = false;
+				
+				//ensureIndexIsVisible(newIndex);
+			}
+			
+			
+			public function updateNavigationButtons():void {
+				var historyIndex:int = Radiate.historyIndex;
+				var totalItems:int = Radiate.history ? Radiate.history.length : 0;
+				var hasItems:Boolean = totalItems>0;
+				
+				// has forward history
+				if (hasItems && historyIndex+1<totalItems) {
+					forwardButton.enabled = true;
+				}
+				else {
+					forwardButton.enabled = false;
+				}
+				
+				// has previous items
+				if (hasItems && historyIndex>-1) {
+					backButton.enabled = true;
+				}
+				else {
+					backButton.enabled = false;
+				}
+			}
+			
+			/**
+			 * Document change handler. Clear history
+			 * */
+			protected function documentChangeHandler(event:Event):void {
+				if (debug) Radiate.log.info("DOCUMENT CHANGE");
+				
+				list.selectedIndex = Radiate.historyIndex;
+				
+				scrollToBottom();
+				
+				updateNavigationButtons();
+				
+				// Radiate.removeAllHistory();
+			}
+			
+			/**
+			 * 
+			 * */
+			public function ensureIndexIsVisible(index:int=0):void {
+				
+				if (index!=-1) {
+					list.ensureIndexIsVisible(index);
+				}
+				else {
+					list.dataGroup.verticalScrollPosition = 0;
+				}
+				//list.validateNow();
+				//list.ensureIndexIsVisible(index);
+				//list.validateNow();
+			}
+			
+			/**
+			 * 
+			 * */
+			public function ensureLastItemVisible():void {
+				if (list.dataProvider.length>0) {
+					ensureIndexIsVisible(list.dataProvider.length-1);
+					scrollToBottom();
+				}
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function revertHandler(event:MouseEvent):void {
+				var length:int = Radiate.history.length;
+				var dispatch:Boolean = false;
+				var time:int = getTimer();
+				var i:int;
+				
+				//trace("revert start: " + time);
+				
+				// it is 22 times faster to not dispatch events until the end
+				// each change takes 85ms per change with dispatch events 
+				// and 2.58ms without
+				
+				Radiate.goToHistoryIndex(-1);
+				
+				//ensureIndexIsVisible(0);
+				
+				//Radiate.history.refresh();
+				
+				//trace("revert start: " + (getTimer()-time));
+				//list.selectedIndex = -1;
+				
+				//Radiate.history.refresh();
+				
+				//updateNavigationButtons();
+				if (debug) Radiate.log.info("5 SELECTED ITEM INDEX: " + list.selectedIndex);
+			}
+			
+			protected function list_valueCommitHandler(event:FlexEvent):void {
+				//Radiate.log.info("Value commit. Index : " + list.selectedIndex);
+				//Radiate.log.info("History Index : " + Radiate.historyIndex);
+				
+				if (list.selectedIndex!= Radiate.historyIndex) {
+					//list.selectedIndex = Radiate.historyIndex;
+					//Radiate.history.refresh();
+					//Radiate.log.info("History OUT OF SYNC");
+				}
+			}
+			
+			protected function list_caretChangeHandler(event:IndexChangeEvent):void {
+				//Radiate.log.info("Caret changed. Index : " + list.selectedIndex);
+				//Radiate.log.info("History Index : " + Radiate.historyIndex);
+			}
+			
+			/**
+			 * History changed. Select the last applied item in the history array. 
+			 * */
+			protected function historyChangeHandler(event:Event):void {
+				if (debug) Radiate.log.info("HISTORY CHANGE");
+				
+				//Radiate.log.info("historyChangeHandler. Index : " + list.selectedIndex);
+				//Radiate.log.info("History Index : " + Radiate.historyIndex);
+				
+				// must call validate now since history.refresh() may have been called
+				list.validateNow();
+				
+				if (Radiate.historyIndex==-1) {
+					list.selectedItem = null;
+				}
+				else {
+					list.selectedIndex = Radiate.historyIndex;
+				}
+				
+				ensureIndexIsVisible(Radiate.historyIndex);
+				updateNavigationButtons();
+			}
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+	</fx:Declarations>
+	
+	<s:Group width="100%" height="100%" left="5" right="5" bottom="5">
+		
+		<s:List id="list" 
+				top="26"
+				focusAlpha="0"
+				minHeight="20"
+				width="100%" height="100%"
+				dataProvider="{Radiate.history}" 
+				labelFunction="labelFunction"
+				borderVisible="false"
+				change="changeHandler(event)"
+				valueCommit="list_valueCommitHandler(event)"
+				caretChange="list_caretChangeHandler(event)"
+				itemRenderer="com.flexcapacitor.views.renderers.HistoryItemRenderer"
+				>
+			
+			<s:layout>
+				<s:VerticalLayout useVirtualLayout="true" gap="1"/>
+			</s:layout>
+			
+		</s:List>
+		
+		<renderers:HistoryItemRenderer id="openLabel" 
+									   label="Open" 
+									   width="100%"
+									   right="100"
+									   useHandCursor="true" 
+									   buttonMode="true"
+									   autoDrawBackground="true"
+									   click="revertHandler(event)" />
+									   
+		<controls:HorizontalLine top="22" 
+								 strokeColor="#000000" 
+								 alpha=".15"
+								 />
+		
+		<!--- triangle -->
+		<s:Group height="14" width="10" top="4" visible="{Radiate.historyIndex==-1}">
+			<s:Path data="M 0 0 L 0 16 L 16 8 z" width="100%" height="100%">
+				<s:fill>
+					<s:SolidColor color="#000000" alpha=".25"/>
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke weight="0" color="#ffffff" />
+				</s:stroke>
+			</s:Path>
+			<!--<s:Line width="40" x="13" y="5" >
+				<s:stroke>
+					<s:SolidColorStroke alpha=".15"/>
+				</s:stroke>
+			</s:Line>-->
+		</s:Group>
+		
+		
+		<!--- UNDO REDO BUTTONS -->
+		<s:HGroup width="100%" right="0" top="0" verticalAlign="top">
+			
+			<!--- revert to beginning -->
+			<!--<s:Group width="50%" height="8" >
+				<s:Rect width="100%" height="8" >
+					<s:fill>
+						<s:SolidColor alpha="0"/>
+					</s:fill>
+				</s:Rect>
+			</s:Group>-->
+			
+			<s:Spacer width="100%"/>
+			
+			<!--- go back -->
+			<s:Group id="backButton" 
+					 click="undo()" 
+					 width="20"
+					 height="15"
+					 useHandCursor="true"
+					 buttonMode="true"
+					 >
+				<s:Path data="M 8 0 L 8 16 L 0 8 Z" height="14" width="14">
+					<s:fill>
+						<s:SolidColor color="#000000" alpha=".5"/>
+					</s:fill>
+				</s:Path>
+			</s:Group>
+			
+			
+			<!--- go forward -->
+			<s:Group id="forwardButton" 
+					 click="redo()" 
+					 width="20"
+					 height="15"
+					 useHandCursor="true"
+					 buttonMode="true">
+				<s:Path data="M 0 0 L 0 16 L 16 8 L 0 0 Z" height="14" width="14">
+					<s:fill>
+						<s:SolidColor color="#000000" alpha=".5"/>
+					</s:fill>
+				</s:Path>
+			</s:Group>
+		</s:HGroup>
+	</s:Group>
+	
+</s:Group>

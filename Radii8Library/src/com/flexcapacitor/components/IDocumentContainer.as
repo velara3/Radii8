@@ -3,8 +3,6 @@ package com.flexcapacitor.components {
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
-	import flash.display.DisplayObjectContainer;
-	
 	import mx.core.IVisualElementContainer;
 	
 	import spark.components.Scroller;
@@ -26,7 +24,7 @@ package com.flexcapacitor.components {
 		/**
 		 * Parses the code
 		 * */
-		function parseDocument(code:String):Boolean;
+		/*function parseDocument(code:String):Boolean;*/
 		
 		/**
 		 * Imports code 
@@ -37,8 +35,8 @@ package com.flexcapacitor.components {
 		 * Reference to the document. Named documentDescription since
 		 * document is already a property on UIComponent.
 		 * */
-		function set documentDescription(value:IDocument):void;
-		function get documentDescription():IDocument;
+		function set iDocument(value:IDocument):void;
+		function get iDocument():IDocument;
 		
 		/**
 		 * Reference to the tool layer.

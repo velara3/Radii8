@@ -13,22 +13,29 @@
 package com.flexcapacitor.managers.layoutClasses
 {
 
+import flash.display.DisplayObject;
+import flash.display.DisplayObjectContainer;
 import flash.display.Sprite;
 import flash.events.Event;
 import flash.geom.Point;
+import flash.geom.Rectangle;
 import flash.utils.Dictionary;
 import flash.utils.getTimer;
 
 import mx.core.ILayoutElement;
+import mx.managers.ISystemManager;
+import mx.managers.LayoutManager;
+import mx.managers.SystemManagerGlobals;
 
 
 /**
  *  @private
  *  The LayoutDebugHelper class renders the layout bounds for the most
  *  recently validated visual items.
+ * 
+ * Adapted from import mx.managers.layoutClasses.LayoutDebugHelper;
  */
-public class LayoutDebugHelper extends Sprite
-{
+public class LayoutDebugHelper extends Sprite {
     //include "../../core/Version.as";
 
     //--------------------------------------------------------------------------
@@ -45,13 +52,51 @@ public class LayoutDebugHelper extends Sprite
      *  @playerversion AIR 1.1
      *  @productversion Flex 3
      */
-    public function LayoutDebugHelper()
-    {
+    public function LayoutDebugHelper() {
         super();
         activeInvalidations = new Dictionary();
         addEventListener("enterFrame", onEnterFrame);
+		
     }
+	
+    /**
+     *  @private
+     *  The sole instance of this singleton class.
+     */
+    private static var instance:LayoutDebugHelper;
+	
+	public static function getInstance():LayoutDebugHelper {
+        if (!instance)
+            instance = new LayoutDebugHelper();
 
+        return instance;
+    }
+	
+    public function enable():void {
+        if (!instance) {
+            instance = getInstance();
+		}
+		
+        Object(instance).mouseEnabled = false;
+        var sm:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0]
+        sm.addChild(instance);
+    
+       // return instance;
+    }
+	
+    public function disable():void {
+        if (instance) {
+            var sm:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0]
+			var index:int = sm.getChildIndex(instance);
+			
+			if (index!=-1) {
+	            sm.removeChildAt(index);
+			}
+        }
+		
+       // return instance;
+    }
+	
     //--------------------------------------------------------------------------
     //
     //  Variables
@@ -59,19 +104,19 @@ public class LayoutDebugHelper extends Sprite
     //--------------------------------------------------------------------------
     
     /**
-     *  @private
+     *  
      */
-    private static const highlightDelay:Number = 2500;
+    public static const highlightDelay:Number = 2500;
     
     /**
      *  @private
      */
-    private static const highlightColor:Number = 0xFF00;
+    public static const highlightColor:Number = 0xFF00;
     
     /**
      *  @private
      */
-    private var activeInvalidations:Dictionary;
+    public var activeInvalidations:Dictionary;
     
     /**
      *  @private
@@ -83,6 +128,7 @@ public class LayoutDebugHelper extends Sprite
     //  Methods
     //
     //--------------------------------------------------------------------------
+    private static var _layoutDebugHelper:Boolean;
 
     /**
      *  @private
@@ -104,7 +150,7 @@ public class LayoutDebugHelper extends Sprite
     /**
      *  @private
      */
-    private function render():void
+    public function render():void
     {       
         graphics.clear();
         for (var item:* in activeInvalidations)
@@ -135,6 +181,41 @@ public class LayoutDebugHelper extends Sprite
             }
         }
     }
+	
+	/**
+	 * Get a rectangle of the item
+	 * */
+	public function getRectangleBounds(item:Object, container:* = null):Rectangle {
+	
+        if (item && item.parent) { 
+            var w:Number = item.getLayoutBoundsWidth(true);
+            var h:Number = item.getLayoutBoundsHeight(true);
+            
+            var position:Point = new Point();
+            position.x = item.getLayoutBoundsX(true);
+            position.y = item.getLayoutBoundsY(true);
+            position = item.parent.localToGlobal(position);
+			
+			var rectangle:Rectangle = new Rectangle();
+			
+			if (container && container is DisplayObjectContainer) {
+				var anotherPoint:Point = DisplayObjectContainer(container).globalToLocal(position);
+				rectangle.x = anotherPoint.x;
+				rectangle.y = anotherPoint.y;
+			}
+			else {
+				rectangle.x = position.x;
+				rectangle.y = position.y;
+			}
+            
+			rectangle.width = w;
+			rectangle.height = h;
+			
+			return rectangle;
+       }
+		
+		return null;
+	}
     
     /**
      *  @private

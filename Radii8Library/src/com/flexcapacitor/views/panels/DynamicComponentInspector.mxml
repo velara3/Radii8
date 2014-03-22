@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 width="100%" height="100%"
+		 creationComplete="creationCompleteHandler(event)"
+		 >
+	
+	
+	<!-- 
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.views.IInspector;
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.InspectorData;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			/**
+			 * Reference to Radiate
+			 * */
+			public var radiate:Radiate;
+			
+			public var componentDescription:ComponentDescription;
+
+			public var target:Object;
+			
+			private var _inspectors:Array;
+			
+			public function get inspectors():Array {
+				return _inspectors;
+			}
+			
+			[Bindable]
+			public function set inspectors(value:Array):void {
+				
+				_inspectors = value;
+				
+				if (_inspectors) {
+					
+				}
+				else {
+					
+				}
+			}
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				// listen at a higher priority so we can deactivate before child inspectors hear event 
+				// before they have to since the views are specific to the class they are used for
+				// for example, if we have inspectors for Button and we switch to Application
+				// we don't want the inspectors for Button to get the target change event 
+				// for Application
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 10, true);
+				//radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				inspectors = radiate.getInspectors(target);
+				
+				updateInspectors(inspectors);
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				var sameType:Boolean = radiate.isSameClassType(target, radiate.target);
+				
+				target = radiate.target;
+				
+				if (!sameType) {
+					inspectors = radiate.getInspectors(target);
+					
+					updateInspectors(inspectors);
+				}
+			}
+			
+			
+			public function updateInspectors(inspectors:Array):void {
+				var inspectorInstance:UIComponent;
+				var inspectorData:InspectorData;
+				var length:int = contentGroup.numElements;
+				
+				// deactivate and remove previous inspectors
+				for (var j:int;j<length;j++) {
+					if (contentGroup.getElementAt(j) is IInspector) {
+						IInspector(contentGroup.getElementAt(j)).deactivate();
+					}
+				}
+				
+				contentGroup.removeAllElements();
+				
+				length = inspectors.length;
+				
+				// add and activate inspectors
+				for (var i:int;i<length;i++) {
+					inspectorData = InspectorData(inspectors[i]);
+					inspectorInstance = inspectorData.getInstance() as UIComponent;
+					
+					if (inspectorInstance) {
+						contentGroup.addElement(inspectorInstance);
+						IInspector(inspectorInstance).activate();
+					}
+				}
+				
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<s:Scroller id="scroller" top="0" left="8" right="8" bottom="4">
+		<s:VGroup id="contentGroup" width="100%" paddingRight="12" paddingBottom="12" />
+	</s:Scroller>
+	
+</s:Group>

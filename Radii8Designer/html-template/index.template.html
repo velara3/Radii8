@@ -28,12 +28,19 @@
             #flashContent { display:none; }
         </style>
         
+		
         <!-- NORMALIZE -->
 		<link rel="stylesheet" href="css/normalize/2.1.2/normalize.css"/>
 
         <!-- ACE editor -->
         <script src="../src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
         
+        <!-- RADII8 -->
+		<script src="js/code.js" type="text/javascript" charset="utf-8"></script>
+        
+        <!-- USE BROWSER LOGIN -->
+		<script src="js/StoreLogin.js" type="text/javascript" charset="utf-8"></script>
+		
         <script>
 
         function createEditor(editorName, flashID) {
@@ -122,7 +129,9 @@
 		}
 		
 		function onloadHandler() {
-			window.onbeforeunload = beforeUnloadHandler;
+			radiate = Radiate.getInstance();
+			//console.log("radiate: " + radiate);
+			window.onbeforeunload = radiate.beforeUnloadHandler;
 		}
 		
 		</script>
@@ -159,6 +168,7 @@
             swfobject.createCSS("#flashContent", "display:block;text-align:left;");
         </script>
     </head>
+    
     <body onload="onloadHandler()">
         <!-- SWFObject's dynamic embed method replaces this alternative HTML content with Flash content when enough 
              JavaScript and Flash plug-in support is available. The div is initially hidden so that it doesn't show
@@ -175,6 +185,13 @@
                                 + "get_flash_player.gif' alt='Get Adobe Flash player' /></a>" ); 
             </script> 
         </div>
+        
+
+	    <form id="bridgeForm" action="#" target="loginframe" autocomplete="on" style="display:none" method="post">
+	            <input type="text" name="username" id="username" />
+	            <input type="password" name="password" id="password"/>
+	    </form>
+		<iframe id="loginframe" name="loginframe" src="blankpage.html" style="display:none"></iframe>
         
         <noscript>
             <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="${width}" height="${height}" id="${application}">

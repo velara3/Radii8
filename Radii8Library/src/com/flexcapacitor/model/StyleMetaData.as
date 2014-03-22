@@ -7,13 +7,16 @@ package com.flexcapacitor.model {
 	 * */
 	public class StyleMetaData extends MetaData {
 		
-		
-		public function StyleMetaData(item:XML = null, target:* = null)
-		{
+		/**
+		 * Constructor
+		 * */
+		public function StyleMetaData(item:XML = null, target:* = null) {
 			if (item) unmarshall(item, target);
 		}
 		
-		
+		/**
+		 * 
+		 * */
 		public var inherit:Boolean;
 		
 		/**
@@ -23,15 +26,21 @@ package com.flexcapacitor.model {
 		 * */
 		public var definedInline:Boolean;
 		
+		/**
+		 * 
+		 * */
 		public var inheritedValue:*;
 		
+		/**
+		 * 
+		 * */
 		public var nonInheritedValue:*;
 		
 		/**
 		 * Import metadata XML Style node into this instance
 		 * */
-		override public function unmarshall(item:XML, target:* = null):void {
-			super.unmarshall(item, target);
+		override public function unmarshall(item:XML, target:* = null, getValue:Boolean = true):void {
+			super.unmarshall(item, target, getValue);
 			
 			var args:XMLList = item.arg;
 			var keyName:String;
@@ -42,7 +51,7 @@ package com.flexcapacitor.model {
 				keyName = arg.@key;
 				
 				if (keyName=="inherit") {
-					inherit = keyValue=="no";
+					inherit = keyValue=="no";//bug?
 					break;
 				}
 				
@@ -58,7 +67,11 @@ package com.flexcapacitor.model {
 				textValue = "" + inheritedValue;
 			}
 			else {
-				inheritedValue = undefined; // don't know how to get this value
+				// don't know how to get this value -
+				// UPDATE: there is CSS code in MiniInspector to check if a value is 
+				// set inline or inherited
+				// we also have the inheritedStyles and nonInherited object on IStyleClient
+				inheritedValue = undefined;
 				nonInheritedValue = target.getStyle(name);
 				value = nonInheritedValue;
 				textValue = "" + nonInheritedValue;

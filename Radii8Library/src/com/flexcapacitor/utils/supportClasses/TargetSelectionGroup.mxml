@@ -115,7 +115,7 @@
 			{
 				super.updateDisplayList(unscaledWidth, unscaledHeight);
 				var radiate:Radiate = Radiate.getInstance();
-				var documentDescription:IDocument = radiate.document;
+				var documentDescription:IDocument = radiate.selectedDocument;
 				//graphics.clear();
 				/*
 				was showing previous selection like the graphics weren't cleared

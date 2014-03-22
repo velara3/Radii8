@@ -7,7 +7,7 @@
 		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
 		 xmlns:status="com.flexcapacitor.effects.status.*" 
 		 
-		 width="120" height="24" 
+		 height="24" 
 		 >
 	
 	<fx:Metadata>
@@ -171,7 +171,7 @@
 	</fx:Declarations>
 	
 	<s:layout>
-		<s:HorizontalLayout paddingLeft="4" />
+		<s:HorizontalLayout paddingLeft="0" />
 	</s:layout>
 	
 	<mx:ColorPicker id="colorPicker" 

@@ -88,7 +88,7 @@
 	
 	<s:CheckBox id="showSelection" label="Show Selection" change="showSelection_changeHandler(event)"/>
 	<s:CheckBox id="showLabel" label="Show Label" change="showLabel_changeHandler(event)"/>
-	<s:Label text="Drop Location: " paddingLeft="4" visible="{showDropLocation}"/>
-	<s:Label id="dropLocation" text="{selectionTool.dragLocation}" visible="{showDropLocation}"/>
+	<s:Label text="Drop Location: " paddingLeft="4" visible="{showDropLocation}" includeInLayout="{showDropLocation}"/>
+	<s:Label id="dropLocation" text="{selectionTool.dragLocation}" visible="{showDropLocation}" includeInLayout="{showDropLocation}"/>
 
 </s:Group>

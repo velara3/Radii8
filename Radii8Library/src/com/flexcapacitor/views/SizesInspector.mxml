@@ -3,7 +3,7 @@
 		 xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:filters="com.flexcapacitor.filters.*"
-		 
+		 xmlns:c="com.flexcapacitor.controls.*"
 		 creationComplete="group1_creationCompleteHandler(event)"
 		 >
 
@@ -175,7 +175,7 @@
 			 * Update portrait setting
 			 * */
 			public function updatePortraitCheckbox():void {
-				var document:IDocument = radiate.document;
+				var document:IDocument = radiate.selectedDocument;
 				var documentInstance:DisplayObject = document ? document.instance as DisplayObject : null;
 				var portrait:Boolean;
 				
@@ -198,7 +198,7 @@
 			 * 
 			 * */
 			public function updateDocumentSize():void {
-				var document:IDocument = radiate.document;
+				var document:IDocument = radiate.selectedDocument;
 				var device:Device = sizesComboBox.selectedItem as Device;
 				var object:Object = {};
 				var applied:Boolean;
@@ -259,14 +259,18 @@
 	</fx:Declarations>
 
 	<s:layout>
-		<s:HorizontalLayout paddingLeft="4" />
+		<s:HorizontalLayout paddingLeft="4" verticalAlign="baseline"/>
 	</s:layout>
 	
-	<s:CheckBox id="portraitEnabledCheckbox" 
+	<s:ToggleButton id="portraitEnabledCheckbox" 
 				label="Portrait" 
 				selected="true"
-				change="changeOrientation_changeHandler(event)"/>
-	
+				change="changeOrientation_changeHandler(event)"
+				skinClass="com.flexcapacitor.views.skins.OrientationButton"
+				useHandCursor="true"
+				buttonMode="true"
+				/>
+	<s:Spacer width="1"/>
 	<s:DropDownList id="sizesComboBox" 
 				width="180" 
 				focusAlpha="0" 
@@ -287,20 +291,29 @@
         </s:layout>
 	</s:DropDownList>
 	
-	<s:Button id="actualSizeButton" label="Actual"
-			  visible="{showRestoreSize}"
-			  includeInLayout="{showRestoreSize}"
-			  click="actualSize_clickHandler(event)"/>
+	<c:ImageButton id="centerButton" 
+			   toolTip="Center"
+			   visible="{showCenterButton}"
+			   includeInLayout="{showCenterButton}"
+			   source="{Radii8LibraryAssets.centerAlignment}" 
+			   click="centerButton_clickHandler(event)"
+			   />
 	
-	<s:Button id="fitSizeButton" label="Fit"
-			  visible="{showFitSize}"
-			  includeInLayout="{showFitSize}"
-			  click="fitSizeButton_clickHandler(event)"/>
+	<c:ImageButton id="fitSizeButton" 
+			   toolTip="Fit"
+			   visible="{showFitSize}"
+			   includeInLayout="{showFitSize}"
+			   source="{Radii8LibraryAssets.zoomToFit}" 
+			   click="fitSizeButton_clickHandler(event)"
+			   />
 	
-	<s:Button id="centerButton" label="Center"
-			  visible="{showCenterButton}"
-			  includeInLayout="{showCenterButton}"
-			  click="centerButton_clickHandler(event)"/>
+	<c:ImageButton id="actualSizeButton" 
+			   toolTip="Actual"
+			   visible="{showRestoreSize}"
+			   includeInLayout="{showRestoreSize}"
+			   source="{Radii8LibraryAssets.actualSize}" 
+			   click="actualSize_clickHandler(event)"
+			   />
 	
 
 </s:Group>

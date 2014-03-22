@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<r:PropertiesGridRendererBase xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" 
+		xmlns:c="com.flexcapacitor.components.*"
+		xmlns:r="com.flexcapacitor.views.renderers.*"
+
+		clipAndEnableScrolling="true">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.skins.ClearButton;
+			
+			import spark.events.TextOperationEvent;
+			import spark.skins.spark.TextAreaSkin;
+			
+			import flashx.textLayout.operations.SplitParagraphOperation;
+			
+			/**
+			 * Prevents line breaks
+			 * */
+			protected function targetValueText_changingHandler(event:TextOperationEvent):void {
+				
+				// prevent line breaks
+				if (event.operation is SplitParagraphOperation) {
+					event.preventDefault();
+				}
+			}
+			
+			protected function targetValueText_keyUpHandler(event:KeyboardEvent):void {
+				var value:String;
+				
+				if (event.keyCode==Keyboard.ENTER && !event.shiftKey) {
+					setTargetValue();
+					event.preventDefault();
+				}
+				else if (event.keyCode==Keyboard.ESCAPE) {
+					if (data is XML) {
+						value = String(data.@value);
+					}
+					else {
+						value = String(data.value);
+					}
+					targetValueText.text = value;
+					event.preventDefault();
+				}
+			}
+			
+			protected function targetValueText_focusOutHandler(event:FocusEvent):void {
+				setTargetValue();
+				//event.preventDefault();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:TextArea id="targetValueText" 
+				width="100%" 
+				height="100%"
+				borderAlpha="0.2" 
+				skinClass="spark.skins.spark.TextAreaSkin"
+				keyUp="targetValueText_keyUpHandler(event)"
+				focusOut="targetValueText_focusOutHandler(event)"
+				changing="targetValueText_changingHandler(event)"
+				>
+	</s:TextArea>
+	
+	<s:Button id="clearStyleButton" 
+			  skinClass="com.flexcapacitor.skins.ClearButton"
+			  click="setTargetValue(true)"
+			  right="0" 
+			  verticalCenter="0"/>
+
+</r:PropertiesGridRendererBase>

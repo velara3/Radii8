@@ -5,7 +5,10 @@
 				doubleClickEnabled="true"
 				doubleClick="itemrenderer1_doubleClickHandler(event)"
 				autoDrawBackground="true"
-				height="22">
+				useHandCursor="true"
+				buttonMode="true"
+				height="22"
+				>
 	
 	<fx:Metadata>
 		[HostComponent("spark.components.List")]
@@ -14,6 +17,7 @@
 	<fx:Script>
 	<![CDATA[
 		import com.flexcapacitor.model.IProject;
+		import com.flexcapacitor.model.DocumentData;
 		
 		import spark.components.List;
 		import spark.components.supportClasses.ListBase;
@@ -56,6 +60,7 @@
 		}
 		
 		protected function textInput_focusOutHandler(event:FocusEvent):void {
+			dataChangeHandler();
 			currentState = "normal";
 		}
 		
@@ -79,15 +84,44 @@
 		</s:fill>
 	</s:Rect>-->
 	
+	<s:BitmapImage id="icon" 
+				   source="{data &amp;&amp; DocumentData(data).isOpen ? Radii8LibraryAssets.openFolder : Radii8LibraryAssets.projectIcon}"
+				   top="4"
+				   left="5"
+				   >
+		
+	</s:BitmapImage>
+	
+	<s:BitmapImage id="saveIcon" 
+				   source="{Radii8LibraryAssets.save}"
+				   right="5"
+				   top="2"
+				   visible="{data &amp;&amp; (DocumentData(data).saveInProgress || DocumentData(data).openInProgress)}"
+				   >
+	</s:BitmapImage>
+	
 	<s:Label id="labelDisplay" 
 			 height="100%"
 			 width="100%"
+			 left="20"
+			 top="3"
 			 verticalAlign="middle"
 			 itemCreationPolicy="immediate"
-			 paddingLeft="4"
+			 paddingLeft="5"
 			 includeIn="hovered, normal, selected"/>
 	
+	<s:Label id="isChangedLabel2" 
+			 bottom="0"
+			 left="0"
+			 text=" "
+			 height="100%"
+			 width="4"
+			 backgroundColor="#989898"
+			 backgroundAlpha="1"
+			 visible="{data &amp;&amp; DocumentData(data).isChanged}"/>
+	
 	<s:TextInput id="textInput" 
+				 left="20"
 				 includeIn="edit" 
 				 focusAlpha="0"
 				 enter="dataChangeHandler()" 

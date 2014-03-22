@@ -22,7 +22,6 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.IDocument;
-			import com.flexcapacitor.utils.MXMLImporter;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.core.IVisualElement;
@@ -35,6 +34,155 @@
 			import spark.components.Application;
 			
 			import org.as3commons.lang.ArrayUtils;
+			
+			
+			
+			/**
+			 * STEP 1. 
+			 * 
+			 * When this is added to the display list then we
+			 * load in a blank application.
+			 * 
+			 * We do this so that at some point we can sandbox 
+			 * the application.
+			 * We also do this so we can load in remote applications.
+			 * */
+			private function creationComplete():void {
+				radiate = Radiate.getInstance();
+				toolLayer = toolLayerInstance;
+				canvasBorder = canvasBorderInstance;
+				canvasBackground = canvasBackgroundInstance;
+				canvasScroller = canvasScrollerInstance;
+				//radiate.setCanvas(canvasBorder, canvasBackground, canvasScroller);				
+				
+				
+				
+				systemManager.allowDomain("*");
+				
+				var context:LoaderContext = new LoaderContext();
+				
+				/* Specify the current application's security domain. */
+				context.securityDomain = SecurityDomain.currentDomain;
+				
+				/* Specify a new ApplicationDomain, which loads the sub-app into a 
+				peer ApplicationDomain. */
+				context.applicationDomain = new ApplicationDomain();
+				
+				projectLoader.trustContent = trustContent;
+				projectLoader.loadForCompatibility = loadForCompatibility;
+				projectLoader.maintainAspectRatio = maintainAspectRatio;
+				projectLoader.scaleContent = scaleContent;
+				
+				// if not on server context throws errors
+				if (Security.sandboxType == Security.REMOTE) {
+					//projectLoader.loaderContext = context;
+					projectLoader.trustContent = !trustContent;
+				}
+				
+				projectLoader.source = url;//URL.text; // "http://yourdomain.com/SubApp3.swf";
+				
+				//projectLoader.autoLoad = autoLoad;
+				//load();
+				
+				//stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+			}
+			
+			/**
+			 * STEP 2. 
+			 * 
+			 * SWF is Loaded now listen for Application Complete
+			 * */
+			protected function project_completeHandler(event:Event):void {
+				//var loader:SWFLoader = event.currentTarget as SWFLoader;
+				/*
+				SecurityDomain 'http://www.radii8.com/demo2/RadiateExample.html?debug=true' 
+				tried to access incompatible context 'http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf'
+				SecurityError: Error #2121: Security sandbox violation: Loader.content: 
+				http://www.radii8.com/demo2/RadiateExample.swf/[[DYNAMIC]]/3 cannot access 
+				http://www.flexcapacitor.com/apps/urlcodec/URLCodec.swf. This may be worked around by 
+				calling Security.allowDomain.
+
+				*/
+				projectLoader.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				
+				var loaderClassName:String = NameUtil.getUnqualifiedClassName(projectLoader.content);
+				
+				
+				if (projectLoader.content is DisplayObject) {
+					//parentAllowsChild.selected = b.parentAllowsChild;
+					//childAllowsParent.selected = b.childAllowsParent;
+					targetSystemManager = projectLoader.content as SystemManager;
+					
+					targetSystemManager.addEventListener(FlexEvent.APPLICATION_COMPLETE, applicationComplete);
+					//LoaderInfo(targetApplication.loaderInfo).uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
+				}
+				
+				hideBusyIndicators();
+				
+				
+				//Radiate.log.info("SWF Loaded");
+			}
+			
+			/**
+			 * STEP 3.
+			 * 
+			 * Blank application loaded. Import the document. 
+			 * */
+			protected function applicationComplete(event:Event):void {
+				var loader:Object = event.currentTarget;
+				var radiate:Radiate = Radiate.instance;
+				//parentAllowsChild.selected = b.parentAllowsChild;
+				//childAllowsParent.selected = b.childAllowsParent;
+				
+				
+				targetSystemManager = loader as SystemManager;
+				targetApplication = loader.application;
+				
+				
+				// 8.5 x 11 at 72dpi is 612x792
+				targetApplication.width = Radiate.DEFAULT_DOCUMENT_WIDTH;
+				targetApplication.height = Radiate.DEFAULT_DOCUMENT_HEIGHT;
+				
+				updateBackgroundSize();
+				
+				iDocument.instance = targetApplication;
+				
+				//radiate.setDocument(iDocument);
+				//radiate.setTarget(targetApplication);
+				
+				//codeAvailable = true;
+				
+				if (iDocument.source) {
+					validateNow();
+					iDocument.parseSource();
+					iDocument.resetSaveStatus();
+					updateBackgroundSize();
+					//parseDocument(codeToLoad);
+					//codeAvailable = false;
+				}
+				radiate.setDocument(iDocument);
+				radiate.setTarget(targetApplication);
+				
+				
+				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
+				//radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChange, false, 0, true);
+				
+				//updateAppScrollPosition();
+				
+				//setTimeout(updateAppScrollPosition, 10);
+				//setTimeout(updateAppScrollPosition, 100);
+				//setTimeout(updateAppScrollPosition, 500);
+				
+				hideBusyIndicators();
+				
+				applicationReady = true;
+				
+				radiate.centerApplication(true);
+				
+				//Radiate.log.info("Application Complete");
+				
+			}
 			
 			/**
 			 * The document / application
@@ -121,7 +269,7 @@
 			
 			private var _documentDescription:IDocument;
 
-			public function get documentDescription():IDocument {
+			public function get iDocument():IDocument {
 				return _documentDescription;
 			}
 
@@ -129,7 +277,7 @@
 			 * Reference to document description
 			 * */
 			[Bindable]
-			public function set documentDescription(value:IDocument):void {
+			public function set iDocument(value:IDocument):void {
 				if (_documentDescription == value) return;
 				_documentDescription = value;
 				
@@ -200,45 +348,6 @@
 				codeAvailable = true;
 				return true;
 			}
-
-			/**
-			 * 
-			 * */
-			public function parseDocument(code:String):Boolean {
-				var xml:XML;
-				
-				
-				try {
-					xml = new XML(code);
-					
-					
-				}
-				catch (error:Error) {
-					
-				}
-				
-				var currentChildren:XMLList;
-				var child:XML;
-				var nodeName:String;
-				
-				if (xml) {
-					// loop through each item and create an instance 
-					// and set the properties and styles on it
-					/*currentChildren = xml.children();
-					while (child in currentChildren) {
-						nodeName = child.name();
-						
-					}*/
-					
-					//var mxmlLoader:MXMLImporter = new MXMLImporter( "testWindow", new XML( inSource ), canvasHolder  );
-					var mxmlLoader:MXMLImporter;
-					//mxmlLoader = new MXMLImporter("testWindow", testModel, targetApplication as IVisualElement);
-				}
-				/*_toolTipChildren = new SystemChildrenList(this,
-                new QName(mx_internal, "topMostIndex"),
-                new QName(mx_internal, "toolTipIndex"));*/
-				return true;
-			}
 			
 			/**
 			 * 
@@ -253,53 +362,7 @@
 				load();
 			}
 
-			/**
-			 * When this is added to the display list then we
-			 * load in a blank application.
-			 * 
-			 * We do this so that at some point we can sandbox 
-			 * the application.
-			 * We also do this so we can load in remote applications.
-			 * */
-			private function creationComplete():void {
-				radiate = Radiate.getInstance();
-				toolLayer = toolLayerInstance;
-				canvasBorder = canvasBorderInstance;
-				canvasBackground = canvasBackgroundInstance;
-				canvasScroller = canvasScrollerInstance;
-				//radiate.setCanvas(canvasBorder, canvasBackground, canvasScroller);				
-				
-				
-				
-				systemManager.allowDomain("*");
-				
-				var context:LoaderContext = new LoaderContext();
-				
-				/* Specify the current application's security domain. */
-				context.securityDomain = SecurityDomain.currentDomain;
-				
-				/* Specify a new ApplicationDomain, which loads the sub-app into a 
-				peer ApplicationDomain. */
-				context.applicationDomain = new ApplicationDomain();
-				
-				projectLoader.trustContent = trustContent;
-				projectLoader.loadForCompatibility = loadForCompatibility;
-				projectLoader.maintainAspectRatio = maintainAspectRatio;
-				projectLoader.scaleContent = scaleContent;
-				
-				// if not on server context throws errors
-				if (Security.sandboxType == Security.REMOTE) {
-					//projectLoader.loaderContext = context;
-					projectLoader.trustContent = !trustContent;
-				}
-				
-				projectLoader.source = url;//URL.text; // "http://yourdomain.com/SubApp3.swf";
-				
-				//projectLoader.autoLoad = autoLoad;
-				//load();
-				
-				//stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
-			}
+			
 			
 			/**
 			 * Load blank Spark Application SWF
@@ -394,93 +457,6 @@
 			/**
 			 * 
 			 * */
-			protected function project_completeHandler(event:Event):void {
-				//var loader:SWFLoader = event.currentTarget as SWFLoader;
-				/*
-				SecurityDomain 'http://www.radii8.com/demo2/RadiateExample.html?debug=true' 
-				tried to access incompatible context 'http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf'
-				SecurityError: Error #2121: Security sandbox violation: Loader.content: 
-				http://www.radii8.com/demo2/RadiateExample.swf/[[DYNAMIC]]/3 cannot access 
-				http://www.flexcapacitor.com/apps/urlcodec/URLCodec.swf. This may be worked around by 
-				calling Security.allowDomain.
-
-				*/
-				projectLoader.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
-				
-				var loaderClassName:String = NameUtil.getUnqualifiedClassName(projectLoader.content);
-				
-				
-				if (projectLoader.content is DisplayObject) {
-					//parentAllowsChild.selected = b.parentAllowsChild;
-					//childAllowsParent.selected = b.childAllowsParent;
-					targetSystemManager = projectLoader.content as SystemManager;
-					
-					targetSystemManager.addEventListener(FlexEvent.APPLICATION_COMPLETE, applicationComplete);
-					//LoaderInfo(targetApplication.loaderInfo).uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, uncaughtErrorHandler);
-				}
-				
-				hideBusyIndicators();
-				
-				
-				Radiate.log.info("SWF Loaded");
-			}
-			
-			/**
-			 * Blank application loaded
-			 * */
-			protected function applicationComplete(event:Event):void {
-				var loader:Object = event.currentTarget;
-				var radiate:Radiate = Radiate.instance;
-				//parentAllowsChild.selected = b.parentAllowsChild;
-				//childAllowsParent.selected = b.childAllowsParent;
-				
-				
-				targetSystemManager = loader as SystemManager;
-				targetApplication = loader.application;
-				
-				
-				targetApplication.width = 600;
-				targetApplication.height = 500;
-				
-				updateBackgroundSize();
-				
-				documentDescription.instance = targetApplication;
-				
-				radiate.setDocument(documentDescription);
-				radiate.setTarget(targetApplication);
-				
-				codeAvailable = true;
-				
-				if (codeAvailable) {
-					validateNow();
-					parseDocument(codeToLoad);
-					codeAvailable = false;
-				}
-				
-				
-				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
-				//radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChange, false, 0, true);
-				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGE, propertyChange, false, 0, true);
-				
-				//updateAppScrollPosition();
-				
-				//setTimeout(updateAppScrollPosition, 10);
-				//setTimeout(updateAppScrollPosition, 100);
-				//setTimeout(updateAppScrollPosition, 500);
-				
-				hideBusyIndicators();
-				
-				applicationReady = true;
-				
-				radiate.centerApplication(true);
-				
-				Radiate.log.info("Application Complete");
-				
-			}
-			
-			/**
-			 * 
-			 * */
 			protected function project_ioErrorHandler(event:IOErrorEvent):void {
 				//trace("ioerror");
 				Radiate.log.error(event.text);
@@ -567,8 +543,8 @@
 			 * Make sure we are showing the correct document
 			 * */
 			protected function group1_showHandler(event:FlexEvent):void {
-				if (radiate.document!=documentDescription) {
-					radiate.setDocument(radiate.document, true);// maybe call update document here???
+				if (radiate.selectedDocument!=iDocument) {
+					radiate.setDocument(radiate.selectedDocument, true);// maybe call update document here???
 				}
 				
 				Radiate.log.info("Document SHOW event");
@@ -881,6 +857,48 @@
 				//}
 			}
 			
+			
+			protected function canvasScrollerInstance_creationCompleteHandler(event:FlexEvent):void {
+				var enableMouseSupport:Boolean = false;
+				
+				if (enableMouseSupport) {
+       				canvasScrollerInstance.addEventListener(MouseEvent.MOUSE_WHEEL, list_mouseWheel, true);
+				}
+			}
+			
+			protected function list_mouseWheel(e:MouseEvent):void {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				canvasScrollerInstance.viewport.verticalScrollPosition  -= e.delta * 5;
+			}
+			
+			protected function drawGrid(sprite:Sprite):void {
+                var x:int = 0;
+                var y:int = 0;
+                
+                sprite.graphics.clear();
+                
+                // draw the background
+                sprite.graphics.beginFill(0xFFFFFF);
+                sprite.graphics.drawRect(0, 0, sprite.width, sprite.height);
+                sprite.graphics.endFill();
+                
+                sprite.graphics.lineStyle(0.5, 0x000000, 0.2);
+                
+                // draw the vertical lines
+                while (x <= sprite.width) {
+                    sprite.graphics.moveTo(x, 0);
+                    sprite.graphics.lineTo(x, sprite.height);
+                    x = x + 20;
+                }
+                
+                // draw the horizontal lines
+                while (y <= sprite.height) {
+                    sprite.graphics.moveTo(0, y);
+                    sprite.graphics.lineTo(sprite.width, y);
+                    y = y + 20;
+                }
+            }
 		]]>
 	</fx:Script>
 	
@@ -928,6 +946,8 @@
 				width="100%"
 				height="100%"
 				resize="scroller_resizeHandler(event)"
+				interactionMode="mouse"
+				creationComplete="canvasScrollerInstance_creationCompleteHandler(event)"
 				>
 		
 		<!--- why two containers around this? reasons below -->

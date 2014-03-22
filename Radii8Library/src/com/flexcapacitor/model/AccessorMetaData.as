@@ -25,7 +25,9 @@ package com.flexcapacitor.model {
 		/**
 		 * Import metadata XML Style node into this instance
 		 * */
-		override public function unmarshall(item:XML, target:* = null):void {
+		override public function unmarshall(item:XML, target:* = null, getValue:Boolean = true):void {
+			super.unmarshall(item, target, getValue);
+			if (item==null) return;
 			var metadata:XMLList = item.metadata;
 			var args:XMLList;
 			var keyName:String;
@@ -33,10 +35,7 @@ package com.flexcapacitor.model {
 			var propertyValue:*;
 			var dataname:String;
 			
-			name = item.@name;
 			access = item.@access;
-			type = item.@type;
-			declaredBy = item.@declaredBy;
 			
 			// loop through metadata objects
 			outerloop:
@@ -151,6 +150,10 @@ package com.flexcapacitor.model {
 			
 			if (access!="writeonly") {
 				value = target && name in target ? target[name] : undefined;
+				
+				textValue = value===undefined || value==null ? "": "" + value;
+				
+				if (!getValue) value = undefined;
 			}
 			
 			raw = item.toXMLString();

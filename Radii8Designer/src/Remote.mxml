@@ -4,17 +4,17 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:controls="com.flexcapacitor.controls.*"
 		 xmlns:components="com.flexcapacitor.components.*"
-		 xmlns:inspectors="com.flexcapacitor.views.*"
 		 xmlns:supportClasses="spark.components.supportClasses.*" 
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:core="com.flexcapacitor.effects.core.*"
 		 xmlns:flexiframe="com.google.code.flexiframe.*" 
 		 xmlns:views="com.flexcapacitor.views.*"
+		 xmlns:panels="com.flexcapacitor.views.panels.*"
 		 xmlns:ns1="*" 
 		 
 		 width="400" 
 		 height="100%" 
-		 creationComplete="creationCompleteHandler(event)"
+		 creationComplete="creationCompleteHandler(event)" 
 		 >
 		
 	<fx:Style>
@@ -41,17 +41,18 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.components.DocumentContainer;
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.views.IInspector;
 			
+			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			import mx.events.IndexChangedEvent;
 			
 			import spark.events.IndexChangeEvent;
 			
 			
+			[Bindable]
 			private var radiate:Radiate;
 			
 			protected function panelsLabelFunction(item:Object):String {
@@ -77,20 +78,8 @@
 				event.preventDefault();*/
 			}
 			
-			protected function showConsoleHandler(event:MouseEvent):void {
-				/*
-				if (console.height>=100) {
-					console.height = 22;
-					console.includeInLayout = false;
-					console.visible = false;
-					showConsoleLabel.text = "Console";
-				}
-				else {
-					console.height = 200;
-					console.visible = true;
-					console.includeInLayout = true;
-					showConsoleLabel.text = "Close";
-				}*/
+			protected function closeDocumentIcon_clickHandler():void {
+				radiate.closeVisibleDocument();
 			}
 			
 			protected function navigatorContent_changeHandler(event:IndexChangedEvent):void {
@@ -98,6 +87,7 @@
 				var document:IDocument;
 				
 				document = radiate.getDocumentAtIndex(event.newIndex);
+				radiate.setProject(document.project);
 				radiate.setDocument(document, true);
 				return;
 				
@@ -119,8 +109,6 @@
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
-				radiate.addEventListener(RadiateEvent.REQUEST_PREVIEW, requestPreviewHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.CODE_UPDATED, codeUpdatedHandler, false, 0, true);
 				
 				radiate.documentsTabNavigator = documentsTagNavigator;
 			}
@@ -131,36 +119,102 @@
 
 			private var navigatorContent:NavigatorContent;
 			
-			protected function requestPreviewHandler(event:RadiateEvent):void {
-				var previewType:String = event.previewType;
+			
+			protected function documentsTagNavigator_clickHandler(event:MouseEvent):void {
+				/*var target:Object = radiate.target;
+				var navigatorContent:INavigatorContent = documentsTagNavigator.selectedChild;
 				
-				if (!previewCreated && previewType==Code.HTML) {
-					
-					previewCreated = true;
+				if (target && "setFocus" in target) {
+					target["setFocus"]();
 				}
 				
-				//var displayList:ComponentDescription = DisplayObjectUtils.getDisplayList(radiate.document);
-				
-				if (previewType==Code.HTML) {
-					//documentsTagNavigator.selectedIndex = 1;
-					//radiate.isPreviewVisible = true;
-				}
-				else {
-					//documentsTagNavigator.selectedIndex = 0;
-				}
-				
-				
+				if (navigatorContent is DisplayObject) {
+					var filter:BorderStrokeFilter = new BorderStrokeFilter();
+					navigatorContent.filters = [filter];
+				}*/
 			}
 			
 			/**
-			 * Update code in preview
+			 * Activate selected inspector and deactivate hidden inspectors
 			 * */
-			protected function codeUpdatedHandler(event:RadiateEvent):void {
+			public function activateInspector(viewstack:ViewStack, selectedNavigator:NavigatorContent):void {
+				var navigatorItem:NavigatorContent;
+				var selectedNavigatorContent:IInspector;
+				var navigatorInspector:IInspector;
 				
-				//if (iframe) { 
-					//documentsTagNavigator.selectedIndex = 1;
-				//	iframe.content = event.value;
-				//}
+				if (selectedNavigator && selectedNavigator.numElements>0) {
+					selectedNavigatorContent = selectedNavigator.getElementAt(0) as IInspector;
+				}
+				
+				var length:int = viewstack.numElements;
+				
+				// deactivate hidden inspectors
+				for (var i:int;i<length;i++) {
+					navigatorItem = viewstack.getElementAt(i) as NavigatorContent;
+					
+					if (navigatorItem && navigatorItem.numElements>0) {
+						navigatorInspector = navigatorItem.getElementAt(0) as IInspector;
+						
+						if (navigatorInspector) {
+							navigatorInspector.deactivate();
+						}
+					}
+				}
+				
+				// activate the current inspector
+				if (selectedNavigatorContent) {
+					UIComponent(selectedNavigatorContent).validateNow();// make sure everythings created
+					selectedNavigatorContent.activate();
+				}
+			}
+
+			/**
+			 * 
+			 * This error occured on switching from design view to the home screen
+			TypeError: Error #1009: Cannot access a property or method of a null object reference.
+				at mx.containers::TabNavigator/keyDownHandler()[E:\dev\4.y\frameworks\projects\mx\src\mx\containers\TabNavigator.as:895]
+				 * 
+			    override protected function keyDownHandler(event:KeyboardEvent):void
+			    {
+			        if (focusManager.getFocus() == this) // error here line 895
+			        {
+			            // Redispatch the event from the TabBar so that it can handle it.
+			            tabBar.dispatchEvent(event);
+			        }
+			    }
+
+			*/
+			
+			protected function firstViewStack_changeHandler(event:IndexChangedEvent):void {
+				activateInspector(firstViewStack, event.relatedObject as NavigatorContent);
+			}
+			
+			protected function secondViewStack_changeHandler(event:IndexChangedEvent):void {
+				activateInspector(secondViewStack, event.relatedObject as NavigatorContent);
+			}
+			
+			protected function thirdViewStack_changeHandler(event:IndexChangedEvent):void {				
+				activateInspector(thirdViewStack, event.relatedObject as NavigatorContent);
+			}
+			
+			protected function forthViewStack_changeHandler(event:IndexChangedEvent):void {
+				activateInspector(forthViewStack, event.relatedObject as NavigatorContent);
+			}
+			
+			protected function firstViewStack_creationCompleteHandler(event:FlexEvent):void {
+				activateInspector(firstViewStack, firstViewStack.selectedChild as NavigatorContent);
+			}
+			
+			protected function secondViewStack_creationCompleteHandler(event:FlexEvent):void {
+				activateInspector(secondViewStack, secondViewStack.selectedChild as NavigatorContent);
+			}
+			
+			protected function thirdViewStack_creationCompleteHandler(event:FlexEvent):void {
+				activateInspector(thirdViewStack, thirdViewStack.selectedChild as NavigatorContent);
+			}
+			
+			protected function forthViewStack_creationCompleteHandler(event:FlexEvent):void {
+				activateInspector(forthViewStack, forthViewStack.selectedChild as NavigatorContent);
 			}
 			
 		]]>
@@ -204,12 +258,14 @@
 	
 	<s:Group width="100%" height="100%" bottom="35" left="5" right="5">
 		
-		<s:HGroup width="100%" height="32" >
+		<s:HGroup id="toolBarGroup" width="100%" height="26" >
 			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStripIcon}"/>
-			<inspectors:ToolInspector />
+			<views:SelectedToolToolBar />
+			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStripIcon}"/>
+			<views:HistoryToolBar />
 			<s:Spacer width="100%"/>
-			<inspectors:SizesInspector showRestoreSize="true"/>
-			<inspectors:ZoomInspector showActualSize="false"/>
+			<views:SizesInspector showRestoreSize="true" height="100%"/>
+			<views:ZoomInspector showActualSize="false" height="100%"/>
 		</s:HGroup>
 	
 		<mx:HDividedBox width="100%" height="100%" 
@@ -253,29 +309,30 @@
 				<!--<s:TabBar dataProvider="{firstViewStack}" width="100%" height="22"/>-->
 				
 				<mx:TabNavigator id="firstViewStack" 
-							  borderStyle="solid" 
-							  width="100%"
-							  height="100%"
-							  clipContent="true">
+								 width="100%"
+								 height="100%"
+								 clipContent="true"
+								 change="firstViewStack_changeHandler(event)"
+								 creationComplete="firstViewStack_creationCompleteHandler(event)">
 					
 					<!-- PROJECT -->
 					<s:NavigatorContent label="PROJECTS"  >
-						<views:ProjectInspector width="100%" />
+						<panels:ProjectInspector width="100%" />
 					</s:NavigatorContent>
 					
 					<!-- COMPONENTS -->
 					<s:NavigatorContent label="COMPONENTS">
-						<views:Components height="100%" width="100%" />
+						<panels:ComponentsInspector height="100%" width="100%" />
 					</s:NavigatorContent>
 					
 					<!-- LAYERS -->
 					<s:NavigatorContent label="LAYERS"  >
-						<views:Layers width="100%" minHeight="180"/>
+						<views:LayersInspector width="100%" minHeight="180"/>
 					</s:NavigatorContent>
 					
 					<!-- HISTORY -->
 					<s:NavigatorContent label="HISTORY">
-						<inspectors:History id="history" minHeight="100" 
+						<panels:HistoryInspector id="history" minHeight="100" 
 											clearOnTargetChange="false"
 											height="100%" width="100%"/>
 					</s:NavigatorContent>
@@ -300,29 +357,29 @@
 							
 							<!-- SNAPSHOT -->
 							<s:Label text="SNAPSHOT" width="100%" styleName="formItem" />
-							<inspectors:Snapshot height="100%" width="100%" />
+							<views:Snapshot height="100%" width="100%" />
 							
 							<!-- EDIT DECISION LIST -->
 							<s:Label text="CHANGE LOG" width="100%" styleName="formItem"/>
-							<inspectors:ChangeHistory minHeight="22" height="100%" width="100%" removeDuplicates="false"/>
+							<views:ChangeHistory minHeight="22" height="100%" width="100%" removeDuplicates="false"/>
 							
 							
 							<!-- SEARCH EXPRESSION -->
 							<s:Label text="SEARCH EXPRESSION" width="100%" styleName="formItem"/>
-							<inspectors:SearchExpression height="100%" width="100%"/>
+							<views:SearchExpression height="100%" width="100%"/>
 							
 							<!-- REDRAW REGIONS -->
 							<s:Label text="REDRAW REGIONS" width="100%" styleName="formItem"/>
-							<inspectors:RedrawRegions width="20" height="20" />
+							<views:RedrawRegions width="20" height="20" />
 							
 							<!-- FRAMERATE -->
 							<s:Label text="FRAMERATE" width="100%"
 									 styleName="formItem"/>
-							<inspectors:FrameRate />
+							<views:FrameRate />
 							
 							<!-- MEMORY -->
 							<s:Label text="MEMORY" width="100%" styleName="formItem"/>
-							<inspectors:Memory height="100%" width="100%" 
+							<views:Memory height="100%" width="100%" 
 											   showCurrentlyUsedPlayerMemory="true"/>
 							<s:Spacer height="10"/>
 						</s:Group>
@@ -334,29 +391,61 @@
 								 borderStyle="solid"
 								 width="100%"
 								 height="100%"
-								 selectedIndex="0">
+								 selectedIndex="0"
+								 change="secondViewStack_changeHandler(event)"
+								 creationComplete="secondViewStack_creationCompleteHandler(event)">
 					
 					<!-- DOCUMENTS -->
 					<s:NavigatorContent width="100%" height="100%" label="DOCUMENTS">
-						<views:DocumentsInspector height="100%" width="100%"/>
+						<panels:DocumentsInspector height="100%" width="100%"/>
+					</s:NavigatorContent>
+					
+					<!-- LIBRARY -->
+					<s:NavigatorContent label="LIBRARY">
+						<panels:LibraryInspector minHeight="180" height="100%" width="100%"/>
 					</s:NavigatorContent>
 					
 					<!-- LAYOUT CONSTRAINTS -->
 					<s:NavigatorContent label="LAYOUT">
 						<s:Scroller width="100%" height="100%">
-							<inspectors:Constraints height="100%" width="100%" />
+							<panels:ConstraintsInspector height="100%" width="100%" />
 						</s:Scroller>
 					</s:NavigatorContent>
 					
 					<!-- PROPERTIES -->
 					<s:NavigatorContent label="PROPERTIES">
-						<inspectors:Properties minHeight="180" height="100%" width="100%"/>
+						<mx:LinkBar dataProvider="{forthViewStack}" right="0"/>
+						
+						<mx:ViewStack id="forthViewStack" 
+										 width="100%"
+										 height="100%"
+										 minHeight="24"
+										 top="28"
+										 change="forthViewStack_changeHandler(event)"
+										 creationComplete="forthViewStack_creationCompleteHandler(event)">
+							
+							<!-- DYNAMIC INSPECTOR -->
+							<s:NavigatorContent label="COMMON">
+								<panels:DynamicComponentInspector width="100%" height="100%"/>
+							</s:NavigatorContent>
+							
+							<!-- PROPERTY INSPECTOR -->
+							<s:NavigatorContent label="ALL">
+								<panels:PropertyInspector minHeight="180" height="100%" width="100%"/>
+							</s:NavigatorContent>
+						</mx:ViewStack>
+						<!--<mx:TabNavigator id="forthViewStack" 
+										 borderStyle="none"
+										 width="100%"
+										 height="100%"
+										 minHeight="24">
+						</mx:TabNavigator>-->
 					</s:NavigatorContent>
 					
 					<!-- EVENTS -->
 					<s:NavigatorContent label="EVENTS">
 						<s:Scroller width="100%" height="100%">
-							<inspectors:Events height="100%" width="100%"/>
+							<panels:Events height="100%" width="100%"/>
 						</s:Scroller>
 					</s:NavigatorContent>
 					
@@ -370,13 +459,13 @@
 					<!-- STATES -->
 					<s:NavigatorContent label="STATES">
 						<s:Scroller width="100%" height="100%">
-							<views:States height="100%" width="100%" />
+							<panels:States height="100%" width="100%" />
 						</s:Scroller>
 					</s:NavigatorContent>
 					
 					<!-- PROFILING -->
 					<s:NavigatorContent width="100%" height="100%" label="PROFILE">
-						<views:Profiling height="100%" width="100%"/>
+						<panels:Profiling height="100%" width="100%"/>
 					</s:NavigatorContent>
 					
 				</mx:TabNavigator>
@@ -396,7 +485,9 @@
 		
 				
 				<mx:TabNavigator id="documentsTagNavigator" width="100%" height="100%"
-								  change="navigatorContent_changeHandler(event)">
+								  change="navigatorContent_changeHandler(event)"
+								  click="documentsTagNavigator_clickHandler(event)"
+								  >
 					<!--<s:NavigatorContent width="100%" height="100%" label="HELL0!">
 						<ns1:StartPage id="startPage" width="100%" height="100%" />
 					</s:NavigatorContent>-->
@@ -416,6 +507,11 @@
 						<ns1:Document id="document2" width="100%" height="100%" />
 					</s:NavigatorContent>-->
 				</mx:TabNavigator>
+				
+				<!--<s:Label id="noDocumentsLabel"
+						 text="To create a new project or document select File > New Project or File > New Document."
+						 visible="{documentsTagNavigator.length==0}" 
+						 height="100%"/>-->
 				
 				<!-- BREADCRUMBS -->
 				<!--<s:Label text="BREADCRUMBS" width="100%" styleName="formItem"/>-->
@@ -444,26 +540,34 @@
 				<mx:TabNavigator id="thirdViewStack" 
 								 borderStyle="solid"
 								 width="100%"
-								 height="200">
+								 height="200"
+								 minHeight="24"
+								 change="thirdViewStack_changeHandler(event)"
+								 creationComplete="thirdViewStack_creationCompleteHandler(event)">
+					
+					<!-- DYNAMIC INSPECTOR -->
+					<s:NavigatorContent label="INSPECTOR">
+						<panels:DynamicComponentInspector width="100%" height="100%"/>
+					</s:NavigatorContent>
 					
 					<!-- CONSOLE -->
 					<s:NavigatorContent label="CONSOLE">
-						<views:Console width="100%" height="100%"/>
+						<panels:ConsoleInspector width="100%" height="100%"/>
 					</s:NavigatorContent>
 				
 					<!-- CODE INSPECTOR -->
 					<s:NavigatorContent width="100%" height="100%" label="CODE">
-						<inspectors:Code id="code1" width="100%" height="100%" />
+						<panels:CodeInspector id="code1" width="100%" height="100%" />
 					</s:NavigatorContent>
 				
 					<!-- METADATA INSPECTOR -->
 					<s:NavigatorContent width="100%" height="100%" label="METADATA">
-						<views:MetaDataInspector id="metadataInspector" width="100%" height="100%" />
+						<panels:MetaDataInspector id="metadataInspector" width="100%" height="100%" />
 					</s:NavigatorContent>
 				
 					<!-- DOCS INSPECTOR -->
 					<s:NavigatorContent width="100%" height="100%" label="DOCS">
-						<views:DocumentationInspector id="docsInspector" width="100%" height="100%" />
+						<panels:DocumentationInspector id="docsInspector" width="100%" height="100%" />
 					</s:NavigatorContent>
 				
 					<!-- FEATURE INSPECTOR -->
@@ -481,23 +585,20 @@
 			</mx:VDividedBox>
 		
 		</mx:HDividedBox>
+		
+			
+		<controls:ImageButton id="closeDocument" 
+							  source="{Radii8LibraryAssets.clear}" 
+							  click="closeDocumentIcon_clickHandler()"
+							  right="8"
+							  top="34"
+							  width="16"
+							  height="16"
+							  horizontalAlign="center"
+							  verticalAlign="middle"
+							  />
 	</s:Group>
-	
-	<s:Rect width="100%" height="28" bottom="0">
-		<s:fill>
-			<s:SolidColor color="#3d3d3d"/>
-		</s:fill>
-	</s:Rect>
-	
-	<inspectors:Breadcrumbs height="14" bottom="6" left="10" width="100%" 
-							color="#ffffff"/>
-	
-	<s:Label right="10" 
-			 bottom="6"
-			 textAlign="right" 
-			 color="#888888"
-			 text="©2009-2013 Velara III. All rights reserved."
-			 />
+
 					
 	<!--<s:List id="shortcutList" 
 			width="100%" 

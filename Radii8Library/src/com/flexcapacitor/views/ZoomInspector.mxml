@@ -3,6 +3,7 @@
 		 xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:filters="com.flexcapacitor.filters.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
 		 
 		 creationComplete="group1_creationCompleteHandler(event)"
 		 >
@@ -145,10 +146,14 @@
 	</s:layout>
 	
 	<!--<s:CheckBox label="Scrub Zoom" />-->
-	<s:Button id="actualSize" label="Actual Size"
-			  visible="{showActualSize}"
-			  includeInLayout="{showActualSize}"
-			  click="actualSize_clickHandler(event)"/>
+	<c:ImageButton id="actualSizeButton" 
+			   visible="{showActualSize}"
+			   includeInLayout="{showActualSize}"
+			   source="{Radii8LibraryAssets.actualSize}" 
+			   toolTip="Actual"
+			   click="actualSize_clickHandler(event)"
+			   height="100%"
+			   />
 	
 	<!--<s:Button id="fitSize" label="Fit Size"
 			  visible="{showActualSize}"
@@ -157,6 +162,7 @@
 	
 	<s:ComboBox id="zoomComboBox" 
 				width="80" 
+				height="100%"
 				focusAlpha="0" 
 				selectedIndex="8"
 				change="zoomComboBox_changeHandler(event)"

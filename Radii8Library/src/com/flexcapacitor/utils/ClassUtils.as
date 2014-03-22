@@ -5,6 +5,9 @@
 package com.flexcapacitor.utils {
 	import com.flexcapacitor.events.InspectorEvent;
 	import com.flexcapacitor.graphics.LayoutLines;
+	import com.flexcapacitor.model.AccessorMetaData;
+	import com.flexcapacitor.model.MetaData;
+	import com.flexcapacitor.model.StyleMetaData;
 	import com.flexcapacitor.model.VisualElementVO;
 	
 	import flash.desktop.Clipboard;
@@ -26,6 +29,8 @@ package com.flexcapacitor.utils {
 	import mx.utils.DescribeTypeCacheRecord;
 	import mx.utils.NameUtil;
 	import mx.utils.ObjectUtil;
+	
+	import avmplus.DescribeType;
 
 	public class ClassUtils {
 
@@ -172,6 +177,24 @@ package com.flexcapacitor.utils {
 				name = name.replace("::", ".");
 			}
 			return name;
+		}
+
+		/**
+		 * Checks if the source object is the same type as the target object. 
+		 * */
+		public static function isSameClassType(source:Object, target:Object):Boolean {
+			if (source==null && target!=null) {
+				return false;
+			}
+			if (target==null && source!=null) {
+				return false;
+			}
+			
+			if (flash.utils.getQualifiedClassName(source) == flash.utils.getQualifiedClassName(target)) {
+				return true;
+			}
+			
+			return false;
 		}
 
 		/**
@@ -428,7 +451,78 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Creates and array of metadata items for the given object type including inherited metadata. 
+		 * Get AccessorMetaData data for the given property. 
+		 * */
+		public static function getMetaDataOfProperty(target:Object, property:String):AccessorMetaData {
+			var describedTypeRecord:mx.utils.DescribeTypeCacheRecord = mx.utils.DescribeTypeCache.describeType(target);
+			var accessorMetaData:AccessorMetaData = new AccessorMetaData();
+			var matches:XMLList = describedTypeRecord.typeDescription.accessor.(@name==property);
+			var node:XML;
+			
+			if (matches.length()>0) {
+				node = matches[0];
+				accessorMetaData.unmarshall(node, target);
+				return accessorMetaData;
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Get StyleMetaData data for the given style. 
+		 * */
+		public static function getMetaDataOfStyle(target:Object, style:String, superType:String = null):StyleMetaData {
+			var describedTypeRecord:mx.utils.DescribeTypeCacheRecord;
+			var matches:XMLList;
+			var styleMetaData:StyleMetaData;
+			var extendsClassList:XMLList;
+			var node:XML;
+			
+			if (superType) {
+				describedTypeRecord = mx.utils.DescribeTypeCache.describeType(superType);
+			}
+			else {
+				describedTypeRecord = mx.utils.DescribeTypeCache.describeType(target);
+			}
+			
+			if (superType || target is String) {
+				matches = describedTypeRecord.typeDescription.factory.metadata.(@name=="Style").arg.(@value==style);
+			}
+			else if (target is Object) {
+				matches = describedTypeRecord.typeDescription.metadata.(@name=="Style").arg.(@value==style);
+			}
+			
+			if (matches && matches.length()==0) {
+				
+				if (superType || target is String) {
+					extendsClassList = describedTypeRecord.typeDescription.factory.extendsClass;
+				}
+				else if (target is Object) {
+					extendsClassList = describedTypeRecord.typeDescription.extendsClass;
+				}
+				
+				var length:int = extendsClassList.length();
+				
+				for (var i:int;i<length;i++) {
+					var type:String = extendsClassList[i].@type;
+					if (type=="Class") return null;
+					return getMetaDataOfStyle(target, style, type);
+				}
+				
+			}
+			
+			if (matches.length()>0) {
+				node = matches[0].parent();
+				styleMetaData = new StyleMetaData();
+				styleMetaData.unmarshall(node, target);
+				return styleMetaData;
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Creates an array of metadata items for the given object type including inherited metadata. 
 		 * 
 		 * For example, if you give it a Spark Button class it gets all the
 		 * information for it and then gets it's super class ButtonBase and 
@@ -440,7 +534,7 @@ package com.flexcapacitor.utils {
 		 * @param metaType The name of the data in the item name property. Either Style or Event
 		 * @param existingItems The list of the data in the item name property
 		 * */
-		public static function concatenateMetaDataXMLItems(object:Object, metaType:String, existingItems:XMLList):XMLList {
+		public static function concatenateMetaDataXMLItems(object:Object, metaType:String, existingItems:XMLList = null):XMLList {
 			var describedTypeRecord:mx.utils.DescribeTypeCacheRecord = mx.utils.DescribeTypeCache.describeType(object);
 			var typeDescription:* = describedTypeRecord.typeDescription;
 			var hasFactory:Boolean = typeDescription.factory.length()>0;
@@ -453,9 +547,16 @@ package com.flexcapacitor.utils {
 			var className:String = !isRoot ? object as String : getQualifiedClassName(object);
 			var itemsLength:int;
 			var itemsList:XMLList;
-			var existingItemsLength:int = existingItems.length();
+			var existingItemsLength:int = existingItems ? existingItems.length() : 0;
 			var metaName:String;
 			var duplicateItems:Array = [];
+			
+			if (metaType.toLowerCase()=="style") {
+				metaType = "Style"; 
+			}
+			else if (metaType.toLowerCase()=="event") {
+				metaType = "Event"; 
+			}
 			
 			if (hasFactory) {
 				//itemsList = factory.metadata.(@name==name); property "name" won't work! no matches found
@@ -480,8 +581,10 @@ package com.flexcapacitor.utils {
 				item.@declaredBy = className;
 				//item.@className = className.indexOf("::")!=-1 ? className.split("::")[1] : className;
 				//continue;
+				
 				for (var j:int=0;j<existingItemsLength;j++) {
 					var existingItem:XML = existingItems[j];
+					
 					if (metaName==existingItem.@name) {
 						delete itemsList[i];
 						itemsLength--;

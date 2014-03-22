@@ -135,7 +135,7 @@
 			}
 			
 			private function createBreadCrumbTrail():void {
-				var parentDocument:IDocument = radiate.document;
+				var parentDocument:IDocument = radiate.selectedDocument;
 				var lastElement:IVisualElement;
 				var newScrollPosition:int;
 				var displayItems:Array;

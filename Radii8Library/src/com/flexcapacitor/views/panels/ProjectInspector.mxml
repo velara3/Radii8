@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:views="com.flexcapacitor.views.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:fc="com.flexcapacitor.effects.popup.*"
+		 xmlns:e="com.flexcapacitor.handlers.*"
+		 
+		 width="200" height="100%"
+		 implements="com.flexcapacitor.views.IInspector" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IProject;
+			import com.flexcapacitor.views.skins.OnlineToggleButton;
+			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
+			import com.flexcapacitor.views.windows.PublishWindow;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			private var radiate:Radiate;
+			
+			
+
+			public function activate():void {
+				radiate = Radiate.instance;
+				
+				radiate.addEventListener(RadiateEvent.PROJECT_CHANGE, projectChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROJECT_ADDED, projectCreatedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROJECT_CREATED, projectCreatedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROJECT_REMOVED, projectRemovedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROJECT_DELETED, projectRemovedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROJECT_SAVED, projectSavedHandler, false, 0, true);
+				
+				
+				radiate.addEventListener(RadiateEvent.DOCUMENT_ADDED, documentChangedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, documentChangedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_DELETED, documentChangedHandler, false, 0, true);
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.PROJECT_CHANGE, projectChangeHandler);
+					radiate.removeEventListener(RadiateEvent.PROJECT_ADDED, projectCreatedHandler);
+					radiate.removeEventListener(RadiateEvent.PROJECT_CREATED, projectCreatedHandler);
+					radiate.removeEventListener(RadiateEvent.PROJECT_REMOVED, projectRemovedHandler);
+					radiate.removeEventListener(RadiateEvent.PROJECT_DELETED, projectRemovedHandler);
+					radiate.removeEventListener(RadiateEvent.PROJECT_SAVED, projectSavedHandler);
+					
+					
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_ADDED, documentChangedHandler);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_REMOVED, documentChangedHandler);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_DELETED, documentChangedHandler);
+				}
+			}
+			
+			protected function update():void {
+
+				if (radiate.selectedProject) {
+					updateSelectedItem(radiate.selectedProject);
+				}				
+			}
+			
+			/**
+			 * 
+			 * */
+			private function labelFunction(data:Object):String {
+				return data.name;
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function projectChangeHandler(event:RadiateEvent):void {
+				//updateProjects();
+				updateSelectedItem(event.selectedItem as IProject);
+			}
+			
+			private function updateProjects():void {
+				projects.refresh();
+				
+				// must call validate now so selected index doesn't revert if a new project is selected
+				list.validateNow();
+			}
+			
+			private function updateSelectedItem(project:IProject):void {
+				list.selectedItem = project;
+			}
+			
+			public function projectCreatedHandler(event:RadiateEvent):void {
+				updateProjects();
+			}
+			
+			protected function list_changeHandler(event:IndexChangeEvent):void {
+				var project:IProject = list.selectedItem ? IProject(list.selectedItem) : null;
+				
+				if (project && !project.isOpen) {
+					radiate.openProject(project);
+				}
+				
+				if (project) {
+					radiate.setProject(project);
+				}
+			}
+			
+			protected function publishButton_clickHandler(event:MouseEvent):void {
+				
+			}
+			
+			protected function saveProjectIcon_clickHandler(event:MouseEvent):void {
+				radiate.saveProject(radiate.selectedProject);
+				//radiate.save();
+				radiate.saveSettings();
+			}
+			
+			protected function getSavedProjectsIcon_clickHandler(event:MouseEvent):void {
+				radiate.getSavedData();
+				radiate.getSettingsData();
+			}
+			/*
+			protected function deleteProjectIcon_clickHandler(event:MouseEvent):void {
+				var selectedProject:IProject = list.selectedItem as IProject;
+				
+				if (selectedProject) {
+					radiate.removeProject(selectedProject);
+				}
+				else {
+					Radiate.log.info("Please select a project");
+				}
+			}*/
+			
+			protected function newProjectIcon_clickHandler(event:MouseEvent):void {
+				//radiate.createProject();
+				//radiate.addProject(radiate.createProject(), true, true, true);
+				radiate.createBlankDemoDocument();
+			}
+			
+			protected function removeSavedDataIcon_clickHandler(event:MouseEvent):void {
+				radiate.removeSavedData();
+				radiate.removeSavedSettings();
+			}
+			
+			/**
+			 * Handle when a project has been removed
+			 * */
+			protected function projectRemovedHandler(event:Event):void {
+				updateProjects();
+				
+				if (radiate.projects.length>0) {
+					radiate.setProject(radiate.projects[0], true);
+				}
+			}
+			
+			protected function closeProjectIcon_clickHandler(event:MouseEvent):void {
+				var project:IProject = list.selectedItem ? IProject(list.selectedItem) : null;
+				
+				if (project) {
+					radiate.closeProject(project);
+				}
+			}
+			
+			protected function openProjectsIcon_clickHandler(event:MouseEvent):void {
+				var project:IProject = list.selectedItem ? IProject(list.selectedItem) : null;
+				
+				if (project) {
+					radiate.openProject(project);
+				}
+			}
+			
+			// HACK TO Mark project needs saved
+			protected function documentChangedHandler(event:RadiateEvent):void {
+				
+				if (radiate.selectedProject) {
+					radiate.selectedProject.checkProjectHasChanged();
+				}
+			}
+			
+			
+			// HACK TO Mark project needs saved
+			protected function projectSavedHandler(event:Event):void {
+				
+				if (radiate.selectedProject) {
+					radiate.selectedProject.checkProjectHasChanged();
+				}
+			}
+			
+			protected function autoSaveToggle_clickHandler(event:MouseEvent):void {
+				radiate.enableAutoSave = autoSaveToggle.selected;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:ArrayCollection id="projects" source="{radiate.projects}"/>
+		<s:ArrayCollection id="projectsFiltersTypes">
+			<fx:Array>
+				<fx:String>All Projects</fx:String>
+				<fx:String>Open Projects</fx:String>
+			</fx:Array>
+		</s:ArrayCollection>
+		
+		<e:EventHandler eventName="click" target="{publishButton}">
+			<fc:OpenPopUp popUpType="{PublishWindow}" modalDuration="250"/>
+		</e:EventHandler>
+		
+		<!--- show delete project popup -->
+		<e:EventHandler targets="{deleteProjectIcon}" eventName="click" >
+			<fc:OpenPopUp id="openDeleteProjectPopUp" 
+						  popUpType="{DeleteDocumentWindow}" 
+						  modalDuration="100" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="600"
+						  parent="{parentApplication}"
+						  popUpOptions="{{currentState:'project',documentData:list.selectedItem}}"
+						  />
+		</e:EventHandler>
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="5" paddingRight="5" paddingBottom="5"/>
+	</s:layout>
+	
+	<s:ButtonBar id="projectFilters" 
+				 requireSelection="true"
+				 selectedIndex="0"
+				 labelField="name"
+				 dataProvider="{projectsFiltersTypes}"
+				 includeInLayout="false"
+				 visible="false"
+				 >
+	</s:ButtonBar>
+
+	<s:List id="list" 
+			focusAlpha="0"
+			minHeight="20"
+			width="100%" 
+			height="100%"
+			labelFunction="labelFunction"
+			borderAlpha=".2"
+			dataProvider="{projects}"
+			change="list_changeHandler(event)"
+			itemRenderer="com.flexcapacitor.views.renderers.EditableProjectRenderer"
+			>
+		
+	</s:List>
+	
+	<s:HGroup width="100%"
+			 height="24"
+			 minHeight="24"
+			 verticalAlign="middle"
+			 >
+		<s:Button id="publishButton" 
+				  label="Publish" 
+				  visible="false"
+				  includeInLayout="false"/>
+		
+		<c:ImageButton id="removeSavedDataIcon" 
+					   source="{Radii8LibraryAssets.clear}" 
+					   toolTip="Remove All Locally Saved Projects and Documents"
+					   click="removeSavedDataIcon_clickHandler(event)"
+					   visible="false"
+					   includeInLayout="false"
+					   />
+		<c:ImageButton id="getProjectsIcon" 
+					   source="{Radii8LibraryAssets.openFolder}" 
+					   toolTip="Load all locally Saved Projects and documents"
+					   click="getSavedProjectsIcon_clickHandler(event)"
+					   visible="false"
+					   includeInLayout="false"
+					   />
+		<s:CheckBox id="autoSaveToggle" 
+					selected="{radiate.enableAutoSave}"
+					useHandCursor="true"
+					buttonMode="true"
+					enabled="true"
+					toolTip="Enables auto save"
+					label="Auto Save"
+					click="autoSaveToggle_clickHandler(event)"
+					/>
+		
+		<s:Spacer width="100%"/>
+		<c:ImageButton id="closeProjectIcon" 
+					   source="{Radii8LibraryAssets.closedFolder}" 
+					   toolTip="Close Project"
+					   click="closeProjectIcon_clickHandler(event)"
+					   />
+		<c:ImageButton id="openProjectsIcon" 
+					   source="{Radii8LibraryAssets.openFolder}" 
+					   toolTip="Open Project"
+					   click="openProjectsIcon_clickHandler(event)"
+					   />
+		<c:ImageButton id="saveProjectIcon" 
+					   source="{Radii8LibraryAssets.save}" 
+					   toolTip="Save Project"
+					   click="saveProjectIcon_clickHandler(event)"
+					   height="15"
+					   />
+		<c:ImageButton id="newProjectIcon" 
+					   source="{Radii8LibraryAssets.newFile}" 
+					   toolTip="New Project"
+					   click="newProjectIcon_clickHandler(event)"
+					   />
+		<c:ImageButton id="deleteProjectIcon" 
+					   source="{Radii8LibraryAssets.trashCan}" 
+					   toolTip="Remove Project"
+					   />
+	</s:HGroup>
+	
+</s:Group>

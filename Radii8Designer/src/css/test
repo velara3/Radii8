@@ -1,0 +1,18 @@
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+main,
+nav,
+section,
+summary {
+    display: inline-block;
+}
+
+*, *:before, *:after {
+  outline:1px dotted red;
+}

@@ -1,52 +1,92 @@
 
 package com.flexcapacitor.model {
 	
-	import com.flexcapacitor.events.HistoryEvent;
-	import com.flexcapacitor.events.HistoryEventItem;
+	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
+	import com.flexcapacitor.utils.MXMLDocumentExporter;
+	import com.flexcapacitor.utils.MXMLImporter;
+	import com.flexcapacitor.utils.XMLUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
-	import flash.events.EventDispatcher;
+	import flash.display.DisplayObject;
 	import flash.events.IEventDispatcher;
 	import flash.utils.Dictionary;
 	
 	import mx.collections.ArrayCollection;
+	import mx.core.IVisualElement;
+	import mx.utils.UIDUtil;
 	
 	
 	
 	/**
 	 * Document model
 	 * */
-	public class Document extends EventDispatcher implements IDocument {
-		
-		/**
-		 * Exports the document to string
-		 * */
-		public static var exporter:IDocumentExporter;
+	public class Document extends DocumentData implements IDocument, ISavable {
 		
 		/**
 		 * Constructor
 		 * */
 		public function Document(target:IEventDispatcher=null) {
 			super(target);
+			uid = UIDUtil.createUID();
 		}
+
 		
+		/**
+		 * URL to get code
+		 * */
+		public var URL:String;
 		
+		/**
+		 * Dots per inch
+		 * */
+		public var DPI:int;
 		
-		private var _name:String;
+		/**
+		 * Width of document
+		 * */
+		public var width:String;
+		
+		/**
+		 * Height of document
+		 * */
+		public var height:String;
+		
+		private var _scale:Number = 1;
 
 		/**
-		 * Name of Document
+		 * Scale of document
 		 * */
-		public function get name():String {
-			return _name;
+		public function get scale():Number {
+			return _scale;
+		}
+
+		/**
+		 * Scale of document
+		 * */
+		public function set scale(value:Number):void {
+			_scale = value;
+			
+			if (instance) {
+				DisplayObject(instance).scaleX = value;
+				DisplayObject(instance).scaleY = value;
+			}
+		}
+
+		private var _projectID:String;
+
+		/**
+		 * ID of project. Can be part of multiple projects so we may need to change this. 
+		 * */
+		public function get projectID():String {
+			return _projectID;
 		}
 
 		/**
 		 * @private
 		 */
-		public function set name(value:String):void {
-			_name = value;
+		public function set projectID(value:String):void {
+			_projectID = value;
 		}
 
 		private var _project:IProject;
@@ -65,32 +105,59 @@ package com.flexcapacitor.model {
 			_project = value;
 		}
 		
+		private var _containerType:Class;
+
+		/**
+		 * @inheritDoc
+		 * */
+		public function get containerType():Class {
+			return _containerType;
+		}
+
+		public function set containerType(value:Class):void {
+			_containerType = value;
+		}
+
+		private var _containerTypeName:String;
+
+		/**
+		 * @inheritDoc
+		 * */
+		public function get containerTypeName():String {
+			return _containerTypeName;
+		}
+
+		public function set containerTypeName(value:String):void {
+			_containerTypeName = value;
+		}
+
+		
 		/**
 		 * @private
 		 * */
-		private var _description:ComponentDescription;
+		private var _componentDescription:ComponentDescription;
 
 		/**
 		 * Reference to the component description
 		 * */
-		public function get description():ComponentDescription {
-			if (!_description) {
+		public function get componentDescription():ComponentDescription {
+			if (!_componentDescription) {
 				
 				if (instance) {
-					_description = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary);
+					_componentDescription = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary);
 				}
 			}
+			// com.flexcapacitor.utils.supportClasses.ComponentDescription (@1234c3539)
+			_componentDescription = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary);
 			
-			_description = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary);
-			
-			return _description;
+			return _componentDescription;
 		}
 
 		/**
 		 * @private
 		 */
-		public function set description(value:ComponentDescription):void {
-			_description = value;
+		public function set componentDescription(value:ComponentDescription):void {
+			_componentDescription = value;
 		}
 
 		
@@ -131,7 +198,7 @@ package com.flexcapacitor.model {
 		}
 
 		
-		private var _historyIndex:int;
+		private var _historyIndex:int = -1;
 
 		/**
 		 * Index of current event in history
@@ -146,7 +213,48 @@ package com.flexcapacitor.model {
 		[Bindable]
 		public function set historyIndex(value:int):void {
 			_historyIndex = value;
+			
+			if (value != lastSavedHistoryIndex) {
+				isChanged = true;
+			}
+			else {
+				isChanged = false;
+			}
 		}
+
+		
+		private var _lastSavedHistoryIndex:int = -1;
+
+		/**
+		 * Index of event in history when the document was last saved
+		 * */
+		public function get lastSavedHistoryIndex():int {
+			return _lastSavedHistoryIndex;
+		}
+
+		/**
+		 * @private
+		 */
+		[Bindable]
+		public function set lastSavedHistoryIndex(value:int):void {
+			_lastSavedHistoryIndex = value;
+			
+			isChanged = historyIndex!=value;
+		}
+		
+		private var _isPreviewOpen:Boolean;
+
+		/**
+		 * @inheritDoc
+		 * */
+		public function get isPreviewOpen():Boolean {
+			return _isPreviewOpen;
+		}
+
+		public function set isPreviewOpen(value:Boolean):void {
+			_isPreviewOpen = value;
+		}
+
 		
 		private var _descriptionsDictionary:Dictionary = new Dictionary(true);
 
@@ -163,138 +271,198 @@ package com.flexcapacitor.model {
 		public function set descriptionsDictionary(value:Dictionary):void {
 			_descriptionsDictionary = value;
 		}
+		
+		private var _documentData:IDocumentData;
 
+		/**
+		 * Reference to the last saved data that was loaded in
+		 * */
+		public function get documentData():IDocumentData {
+			return _documentData;
+		}
 
 		/**
-		 * Code
-		 * */
-		public var code:String;
+		 * @private
+		 */
+		public function set documentData(value:IDocumentData):void {
+			_documentData = value;
+		}
 		
 		/**
-		 * URL to get code
+		 * @inheritDoc
 		 * */
-		public var URL:String;
+		override public function close():void {
+			super.close();
+			
+			clearHistory();
+		}
 		
 		/**
-		 * Class type of document
+		 * Removes the history events
 		 * */
-		public var type:Class;
+		public function clearHistory():void {
+			//history.refresh();
+			history.removeAll();
+		}
 		
 		/**
-		 * Class name of document
+		 * Save 
 		 * */
-		public var className:String;
+		override public function save(locations:String = REMOTE_LOCATION, options:Object = null):Boolean {
+			var savedLocallyResult:Boolean = super.save(locations, options);
+			
+			lastSavedHistoryIndex = historyIndex;
+			
+			return savedLocallyResult;
+		}
 		
-		/**
-		 * Dots per inch
-		 * */
-		public var DPI:int;
 		
-		/**
-		 * Width of document
-		 * */
-		public var width:String;
-		
-		/**
-		 * Height of document
-		 * */
-		public var height:String;
 
-		
+		/**
+		 * 
+		 * */
 		override public function toString():String {
 			var output:String = exporter.export(this);
 			
 			return output;
-			
 		}
 		
-
 		/**
 		 * Exports to XML object
 		 * */
-		public function toXML():XML {
-			var output:XML = exporter.exportXML(this);
+		override public function toXML(representation:Boolean = false):XML {
+			var output:XML = exporter.exportXML(this, representation);
 			
 			return output;
-			
 		}
 
 		/**
-		 * Exports an XML string
+		 * Exports an XML string.
+		 * If reference is true then just returns just enough basic information to locate it. 
 		 * */
-		public function toXMLString():String {
-			var output:String = exporter.export(this);
+		/*override public function toXMLString(reference:Boolean = false):String {
+			var output:String;
+			
+			output = exporter.exportXMLString(this, reference);
+			
+			return output;
+		}*/
+
+		/**
+		 * Exports an MXML string.
+		 * If reference is true then just enough basic information to locate it. 
+		 * */
+		/*override public function toMXMLString(reference:Boolean = false):String {
+			var output:String;
+			
+			output = internalExporter.exportXMLString(this, reference);
 			
 			return output;
 			
-		}
+		}*/
 		
 		/**
 		 * Exports a string
 		 * */
-		public function export(exporter:IDocumentExporter):String {
-			var output:String = exporter.export(this);
+		/*public function export(exporter:IDocumentExporter):String {
+			var output:String = exporter.exportXMLString(this);
 			
 			return output;
+			
+		}*/
+		
+		/**
+		 * Get basic document data
+		 * */
+		override public function unmarshall(data:Object):void {
+			super.unmarshall(data); 
+			
+			if (data is IDocumentData) {
+				//documentData = IDocumentData(data);// this and
+				//IDocumentData(data).document = this;// this should be removed just have references somewhere 
+			}
+		}
+		
+		/**
+		 * Get source code for document. 
+		 * Don't really like the way I'm doing this.
+		 * I think it would be better to keep exporting and importing to external classes
+		 * */
+		override public function getSource(target:Object = null):String {
+			
+			// refactor - should maybe use DocumentExporter class 
+			return internalExporter.export(this);
 			
 		}
 		
 		/**
-		 * Get an object that contains the properties that have been set on the component.
-		 * This does this by going through the history events and checking the changes.
+		 * Parses the code and builds a document. 
+		 * If code is null and source is set then parses source.
+		 * If parent is set then imports code to the parent. 
 		 * */
-		public function getAppliedPropertiesFromHistory(component:ComponentDescription, addToProperties:Boolean = true):Object {
-			var historyEventItem:HistoryEventItem;
-			var historyEventItems:Array;
-			var historyEvent:HistoryEvent;
-			var eventsLength:int;
-			var propertiesObject:Object = {};
-			var stylesObject:Object = {};
-			var properties:Array;
-			var styles:Array;
+		public function parseSource(code:String = null, parent:IVisualElement = null):void {
+			var codeToParse:String = code ? code : source;
+			var currentChildren:XMLList;
+			var nodeName:String;
+			var child:XML;
+			var xml:XML;
+			var root:String;
+			var isValid:Boolean;
+			var rootNodeName:String = "RootWrapperNode";
+			var updatedCode:String;
 			
-			// go back through the history of changes and 
-			// add the properties that have been set to an object
-			for (var i:int=historyIndex+1;i--;) {
-				historyEvent = HistoryEvent(history.getItemAt(i));
-				historyEventItems = historyEvent.historyEventItems;
-				eventsLength = historyEventItems.length;
+			isValid = XMLUtils.isValidXML(codeToParse);
+			
+			if (!isValid) {
+				root = '<'+rootNodeName+ ' xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex/mx">';
+				updatedCode = root + codeToParse + "</"+rootNodeName+">";
 				
-				for (var j:int=0;j<eventsLength;j++) {
-					historyEventItem = HistoryEventItem(historyEventItems[j]);
-					properties = historyEventItem.properties;
-					styles = historyEventItem.styles;
-		
-					if (historyEventItem.targets.indexOf(component.instance)!=-1) {
-						
-						for each (var property:String in properties) {
-							
-							if (property in propertiesObject) {
-								continue;
-							}
-							else {
-								propertiesObject[property] = historyEventItem.propertyChanges.end[property];
-							}
-						}
-						
-						for each (var style:String in styles) {
-							
-							if (style in stylesObject) {
-								continue;
-							}
-							else {
-								stylesObject[style] = historyEventItem.propertyChanges.end[style];
-							}
-						}
-					}
-					
+				isValid = XMLUtils.isValidXML(updatedCode);
+				if (isValid) {
+					codeToParse = updatedCode;
 				}
 			}
 			
-			component.properties = propertiesObject;
-			component.styles = stylesObject;
+			// check for valid XML
+			try {
+				xml = new XML(codeToParse);
+			}
+			catch (error:Error) {
+				Radiate.log.error("Could not parse code for document " + name + ". " + error.message);
+			}
 			
-			return propertiesObject;
+			
+			if (xml) {
+				// loop through each item and create an instance 
+				// and set the properties and styles on it
+				/*currentChildren = xml.children();
+				while (child in currentChildren) {
+					nodeName = child.name();
+					
+				}*/
+				Radiate.log.info("Importing document: " + name);
+				//var mxmlLoader:MXMLImporter = new MXMLImporter( "testWindow", new XML( inSource ), canvasHolder  );
+				var mxmlLoader:MXMLImporter;
+				var container:IVisualElement = parent ? parent as IVisualElement : instance as IVisualElement;
+				mxmlLoader = new MXMLImporter(this, "testWindow", xml, container);
+				
+				if (container) {
+					Radiate.getInstance().setTarget(container);
+				}
+			}
+			
+			
+			/*_toolTipChildren = new SystemChildrenList(this,
+            new QName(mx_internal, "topMostIndex"),
+            new QName(mx_internal, "toolTipIndex"));*/
+			//return true;
+		}
+		
+		/**
+		 * Resets the save status after loading a document
+		 * */
+		public function resetSaveStatus():void {
+			lastSavedHistoryIndex = historyIndex;
 		}
 	}
 }

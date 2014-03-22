@@ -101,8 +101,10 @@
 				xml = <root><items/></root>;
 				
 				// get document tree for getting path names later
-				documentTree = radiate.document.description;
+				documentTree = radiate.selectedDocument.componentDescription;
 				
+				return "Not supported at this time";
+				// THIS IS OLDER CODE IT NEEDS TO BE REFACTORED
 				
 				// loop through changes and create change items
 				for (var i:int;i<totalHistoryLength;i++) {

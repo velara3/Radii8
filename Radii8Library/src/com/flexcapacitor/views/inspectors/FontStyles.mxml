@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 styleName="inspectablePanel">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.StyleMetaData;
+			import com.flexcapacitor.utils.ClassUtils;
+			
+			
+			import mx.core.FlexGlobals;
+			import mx.core.UIComponent;
+			import mx.managers.ISystemManager;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			public var fonts:Array;
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+				radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				callLater(update);
+			}
+			
+			public function update():void {
+				var fontFamilyStyle:StyleMetaData = ClassUtils.getMetaDataOfStyle(target, "fontFamily"); // font
+				var fontSizeStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "fontSize"); // size
+				var fontWeightStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "fontWeight"); // bold
+				var fontStyleStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "fontStyle"); // italic
+				var textDecorationStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "textDecoration"); // underline 
+				var colorStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "color"); // color
+				
+				if (fonts==null) {
+					fonts = getFontInformationDetails(target);
+				}
+				
+				fontFamilyStyle.enumeration = fonts;
+				//fontsRenderer.data = data;
+				fontsRenderer.data = fontFamilyStyle;
+				fontSizeRenderer.data = fontSizeStyle;
+				fontWeightRenderer.data = fontWeightStyle;
+				fontStyleRenderer.data = fontStyleStyle;
+				colorRenderer.data = colorStyle;
+			}
+				
+				
+			
+			/**
+			 * Gets details about the embedded fonts
+			 * */
+			public function getFontInformationDetails(target:Object, showDeviceFontInformation:Boolean = true):Array {
+				var component:UIComponent = target as UIComponent;
+				var systemManager:ISystemManager = component ? component.systemManager : null;
+				var dictionary:Dictionary = new Dictionary(true);
+				var fontList:Array = Font.enumerateFonts(showDeviceFontInformation);
+				var length:int = fontList.length;
+				var output:String = "";
+				var fontObject:Object;
+				var paddedName:String;
+				var name:String;
+				var font:Font;
+				
+				
+				if (systemManager==null && FlexGlobals.topLevelApplication.systemManager) {
+					output += systemManager==null ? "Warning: Target system manager is null. Using FlexGlobals top level application system manager\n" : "";
+					systemManager = FlexGlobals.topLevelApplication.systemManager;
+				}
+				else if (systemManager==null) {
+					output += "Could not find system manager";
+					return [];
+				}
+				
+				for (var i:int;i<length;i++)
+				{
+					font = Font(fontList[i]);
+					name = font.fontName;
+					if (dictionary[name]==1) continue;
+					dictionary[name] = 1;
+					
+					paddedName = name; //padString(name, minimumStyleNamePadding);
+					fontObject = getFontFamilyEmbedded(name, systemManager);
+					
+					//output += prespace + paddedName;
+					
+					if (fontObject.embeddedCFF.length>0) {
+						output += "Embedded CFF: " + fontObject.embeddedCFF.join(", ");
+					}
+					
+					if (fontObject.embedded.length>0) {
+						if (fontObject.embeddedCFF.length>0) {
+							output+= "; ";
+							output+= "Embedded    : ";
+						}
+						else {
+							output+= "Embedded: ";
+						}
+						output += fontObject.embedded.join(", ");
+					}
+					
+					output += "\n";
+					
+				}
+				
+				
+				return fontList;
+			}
+				
+				
+			
+			/**
+			 * Returns an object that contains an array of embedding information for the font with the given name.
+			 * Includes embedded and embeddedCFF information. If null then the font and that style of the font
+			 * are not embedded.<br/><br/>
+			 * Example, <br/>
+			 * <pre>
+			 * var object:Object = getFontFamilyEmbedded("MyFont", myButton.systemManager);
+			 * trace(object); // {embedded:[regular, italic], embeddedCFF:[regular, bold, italic, boldItalic]}
+			 * </pre>
+			 **/
+			public function getFontFamilyEmbedded(name:String, systemManager:ISystemManager):Object {
+				var textFormat:TextFormat = new TextFormat();
+				var fontDescription:String = "";
+				var embeddedCFF:Array = [];
+				var embedded:Array = [];
+				var boldItalic:Boolean;
+				var regular:Boolean;
+				var italic:Boolean;
+				var bold:Boolean;
+				
+				textFormat.font = name;
+				
+				// check for regular
+				regular = systemManager.isFontFaceEmbedded(textFormat);
+				if (regular) {
+					fontDescription = "regular";
+					
+					if (isFontFaceEmbeddedCFF(textFormat, systemManager)) {
+						embeddedCFF.push(fontDescription);
+					}
+					if (!isFontFaceEmbeddedCFF(textFormat, systemManager)) {
+						embedded.push(fontDescription);
+					}
+				}
+				
+				// check for bold
+				textFormat.bold = true;
+				bold = systemManager.isFontFaceEmbedded(textFormat);
+				if (bold) {
+					fontDescription = "bold";
+					if (isFontFaceEmbeddedCFF(textFormat, systemManager)) {
+						embeddedCFF.push(fontDescription);
+					}
+					if (!isFontFaceEmbeddedCFF(textFormat, systemManager)) {
+						embedded.push(fontDescription);
+					}
+				}
+				
+				// check for bold and italic
+				textFormat.italic = true;
+				boldItalic = systemManager.isFontFaceEmbedded(textFormat);
+				if (boldItalic) {
+					fontDescription = "boldItalic";
+					if (isFontFaceEmbeddedCFF(textFormat, systemManager)) {
+						embeddedCFF.push(fontDescription);
+					}
+					if (!isFontFaceEmbeddedCFF(textFormat, systemManager)) {
+						embedded.push(fontDescription);
+					}
+				}
+				
+				// check for italic
+				textFormat.bold = false;
+				italic = systemManager.isFontFaceEmbedded(textFormat);
+				if (italic) {
+					fontDescription = "italic";
+					if (isFontFaceEmbeddedCFF(textFormat, systemManager)) {
+						embeddedCFF.push(fontDescription);
+					}
+					if (!isFontFaceEmbeddedCFF(textFormat, systemManager)) {
+						embedded.push(fontDescription);
+					}
+				}
+				
+				// there's probably alot of optimization that could go into this call
+				// but for now we are using this
+				
+				return {embedded:embedded, embeddedCFF:embeddedCFF};
+			}
+			
+			
+			
+			/**
+			 * Checks if font is embedded and is also embeddedCFF.
+			 * Does not run all methods system manager function runs.
+			 */
+			public function isFontFaceEmbeddedCFF(textFormat:TextFormat, systemManager:ISystemManager):Boolean
+			{
+				var fontName:String = textFormat.font;
+				var bold:Boolean = textFormat.bold;
+				var italic:Boolean = textFormat.italic;
+				
+				var fontList:Array = Font.enumerateFonts();
+				
+				var n:int = fontList.length;
+				for (var i:int = 0; i < n; i++)
+				{
+					var font:Font = Font(fontList[i]);
+					if (font.fontName == fontName)
+					{
+						var style:String = "regular";
+						if (bold && italic)
+							style = "boldItalic";
+						else if (bold)
+							style = "bold";
+						else if (italic)
+							style = "italic";
+						
+						if (font.fontStyle == style ) {
+							if (font.fontType=="embeddedCFF") {
+								return true;
+							}
+							else {
+								return false;
+							}
+						}
+					}
+				}
+				
+				return false;
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Font Family" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:ComboBoxRenderer id="fontsRenderer" height="24" labelField="fontName"
+									valueIsField="true" fieldIsValue="true"
+									minWidth="180"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Font Weight" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:DropDownListRenderer id="fontWeightRenderer" height="24" />
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Font Size" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:NumberRenderer id="fontSizeRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Font Style" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:DropDownListRenderer id="fontStyleRenderer" height="24"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Color" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:ColorPickerRenderer id="colorRenderer" height="24" includeCopyIcon="false"/>
+	</s:HGroup>
+</s:Group>

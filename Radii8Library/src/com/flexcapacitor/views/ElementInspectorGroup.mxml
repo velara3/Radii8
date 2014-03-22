@@ -4,7 +4,7 @@
 						   xmlns:mx="library://ns.adobe.com/flex/mx" 
 						   width="400" height="400" 
 						   xmlns:inspectors="com.flexcapacitor.inspectors.*"
-						   styleName="myStyle" xmlns:views="com.flexcapacitor.views.*">
+						   styleName="myStyle" xmlns:views="com.flexcapacitor.views.*" xmlns:panels="com.flexcapacitor.views.panels.*">
 
 	<fx:Style>
 		@namespace s "library://ns.adobe.com/flex/spark";
@@ -96,7 +96,7 @@
 					<s:layout>
 						<s:VerticalLayout/>
 					</s:layout>
-					<views:Constraints id="constraints" height="100%" width="100%"
+					<panels:ConstraintsInspector id="constraints" height="100%" width="100%"
 											target="{target}"/>
 				</s:Group>
 			</s:Scroller>
@@ -108,7 +108,7 @@
 					<s:layout>
 						<s:VerticalLayout/>
 					</s:layout>
-					<views:Properties height="100%" width="100%"/>
+					<panels:PropertyInspector height="100%" width="100%"/>
 				</s:Group>
 			</s:Scroller>
 		<!--</s:View>-->

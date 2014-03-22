@@ -1,5 +1,10 @@
 package {
 	import mx.controls.LinkButton;
+	import mx.graphics.LinearGradient;
+	import mx.graphics.RadialGradient;
+	import mx.graphics.RadialGradientStroke;
+	import mx.graphics.SolidColor;
+	import mx.graphics.SolidColorStroke;
 	import mx.skins.spark.LinkButtonSkin;
 	
 	import spark.components.BorderContainer;
@@ -9,6 +14,11 @@ package {
 	import spark.components.TabBar;
 	import spark.components.TileGroup;
 	import spark.components.ToggleButton;
+	import spark.primitives.BitmapImage;
+	import spark.primitives.Ellipse;
+	import spark.primitives.Line;
+	import spark.primitives.Path;
+	import spark.primitives.Rect;
 	import spark.skins.spark.BorderContainerSkin;
 	import spark.skins.spark.ButtonBarSkin;
 	import spark.skins.spark.RadioButtonSkin;
@@ -16,7 +26,10 @@ package {
 	import spark.skins.spark.ToggleButtonSkin;
 	
 	/**
-	 * Classes, skins and icons
+	 * Classes, skins and icons. 
+	 * 
+	 * To control the list of what shows up in the component inspector  
+	 * edit the /assets/data/spark-manifest-defaults.xml
 	 * */
 	public class Radii8LibrarySparkAssets {
 		
@@ -32,6 +45,8 @@ package {
 		 * var xml:XML = new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
 		 * // get list of component classes
 		 * items = XML(xml).component;
+		 * 
+		 * NOTE: Add a reference to the classes here and in the XML file. 
 		 * */
 		[Embed(source="/assets/data/spark-manifest-defaults.xml", mimeType="application/octet-stream")]
 		public static const sparkManifestDefaults:Class;
@@ -130,6 +145,9 @@ package {
 		///////////////////////////////////////////////////////
 		// CONTROLS
 		///////////////////////////////////////////////////////
+		[Embed(source="assets/icons/spark/controls/Image.png")]
+		public static const BitmapImageIcon:Class;
+		public static var bitmapImage:BitmapImage;
 		
 		[Embed(source="assets/icons/spark/controls/ButtonBar.png")]
 		public static const ButtonIcon:Class;
@@ -267,6 +285,22 @@ package {
 		[Embed(source="assets/icons/spark/controls/VSlider.png")]
 		public static const VSliderIcon:Class;
 		
+		///////////////////////////////////////////////////////
+		// GRAPHIC PRIMITIVES
+		///////////////////////////////////////////////////////
 		
+		// 1110: The constant was not initialized.
+		// - change const to var
+		//public static const rect:Rect;
+
+		public static var rect:Rect;
+		public static var ellipse:Ellipse;
+		public static var path:Path;
+		public static var line:Line;
+		public static var solidColorFill:SolidColor;
+		public static var linearGradientFill:LinearGradient;
+		public static var radialGradientFill:RadialGradient;
+		public static var solidColorStroke:SolidColorStroke;
+		public static var radialGradientStroke:RadialGradientStroke;
 	}
 }

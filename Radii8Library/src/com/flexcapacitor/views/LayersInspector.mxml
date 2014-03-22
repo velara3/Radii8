@@ -1,0 +1,675 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:views="com.flexcapacitor.views.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 width="200" height="100%"
+		 creationComplete="creationCompleteHandler(event)" 
+		 implements="com.flexcapacitor.views.IInspector"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			import com.flexcapacitor.views.renderers.LayersRenderer;
+			import com.flexcapacitor.views.supportClasses.LayersDataDescriptor;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.mx_internal;
+			import mx.events.DragEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.events.TreeEvent;
+			import mx.states.AddItems;
+			
+			import spark.components.Application;
+			
+			private var rootDisplayObject:DisplayObject;
+			private var displayList:Array = [];
+			private var radiate:Radiate;
+			private var designDocument:IEventDispatcher;
+			
+			[Bindable]
+			public var components:ArrayCollection = new ArrayCollection();
+			
+			private var _target:*;
+			
+			public function get target():* {
+				return _target;
+			}
+			
+			[Bindable]
+			public function set target(value:*):void {
+				_target = value;
+			}
+			
+			public function activate():void {
+				radiate = Radiate.instance;
+				updateComponentDisplayList();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					updateTarget(radiate.target);
+				}
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
+					radiate.removeEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
+					radiate.removeEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler);
+					radiate.removeEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler);
+					
+					target = null;
+				}
+			}
+			
+			/**
+			 * Listen for any changes to the display list
+			 * */
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				/*radiate = Radiate.instance;
+				updateComponentDisplayList();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
+				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
+				radiate.addEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler);
+				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler);
+				
+				if (radiate.target) {
+					updateTarget(radiate.target);
+				}
+				*/
+			}
+			
+			
+			/**
+			 * Found on blog by Flex SDK developer (source).
+			 * Not used. For reference.
+			 */
+			public function sortDisplayByDepth(item:Object, parentItem:Object = null, depth:int = 0):void {
+				
+				
+				if (displayList.length <= depth) {
+					displayList.push(new ArrayCollection());
+				}
+				
+				
+				if ("numElements" in item) {
+					for (var i:int = 0; i < item.numElements; i++) {
+						var child:Object = item.getElementAt(i);
+						sortDisplayByDepth(child, parentItem, depth + 1);
+						displayList[depth].push(child);
+					}
+				}
+				
+			}
+			
+			
+			private function labelFunction(data:Object):String {
+				return data.name;
+			}
+			
+			/**
+			 * When the target changes reselect it 
+			 * */
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				updateTarget(event.selectedItem);
+			}
+			
+			/**
+			 * 
+			 * */
+			public function updateTarget(selectedItem:Object):void {
+				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
+				var collection:ArrayCollection = displayListTree.dataProvider as ArrayCollection;
+				var rootApplicationDescription:ComponentDescription;
+				var targetDescription:ComponentDescription;
+				var parent:ComponentDescription;
+				
+				target = selectedItem;
+				
+				if (item && target!=item.instance) {
+					//updateComponentDisplayList();
+				}
+				
+				if (collection.length==0) {
+					updateComponentDisplayList();
+					collection = displayListTree.dataProvider as ArrayCollection;
+				}
+				
+				if (target && collection.length) {
+					rootApplicationDescription = collection.getItemAt(0) as ComponentDescription;
+					
+					if (rootApplicationDescription) {
+						targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, rootApplicationDescription);
+						
+						if (targetDescription) {
+							
+							parent = targetDescription.parent;
+							
+							while (parent) {
+								
+								// open item if not open
+								if (!displayListTree.isItemOpen(parent)) {
+									displayListTree.expandItem(parent, true, false, false);
+									displayListTree.validateNow();
+								}
+								
+								parent = parent.parent;
+							}
+							
+							
+							// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
+							// ALSO we are resetting the dataProvider so it's not going to find the items
+							for (var i:int;i<length;i++) {
+								//displayListTree.expandItem(openItems[i], true, false, false);
+								//trace("expanding");
+							}
+							
+							displayListTree.selectedItem = targetDescription;
+						}
+					}
+				}
+				
+				//openAllItems();
+				updateTreeHeight();
+				scrollIntoView();
+			}
+			
+			/**
+			 * Open all items
+			 * */
+			public function openAllItems():void {
+				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
+				var collection:ArrayCollection = displayListTree.dataProvider as ArrayCollection;
+				var rootApplicationDescription:ComponentDescription;
+				var targetDescription:ComponentDescription;
+				var parent:ComponentDescription;
+				
+				if (item && target!=item.instance) {
+					//updateComponentDisplayList();
+				}
+				
+				if (collection.length==0) {
+					collection = displayListTree.dataProvider as ArrayCollection;
+				}
+				
+				if (collection.length<1) return;
+				rootApplicationDescription = collection.getItemAt(0) as ComponentDescription;
+				
+				for (var i:int;i<rootApplicationDescription.children.length;i++) {
+					displayListTree.expandChildrenOf(rootApplicationDescription.children[i], true);
+					displayListTree.validateNow();
+				}
+				
+			}
+			
+			/**
+			 * Close all items
+			 * */
+			public function closeAllItems():void {
+				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
+				var collection:ArrayCollection = displayListTree.dataProvider as ArrayCollection;
+				var rootApplicationDescription:ComponentDescription;
+				var targetDescription:ComponentDescription;
+				var parent:ComponentDescription;
+				
+				if (item && target!=item.instance) {
+					//updateComponentDisplayList();
+				}
+				
+				if (collection.length==0) {
+					collection = displayListTree.dataProvider as ArrayCollection;
+				}
+				
+				if (collection.length<1) return;
+				rootApplicationDescription = collection.getItemAt(0) as ComponentDescription;
+				
+				for (var i:int;i<rootApplicationDescription.children.length;i++) {
+					displayListTree.expandChildrenOf(rootApplicationDescription.children[i], false);
+					displayListTree.validateNow();
+				}
+				
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function documentChangeHandler(event:Event):void {
+				if (designDocument!=radiate.selectedDocument) {
+					updateComponentDisplayList(false);
+				}
+			}
+			
+			/**
+			 * Select target
+			 * */
+			protected function displayListTree_changeHandler(event:ListEvent):void {
+				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
+				
+				if (item) {
+					radiate.setTarget(item.instance as IEventDispatcher, true);
+				}
+				/* 
+				if (!preventChange) {
+				}
+				else {
+					displayListTree.selectable
+				}
+				
+				preventChange = false; */
+			}
+			
+			/**
+			 * Recreate the display list and open all items.
+			 * */
+			private function updateComponentDisplayList(preserveOpenItems:Boolean = true):void {
+				var openItems:Object = displayListTree.openItems;
+				var document:IDocument = radiate.selectedDocument;
+				var display:Object;
+				var length:int;
+				
+				
+				if (!document) return;
+				
+				// we need to create a list of the instances of open items
+				// componentDescription.instance not componentDescription
+				
+				// we could check for the target and update that branch
+				display = document.componentDescription;
+				displayListTree.dataProvider = display;
+				
+				// 
+				//DisplayObjectUtils.walkDownTree(application as IVisualElement, traceTree);
+				
+				
+				if (preserveOpenItems) {
+					displayListTree.validateNow();
+					
+					/* for each (var item:ComponentDescription in openItems) {
+						displayListTree.expandItem(item, true, false, false);
+						//trace("expanding");
+					}
+					 */
+					length = openItems.length;
+					
+					// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
+					// ALSO we are resetting the dataProvider so it's not going to find the items if we do that
+					for (var i:int;i<length;i++) {
+						if (!displayListTree.isItemOpen(openItems[i])) {
+							displayListTree.expandItem(openItems[i], true, false, false);
+						}
+						//trace("expanding");
+					}
+				}
+			}
+			
+			public function traceTree(element:Object):void {
+				//trace("element="+NameUtil.getUnqualifiedClassName(element));
+			}
+			
+			/**
+			 * 
+			 * */
+			private function findTargetInDisplayList(target:Object, parentItem:ComponentDescription, depth:int = 0):ComponentDescription {
+				var length:int = parentItem.children ? parentItem.children.length : 0;
+				var possibleItem:ComponentDescription;
+				var item:ComponentDescription;
+				var itemFound:Boolean;
+				
+				for (var i:int; i < length; i++) {
+					item = parentItem.children.getItemAt(i) as ComponentDescription;
+					
+					if (item && item.instance==target) {
+						itemFound = true;
+						break;
+					}
+					
+					if (item.children) {
+						possibleItem = findTargetInDisplayList(target, item, depth + 1);
+						
+						if (possibleItem) {
+							itemFound = true;
+							item = possibleItem;
+							break;
+						}
+					}
+					
+				}
+				
+				if (itemFound) return item;
+				
+				return null;
+			}
+			
+			/**
+			 * Add item handler
+			 * */
+			protected function addItemChangeHandler(event:RadiateEvent):void {
+				updateComponentDisplayList();
+			}
+			
+			
+			/**
+			 * Move item handler
+			 * */
+			protected function moveItemChangeHandler(event:RadiateEvent):void {
+				updateComponentDisplayList();
+			}
+			
+			/**
+			 * Item open handler
+			 * */
+			protected function displayListTree_itemOpenHandler(event:TreeEvent):void {
+				updateTreeHeight()
+			}
+			
+			/**
+			 * 
+			 * */
+			public function getTotalRowCount(item:ComponentDescription, count:int = 0):int {
+				
+				if (item.children && item.children.length>0) {
+				// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
+				// ALSO we are resetting the dataProvider so it's not going to find the items if we do that
+				for (var i:int;i<item.children.length;i++) {
+					count++;
+					if (displayListTree.isItemOpen(item.children[i])) {
+						count = getTotalRowCount(item.children[i] as ComponentDescription, count);
+					}
+				}
+				}
+				return count;
+			}
+			
+			/**
+			 * Resize the tree to be as high as all open items
+			 * */
+			public function updateTreeHeight():void {
+				var newHeight:int = displayListTree.rowCount * displayListTree.rowHeight;
+				var numChildren:int = displayListTree.numChildren;
+				var openItems:Object = displayListTree.openItems;
+				var openItemsLength:int = displayListTree.openItems.length;
+				var dataProvider:Object = displayListTree.dataProvider;
+				var dataProviderLength:int = displayListTree.dataProvider.length;
+				var item:ComponentDescription;
+				var count:int = 2; // application plus one for easier drop on last row
+				
+				var newCount:int = getTotalRowCount(dataProvider[0] as ComponentDescription, count);
+				
+				newHeight = newCount * displayListTree.rowHeight;
+				// ArgumentError: Error #2004: One of the parameters is invalid.
+				//	at flash.display::Graphics/drawRect()
+				//displayListTree.setActualSize(NaN, newHeight);
+				//displayListTree.height = newHeight;
+				displayListTree.explicitHeight = newHeight;
+			}
+			
+			// THIS IS ALL TO HANDLE SCROLLING INSIDE ANOTHER SCROLLER THAT HAS TOUCH INTERACTION
+			// SPARK COMPONENTS DON'T HAVE THIS PROBLEM
+			private var mouseDownLocation:int;
+			public var preventChange:Boolean;
+			
+			protected function displayListTree_mouseDownHandler(event:MouseEvent):void {
+				mouseDownLocation = event.stageY;
+				stage.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler, false, 0, true);
+				stage.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+			}
+			
+			protected function mouseMoveHandler(event:MouseEvent):void {
+				
+				var diff:int = Math.abs(event.stageY - mouseDownLocation);
+				
+				if (diff>10) {
+					displayListTree.selectable = false;
+				}
+			}
+			
+			protected function mouseUpHandler(event:MouseEvent):void {
+				stage.removeEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+				stage.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				displayListTree.selectable = true;
+			}
+			
+			protected function displayListTree_itemCloseHandler(event:TreeEvent):void {
+				updateTreeHeight();
+			}
+			
+			private function scrollIntoView():void {
+				
+				if (displayListTree.selectedIndex>-1) {
+					displayListTree.scrollToIndex(displayListTree.selectedIndex);
+				}
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function displayListTree_dragDropHandler(event:DragEvent):void {
+				//Radiate.log.info("Drag drop handler");
+				event.draggedItem;
+				event.target;
+				event.relatedObject;
+				
+				/*
+	            Pay attention at mx_internal namespace :
+	            Behaviour could change in the next flex version.
+	            Drop data structure.
+	            _dropData = { 
+	                parent: parent, 
+	                index: index, 
+	                localX: event.localX, 
+	                localY: event.localY, 
+	                emptyFolder: emptyFolder, 
+	                rowHeight: rowHeight, 
+	                rowIndex: rowNum };
+	            */
+	            var dropData:Object = displayListTree.mx_internal::_dropData;
+	            var dropParent:Object = dropData.parent;
+	            var dropIndex:int = dropData.index;
+	            var rowIndex:int = dropData.rowIndex;
+	            var draggedElement:Object = (event.dragSource.dataForFormat("treeItems") as Array)[0];
+				var draggedElementParent:Object = draggedElement.parent;
+				var canDragOutOfParent:Boolean = !displayListTree.showRoot;
+				var currentIndex:int;
+				
+	            if (!canDragOutOfParent && 
+					draggedElementParent != dropParent) {
+					
+	                // element is an item and parent is different => can not drop                                        
+	                event.preventDefault();
+	                displayListTree.hideDropFeedback(event);
+					return;
+	            }
+
+	            // you can also play with
+	            //var dropIndex:int = displayListTree.calculateDropIndex(event);
+	            //var itemIndex:int = displayListTree.getItemIndex(dropIndex);
+				
+	            // but it is a little more complicated to find 
+	            // the real parent because we haven't drop indicator 
+	            // information (child or parent position).
+	
+	            // I did not use xml element id but it is also possible
+	            // parent.id != draggedElement.parent().id
+				
+				// some reason there is a bug when on the application
+				// we have to subtract one from the drop index if it's lower than it's current index
+				if (dropParent && 
+					draggedElement.parent == dropParent && 
+					dropParent.instance is Application) {
+					currentIndex = ComponentDescription(dropParent).children.getItemIndex(draggedElement);
+					
+					// when dragging to an index after our index we have to subtract one
+					if (currentIndex<dropIndex) {
+						dropIndex--;
+						//Radiate.log.info("Lowering index");
+					}
+				}
+				
+				
+				// make sure application can't be dropped into itself
+				if (draggedElement.instance is Application) {
+	                event.preventDefault();
+	                displayListTree.hideDropFeedback(event);
+					return;
+				}
+				
+				// make sure container can't be dropped into child container
+				if (draggedElement.instance is DisplayObjectContainer &&
+					dropParent && 
+					dropParent.instance is DisplayObjectContainer &&
+					DisplayObjectContainer(draggedElement.instance).contains(dropParent.instance)) {
+					
+	                event.preventDefault();
+	                displayListTree.hideDropFeedback(event);
+					return;
+				}
+				
+				if (dropParent) {
+					/*
+					Radiate.log.info("drop index:"+ dropIndex);
+					Radiate.log.info("row  index:" + rowIndex);
+					Radiate.log.info("item index:" + droppingIndex);*/
+					
+					Radiate.moveElement(draggedElement.instance, dropParent.instance, [], [], null, 
+										RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
+					
+					radiate.setTarget(draggedElement.instance);
+				}
+				else {
+					
+					// if not showing root then allow drop
+					if (canDragOutOfParent && dropParent==null) {
+						dropParent = ArrayCollection(displayListTree.dataProvider).getItemAt(0);
+						currentIndex = ComponentDescription(dropParent).children.getItemIndex(draggedElement);
+						
+						// when dragging to an index after our index we have to subtract one
+						if (currentIndex<dropIndex && dropParent.instance==draggedElement.parent.instance) {
+							dropIndex--;
+							//Radiate.log.info("Lowering index");
+						}
+						
+						Radiate.moveElement(draggedElement.instance, dropParent.instance, [], [], null, 
+										RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
+					}
+					else {
+							
+		                // element is an item and parent is different => can not drop                                        
+		                event.preventDefault();
+		                displayListTree.hideDropFeedback(event);
+					}
+				}
+				
+			}
+			
+			protected function displayListTree_dragCompleteHandler(event:DragEvent):void {
+				
+			}
+			
+			/**
+			 * Handle when dragging just outside of tree
+			 * */
+			protected function displayListTree_dragOverHandler(event:DragEvent):void {
+				
+	            var dropData:Object = displayListTree.mx_internal::_dropData;
+	            var dropParent:Object = dropData.parent;
+				
+                // dragging outside of tree                                      
+	            if (dropParent==null) {
+					// prevents dragging from working after this point
+					//event.preventDefault(); 
+					//displayListTree.hideDropFeedback(event);
+	            }
+			}
+			
+			protected function expandAllNodes_clickHandler(event:MouseEvent):void {
+				openAllItems();
+			}
+			
+			protected function closeAllNodes_clickHandler(event:MouseEvent):void {
+				closeAllItems();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<!--
+	<views:BlendMode height="20" width="50%" />-->
+	
+	<s:Scroller id="scroller" width="100%" height="100%"
+				top="0"
+				bottom="0">
+		<s:Group width="100%" height="100%">
+			<mx:Tree id="displayListTree" 
+					 width="100%"
+					 focusAlpha="0"
+					 minHeight="50"
+					 itemOpen="displayListTree_itemOpenHandler(event)"
+					 itemClose="displayListTree_itemCloseHandler(event)"
+					 change="displayListTree_changeHandler(event)"
+					 showRoot="false"
+					 dataProvider="{components}"
+					 labelFunction="labelFunction"
+					 verticalScrollPolicy="off"
+					 horizontalScrollPolicy="auto"
+					 rollOverColor="#ffffff"
+					 selectionColor="#d8d8d8"
+					 useRollOver="false"
+					 borderVisible="false"
+					 indentation="16"
+					 dragEnabled="true"
+					 dropEnabled="true"
+					 dragMoveEnabled="true"
+					 itemRenderer="com.flexcapacitor.views.renderers.LayersRenderer"
+					 mouseDown="displayListTree_mouseDownHandler(event)"
+					 dragOver="displayListTree_dragOverHandler(event)"
+					 dragDrop="displayListTree_dragDropHandler(event)"
+					 dragComplete="displayListTree_dragCompleteHandler(event)"
+					 dataDescriptor="{new LayersDataDescriptor()}"
+					 >
+
+				
+			</mx:Tree>
+		</s:Group>
+	</s:Scroller>
+	
+	
+	<s:HGroup width="100%"
+			 height="24"
+			 minHeight="24"
+			 verticalAlign="middle"
+			 paddingRight="8"
+			 >
+		<s:Spacer width="100%"/>
+		<c:ImageButton id="closeAllNodes" 
+					   source="{Radii8LibraryAssets.treeViewClosed}" 
+					   toolTip="Expand All"
+					   click="closeAllNodes_clickHandler(event)"
+					   />
+		<c:ImageButton id="expandAllNodes" 
+					   source="{Radii8LibraryAssets.treeView}" 
+					   toolTip="Expand All"
+					   click="expandAllNodes_clickHandler(event)"
+					   />
+	</s:HGroup>
+	
+</s:Group>

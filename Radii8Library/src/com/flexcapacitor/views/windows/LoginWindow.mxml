@@ -1,0 +1,908 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:handlers="com.flexcapacitor.handlers.*" 
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:controls="com.flexcapacitor.controls.*"
+			   xmlns:c="com.flexcapacitor.views.windows.*"
+			   xmlns:core="com.flexcapacitor.effects.core.*"
+			   xmlns:windows="com.flexcapacitor.views.windows.*"
+			   
+			   title.login="Login"
+			   title.logout="Logout"
+			   title.register="Register"
+			   title.registrationWithSite="Register"
+			   title.lostPassword="Lost Password"
+			   title.lostPasswordConfirmation="Change Password"
+			   title.loginAfterPasswordChanged="Login"
+			   title.changePassword="Change Password"
+			   
+			   creationComplete="creationCompleteHandler(event)"
+			   resize="panel1_resizeHandler(event)"
+			   
+			   resizeEffect="Resize" 
+			   >
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace c "com.flexcapacitor.controls.*";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace handlers "com.flexcapacitor.handlers.*";
+		@namespace fc "com.flexcapacitor.effects.popup.*";
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.StoreLogin;
+			
+			import mx.core.Singleton;
+			import mx.core.mx_internal;
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			import mx.managers.PopUpData;
+			import mx.managers.PopUpManager;
+			import mx.managers.PopUpManagerImpl;
+			
+			use namespace mx_internal;
+			
+			private var username:String;
+			
+			public static const REGISTER:String = "register";
+			public static const LOGIN:String = "login";
+			public static const LOGOUT:String = "logout";
+			public static const LOST_PASSWORD:String = "lostPassword";
+			public static const LOST_PASSWORD_CONFIRMATION:String = "lostPasswordConfirmation";
+			public static const LOGIN_AFTER_PASSWORD_CHANGED:String = "loginAfterPasswordChanged";
+			public static const LOGIN_AFTER_REGISTRATION:String = "loginAfterRegistration";
+			public static const REGISTRATION_WITH_SITE:String = "registrationWithSite";
+			
+			// There should be a form on our HTML page. 
+			// The browser will fill the form with values if the user logged in before
+			// If there are multiple users it will fill it with the last user
+			// Or if it's blank it will autofill the password when a username is entered into the form
+			// 
+			// What we do is this:
+			// 
+			// 1. add scripts to the page when the application loads
+			// 2. check for existing form values set by the browser
+			// 3. fill in our Flash form with those values
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				var savePassword:StoreLogin = new StoreLogin();
+				var savePasswordCreated:Boolean;
+				
+				savePasswordCreated = savePassword.initialize(); // places our javascript onto the page
+				checkForValues();
+				
+				radiate = Radiate.getInstance();
+				//trace("creation");
+				// apply after opened
+				//setStyle("moveEffect", moveEffect);
+			}
+			
+			/**
+			 * Gets form values from page
+			 * */
+			protected function checkForValues():void {
+				var savePassword:StoreLogin = new StoreLogin();
+				var loginItems:Array;
+				
+				loginItems = savePassword.getFormValues(); // gets existing form values
+				
+				if (loginItems.length>0) {
+					if (currentState=="login") {
+						usernameTextInput.text = loginItems[0];
+						passwordTextInput.text = loginItems[1];
+					}
+				}
+			}
+			
+			/**
+			 * To get the browser to save our login we need to submit the form. 
+			 * 
+			 * 4. Copy our login information to the form on the HTML page
+			 * 5. Submit the form - the form is benign (it doesn't go anywhere). 
+			 * this causes the browser to display a save password dialog
+			 * 6. After calling submit form continue to handle the login procedure as 
+			 * you normally would. IE Continue to use HTTPService, URLRequest, etc
+			 **/
+			protected function login():void {
+				var savePassword:StoreLogin = new StoreLogin();
+				var setValues:Boolean = savePassword.setFormValues(usernameTextInput.text, passwordTextInput.text);
+				var results:Boolean;
+				
+				if (rememberLoginCheckbox.selected) {
+					results = savePassword.submitForm();
+				}
+				
+				loginWarningsLabel.text = "";
+				radiate.login(usernameTextInput.text, passwordTextInput.text);
+				radiate.addEventListener(RadiateEvent.LOGIN_RESULTS, loginResultsHandler, false, 0, true);
+				inProgress = true;
+			}
+			
+			
+			// OPTIONAL - support multiple accounts or username required to autofill browsers
+			// - does not work in chrome. the only solution so far is to login with a user 
+			//   for that user to be remembered the next time
+			// 
+			// If the form is blank then it may be because we have multiple accounts
+			// Let the user type in a name / username and then when they tab to password
+			// 7. check if the browser has filled in the password after username is entered
+			// 8. fill in our password field with the password
+			protected function username_focusOutHandler(event:FocusEvent):void {
+				var savePassword:StoreLogin = new StoreLogin();
+				var results:Object;
+				var value:String;
+				
+				// if username or password is blank check for password after supplying username
+				value = savePassword.checkForPassword(usernameTextInput.text);
+				
+				if (value!="") {
+					passwordTextInput.text = value;
+					passwordTextInput.selectAll();
+				}
+				
+				// set focus on our text field
+				passwordTextInput.setFocus();
+				
+				// we have to focus back on flash because of the javascript we use
+				results = savePassword.setFocusOnFlash();
+				
+			}
+			
+			private function logout():void {
+				logoutWarningsLabel.text = "";
+				radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.LOGOUT_RESULTS, logoutResultsHandler, false, 0, true);
+				radiate.logout();
+				inProgress = true;
+			}
+			
+			private function register():void {
+				registrationWarningsLabel.text = "";
+				radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler, false, 0, true);
+				radiate.register(newUsernameTextInput.text, emailTextInput.text);
+				inProgress = true;
+			}
+			
+			private function registerUserAndSite():void {
+				registrationWarningsLabel.text = "";
+				radiate.addEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler, false, 0, true);
+				radiate.registerUserAndSite(newUsernameTextInput.text, emailTextInput.text, newSiteTextInput.text, newSiteTitleTextInput.text);
+				inProgress = true;
+			}
+			
+			protected function goToLoginAfterRegistrationState():void {
+				currentState = LOGIN_AFTER_REGISTRATION;
+			}
+			
+			protected function goToRegistrationWithSiteState():void {
+				currentState = REGISTRATION_WITH_SITE;
+			}
+			
+			protected function goToRegistrationState():void {
+				currentState = REGISTER;
+			}
+			
+			protected function goToLogoutState():void {
+				currentState = LOGOUT;
+			}
+			
+			protected function goToLoginState():void {
+				currentState = LOGIN;
+				checkForValues();
+			}
+			
+			protected function goToLostPasswordState():void {
+				currentState = LOST_PASSWORD;
+			}
+			
+			protected function goToLostPasswordConfirmationState():void {
+				currentState = LOST_PASSWORD_CONFIRMATION;
+			}
+			
+			
+			private function createRandomPassword(hashLen:uint, 
+												  includeLowercase:Boolean = true, 
+												  includeUppercase:Boolean = true, 
+												  includeNumbers:Boolean = true, 
+												  includeCharacters:Boolean = true):String {
+				var strHash:String = "";
+				if (includeLowercase) strHash += "abchefghjkmnpqrstuvwxyz";
+				if (includeNumbers) strHash += "0123456789";
+				if (includeUppercase) strHash += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+				if (includeCharacters) strHash += "~!@#$%^&*()-_=+[{]}\|;:/?.>,<";
+				
+				var maskPick:Number;
+				var passwordStr:String = "";
+				var maskLen:uint = strHash.length;
+				
+				for (var i:uint = 0; i < hashLen; i++) {
+					maskPick = Math.floor(Math.random() * maskLen);
+					passwordStr += strHash.charAt(maskPick);
+				}
+				
+				return passwordStr;
+			}
+			
+			///////////////////////////////////////////////////////////
+			//
+			//  HANDLERS
+			// 
+			///////////////////////////////////////////////////////////
+			
+			
+			protected function getNewPasswordButton_clickHandler(event:MouseEvent = null):void {
+				inProgress = true;
+				lostPasswordWarningsLabel.text = "";
+				username = usernameOrEmailTextInput.text;
+				radiate.addEventListener(RadiateEvent.LOST_PASSWORD_RESULTS, onLostPasswordResults, false, 0, true);
+				radiate.lostPassword(usernameOrEmailTextInput.text);
+			}
+			
+			protected function changePasswordButton_clickHandler(event:MouseEvent):void {
+				inProgress = true;
+				changePasswordWarningsLabel.text = "";
+				radiate.addEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS, onChangePasswordResults, false, 0, true);
+				radiate.changePassword(confirmationCodeTextInput.text, username, newPasswordTextInput.text, newPasswordTextInput2.text);
+			}
+			
+			protected function generatePasswordButton_clickHandler(event:MouseEvent):void {
+				var password:String = createRandomPassword(12, true, true, true, false);
+				newPasswordTextInput.text = password;
+				newPasswordTextInput2.text = password;
+			}
+			
+			protected function panel1_resizeHandler(event:ResizeEvent):void {
+				if (stage && !addedEffect.isPlaying) {
+					// to fix bug on line 505 of PopUpManagerImpl
+					var popUpImp:PopUpManagerImpl = PopUpManagerImpl(Singleton.getInstance("mx.managers::IPopUpManager"));
+					var popupInfo:Array = popUpImp.popupInfo;
+					
+					const n:int = popupInfo.length;
+					var instanceIndex:int = -1;
+					
+					for (var i:int = 0; i < n; i++) {
+						var o:PopUpData = popupInfo[i];
+						if (o.owner == this) {
+							instanceIndex = i;
+						}
+					}
+					
+					if (instanceIndex!=-1) {
+						PopUpManager.centerPopUp(this);
+					}
+				}
+			}
+			
+			protected function cancelButton_clickHandler(event:MouseEvent):void {
+				callLater(PopUpManager.removePopUp, [this]);
+			}
+			
+			
+			protected function usernameOrEmailTextInput_keyUpHandler(event:KeyboardEvent):void {
+				if (event.keyCode==Keyboard.ENTER) {
+					getNewPasswordButton_clickHandler(null);
+				}
+			}
+			
+			/**
+			 * Handle logout 
+			 * */
+			protected function logoutResultsHandler(event:RadiateEvent):void {
+				var data:Object = event.data;
+				var error:String;
+				var label:Label;
+				var message:String = "";
+				
+				radiate.removeEventListener(RadiateEvent.LOGOUT_RESULTS, logoutResultsHandler);
+				
+				logoutWarningsLabel.text = "";
+
+				if (data && data is Object) {
+					for each (error in data.errors) {
+						message += error + " ";
+					}
+				}
+				
+				inProgress = false;
+			
+				if (event.faultEvent is IOErrorEvent) {
+				
+					message = "Are you connected to the internet? ";
+					
+					if (event.faultEvent is IOErrorEvent) {
+						message = IOErrorEvent(event.faultEvent).text;
+					}
+					else if (event.faultEvent is SecurityErrorEvent) {
+						
+						if (SecurityErrorEvent(event.faultEvent).errorID==2048) {
+							
+						}
+						
+						message += SecurityErrorEvent(event.faultEvent).text;
+					}
+				}
+				
+				if (data && data is Object && data.loggedIn==false) {
+					closePopUp.startDelay = 250;
+					closePopUp.play();
+				}
+				
+				logoutWarningsLabel.text = message;
+			}
+			
+			/**
+			 * Handle register 
+			 * */
+			protected function registerResultsHandler(event:RadiateEvent):void {
+				var data:Object = event.data;
+				var error:String;
+				var label:Label;
+				var message:String = "";
+				var successful:Boolean = event.successful;
+				var errors:Array;
+				
+				radiate.removeEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler);
+				
+				registrationWarningsLabel.text = "";
+		
+				for (error in data.errors) {
+					// user_email, user_name
+					if (error=="incorrect_password") {
+						message += "The password you entered is incorrect. "
+					}
+					else if (error=="invalid_username") {
+						message += "The username you entered is not found. "
+					}
+					else if (data.errors[error] is Array) {
+						errors = data.errors[error] as Array;
+						
+						if (error=="blogname" && errors.indexOf("Only lowercase letters")!=-1) {
+							message += "Only lowercase letters (a-z) and numbers are allowed in the site name.";
+						}
+						else {
+							message += errors.join(" ") + " ";
+						}
+					}
+					else {
+						message += error + " ";
+					}
+					
+				}
+				
+				inProgress = false;
+				
+				message = message.replace(/<strong>ERROR<\/strong>: /i, "");
+	
+				if (event.faultEvent is IOErrorEvent) {
+				
+					message = "Are you connected to the internet? ";
+					
+					if (event.faultEvent is IOErrorEvent) {
+						message = IOErrorEvent(event.faultEvent).text;
+					}
+					else if (event.faultEvent is SecurityErrorEvent) {
+						
+						if (SecurityErrorEvent(event.faultEvent).errorID==2048) {
+							
+						}
+						
+						message += SecurityErrorEvent(event.faultEvent).text;
+					}
+				}
+				
+				if (data && data is Object && successful) {
+					goToLoginAfterRegistrationState();
+					validateNow();
+					
+					if (usernameTextInput) {
+						usernameTextInput.text = newUsernameTextInput.text;
+					}
+					
+					if (data.site) {
+						message = data.site.message;
+						message = message ? message.replace(/site/g, "account") : null;
+					}
+					else {
+						message = "You have successfully registered your username.";
+					}
+					
+					loginAfterRegistrationLabel.text = message;
+					return;
+				}
+				
+				registrationWarningsLabel.text = message;
+			}
+			
+			/**
+			 * Login results handler
+			 * */
+			protected function loginResultsHandler(event:RadiateEvent):void {
+				var data:Object = event.data;
+				var error:String;
+				var label:Label;
+				var message:String = "";
+				var successful:Boolean = event.successful;
+
+				radiate.removeEventListener(RadiateEvent.LOGIN_RESULTS, loginResultsHandler);
+				
+				loginWarningsLabel.text = "";
+				
+				for (error in data.errors) {
+					
+					if (error=="incorrect_password") {
+						message += "The password you entered is incorrect. "
+					}
+					else if (error=="invalid_username") {
+						message += "The username you entered is not found. "
+					}
+					else {
+						error = data.errors[error][0].replace(/<strong>ERROR<\/strong>: /i, "");
+						message += error + " ";
+					}
+				}
+				
+				inProgress = false;
+			
+				if (event.faultEvent is IOErrorEvent) {
+					message = "Are you connected to the internet? ";
+					
+					if (event.faultEvent is IOErrorEvent) {
+						message = IOErrorEvent(event.faultEvent).text;
+					}
+					else if (event.faultEvent is SecurityErrorEvent) {
+						
+						if (SecurityErrorEvent(event.faultEvent).errorID==2048) {
+							
+						}
+						
+						message += SecurityErrorEvent(event.faultEvent).text;
+					}
+				}
+				
+				
+				if (data && data is Object && successful) {
+					dispatchEvent(new Event(LOGIN));
+					closePopUp.startDelay = 250;
+					closePopUp.play();
+				}
+				
+				
+				loginWarningsLabel.text = message;
+			}
+			
+			protected function onLostPasswordResults(event:RadiateEvent):void {
+				var data:Object = event.data;
+				var error:String;
+				var message:String = "";
+				inProgress = false;
+			
+				if (data && data is Object && data.sent==true) {
+					loginWarningsLabel.text = "";
+					currentState = LOST_PASSWORD_CONFIRMATION;
+					//logoutWarningsLabel.text = "";
+					//closePopUp.startDelay = 250;
+					//closePopUp.play();
+					return;
+				}
+				
+				lostPasswordWarningsLabel.text = "";
+				
+				for (error in data.errors) {
+					
+					if (error=="incorrect_password") {
+						lostPasswordWarningsLabel.text += "The password you entered is incorrect."
+					}
+					else if (error=="invalid_username") {
+						lostPasswordWarningsLabel.text += "The username you entered is not found."
+					}
+					else {
+						error = data.errors[error][0].replace(/<strong>ERROR<\/strong>: /i, "");
+						lostPasswordWarningsLabel.text += error;
+					}
+				}
+				
+				radiate.removeEventListener(RadiateEvent.LOST_PASSWORD_RESULTS, onLostPasswordResults);
+			}
+			
+			protected function onChangePasswordResults(event:RadiateEvent):void {
+				var data:Object = event.data;
+				var error:String;
+				var message:String = "";
+				inProgress = false;
+				
+	
+				if (data && data is Object && data.reset==true) {
+					currentState = LOGIN_AFTER_PASSWORD_CHANGED;
+					usernameTextInput.text = username;
+					passwordTextInput.text = newPasswordTextInput.text;
+					//logoutWarningsLabel.text = "";
+					//closePopUp.startDelay = 250;
+					//closePopUp.play();
+					return;
+				}
+				
+				changePasswordWarningsLabel.text = "";
+				
+				for (error in data.errors) {
+					
+					if (error=="invalid_key") {
+						changePasswordWarningsLabel.text += "The key you entered is invalid."
+					}
+					else if (error=="expired_key") {
+						changePasswordWarningsLabel.text += "The key you entered has expired."
+					}
+					else if (error=="invalid_login") {
+						changePasswordWarningsLabel.text += "The username is invalid."
+					}
+					else if (error=="password_not_set") {
+						changePasswordWarningsLabel.text += "The password is not set."
+					}
+					else if (error=="password_reset_mismatch") {
+						changePasswordWarningsLabel.text += "The passwords do not match."
+					}
+					else {
+						error = data.errors[error][0].replace(/<strong>ERROR<\/strong>: /i, "");
+						changePasswordWarningsLabel.text += error;
+					}
+				}
+					
+				radiate.removeEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS, onChangePasswordResults);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="clickNOT">
+			<fc:ClosePopUp id="closePopUp" popUp="{this}" />
+		</handlers:EventHandler>
+
+		
+		<!--- hide about popup -->
+		<!--<handlers:EventHandler targets="{importButton}" eventName="click">
+			<s:SetAction property="action" target="{this}" value="import"/>
+			<fc:ClosePopUp popUp="{this}"  />
+		</handlers:EventHandler>-->
+		
+		<fx:String id="action"></fx:String>
+		
+	</fx:Declarations>
+	
+	
+	<c:states>
+		<s:State name="login" />
+		<s:State name="logout" />
+		<s:State name="loginAfterPasswordChanged" basedOn="login" />
+		<s:State name="loginAfterRegistration" basedOn="login" />
+		<s:State name="register" />
+		<s:State name="registrationWithSite" basedOn="register"/>
+		<s:State name="lostPassword" />
+		<s:State name="lostPasswordConfirmation" />
+		<s:State name="changePassword" />
+	</c:states>
+	
+	
+	<!-- REGISTRATION -->
+	<s:Label text.register="Please enter a user name and email."
+			 text.registrationWithSite="Please enter a user name, email, site name and title. If you leave the site name and title blank your username will be used. "
+			 fontSize="13"
+			 top="70"
+			 right="20"
+			 width="45%"
+			 includeIn="register,registrationWithSite" />
+	
+	<controls:VerticalLine height="60%" horizontalCenter="0" top="20" includeIn="register,registrationWithSite"/>
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20" 
+				 bottom="20"
+				 gap="10"
+				 includeIn="register, registrationWithSite"
+				 >
+		
+		<s:Label text="Username" fontSize="18" styleName="textInputStyles"/>
+		<s:TextInput id="newUsernameTextInput" 
+					 text="" 
+					 prompt="Username"
+					 minWidth="220"
+					 fontSize="18" 
+					 styleName="textInputStyles"
+					 />
+		<s:Label text="E-mail" fontSize="18" styleName="textInputStyles"/>
+		<s:TextInput id="emailTextInput" 
+					 text="" 
+					 prompt="Email"
+					 fontSize="18" 
+					 minWidth="220"
+					 styleName="textInputStyles"
+					 />
+		
+		<!-- registration of site -->
+		<s:Label text="Site Name" 
+				 fontSize="18" 
+				 styleName="textInputStyles"
+				 includeIn="registrationWithSite"/>
+		<s:TextInput id="newSiteTextInput" 
+					 text="" 
+					 prompt="Site name"
+					 minWidth="220"
+					 fontSize="18" 
+					 styleName="textInputStyles"
+					 includeIn="registrationWithSite"
+					 />
+		<s:Label text="Site Title" 
+				 fontSize="18" 
+				 styleName="textInputStyles"
+				 includeIn="registrationWithSite"/>
+		<s:TextInput id="newSiteTitleTextInput" 
+					 text="" 
+					 prompt="Title"
+					 fontSize="18" 
+					 minWidth="220"
+					 styleName="textInputStyles"
+					 includeIn="registrationWithSite"
+					 />
+		
+		
+		<s:Label id="registrationWarningsLabel" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"
+				 width="50%"/>
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			<s:Label text="Login" 
+					 styleName="stateLabel" 
+					 click="goToLoginState()"
+					 useHandCursor="true"
+					 buttonMode="true"/>
+			<s:Label text="Please wait..." 
+					 visible="{inProgress}"
+					 />
+			<s:Spacer width="100%"/>
+			<s:Button label="Register" 
+					  click.register="register()" 
+					  click.registrationWithSite="registerUserAndSite()"/>
+		</s:HGroup>
+		
+	</s:VGroup>
+
+	<!-- LOGIN AFTER REGISTRATION -->
+	<s:TextArea id="loginAfterRegistrationLabel" 
+			 text="A password will be emailed to you. Check your email for login information. If you don't see the email check your spam folder. " 
+			 fontSize="13"
+			 top="30"
+			 right="20"
+			 width="45%"
+			 height="130"
+			 includeIn="loginAfterRegistration"
+			 editable="false"
+			 borderVisible="false"/>
+	
+	<controls:VerticalLine height="60%" horizontalCenter="0" top="20" includeIn="loginAfterRegistration"/>
+	
+	<!-- LOGIN -->
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20"
+				 gap="10"
+				 includeIn="login"
+				 >
+		
+		<s:Label text="Username" fontSize="18" />
+		<s:TextInput id="usernameTextInput" 
+					 text="" 
+					 focusOut="username_focusOutHandler(event)" 
+					 prompt="Username"
+					 fontSize="18" styleName="textInputStyles"
+					 />
+		<s:Label text="Password" fontSize="18" />
+		<s:TextInput id="passwordTextInput" 
+					 text="" 
+					 displayAsPassword="true" 
+					 prompt="Password"
+					 fontSize="18" styleName="textInputStyles"
+					 />
+		
+		<s:Label id="loginWarningsLabel" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"
+				 width="100%"/>
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			<s:Label text="Register" 
+					 styleName="stateLabel" 
+					 click="goToRegistrationWithSiteState()"
+					 useHandCursor="true"
+					 buttonMode="true"/>
+			<controls:VerticalLine />
+			<s:Label text="Lost Password" 
+					 styleName="stateLabel" 
+					 click="goToLostPasswordState()"
+					 useHandCursor="true"
+					 buttonMode="true"/>
+			<s:Label text="Logging in..." 
+					 visible="{inProgress}"
+					 />
+			<s:Spacer width="100%"/>
+			<s:CheckBox id="rememberLoginCheckbox" label="Remember Me" selected="true" />
+			<s:Button id="cancelButton" label="Cancel" click="cancelButton_clickHandler(event)" />
+			<s:Button label="Login" click="login()" />
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+	<!-- LOST PASSWORD -->
+	<s:Label text="Please enter your username or email address. You will receive a passkey to create a new password via email." 
+			 fontSize="14"
+			 top="30"
+			 right="20"
+			 width="45%"
+			 includeIn="lostPassword"/>
+	
+	<controls:VerticalLine height="60%" horizontalCenter="-20" top="20" includeIn="lostPassword"/>
+	
+	<!-- LOST PASSWORD -->
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20"
+				 gap="10"
+				 includeIn="lostPassword"
+				 >
+		
+		<s:Label text="Username or email" fontSize="18" />
+		<s:TextInput id="usernameOrEmailTextInput" 
+					 text="" 
+					 prompt="Username or email"
+					 fontSize="18" styleName="textInputStyles"
+					 width="240" 
+					 keyUp="usernameOrEmailTextInput_keyUpHandler(event)"
+					 />
+		
+		
+		<s:Label id="lostPasswordWarningsLabel" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"
+				 width="100%"/>
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			<s:Label text="Login" 
+					 styleName="stateLabel" 
+					 click="goToLoginState()"
+					 useHandCursor="true"
+					 buttonMode="true"/>
+			<s:Label text="Please wait..." 
+					 visible="{inProgress}"
+					 />
+			<s:Spacer width="100%"/>
+			<s:Button id="lostPasswordButton" label="Get New Password" click="getNewPasswordButton_clickHandler(event)" />
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+	<!-- LOST PASSWORD CONFIRMATION -->
+	
+	<s:Label text="Check your email.&#xd;&#xd;A message was sent containing a confirmation code. Enter the code here and choose a new password." 
+			 fontSize="14"
+			 top="70"
+			 right="20"
+			 width="45%"
+			 includeIn="lostPasswordConfirmation"/>
+	
+	<controls:VerticalLine height="75%" horizontalCenter="-10" top="20" includeIn="lostPasswordConfirmation"/>
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20"
+				 gap="10"
+				 includeIn="lostPasswordConfirmation"
+				 >
+		
+		<s:Label text="Confirmation Code" fontSize="18" />
+		<s:TextInput id="confirmationCodeTextInput" 
+					 text="" 
+					 fontSize="18" styleName="textInputStyles"
+					 width="240"
+					 />
+		<s:Label text="New Password" fontSize="18" />
+		<s:TextInput id="newPasswordTextInput" 
+					 text="" 
+					 fontSize="18" styleName="textInputStyles"
+					 width="240"
+					 displayAsPassword="true"
+					 />
+		<s:Label text="Confirm Password" fontSize="18" />
+		<s:TextInput id="newPasswordTextInput2" 
+					 text="" 
+					 fontSize="18" styleName="textInputStyles"
+					 width="240"
+					 displayAsPassword="true"
+					 />
+		
+		<s:Label id="changePasswordWarningsLabel" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"
+				 width="100%"/>
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			<s:Label text="Lost Password" 
+					 styleName="stateLabel" 
+					 click="goToLostPasswordState()"
+					 useHandCursor="true"
+					 buttonMode="true"/>
+			<s:Label text="Please wait..." 
+					 visible="{inProgress}"
+					 />
+			<s:Spacer width="100%"/>
+			<s:Button id="generatePasswordButton" label="Generate Password For Me" click="generatePasswordButton_clickHandler(event)" />
+			<s:Button id="changePasswordButton" label="Change Password" click="changePasswordButton_clickHandler(event)" />
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+	
+	<!-- PASSWORD CHANGED -->
+	<s:Label text="Your password has been changed!&#xd;&#xd;Please store it in a safe place. Your password has been filled in for you. You may now login. " 
+			 fontSize="13"
+			 top="50"
+			 right="20"
+			 width="45%"
+			 includeIn="loginAfterPasswordChanged"/>
+	
+	<controls:VerticalLine height="60%" horizontalCenter="0" top="20" includeIn="loginAfterPasswordChanged"/>
+	
+	
+	
+	<!-- LOGOUT -->
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20"
+				 gap="10"
+				 includeIn="logout"
+				 >
+		
+		<s:Label text="Are you sure you want to logout?" fontSize="18" />
+		
+		<s:Spacer height="100%"/>
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			
+			<s:Label text="Logging out..." 
+					 visible="{inProgress}"
+					 includeInLayout="{inProgress}"
+					 />
+			<s:Label id="logoutWarningsLabel" 
+					 x="15" y="15" 
+					 text="" 
+					 fontWeight="bold" 
+					 color="red"
+					 width="100%"/>
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelLogoutButton" label="Cancel" click="cancelButton_clickHandler(event)" />
+			<s:Button label="Logout" click="logout()" />
+		</s:HGroup>
+		
+	</s:VGroup>
+</windows:AnimatedPanelWindow>

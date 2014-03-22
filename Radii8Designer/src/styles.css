@@ -1,0 +1,146 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+@namespace local "*";
+@namespace skins "com.flexcapacitor.skins.*";
+@namespace controls "com.flexcapacitor.controls.*";
+		
+s|Scroller
+{
+	skinClass: ClassReference("com.flexcapacitor.skins.MinimalScrollerSkin");
+}
+
+global {
+	fontFamily: Arial;
+	selectionColor: #d8d8d8;
+	rollOverColor: #d8d8d8;
+	caretColor: #d8d8d8;
+}
+
+mx|ToolTip { 
+    fontSize: 12;
+	color: #585858;
+    backgroundColor: #FCFCFC;
+	cornerRadius: 3;
+}
+
+	
+.constraintStyles {
+	fontSize:12;
+}
+
+.inputStyles {
+	fontSize: 12;
+	focusAlpha : 0;
+	borderColor: #b8b8b8;
+}
+
+.stateLabel {
+	color: #989898;
+	fontSize: 12;
+}
+
+.textInputStyles {
+	fontSize: 18;
+}
+
+.loginLabel {
+	color: #686868;
+}
+
+s|SkinnableTextBase:normalWithPrompt {
+	fontStyle:normal;
+	color: #CCCCCC;
+}
+
+s|TextBase:normalWithPrompt {
+	fontStyle:normal;
+	color: #CCCCCC;
+}
+
+s|TextInput:normalWithPrompt {
+	fontStyle:normal;
+	color: #CCCCCC;
+	borderColor: #b8b8b8;
+}
+
+controls|SearchTextInput:normalWithPrompt {
+	fontStyle:normal;
+	color: #b8b8b8;
+}
+
+
+mx|MenuBar#mainMenuBar {
+    /*chromeColor: #333333;
+    borderVisible: true;
+    borderColor: #000000;
+    borderAlpha: 0;
+    borderStyle: solid;
+    borderWeight: 2;
+    color: #FFFFFF;
+    contentBackgroundColor: #333333;
+    contentBackgroundAlpha: 0.8;
+    rollOverColor: #AAAAAA;
+    itemRollOverColor: #FF0000;*/
+   	/* changes background color at top level*/
+	backgroundSkin: ClassReference("com.flexcapacitor.skins.MenuBarButtonSkin");
+   	/* changes background HOVER color at top level of menu bar */
+	itemSkin: ClassReference("com.flexcapacitor.skins.MenuItemSkin");
+    color: #EFEFEF;
+    rollOverColor: #AAAAAA;
+    itemRollOverColor: #FF0000;
+}
+
+ mx|MenuItemRenderer{
+  color:#585858;
+}
+
+s|Panel {
+	skinClass: ClassReference("com.flexcapacitor.skins.PanelSkin");
+	showHeader: true;
+	backgroundColor: #FFFFFF;
+/*	headerBackgroundColor: #a71717;*/
+	headerBackgroundColor: #444444;
+	headerBackgroundAlpha: 1;
+	headerTextColor: #ffffff;
+	headerDividerColor: #000000;
+	headerDividerWeight: 2;
+	cornerRadius: 4;
+	borderVisible: true;
+	borderWeight: 2;
+	borderAlpha: 1;
+	borderColor: #181818;
+}
+/*
+s|Panel skins|PanelSkin#titleDisplay {
+	backgroundColor: #00ff00;
+	backgroundAlpha: 1;
+}*/
+
+mx|TabNavigator {
+	
+}
+
+mx|TabNavigator {
+	tabStyleName: tabStyle;
+	/*borderStyle: inset;*/
+	tabOffset: 0;
+	/*border-color: #FF0000;*/
+}
+
+mx|TabNavigator .tabStyle {
+	fontFamily: "Verdana";
+	fontSize: 10;
+	cornerRadius: 10;
+}
+
+/* used to set the label width of the dynamic property inspector panels */
+.inspectablePanel {
+	labelWidth: 132;
+	gap: 12;
+	focusColor: #CCCCCC;
+}
+
+.inspectablePanelLabel {
+	textAlign: right;
+}

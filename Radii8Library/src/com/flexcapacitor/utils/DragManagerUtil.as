@@ -159,7 +159,7 @@ package com.flexcapacitor.utils {
 			topLevelApplication = Application(FlexGlobals.topLevelApplication);
 			
 			//componentTree = DisplayObjectUtils.getComponentDisplayList(documentApplication);
-			componentTree = document.description;
+			componentTree = document.componentDescription;
 			
 			// either the component to add or the component to move
 			if (arguments[3]) {
@@ -253,8 +253,6 @@ package com.flexcapacitor.utils {
 		 * */
 		public function startDrag(dragInitiator:IUIComponent, application:Application, event:MouseEvent):void {
 			var dragSource:DragSource = new DragSource();
-			var distanceFromLeft:int;
-			var distanceFromTop:int;
 			var snapshot:BitmapAsset;
 
 			this.dragInitiator = dragInitiator;
@@ -267,9 +265,20 @@ package com.flexcapacitor.utils {
 			distanceFromLeft = dragInitiator.localToGlobal(new Point).x;
 			distanceFromTop = dragInitiator.localToGlobal(new Point).y;
 			
+			// TODO = READ 
+			// Flex coordinate systems
+			// http://help.adobe.com/en_US/flex/using/WS2db454920e96a9e51e63e3d11c0bf69084-7de0.html
+			var scale:Number = application.scaleX;
+			
 			// store distance of mouse point to top left of display object
-			offset.x = event.stageX - distanceFromLeft;
-			offset.y = event.stageY - distanceFromTop;
+			if (scale!=1 && !isNaN(scale)) {
+				offset.x = event.stageX - distanceFromLeft;// * scale;
+				offset.y = event.stageY - distanceFromTop;// * scale;
+			}
+			else {
+				offset.x = event.stageX - distanceFromLeft;
+				offset.y = event.stageY - distanceFromTop;
+			}
 			
 			updateDropTargetLocation(targetApplication, event);
 			
@@ -1127,7 +1136,10 @@ package com.flexcapacitor.utils {
 			// THE Following code may be causing this error:
 			// TypeError: Error #1009: Cannot access a property or method of a null object reference.
 			//	at mx.managers.dragClasses::DragProxy/mouseUpHandler()[E:\dev\4.y\frameworks\projects\framework\src\mx\managers\dragClasses\DragProxy.as:640]
-
+			//  - the parent property is null for some reason
+			//  solution maybe to add a try catch block if possible
+			//  or monkey patch DragProxy and remove animation effect (that causes error)
+			
 			// it seems to happen when dragging and dropping rapidly
 			// stops the drop not accepted animation
 			var dragManagerImplementation:Object = mx.managers.DragManagerImpl.getInstance();
@@ -1160,8 +1172,8 @@ package com.flexcapacitor.utils {
 			
 			// setPositionFromXY(target, startPoint, endPoint);
 			if (isBasicLayout) {
-				var dropX:int = dropPoint.x - offset.x;
-				var dropY:int = dropPoint.y - offset.y;
+				var dropX:Number;
+				var dropY:Number;
 				var values:Object = new Object();
 				var properties:Array = [];
 				var styles:Array = [];
@@ -1181,6 +1193,24 @@ package com.flexcapacitor.utils {
 				var top:int;
 				var x:int;
 				var y:int;
+				var scaleX:Number = targetApplication.scaleX;
+				var scaleY:Number = targetApplication.scaleY;
+				
+				
+				var distanceFromLeftEdge:Number = targetApplication.localToGlobal(new Point).x;
+				var distanceFromTopEdge:Number = targetApplication.localToGlobal(new Point).y;
+				
+				// check for scaling
+				if (scaleX!=1 && !isNaN(scaleX)) {
+					//dropX = (dropPoint.x*scaleX) - offset.x; //45.6875
+					//dropY = (dropPoint.y*scaleY) - offset.y;
+					dropX = dropPoint.x - offset.x; //45.6875
+					dropY = dropPoint.y - offset.y;
+				}
+				else {
+					dropX = dropPoint.x - offset.x;
+					dropY = dropPoint.y - offset.y;
+				}
 				
 				
 				////////////////////////////////////////
@@ -1236,6 +1266,8 @@ package com.flexcapacitor.utils {
 					verticalCenter = dropY - draggedItem.parent.height /2;
 					values["verticalCenter"] = verticalCenter;
 					delete values["y"];
+					//delete values["top"]; need to test
+					//delete values["bottom"];
 				}
 				
 				if (draggedItem.horizontalCenter!=undefined) {
@@ -1243,6 +1275,8 @@ package com.flexcapacitor.utils {
 					horizontalCenter = dropX - draggedItem.parent.width/2;
 					values["horizontalCenter"] = horizontalCenter;
 					delete values["x"];
+					//delete values["left"];
+					//delete values["right"];
 				}
 				
 				// build affected properties array
@@ -1649,6 +1683,10 @@ package com.flexcapacitor.utils {
 		public var addDropShadow:Boolean = false;
 
 		public var componentTree:ComponentDescription;
+
+		private var distanceFromLeft:int;
+
+		private var distanceFromTop:int;
 
 		
 		/**

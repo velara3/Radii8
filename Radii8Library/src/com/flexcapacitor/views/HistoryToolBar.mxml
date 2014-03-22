@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 creationComplete="creationCompleteHandler(event)">
+	
+	
+	<!-- 
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			
+			import mx.events.FlexEvent;
+
+			
+			
+			private var radiate:Radiate = Radiate.instance;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+				
+				updateNavigationButtons();
+			}
+			
+			/**
+			 * History changed. Select the last applied item in the history array. 
+			 * */
+			protected function historyChangeHandler(event:Event):void {
+				updateNavigationButtons();
+			}
+			
+			/**
+			 * 
+			 * */
+			public function redo():void {
+				var historyIndex:int = Radiate.redo(true);
+				
+				
+				//Radiate.history.refresh();
+				
+				//list.selectedIndex = historyIndex;
+				
+				updateNavigationButtons();
+				
+			}
+			
+			/**
+			 * 
+			 * */
+			public function undo():void {
+				var historyIndex:int = Radiate.undo(true);
+				
+				//Radiate.history.refresh();
+				
+				//list.selectedIndex = Radiate.historyIndex;
+				
+				updateNavigationButtons();
+			}
+			
+			public function updateNavigationButtons():void {
+				var historyIndex:int = Radiate.historyIndex;
+				var totalItems:int = Radiate.history ? Radiate.history.length : 0;
+				var hasItems:Boolean = totalItems>0;
+				
+				// has forward history
+				if (hasItems && historyIndex+1<totalItems) {
+					forwardButton.enabled = true;
+				}
+				else {
+					forwardButton.enabled = false;
+				}
+				
+				// has previous items
+				if (hasItems && historyIndex>-1) {
+					backButton.enabled = true;
+				}
+				else {
+					backButton.enabled = false;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+		
+	<s:layout>
+		<s:HorizontalLayout paddingTop="4" verticalAlign="baseline" />
+	</s:layout>
+
+	<c:ImageButton id="backButton" source="{Radii8LibraryAssets.undo}" 
+						  height="15"
+						  alpha=".8"
+						  click="undo()" 
+						  />
+	<c:ImageButton id="forwardButton" source="{Radii8LibraryAssets.redo}"
+						  height="15"
+						  alpha=".8"
+						  click="redo()" 
+						  />
+</s:Group>

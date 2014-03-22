@@ -4,7 +4,7 @@ package {
 	/**
 	 * List of classes and tools to include. 
 	 * 
-	 * Be sure to add a reference to the RadiateReferences.
+	 * Be sure to add a reference to this class in the RadiateReferences.
 	 * */
 	public class Radii8LibraryToolAssets {
 		
@@ -17,7 +17,7 @@ package {
 		///////////////////////////////////////////////////////
 		
 		/**
-		 * var xml:XML = new XML(new Radii8LibraryToolAssets.toolManifestDefaults());
+		 * var xml:XML = new XML(new Radii8LibraryToolAssets.toolsManifestDefaults());
 		 * // get list of tool classes
 		 * items = XML(xml).tool;
 		 * 
@@ -25,7 +25,7 @@ package {
 		 * Be sure to add a reference to the RadiateReferences.
 		 * */
 		[Embed(source="/assets/data/tools-manifest-defaults.xml", mimeType="application/octet-stream")]
-		public static const toolManifestDefaults:Class;
+		public static const toolsManifestDefaults:Class;
 		
 		
 		///////////////////////////////////////////////////////

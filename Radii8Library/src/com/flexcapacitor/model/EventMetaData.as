@@ -17,8 +17,8 @@ package com.flexcapacitor.model {
 		/**
 		 * Import metadata XML Style node into this instance
 		 * */
-		override public function unmarshall(item:XML, target:* = null):void {
-			super.unmarshall(item, target);
+		override public function unmarshall(item:XML, target:* = null, getValue:Boolean = true):void {
+			super.unmarshall(item, target, getValue);
 			/*
 			var args:XMLList = item.arg;
 			var keyName:String;

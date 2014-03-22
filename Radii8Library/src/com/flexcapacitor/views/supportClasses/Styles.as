@@ -1,11 +1,22 @@
 
 package com.flexcapacitor.views.supportClasses {
 	
+	/**
+	 * Styles for HTML elements
+	 * */
 	public class Styles {
+		
+		/**
+		 * Constructor
+		 * */
+		public function Styles() {
+			
+		}
 		
 		public static const POSITION:String = "position";
 		public static const RELATIVE:String = "relative";
 		public static const ABSOLUTE:String = "absolute";
+		public static const FIXED:String = "fixed";
 		
 		public static const BLOCK:String = "block";
 		public static const INLINE:String = "inline";
@@ -21,9 +32,12 @@ package com.flexcapacitor.views.supportClasses {
 		public static const PADDING_TOP:String = "padding-top";
 		public static const PADDING_BOTTOM:String = "padding-bottom";
 		
-		public function Styles()
-		{
-		}
+		
+		public static const MARGIN_LEFT:String = "margin-left";
+		public static const MARGIN_RIGHT:String = "margin-right";
+		public static const MARGIN_TOP:String = "margin-top";
+		public static const MARGIN_BOTTOM:String = "margin-bottom";
+		
 		
 		public var position:String;
 		public var display:String;
@@ -33,6 +47,11 @@ package com.flexcapacitor.views.supportClasses {
 		public var paddingLeft:String;
 		public var paddingTop:String;
 		public var paddingBottom:String;
+		
+		public var marginRight:String;
+		public var marginLeft:String;
+		public var marginTop:String;
+		public var marginBottom:String;
 		
 		public var left:String;
 		public var top:String;

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:handlers="com.flexcapacitor.handlers.*" 
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   
+			   title="Logout"
+			   creationComplete="creationCompleteHandler(event)"
+			   >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.services.WPService;
+			import com.flexcapacitor.services.WPServiceEvent;
+			
+			import mx.events.FlexEvent;
+			
+			public var service:WPService;
+			
+			[Bindable]
+			public var inProgress:Boolean;
+
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				service = new WPService();
+				service.host = Radiate.WP_HOST;
+				service.addEventListener(WPServiceEvent.RESULT, onWPServiceResult, false, 0, true);
+				service.addEventListener(WPServiceEvent.FAULT, onWPServiceFault, false, 0, true);
+			}
+			
+			
+			protected function onWPServiceResult(event:WPServiceEvent):void {
+				var data:Object = event.data;
+				
+				inProgress = false;
+				
+				if (data) {
+					logoutWarningsLabel.text = "";
+					
+					for each (var error:String in data.errors) {
+						logoutWarningsLabel.text += error;
+					}
+					
+					if (data.loggedIn==false) {
+						
+						logoutWarningsLabel.text = "";
+						closePopUp.startDelay = 250;
+						closePopUp.play();
+					}
+				}
+				else {
+					logoutWarningsLabel.text = "";
+				}
+				
+			}
+			
+			protected function onWPServiceFault(event:WPServiceEvent):void {
+				inProgress = false;
+				logoutWarningsLabel.text = "Could not connect to server. " + event.message;
+			}
+			
+			private function logout():void {
+				logoutWarningsLabel.text = "";
+				service.logoutUser();
+				inProgress = true;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="click">
+			<s:SetAction property="action" target="{this}" value="cancel"/>
+			<fc:ClosePopUp id="closePopUp" popUp="{this}"  />
+		</handlers:EventHandler>
+		
+		<!--- hide about popup -->
+		<!--<handlers:EventHandler targets="{importButton}" eventName="click">
+			<s:SetAction property="action" target="{this}" value="import"/>
+			<fc:ClosePopUp popUp="{this}"  />
+		</handlers:EventHandler>-->
+		
+		<fx:String id="action"></fx:String>
+		
+	</fx:Declarations>
+	
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="1"
+				 gap="10"
+				 >
+		
+		
+		<s:Label text="Are you sure you want to logout?" fontSize="18" />
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			
+			<s:Label text="Logging out..." 
+					 visible="{inProgress}"
+					 />
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Cancel"  />
+			<s:Button label="Logout" click="logout()" />
+		</s:HGroup>
+		
+		<s:Label id="logoutWarningsLabel" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"
+				 width="100%"/>
+	</s:VGroup>
+	
+</s:Panel>

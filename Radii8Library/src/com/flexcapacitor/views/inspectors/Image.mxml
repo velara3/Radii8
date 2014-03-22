@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 styleName="inspectablePanel"
+		 width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			public function update():void {
+				//var data:Object = ClassUtils.getMetaDataOfProperty(target, "source");
+				sourceRenderer.data = ClassUtils.getMetaDataOfProperty(target, "source");
+				alphaRenderer.data = ClassUtils.getMetaDataOfProperty(target, "alpha");
+				smoothRenderer.data = ClassUtils.getMetaDataOfProperty(target, "smooth");
+				scaleModeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "scaleMode");
+				fillModeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "fillMode");
+				contentLoaderGroupRenderer.data = ClassUtils.getMetaDataOfProperty(target, "contentLoaderGrouping");
+				clearOnLoadRenderer.data = ClassUtils.getMetaDataOfProperty(target, "clearOnLoad");
+				
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				callLater(update);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	<!--<s:Image scaleMode="" alpha="" smooth="" clearOnLoad="" contentLoader="" fillMode=""
+			 enableLoadingState="" backgroundAlpha="" backgroundColor=""
+			 smoothingQuality="" skinClass="" />-->
+			 
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Source" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:TextRenderer id="sourceRenderer" height="24" width="100%"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Alpha" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:NumberRenderer id="alphaRenderer" height="24" />
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Smooth" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:BooleanRenderer id="smoothRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Scale Mode" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:ComboBoxRenderer id="scaleModeRenderer" height="24"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Fill Mode" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:ComboBoxRenderer id="fillModeRenderer" height="24"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Content Grouping" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:TextRenderer id="contentLoaderGroupRenderer" height="24"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Clear on Load" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:BooleanRenderer id="clearOnLoadRenderer" height="24"/>
+	</s:HGroup>
+</s:Group>

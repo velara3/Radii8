@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<r:PropertiesGridRendererBase xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" 
+		xmlns:c="com.flexcapacitor.components.*"
+		xmlns:r="com.flexcapacitor.views.renderers.*"
+
+		clipAndEnableScrolling="true">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.skins.ClearButton;
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:RadioButtonGroup id="booleanGroup" change="setTargetValue()"/>
+	</fx:Declarations>
+	
+	<r:layout>
+		<s:HorizontalLayout />
+	</r:layout>
+	
+	<s:RadioButton id="booleanEnabledRadioButton" 
+				   label="True"
+				   groupName="booleanGroup"
+				   />
+	<s:RadioButton id="booleanDisabledRadioButton"
+				   label="False"
+				   groupName="booleanGroup"
+				   />
+	
+	<s:Spacer width="100%"/>
+	
+	<s:Button id="clearStyleButton" 
+			  skinClass="com.flexcapacitor.skins.ClearButton"
+			  click="setTargetValue(true)"
+			  />
+</r:PropertiesGridRendererBase>

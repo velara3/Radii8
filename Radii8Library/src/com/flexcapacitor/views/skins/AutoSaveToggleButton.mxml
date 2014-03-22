@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:fc="http://ns.adobe.com/flashcatalyst/2009"
+		>
+	
+	<fx:Metadata>
+		[HostComponent("spark.components.ToggleButton")]
+	</fx:Metadata>
+	
+	<s:states>
+		<s:State name="up" />
+		<s:State name="over"  />
+		<s:State name="down"  />
+		<s:State name="disabled"  />
+		<s:State name="upAndSelected"  />
+		<s:State name="overAndSelected" />
+		<s:State name="downAndSelected"  />
+		<s:State name="disabledAndSelected"  />
+	</s:states>
+	
+	<!-- we need a hit area since bitmap image does not have a hit area? or was enabled false? -->
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor alpha="0"/>
+		</s:fill>
+	</s:Rect>
+	
+	
+	<!-- images -->
+	<s:BitmapImage x="0" y="0" smooth="true"
+				   source="{Radii8LibraryAssets.save}"/>
+	
+	<!-- images -->
+	<s:BitmapImage includeIn="disabled,down,over,up" 
+				   x="0" y="0" smooth="true" alpha="0.1"
+				   source="{Radii8LibraryAssets.disconnected}"/>
+	<s:BitmapImage includeIn="disabledAndSelected,downAndSelected,overAndSelected,upAndSelected" 
+				   x="0" y="0" smooth="true" alpha="0.5"
+				   source="{Radii8LibraryAssets.connected}"/>
+	
+	
+</s:Skin>

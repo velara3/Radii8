@@ -24,12 +24,14 @@ package com.flexcapacitor.utils {
 	import es.xperiments.utils.logging.Log;*/
 	
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	
 	import flash.events.EventDispatcher;
 	import flash.net.FileReference;
 	import flash.system.ApplicationDomain;
 	import flash.utils.Dictionary;
+	import flash.utils.getTimer;
 	
 	import mx.controls.DataGrid;
 	import mx.controls.RadioButton;
@@ -41,7 +43,15 @@ package com.flexcapacitor.utils {
 
 	
 	/**
+	 * Import MXML. Parts based on Live MXML. 
+	 * http://code.google.com/p/livemxml/
 	 * 
+	 * 
+	 * 
+	 * A way to load dynamically limited mxml files and compile it on the fly.
+	 * - Based on the Class MXMLLoader from Manish Jethani.
+	 *  http://manishjethani.com/blog/2008/04/02/the-mxmlloader-component/
+	 *  http://www.xperiments.es/blog  
 	 * */
 	public class MXMLImporter extends EventDispatcher {
 		//Dependencies
@@ -69,7 +79,7 @@ package com.flexcapacitor.utils {
 			return MXMLImporter.getChildByIds(idString, name);
 		}
 		]]>
-		</code>;		
+		</code>;
 		
 		public static var MXMLLoaderArray:Array = new Array( );
 		public var idString:String;
@@ -106,16 +116,36 @@ package com.flexcapacitor.utils {
 
 		private var _startCode:String = "";
 		private var _initCode:String = "";
+		public var document:IDocument;
 
 		/**
-		 * 
+		 * Refactor this
 		 * */
-		public function MXMLImporter(idStr:String, mxml:XML, container:IVisualElement) {
+		public function MXMLImporter(iDocument:IDocument, idStr:String, mxml:XML, container:IVisualElement) {
 			idString = idStr;
 			_container = container;
 			_ids = new Dictionary();
 			_initCode = "";
 			_startCode = "";
+			document = iDocument;
+			
+			
+			var elName:String = mxml.localName();
+			
+			var timer:int = getTimer(); 
+			
+			Radiate.importingDocument = true;
+			
+			// TODO this is a special case we check for since 
+			// we should have already created the application by now
+			// we should handle this case before we get here (pass in the children of the application xml not application itself)
+			if (elName=="Application") {
+				Radiate.setAttributesOnComponent(document.instance, mxml);
+			}
+			else {
+				createChildFromMXMLNode(mxml, container);
+			}
+			
 			
 			for each (var childNode:XML in mxml.children()) {
 				
@@ -127,6 +157,11 @@ package com.flexcapacitor.utils {
 					//new FrameDelay( onComplete, 2 );
 				}
 			}
+			
+			Radiate.importingDocument = false;
+			
+			// using importing document flag it goes down from 5 seconds to 1 second
+			//Radiate.log.info("Time to import: " + (getTimer()-timer));
 			
 			MXMLImporter.MXMLLoaderArray[ idString ] = this;
 		}
@@ -171,7 +206,7 @@ package com.flexcapacitor.utils {
 			ByteLoader.loadBytes(bytes);*/
 			
 			onComplete();		
-		}		
+		}
 		
 		/**
 		 * 
@@ -186,9 +221,9 @@ package com.flexcapacitor.utils {
 		private function createChildFromMXMLNode(node:XML, parent:Object):IVisualElement {
 			var elementName:String = node.localName();
 			var domain:ApplicationDomain = ApplicationDomain.currentDomain;
-			var componentDefinition:ComponentDefinition = Radiate.getComponentType(elementName);
-			var className:String = componentDefinition.className;
-			var classType:Class = componentDefinition.classType as Class;
+			var componentDefinition:ComponentDefinition = Radiate.getDynamicComponentType(elementName);
+			var className:String;
+			var classType:Class;
 			var currentDataProviderString:String; // current dataProvider
 			var ignoreChildren:Boolean = false;
 			var instance:Object;
@@ -198,6 +233,20 @@ package com.flexcapacitor.utils {
 			var array:Array;
 			var functionName:String;
 			
+			if (componentDefinition==null) {
+				
+			}
+			
+			className =componentDefinition ? componentDefinition.className :null;
+			classType = componentDefinition ? componentDefinition.classType as Class :null;
+			
+			
+			if (componentDefinition==null && elementName!="RootWrapperNode") {
+				var message:String = "Could not find definition for " + elementName + ". The document will be missing elements.";
+				//message += " Add this class to Radii8LibrarySparkAssets.sparkManifestDefaults or add the library to the project that contains it.";
+				Radiate.log.error(message);
+				return null;
+			}
 			
 			// classes to look into for decoding XML
 			// XMLDecoder, SchemaTypeRegistry, SchemaManager, SchemaProcesser
@@ -216,17 +265,26 @@ package com.flexcapacitor.utils {
 			//var object2:* = SchemaTypeRegistry.getInstance().registerClass(;
 			
 	
-			if (className!="mx.controls.RadioButtonGroup") {
+			if (className!="mx.controls.RadioButtonGroup" && componentDefinition!=null) {
 				//instance = new classType();
-				instance = Radiate.createComponentForAdd(componentDefinition, false);
+				instance = Radiate.createComponentForAdd(document, componentDefinition, true);
 				instanceID = "";
+				//Radiate.log.info("MXML Importer adding: " + elementName);
 				
-				for each (attribute in node.attributes()) {
+				// calling add before setting properties because some 
+				// properties such as borderVisible need to be set after 
+				// the component is added (maybe)
+				Radiate.addElement(instance, parent);
+				
+				Radiate.setAttributesOnComponent(instance, node);
+				/*for each (attribute in node.attributes()) {
 					attributeName = attribute.name().toString();
+					//Radiate.log.info(" found attribute: " + attributeName); 
 					
 					// check if property 
 					if (attributeName in instance) {
 						
+						//Radiate.log.info(" setting property: " + attributeName);
 						Radiate.setProperty(instance, attributeName, attribute.toString());
 					 	
 					}
@@ -234,12 +292,11 @@ package com.flexcapacitor.utils {
 					// could be style or event
 					else {
 						if (instance is IStyleClient) {
+							//Radiate.log.info(" setting style: " + attributeName);
 							Radiate.setStyle(instance, attributeName, attribute.toString());
 						}
 					}
-				}
-				
-				Radiate.addElement(instance, parent);
+				}*/
 				
 			}
 			
@@ -416,7 +473,7 @@ package com.flexcapacitor.utils {
 			
 			if (!ignoreChildren) {
 				
-				for each (var childNode:XML in node.children()) {
+				for each (childNode in node.children()) {
 					createChildFromMXMLNode(childNode, instance);
 				}
 			}
