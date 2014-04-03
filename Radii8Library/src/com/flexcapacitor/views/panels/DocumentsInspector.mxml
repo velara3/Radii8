@@ -198,7 +198,7 @@
 			 * */
 			protected function newDocumentIcon_clickHandler(event:MouseEvent):void {
 				var newDocument:IDocument = radiate.addDocument(radiate.createDocument(), radiate.selectedProject, true, true);
-				radiate.openDocument(newDocument, true); 
+				radiate.openDocument(newDocument, DocumentData.INTERNAL_LOCATION, true); 
 			}
 			
 			protected function saveDocumentIcon_clickHandler(event:MouseEvent):void {
@@ -226,7 +226,7 @@
 						radiate.showDocument(documentData);
 					}
 					else {
-						radiate.openDocumentByData(documentData);
+						//radiate.openDocumentByData(documentData);
 					}
 				}
 				
@@ -279,7 +279,7 @@
 				var selectedDocument:IDocument = list.selectedItem as IDocument;
 				
 				if (selectedDocument) {
-					radiate.openDocument(selectedDocument, true);
+					radiate.openDocument(selectedDocument, DocumentData.REMOTE_LOCATION, true);
 				}
 				else {
 					Radiate.log.info("Please select a document");
@@ -496,7 +496,7 @@
 					top="0"
 					left="8" 
 					right="8" 
-					bottom="4"
+					bottom="0"
 					>
 		
 		<s:Group height="24" 
@@ -547,7 +547,7 @@
 			 verticalAlign="middle"
 			 >
 		<c:ImageButton id="importDocumentIcon" 
-					   source="{Radii8LibraryAssets.openFolder}" 
+					   source="{Radii8LibraryAssets.importIcon}" 
 					   toolTip="Import Document"
 					   />
 		<s:Spacer width="100%"/>

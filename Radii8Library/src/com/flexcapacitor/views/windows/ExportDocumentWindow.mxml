@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
 			   xmlns:s="library://ns.adobe.com/flex/spark" 
 			   xmlns:mx="library://ns.adobe.com/flex/mx" 
 			   xmlns:handlers="com.flexcapacitor.handlers.*" 
 			   xmlns:fc="com.flexcapacitor.effects.popup.*"
 			   xmlns:views="com.flexcapacitor.views.*"
+			   xmlns:panels="com.flexcapacitor.views.panels.*"
+			   xmlns:windows="com.flexcapacitor.views.windows.*" 
 			   
-			   title="Export"
-			   creationComplete="panel1_creationCompleteHandler(event)" xmlns:panels="com.flexcapacitor.views.panels.*"
+			   title="Save As..."
+			   creationComplete="panel1_creationCompleteHandler(event)" 
 			   >
 	
 	<fx:Script>
@@ -25,6 +27,7 @@
 			
 			protected function panel1_creationCompleteHandler(event:FlexEvent):void {
 				codeInspector.exportWindow = true;
+				codeInspector.activate();
 			}
 			
 			protected function eventhandler1_effectEndHandler(event:EffectEvent):void {
@@ -42,12 +45,13 @@
 			}
 			
 			protected function completeHandler(event:Event):void {
-				closePopUp.startDelay = 500;
+				codeInspector.deactivate();
+				closePopUp.startDelay = closePanelDelay;
 				closePopUp.play();
 			}
 			
 			protected function cancelHandler(event:Event):void {
-				Radiate.log.info("Canceled Save");
+				//Radiate.log.info("Canceled Save");
 			}
 			
 		]]>
@@ -116,4 +120,4 @@
 		</s:HGroup>
 	</s:VGroup>
 	
-</s:Panel>
+</windows:AnimatedPanelWindow>

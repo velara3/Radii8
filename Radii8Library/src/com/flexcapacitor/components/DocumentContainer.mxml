@@ -151,7 +151,7 @@
 				//radiate.setTarget(targetApplication);
 				
 				//codeAvailable = true;
-				
+				//Radiate.log.info("Document container app complete");
 				if (iDocument.source) {
 					validateNow();
 					iDocument.parseSource();
@@ -160,14 +160,14 @@
 					//parseDocument(codeToLoad);
 					//codeAvailable = false;
 				}
-				radiate.setDocument(iDocument);
-				radiate.setTarget(targetApplication);
 				
 				
 				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
 				//radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChange, false, 0, true);
 				
+				radiate.setDocument(iDocument);
+				radiate.setTarget(targetApplication);
 				//updateAppScrollPosition();
 				
 				//setTimeout(updateAppScrollPosition, 10);

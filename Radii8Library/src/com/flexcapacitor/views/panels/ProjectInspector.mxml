@@ -15,8 +15,8 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IProject;
-			import com.flexcapacitor.views.skins.OnlineToggleButton;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			import com.flexcapacitor.views.windows.PublishWindow;
 			
@@ -170,7 +170,7 @@
 				var project:IProject = list.selectedItem ? IProject(list.selectedItem) : null;
 				
 				if (project) {
-					radiate.openProject(project);
+					radiate.openProject(project, DocumentData.INTERNAL_LOCATION);
 				}
 			}
 			
@@ -288,7 +288,7 @@
 					/>
 		
 		<s:Spacer width="100%"/>
-		<c:ImageButton id="closeProjectIcon" 
+		<!--<c:ImageButton id="closeProjectIcon" 
 					   source="{Radii8LibraryAssets.closedFolder}" 
 					   toolTip="Close Project"
 					   click="closeProjectIcon_clickHandler(event)"
@@ -297,7 +297,7 @@
 					   source="{Radii8LibraryAssets.openFolder}" 
 					   toolTip="Open Project"
 					   click="openProjectsIcon_clickHandler(event)"
-					   />
+					   />-->
 		<c:ImageButton id="saveProjectIcon" 
 					   source="{Radii8LibraryAssets.save}" 
 					   toolTip="Save Project"

@@ -73,6 +73,10 @@
 			currentState = "normal";
 		}
 		
+		protected function openIcon_clickHandler(event:MouseEvent):void {
+			Radiate.getInstance().openDocument(this.data as IDocument);
+		}
+		
 	]]>
 	</fx:Script>
 	
@@ -108,6 +112,15 @@
 				   visible="{data &amp;&amp; (DocumentData(data).saveInProgress || DocumentData(data).openInProgress)}"
 				   >
 	</s:BitmapImage>
+	
+	<!--click event is not getting dispatched <s:Image id="openIcon" 
+				   source="{Radii8LibraryAssets.openFolder}"
+				   right="5"
+				   top="5" 
+				   visible="{data &amp;&amp; !(DocumentData(data).isOpen &amp;&amp; !DocumentData(data).openInProgress)}"
+				   click="openIcon_clickHandler(event)"
+				   >
+	</s:Image>-->
 	
 	
 	<s:Label id="labelDisplay" 

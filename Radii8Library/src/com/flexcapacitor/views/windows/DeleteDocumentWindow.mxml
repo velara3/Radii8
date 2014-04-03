@@ -41,6 +41,8 @@
 			public static const PROJECT:String = "project";
 			public static const RESOURCE:String = "resource";
 			
+			public var closeWindowDelay:int = 250;
+			
 			[Bindable]
 			public var documentData:IDocumentData;
 			
@@ -123,7 +125,7 @@
 			public function playDeleteSuccessfulMessage():void {
 				infoLabel.text = "Deleted!";
 				action = "Deleted";
-				closePopUp.startDelay = 1000;
+				closePopUp.startDelay = closeWindowDelay;
 				closePopUp.play();
 			}
 			

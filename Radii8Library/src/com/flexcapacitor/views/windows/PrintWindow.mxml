@@ -6,9 +6,10 @@
 			   xmlns:fc="com.flexcapacitor.effects.popup.*"
 			   xmlns:views="com.flexcapacitor.views.*"
 			   xmlns:c="com.flexcapacitor.views.*"
+			   xmlns:windows="com.flexcapacitor.views.windows.*"
 			   
 			   title="Print"
-			   creationComplete="panel1_creationCompleteHandler(event)" xmlns:windows="com.flexcapacitor.views.windows.*"
+			   creationComplete="panel1_creationCompleteHandler(event)" 
 			   >
 	
 	<fx:Script>
@@ -46,7 +47,6 @@
 			}
 			
 			protected function printCompleteHandler(event:Event):void {
-				//trace("print complete");
 				closeWindow.play();
 			}
 			
@@ -56,9 +56,9 @@
 	<fx:Declarations>
 		
 		<!--- hide about popup -->
-		<handlers:EventHandler targets="{cancelButton}" eventName="click">
+		<handlers:EventHandler targets="{cancelButton}" setTriggerEvent="true" eventName="click">
 			<s:SetAction property="action" target="{this}" value="cancel"/>
-			<fc:ClosePopUp id="closeWindow" popUp="{this}"  />
+			<fc:ClosePopUp id="closeWindow" popUp="{this}" />
 		</handlers:EventHandler>
 		
 		<!--- hide about popup -->

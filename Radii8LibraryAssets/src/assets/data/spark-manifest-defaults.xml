@@ -39,8 +39,8 @@
     	<defaults width="166" height="23" dataProvider="Item 1,Item 2,Item 3"/>
     </component>
 	
-	<component id="DataGrid" class="spark.components.DataGrid" include="true">
-    	<defaults width="240" height="66" dataProvider="Item 1,Item 2,Item 3"/>
+	<component id="DataGrid" class="spark.components.DataGrid" include="false">
+    	<defaults width="240" height="66" />
     </component>
     
     <component id="DataGroup" class="spark.components.DataGroup" include="false">
@@ -175,7 +175,7 @@
     </component>
     
     <component id="ToggleButton" class="spark.components.ToggleButton" include="true">
-    	<defaults width="76" height="20" label="Label"/>
+    	<defaults width="76" height="20" label="Toggle"/>
     </component>
     
     <component id="VGroup" class="spark.components.VGroup" include="true">

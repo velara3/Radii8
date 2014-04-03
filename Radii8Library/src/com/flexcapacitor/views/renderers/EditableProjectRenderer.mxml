@@ -2,6 +2,7 @@
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
 				xmlns:s="library://ns.adobe.com/flex/spark"
 				xmlns:mx="library://ns.adobe.com/flex/halo"
+				
 				doubleClickEnabled="true"
 				doubleClick="itemrenderer1_doubleClickHandler(event)"
 				autoDrawBackground="true"
@@ -45,6 +46,7 @@
 			project.name = textInput.text;
 		    list.dataProvider.itemUpdated(project, "name", project.name, textInput.text); 
 			currentState = "normal";
+			project.checkProjectHasChanged();
 		}
 		
 		protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void {

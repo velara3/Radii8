@@ -95,9 +95,9 @@
 			}
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-				radiate.addEventListener(RadiateEvent.ADD_ITEM, addChangeHandler);
-				radiate.addEventListener(RadiateEvent.MOVE_ITEM, moveChangeHandler);
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ADD_ITEM, addChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.MOVE_ITEM, moveChangeHandler, false, 0, true);
 				
 				if (radiate.targets) {
 					target = radiate.target;
@@ -254,14 +254,24 @@
 								 typographicCase="lowercaseToSmallCaps"
 								 fontWeight="normal"
 								 verticalCenter="0"
+									color="#585858"
+								 color.hovered="#787878"
+								 color.selected="#383838"
+								 />
+						
+								<!-- dark background colors -->
+								<!-- 
 								 color="#BBBBBB"
 								 color.hovered="#DDDDDD"
 								 color.selected="#FFFFFF"
-								 />
+								-->
+						
 								<!-- light background colors -->
-								<!-- color="#585858"
+								<!--
+									color="#585858"
 								 color.hovered="#787878"
-								 color.selected="#383838"-->
+								 color.selected="#383838"
+								-->
 					</s:ItemRenderer>
 				</fx:Component>
 			</s:itemRenderer>

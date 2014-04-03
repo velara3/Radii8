@@ -22,12 +22,12 @@
 				ExternalInterface.call("resizeEditor");
 			}
 			
-			protected function button1_clickHandler(event:MouseEvent):void {
+			protected function createEditor():void {
 				var createEditor:String = "createEditor";
 				var result:Object;
 				currentState = "editor";
 				
-				if (!aceEditorCreated) {
+				if (true || !aceEditorCreated) {
 					editor.content = "<div id='editor1' style='display:block;position:absolute;top:0px;left:0px;right:0px;bottom:0px;height:100%;width:100%'></div>";
 					editor.validateNow();
 					result = ExternalInterface.call(createEditor, "editor0", ExternalInterface.objectID);
@@ -36,9 +36,7 @@
                 	aceEditorCreated = true;
 				}
 				
-				settingEditorText = true;
-				result = ExternalInterface.call("setEditorText", template);
-				settingEditorText = false;
+				updateContent();
 			}
 			
 			public function editorChange(value:String = ""):void {
@@ -63,9 +61,17 @@
 				
 			}
 			
-			protected function button2_clickHandler(event:MouseEvent):void {
+			public function updateContent():void {
+				
+				settingEditorText = true;
+				var result:String = ExternalInterface.call("setEditorText", template);
+				settingEditorText = false;
+			}
+			
+			protected function switchStates(event:MouseEvent):void {
 				if (currentState=="normal") {
 					currentState = "editor";
+					createEditor();
 				}
 				else {
 					currentState = "normal";
@@ -73,7 +79,7 @@
 			}
 			
 			protected function application1_creationCompleteHandler(event:FlexEvent):void {
-				button1_clickHandler(null);
+				//createEditor();
 			}
 			
 		]]>
@@ -151,7 +157,7 @@
 	</flexiframe:IFrame>
 
 	<s:HGroup>
-		<s:Button label="Set contents" click="button1_clickHandler(event)"/>
-		<s:Button label="Switch States" click="button2_clickHandler(event)"/>
+		<s:Button label="Set contents" click="createEditor()"/>
+		<s:Button label="Switch States" click="switchStates(event)"/>
 	</s:HGroup>
 </s:Application>

@@ -54,6 +54,6 @@ package com.flexcapacitor.model {
 		/**
 		 * Gets document by UID.
 		 * */
-		function getDocumentByID(uid:String):IDocumentData;
+		function getDocumentByUID(uid:String):IDocumentData;
 	}
 }

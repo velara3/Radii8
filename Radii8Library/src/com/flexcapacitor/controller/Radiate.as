@@ -99,6 +99,7 @@ package com.flexcapacitor.controller {
 	import spark.components.Button;
 	import spark.components.ComboBox;
 	import spark.components.Grid;
+	import spark.components.Image;
 	import spark.components.Label;
 	import spark.components.NavigatorContent;
 	import spark.components.Scroller;
@@ -549,6 +550,12 @@ package com.flexcapacitor.controller {
 		public var user:Object;
 		
 		/**
+		 * User email
+		 * */
+		[Bindable]
+		public var userEmail:String;
+		
+		/**
 		 * User id
 		 * */
 		[Bindable]
@@ -642,23 +649,27 @@ package com.flexcapacitor.controller {
 		 * */
 		public function autoSaveHandler():void {
 			var length:int;
+			var iProject:IProject;
 			var iDocumentData:IDocumentData;
+			var iAttachmentData:AttachmentData;
+			var imageData:ImageData;
 			var i:int;
 			
 			// save documents
-			length = documents.length;
+			/*length = documents.length;
 			for (i=0;i<length;i++) {
 				iDocumentData = documents[i] as IDocumentData;
-				if (iDocumentData.isChanged) {
+				if (iDocumentData.isChanged && !iDocumentData.saveInProgress && iDocumentData.isOpen) {
 					iDocumentData.save();
 				}
-			}
+			}*/
 			
 			// save projects
 			length = projects.length;
 			for (i=0;i<length;i++) {
 				iDocumentData = projects[i] as IDocumentData;
-				if (iDocumentData.isChanged) {
+				//if (iDocumentData.isChanged && !iDocumentData.saveInProgress && iDocumentData.isOpen) {
+				if (!iDocumentData.saveInProgress && iDocumentData.isOpen) {
 					iDocumentData.save();
 				}
 			}
@@ -666,9 +677,14 @@ package com.flexcapacitor.controller {
 			// save attachments
 			length = assets.length;
 			for (i=0;i<length;i++) {
-				iDocumentData = assets[i] as IDocumentData;
-				if (iDocumentData.isChanged) {
-					//iDocumentData.save();
+				iAttachmentData = assets[i] as ImageData;
+				if (iAttachmentData) {
+					imageData = iAttachmentData as ImageData;
+					
+					if (!imageData.saveInProgress && imageData.id==null) {
+						//imageData.save();
+						uploadAttachment(imageData.byteArray, selectedProject.id, imageData.name, null, imageData.contentType);
+					}
 				}
 			}
 		}
@@ -947,7 +963,7 @@ package com.flexcapacitor.controller {
 		
 		
 		/**
-		 * Dispatch code updated event
+		 * Dispatch code updated event. Type is usually "HTML". 
 		 * */
 		public function dispatchCodeUpdatedEvent(code:String, type:String, openInWindow:Boolean = false):void {
 			var codeUpdatedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.CODE_UPDATED);
@@ -1879,7 +1895,7 @@ package com.flexcapacitor.controller {
 		//----------------------------------
 		
 		/**
-		 *  
+		 * Use setTarget() or setTargets() method to set the target. 
 		 * */
 		public function get target():Object {
 			if (_targets.length > 0)
@@ -1921,7 +1937,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Selected targets
+		 * Use setTargets() to set the targets
 		 *  @private
 		 * */
 		/*public function set targets(value:Array):void {
@@ -4538,7 +4554,7 @@ package com.flexcapacitor.controller {
 		 * */
 		public function closeProject(iProject:IProject, dispatchEvents:Boolean = true):Boolean {
 			var length:int = iProject.documents.length;
-			
+			log.info("Close project");
 			if (dispatchEvents) {
 				dispatchProjectClosingEvent(iProject);
 			}
@@ -4703,18 +4719,18 @@ package com.flexcapacitor.controller {
 		/**
 		 * Creates a blank project
 		 * */
-		public function createBlankDemoDocument(name:String = null, type:Class = null, open:Boolean = true, dispatchEvents:Boolean = false, select:Boolean = true):IDocument {
+		public function createBlankDemoDocument(projectName:String = null, documentName:String = null, type:Class = null, open:Boolean = true, dispatchEvents:Boolean = false, select:Boolean = true):IDocument {
 			var newProject:IProject;
 			var newDocument:IDocument;
 			
-			newProject = createProject(); // create project
+			newProject = createProject(projectName); // create project
 			addProject(newProject);       // add to projects array - shows up in application
 			
-			newDocument = createDocument(); // create document
+			newDocument = createDocument(documentName); // create document
 			addDocument(newDocument, newProject); // add to project and documents array - shows up in application
 			
 			openProject(newProject); // should open documents - maybe we should do all previous steps in this function???
-			openDocument(newDocument, true, true); // add to application and parse source code if any
+			openDocument(newDocument, DocumentData.INTERNAL_LOCATION, true, true); // add to application and parse source code if any
 			
 			setProject(newProject); // selects project 
 			
@@ -4781,6 +4797,7 @@ package com.flexcapacitor.controller {
 				// should there be a remove (internally) and delete method?
 				
 				//throw new Error("Document overwrite is not implemented yet");
+				documentAdded = true;
 			}
 			
 			if (project) {
@@ -4879,7 +4896,7 @@ package com.flexcapacitor.controller {
 				iDocument = createDocumentFromData(data);
 			}
 			
-			var result:Boolean = openDocument(iDocument, showDocument, dispatchEvents);
+			var result:Boolean = openDocument(iDocument, DocumentData.INTERNAL_LOCATION, showDocument, dispatchEvents);
 			
 			return result;
 		}
@@ -4985,7 +5002,7 @@ package com.flexcapacitor.controller {
 			}
 			else {
 				iDocument.source = code;
-				result = openDocument(iDocument, true, dispatchEvents);
+				result = openDocument(iDocument, DocumentData.INTERNAL_LOCATION, true, dispatchEvents);
 			}
 			
 			return result;
@@ -4997,7 +5014,7 @@ package com.flexcapacitor.controller {
 		 * 
 		 * It returns the document container. 
 		 * */
-		public function openDocument(iDocument:IDocument, showDocumentInTab:Boolean = true, dispatchEvents:Boolean = true):Object {
+		public function openDocument(iDocument:IDocument, locations:String = null, showDocumentInTab:Boolean = true, dispatchEvents:Boolean = true):Object {
 			var documentContainer:DocumentContainer;
 			var navigatorContent:NavigatorContent;
 			var openingEventDispatched:Boolean;
@@ -5029,7 +5046,7 @@ package com.flexcapacitor.controller {
 				return documentsContainerDictionary[iDocument];
 			}
 			else {
-				iDocument.open();
+				iDocument.open(locations);
 			}
 			
 			// TypeError: Error #1034: Type Coercion failed: cannot convert 
@@ -5659,9 +5676,15 @@ package com.flexcapacitor.controller {
 			// todo check if name already exists
 			iDocument.name = name;
 			tab = getNavigatorByDocument(iDocument);
+			
+			if (iDocument.instance is Application) {
+				setProperty(iDocument.instance, "pageTitle", name);
+			}
+			
 			if (tab) {
 				tab.label = iDocument.name;
 			}
+			
 			dispatchDocumentRenameEvent(iDocument, name);
 		}
 		
@@ -5794,7 +5817,7 @@ package com.flexcapacitor.controller {
 			
 			newDocument = createDocument(name, type);
 			addDocument(newDocument, selectedProject, true, true);
-			openDocument(newDocument, true);
+			openDocument(newDocument, DocumentData.INTERNAL_LOCATION, true);
 			/*
 			
 			if (project) {
@@ -6043,11 +6066,11 @@ package com.flexcapacitor.controller {
 					
 					if (project && project.documents.indexOf(iDocument)!=-1) {
 						log.info("Opening project document " + iDocument.name);
-						openDocument(iDocument, false, true);
+						openDocument(iDocument, DocumentData.INTERNAL_LOCATION, false, true);
 					}
 					else if (project==null) {
 						log.info("Opening document " + iDocument.name);
-						openDocument(iDocument, false, true);
+						openDocument(iDocument, DocumentData.INTERNAL_LOCATION, false, true);
 					}
 				}
 				
@@ -6260,7 +6283,9 @@ package com.flexcapacitor.controller {
 				EventDispatcher(project).removeEventListener(SaveResultsEvent.SAVE_RESULTS, projectSaveResults);
 			}
 			
-			setLastSaveDate();
+			if (event is SaveResultsEvent && SaveResultsEvent(event).successful) {
+				setLastSaveDate();
+			}
 			
 			dispatchProjectSavedEvent(IProject(Event(event).currentTarget));
 		}
@@ -6375,6 +6400,13 @@ package com.flexcapacitor.controller {
 		 * */
 		public function getIsDataBaseLocation(value:String):Boolean {
 			return value ? value.indexOf(DocumentData.FILE_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
+		}
+		
+		/**
+		 * Returns true if location includes internal
+		 * */
+		public function getIsInternalLocation(value:String):Boolean {
+			return value ? value.indexOf(DocumentData.INTERNAL_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
 		}
 		
 		/**
@@ -6762,7 +6794,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Register user and site 
 		 * */
-		public function registerUserAndSite(username:String, email:String, blogName:String = "", blogTitle:String = "", isPublic:Boolean = false):void {
+		public function registerUserAndSite(username:String, email:String, siteName:String = "", blogTitle:String = "", isPublic:Boolean = false, requireSiteName:Boolean = false):void {
 			
 			// we need to create service
 			if (registerService==null) {
@@ -6775,7 +6807,17 @@ package com.flexcapacitor.controller {
 			
 			registerInProgress = true;
 			
-			registerService.registerUserAndSite(username, email, blogName, blogTitle, isPublic);
+			if (!requireSiteName) {
+				if (siteName=="") {
+					siteName = username;
+				}
+				
+				if (blogTitle=="") {
+					blogTitle = "A Radiate site";
+				}
+			}
+			
+			registerService.registerUserAndSite(username, email, siteName, blogTitle, isPublic);
 			
 		}
 		
@@ -6939,6 +6981,7 @@ package com.flexcapacitor.controller {
 				userAvatar = data.avatar;
 				userDisplayName = data.displayName ? data.displayName : "guest";
 				userID = data.id;
+				userEmail = data.contact;
 				user = data;
 				
 				if ("blogs" in user) {
@@ -7100,14 +7143,16 @@ package com.flexcapacitor.controller {
 			var length:int;
 			var object:Object;
 			var attachment:AttachmentData;
-			var attachments:Array = data && data.post && data.post.attachments ? data.post.attachments : []; 
+			var asset:AttachmentData;
+			var remoteAttachments:Array = data && data.post && data.post.attachments ? data.post.attachments : []; 
+			var containsName:Boolean;
+			var assetsLength:int;
 			
-			
-			if (attachments.length>0) {
-				length = attachments.length;
+			if (remoteAttachments.length>0) {
+				length = remoteAttachments.length;
 				
 				for (var i:int;i<length;i++) {
-					object = attachments[i];
+					object = remoteAttachments[i];
 					
 					if (String(object.mime_type).indexOf("image/")!=-1) {
 						attachment = new ImageData();
@@ -7119,14 +7164,59 @@ package com.flexcapacitor.controller {
 					}
 					
 					potentialAttachments.push(attachment);
+					
+					//attachments = potentialAttachments;
+					assetsLength = assets.length;
+					j = 0;
+					
+					for (var j:int;j<assetsLength;j++) {
+						asset = assets.getItemAt(j) as AttachmentData;
+						containsName = asset ? asset.name.indexOf(attachment.name)==0 : false;
+						
+						// this is not very robust but since uploading only supports one at a time 
+						// it should be fine. when supporting multiple uploading, keep
+						// track of items being uploaded
+						if (containsName && asset.id==null) {
+							asset.unmarshall(attachment);
+							
+							var documentLength:int = documents.length;
+							k = 0;
+							
+							for (var k:int;k<documentLength;k++) {
+								var iDocument:IDocument = documents[k] as IDocument;
+								
+								if (iDocument) {
+									DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData, [asset]);
+								}
+							}
+							
+							break;
+						}
+					}
 				}
 			}
 			
-			//attachments = potentialAttachments;
 			
 			uploadAttachmentInProgress = false;
 			
 			dispatchUploadAttachmentResultsEvent(successful, potentialAttachments, data.post);
+		}
+		
+		/**
+		 * Replaces occurances where the bitmapData in Image and BitmapImage to URL on the server
+		 * */
+		public function replaceBitmapData(component:ComponentDescription, imageData:ImageData):void {
+			var instance:Object;
+			
+			if (imageData && component && component.instance) {
+				instance = component.instance;
+				
+				if (instance is Image || instance is BitmapImage) {
+					if (instance.source == imageData.bitmapData) {
+						Radiate.setProperty(instance, "source", imageData.url);
+					}
+				}
+			}
 		}
 		
 		/**
@@ -7145,7 +7235,7 @@ package com.flexcapacitor.controller {
 		 * Login results handler
 		 * */
 		public function loginResultsHandler(event:IServiceEvent):void {
-			Radiate.log.info("Login results");
+			//Radiate.log.info("Login results");
 			var data:Object = event.data;
 			var loggedIn:Boolean;
 			
@@ -7213,7 +7303,7 @@ package com.flexcapacitor.controller {
 		 * Register results handler
 		 * */
 		public function registerResultsHandler(event:IServiceEvent):void {
-			Radiate.log.info("Register results");
+			//Radiate.log.info("Register results");
 			var data:Object = event.data;
 			var successful:Boolean;
 			
@@ -7246,7 +7336,7 @@ package com.flexcapacitor.controller {
 		 * Register results handler
 		 * */
 		public function changePasswordResultsHandler(event:IServiceEvent):void {
-			Radiate.log.info("Change password results");
+			//Radiate.log.info("Change password results");
 			var data:Object = event.data;
 			var successful:Boolean;
 			
@@ -7279,7 +7369,7 @@ package com.flexcapacitor.controller {
 		 * Lost password results handler
 		 * */
 		public function lostPasswordResultsHandler(event:IServiceEvent):void {
-			Radiate.log.info("Change password results");
+			//Radiate.log.info("Change password results");
 			var data:Object = event.data;
 			var successful:Boolean;
 			
@@ -7310,7 +7400,7 @@ package com.flexcapacitor.controller {
 		 * Delete project results handler
 		 * */
 		public function deleteProjectResultsHandler(event:IServiceEvent):void {
-			Radiate.log.info("Delete project results");
+			//Radiate.log.info("Delete project results");
 			var data:Object = event.data;
 			var status:Boolean;
 			var successful:Boolean;
@@ -7368,7 +7458,7 @@ package com.flexcapacitor.controller {
 		 * Delete document results handler
 		 * */
 		public function deleteDocumentResultsHandler(event:IServiceEvent):void {
-			Radiate.log.info("Delete document results");
+			//..Radiate.log.info("Delete document results");
 			var data:Object = event.data;
 			//var status:Boolean;
 			var successful:Boolean;

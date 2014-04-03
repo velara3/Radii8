@@ -2,8 +2,11 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:controls="com.flexcapacitor.controls.*"
+		 
 		 width="200" height="100"
-		 creationComplete="group1_creationCompleteHandler(event)" xmlns:controls="com.flexcapacitor.controls.*">
+		 creationComplete="group1_creationCompleteHandler(event)" 
+		 >
 	
 	
 	<!-- to use
@@ -99,7 +102,8 @@
 				top="12"
 				width="100%" height="100%"
 				tabFocusEnabled="false"
-				fontSize="12"
+				fontWeight="normal"
+				fontSize="13"
 				focusAlpha="0"
 				fontFamily="Courier New"
 				borderVisible="false"

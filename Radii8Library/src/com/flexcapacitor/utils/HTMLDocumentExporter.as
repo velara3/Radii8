@@ -666,7 +666,7 @@ package com.flexcapacitor.utils {
 						//styleValue += "height:" + component.instance.height+ "px;";
 						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
-						output += setStyles(component.instance, styleValue);
+						output += setStyles("#"+getIdentifierOrName(component.instance, true, "_Label"), styleValue);
 						output += "<input ";
 						output = getIdentifierAttribute(component.instance, output);
 						output += " type=\"" + htmlName.toLowerCase() + "\" ";
@@ -691,13 +691,14 @@ package com.flexcapacitor.utils {
 					htmlName = "radio";
 					if (component.instance.label!="") {
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						output += "<label";
+						output += "<label ";
+						output = getIdentifierAttribute(component.instance, output, "_Label");
 						//styleValue += "width:" + (component.instance.width + 8)+ "px;";
 						//styleValue += "height:" + component.instance.height+ "px;";
 						styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
 						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
-						output += setStyles(component.instance, styleValue);
+						output += setStyles("#"+getIdentifierOrName(component.instance, true, "_Label"), styleValue);
 						output += "<input type=\"radio\" " ;
 						output = getIdentifierAttribute(component.instance, output);
 						//styleValue = getSizeString(component.instance as IVisualElement, styleValue);
@@ -718,7 +719,7 @@ package com.flexcapacitor.utils {
 					
 					output += getWrapperTag(wrapperTag, true);
 				}
-				else if (htmlName=="textinput") {
+				else if (htmlName=="textinput" || htmlName=="combobox") {
 					htmlName = "input";
 					output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					output += "<input ";
@@ -730,7 +731,33 @@ package com.flexcapacitor.utils {
 					styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 					styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 					styleValue += "padding:0;border:1px solid " + DisplayObjectUtils.getColorInHex(component.instance.getStyle("borderColor"), true) + ";";
+					
+					if (htmlName=="combobox") {
+						output += " list=\"listdata\"";
+						//<datalist id="listData">
+							  //<option value="value 1">
+							  //<option value="value 2">
+							  //<option value="value 3">
+							//</datalist> 
+					}
 					output += setStyles(component.instance, styleValue);
+					output += getWrapperTag(wrapperTag, true);
+				}
+				else if (htmlName=="dropdownlist") {
+					htmlName = "select";
+					output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					output += "<select ";
+					output = getIdentifierAttribute(component.instance, output);
+					output += " type=\"input\" "  + properties;
+					//styleValue += "width:" + component.instance.width+ "px;";
+					//styleValue += "height:" + component.instance.height+ "px;";
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+					styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+					styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+					styleValue += "padding:0;border:1px solid " + DisplayObjectUtils.getColorInHex(component.instance.getStyle("borderColor"), true) + ";";
+					
+					output += setStyles(component.instance, styleValue);
+					output += "</select>";
 					output += getWrapperTag(wrapperTag, true);
 				}
 				else if (htmlName=="linkbutton") {
@@ -803,13 +830,44 @@ package com.flexcapacitor.utils {
 				}
 				
 				else {
+					// show placeholder NOT actual component
+					htmlName = "label";
+					if (useWrapperDivs) {
+						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					}
+					else {
+						output = tabs;
+					}
+					output += "<label "  + properties;
+					output = getIdentifierAttribute(component.instance, output);
+					//styleValue += "width:" + component.instance.width+ "px;";
+					//styleValue += "height:" + component.instance.height+ "px;";
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet, isVerticalSet);
+					//styleValue += wrapperTagStyles;
+					styleValue += "color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("color"), true) + ";";
+					styleValue += "font-weight:" + component.instance.getStyle("fontWeight") + ";";
+					styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+					styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
+					styleValue += "line-height:" + "1;";
+					//styles += getBorderString(component.instance as IStyleClient);
+					
+					output += properties ? " " : "";
+					// remove wrapperTagStyles since we are trying to not use wrapper tags
+					//output += setStyles(component.instance, styleValue+wrapperTagStyles);
+					output += setStyles(component.instance, wrapperTagStyles+styleValue);
+					output += getIdentifierOrName(component.instance);
+					output += "</label>";
+					if (useWrapperDivs) {
+						output += getWrapperTag(wrapperTag, true);
+					}
+					/*
 					output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					output += "<" + htmlName.toLowerCase()  + " " + properties;
 					output = getIdentifierAttribute(component.instance, output);
 					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
 					output += properties ? " " : "";
 					output += setStyles(component.instance, styleValue);
-					output += getWrapperTag(wrapperTag, true);
+					output += getWrapperTag(wrapperTag, true);*/
 				}
 				
 				
@@ -1076,13 +1134,13 @@ package com.flexcapacitor.utils {
 		 * 
 		 * returns id or name
 		 * */
-		public function getIdentifierOrName(element:Object, name:Boolean = true):String {
+		public function getIdentifierOrName(element:Object, name:Boolean = true, appendID:String = ""):String {
 
 			if (element && "id" in element && element.id) {
-				return element.id;
+				return element.id + appendID;
 			}
 			else if (element && name && "name" in element && element.name) {
-				return element.name;
+				return element.name + appendID;
 			}
 			
 			return "";

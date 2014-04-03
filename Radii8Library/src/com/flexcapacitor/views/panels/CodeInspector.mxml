@@ -79,6 +79,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.IProject;
 			import com.flexcapacitor.utils.AndroidDocumentExporter;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -596,7 +597,8 @@
 			 * Updates the code to show the selected item or document
 			 * */
 			public function update(dispatchCodeUpdatedEvent:Boolean = false):void {
-			
+				radiate = Radiate.getInstance();
+				
 				if (!radiate.target && !radiate.selectedDocument) return;
 				
 				if (showSelection.selected) {
@@ -960,6 +962,28 @@
 			protected function showSourceCodeCheckbox_clickHandler(event:MouseEvent):void {
 				showSourceCode = showSourceCodeCheckbox.selected;
 				update(true);
+			}
+			
+			protected function showOriginalSourceLabel_clickHandler(event:MouseEvent):void {
+				var selectedDocument:IDocument = radiate.selectedDocument as IDocument;
+				
+				if (selectedDocument) {
+					Radiate.log.info(selectedDocument.originalSource);
+				}
+				else {
+					Radiate.log.info("Please select a document");
+				}
+			}
+			
+			protected function showProjectSourceLabel_clickHandler(event:MouseEvent):void {
+				var selectedProject:IProject = radiate.selectedProject as IProject;
+				
+				if (selectedProject) {
+					Radiate.log.info(selectedProject.source);
+				}
+				else {
+					Radiate.log.info("Please select a project");
+				}
 			}
 			
 		]]>
@@ -1402,12 +1426,35 @@ IFRAME_ID {
 		</flexiframe:IFrame>
 		
 	</s:Group>
+
+	<s:Label id="showOriginalSourceLabel" 
+			 paddingLeft="8"
+			 paddingBottom="4"
+			 color="#888888"
+			 toolTip="Show original source code"
+			 text="Show original document source code"
+			 includeInLayout="false"
+			 visible="false"
+			 click="showOriginalSourceLabel_clickHandler(event)"
+			 />
+
+	<s:Label id="showProjectSourceLabel" 
+			 paddingLeft="8"
+			 paddingBottom="4"
+			 color="#888888"
+			 toolTip="Show project source code"
+			 text="Show project source code"
+			 includeInLayout="false"
+			 visible="false"
+			 click="showProjectSourceLabel_clickHandler(event)"
+			 />
 	
 	<s:Label id="errorLabel" 
 			 paddingLeft="8"
 			 color="#f00000"
 			 text="{errorMessage}"
-			 includeInLayout="{false}"
+			 includeInLayout="false"
+			 visible="false"
 			 width="100%"
 			 />
 </s:Group>

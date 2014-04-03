@@ -6,6 +6,7 @@ package com.flexcapacitor.model {
 	import com.flexcapacitor.services.IWPServiceEvent;
 	import com.flexcapacitor.services.WPService;
 	import com.flexcapacitor.services.WPServiceBase;
+	import com.flexcapacitor.services.WPServiceEvent;
 	import com.flexcapacitor.utils.MXMLDocumentExporter;
 	
 	import flash.events.IEventDispatcher;
@@ -66,6 +67,12 @@ package com.flexcapacitor.model {
 		 * */
 		[Transient]
 		public static const LOCAL_LOCATION:String = "local";
+		
+		/**
+		 * Constant used to open from internal references
+		 * */
+		[Transient]
+		public static const INTERNAL_LOCATION:String = "internal";
 		
 		/**
 		 * Constant used to save to the local file system
@@ -305,10 +312,10 @@ package com.flexcapacitor.model {
 			var form:URLVariables;
 			
 			if (saveRemote) {
+			//Radiate.log.info("Save");
 				// we need to create service
 				if (saveService==null) {
 					var wpSaveService:WPService = new WPService();
-					wpSaveService = new WPService();
 					wpSaveService.host = host;
 					wpSaveService.addEventListener(WPServiceBase.RESULT, saveResultsHandler, false, 0, true);
 					wpSaveService.addEventListener(WPServiceBase.FAULT, saveFaultHandler, false, 0, true);
@@ -344,12 +351,15 @@ package com.flexcapacitor.model {
 			var loadLocally:Boolean = location==LOCAL_LOCATION;
 			
 			if (location==REMOTE_LOCATION) {
+				//Radiate.log.info("Open Document Remote");
 				retrieve();
 			}
 			else if (location==LOCAL_LOCATION) {
 				//var documentData:IDocumentData = Radiate.getInstance().getDocumentLocally(this);
+				//Radiate.log.info("Open Document Local");
 			}
 			else {
+				//Radiate.log.info("Open Document normal");
 				//source = getSource();
 			}
 			
@@ -360,6 +370,7 @@ package com.flexcapacitor.model {
 		 * @inheritDoc
 		 * */
 		public function close():void {
+			//Radiate.log.info("Close Document");
 			source = getSource();
 			isOpen = false;
 		}
@@ -376,7 +387,6 @@ package com.flexcapacitor.model {
 				openService.host = host;
 				openService.addEventListener(WPServiceBase.RESULT, openResultsHandler, false, 0, true);
 				openService.addEventListener(WPServiceBase.FAULT, openFaultHandler, false, 0, true);
-				openService = openService;
 			}
 			
 			openSuccessful = false;
@@ -446,11 +456,13 @@ package com.flexcapacitor.model {
 				
 				saveResultsEvent.successful = true;
 				saveSuccessful = true;
-				Radiate.log.info("Document saved: "+ name);
+				//Radiate.log.info("Document saved: "+ name);
+				
+				Radiate.instance.setLastSaveDate();
 			}
 			else {
 				saveSuccessful = false;
-				Radiate.log.info("Document not saved: "+ name);
+				//Radiate.log.info("Document not saved: "+ name);
 			}
 			
 			
@@ -518,7 +530,11 @@ package com.flexcapacitor.model {
 				//Radiate.log.info("Document open: "+ name);
 			}
 			else {
-				Radiate.log.info("Document not opened: "+ name);
+				
+				if (event is WPServiceEvent) {
+					openResultsEvent.message = WPServiceEvent(event).message;
+				}
+				//Radiate.log.info("Document not opened: "+ name);
 			}
 			
 			openResultsEvent.data = data;

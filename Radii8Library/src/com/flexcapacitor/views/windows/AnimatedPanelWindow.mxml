@@ -21,10 +21,11 @@
 			
 			public var radiate:Radiate;
 
+			public var closePanelDelay:int = 500;
 			
 			private var moveAdded:Boolean;
 			
-			protected function addMoveEffect():void {
+			public function addMoveEffect():void {
 				if (!moveAdded) {
 					//trace("added move effect");
 					//setStyle("moveEffect", moveEffect);

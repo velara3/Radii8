@@ -1,22 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
-		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx"
-		 
-		 implements="com.flexcapacitor.views.IInspector" 
-		 width="100%" 
-		 minHeight="20"
-		 >
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:c="com.flexcapacitor.views.windows.*"
+			   xmlns:handlers="com.flexcapacitor.handlers.*"
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:windows="com.flexcapacitor.views.windows.*"
+			   
+			   title="Contact"
+			   creationComplete="creationCompleteHandler(event)"
+			   stateChangeComplete="stateChangeCompleteHandler(event)"
+			   height.bug="450"
+			   >
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace c "com.flexcapacitor.controls.*";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace handlers "com.flexcapacitor.handlers.*";
+		@namespace fc "com.flexcapacitor.effects.popup.*";
+		
+	</fx:Style>
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.status.StatusManager;
 			
+			import mx.core.mx_internal;
+			import mx.events.FlexEvent;
 			import mx.events.ValidationResultEvent;
+			import mx.managers.PopUpManager;
 			import mx.rpc.events.FaultEvent;
 			import mx.rpc.events.ResultEvent;
 			import mx.validators.EmailValidator;
+			
+			use namespace mx_internal;
+			
+			public static const BUG:String = "bug";
+			public static const FEATURE:String = "feature";
 			
 			[Bindable]
 			public var os:String;
@@ -53,21 +75,6 @@
 			
 			[Bindable]
 			public var flexSDK:String;
-			
-			private var radiate:Radiate = Radiate.instance;
-			
-
-			public function activate():void {
-				radiate = Radiate.instance;
-				
-				if (radiate.isUserLoggedIn) {
-					emailText.text = radiate.userEmail;
-				}
-			}
-			
-			public function deactivate():void {
-				
-			}
 			
 			protected function getPropertiesInfo():void {
 				
@@ -117,27 +124,32 @@
 			
 			protected function featureRadioGroup_changeHandler(event:Event):void {
 				if (featureRadioButton.selected) {
-					currentState = "feature";
+					currentState = FEATURE;
 				}
 				else {
-					currentState = "bug";
+					currentState = BUG;
 				}
 			}
 			
 			
-			protected function sendButton_clickHandler(event:MouseEvent):void {
+			protected function sendButton_clickHandler():void {
 				var message:Object = new Object();
 				var validResultEvent:ValidationResultEvent = emailValidator.validate(emailText.text);
 				//var validEmail:Boolean = emailValidator.validate(emailText.text);
 				
-				if (emailText.text=="" && validResultEvent.results.length==0) {
-					StatusManager.show("Please enter your email before sending a message.");
+				if (validResultEvent.results && validResultEvent.results.length!=0) {
+					//infoLabel.text = "Please enter a valid email before sending a message.";
+					infoLabel.text = validResultEvent.message;
 					return;
 				}
-				if (messageTextArea.text=="") {
-					StatusManager.show("Please enter a message.");
+				
+				if (messageTextArea.text=="" || messageTextArea.text.length<6) {
+					//StatusManager.show("Please enter a message.");
+					infoLabel.text = "Please enter a message";
 					return;
 				}
+				
+				getPropertiesInfo();
 				
 				message.os = os;
 				message.browser = browser;
@@ -149,31 +161,101 @@
 				message.supports32bit = supports32bit;
 				message.supports64bit = supports64bit;
 				message.touchscreen = touchscreenType;
-				//message.name = nameText.text;
+				
 				message.email = emailText.text=="" ? emailText.prompt : emailText.text;
-				message.message = messageTextArea.text;
+				
+				if (currentState==BUG) {
+					message.message = bugMessageTextArea.text;
+				}
+				else if (currentState==FEATURE) {
+					message.message = messageTextArea.text;
+				}
 
 				feedbackService.send(message);
 			}
 			
 			protected function feedbackService_resultHandler(event:ResultEvent):void {
 				var result:String = event.result as String;
-				StatusManager.show("Message sent!");
+				//StatusManager.show("Message sent!", 3000, false, null, false, .75);
 				//nameText.text = "";
-				emailText.prompt = emailText.text!="" ? emailText.text : emailText.prompt;
-				emailText.text = "";
-				messageTextArea.text = "";
+				//emailText.prompt = emailText.text!="" ? emailText.text : emailText.prompt;
+				//emailText.text = "";
+				
+				if (currentState==BUG) {
+					bugMessageTextArea.text = bugText;
+				}
+				else if (currentState==FEATURE) {
+					messageTextArea.text = "";
+				}
+				
+				if (result && result.indexOf("Mail sent")!=-1) {
+					playSentSuccessfulMessage();
+				}
+				
 			}
 			
 			
 			protected function feedbackService_faultHandler(event:FaultEvent):void {
-				StatusManager.show("An error occurred! Message may not have been sent. Please email contact@radii8.com.", 6000);
+				infoLabel.text = "An error occurred! Message may not have been sent. Please email contact@radii8.com.";
 				//StatusManager.show("An error occurred! Message may not have been sent. \n\n" + event.fault.message);
 				Radiate.log.error(event.fault.message);
 			}
 			
+			/**
+			 * Sets the action to deleted, the label to deleted and closes the window after a second.
+			 * */
+			public function playSentSuccessfulMessage():void {
+				//infoLabel.text = "Sent!";
+				//action = "Sent";
+				
+				StatusManager.show("Message sent!", 1000, false, null, false, .20);
+				closePopUp.startDelay = 1000;
+				closePopUp.play();
+			}
+			
+			protected function cancelButton_clickHandler(event:MouseEvent):void {
+				callLater(PopUpManager.removePopUp, [this]);
+			}
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				if (radiate.isUserLoggedIn) {
+					emailText.text = radiate.userEmail;
+				}
+				
+				if (currentState==BUG) {
+					bugMessageTextArea.text = bugText;
+					//helpTextArea.text = bugExampleText;
+				}
+				else {
+					//messageTextArea.text = bugText;
+					//messageTextArea.text = bugExampleText;
+				}
+			}
+			
+			protected function stateChangeCompleteHandler(event:FlexEvent):void {
+				
+				if (currentState==BUG && bugMessageTextArea.text=="") {
+					bugMessageTextArea.text = bugText;
+					addMoveEffect();
+					PopUpManager.centerPopUp(this);
+				}
+				else {
+					PopUpManager.centerPopUp(this);
+				}
+			}
+			
 		]]>
 	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<fx:String id="action"></fx:String>
+		
+		<fc:ClosePopUp id="closePopUp" popUp="{this}" />
+	</fx:Declarations>
+	
 	
 	<fx:Declarations>
 		<mx:EmailValidator id="emailValidator" />
@@ -186,23 +268,50 @@
 					   fault="feedbackService_faultHandler(event)" 
 					   result="feedbackService_resultHandler(event)"
 					   url="http://www.radii8.com/support.php"/>
+		
+		<fx:String id="bugText">
+		<![CDATA[Summary:
+
+
+Steps to reproduce:
+1. 
+2. 
+3. 
+
+Expected Result:
+
+
+Actual Result:
+
+
+]]></fx:String>
+		
+		<fx:String id="bugExampleText">
+<![CDATA[Summarize the problem and list the steps to reproduce.
+
+Steps to reproduce:
+1. Add a button to the stage
+2. Set color on the button to red in the properties panel
+
+Expected Result:
+Button text is red
+
+Actual Result:
+Button text is blue]]></fx:String>
 	</fx:Declarations>
 	
-	<s:states>
+	<windows:states>
 		<s:State name="feature"/>
 		<s:State name="bug"/>
-	</s:states>
+	</windows:states>
 	
-	<s:VGroup left="0" right="0" 
-			  top="0"
-			  width="100%"
-			  height="100%"
-			  clipAndEnableScrolling="true" 
-			  paddingLeft="10" 
-			  paddingRight="10"
-			  paddingBottom="10"
-			  >
-			
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20"
+				 gap="10"
+				 >
+					
 		<s:HGroup left="0" right="0" 
 				  width="100%"
 				  clipAndEnableScrolling="true" 
@@ -223,11 +332,6 @@
 						   label="Bug"
 						   group="{featureRadioGroup}"
 						   />
-			
-			<s:Button id="sendButton" 
-					  label="Send" 
-					  click="sendButton_clickHandler(event)"
-					  />
 	
 		</s:HGroup>
 		
@@ -250,37 +354,32 @@
 			<s:TextArea id="messageTextArea" 
 						focusColor="#585858"
 						focusAlpha="0"
-						width="50%" height="100%" 
+						width="100%" height="100%" 
 						borderColor="#cccccc"
 						paddingTop="8"
 						paddingBottom="8"
-						prompt.feature="Enter your feature and click send"
+						prompt="Enter your feature and click send"
+						includeIn="feature"
+						>
+			</s:TextArea>
+			
+			<s:TextArea id="bugMessageTextArea" 
+						focusColor="#585858"
+						focusAlpha="0"
+						width="100%" height="100%" 
+						borderColor="#cccccc"
+						paddingTop="8"
+						paddingBottom="8"
+						includeIn="bug"
 						>
 				<s:keyFocusChange>
 					event.preventDefault();
 					event.currentTarget.insertText("\t");
 			    </s:keyFocusChange>
-				<s:prompt.bug>Summarize the problem and list the steps to reproduce.</s:prompt.bug>
-	
-				<s:text.bug>
-<![CDATA[Summary:
-
-
-Steps to reproduce:
-1. 
-2. 
-3. 
-
-Expected Result:
-
-
-Actual Result:
-
-
-]]></s:text.bug>
+				<s:prompt>Summarize the problem and list the steps to reproduce.</s:prompt>
 			</s:TextArea>
 		
-			<s:TextArea id="helpTextArea" 
+			<!--<s:TextArea id="helpTextArea" 
 						focusColor="#585858"
 						focusAlpha="0"
 						width="50%" height="100%" 
@@ -293,19 +392,18 @@ Actual Result:
 						fontStyle="italic"
 						color="#585858"
 						>
-				<s:text><![CDATA[Summarize the problem and list the steps to reproduce.
-
-Steps to reproduce:
-1. Add a button to the stage
-2. Set color on the button to red in the properties panel
-
-Expected Result:
-Button text is red
-
-Actual Result:
-Button text is blue]]></s:text>
-			</s:TextArea>
+				<s:text></s:text>
+			</s:TextArea>-->
 		</s:HGroup>
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			<s:Label id="infoLabel" text="" />
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Cancel" click="cancelButton_clickHandler(event)" />
+			<s:Button label="Send" click="sendButton_clickHandler()" />
+		</s:HGroup>
+		
 	</s:VGroup>
 	
-</s:Group>
+	
+</windows:AnimatedPanelWindow>

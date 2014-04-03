@@ -88,6 +88,7 @@
 			public function activate():void {
 				radiate = Radiate.getInstance();
 				
+				radiate.addEventListener(RadiateEvent.ATTACHMENT_UPLOADED, uploadAttachmentResult, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ASSET_ADDED, assetAdded, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved, false, 0, true);
@@ -97,6 +98,7 @@
 			
 			public function deactivate():void {
 				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.ATTACHMENT_UPLOADED, uploadAttachmentResult);
 					radiate.removeEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived);
 					radiate.removeEventListener(RadiateEvent.ASSET_ADDED, assetAdded);
 					radiate.removeEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved);
@@ -542,7 +544,7 @@
 				var iDocument:IDocument = radiate.selectedDocument;
 				
 				if (event.successful) {
-					for (var i:int;i<length;i++) {
+					/*for (var i:int;i<length;i++) {
 						attachment = attachments[i];
 						containsName = currentUpload.name.indexOf(attachment.name)==0;
 						
@@ -553,26 +555,11 @@
 					}
 					
 					// might need to loop through all documents in project
-					DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData);
+					DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData);*/
 				}
 				
 				// cause the list to update and rerender the rows
 				libraryCollection.refresh();
-			}
-			
-			public function replaceBitmapData(component:ComponentDescription):void {
-				var imageData:ImageData = currentUpload as ImageData;
-				var instance:Object;
-				
-				if (imageData) {
-					instance = component.instance;
-					
-					if (instance is Image || instance is BitmapImage) {
-						if (instance.source == imageData.bitmapData) {
-							Radiate.setProperty(instance, "source", imageData.url);
-						}
-					}
-				}
 			}
 			
 			protected function uploadAttachmentFault(event:RadiateEvent):void {
@@ -861,7 +848,7 @@
 			 >
 		
 		<c:ImageButton id="browseForFileIcon" 
-				 source="{Radii8LibraryAssets.openFolder}" 
+				 source="{Radii8LibraryAssets.newFile}" 
 				 toolTip="Add"
 				 />
 		

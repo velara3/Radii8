@@ -10,7 +10,7 @@
 		 
 		 minWidth="200" 
 		 minHeight="100"
-		 creationComplete="group1_creationCompleteHandler(event)" 
+		 implements="com.flexcapacitor.views.IInspector"
 		 >
 	
 	<fx:Script>
@@ -22,25 +22,26 @@
 			
 			import flash.net.navigateToURL;
 			
-			import mx.events.FlexEvent;
 			
 			/**
 			 * Reference to Radiate
 			 * */
 			public var radiate:Radiate;
 			
-			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
-				
-				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
-				
-				if (radiate.target) {
-					//target = radiate.target;
-				}
-			}
-			
 			public var lastURL:String;
 			public var declaredBy:String;
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler, false, 0, true);
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
+				}
+			}
 			 
 			protected function propertySelectedHandler(event:RadiateEvent):void {
 				var metadata:MetaData = MetaData(event.selectedItem);

@@ -81,6 +81,12 @@ package {
 		[Embed(source="assets/icons/general/LandscapeMode.png")]
 		public static const landscapeMode:Class;
 		
+		[Embed(source="assets/icons/general/export.png")]
+		public static const exportIcon:Class;
+		
+		[Embed(source="assets/icons/general/import.png")]
+		public static const importIcon:Class;
+		
 		[Embed(source="assets/icons/general/upload.png")]
 		public static const upload:Class;
 		

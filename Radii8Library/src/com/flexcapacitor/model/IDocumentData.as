@@ -19,6 +19,12 @@ package com.flexcapacitor.model {
 		function get exporter():IDocumentExporter;
 		
 		/**
+		 * Original source code of the document before importing
+		 * */
+		function set originalSource(value:String):void;
+		function get originalSource():String;
+		
+		/**
 		 * Source code of the document
 		 * */
 		function set source(value:String):void;

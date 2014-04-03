@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:handlers="com.flexcapacitor.handlers.*"
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:c="com.flexcapacitor.views.windows.*"
+			   
+			   title.project="New Project"
+			   title.document="New Document"
+			   title.resource="New Resource"
+			   creationComplete="creationCompleteHandler(event)"
+			   stateChangeComplete="stateChangeCompleteHandler(event)"
+			   >
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace c "com.flexcapacitor.controls.*";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace handlers "com.flexcapacitor.handlers.*";
+		@namespace fc "com.flexcapacitor.effects.popup.*";
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			
+			import mx.core.mx_internal;
+			import mx.events.FlexEvent;
+			import mx.events.ValidationResultEvent;
+			import mx.managers.PopUpManager;
+			
+			public static const DOCUMENT:String = "document";
+			public static const PROJECT:String = "project";
+			public static const RESOURCE:String = "resource";
+			
+			public static const CANCELED:String = "canceled";
+			public static const FINISH:String = "finish";
+			use namespace mx_internal;
+			
+			protected function finish_clickHandler():void {
+				var results:ValidationResultEvent;
+				var results2:ValidationResultEvent;
+				
+				if (currentState==DOCUMENT) {
+					results = documentNameValidator.validate();
+					
+					if (results.type==ValidationResultEvent.VALID) {
+						documentName = documentNameText.text;
+						infoLabel.text = "";
+						playSuccessfulMessage();
+					}
+					else {
+						infoLabel.text = results.message;
+					}
+				}
+				else if (currentState==PROJECT) {
+					results = projectNameValidator.validate();
+					//results2 = documentNameValidator2.validate();
+					
+					//if (results.type==ValidationResultEvent.VALID && results2.type==ValidationResultEvent.VALID) {
+					if (results.type==ValidationResultEvent.VALID) {
+						projectName = projectNameText.text;
+						//documentName = documentNameText2.text;
+						infoLabel.text = "";
+						playSuccessfulMessage();
+					}
+					else {
+						if (results.type==ValidationResultEvent.INVALID) {
+							infoLabel.text = results.message;
+						}
+						/*else if (results2.type==ValidationResultEvent.INVALID) {
+							infoLabel.text = results2.message;
+						}*/
+						
+					}
+					
+				}
+				else if (currentState==RESOURCE) {
+					
+				}
+				
+			}
+			
+			/**
+			 * Sets the action to finish
+			 * */
+			public function playSuccessfulMessage():void {
+				action = FINISH;
+				//closePopUp.startDelay = 1000;
+				closePopUp.play();
+			}
+			
+			protected function cancelButton_clickHandler(event:MouseEvent):void {
+				action = CANCELED;
+				callLater(PopUpManager.removePopUp, [this]);
+			}
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+			}
+			
+			protected function stateChangeCompleteHandler(event:FlexEvent):void {
+				addMoveEffect();
+				PopUpManager.centerPopUp(this);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:StringValidator id="documentNameValidator" 
+							source="{documentNameText}" 
+							property="text" 
+							required="true"/>
+		<!--<mx:StringValidator id="documentNameValidator2" 
+							source="{documentNameText2}" 
+							property="text" 
+							required="true"/>-->
+		<mx:StringValidator id="projectNameValidator" source="{projectNameText}" property="text" required="true"/>
+		<mx:StringValidator id="resourceNameValidator" source="{documentNameText}" property="text" required="true"/>
+		
+		<fx:String id="action"></fx:String>
+		<fx:String id="projectName"></fx:String>
+		<fx:String id="documentName"></fx:String>
+		<fx:String id="resourceName"></fx:String>
+		
+		<fc:ClosePopUp id="closePopUp" popUp="{this}" />
+	</fx:Declarations>
+	
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<c:states>
+		<s:State name="document"/>
+		<s:State name="project"/>
+		<s:State name="resource"/>
+	</c:states>
+	
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20"
+				 gap="10"
+				 >
+		
+		<s:HGroup verticalAlign="middle">
+			<s:Label text="Project Name:" minWidth="110" includeIn="project"/>
+	
+			<s:TextInput id="projectNameText" 
+						 minWidth="250"
+						 focusAlpha="0"
+						 borderColor="#cccccc"
+						 text="My Project"
+						 />
+		</s:HGroup>
+		<!--<s:HGroup verticalAlign="middle">
+			<s:Label text="Document Name:" minWidth="110" includeIn="project"/>
+	
+			<s:TextInput id="documentNameText2" 
+						 minWidth="250"
+						 focusAlpha="0"
+						 borderColor="#cccccc"
+						 text="Document"
+						 />
+		</s:HGroup>-->
+		
+		
+		<s:HGroup verticalAlign="middle" includeIn="document">
+			<s:Label text="Name:" minWidth="110" />
+	
+			<s:TextInput id="documentNameText" 
+						 minWidth="250"
+						 focusAlpha="0"
+						 borderColor="#cccccc"
+						 />
+		</s:HGroup>
+		
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			<s:Label id="infoLabel" text="" />
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Cancel" click="cancelButton_clickHandler(event)" />
+			<s:Button label="Finish" click="finish_clickHandler()" />
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+	
+</c:AnimatedPanelWindow>

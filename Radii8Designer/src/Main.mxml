@@ -48,13 +48,17 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.DocumentData;
+			import com.flexcapacitor.model.DocumentMetaData;
+			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
 			import com.flexcapacitor.model.MenuItem;
 			import com.flexcapacitor.utils.XMLUtils;
+			import com.flexcapacitor.views.windows.ContactWindow;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			import com.flexcapacitor.views.windows.ExportDocumentWindow;
 			import com.flexcapacitor.views.windows.ImportWindow;
 			import com.flexcapacitor.views.windows.LoginWindow;
+			import com.flexcapacitor.views.windows.NewDocumentWindow;
 			import com.flexcapacitor.views.windows.PrintWindow;
 			
 			import mx.core.UIComponentGlobals;
@@ -225,7 +229,7 @@
 			}
 			
 			private function openDocument_itemClickHandler(event:MenuEvent):void {
-				radiate.openDocument(radiate.selectedDocument, true);
+				radiate.openDocument(radiate.selectedDocument, DocumentData.INTERNAL_LOCATION, true);
 			}
 			
 			/**
@@ -271,7 +275,7 @@
 				}
 				else {
 					if (statusLabel) {
-						statusLabel.text = "You must be logged in to create projects";
+						statusLabel.text = "You must be logged in to save projects";
 					}
 				}
 				
@@ -286,11 +290,15 @@
 				
 				if (radiate.isUserLoggedIn) {
 					radiate.enableAutoSave = true;
+					
+					if (statusLabel) {
+						statusLabel.text = "";
+					}
 				}
 				else {
 					// display you have been logged out message
 					if (statusLabel) {
-						statusLabel.text = "You must be logged in to create projects";
+						statusLabel.text = "You must be logged in to save projects";
 					}
 				}
 			}
@@ -433,11 +441,24 @@
 				}
 			}
 			
-			protected function createNewProjectLabel_clickHandler(event:MouseEvent):void {
-				currentState = DESIGN_STATE;
-				validateNow();
-				radiate.createBlankDemoDocument();
-				radiate.saveProject(radiate.selectedProject);
+			protected function createNewProjectLabel_clickHandler(event:Event):void {
+				var openNewProject:OpenPopUp = event.currentTarget as OpenPopUp;
+				var popUp:NewDocumentWindow = openNewProject.popUp as NewDocumentWindow;
+				var projectName:String = popUp.projectName;
+				var documentName:String = popUp.documentName;
+				
+				if (popUp.action==NewDocumentWindow.FINISH) {
+					currentState = DESIGN_STATE;
+					validateNow();
+					radiate.createBlankDemoDocument(projectName, documentName);
+					
+					if (radiate.isUserLoggedIn) {
+						radiate.saveProject(radiate.selectedProject);
+					}
+					else {
+						//Radiate.log.info("The project will not be saved");
+					}
+				}
 			}
 			
 			protected function getProjectsByUser_clickHandler(event:MouseEvent):void {
@@ -502,6 +523,24 @@
 				checkOnline();
 			}
 			
+			protected function showProjectSource_itemClickHandler(event:MenuEvent):void {
+				var iProject:IProject = radiate.selectedProject;
+				
+				if (iProject) {
+					Radiate.log.info(iProject.toString());
+				}
+			}
+			
+			protected function showDocumentSource_itemClickHandler(event:MenuEvent):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (iDocument) {
+					var source:String = iDocument.marshall(DocumentMetaData.STRING_TYPE, true) as String;
+					Radiate.log.info(source);
+				}
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -521,6 +560,17 @@
 			<popup:ShowPopupAnchor target="{loginPopUp}" closeOnMouseOut="true" />
 		</handlers:EventHandler>-->
 		
+		<!--- show contact popup -->
+		<handlers:EventHandler targets="{[contactLabel,feedbackLabel]}" eventName="click" >
+			<fc:OpenPopUp id="openContactPopUp" 
+						  popUpType="{ContactWindow}" 
+						  modalDuration="100" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="600"
+						  parent="{parentApplication}"/>
+		</handlers:EventHandler>
+		
 		<!--- show logout popup -->
 		<handlers:EventHandler targets="{[logoutLabel,logoutLabel2]}" eventName="click" >
 			<fc:OpenPopUp id="openLogoutPopUp" 
@@ -535,16 +585,16 @@
 		</handlers:EventHandler>
 		
 		<!--- show delete project popup -->
-		<handlers:EventHandler targets="{[deleteProjectIcon,removeProject]}" eventNames="{['click','itemClick']}" >
-			<fc:OpenPopUp id="openDeleteProjectPopUp" 
-						  popUpType="{DeleteDocumentWindow}" 
+		<handlers:EventHandler targets="{[newProjectButton,menuNewProject,newDocumentButton]}" eventNames="{['click','itemClick']}" >
+			<fc:OpenPopUp id="openNewProjectPopUp" 
+						  popUpType="{NewDocumentWindow}" 
 						  modalDuration="100" 
 						  percentWidth="75"
 						  percentHeight="90"
 						  width="600"
 						  parent="{parentApplication}"
-						  popUpOptions="{{currentState:DeleteDocumentWindow.PROJECT, documentData:projectsList.selectedItem}}"
-						  close="checkForProjects();"
+						  popUpOptions="{{currentState:NewDocumentWindow.PROJECT}}"
+						  close="createNewProjectLabel_clickHandler(event);"
 						  />
 		</handlers:EventHandler>
 		
@@ -579,13 +629,26 @@
 		</handlers:EventHandler>
 		
 		<!--- open feedback URL -->
-		<handlers:EventHandler target="{feedbackLabel}" eventName="click">
+<!--		<handlers:EventHandler target="{feedbackLabel}" eventName="click">
 			<popup:HidePopupAnchor target="{aboutPopUp}" />
 			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=120" window="_blank" />
+		</handlers:EventHandler>-->
+				
+		<!--- show delete project popup -->
+		<handlers:EventHandler targets="{[deleteProjectIcon,removeProject]}" eventNames="{['click','itemClick']}" >
+			<fc:OpenPopUp id="openDeleteProjectPopUp" 
+						  popUpType="{DeleteDocumentWindow}" 
+						  modalDuration="100" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="600"
+						  parent="{parentApplication}"
+						  popUpOptions="{{currentState:DeleteDocumentWindow.PROJECT, documentData:projectsList.selectedItem}}"
+						  close="checkForProjects();"
+						  />
 		</handlers:EventHandler>
 		
-		
-		<!--- show save as popup -->		
+		<!--- show save as popup -->
 		<handlers:EventHandler eventName="itemClick" target="{saveDocumentAs}">
 			<fc:OpenPopUp id="openExportPopUp" 
 						  popUpType="{ExportDocumentWindow}" 
@@ -597,7 +660,7 @@
 						  close="exportPopUp_closeHandler(event)"/>
 		</handlers:EventHandler>
 		
-		<!--- show import document popup -->		
+		<!--- show import document popup -->
 		<handlers:EventHandler eventName="itemClick" target="{importMenuItem}">
 			<fc:OpenPopUp id="openImportPopUp" 
 						  popUpType="{ImportWindow}" 
@@ -610,7 +673,7 @@
 		</handlers:EventHandler>
 		
 		
-		<!--- show print popup -->		
+		<!--- show print popup -->
 		<handlers:EventHandler eventName="itemClick" target="{printItem}">
 			<fc:OpenPopUp id="openPrintPopUp" 
 						  popUpType="{PrintWindow}" 
@@ -635,7 +698,7 @@
 						  close="loginPopUp_closeHandler(event)"/>
 		</handlers:EventHandler>
 		
-		<!--- show register popup -->		
+		<!--- show register popup -->
 		<handlers:EventHandler eventName="click" targets="{[registerLabel,registerLabel2]}">
 			<fc:OpenPopUp popUpType="{LoginWindow}" 
 						  modalDuration="150" 
@@ -668,7 +731,7 @@
 		<model:MenuItem id="rootMenu">
 			<model:MenuItem label="File">
 				<model:MenuItem id="menuNewDocument" label="New Document" itemClick="{radiate.createNewDocument()}"/>
-				<model:MenuItem id="menuNewProject" label="New Project" itemClick="{radiate.createNewProject()}"/>
+				<model:MenuItem id="menuNewProject" label="New Project" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem label="Open Project" itemClick="openProject_itemClickHandler(event)"/>
 				<model:MenuItem label="Open Document" itemClick="openDocument_itemClickHandler(event)"/>
@@ -699,6 +762,10 @@
 				<model:MenuItem id="cut" label="Cut" enabled="false"/>
 				<model:MenuItem id="copy" label="Copy" enabled="false"/>
 				<model:MenuItem id="paste" label="Paste" name="paste" enabled="false"/>
+			</model:MenuItem>
+			<model:MenuItem label="Commands" >
+				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="showProjectSource_itemClickHandler(event)" />
+				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="showDocumentSource_itemClickHandler(event)"/>
 			</model:MenuItem>
 <!--			<model:MenuItem label="Edit" menuShow="editHandler(event)">
 				<model:MenuItem id="cut" label="Cut" itemClick="cutHandler(event)"/>
@@ -749,7 +816,6 @@
 		<s:State name="homeLoggedIn" basedOn="home"/>
 		<s:State name="homeLoggedOut" basedOn="home"/>
 		<s:State name="design"/>
-		<s:State name="description"/>
 	</s:states>
 	
 	
@@ -762,17 +828,17 @@
 	
 	
 	<!-- LOGIN SCREEN -->
-	<s:RectangularDropShadow height="380" width="640" 
+	<!--<s:RectangularDropShadow height="380" width="640" 
 							 horizontalCenter="0" verticalCenter="-20"
 							 blurX="6" blurY="6"
 							 distance="0"
-							 includeIn="login"/>
+							 includeIn="login"/>-->
 	
 	<!-- LOGIN SCREEN -->
-	<windows:LoginWindow height="380" width="640" 
+	<!--<windows:LoginWindow height="380" width="640" 
 					   horizontalCenter="0" verticalCenter="-20" 
 					   includeIn="login"
-					   />
+					   />-->
 	
 	<!-- HOME SCREEN MENU -->
 	<s:RectangularDropShadow height="380" width="640" 
@@ -810,12 +876,12 @@
 			<s:VGroup width="100%" gap="0">
 				
 				<s:Spacer height="8"/>
-				<renderers:EditableDocumentRenderer label="New Project" width="100%"
+				<renderers:EditableDocumentRenderer id="newProjectButton" label="New Project" width="100%"
 													useHandCursor="true" buttonMode="true"
-													click="createNewProjectLabel_clickHandler(event)"/>
-				<renderers:EditableDocumentRenderer label="New Document" width="100%"
+													autoDrawBackground="false"/>
+				<renderers:EditableDocumentRenderer id="newDocumentButton" label="New Document" width="100%"
 													useHandCursor="true" buttonMode="true"
-													click="createNewProjectLabel_clickHandler(event)"/>
+													autoDrawBackground="false"/>
 				<renderers:EditableDocumentRenderer label="Get My Projects" width="100%"
 													useHandCursor="true" buttonMode="true"
 													click="getProjectsByUser_clickHandler(event)"/>
@@ -946,6 +1012,12 @@
 		
 	</s:BorderContainer>
 	
+	<s:Label id="productionLabel" text="Not ready for production work" 
+			 typographicCase="lowercaseToSmallCaps" bottom="60" horizontalCenter="0" 
+			 textAlign="left"
+			 color="#888888"
+			 includeIn="home"
+			 />
 	
 	<local:Remote id="remote" width="100%" height="100%" top="38" includeIn="design" />
 	
@@ -1241,35 +1313,46 @@
 		</s:fill>
 	</s:Rect>
 	
-	<views:Breadcrumbs height="14" 
+	<!--<views:Breadcrumbs height="14" 
 					   bottom="6" 
 					   left="10" 
 					   width="100%" 
 					   color="#ffffff"
-					   includeIn="design"/>
+					   includeIn="design"/>-->
 
+	
 	<s:HGroup verticalAlign="middle"
 			  right="10" 
 			  bottom="6"
-			  textAlign="right" 
+			  left="10"
 			  color="#888888"
 			  >
-		<s:Label text="Last saved:"  includeInLayout="{radiate.lastSaveDate!=null}" visible="{radiate.lastSaveDate!=null}"/>
-		<s:Label id="lastSavedDate" text="{radiate.lastSaveDate}" includeInLayout="{radiate.lastSaveDate!=null}" visible="{radiate.lastSaveDate!=null}"/>
-		<c:VerticalLine height="100%" includeInLayout="{radiate.lastSaveDate!=null}" visible="{radiate.lastSaveDate!=null}"/>
+		<c:LabelButton id="contactLabel" 
+				 bottom="6" 
+				 left="10" 
+				 text="Contact" 
+				 color="#888888" 
+				 typographicCase="capsToSmallCaps"
+				 />
+		<s:Spacer width="1"/>
+		<c:VerticalLine height="16" />
+		<s:Spacer width="1"/>
 		<s:Label text="Build Date:"  />
 		<s:Label id="buildDate" text="{radiate.buildDate}" />
 		<s:Label text="Build Time:" /> 
 		<s:Label id="buildTime" text="{radiate.buildTime}" />
 		<s:Label text="Build Number:" />
 		<s:Label id="buildNumber" text="{radiate.buildNumber}" />
-		<s:Spacer width="1"/>
-		<c:VerticalLine height="100%" />
-		<s:Spacer width="1"/>
+			
+		<s:Spacer width="100%"/>
+		<s:Label text="Last saved:"  includeInLayout="{radiate.lastSaveDate!=null}" visible="{radiate.lastSaveDate!=null}"/>
+		<s:Label id="lastSavedDate" text="{radiate.lastSaveDate}" includeInLayout="{radiate.lastSaveDate!=null}" visible="{radiate.lastSaveDate!=null}"/>
+		<c:VerticalLine height="100%" includeInLayout="{radiate.lastSaveDate!=null}" visible="{radiate.lastSaveDate!=null}"/>
+
 		<s:Label right="10" 
 				 bottom="6"
 				 textAlign="right" 
-				 text="©2009-2013 Velara III. All rights reserved."
+				 text="©2009-2014 Velara III. All rights reserved."
 				 />
 	</s:HGroup>
 </s:Application>

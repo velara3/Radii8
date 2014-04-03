@@ -42,7 +42,9 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.views.IInspector;
 			
 			import mx.core.UIComponent;
@@ -111,6 +113,7 @@
 				radiate = Radiate.getInstance();
 				
 				radiate.documentsTabNavigator = documentsTagNavigator;
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChange, false, 0, true);
 			}
 			
 			private var previewCreated:Boolean;
@@ -217,6 +220,22 @@
 				activateInspector(forthViewStack, forthViewStack.selectedChild as NavigatorContent);
 			}
 			
+			protected function targetChange(event:RadiateEvent):void {
+				var targetNameValue:String = ClassUtils.getClassNameOrID(event.selectedItem);
+				
+				if (targetNameValue) {
+					targetName = targetNameValue;
+				}
+				else {
+					targetName = null;
+				}
+			}
+			
+			/**
+			 * Name or class name of target
+			 * */
+			[Bindable]
+			public var targetName:String;
 		]]>
 	</fx:Script>
 	
@@ -414,7 +433,12 @@
 					
 					<!-- PROPERTIES -->
 					<s:NavigatorContent label="PROPERTIES">
-						<mx:LinkBar dataProvider="{forthViewStack}" right="0"/>
+						<!-- TODO Convert this into a composite component -->
+						<s:HGroup width="100%" verticalAlign="baseline">
+							<s:Label width="100%" text="{targetName}" paddingLeft="6" color="#888888"/>
+							<s:Spacer width="100%" />
+							<mx:LinkBar dataProvider="{forthViewStack}" right="0"/>
+						</s:HGroup>
 						
 						<mx:ViewStack id="forthViewStack" 
 										 width="100%"
@@ -535,51 +559,53 @@
 							 click="showConsoleHandler(event)"
 							 />
 				</s:HGroup>-->
+				<s:VGroup width="100%" height="45%" minHeight="12">
+					<views:Breadcrumbs width="100%" />
 				
-				
-				<mx:TabNavigator id="thirdViewStack" 
-								 borderStyle="solid"
-								 width="100%"
-								 height="200"
-								 minHeight="24"
-								 change="thirdViewStack_changeHandler(event)"
-								 creationComplete="thirdViewStack_creationCompleteHandler(event)">
+					<mx:TabNavigator id="thirdViewStack" 
+									 borderStyle="solid"
+									 width="100%"
+									 height="100%"
+									 minHeight="24"
+									 change="thirdViewStack_changeHandler(event)"
+									 creationComplete="thirdViewStack_creationCompleteHandler(event)">
+						
+						<!-- DYNAMIC INSPECTOR -->
+						<!--<s:NavigatorContent label="INSPECTOR">
+							<panels:DynamicComponentInspector width="100%" height="100%"/>
+						</s:NavigatorContent>-->
+						
+						<!-- CONSOLE -->
+						<s:NavigatorContent label="CONSOLE">
+							<panels:ConsoleInspector width="100%" height="100%"/>
+						</s:NavigatorContent>
 					
-					<!-- DYNAMIC INSPECTOR -->
-					<s:NavigatorContent label="INSPECTOR">
-						<panels:DynamicComponentInspector width="100%" height="100%"/>
-					</s:NavigatorContent>
+						<!-- CODE INSPECTOR -->
+						<s:NavigatorContent width="100%" height="100%" label="CODE">
+							<panels:CodeInspector id="code1" width="100%" height="100%" />
+						</s:NavigatorContent>
 					
-					<!-- CONSOLE -->
-					<s:NavigatorContent label="CONSOLE">
-						<panels:ConsoleInspector width="100%" height="100%"/>
-					</s:NavigatorContent>
-				
-					<!-- CODE INSPECTOR -->
-					<s:NavigatorContent width="100%" height="100%" label="CODE">
-						<panels:CodeInspector id="code1" width="100%" height="100%" />
-					</s:NavigatorContent>
-				
-					<!-- METADATA INSPECTOR -->
-					<s:NavigatorContent width="100%" height="100%" label="METADATA">
-						<panels:MetaDataInspector id="metadataInspector" width="100%" height="100%" />
-					</s:NavigatorContent>
-				
-					<!-- DOCS INSPECTOR -->
-					<s:NavigatorContent width="100%" height="100%" label="DOCS">
-						<panels:DocumentationInspector id="docsInspector" width="100%" height="100%" />
-					</s:NavigatorContent>
-				
-					<!-- FEATURE INSPECTOR -->
-					<s:NavigatorContent width="100%" height="100%" label="FEATURE">
-						<views:Features id="featureInspector" width="100%" height="100%" />
-					</s:NavigatorContent>
-				
+						<!-- METADATA INSPECTOR -->
+						<s:NavigatorContent width="100%" height="100%" label="METADATA">
+							<panels:MetaDataInspector id="metadataInspector" width="100%" height="100%" />
+						</s:NavigatorContent>
 					
-					<!-- PROPERTY INSPECTOR -->
-					<!--<s:NavigatorContent label="PROPERTY INSPECTOR">
-					</s:NavigatorContent>-->
-				</mx:TabNavigator>
+						<!-- DOCS INSPECTOR -->
+						<s:NavigatorContent width="100%" height="100%" label="DOCS">
+							<panels:DocumentationInspector id="docsInspector" width="100%" height="100%" />
+						</s:NavigatorContent>
+					
+						<!-- FEATURE INSPECTOR -->
+						<!--<s:NavigatorContent width="100%" height="100%" label="FEATURE">
+							<views:Features id="featureInspector" width="100%" height="100%" />
+						</s:NavigatorContent>-->
+					
+						
+						<!-- PROPERTY INSPECTOR -->
+						<!--<s:NavigatorContent label="PROPERTY INSPECTOR">
+						</s:NavigatorContent>-->
+					</mx:TabNavigator>
+				</s:VGroup>
 				
 				
 			</mx:VDividedBox>
@@ -589,6 +615,7 @@
 			
 		<controls:ImageButton id="closeDocument" 
 							  source="{Radii8LibraryAssets.clear}" 
+							  toolTip="Closes the visible document. Use the open button to reopen the document."
 							  click="closeDocumentIcon_clickHandler()"
 							  right="8"
 							  top="34"

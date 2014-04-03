@@ -19,9 +19,7 @@
 			   title.changePassword="Change Password"
 			   
 			   creationComplete="creationCompleteHandler(event)"
-			   resize="panel1_resizeHandler(event)"
-			   
-			   resizeEffect="Resize" 
+			   stateChangeComplete="stateChangeCompleteHandler(event)"
 			   >
 	
 	<fx:Style>
@@ -330,7 +328,7 @@
 				}
 				
 				if (data && data is Object && data.loggedIn==false) {
-					closePopUp.startDelay = 250;
+					closePopUp.startDelay = closePanelDelay;
 					closePopUp.play();
 				}
 				
@@ -556,6 +554,12 @@
 				radiate.removeEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS, onChangePasswordResults);
 			}
 			
+			protected function stateChangeCompleteHandler(event:FlexEvent):void {
+				
+				addMoveEffect();
+				PopUpManager.centerPopUp(this);
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -593,7 +597,7 @@
 	
 	<!-- REGISTRATION -->
 	<s:Label text.register="Please enter a user name and email."
-			 text.registrationWithSite="Please enter a user name, email, site name and title. If you leave the site name and title blank your username will be used. "
+			 text.registrationWithSite="Please enter a user name, email, site name and title. If you leave the site name and site title blank your username will be used. "
 			 fontSize="13"
 			 top="70"
 			 right="20"

@@ -15,62 +15,70 @@ class JSON_API_Projects_Controller {
 		$category = $json_api->introspector->get_category_by_slug("project");
 		$status = $json_api->query->status;
 		
+		// Make sure we have the category
+		if (!$category) {
+			$json_api->error("The project category does not exist.");
+		}
+		
+		if ( !is_user_logged_in() ) {
+			$status = "publish";
+		}
+
+		$query = array(
+	      'category_name' => $category->slug,
+	      'post_status' => $status
+	    );
+	    
+	    // Make sure we have required params
+	    if ($json_api->query->user_id) {
+	    	//return "something";
+			$query['author'] = $json_api->query->user_id;;
+	    }
+	    
+		
+	    $posts = $json_api->introspector->get_posts($query);
+	    
+	    //return "test";
+	    //return $this->posts_object_result($posts, $wp_query->query); // returns the query we just sent
+	    return $this->posts_result($posts);
+    }
+    
+	public function get_projects_by_user() {
+		global $json_api;
+		
+		
+        $user_id = $json_api->query->user_id;
+        $user = get_userdata($user_id);
+		$category = $json_api->introspector->get_category_by_slug("project");
+		$status = $json_api->query->status;
+		
+		// Make sure we have the category
+		if (!$category) {
+			$json_api->error("The project category does not exist.");
+		}
+		
 		if ( !is_user_logged_in() ) {
 			$status = "publish";
 		}
 	    
-	    if (!$author) {
-	    //  $json_api->error("Not found.");
+	    $query = array(
+	    	'category_name' => $category->slug,
+	    	'post_status' => $status
+	    );
+	    
+	    if (!$user) {
+	    	$json_api->error("User with that ID not found.");
+	    }
+	    else {
+	    	$query['author'] = $user_id;
 	    }
 	    
-		// Make sure we have required params
-		if (!$json_api->query->author_id || !$json_api->query->category) {
-		//	$json_api->error("Include a 'author' and 'category' query var.");
-		}
-	  
-	    $posts = $json_api->introspector->get_posts(array(
-	      'author' => $user_ID,
-	      'category_name' => $category->slug,
-	      'post_status' => $status
-	    ));
+		//return $query;
+	    $posts = $json_api->introspector->get_posts($query);
 	    
-	    //return "test";
-	    return $this->posts_object_result($posts, $wp_query->query);
-    }
-    
-	public function get_author_posts() {
-		global $json_api;
-		$author = $json_api->introspector->get_current_author();
-	    
-	    if (!$author) {
-	      $json_api->error("Not found.");
-	    }
-	    
-	    $posts = $json_api->introspector->get_posts(array(
-	      'author' => $author->id
-	    ));
-	    
-	    return $this->posts_object_result($posts, $author);
+	    return $this->posts_result($posts);
 	}
   
-  
-	public function get_categories($args = null) {
-	  global $json_api;
-	  $wp_categories = $json_api->introspector->get_categories($args);
-		
-	  //$categories = array();
-	  
-	  //foreach ($wp_categories as $wp_category) {
-	  //  if ($wp_category->term_id == 1 && $wp_category->slug == 'uncategorized') {
-	  //    continue;
-	  //  }
-	  //  $categories[] = $this->get_category_object($wp_category);
-	  //}
-	  
-	  $output = array();
-	  $output['attachments'] = $json_api->introspector->get_categories($args);
-	  return $output;
-	}
   
 	// Retrieve posts based on custom field key/value pair
 	public function get_custom_posts() {
@@ -96,8 +104,10 @@ class JSON_API_Projects_Controller {
 	
   protected function posts_object_result($posts, $object) {
     global $wp_query;
+    
     // Convert something like "JSON_API_Category" into "category"
     $object_key = strtolower(substr(get_class($object), 9));
+    
     return array(
       'count' => count($posts),
       'count_total' => (int) $wp_query->found_posts,
@@ -106,12 +116,14 @@ class JSON_API_Projects_Controller {
       'posts' => $posts
     );
   }
+  
   protected function posts_result($posts) {
     global $wp_query;
+    
     return array(
       'count' => count($posts),
       'count_total' => (int) $wp_query->found_posts,
-      'pages' => $wp_query->max_num_pages,
+      'pages' => (int) $wp_query->max_num_pages,
       'posts' => $posts
     );
   }

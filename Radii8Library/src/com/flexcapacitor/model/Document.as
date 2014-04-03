@@ -293,7 +293,7 @@ package com.flexcapacitor.model {
 		 * */
 		override public function close():void {
 			super.close();
-			
+			//Radiate.log.info("Close:" + source);
 			clearHistory();
 		}
 		
@@ -303,6 +303,8 @@ package com.flexcapacitor.model {
 		public function clearHistory():void {
 			//history.refresh();
 			history.removeAll();
+			historyIndex = -1;
+			isChanged = false;
 		}
 		
 		/**
@@ -385,14 +387,48 @@ package com.flexcapacitor.model {
 		
 		/**
 		 * Get source code for document. 
-		 * Don't really like the way I'm doing this.
-		 * I think it would be better to keep exporting and importing to external classes
+		 * Exporters may not work if the document is not open. 
 		 * */
 		override public function getSource(target:Object = null):String {
+			var value:String;
 			
-			// refactor - should maybe use DocumentExporter class 
-			return internalExporter.export(this);
-			
+			if (isOpen) {
+				if (this.historyIndex==-1) {
+					//Radiate.log.info("Document history is empty!");
+				}
+				
+				if (isChanged || source==null || source=="") {
+					value = internalExporter.export(this);
+				}
+				else if (source) {
+					value = source;
+				}
+				else if (originalSource) {
+					value = originalSource;
+				}
+				
+				/*
+				Radiate.log.info("is changed=" + isChanged);
+				Radiate.log.info("original source null=" + (originalSource==null));
+				Radiate.log.info("history length=" + history.length);
+				Radiate.log.info("history index=" + historyIndex);
+				Radiate.log.info("instance stage=" + (instance?instance.stage:null));
+				Radiate.log.info("date saved=" + dateSaved);
+				Radiate.log.info(value);*/
+/*				Main Thread (Suspended)	
+	com.flexcapacitor.model::Document/getSource	
+	com.flexcapacitor.model::DocumentData/close	
+	com.flexcapacitor.model::Document/close	
+	com.flexcapacitor.controller::Radiate/closeDocument	
+	com.flexcapacitor.controller::Radiate/closeProject	
+	com.flexcapacitor.views.panels::ProjectInspector/closeProjectIcon_clickHandler	
+	com.flexcapacitor.views.panels::ProjectInspector/__closeProjectIcon_click	
+*/
+				return value;
+				
+			}
+			// return source;
+			return source;
 		}
 		
 		/**
@@ -440,7 +476,7 @@ package com.flexcapacitor.model {
 					nodeName = child.name();
 					
 				}*/
-				Radiate.log.info("Importing document: " + name);
+				//Radiate.log.info("Importing document: " + name);
 				//var mxmlLoader:MXMLImporter = new MXMLImporter( "testWindow", new XML( inSource ), canvasHolder  );
 				var mxmlLoader:MXMLImporter;
 				var container:IVisualElement = parent ? parent as IVisualElement : instance as IVisualElement;
