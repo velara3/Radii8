@@ -11,11 +11,11 @@ Home page:
  - Demo  - http://www.radii8.com/demo 
    - click New Project to see an empty new project (give it a minute to load)
  
- Notes:
+Notes:
  - prototype. 
  - you can create a plugin based on what exists now (see the components in the views package) 
 
- What needs to be done:
+What needs to be done:
  - conforming this document to https://github.com/infochimps-labs/style_guide/blob/master/style-guide-for-readme-files.md
  - conforming to Git project file and folders structure https://github.com/infochimps-labs/style_guide/blob/master/style-guide-for-repo-organization.md 
  - documentation on getting started
@@ -26,7 +26,7 @@ Home page:
      - radiate.setProperty(target:Object, property:String, value:*, description:String = null, keepUndefinedValues:Boolean = false);
  - see http://www.radii8.com/blog/?page_id=2
  
- Roadmap:
+Roadmap:
  http://www.radii8.com/blog/?page_id=2
  
  
