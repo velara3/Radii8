@@ -710,10 +710,10 @@ function onWrite(e:MultipartURLLoaderEvent):void {
 				var token:AsyncToken;
 				
 				if (requireLogin) {
-					token = blogapi.call(call_txt.text, "", user_txt.text, password_txt.text);
+					//token = blogapi.call(call_txt.text, "", user_txt.text, password_txt.text);
 				}
 				else {
-					token = blogapi.call(call_txt.text, "");
+					//token = blogapi.call(call_txt.text, "");
 				}
 				
 				var tresponder:ItemResponder = new ItemResponder(this.showUserInfo, this.onFault);
@@ -1270,15 +1270,15 @@ function onWrite(e:MultipartURLLoaderEvent):void {
 		<!-- test user
 		http://www.radii8.com/blog
 		/xmlrpc.php
-		remote
-		iwtlVqJ251RTWha976Pa
 		-->
 		
 		
 		<!-- RPC Object -->
-		<ns:XMLRPCObject id="blogapi" 
+		<!-- ADD to the project to get this to run
+		     /as3rpclib/bin/as3rpclib-sdk4.9.1.swc-->
+		<!--<ns:XMLRPCObject id="blogapi" 
 						 destination="{endpoint_txt.text}" 
-						 endpoint="{rooturl_txt.text}"/>
+						 endpoint="{rooturl_txt.text}"/>-->
 		
 		
 		

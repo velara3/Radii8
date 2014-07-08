@@ -1,7 +1,7 @@
 
 
 
-public static const BUILD_DATE:String = "2014-06-22";
-public static const BUILD_TIME:String = "07:21 PM";
+public static const BUILD_DATE:String = "2014-07-08";
+public static const BUILD_TIME:String = "02:02 PM";
 
-public static const BUILD_NUMBER:String = "4474";
+public static const BUILD_NUMBER:String = "4478";

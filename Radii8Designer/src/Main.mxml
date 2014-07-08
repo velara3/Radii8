@@ -542,11 +542,11 @@
 			}
 			
 			protected function userIcon_securityErrorHandler(event:SecurityErrorEvent):void {
-				trace("security ");
+				//trace("security error ");
 			}
 			
 			protected function userIcon_ioErrorHandler(event:IOErrorEvent):void {
-				trace("ioerror ");
+				//trace("ioerror ");
 				userIcon.source = null;
 				userIcon.source = radiate.defaultUserAvatarPath;
 			}

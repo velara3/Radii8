@@ -16,7 +16,6 @@
       <libraryPathEntry kind="3" linkType="1" path="/FlexIFrame/bin/FlexIFrame.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="/AS3CommonsReflect/bin/AS3CommonsReflect.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="/AS3SyntaxHighlighter/bin/AS3SyntaxHighlighter.swc" useDefaultLinkType="false"/>
-      <libraryPathEntry kind="3" linkType="1" path="/Users/monkeypunch/Documents/ProjectsGithub/as3rpclib/bin/as3rpclib-sdk4.9.1.swc" useDefaultLinkType="false"/>
     </libraryPath>
     <sourceAttachmentPath/>
   </compiler>
@@ -26,10 +25,7 @@
     <application path="JSONAPI.mxml"/>
     <application path="examples/designlayer/RemovingLayer.mxml"/>
     <application path="TestingAceEditor.mxml"/>
-    <application path="TestingSnapshots.mxml"/>
     <application path="Main.mxml"/>
-    <application path="TestingStategroups.mxml"/>
-    <application path="PopUpTest.mxml"/>
   </applications>
   <modules/>
   <workers/>
