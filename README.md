@@ -12,7 +12,7 @@ Home page:
    - click New Project to see an empty new project (give it a minute to load)
  
 Notes:
- - prototype. 
+ - it is a prototype
  - you can create a plugin based on what exists now (see the components in the views package) 
 
 What needs to be done:
@@ -27,6 +27,6 @@ What needs to be done:
  - see http://www.radii8.com/blog/?page_id=2
  
 Roadmap:
- http://www.radii8.com/blog/?page_id=2
+ - http://www.radii8.com/blog/?page_id=2
  
  
