@@ -60,6 +60,7 @@
     <classEntry path="com.flexcapacitor.views.inspectors.Identity"/>
     <classEntry path="com.flexcapacitor.views.Size"/>
     <classEntry path="com.flexcapacitor.views.inspectors.FontStyles"/>
+    <classEntry path="com.flexcapacitor.utils.Base64"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

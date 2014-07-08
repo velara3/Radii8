@@ -6,10 +6,10 @@
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:collections="com.flexcapacitor.effects.collections.*"
 		 xmlns:components="com.flexcapacitor.components.*" 
+		 implements="com.flexcapacitor.views.IInspector" 
 		 
 		 minWidth="200" 
 		 minHeight="100"
-		 creationComplete="group1_creationCompleteHandler(event)" 
 		 >
 	
 	<fx:Script>
@@ -17,9 +17,8 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.MetaData;
+			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.SyntaxHighlighter;
-			
-			import mx.events.FlexEvent;
 			
 			/**
 			 * Reference to Radiate
@@ -30,15 +29,43 @@
 			
 			public var rawData:String;
 			
-			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+			public var lastTarget:Object;
+			
+			public function activate():void {
 				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.OBJECT_SELECTED, objectSelectedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
 					//target = radiate.target;
 				}
+				
+				if (radiate.target) {
+					updateObject(radiate.target);
+				}
+			}
+			
+			public function deactivate():void {
+				
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
+					radiate.removeEventListener(RadiateEvent.OBJECT_SELECTED, objectSelectedHandler);
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				
+				}
+			}
+			
+			
+			public function updateObject(object:Object):void {
+				//rawData = String(object);// ObjectUtil.toString(value);
+				
+				if (lastTarget==object || object==null) return;
+				rawData = ClassUtils.getDescribeType(object);
+				mxTextArea.text = rawData;
+				mxTextAreaChangeHandler();
+				lastTarget = object;
 			}
 			
 			protected function propertySelectedHandler(event:RadiateEvent):void {
@@ -60,6 +87,7 @@
 			
 			protected function objectSelectedHandler(event:RadiateEvent):void {
 				var object:Object = event.selectedItem;
+				updateObject(object);
 				//var valueObject:Object = ObjectUtil.getClassInfo(object);
 				//var value:String = ObjectUtil.toString(valueObject);
 				
@@ -69,10 +97,10 @@
 					//trace("data hasn't changed");
 				//	return;
 				//}
-				
-				rawData = String(object);// ObjectUtil.toString(value);
-				mxTextArea.text = rawData;
-				mxTextAreaChangeHandler();
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				updateObject(event.selectedItem);
 			}
 			
 			private function mxTextAreaChangeHandler():void {
@@ -90,6 +118,7 @@
 			protected function completeHandler(event:Event):void {
 				//trace("complete event:" + getTimer());
 			}
+			
 			
 		]]>
 	</fx:Script>

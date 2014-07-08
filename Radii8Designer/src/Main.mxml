@@ -541,6 +541,16 @@
 				
 			}
 			
+			protected function userIcon_securityErrorHandler(event:SecurityErrorEvent):void {
+				trace("security ");
+			}
+			
+			protected function userIcon_ioErrorHandler(event:IOErrorEvent):void {
+				trace("ioerror ");
+				userIcon.source = null;
+				userIcon.source = radiate.defaultUserAvatarPath;
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1215,9 +1225,11 @@
 				 width="22" height="22" 
 				 top="3"
 				 source="{radiate.userAvatar}"
-				 showErrorSkin="true"
+				 showErrorSkin="false"
 				 smooth="true"
 				 clearOnLoad="false"
+				 securityError="userIcon_securityErrorHandler(event)"
+				 ioError="userIcon_ioErrorHandler(event)"
 				 />
 		
 		<c:VerticalLine 

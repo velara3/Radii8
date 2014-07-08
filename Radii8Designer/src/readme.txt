@@ -79,7 +79,6 @@
 	ICONS and IMAGES
 	
 	These need to be checked to see if any are copyrighted and replaced if need be before going live
-	
 	http://www.arungudelli.com/free/best-free-social-media-icons/ 
 	
 	
@@ -115,6 +114,9 @@
 		http://www.toonmonkey.com/extensions.html
 
 		
+	JS BASE 64 Encode / Decode
+	http://jsbase64.codeplex.com/
+		
 	GOOGLE TEST PAGE IMPORT MXML
 	
 <s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" >
@@ -139,40 +141,4 @@
 
 	TEST COMPONENT BOUNDS
 	
-<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark">
-	<s:BorderContainer x="205" y="324"/>
-	<s:HGroup x="299" y="105">
-		<s:Spacer/>
-	</s:HGroup>
-	<s:LinkButton x="552" y="173"/>
-	<s:RichText x="629" y="179"/>
-	<s:TextArea x="470" y="326"/>
-	<s:Button x="622" y="253"/>
-	<s:CheckBox x="218" y="169"/>
-	<s:Label x="11" y="19" text="TEST COMPONENT BOUNDS" fontSize="25"/>
-	<s:Image x="561" y="254"/>
-	<s:Label x="471" y="405"/>
-	<s:Label x="560" y="236"/>
-	<s:RadioButton x="436" y="252"/>
-	<s:Label x="739" y="161"/>
-	<s:ComboBox x="22" y="166" dataProvider="Item 1,Item 2,Item 3"/>
-	<s:Label x="469" y="312"/>
-	<s:HSlider x="334" y="175"/>
-	<s:Label x="622" y="239"/>
-	<s:Label x="206" y="312"/>
-	<s:VSlider x="749" y="177"/>
-	<s:List x="22" y="326" dataProvider="Item 1,Item 2,Item 3"/>
-	<s:Label x="22" y="310"/>
-	<s:Label x="254" y="237"/>
-	<s:Label x="438" y="236"/>
-	<s:Label x="625" y="158"/>
-	<s:ToggleButton x="164" y="250"/>
-	<s:Label x="339" y="160"/>
-	<s:Label x="23" y="151"/>
-	<s:DropDownList x="253" y="249" dataProvider="Item 1,Item 2,Item 3"/>
-	<s:Label x="220" y="159"/>
-	<s:Label x="164" y="239"/>
-	<s:Label x="22" y="237"/>
-	<s:DataGrid x="469" y="418"/>
-	<s:TextInput x="22" y="255"/>
-</s:Application>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark">	<s:BorderContainer x="205" y="324"/>	<s:HGroup x="299" y="105">		<s:Spacer/>	</s:HGroup>	<s:LinkButton x="522" y="166"/>	<s:RichText x="628" y="166"/>	<s:TextArea x="470" y="326"/>	<s:Button x="622" y="255"/>	<s:CheckBox x="218" y="166"/>	<s:Label x="11" y="19" text="TEST COMPONENT BOUNDS" fontSize="25"/>	<s:Image x="561" y="255"/>	<s:Label x="471" y="405" text="DataGrid"/>	<s:Label x="560" y="237" text="Image"/>	<s:RadioButton x="436" y="255"/>	<s:Label x="739" y="150" text="VSlider"/>	<s:ComboBox dataProvider="Item 1,Item 2,Item 3" x="22" y="166"/>	<s:Label x="469" y="312" text="Text Area"/>	<s:HSlider x="324" y="166"/>	<s:Label x="622" y="237" text="Button"/>	<s:Label x="206" y="312" text="Border Container"/>	<s:VSlider x="749" y="167"/>	<s:List dataProvider="Item 1,Item 2,Item 3" x="22" y="326"/>	<s:Label x="22" y="310" text="List"/>	<s:Label x="254" y="237" text="Drop Down List"/>	<s:Label x="438" y="237" text="Radio Button"/>	<s:Label x="531" y="150" text="Link"/>	<s:ToggleButton x="164" y="255"/>	<s:Label x="324" y="150" text="HSlider"/>	<s:Label x="23" y="150" text="ComboBox"/>	<s:DropDownList dataProvider="Item 1,Item 2,Item 3" x="253" y="255"/>	<s:Label x="218" y="150" text="Checkbox"/>	<s:Label x="164" y="237" text="Toggle"/>	<s:Label x="22" y="237" text="Text Input"/>	<s:DataGrid x="469" y="418"/>	<s:TextInput x="22" y="255"/>	<s:Label x="627" y="150" text="Rich Text"/></s:Application>

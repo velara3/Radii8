@@ -6,6 +6,8 @@ package com.flexcapacitor.utils {
 	
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
+	import flash.display.JPEGEncoderOptions;
+	import flash.display.PNGEncoderOptions;
 	import flash.geom.Rectangle;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
@@ -532,6 +534,7 @@ package com.flexcapacitor.utils {
 						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 						styleValue += "margin:0 auto;";
 						styleValue += "left:8px;top:14px;";
+						styleValue += "overflow:auto;";
 						styleValue += "background-color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("backgroundColor"), true) + ";";
 						//output += properties ? " " : "";
 						output += setStyles(component.instance, styleValue);
@@ -546,7 +549,7 @@ package com.flexcapacitor.utils {
 							backgroundSnapshot += " src=\"" + imageData + "\" ";
 							
 							output += backgroundSnapshot;
-							output += setStyles("#"+backgroundImageID, "position:absolute;opacity:"+backgroundImageAlpha+";", true);
+							output += setStyles("#"+backgroundImageID, "position:absolute;opacity:"+backgroundImageAlpha+";top:0px;left:0px;", true);
 							/* background-image didn't work in FF on mac. didn't test on other browsers
 							//trace(imageData);
 							var imageDataStyle:String = "#" + getIdentifierOrName(target) + "  {\n";
@@ -1227,13 +1230,27 @@ package com.flexcapacitor.utils {
 			var component:IUIComponent = target as IUIComponent;
 			var bitmapData:BitmapData;
 		    var byteArray:ByteArray;
-		    var base64:Base64Encoder;
+		    var base64Encoder:Base64Encoder;
+		    var base64Encoder2:Base64;
+			var useEncoder:Boolean;
+			var rectangle:Rectangle;
+			var jpegEncoderOptions:JPEGEncoderOptions;
+			var pngEncoderOptions:PNGEncoderOptions;
+			var quality:int = 80;
+			var fastCompression:Boolean = true;
+			var timeEvents:Boolean = true;
+			var altBase64:Boolean = true;
+			var results:String;
+			
 			
 			if (base64BitmapCache[target] && checkCache) {
 				return base64BitmapCache[target];
 			}
 			
-			//var time:int = getTimer();
+			if (timeEvents) {
+				var time:int = getTimer();
+			}
+			
 			if (component) {
 				bitmapData = BitmapUtil.getSnapshot(component);
 			}
@@ -1247,40 +1264,75 @@ package com.flexcapacitor.utils {
 				return null;
 			}
 			
-			//trace ("get snapshot. time=" + (getTimer()-time));
-			//time = getTimer();
+			rectangle = new Rectangle(0, 0, bitmapData.width, bitmapData.height);
+			
+			if (timeEvents) {
+				trace ("get snapshot. time=" + (getTimer()-time));
+				time = getTimer();
+			}
+			
 			if (type=="png") {
-				if (!pngEncoder) {
-					pngEncoder = new PNGEncoder();
-				}
 				
-				byteArray = pngEncoder.encode(bitmapData);
+				if (useEncoder) {
+					if (!pngEncoder) {
+						pngEncoder = new PNGEncoder();
+					}
+					
+					byteArray = pngEncoder.encode(bitmapData);
+				}
+				else {
+					if (!pngEncoderOptions) {
+						pngEncoderOptions = new PNGEncoderOptions(fastCompression);
+					}
+					
+					byteArray = bitmapData.encode(rectangle, pngEncoderOptions);
+				}
 			}
 			else if (type=="jpg" || type=="jpeg") {
 				
-				if (!jpegEncoder) {
-					jpegEncoder = new JPEGEncoder();
+				if (useEncoder) {
+					if (!jpegEncoder) {
+						jpegEncoder = new JPEGEncoder();
+					}
+					
+					byteArray = jpegEncoder.encode(bitmapData);
 				}
-				
-				byteArray = jpegEncoder.encode(bitmapData);
+				else {
+					if (!jpegEncoderOptions) {
+						jpegEncoderOptions = new JPEGEncoderOptions(quality);
+					}
+					
+					byteArray = bitmapData.encode(rectangle, jpegEncoderOptions);
+				}
 			}
 			else {
 				// raw bitmap image data
 				byteArray = bitmapData.getPixels(new Rectangle(0, 0, bitmapData.width, bitmapData.height));
 			}
 			
-			//trace ("encode to png. time=" + (getTimer()-time));
-			//time = getTimer();
-			
-			if (!base64) {
-				base64 = new Base64Encoder();
+			if (timeEvents) {
+				trace ("encode to " + type + ". time=" + (getTimer()-time));
+				time = getTimer();
 			}
 			
-		    base64.encodeBytes(byteArray);
+			if (!altBase64) {
+				if (!base64Encoder) {
+					base64Encoder = new Base64Encoder();
+				}
+				
+			    base64Encoder.encodeBytes(byteArray);
+			
+				results = base64Encoder.toString();
+			}
+			else {
+				results = Base64.encode(byteArray);
+			}
+			
 		    //trace(base64.toString());
 			
-			var results:String = base64.toString();
-			//trace ("encode to base 64. time=" + (getTimer()-time));
+			if (timeEvents) {
+				trace ("encode to base 64. time=" + (getTimer()-time));
+			}
 			
 			base64BitmapCache[target] = results;
 			

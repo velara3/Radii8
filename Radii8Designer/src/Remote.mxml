@@ -10,6 +10,7 @@
 		 xmlns:flexiframe="com.google.code.flexiframe.*" 
 		 xmlns:views="com.flexcapacitor.views.*"
 		 xmlns:panels="com.flexcapacitor.views.panels.*"
+		 xmlns:fc="com.flexcapacitor.effects.popup.*"
 		 xmlns:ns1="*" 
 		 
 		 width="400" 
@@ -46,6 +47,8 @@
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.views.IInspector;
+			import com.flexcapacitor.views.windows.ContactWindow;
+			import com.flexcapacitor.views.windows.SaveBeforeCloseWindow;
 			
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
@@ -272,6 +275,18 @@
 		<!--<handlers:EventHandler eventName="creationComplete" target="{this}">
 			<core:PlayEffect effect="{fadeIn}"/>
 		</handlers:EventHandler>-->
+		
+		
+		<!--- show contact popup -->
+		<handlers:EventHandler target="{closeDocument}" eventName="click" >
+			<fc:OpenPopUp id="openSaveBeforeClosePopUp" 
+						  popUpType="{SaveBeforeCloseWindow}" 
+						  modalDuration="100" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="600"
+						  parent="{parentApplication}"/>
+		</handlers:EventHandler>
 	</fx:Declarations>
 	
 	
@@ -616,7 +631,6 @@
 		<controls:ImageButton id="closeDocument" 
 							  source="{Radii8LibraryAssets.clear}" 
 							  toolTip="Closes the visible document. Use the open button to reopen the document."
-							  click="closeDocumentIcon_clickHandler()"
 							  right="8"
 							  top="34"
 							  width="16"
