@@ -3,7 +3,7 @@ Radii8
 
 An online and desktop design, develop and debug tool for creating graphic designs, websites, prototypes and applications. The online version connects to Wordpress and Wordpress MU for storage and retrieval. It can be adapted to create themes easily (maybe 1-3 weeks of work). The desktop version should eventually reference local files and projects. 
 
-It uses the Flex SDK as underlying framework (for both the IDE and when publishing an application). It can generate MXML, HTML and Android XML. It may in the future publish to other technologies. 
+It uses the Flex SDK as underlying framework (for both the IDE and when publishing an application). It can generate MXML, HTML and Android XML. It may in the future publish to other languages. 
 
 Home page:
  - About - http://www.radii8.com/blog/?page_id=2. 
