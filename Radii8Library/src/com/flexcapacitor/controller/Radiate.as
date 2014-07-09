@@ -5025,6 +5025,18 @@ package com.flexcapacitor.controller {
 			var previewName:String;
 			var index:int;
 			
+			// NOTE: If the document is empty or all of the components are in the upper left hand corner
+			// and they have no properties then my guess is that the application was never fully loaded 
+			// or activated. this happens with multiple documents opening too quickly where some 
+			// do not seem to activate. you see them activate when you select their tab for the first time
+			// so then later if it hasn't activated, when the document is exported none of the components have
+			// their properties or styles set possibly because Flex chose to defer applying them.
+			// the solution is to make sure the application is fully loaded and activated
+			// and also store a backup of the document MXML. 
+			// that could mean waiting to open new documents until existing documents have 
+			// loaded. listen for the application complete event (or create a parse and import event) 
+			// ...haven't had time to do any of this yet
+			
 			isAlreadyOpen = isDocumentOpen(iDocument);
 			
 			if (dispatchEvents) {

@@ -3,7 +3,6 @@ package com.flexcapacitor.model {
 	
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
-	import com.flexcapacitor.utils.MXMLDocumentExporter;
 	import com.flexcapacitor.utils.MXMLImporter;
 	import com.flexcapacitor.utils.XMLUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;

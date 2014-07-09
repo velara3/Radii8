@@ -1,19 +1,14 @@
-	<!-- 5,483 lines of code in 2013-->
-	<!-- radiate library 8103 
-	654
-	252
-	53,549
-	
-	
-			   preloader="com.flexcapacitor.preloader.SparkPreloader"
-	-
-	During beta, the Digg RSS reader is free. In a survey Digg published last month on its blog,
+				   
+    THOUGHTS ON SUSTAINABILITY
+
+	Quote from Digg, 
+	"During beta, the Digg RSS reader is free. In a survey Digg published last month on its blog,
 	however, the company found that over 40 percent of respondents are 
 	"willing to pay for a Google Reader replacement." The company noted alongside the finding 
 	that, "Free products on the Internet don't have a great track record. They tend to disappear, 
 	leaving users in a lurch. We need to build a product that people can rely on and trust will
 	always be there for them. We're not sure how pricing might work, but we do know that we'd 
-	like our users to be our customers, not our product.
+	like our users to be our customers, not our product."
 	
 	
 	Readings for new developers
@@ -29,18 +24,7 @@
 	Design workflows
 	http://www.vanseodesign.com/blog/page/8/
 	
-	Image uploader fix for wordpress (in .htaccess in wp-admin folder):
-	http://xperiments.es/blog/en/wordpress-flash-uploader-http-error/
 	
-	#BEGIN Image Upload HTTP Error Fix - am not using this (Using wpattachment service)
-	<IfModule mod_security.c>
-	<Files async-upload.php>
-	SecFilterEngine Off
-	SecFilterScanPOST Off
-	</Files>
-	</IfModule>
-	#END Image Upload HTTP Error Fix
-
 	
 	DESIGN VIEW FEATURE REQUIREMENTS
 	
@@ -68,6 +52,38 @@
 	• snap to grid (while dragging)
 	• snap to other elements (while dragging)
 	• snap to rulers
+	• background image (used to compare design spec as you work - onion skin)
+	
+	ADDITIONAL FEATURE REQUIREMENTS
+	• Templates - users can use their own MXML, HTML, PHP, etc templates and indicate locations for CSS, script includes, code blocks and layout 
+	• Desktop environment - users can run on the desktop
+	• Compiler integration - users can compile using the mxmlc or Falcon
+	• Flex project support - users can connect to their Flex projects
+	• Wordpress integration - users can create their own theme. tokens can be used to repeat sections and get values. results are assembled on the server by a theme assembler
+	• Editors - users can create or edit text documents. using Ace editor or Moonshine to syntax highlight
+	• Append CSS - users can append CSS to add to element CSS block and override the generated CSS
+	• Includes - a view exists of external scripts to include (for CSS, JavaScript, MXML script)
+	• Declarations - a view showing declared objects
+	• Publishing - users can publish to their server (using Wordpress) or add in FTP for desktop version
+	• ActionEffects - users can assemble actions based on ActionEffects and create different action paths
+	• AST - a syntax tree can be created for code completion, documentation and error handling
+	• Compiler integration - compiler can provide a problems panel (desktop only?)
+	• Import and Export plugins - new or improved import and export plugins can be added to the environment for better input and output
+	• Plugins - new and improved plugins can be added to the environment to add new or better feature sets
+	• Tools - new and improved tools can be added to the environment to add new or better feature sets
+	• Commands -  can be added to the environment to add missing or necessary functionality
+	• Document types - new document types can be added for additional functionality. text, vector graphics editor
+	• State inheritance - users should be able to create states based on other states (this exists in Flex via basedOn property) this can be used for design templates exporting pages based on state
+	• Integrated language support - users should be able to integrate server side language in the output
+	• Different work flows for output results - one is to generate code (one way), the other is create an AST from code (round trip), another is a mix of both including search and replace tokens and generated code in templates 
+	• Examples - starting points and examples should be included for partial and even full example sites and apps
+	• Previews - users should be able to preview in HTML or application (possibly in another browser or FP instance)
+	• Import of PSD, AI files - users should be able to import PSD or AI. AS3 importers exist
+	• CSS view - show styles applied to component and inherited from containers
+	• Vector graphics editor - users should be able to create and edit vector graphics and use as skins
+	• Animation timeline - users should be able to animate and trigger effects on elements (see ActionEffects)
+	• Export options - panel for setting export options. for example, when converting to HTML, convert text element to an image option 
+	
 	
 	Runtime Design layers
 	http://sourceforge.net/adobe/flexsdk/wiki/Runtime%20Design%20Layers/
@@ -78,7 +94,8 @@
 	
 	ICONS and IMAGES
 	
-	These need to be checked to see if any are copyrighted and replaced if need be before going live
+	This projects uses common icons from Eclipse, the Apache Flex SDK and default OS but may not be royalty free. 
+	We need to check to see if any are copyrighted and replaced if need be before going live
 	http://www.arungudelli.com/free/best-free-social-media-icons/ 
 	
 	
@@ -113,10 +130,35 @@
 		ToonMonkey Extensions
 		http://www.toonmonkey.com/extensions.html
 
-		
+	
 	JS BASE 64 Encode / Decode
 	http://jsbase64.codeplex.com/
-		
+
+
+	APPLICATION TYPES
+	
+	There are three main types of loaded sub-applications in Flex:
+	
+	Single-versioned applications
+	are guaranteed to have been compiled with the same version of the compiler as the main application. They have the greatest level of interoperability with the main application, but they also require that you have complete control over the source of the sub-applications. 
+	
+	Multi-versioned applications
+	can be compiled with older versions of the Flex framework than the main application that loads them. Their interoperability with the main application and other sub-applications is more limited than single-versioned applications.
+	
+	Sandboxed applications
+	are loaded into their own security domains, and can be multi-versioned. Using sandboxed applications is the recommended practice for loading third-party applications. In addition, if your sub-applications use RPC or DataServices-related functionality, you should load them as sandboxed. 
+	
+	When compiling each of these types of applications, you should include the MarshallingSupport class into the main application and sub-applications. You do this with the includes compiler argument, as the following example shows:
+	
+	-includes=mx.managers.systemClasses.MarshallingSupport
+	
+	We use an application as a design canvas for a few reasons. 
+	
+	1. To import a remote application and allow editing
+	2. To sandbox styles with the style manager
+	3. To sandbox the application importing components at runtime from the development environment   
+	
+	
 	GOOGLE TEST PAGE IMPORT MXML
 	
 <s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" >
