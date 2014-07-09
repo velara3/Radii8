@@ -1,4 +1,9 @@
 
+Jul 8
+- fork json-api in github, apply local changes and remove folder from project 
+- fix when document is sometimes empty. see radiate.openDocument()
+- property inspector doesn't list all properties and styles after a time
+- add tests for updated json api apis 
 
 Apr 24
 - add code to allow event listeners to be removed on add -X april 25
