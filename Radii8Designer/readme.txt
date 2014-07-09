@@ -74,7 +74,7 @@
 	• Commands -  can be added to the environment to add missing or necessary functionality
 	• Document types - new document types can be added for additional functionality. text, vector graphics editor
 	• State inheritance - users should be able to create states based on other states (this exists in Flex via basedOn property) this can be used for design templates exporting pages based on state
-	• Integrated language support - users should be able to integrate server side language in the output
+	• Multi language support - users should be able to add and integrate server side code in the output. for example add PHP that wraps around an element or section of code  
 	• Different work flows for output results - one is to generate code (one way), the other is create an AST from code (round trip), another is a mix of both including search and replace tokens and generated code in templates 
 	• Examples - starting points and examples should be included for partial and even full example sites and apps
 	• Previews - users should be able to preview in HTML or application (possibly in another browser or FP instance)
@@ -84,6 +84,13 @@
 	• Animation timeline - users should be able to animate and trigger effects on elements (see ActionEffects)
 	• Export options - panel for setting export options. for example, when converting to HTML, convert text element to an image option 
 	
+	Document Classes
+	The document classes were made to support saving to local shared objects and remote save and retrieve to Wordpress were tacked on later.
+	Documents don't yet support the file system for read and write. They need to support data coming from anywhere
+	(dynamic instance, local shared object, file system, Wordpress API, database, etc). 
+	There is always a question if undo and redo, save, load and open should be in the Document or the Radiate class. 
+	I can't settle on one or the other but I'm leaning towards Document to have all the code and Radiate be a 
+	wrapper that calls methods on the document class. They could be refactored. 
 	
 	Runtime Design layers
 	http://sourceforge.net/adobe/flexsdk/wiki/Runtime%20Design%20Layers/
