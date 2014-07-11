@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   xmlns:nativeProcess="com.flexcapacitor.effects.nativeProcess.*" 
+					   xmlns:handlers="com.flexcapacitor.handlers.*" 
+					   xmlns:status="com.flexcapacitor.effects.status.*" 
+					   xmlns:controls="form.controls.*"
+					   >
+	
+	<fx:Script>
+		<![CDATA[
+			
+
+			public var process:NativeProcess;
+
+			protected function button1_clickHandler(event:MouseEvent):void {
+				if (Capabilities.os.indexOf("Mac OS") > -1) {       
+					/* var dlFile:File = File.userDirectory;
+					var _chmod:File = new File("/bin/bash");
+					//dlFile = new File(file);
+					
+					var nativeProcess:NativeProcess = new NativeProcess();
+					var chmodStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+					chmodStartupInfo.executable = _chmod;           
+					
+					var args:Vector.<String> = new Vector.<String>();
+					args.push("-c"); 
+					
+					// Trace so I can make sure the command and path are correct in the debugger              
+					
+					trace ("\"chmod ugo+x '"+dlFile.nativePath+"'\"");
+					args.push("chmod ugo+x '"+dlFile.nativePath+"'");
+					chmodStartupInfo.arguments = args;
+					//nativeProcess.addEventListener(NativeProcessExitEvent.EXIT, onExitError );
+					//chmodStartupInfo.executable = new File(file);                       
+					
+					var process:NativeProcess = new NativeProcess();
+					process.start(chmodStartupInfo);   */
+					
+					setupAndLaunch();
+				}
+				
+			}
+			
+			public function runExecutable():void {
+				
+				var nativeProcessStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+				// XCode opens with shellscript.sh as it's file
+				//var shellFile:File = File.applicationDirectory.resolvePath("/usr/bin/open");
+				
+				var shellFile:File = File.applicationDirectory.resolvePath("shellscript.sh");
+				var scriptFile:File = File.applicationDirectory.resolvePath("closeAllWindows.scpt");
+				
+				nativeProcessStartupInfo.executable = shellFile;
+				
+				var processArgs:Vector.<String> = new Vector.<String>();
+				processArgs[0] = "shellscript.sh";
+				
+				nativeProcessStartupInfo.arguments = processArgs;
+				nativeProcessStartupInfo.workingDirectory = File.applicationDirectory;
+				
+				process = new NativeProcess();
+				process.start(nativeProcessStartupInfo);
+				
+				// Error: Error #3219: The NativeProcess could not be started. 'launch path not accessible'
+				// cause: file is not executable
+				
+			}
+			
+			public function setupAndLaunch():void {
+				var nativeProcessStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+				var file:File = File.applicationDirectory.resolvePath("/usr/bin/osascript");
+				// "usr/bin/osascript" 
+				// ArgumentError: Error #3214: NativeProcessStartupInfo.executable does not specify a valid executable file.
+				//var scriptFile:File = File.applicationDirectory.resolvePath("closeAllWindows.scpt");
+				var processArgs:Vector.<String>;
+				
+				
+				nativeProcessStartupInfo.executable = file;
+				nativeProcessStartupInfo.workingDirectory = File.applicationDirectory;
+				
+				processArgs = new Vector.<String>();
+				processArgs[0] = "closeAllWindows.scpt";
+				
+				nativeProcessStartupInfo.arguments = processArgs;
+				
+				process = new NativeProcess();
+				process.start(nativeProcessStartupInfo);
+				
+				process.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, onOutputData);
+				process.addEventListener(ProgressEvent.STANDARD_ERROR_DATA, onErrorData);
+				process.addEventListener(NativeProcessExitEvent.EXIT, onExit);
+				process.addEventListener(IOErrorEvent.STANDARD_OUTPUT_IO_ERROR, onIOError);
+				process.addEventListener(IOErrorEvent.STANDARD_ERROR_IO_ERROR, onIOError);
+				
+				return;
+				///////////
+				//are_we_native.text = '"'+args+'"';
+			}
+			
+			public function onOutputData(event:ProgressEvent):void
+			{
+				trace("Got: ", process.standardOutput); 
+				//outputTextArea.text = runProcess.standardOutput;
+			}
+			
+			public function onErrorData(event:ProgressEvent):void
+			{
+				trace("ERROR -", runProcess.errorData);
+				outputTextArea.text = runProcess.errorData;
+			}
+			
+			public function onExit(event:NativeProcessExitEvent):void
+			{
+				trace("Process exited with ", event.exitCode);
+			}
+			
+			public function onIOError(event:IOErrorEvent):void
+			{
+				trace(event.toString());
+			}
+			
+			public function standardOutput():void {
+				
+				//trace(runProcess.outputData);
+				outputTextArea.text = runProcess.outputData;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<handlers:EventHandler target="{runButton}" eventName="click" >
+			<nativeProcess:RunProcess id="runProcess"
+									  arguments="{argumentsInput.text}"
+									  executablePath="{executablePathInput.text}"
+									  commands="{commandsInput.text}"
+									  standardOutputData="standardOutput()"
+									  standardErrorData="onErrorData(event)"
+									  standardErrorIOError="onIOError(event)">
+				<nativeProcess:notSupportedEffect>
+					<status:ShowStatusMessage message="Native process not supported"/>
+				</nativeProcess:notSupportedEffect>
+				<nativeProcess:processNotFoundEffect>
+					<status:ShowStatusMessage message="Process not found"/>
+				</nativeProcess:processNotFoundEffect>
+				<nativeProcess:processFoundEffect>
+					<status:ShowStatusMessage message="Process found"/>
+				</nativeProcess:processFoundEffect>
+			</nativeProcess:RunProcess>
+			
+		</handlers:EventHandler>
+	</fx:Declarations>
+	
+	<!---
+	
+	This application is used to run command line from a tool with a UI. Fuck the command line. 
+	
+	-->
+	
+	<!--<s:Button label="Hide desktop" click="button1_clickHandler(event)"/>-->
+	<s:Form horizontalCenter="0" width="100%">
+		<s:layout>
+			<s:FormLayout gap="0" paddingLeft="20"/>
+		</s:layout>
+		
+		<s:FormItem label="Executable:" width="100%" backgroundColor="#f0f000">
+			<s:TextInput id="executablePathInput" text="/usr/bin/osascript" width="100%"/>
+			<s:Button id="executablePathButton1" label="1" width="24" 
+					  click="executablePathInput.text = '/usr/bin/ditto'"/>
+			<s:Button id="executablePathButton2" label="2" width="25"
+					  click="executablePathInput.text = '/Applications/Ant/bin/ant'"/>
+			<controls:FileControl showLabel="false" id="folderInput" width="100%" 
+								  useFileReferences="false"
+								  allowMultipleSelection="false" 
+								  selectFolder="true"/>
+		</s:FormItem>
+		
+		<s:FormItem label="Arguments:" width="50%">
+				<s:TextInput id="argumentsInput" text="" width="100%"/>
+		</s:FormItem>
+		
+		<s:FormItem label="Commands:" width="50%">
+			<s:TextInput id="commandsInput" text="" width="100%"/>
+		</s:FormItem>
+		
+		<s:FormItem>
+			<s:Button id="runButton" label="Run Process" />
+			<s:TextArea id="outputTextArea" width="100%"/>
+		</s:FormItem>
+	</s:Form>
+	
+</s:WindowedApplication>

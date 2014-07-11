@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   
+					   >
+	
+	<fx:Script>
+		<![CDATA[
+			
+
+			public var process:NativeProcess;
+
+			
+			public function runExecutable():void {
+				
+				var nativeProcessStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+				// XCode opens with shellscript.sh as it's file
+				//var shellFile:File = File.applicationDirectory.resolvePath("/usr/bin/open");
+				
+				var shellFile:File = File.applicationDirectory.resolvePath("shellscript.sh");
+				var scriptFile:File = File.applicationDirectory.resolvePath("closeAllWindows.scpt");
+				
+				nativeProcessStartupInfo.executable = shellFile;
+				
+				var processArgs:Vector.<String> = new Vector.<String>();
+				processArgs[0] = "shellscript.sh";
+				
+				nativeProcessStartupInfo.arguments = processArgs;
+				nativeProcessStartupInfo.workingDirectory = File.applicationDirectory;
+				
+				process = new NativeProcess();
+				process.start(nativeProcessStartupInfo);
+				
+				// Error: Error #3219: The NativeProcess could not be started. 'launch path not accessible'
+				// cause: file is not executable
+				
+			}
+			
+			/**
+			 * Runs the script
+			 * 
+			 * ERROR
+				Error: Error #3219: The NativeProcess could not be started. 'Not supported in current profile.'
+					at Error$/throwError()
+					at flash.desktop::NativeProcess/start()
+			 * 
+			 * SOLUTION
+			 * Add 	<supportedProfiles>extendedDesktop desktop</supportedProfiles> to the application descriptor file
+			 * */
+			public function runScript(fileName:String):void {
+				var nativeProcessStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+				var file:File = File.applicationDirectory.resolvePath("/usr/bin/osascript");
+				// "usr/bin/osascript" 
+				// ArgumentError: Error #3214: NativeProcessStartupInfo.executable does not specify a valid executable file.
+				var scriptFile:File = File.applicationDirectory.resolvePath(fileName);
+				var processArgs:Vector.<String>;
+				
+				
+				nativeProcessStartupInfo.executable = file;
+				nativeProcessStartupInfo.workingDirectory = File.applicationDirectory;
+				
+				processArgs = new Vector.<String>();
+				processArgs[0] = fileName;
+				
+				nativeProcessStartupInfo.arguments = processArgs;
+				
+				process = new NativeProcess();
+				process.start(nativeProcessStartupInfo);
+				
+				process.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, onOutputData);
+				process.addEventListener(ProgressEvent.STANDARD_ERROR_DATA, onErrorData);
+				process.addEventListener(NativeProcessExitEvent.EXIT, onExit);
+				process.addEventListener(IOErrorEvent.STANDARD_OUTPUT_IO_ERROR, onIOError);
+				process.addEventListener(IOErrorEvent.STANDARD_ERROR_IO_ERROR, onIOError);
+				
+				return;
+				///////////
+				//are_we_native.text = '"'+args+'"';
+			}
+			
+			public function onOutputData(event:ProgressEvent):void
+			{
+				trace("Got: ", process.standardOutput.readUTFBytes(process.standardOutput.bytesAvailable)); 
+			}
+			
+			public function onErrorData(event:ProgressEvent):void
+			{
+				trace("ERROR -", process.standardError.readUTFBytes(process.standardError.bytesAvailable)); 
+			}
+			
+			public function onExit(event:NativeProcessExitEvent):void
+			{
+				trace("Process exited with ", event.exitCode);
+			}
+			
+			public function onIOError(event:IOErrorEvent):void
+			{
+				trace(event.toString());
+			}
+			
+			protected function startAirplayHandler(event:MouseEvent):void {
+				runScript("startAIRPlay.scpt");
+			}
+			
+			protected function resetAudioHandler(event:MouseEvent):void {
+				
+				
+				// this should be
+				
+				// sudo killall coreaudio
+				// open airplay
+				
+				
+				if (Capabilities.os.indexOf("Mac OS") > -1) {
+					runScript("resetAudio");
+				}
+				   
+				
+					/* var dlFile:File = File.userDirectory;
+					var _chmod:File = new File("/bin/bash");
+					//dlFile = new File(file);
+					
+					var nativeProcess:NativeProcess = new NativeProcess();
+					var chmodStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+					chmodStartupInfo.executable = _chmod;           
+					
+					var args:Vector.<String> = new Vector.<String>();
+					args.push("-c"); 
+					
+					// Trace so I can make sure the command and path are correct in the debugger              
+					
+					trace ("\"chmod ugo+x '"+dlFile.nativePath+"'\"");
+					args.push("chmod ugo+x '"+dlFile.nativePath+"'");
+					chmodStartupInfo.arguments = args;
+					//nativeProcess.addEventListener(NativeProcessExitEvent.EXIT, onExitError );
+					//chmodStartupInfo.executable = new File(file);                       
+					
+					var process:NativeProcess = new NativeProcess();
+					process.start(chmodStartupInfo);   */
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<!---
+	
+	This application is used to run command line from a tool with a UI. Fuck the command line. 
+	
+	-->
+	<s:VGroup horizontalCenter="0" verticalCenter="0">
+		<s:Button label="Reset Audio" click="resetAudioHandler(event)"/>
+		<s:Button label="Start AIRPlay" click="startAirplayHandler(event)"/>
+	</s:VGroup>
+	
+</s:WindowedApplication>

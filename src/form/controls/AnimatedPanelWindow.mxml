@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   
+			   creationCompleteEffect="{addedEffect}"
+			   removedEffect="{removedEffect}"
+			   >
+	
+	
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.core.mx_internal;
+			
+			use namespace mx_internal;
+			
+			[Bindable]
+			public var inProgress:Boolean;
+			
+
+			public var closePanelDelay:int = 500;
+			
+			private var moveAdded:Boolean;
+			
+			public function addMoveEffect():void {
+				if (!moveAdded) {
+					//trace("added move effect");
+					//setStyle("moveEffect", moveEffect);
+					setStyle("moveEffect", "Move");
+					moveAdded = true;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+				
+		<s:Parallel id="removedEffect" target="{this}" suspendBackgroundProcessing="false">
+			<s:Scale3D scaleYTo="0" duration="500" startDelay="0" disableLayout="false"
+					   autoCenterProjection="true" autoCenterTransform="true" applyChangesPostLayout="true"/>
+			<s:Fade alphaFrom="1" alphaTo="0" duration="250" startDelay="50"/>
+		</s:Parallel>
+		
+		<s:Parallel id="addedEffect" target="{this}" suspendBackgroundProcessing="false">
+			<s:Scale3D scaleYFrom="0" scaleYTo="1" duration="250" disableLayout="false"
+					   autoCenterProjection="true" autoCenterTransform="true" applyChangesPostLayout="true"/>
+			<s:Fade alphaFrom="0" alphaTo="1" duration="200"/>
+			<!--<core:CallMethod method="addMoveEffect" startDelay="250"/>-->
+		</s:Parallel>
+		
+		<s:Move id="moveEffect" target="{this}" />
+		
+	</fx:Declarations>
+	
+	
+	
+</s:Panel>

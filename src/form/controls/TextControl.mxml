@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="form.controls.IFormControl"
+		 
+		 width="100" height="22"
+		 >
+	
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+	
+	<fx:Declarations>
+		<fx:String id="title"/>
+		<fx:String id="prompt"/>
+		<fx:String id="quotes"/>
+		<fx:String id="defaultValue"/>
+		<fx:Object id="data"/>
+		<fx:int id="labelWidth">150</fx:int>
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import spark.events.TextOperationEvent;
+			
+			public function getValue():String {
+				var out:String = textInput.text;
+
+				if (quotes=="single") {
+					out = "'" + out + "'";
+				}
+				else if (quotes=="double") {
+					out = "\"" + out + "\"";
+				}
+				else if (quotes=="beginSingle") {
+					out = "'" + out;
+				}
+				else if (quotes=="beginDouble" || quotes=="begin") {
+					out = "\"" + out;
+				}
+				else if (quotes=="endSingle") {
+					out = out + "'";
+				}
+				else if (quotes=="endDouble" || quotes=="end") {
+					out = out + "\"";
+				}
+				
+				return out;
+			}
+			
+			protected function textInput_changeHandler(event:TextOperationEvent):void {
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+			protected function textInput_focusOutHandler(event:FocusEvent):void {
+				dispatchEvent(new Event(Event.CHANGE));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:HorizontalLayout verticalAlign="middle"/>
+	</s:layout>
+	
+	<s:Label id="labelDisplay" 
+			 text="{title}"
+			 minWidth="{labelWidth}"
+			 />
+	
+	<s:TextInput id="textInput" 
+				 width="100%" 
+				 text="{defaultValue}"
+				 prompt="{prompt}"
+				 change="textInput_changeHandler(event)"/>
+	
+</s:Group>

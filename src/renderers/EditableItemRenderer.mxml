@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/halo"
+				doubleClickEnabled="true"
+				doubleClick="itemrenderer1_doubleClickHandler(event)"
+				autoDrawBackground="true"
+				height="25">
+	
+	<fx:Metadata>
+		[HostComponent("spark.components.List")]
+	</fx:Metadata>
+	
+	<fx:Script>
+	<![CDATA[
+		import spark.components.List;
+		import spark.components.supportClasses.ListBase;
+		
+		import model.CommandItem;
+		
+		[Bindable]
+		public var command:CommandItem;
+		
+		/**
+		 * 
+		 * */
+		override public function set data(value:Object):void {
+			super.data = value;
+			
+			command = value ? CommandItem(value) : null;
+			
+			if (command && labelDisplay) {
+				labelDisplay.text = command.name;
+			}
+			
+		}
+
+
+		override public function setCurrentState(stateName:String, playTransition:Boolean=true):void {
+			super.setCurrentState(stateName, playTransition);
+		}
+		
+		protected function textInputChangeHandler():void {
+			//this.data = textInput.text;
+		    
+		    //dispatch the data update event
+		    var list:ListBase = this.owner as ListBase;
+			
+			if (command) {
+				var oldName:String = command.name;
+				var newName:String = textInput.text;
+				if (newName) {
+					command.name = newName;
+					command.isChanged = true;
+				}
+			    list.dataProvider.itemUpdated(command, "name", oldName, newName); 
+				currentState = "normal";
+			}
+		}
+		
+		protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void {
+			currentState = "edit";
+			textInput.text = labelDisplay.text;
+		}
+		
+		override protected function getCurrentRendererState():String {
+			// if in edit state don't change unless 
+			if (currentState=="edit") return "edit";
+			
+			return super.getCurrentRendererState();
+		}
+		
+		protected function textInput_focusOutHandler(event:FocusEvent):void {
+			textInputChangeHandler();
+			currentState = "normal";
+		}
+		
+		protected function openIcon_clickHandler(event:MouseEvent):void {
+			
+		}
+		
+	]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="hovered" />
+		<s:State name="selected" />
+		<s:State name="disabled" />
+		<s:State name="edit" enterState="textInput.setFocus()"/>
+	</s:states>
+	
+	<!--<s:Rect height="100%" width="100%">
+		<s:fill>
+			<s:SolidColor color="0xEEFFFF"
+						  alpha="0" 
+						  alpha.hovered="0.1" 
+						  alpha.selected="0.4" />
+		</s:fill>
+	</s:Rect>-->
+	
+	<s:BitmapImage id="icon" 
+				   source="/assets/icons/event.png"
+				   left="5"
+				   top="8"
+				   >
+	</s:BitmapImage>
+	
+	<s:Label id="labelDisplay" 
+			 top="3"
+			 left="18"
+			 paddingLeft="4"
+			 height="100%"
+			 width="100%"
+			 verticalAlign="middle"
+			 itemCreationPolicy="immediate"
+			 includeIn="hovered, normal, selected"/>
+	
+	<!--<s:Label id="isChangedLabel" 
+			 top="3"
+			 left="16"
+			 text="*"
+			 verticalAlign="middle"
+			 itemCreationPolicy="immediate"
+			 includeIn="hovered, normal, selected"
+			 visible="{(data as DocumentData).isChanged}"/>-->
+	
+	<s:Label id="isChangedLabel2" 
+			 bottom="0"
+			 left="0"
+			 text=" "
+			 height="100%"
+			 width="4"
+			 backgroundColor="#989898"
+			 backgroundAlpha="1"
+			 visible="{command &amp;&amp; command.isChanged}"/>
+	
+	<s:TextInput id="textInput" 
+				 left="18"
+				 includeIn="edit" 
+				 focusAlpha="0"
+				 enter="textInputChangeHandler()" 
+				 focusOut="textInput_focusOutHandler(event)"
+				 width="100%" height="100%"/>
+</s:ItemRenderer>

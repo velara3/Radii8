@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   xmlns:handlers="com.flexcapacitor.handlers.*" 
+					   xmlns:status="com.flexcapacitor.effects.status.*" xmlns:core="com.flexcapacitor.effects.core.*"
+					   >
+	
+	<fx:Declarations>
+		<handlers:EventHandler eventName="click" target="{test}">
+			
+			<status:ShowStatusMessage id="showRenderingStatus" 
+									  message="Rendering" 
+									  fadeInDuration="150"
+									  keepReference="true"
+									  moveToNextEffectImmediately="false"
+									  profileToConsole="true"
+									  />
+			
+			<status:HideStatusMessage stepInto="false"
+									  startDelay="100"
+									  statusMessagePopUp="{showRenderingStatus.statusMessagePopUp}"
+									  profileToConsole="true"
+									  />
+			<core:CallMethod method="trace" arguments="{['test']}"
+							profileToConsole="true"
+							 />
+			
+			<status:ShowStatusMessage id="showRenderingStatus1" 
+									  message="Rendering item 2" 
+									  fadeInDuration="0"
+									  location="bottom"
+									  profileToConsole="true"
+									  moveToNextEffectImmediately="true"
+									  />
+			<core:CallMethod method="trace" arguments="{['test 2']}"/>
+			
+		</handlers:EventHandler>
+	</fx:Declarations>
+	
+	<s:Button id="test" label="test"/>
+</s:WindowedApplication>

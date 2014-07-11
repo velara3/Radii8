@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<controls:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:handlers="com.flexcapacitor.handlers.*" 
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:controls="form.controls.*" 
+			   
+			   title="Delete Item"
+			   >
+	
+	<fx:Script>
+		<![CDATA[
+			public var CANCEL:String = "cancel";
+			public var CONTINUE:String = "continue";
+		]]>
+	</fx:Script>
+	
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="click" >
+			<s:SetAction property="action" target="{this}" value="cancel"/>
+			<fc:ClosePopUp id="closePopUp" popUp="{this}" />
+		</handlers:EventHandler>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{deleteButton}" eventName="click" >
+			<s:SetAction property="action" target="{this}" value="continue"/>
+			<fc:ClosePopUp popUp="{this}" />
+		</handlers:EventHandler>
+		
+		<fx:String id="action"></fx:String>
+		
+	</fx:Declarations>
+	
+	
+	<s:VGroup left="10" 
+				 top="10" 
+				 right="10"
+				 bottom="10" gap="12">
+		
+		<s:Label id="warningLabel_Ha" 
+				 x="15" y="15" 
+				 text="Delete this item?" 
+				 fontWeight="bold" 
+				 width="100%"/>
+		
+		<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Cancel" />
+			<s:Button id="deleteButton" label="Delete" />
+		</s:HGroup>
+	</s:VGroup>
+	
+</controls:AnimatedPanelWindow>

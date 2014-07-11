@@ -1,0 +1,938 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:collections="com.flexcapacitor.effects.collections.*" 
+					   xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
+					   xmlns:debugging="com.flexcapacitor.effects.debugging.*" 
+					   xmlns:status="com.flexcapacitor.effects.status.*" 
+					   xmlns:database="com.flexcapacitor.data.database.*"
+					   xmlns:db="com.flexcapacitor.effects.database.*" 
+					   xmlns:core="com.flexcapacitor.effects.core.*" 
+					   xmlns:list="com.flexcapacitor.effects.list.*" 
+					   xmlns:handlers="com.flexcapacitor.handlers.*" 
+					   xmlns:popup="com.flexcapacitor.effects.popup.*" 
+					   xmlns:utils="com.flexcapacitor.utils.*" 
+					   
+					   width="900"
+					   height="600" 
+					   >
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.binding.utils.BindingUtils;
+			import mx.utils.StringUtil;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.TextOperationEvent;
+			
+			import form.controls.DeleteWindow;
+			import form.controls.FileControl;
+			import form.controls.SaveWindow;
+			import form.controls.TextControl;
+			
+			import model.CommandItem;
+			
+
+			public static const STRING_TYPE:String = "text";
+			public static const FILE_TYPE:String = "file";
+			public static const FOLDER_TYPE:String = "folder";
+			
+			public var process:NativeProcess;
+			
+			/**
+			 * Inspectable RegEx
+			 * */
+			public var inspectablePattern:RegExp = /(\[Inspectable\(((name="(\w+)")?.*?)\)])/g;
+			
+			/**
+			 * Inspectable bindable pattern RegEx
+			 * */
+			public var bindingPattern:RegExp = /\${(.*?)}/g;
+			public var bindingPattern2:RegExp = /\$({(.*?)})/g;
+			public var formats:Array = ["file","folder","color","string","text","number"];
+			public var form:Array = [];
+			[Bindable]
+			public var parseError:String;
+
+			protected function button1_clickHandler(event:MouseEvent):void {
+				if (Capabilities.os.indexOf("Mac OS") > -1) {       
+					/* var dlFile:File = File.userDirectory;
+					var _chmod:File = new File("/bin/bash");
+					//dlFile = new File(file);
+					
+					var nativeProcess:NativeProcess = new NativeProcess();
+					var chmodStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+					chmodStartupInfo.executable = _chmod;           
+					
+					var args:Vector.<String> = new Vector.<String>();
+					args.push("-c"); 
+					
+					// Trace so I can make sure the command and path are correct in the debugger              
+					
+					trace ("\"chmod ugo+x '"+dlFile.nativePath+"'\"");
+					args.push("chmod ugo+x '"+dlFile.nativePath+"'");
+					chmodStartupInfo.arguments = args;
+					//nativeProcess.addEventListener(NativeProcessExitEvent.EXIT, onExitError );
+					//chmodStartupInfo.executable = new File(file);                       
+					
+					var process:NativeProcess = new NativeProcess();
+					process.start(chmodStartupInfo);   */
+					
+					setupAndLaunch();
+				}
+				
+			}
+			
+			public function runExecutable():void {
+				
+				var nativeProcessStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+				// XCode opens with shellscript.sh as it's file
+				//var shellFile:File = File.applicationDirectory.resolvePath("/usr/bin/open");
+				
+				var shellFile:File = File.applicationDirectory.resolvePath("shellscript.sh");
+				var scriptFile:File = File.applicationDirectory.resolvePath("closeAllWindows.scpt");
+				
+				nativeProcessStartupInfo.executable = shellFile;
+				
+				var processArgs:Vector.<String> = new Vector.<String>();
+				processArgs[0] = "shellscript.sh";
+				
+				nativeProcessStartupInfo.arguments = processArgs;
+				nativeProcessStartupInfo.workingDirectory = File.applicationDirectory;
+				
+				process = new NativeProcess();
+				process.start(nativeProcessStartupInfo);
+				
+				// Error: Error #3219: The NativeProcess could not be started. 'launch path not accessible'
+				// cause: file is not executable
+				
+			}
+			
+			/**
+			 * ERROR
+			 * Error: Error #3219: The NativeProcess could not be started. 'Not supported in current profile.'
+			 * 
+			 * SOLUTION
+			 * Add 	<supportedProfiles>extendedDesktop desktop</supportedProfiles> to the application descriptor file
+			 * */
+			public function setupAndLaunch():void {
+				var nativeProcessStartupInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+				var file:File = File.applicationDirectory.resolvePath("/usr/bin/osascript");
+				// "usr/bin/osascript" 
+				// ArgumentError: Error #3214: NativeProcessStartupInfo.executable does not specify a valid executable file.
+				var scriptFile:File = File.applicationDirectory.resolvePath("closeAllWindows.scpt");
+				var processArgs:Vector.<String>;
+				
+				
+				nativeProcessStartupInfo.executable = file;
+				nativeProcessStartupInfo.workingDirectory = File.applicationDirectory;
+				
+				processArgs = new Vector.<String>();
+				processArgs[0] = "closeAllWindows.scpt";
+				
+				nativeProcessStartupInfo.arguments = processArgs;
+				
+				process = new NativeProcess();
+				process.start(nativeProcessStartupInfo);
+				
+				process.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, onOutputData);
+				process.addEventListener(ProgressEvent.STANDARD_ERROR_DATA, onErrorData);
+				process.addEventListener(NativeProcessExitEvent.EXIT, onExit);
+				process.addEventListener(IOErrorEvent.STANDARD_OUTPUT_IO_ERROR, onIOError);
+				process.addEventListener(IOErrorEvent.STANDARD_ERROR_IO_ERROR, onIOError);
+				
+				return;
+				///////////
+				//are_we_native.text = '"'+args+'"';
+			}
+			
+			public function onOutputData(event:ProgressEvent):void
+			{
+				trace("Got: ", process.standardOutput.readUTFBytes(process.standardOutput.bytesAvailable)); 
+			}
+			
+			public function onErrorData(event:ProgressEvent):void
+			{
+				trace("ERROR -", process.standardError.readUTFBytes(process.standardError.bytesAvailable)); 
+			}
+			
+			public function onExit(event:NativeProcessExitEvent):void
+			{
+				trace("Process exited with ", event.exitCode);
+			}
+			
+			public function onIOError(event:IOErrorEvent):void
+			{
+				trace(event.toString());
+			}
+			
+			
+			protected function commandTextArea_changeHandler(event:TextOperationEvent):void {
+				var selectedCommand:CommandItem = commandsList.selectedItem;
+				
+				parseInput();
+				if (selectedCommand && !selectedCommand.isChanged && selectedCommand.code!=commandTextArea.text) {
+					selectedCommand.isChanged = true;
+				}
+			}
+			
+			public function parseInput():void {
+				var rawCommand:String = commandTextArea.text;
+				var executable:String;
+				var path:String;
+				var item:XML;
+				var arguments:Array;
+				var sentence:String;
+				
+				if (rawCommand) {
+					rawCommand = rawCommand.replace(/(^\s+)/g, "");// removes spaces before text
+					arguments = getArguments(rawCommand);
+					executable = getNameFromArguments(arguments);
+					item = getItem(executable);
+					
+					if (item) {
+						path = getExecutablePath(item);
+					}
+					
+					form = createForm(arguments);
+					sentenceTextArea.text = parseForm(form);
+				}
+			}
+			
+			public function clearForm():void {
+				formGroup.removeAllElements();
+			}
+			
+			public function createForm(arguments:Array):Array {
+				var length:int = arguments.length;
+				formGroup.removeAllElements();
+				
+				
+				for (var i:int;i<length;i++) {
+					var formItem:Object = arguments[i] as Object;
+					var type:String;
+					
+					if (formItem is String) {
+						// do nothing
+					}
+					else if (formItem) {
+						type = formItem.type ? formItem.type.toLowerCase() : STRING_TYPE.toLowerCase();
+						
+						if (type==STRING_TYPE.toLowerCase()) {
+							var textControl:TextControl = new TextControl();
+							textControl.labelWidth = labelWidth;
+							textControl.percentWidth = 100;
+							textControl.title = formItem.name ? formItem.name : STRING_TYPE;
+							textControl.defaultValue = formItem.default;
+							textControl.prompt = formItem.prompt;
+							textControl.quotes = formItem.quotes;
+							textControl.addEventListener(Event.CHANGE, textInputFocusOutHandler, false, 0, true);
+							
+							formItem.control = textControl;
+							formGroup.addElement(textControl);
+						}
+						else if (type==FILE_TYPE.toLowerCase() || type==FOLDER_TYPE.toLowerCase()) {
+							var fileControl:FileControl = new FileControl();
+							fileControl.labelWidth = labelWidth;
+							fileControl.percentWidth = 100;
+							fileControl.defaultValue = formItem.default;
+							fileControl.prompt = formItem.prompt;
+							fileControl.quotes = formItem.quotes;
+							fileControl.title = formItem.name ? formItem.name : FILE_TYPE;
+							fileControl.selectFolder = type==FOLDER_TYPE.toLowerCase() ? true : false;
+							fileControl.addEventListener(Event.CHANGE, controlChangeHandler, false, 0, true);
+							
+							formItem.control = fileControl;
+							formGroup.addElement(fileControl);
+						}
+					}
+				}
+				
+				
+				return arguments;
+				
+			}
+			
+			/**
+			 * Returns an array of text or bindings objects.
+			 * If the text is "ditto path -h" the returned array would be
+			 * ['ditto','path','-h'];
+			 * If the text is "ditto ${"name","test"} -h" the returned array would be 
+			 * ['ditto', {name,"test"}, '-h']. 
+			 * */
+			public function getArguments(value:String):Array {
+				var match:Array = value.split(bindingPattern);
+				var incrementValue:int = 2;
+				var o:Object;
+				var string:String;
+				var form:Array = [];
+				var length:int;
+				var index:int;
+				var parseErrors:Array = [];
+				
+				//match.splice(0,1);
+				length = match.length;
+				
+				for (var i:int;i<length;i++) {
+					string = match[i];
+					
+					if (i%2) {
+						index = formats.indexOf(string.toLowerCase());
+						
+						if (index!=-1) {
+							o = {type:formats[index]};
+							var s:String = JSON.stringify(o);
+							o = JSON.parse(JSON.stringify(o));
+							form.push(o);
+						}
+						else {
+							try {
+								o = JSON.parse("{"+string+"}");
+								
+								if (!o.name) {
+									parseError = "Name must be specified.";
+								}
+								else if (!o.type) {
+									parseError = "Type must be specified.";
+								}
+								else {
+									parseError = "";
+								}
+								
+								form.push(o);
+								
+								if (parseError) {
+									parseErrors.push(parseError);
+								}
+							}
+							catch (e:Error) {
+								parseError = e.message;
+								form.push(string);
+								if (parseError) {
+									parseErrors.push(parseError);
+								}
+							}
+						}
+						
+					}
+					else {
+						form.push(string);
+					}
+				}
+				
+				if (parseErrors.length>0) {
+					parseError = parseErrors.join(". ");
+				}
+				
+				return form;
+				
+			}
+			
+			/**
+			 * 
+			 * */
+			public function getSentence(value:String):String {
+				var sentence:String = value.replace(bindingPattern, "$4");
+				
+				return sentence;
+				
+			}
+			
+			/**
+			 * Gets the text up to the first white space character or end of the text
+			 * */
+			public function getName(value:String):String {
+				var index:int = value ? value.indexOf(" ") : -1;
+				var commandName:String = value.substring(0, index);
+				
+				return commandName;
+			}
+			
+			/**
+			 * Gets first argument that is a string
+			 * */
+			public function getNameFromArguments(array:Array):String {
+				if (array) {
+					for (var i:int;i<array.length;i++) {
+						if (array[i] is String) {
+							return StringUtil.trim(array[i]);
+						}
+					}
+				}
+				return null;
+			}
+			
+			/**
+			 * Returns the absolute path to the command or null if not found. 
+			 * */
+			public function getExecutablePath(item:XML):String {
+				var os:String = Capabilities.version.substr(0,3);
+				
+				if (os=="MAC") {
+					return item.@macPath;
+				}
+				else if (os=="WIN") {
+					return item.@winPath;
+				}
+				
+				return null;
+			}
+			
+			/**
+			 * Checks the value against the list of commands supported. 
+			 * Returns an XML data object containing information about the command
+			 * or null if the command was not found. 
+			 * */
+			public function getItem(name:String):XML {
+				var length:int = commandsXMLList.length();
+				
+				for (var i:int;i<length;i++) {
+					var item:XML = commandsXMLList[i];
+					var itemName:String = String(item.@name);
+					
+					if (itemName && String(name).toLowerCase()==itemName.toLowerCase()) {
+						return item;
+					}
+				}
+				return null;
+			}
+			
+			public function parseForm(form:Array):String {
+				var length:int = form.length;
+				var newCommand:String = "";
+				
+				for (var i:int;i<length;i++) {
+					var formItem:Object = form[i];
+					var type:String;
+					
+					if (formItem is String) {
+						newCommand += formItem;
+					}
+					else if (formItem) {
+						if ("control" in formItem) {
+							newCommand += formItem.control.getValue();
+						}
+						/*type = formItem.type ? formItem.type.toLowerCase() : STRING_TYPE;
+						
+						if (type==STRING_TYPE.toLowerCase()) {
+							var textInput:TextInput = new TextInput();
+							textInput.percentWidth = 100;
+							textInput.addEventListener(FocusEvent.FOCUS_OUT, parseOutput);
+							formItem.control = textInput;
+							formGroup.addElement(textInput);
+						}
+						else if (type==FILE_TYPE.toLowerCase() || type==FOLDER_TYPE.toLowerCase()) {
+							var fileControl:FileControl = new FileControl();
+							fileControl.percentWidth = 100;
+							fileControl.title = formItem.name?formItem.name : FILE_TYPE;
+							formItem.control = fileControl;
+							formGroup.addElement(fileControl);
+						}*/
+					}
+				}
+				
+				return newCommand;
+			}
+			
+			protected function parseFormHandler(event:MouseEvent):void {
+				//commandTextArea.text = 'ditto Some text some more text [Inspectable(name="fuck",minValue="1",maxValue="100")] some text some text  [Inspectable(arrayType="String",category="Styles")] some text.';
+				parseInput();
+				sentenceTextArea.text = parseForm(form);
+			}
+			
+			protected function textInputFocusOutHandler(event:Event):void {
+				sentenceTextArea.text = parseForm(form);
+			}
+			
+			protected function controlChangeHandler(event:Event):void {
+				sentenceTextArea.text = parseForm(form);
+			}
+			
+			protected function fillWithTestData_clickHandler(event:MouseEvent):void {
+				commandTextArea.text = testData;
+				parseInput();
+				sentenceTextArea.text = parseForm(form);
+			}
+			
+			protected function nameFunction(item:Object):String {
+				
+				if (item.name) {
+					return item.name;
+				}
+				
+				return item.content;
+				
+			}
+			
+			protected function clear_clickHandler(event:MouseEvent):void {
+				commandTextArea.text = "";
+				sentenceTextArea.text = "";
+				clearForm();
+			}
+			
+			protected function loadButton_clickHandler(event:MouseEvent):void {
+				var item:Object = commandsList.selectedItem;
+				commandTextArea.text = item.code;
+				parseInput();
+				sentenceTextArea.text = parseForm(form);
+			}
+			
+			public var updatingList:Boolean;
+			public var newIndex:int;
+			public var addingNewItem:Boolean;
+			
+			protected function commandsList_changeHandler(event:IndexChangeEvent):void {
+				var lastSelectedCommand:CommandItem;
+				
+				if (event.oldIndex!=-1) {
+					lastSelectedCommand = commandsList.dataProvider.getItemAt(event.oldIndex) as CommandItem;
+				}
+				
+				if (lastSelectedCommand && lastSelectedCommand.isChanged && !updatingList) {
+					askToSave.play();
+					event.preventDefault();
+					newIndex = event.newIndex;
+				}
+				else {
+					updateFormWithSelectedItem();
+				}
+			}
+			
+			public function updateFormWithSelectedItem():void {
+			
+				var item:Object = commandsList.selectedItem;
+				commandTextArea.text = item.code;
+				parseInput();
+				sentenceTextArea.text = parseForm(form);
+			}
+			
+			private function saveOnChange():void {
+				
+				if (addingNewItem) {
+					addingNewItem = false;
+					insertRecord.play();
+				}
+				else if (newIndex!=-1) {
+					updatingList = true;
+					var command:CommandItem = commandsList.selectedItem;
+					command.isChanged = false;
+					commandsList.selectedIndex = newIndex;
+					commandsList.validateNow();
+					updatingList = false;
+				}
+			}
+			
+			private function updatePosition():void {
+				if (addingNewItem) {
+					addingNewItem = false;
+					insertRecord.play();
+				}
+				else {
+					commandsList.selectedIndex = newIndex;
+				}
+			}
+			
+			protected function newButton_clickHandler(event:MouseEvent):void {
+				var lastSelectedCommand:CommandItem;
+				
+				lastSelectedCommand = commandsList.selectedItem as CommandItem;
+				
+				if (lastSelectedCommand && lastSelectedCommand.isChanged && !updatingList) {
+					//updateCodeColumnData.value = commandTextArea.text;
+					//lastSelectedCommand.code = commandTextArea.text;
+					askToSaveBeforeInsert.play();
+					event.preventDefault();
+					newIndex = commandsList.dataProvider.length;
+					addingNewItem = true;
+					//newIndex = event.newIndex;
+				}
+				else {
+					insertRecord.play();
+					/*var item:Object = commandsList.selectedItem;
+					commandTextArea.text = item.code;
+					parseInput();
+					sentenceTextArea.text = parseForm(form);*/
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<fx:XMLList id="commandsXMLList" xmlns="">
+			<item winPath="" macPath="/usr/bin/osascript" name="OSAScript" description=""/>
+			<item winPath="" macPath="/usr/bin/ditto" name="Ditto" description=""/>
+			<item winPath="" macPath="/usr/bin/which" name="Which" description=""/>
+		</fx:XMLList>
+		
+		<fx:String id="testData">
+			<![CDATA[ditto ${"name":"AIR SDK FOLDER","default":"/Applications/Adobe Flash Builder 4.7/sdks/AdobeAIRSDK","type":"folder","quotes":"single"} ${"name":"AIR SDK FOLDER","default":"/Applications/Adobe Flash Builder 4.7/sdks/AdobeAIRSDK","type":"folder","quotes":"single"}]]>
+		</fx:String>
+		
+		<fx:String id="newItemData">
+			<![CDATA[ditto ${"name":"AIR SDK FOLDER","default":"/Applications/Adobe Flash Builder 4.7/sdks/AdobeAIRSDK","type":"folder","quotes":"single"} ${"name":"AIR SDK FOLDER","default":"/Applications/Adobe Flash Builder 4.7/sdks/AdobeAIRSDK","type":"folder","quotes":"single"}]]>
+		</fx:String>
+		
+		<fx:int id="labelWidth">150</fx:int>
+		
+		<s:ArrayCollection id="itemsCollection" source="{selectItems.data}" />
+		
+		<database:SQLConnection id="connection"/>
+		
+		<handlers:EventHandler target="{copyButton}" eventName="click" >
+			<clipboard:CopyToClipboard targetAncestor="{this}"
+									   data="{sentenceTextArea.text}"/>
+			<status:ShowStatusMessage message="Copied to clipboard"/>
+		</handlers:EventHandler>
+		
+		<handlers:EventHandler target="{saveButton}" eventName="click" >
+			<core:IsPropertySet target="{commandsList}" 
+								targetPropertyValueMayBeNull="true"
+								targetPropertyName="selectedItem" 
+								targetSubPropertyName="id">
+				<core:propertySetEffect>
+					
+					<db:UpdateRecord id="updateRecord" 
+									 tableName="items" 
+									 connection="{connection}"
+									 traceErrorMessage="true"
+									 primaryKey="id"
+									 data="{commandsList.selectedItem}"
+									 effectEnd="trace('update record')"
+									 success="trace('update record success')"
+									 >
+						<db:fields>
+							<database:SQLColumnUpdateData name="name" />
+							<database:SQLColumnData id="updateCodeColumnData" name="code" value="{commandTextArea.text}" />
+							<database:SQLColumnData name="content" value="{sentenceTextArea.text}" />
+						</db:fields>
+						<db:successEffect>
+							<s:Sequence>
+								<core:PlayEffect target="{selectItems}"/>
+								<status:ShowStatusMessage message="Updated"/>
+							</s:Sequence>
+						</db:successEffect>
+					</db:UpdateRecord>
+				</core:propertySetEffect>
+				
+				<!--<core:propertyNotSetEffect>
+					
+					<db:InsertRecord id="insertRecord" 
+									 tableName="items" 
+									 connection="{connection}"
+									 traceErrorMessage="true"
+									 >
+						<db:fields>
+							<database:SQLColumnUpdateData name="name" />
+							<database:SQLColumnData name="code" value="{commandTextArea.text}" />
+							<database:SQLColumnData name="content" value="{sentenceTextArea.text}" />
+						</db:fields>
+						<db:successEffect>
+							<s:Sequence>
+								<core:PlayEffect target="{selectItems}"/>
+								<status:ShowStatusMessage message="Saved"/>
+							</s:Sequence>
+						</db:successEffect>
+					</db:InsertRecord>
+				</core:propertyNotSetEffect>-->
+			</core:IsPropertySet>
+			
+		</handlers:EventHandler>
+		
+		<!--<handlers:EventHandler target="{newButton}" eventName="click" >-->
+			<db:InsertRecord id="insertRecord" 
+							 tableName="items" 
+							 connection="{connection}"
+							 traceErrorMessage="true"
+							 >
+				<db:fields>
+					<database:SQLColumnUpdateData name="name" value="New Item"/>
+					<database:SQLColumnData name="code" value="{newItemData}" />
+				</db:fields>
+				<db:successEffect>
+					<s:Sequence>
+						<core:PlayEffect target="{selectItems}"/>
+						<list:SelectLastItem target="{commandsList}" 
+											 validateBeforeSelection="true"
+											 effectEnd="updateFormWithSelectedItem();"/>
+						<!--<status:ShowStatusMessage message="Saved"/>-->
+					</s:Sequence>
+				</db:successEffect>
+			</db:InsertRecord>
+			
+		<!--</handlers:EventHandler>-->
+		
+		<handlers:EventHandler target="{deleteButton}" eventName="click" >
+			<popup:OpenPopUp id="openDeletePopUp" 
+						  popUpType="{DeleteWindow}" 
+						  modalDuration="100" 
+						  height="100"
+						  width="300"
+						  parent="{parentApplication}">
+				<popup:continueEffect>
+					<list:GetSelectedItem id="getSelectedItem" target="{commandsList}" >
+						<list:selectedItemEffect>
+							<s:Sequence>
+								<core:CopyDataToTarget source="{getSelectedItem}" 
+													   sourcePropertyName="data"
+													   sourceSubPropertyName="id"
+													   target="{deleteColumn}" 
+													   targetPropertyName="value"/>
+								<db:DeleteRecord id="deleteRecord" 
+												 tableName="items" 
+												 connection="{connection}"
+												 traceErrorMessage="true"
+												 traceSQLStatement="false"
+												 fault="trace(deleteRecord.errorEvent.message)" 
+												 >
+									<db:filterFields>
+										<database:SQLColumnFilter id="deleteColumn" 
+																  name="id" 
+																  />
+									</db:filterFields>
+									<db:successEffect>
+										<s:Sequence>
+											<status:ShowStatusMessage message="Deleted item {getSelectedItem.data.name}"/>
+											<core:PlayEffect target="{selectItemsSequence}"/>
+											<list:SelectFirstItem target="{commandsList}" 
+																  noItems="clear_clickHandler(null)" />
+										</s:Sequence>
+									</db:successEffect>
+								</db:DeleteRecord>
+							</s:Sequence>
+						</list:selectedItemEffect>
+						
+						<list:noSelectedItemEffect>
+							<status:ShowStatusMessage message="No item selected"/>
+						</list:noSelectedItemEffect>
+					</list:GetSelectedItem>
+					
+				</popup:continueEffect>
+			</popup:OpenPopUp>
+		</handlers:EventHandler>
+		
+		<!-- CREATE DATABASE AND SELECT ROWS -->
+		<handlers:EventHandler eventName="creationComplete" >
+			
+			<!--- get database and create tables if needed -->
+			<db:GetDatabase id="database" 
+							fileMode="create"
+							baseFilePath="applicationStorage"
+							directory="assets/data/" 
+							fileName="database" 
+							backupPath="assets/data/database"
+							useBackup="newer"
+							connection="{connection}"
+							traceErrors="true"
+							traceFilePaths="true"
+							>
+				<db:notCreatedEffect>
+					<debugging:Trace message="DATABASE NOT CREATED"/>
+				</db:notCreatedEffect>
+			</db:GetDatabase>
+			
+			<s:Sequence id="selectItemsSequence" >
+				
+				<db:SelectRecords id="selectItems" 
+								  tableName="items" 
+								  SQL="select * from items"
+								  connection="{connection}"
+								  traceErrorMessage="true"
+								  traceSQLStatement="false"
+								  traceResults="false"
+								  itemClass="{CommandItem}"
+								  >
+				</db:SelectRecords>
+				<collections:RefreshCollection collection="{itemsCollection}"/>
+			</s:Sequence>
+		</handlers:EventHandler>
+	
+		<popup:OpenPopUp id="askToSave" 
+					  popUpType="{SaveWindow}" 
+					  modalDuration="100" 
+					  height="100"
+					  width="300"
+					  endEffectsPlaying="true"
+					  parent="{parentApplication}"
+					  cancel="saveOnChange()"
+					  continue="updatePosition()"
+					  >
+			<popup:continueEffect>
+				<s:Sequence>
+					<!--<core:CopyDataToTarget source="{commandsList}" 
+										   sourcePropertyName="selectedItem"
+										   target="{updateRecord}" 
+										   targetPropertyName="data"/>-->
+					
+					<db:UpdateRecord id="updateRecord2" 
+									 tableName="items" 
+									 connection="{connection}"
+									 traceErrorMessage="true"
+									 primaryKey="id"
+									 data="{commandsList.selectedItem}"
+									 effectEnd="trace('update record')"
+									 success="trace('update record success')"
+									 >
+						<db:fields>
+							<database:SQLColumnUpdateData name="name" />
+							<database:SQLColumnData name="code" value="{commandTextArea.text}" />
+							<database:SQLColumnData name="content" value="{sentenceTextArea.text}" />
+						</db:fields>
+						<db:successEffect>
+							<s:Sequence>
+								<core:PlayEffect target="{selectItems}"/>
+								<status:ShowStatusMessage message="Updated"/>
+							</s:Sequence>
+						</db:successEffect>
+					</db:UpdateRecord>
+				</s:Sequence>
+				
+			</popup:continueEffect>
+			
+		</popup:OpenPopUp>
+	
+		<popup:OpenPopUp id="askToSaveBeforeInsert" 
+					  popUpType="{SaveWindow}" 
+					  modalDuration="50" 
+					  height="100"
+					  width="300"
+					  endEffectsPlaying="true"
+					  parent="{parentApplication}"
+					  cancel="trace('cancel ')"
+					  continue="trace('save')"
+					  >
+			<popup:continueEffect>
+					<db:UpdateRecord id="updateRecord3" 
+									 tableName="items" 
+									 connection="{connection}"
+									 traceErrorMessage="true"
+									 primaryKey="id"
+									 data="{commandsList.selectedItem}"
+									 >
+						<db:fields>
+							<database:SQLColumnUpdateData name="name" />
+							<database:SQLColumnData name="code" value="{commandTextArea.text}" />
+							<database:SQLColumnData name="content" value="{sentenceTextArea.text}" />
+						</db:fields>
+						<db:successEffect>
+							<s:Sequence>
+								<core:PlayEffect target="{insertRecord}"/>
+								<status:ShowStatusMessage message="Add new"/>
+							</s:Sequence>
+						</db:successEffect>
+					</db:UpdateRecord>
+			</popup:continueEffect>
+			
+		</popup:OpenPopUp>
+		
+		<utils:MiniInspector />
+	</fx:Declarations>
+	
+	
+	<!---
+	
+	This application is used to run command line from a tool with a UI. Fuck the command line. 
+	
+	ditto ${"name":"AIR SDK FOLDER","default":"/Applications/Adobe\\ Flash\\ Builder\\ 4.6/sdks/AdobeAIRSDK","type":"folder"} /Applications/Adobe\ Flash\ Builder\ 4.6/sdks/AIR3.5_4.6.0
+	
+	Some text some more text [Inspectable(name="name",minValue="1",maxValue="100")] some text some text  [Inspectable(arrayType="String",category="Styles")] some text.
+	ditto /Applications/Adobe\ Flash\ Builder\
+	ditto /Applications/Adobe\ Flash\ Builder\ 4.6/sdks/AdobeAIRSDK /Applications/Adobe\ Flash\ Builder\ 4.6/sdks/AIR3.5_4.6.0
+	-->
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace controls "form.controls.*";
+		
+		.headerStyle {
+			backgroundColor: #CCCCCC;
+			paddingTop: 6;
+			paddingBottom: 4;
+			paddingLeft: 5;
+		}
+		
+		.editStyle {
+			color: #ffffff;
+			backgroundAlpha: 1;
+			backgroundColor: #000000;
+			contentBackgroundAlpha: 1;
+			contentBackgroundColor: #000000;
+			fontWeight: normal;
+			fontFamily: "Courier New";
+			paddingTop: 6;
+			paddingBottom: 4;
+			paddingLeft: 5;
+			focusAlpha: 0;
+		}
+		
+		controls|TextControl {
+			
+		}
+		
+		s|TextInput#textInput {
+			borderAlpha: 0.35;
+			focusAlpha: 0;
+		}
+	</fx:Style>
+	
+	<mx:HDividedBox width="100%" height="100%" 
+					paddingTop="8" paddingRight="8" paddingBottom="8"
+					paddingLeft="8">
+		
+		<s:VGroup width="250" height="100%">
+			
+			<s:Label text="SCRIPTS" 
+						 styleName="headerStyle" 
+						 width="100%" />
+			
+			<s:List id="commandsList" 
+					dataProvider="{itemsCollection}"
+					width="100%" 
+					height="100%"
+					labelField="name"
+					doubleClickEnabled="true"
+					labelFunction="nameFunction" 
+					minHeight="120"
+					changing="commandsList_changeHandler(event)"
+					itemRenderer="renderers.EditableItemRenderer"
+					/>
+			
+			<s:HGroup width="100%">
+				<s:Button id="newButton" label="New" left="10" 
+						  click="newButton_clickHandler(event)"/>
+				<s:Button id="saveButton" label="Save" left="10"/>
+				<s:Button id="loadButton" visible="false" 
+						  includeInLayout="false" label="Load" left="10" 
+						  click="loadButton_clickHandler(event)"/>
+				<s:Button id="deleteButton" label="Delete" left="10" />
+			</s:HGroup>
+		</s:VGroup>
+		
+		<s:VGroup width="100%" 
+				  top="10" 
+				  right="10" 
+				  left="10"
+				  bottom="10"
+				  >
+			<s:Label text="INPUT" styleName="headerStyle" width="100%" />
+			<s:TextArea id="commandTextArea" 
+						width="100%" 
+						styleName="editStyle"
+						change="commandTextArea_changeHandler(event)"/>
+			<s:Label text="{parseError}" color="#f00000" includeInLayout="{parseError}" />
+			<s:Label text="OPTIONS" styleName="headerStyle" width="100%" />
+			<s:VGroup id="formGroup" width="100%"/>
+			<s:Label text="OUTPUT" styleName="headerStyle" width="100%" />
+			<s:TextArea id="sentenceTextArea" width="100%" styleName="editStyle" minHeight="90"/>
+			<s:HGroup width="100%">
+				<s:Button label="Test Data" click="fillWithTestData_clickHandler(event)" left="10"/>
+				<s:Button id="copyButton" label="Copy to Clipboard" left="10"/>
+				<s:Button label="Parse" click="parseFormHandler(event)" right="10"/>
+				<s:Button label="Clear" click="clear_clickHandler(event)" right="10"/>
+			</s:HGroup>
+		</s:VGroup>
+	</mx:HDividedBox>
+	
+	
+</s:WindowedApplication>
