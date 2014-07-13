@@ -28,6 +28,6 @@ What needs to be done:
  
 Roadmap:
  - http://www.radii8.com/blog/?page_id=2
- 
- 
-This release is under Apache 2.0 license. It is also under WTFPL license. 
+
+
+This release is Apache 2.0 license. It is also a WTFPL-2.0 license. 
