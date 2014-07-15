@@ -30,4 +30,4 @@ Roadmap:
  - http://www.radii8.com/blog/?page_id=2
 
 
-This release is Apache 2.0 license. It is also a WTFPL-2.0 license. 
+This release is Apache 2.0 license.
