@@ -28,5 +28,6 @@ What needs to be done:
  
 Roadmap:
  - http://www.radii8.com/blog/?page_id=2
- 
- 
+
+
+This release is Apache 2.0 license.
