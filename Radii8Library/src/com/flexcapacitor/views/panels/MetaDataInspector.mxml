@@ -53,7 +53,10 @@
 					radiate.removeEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
 					radiate.removeEventListener(RadiateEvent.OBJECT_SELECTED, objectSelectedHandler);
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-				
+					
+				}
+				if (mxTextArea) {
+					mxTextArea.text = "";
 				}
 			}
 			
@@ -112,7 +115,8 @@
 					syntaxHighlighter.addEventListener(Event.COMPLETE, completeHandler, false, 0, true);
 				}
 				
-				syntaxHighlighter.highlightCode();
+				// do not highlight - it's too slow and slows everything else down
+				// syntaxHighlighter.highlightCode();
 			}
 			
 			protected function completeHandler(event:Event):void {

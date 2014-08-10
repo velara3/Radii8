@@ -32,10 +32,10 @@ package {
 		// ICONS
 		///////////////////////////////////////////////////////
 		
-		[Embed(source="assets/icons/tools/BlackArrow.gif")]
+		[Embed(source="assets/icons/tools/BlackArrow.png")]
 		public static const BlackArrowIcon:Class;
 		
-		[Embed(source="assets/icons/tools/WhiteArrow.gif")]
+		[Embed(source="assets/icons/tools/WhiteArrow.png")]
 		public static const WhiteArrowIcon:Class;
 		
 		[Embed(source="assets/icons/tools/dragStripIcon.png")]

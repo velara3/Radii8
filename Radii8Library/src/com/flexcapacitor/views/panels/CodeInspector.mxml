@@ -991,6 +991,8 @@
 	
 	<fx:Declarations>
 		
+		<fx:Object id="as3TextArea"/>
+		
 		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
 			
 			<clipboard:CopyToClipboard data="{sourceCode}" 
@@ -1378,7 +1380,7 @@ IFRAME_ID {
 	        </s:keyFocusChange>
 		</s:TextArea>
 		
-		<controls:AS3TextArea id="as3TextArea" 
+		<!--<controls:AS3TextArea id="as3TextArea" 
 					top="55"
 					focusColor="#585858"
 					width="100%" height="100%" 
@@ -1393,7 +1395,7 @@ IFRAME_ID {
 				event.preventDefault();
 				event.currentTarget.insertText("\t");
 	        </controls:keyFocusChange>
-		</controls:AS3TextArea>
+		</controls:AS3TextArea>-->
 		
 		<mx:TextArea id="mxTextArea"  
 					 top="0"

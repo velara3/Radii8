@@ -364,8 +364,11 @@ package com.flexcapacitor.utils {
 		
 		/**
 		 * Gets the formatted output from a component.
-		 * Needs refactoring. This was a quick proof of concept and 
-		 * quickly grew beyond it's limits but serves to prove a point. 
+		 * Yes, this is a mess. It needs refactoring.  
+		 * I wanted to see if I could quickly generate valid HTML 
+		 * from the component tree. 
+		 * 
+		 * There is partial work with CSS properties objects but those are not implemented yet. 
 		 * */
 		public function getHTMLOutputString(iDocument:IDocument, component:ComponentDescription, addLineBreak:Boolean = false, tabs:String = "", includePreview:Boolean = false):String {
 			var property:Object = component.properties;
@@ -398,7 +401,7 @@ package com.flexcapacitor.utils {
 			// we are setting the styles in a string now
 			// the next refactor should use the object so we can output to CSS
 			styles.position = Styles.ABSOLUTE;
-			outlineStyle = "outline:1px solid red;";
+			outlineStyle = "outline:1px solid red;"; // we should enable or disable outlines via code not markup on in the export
 			
 			// get layout positioning
 			if (component.parent && component.parent.instance is IVisualElementContainer) {
@@ -1225,6 +1228,11 @@ package com.flexcapacitor.utils {
 		 * get snapshot. time=14
 		 * encode to png. time=336 // encode to jpg. time=2000
 		 * encode to base 64. time=35
+		 * 
+		 * Don't trust these numbers. Test it yourself. First runs are always longer than previous. 
+		 * 
+		 * This function gets called multiple times sometimes. We may be encoding more than we have too.
+		 * But is probably a bug somewhere.  
 		 * */
 		public function getBase64ImageData(target:Object, type:String = "png", checkCache:Boolean = false):String {
 			var component:IUIComponent = target as IUIComponent;
@@ -1238,7 +1246,7 @@ package com.flexcapacitor.utils {
 			var pngEncoderOptions:PNGEncoderOptions;
 			var quality:int = 80;
 			var fastCompression:Boolean = true;
-			var timeEvents:Boolean = true;
+			var timeEvents:Boolean = false;
 			var altBase64:Boolean = true;
 			var results:String;
 			

@@ -20,12 +20,8 @@
     <sourceAttachmentPath/>
   </compiler>
   <applications>
-    <application path="application.mxml"/>
-    <application path="examples/designlayer/ScriptBlock.mxml"/>
-    <application path="JSONAPI.mxml"/>
-    <application path="examples/designlayer/RemovingLayer.mxml"/>
-    <application path="TestingAceEditor.mxml"/>
     <application path="Main.mxml"/>
+    <application path="application.mxml"/>
   </applications>
   <modules/>
   <workers/>

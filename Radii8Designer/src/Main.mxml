@@ -69,8 +69,8 @@
 			import spark.collections.SortField;
 			import spark.events.IndexChangeEvent;
 			
-			private var remoteTestURL:String = "http://www.flexcapacitor.com/apps/aboutyou/AboutYou.swf";
-			private var testURL:String = "assets/test/AboutYou.swf";
+			private var remoteTestURL:String = "";
+			private var testURL:String = "";
 			
 			include "build.as";
 			
@@ -105,6 +105,11 @@
 				
 			}
 			
+			/**
+			 * At one point there was a form visible that let you point to your swf and load that in remotely.
+			 * The controls have been hidden for a while and should probably be moved to their own dialog box
+			 * and this should show up as an option in the menu. 
+			 * */
 			protected function loadTestProject_clickHandler(event:MouseEvent):void {
 				var url:String;
 				hideLoadControls();
@@ -135,10 +140,6 @@
 				hideLoadControls();
 				currentState = DESIGN_STATE;
 				radiate.createNewProject();
-				//validateNow();
-				//remote.validateNow();
-				//remote.document1.validateNow();
-				//remote.document1.load();
 			}
 			
 			protected function logo_clickHandler(event:MouseEvent):void {
@@ -150,13 +151,11 @@
 					currentState = HOME_STATE;
 				}
 				hideLoadControls();
-				//Radiate.clearSelection();
 			}
 			
 			protected function description_clickHandler(event:MouseEvent):void {
 				currentState = "description";
 				hideLoadControls();
-				//Radiate.clearSelection();
 			}
 			
 			protected function loadProject_clickHandler(event:MouseEvent):void {
@@ -565,10 +564,6 @@
 			<popup:HidePopupAnchor target="{aboutPopUp}" />
 		</handlers:EventHandler>
 		
-		<!--- show login popup -->
-		<!--<handlers:EventHandler target="{loginLabel}" eventName="click">
-			<popup:ShowPopupAnchor target="{loginPopUp}" closeOnMouseOut="true" />
-		</handlers:EventHandler>-->
 		
 		<!--- show contact popup -->
 		<handlers:EventHandler targets="{[contactLabel,feedbackLabel]}" eventName="click" >
@@ -621,12 +616,6 @@
 						  />
 		</handlers:EventHandler>
 		
-		
-		<!--- show about logo popup -->
-		<!--<handlers:EventHandler target="{logo}" eventName="click">
-			<popup:ShowPopupAnchor target="{logoPopUp}" hideIfOpen="true" />
-		</handlers:EventHandler>-->
-
 		<!--- hide about logo popup -->
 		<handlers:EventHandler target="{logoPopUpGroup}" eventName="mouseDownOutside">
 			<popup:HidePopupAnchor target="{logoPopUp}" />
@@ -637,12 +626,6 @@
 			<popup:HidePopupAnchor target="{aboutPopUp}" />
 			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=2" window="_blank" />
 		</handlers:EventHandler>
-		
-		<!--- open feedback URL -->
-<!--		<handlers:EventHandler target="{feedbackLabel}" eventName="click">
-			<popup:HidePopupAnchor target="{aboutPopUp}" />
-			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=120" window="_blank" />
-		</handlers:EventHandler>-->
 				
 		<!--- show delete project popup -->
 		<handlers:EventHandler targets="{[deleteProjectIcon,removeProject]}" eventNames="{['click','itemClick']}" >
@@ -719,24 +702,6 @@
 						  popUpOptions="{{currentState:LoginWindow.REGISTRATION_WITH_SITE}}"
 						  close="loginPopUp_closeHandler(event)"/>
 		</handlers:EventHandler>
-		<!--
-						  popUpOptions="{{currentState:'register'}}"
-		<fx:XMLList id="menubarXML">
-            <menuitem label="Menu1" data="top">
-                <menuitem label="MenuItem 1-A" data="1A"/>
-                <menuitem label="MenuItem 1-B" data="1B"/>
-            </menuitem>
-            <menuitem label="Menu2" data="top">
-                <menuitem label="MenuItem 2-A" type="check" data="2A"/>
-                <menuitem type="separator"/>
-                <menuitem label="MenuItem 2-B" >
-                    <menuitem label="SubMenuItem 3-A" type="radio"
-                        groupName="one" data="3A"/>
-                    <menuitem label="SubMenuItem 3-B" type="radio"
-                        groupName="one" data="3B"/>
-                </menuitem>
-            </menuitem>
-		</fx:XMLList>-->
 		
 		<model:MenuItem id="rootMenu">
 			<model:MenuItem label="File">
@@ -795,6 +760,7 @@
 		
 		<mx:ArrayCollection id="projectsCollection" />
 		<mx:ArrayCollection id="documentsCollection" />
+		<mx:ArrayCollection id="examplesCollection" />
 		<mx:ArrayCollection id="templatesCollection" />
 		
 		<s:Parallel id="fadeInLogo">
@@ -836,20 +802,6 @@
 			 alpha=".05"
 			 includeIn="home"/>
 	
-	
-	<!-- LOGIN SCREEN -->
-	<!--<s:RectangularDropShadow height="380" width="640" 
-							 horizontalCenter="0" verticalCenter="-20"
-							 blurX="6" blurY="6"
-							 distance="0"
-							 includeIn="login"/>-->
-	
-	<!-- LOGIN SCREEN -->
-	<!--<windows:LoginWindow height="380" width="640" 
-					   horizontalCenter="0" verticalCenter="-20" 
-					   includeIn="login"
-					   />-->
-	
 	<!-- HOME SCREEN MENU -->
 	<s:RectangularDropShadow height="380" width="640" 
 							 horizontalCenter="0" verticalCenter="-20"
@@ -868,19 +820,13 @@
 				 alpha="0"/>
 		<s:BitmapImage id="logo4" x="32" y="32" source="{Radii8LibraryAssets.logo64}"/>
 		<s:Label x="130" y="44" text="Radiate" fontSize="45">
-			<s:filters>
+			<s:filters> 
 				<filters:BorderStrokeFilter color="#EEEEEE" weight="1"/>
 				<filters:BorderStrokeFilter color="#DDDDDD" weight="1"/>
 				<filters:BorderStrokeFilter color="#CFCFCF" weight="1"/>
 			</s:filters>
 		</s:Label>
 		
-		<!--<s:Label x="31" y="195" 
-				 text="Create New Project" 
-				 fontSize="19"
-				 useHandCursor="true"
-				 buttonMode="true"/>
-		-->
 		<s:HGroup left="20" y="170" width="100%" right="20">
 			
 			<s:VGroup width="100%" gap="0">
@@ -918,32 +864,17 @@
 						itemRenderer="com.flexcapacitor.views.renderers.EditableProjectRenderer"
 						/>
 				
-			
+				<s:Label id="projectLastSavedLabel" text="" 
+						 visible="false" includeInLayout="false"/>
 			</s:VGroup>
 			
 			<s:VGroup width="100%">
-				<s:Label text="Project Contents" fontWeight="bold"/>
+				<s:Label text="Examples" fontWeight="bold"/>
 				<s:List width="100%" borderVisible="false"
-						dataProvider="{documentsCollection}"
+						dataProvider="{examplesCollection}"
 						labelField="name"
 						maxHeight="110"
 						/>
-				
-				<s:Label id="projectLastSavedLabel" text="" 
-						 visible="false" includeInLayout="false"/>
-				<!--<s:List id="list" 
-						focusAlpha="0"
-						minHeight="20"
-						width="100%" 
-						height="100%"
-						borderAlpha=".2"
-						dataProvider="{documentsCollection}"
-						change="list_changeHandler(event)"
-						doubleClick="list_doubleClickHandler(event)"
-						doubleClickEnabled="true"
-						itemRenderer="com.flexcapacitor.views.renderers.EditableDocumentRenderer"
-						>
-				</s:List>-->
 			</s:VGroup>
 			
 			<s:VGroup width="100%" includeInLayout="false" visible="false">
@@ -961,7 +892,6 @@
 		<s:HGroup bottom="20" left="20" right="20"
 				  width="100%"
 				  verticalAlign="middle">
-			<!--<fx:Reparent target="setCB" includeIn="Parent2"/>-->
 			<s:Label id="logoutLabel2" 
 					 text="Logout" 
 					 useHandCursor="true"
@@ -1166,14 +1096,6 @@
 				 visible="false"
 				 includeInLayout="false"
 				 click="closeLabel_clickHandler(event)" />
-		<!--<s:Label id="aboutLabel" 
-				 text="About" 
-				 useHandCursor="true"
-				 buttonMode="true"
-				 verticalAlign="middle" 
-				 textAlign="center"
-				 color="#DDDDDD"
-				 includeIn="start"/>-->
 		
 		<s:Label id="loginLabel" 
 				 text="Login" 
@@ -1249,9 +1171,6 @@
 		
 		<c:VerticalLine />
 		
-		<!--<s:CheckBox id="isConnectedCheckbox" 
-					selected="{radiate.isUserConnected}"
-					label="Online"/>-->
 		
 		<s:ToggleButton id="isConnectedCheckbox" 
 					selected="{radiate.isUserConnected}"
@@ -1263,12 +1182,6 @@
 					click="isConnectedCheckbox_clickHandler(event)"
 					/>
 			
-		<!--<c:VerticalLine />
-		
-		<s:CheckBox id="isUserLoggedInCheckbox" 
-					selected="{radiate.isUserLoggedIn}"
-					enabled="false"
-					label="User Logged In"/>-->
 		
 		<!---http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=96 // assets/avatar/gravar-default-96.png -->
 	</s:BorderContainer>
@@ -1325,12 +1238,6 @@
 		</s:fill>
 	</s:Rect>
 	
-	<!--<views:Breadcrumbs height="14" 
-					   bottom="6" 
-					   left="10" 
-					   width="100%" 
-					   color="#ffffff"
-					   includeIn="design"/>-->
 
 	
 	<s:HGroup verticalAlign="middle"
@@ -1364,7 +1271,7 @@
 		<s:Label right="10" 
 				 bottom="6"
 				 textAlign="right" 
-				 text="©2009-2014 Velara III. All rights reserved."
+				 text=""
 				 />
 	</s:HGroup>
 </s:Application>

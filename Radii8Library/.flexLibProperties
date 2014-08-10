@@ -46,7 +46,6 @@
     <classEntry path="com.flexcapacitor.model.AttachmentData"/>
     <classEntry path="com.flexcapacitor.utils.DocumentExporter"/>
     <classEntry path="com.flexcapacitor.services.WPAttachmentService"/>
-    <classEntry path="com.riaspace.controls.AS3TextArea"/>
     <classEntry path="com.flexcapacitor.skins.MenuItemSkin"/>
     <classEntry path="com.flexcapacitor.skins.MenuBarButtonSkin"/>
     <classEntry path="com.flexcapacitor.skins.PopUpButtonSkin"/>
