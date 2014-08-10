@@ -1,1 +1,0 @@
-This is a modified version of JSON-API plugin for Wordpress.
