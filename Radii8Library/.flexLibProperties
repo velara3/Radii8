@@ -15,7 +15,7 @@
     <classEntry path="com.flexcapacitor.skins.DeviceSkin"/>
     <classEntry path="com.flexcapacitor.tools.ITool"/>
     <classEntry path="com.flexcapacitor.tools.Selection"/>
-    <classEntry path="com.flexcapacitor.utils.MXMLImporter"/>
+    <classEntry path="com.flexcapacitor.utils.MXMLDocumentImporter"/>
     <classEntry path="com.flexcapacitor.utils.SyntaxHighlighter"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.DragData"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.ISelectionGroup"/>

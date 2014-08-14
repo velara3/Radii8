@@ -3,7 +3,7 @@ package com.flexcapacitor.model {
 	
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
-	import com.flexcapacitor.utils.MXMLImporter;
+	import com.flexcapacitor.utils.MXMLDocumentImporter;
 	import com.flexcapacitor.utils.XMLUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
@@ -477,9 +477,9 @@ package com.flexcapacitor.model {
 				}*/
 				//Radiate.log.info("Importing document: " + name);
 				//var mxmlLoader:MXMLImporter = new MXMLImporter( "testWindow", new XML( inSource ), canvasHolder  );
-				var mxmlLoader:MXMLImporter;
+				var mxmlLoader:MXMLDocumentImporter;
 				var container:IVisualElement = parent ? parent as IVisualElement : instance as IVisualElement;
-				mxmlLoader = new MXMLImporter(this, "testWindow", xml, container);
+				mxmlLoader = new MXMLDocumentImporter(this, "testWindow", xml, container);
 				
 				if (container) {
 					Radiate.getInstance().setTarget(container);

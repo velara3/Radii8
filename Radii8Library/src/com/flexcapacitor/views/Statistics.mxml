@@ -66,13 +66,18 @@
 
 
 			//public var stats:Stats;
-			public var stats:Stats;
+			
+			/// UPDATE NEED TO ADD STATS IN LATER AS IT"S AN EXTERNAL CLASS
+			//public var stats:Stats;
+			public var stats:Object;
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				stats = new Stats();
+				stats = new Object();
 				stats.width = container.width;
 				stats.height = container.height;
-				container.addChild(stats);
+				//container.addChild(stats);
+				container.addChild(stats as DisplayObject);
+				// UPDATE NEED TO ADD STATS IN LATER AS IT"S AN EXTERNAL CLASS
 			}
 			
 			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
