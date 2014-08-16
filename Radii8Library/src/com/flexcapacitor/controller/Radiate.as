@@ -1,3 +1,19 @@
+/**
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
 
 package com.flexcapacitor.controller {
 	import com.flexcapacitor.components.DocumentContainer;
@@ -123,7 +139,7 @@ package com.flexcapacitor.controller {
 	use namespace mx_internal;
 	
 	/**
-	 * Dispatched when a register results are received
+	 * Dispatched when register results are received
 	 * */
 	[Event(name="registerResults", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
@@ -261,12 +277,30 @@ package com.flexcapacitor.controller {
 	[Event(name="objectSelected", type="com.flexcapacitor.radiate.events.RadiateEvent")]
 	
 	/**
-	 * Dispatches events when the target or targets property changes or is about to change. 
-	 * This class supports an Undo / Redo history. The architecture is loosely based on 
-	 * the structure found in the Effects classes. 
+	 * Main class and API that handles the interactions between the view and the models. 
 	 * 
-	 * To change a property call request property change. It will be in the history
-	 * To add a component call request item add. It will be in the history
+	 * Dispatches events and exposes methods to manipulate the documents.
+	 *  
+	 * It contains a list of components, tools, devices, inspectors (panels), assets and 
+	 * in the future we should add skins, effects and so on. 
+	 * These items are created from an XML file at startup so we can configure what is available
+	 * to our user or project. We do this so we can also load in a remote SWF to add 
+	 * additional components, sounds, images, skins, inspectors, fonts, etc
+	 * 
+	 * Currently we are saving and loading to a remote location or to a local shared object. 
+	 * To save to a local file system we will need to modify these functions. 
+	 * 
+	 * This class supports an Undo / Redo history. The architecture is loosely based on 
+	 * the structure found in the Effects classes. We may want to be a proxy to the documents
+	 * and call undo and redo on them since we would like to support more than one 
+	 * type of document. 
+	 * 
+	 * This class can be broken up into multiple classes since it is also handling 
+	 * saving and loading and services. 
+	 * 
+	 * To set a property or style call setProperty or setStyle. 
+	 * To add a component call addElement. 
+	 * To log a message to the console call Radiate.log.info() or error().
 	 * 
 	 * To undo call undo
 	 * To redo call redo
@@ -275,6 +309,8 @@ package com.flexcapacitor.controller {
 	 * To check if history exists call the has history
 	 * To check if undo can be performed access has undo
 	 * To check if redo can be performed access has redo 
+	 * 
+	 * Editing through cut, copy and paste is only partially implemented. 
 	 * */
 	public class Radiate extends EventDispatcher {
 		
@@ -2735,6 +2771,9 @@ package com.flexcapacitor.controller {
 		public static var docsURL:String = "http://flex.apache.org/asdoc/";
 		public static var docsURL2:String = "http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/";
 		
+		/**
+		 * Returns the URL to the help document online based on MetaData passed to it. 
+		 * */
 		public static function getURLToHelp(metadata:MetaData, useBackupURL:Boolean = true):String {
 			var path:String = "";
 			var currentClass:String;
@@ -4285,7 +4324,7 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Creates an instance of the component in the descriptor and sets the 
-		 * default properties.
+		 * default properties. We may need to use setActualSize type of methods here or when added. 
 		 * */
 		public static function createComponentForAdd(iDocument:IDocument, item:ComponentDefinition, setDefaults:Boolean = true):Object {
 			var classFactory:ClassFactory;
@@ -6208,7 +6247,8 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Save all projects and documents locally and remotely.
-		 * 
+		 * Eventually, we will want to create a file options class that
+		 * contains information on saving locally, to file, remotely, etc
 		 * NOT FINISHED
 		 * */
 		public function save(locations:String = null, options:Object = null):void {
@@ -6511,7 +6551,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Adds file save as listeners
+		 * Adds file save as listeners. Rename or refactor
 		 * */
 		public function addFileListeners(dispatcher:IEventDispatcher):void {
 			dispatcher.addEventListener(Event.CANCEL, cancelFileSaveAsHandler, false, 0, true);
@@ -6519,7 +6559,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Removes file save as listeners
+		 * Removes file save as listeners. Rename or refactor
 		 * */
 		public function removeFileListeners(dispatcher:IEventDispatcher):void {
 			dispatcher.removeEventListener(Event.CANCEL, cancelFileSaveAsHandler);
@@ -7215,7 +7255,9 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Replaces occurances where the bitmapData in Image and BitmapImage to URL on the server
+		 * Replaces occurances where the bitmapData in Image and BitmapImage have
+		 * been uploaded to the server and we now want to point the image to a URL
+		 * rather than bitmap data
 		 * */
 		public function replaceBitmapData(component:ComponentDescription, imageData:ImageData):void {
 			var instance:Object;
@@ -7735,12 +7777,20 @@ package com.flexcapacitor.controller {
 		// NOTE: THIS IS WRITTEN THIS WAY TO WORK WITH FLEX STATES AND TRANSITIONS
 		// there is probably a better way but I am attempting to use the flex sdk's
 		// own code to apply changes. we could extract that code, create commands, 
-		// etc but it seemed less work and less room for error 
+		// etc but it seemed like less work and less room for error at the time
 		
-		// update oct 27: this could probably be moved to the document's own class
-		// and another way to do history management is create a sequence and 
+		// update oct 27, 2013
+		// i think it would be better to move these calls and data to the document class
+		// then different document types can handle undo, redo in the way that best 
+		// makes sense to it's own needs. 
+		// For example, an text editor will handle undo redo differently than 
+		// a design or application document. 
+		// 
+		// and another way we could do history management is create a sequence and 
 		// add actions to it (SetAction, AddItem, RemoveItem, etc)
-		// that would probably enable easy to use automation and playback 
+		// that would probably enable easy to use automation and playback
+		// if we had proxied these methods here we could have extended the default
+		// document and over wrote the methods to try the sequence method
 		
 		public static var REMOVE_ITEM_DESCRIPTION:String = "Remove";
 		public static var ADD_ITEM_DESCRIPTION:String = "Add";
@@ -7808,6 +7858,8 @@ package com.flexcapacitor.controller {
 		 * is that the History List does not always do the first item in the 
 		 * List. So we need to add a first item that does nothing, like a
 		 * open history event. 
+		 * OR we need to wait. If we could use callLater and not use validateNow
+		 * I think it may solve some issues and not lock the UI
 		 * */
 		public static function undo(dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true):int {
 			var changeIndex:int = getPreviousHistoryIndex(); // index of next change to undo 
@@ -7996,7 +8048,8 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Redo last change
+		 * Redo last change. See notes in undo method. 
+		 * @see undo
 		 * */
 		public static function redo(dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true):int {
 			var currentDocument:IDocument = instance.selectedDocument;
@@ -8534,7 +8587,8 @@ package com.flexcapacitor.controller {
 		private static var _disableHistoryManagement:Boolean;
 
 		/**
-		 * Disables history management
+		 * Disables history management. We do this when importing documents since
+		 * it creates the document 5x faster. 
 		 * */
 		public static function get disableHistoryManagement():Boolean {
 			return _disableHistoryManagement;

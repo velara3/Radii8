@@ -1,4 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
@@ -165,6 +186,8 @@
 					updateBackgroundSize();
 					//parseDocument(codeToLoad);
 					//codeAvailable = false;
+					
+					// we should dispatch an event when parsing is complete
 				}
 				
 				
@@ -741,67 +764,6 @@
 			 * */
 			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
 				super.updateDisplayList(unscaledWidth, unscaledHeight);
-				/*
-				var scrollWidth:int = canvasScroller.width;
-				var scrollHeight:int = canvasScroller.height;
-				var scaledWidth:int;
-				var scaledHeight:int;
-				var largerWidth:int;
-				var largerHeight:int;
-				
-				
-				
-				if (!targetApplication) return;
-				
-				scaledWidth = targetApplication.width * targetApplication.scaleX; //getTextWidth();
-				scaledHeight = targetApplication.height * targetApplication.scaleY; //getTextHeight();
-				
-				largerWidth = Math.max(scrollWidth, scaledWidth);
-				largerHeight = Math.max(scrollHeight, scaledHeight);*/
-				/*
-				if (scaledHeight<scrollHeight) {
-					borderContainer.verticalCenter = 0;
-				}
-				else {
-					borderContainer.verticalCenter = scaledHeight>scrollHeight ? int(scaledHeight/2-scrollHeight/2) : 0;
-				}*/
-				
-				/*
-				fill.width = largerWidth;
-				fill.height = largerHeight;
-				fill2.width = largerWidth*2;
-				fill2.height = largerHeight*2;*/
-				
-				//PerformanceMeter.start("scroller validate", true);
-				//scroller.validateNow();
-				//PerformanceMeter.stop("scroller validate");
-				
-				
-				/*if (currentState==WEBVIEW_STATE) {
-					// do nothing
-				}
-				else if (currentState==RICHTEXT_STATE) {
-					asciiRichText.horizontalCenter = textWidth>scrollWidth ? int(textWidth/2-scrollWidth/2) : 0;
-					asciiRichText.verticalCenter = textHeight>scrollHeight ? int(textHeight/2-scrollHeight/2) : 0;
-				}
-				else if (currentState==LABEL_STATE) {*/
-				
-					//borderContainer.horizontalCenter = textWidth>scrollWidth ? int(textWidth/2-scrollWidth/2) : 0;
-					//borderContainer.verticalCenter = textHeight>scrollHeight ? int(textHeight/2-scrollHeight/2) : 0;
-				//}
-				
-				/*
-				if (showBackgroundImage) {
-					//imageBackground.width = asciiLabel.width;
-					//imageBackground.height = asciiLabel.height;
-					//imageBackground.validateNow();
-					backgroundImage.horizontalCenter = textWidth>scrollWidth ? int(textWidth/2-scrollWidth/2) : 0;
-					backgroundImage.verticalCenter = textHeight>scrollHeight ? int(textHeight/2-scrollHeight/2) : 0;
-				}*/
-				
-				/*
-				fill2.x = int((scrollWidth - largerWidth*2)/2);
-				fill2.y = int((scrollHeight - largerHeight*2)/2);*/
 				
 				return;
 				
