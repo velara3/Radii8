@@ -17,42 +17,9 @@
 
 //TODO: Refactor this into a StoreLogin class 
 
-var DocumentManager = {
-	get: function(el) {
-		if (typeof el === 'string') {
-			return document.getElementById(el);
-		} else {
-			return el;
-		}
-	},
-	add: function(el, dest) {
-		var el = this.get(el);
-		var dest = this.get(dest);
-		if (!dest) dest = document.body;
-		dest.appendChild(el);
-	},
-	remove: function(el) {
-		var el = this.get(el);
-		el.parentNode.removeChild(el);
-	}
-};
-
-var EventManager = {
-	add: function() {
-		if (window.addEventListener) {
-			return function(el, type, fn) {
-				DocumentManager.get(el).addEventListener(type, fn, false);
-			};
-		} else if (window.attachEvent) {
-			return function(el, type, fn) {
-				var f = function() {
-					fn.call(DocumentManager.get(el), window.event);
-				};
-				DocumentManager.get(el).attachEvent('on' + type, f);
-			};
-		}
-	}()
-};
+// removed code until license is found
+var DocumentManager; // basically this gets an element by id and adds or removes elements
+var EventManager; // this adds event listeners to elements
 
 function resizeApplication(id, value) {
 	var el = DocumentManager.get(id);
