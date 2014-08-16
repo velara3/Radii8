@@ -100,48 +100,13 @@
 					errorMessage = event.error.toString();
 				}
 				
-				//Radiate.logTarget.logEvent(new LogEvent("Uncaught Error", LogEventLevel.ERROR));
 				Radiate.log.error(errorMessage);
 				
 			}
 			
 			/**
-			 * At one point there was a form visible that let you point to your swf and load that in remotely.
-			 * The controls have been hidden for a while and should probably be moved to their own dialog box
-			 * and this should show up as an option in the menu. 
+			 * Switch views on logo click
 			 * */
-			protected function loadTestProject_clickHandler(event:MouseEvent):void {
-				var url:String;
-				hideLoadControls();
-				currentState = DESIGN_STATE;
-				validateNow();
-				
-				
-				// if on server use remote url
-				if (Security.sandboxType == Security.REMOTE) {
-					url = remoteTestURL;
-				}
-				else {
-					url = testURL;
-				}
-				
-				appURL.text = url;
-				loadURL(url);
-			}
-			
-			protected function textinput1_enterHandler(event:FlexEvent):void {
-				hideLoadControls();
-				currentState = DESIGN_STATE;
-				validateNow();
-				loadURL(appURL.text);
-			}
-			
-			protected function loadNewProject_clickHandler(event:MouseEvent):void {
-				hideLoadControls();
-				currentState = DESIGN_STATE;
-				radiate.createNewProject();
-			}
-			
 			protected function logo_clickHandler(event:MouseEvent):void {
 				
 				if (currentState==HOME_STATE) {
@@ -150,59 +115,14 @@
 				else {
 					currentState = HOME_STATE;
 				}
-				hideLoadControls();
-			}
-			
-			protected function description_clickHandler(event:MouseEvent):void {
-				currentState = "description";
-				hideLoadControls();
-			}
-			
-			protected function loadProject_clickHandler(event:MouseEvent):void {
 				
-				if (appURL.visible) {
-					hideLoadControls();
-					currentState = DESIGN_STATE;
-					validateNow();
-					loadURL(appURL.text);
-				}
-				else {
-					showLoadControls();
-				}
 			}
 			
-			private function loadURL(url:String):void {
-				//remote.document1.loadRemote(url, trustContent.selected, loadCompatible.selected);
-			}
-			
-			private function hideLoadControls():void {
-				loadLabel.text = "Load";
-				closeLabel.visible = false;
-				closeLabel.includeInLayout = false;
-				appURL.visible = false;
-				trustContent.visible = false;
-				loadCompatible.visible = false;
-			}
-			
-			private function showLoadControls():void {
-				loadLabel.text = "Load";
-				closeLabel.includeInLayout = true;
-				closeLabel.visible = true;
-				appURL.visible = true;
-				trustContent.visible = true;
-				loadCompatible.visible = true;
-			}
-			
-			
-			protected function aboutLabel_clickHandler(event:MouseEvent):void {
-				Radiate.log.info("Build Number: " + BUILD_NUMBER);
-				Radiate.log.info("Build Date: " + BUILD_DATE);
-			}
-			
-			protected function closeLabel_clickHandler(event:MouseEvent):void {
-				hideLoadControls();
-			}
-			
+			/**
+			 * Setup the environment. If remote set WP host and path. 
+			 * If running on the desktop or not using remote service
+			 * we will need to change the message
+			 * */
 			protected function applicationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				radiate.buildNumber = BUILD_NUMBER;
@@ -223,23 +143,22 @@
 				//LayoutManager.getInstance().usePhasedInstantiation = false;
 			}
 			
+			/**
+			 * Open project
+			 * */
 			protected function openProject_itemClickHandler(event:MenuEvent):void {
 				radiate.openProject(radiate.selectedProject);
 			}
 			
+			/**
+			 * Open document
+			 * */
 			private function openDocument_itemClickHandler(event:MenuEvent):void {
 				radiate.openDocument(radiate.selectedDocument, DocumentData.INTERNAL_LOCATION, true);
 			}
 			
 			/**
-			 * Import 
-			 * */
-			protected function importPopUp_closeHandler(event:Event):void {
-				// code moved to pop up
-			}
-			
-			/**
-			 * Redispatches our custom menu events (so we can use custom menu data types
+			 * Redispatches our custom menu events (so we can use custom menu data types)
 			 * */
 			private function menuItemEventHandler(event:MenuEvent):void {
 				
@@ -370,6 +289,9 @@
 				
 			}
 			
+			/**
+			 * Show project info and show documents in the project
+			 * */
 			protected function projectsList_changeHandler(event:IndexChangeEvent = null):void {
 				var project:IProject = projectsList.selectedItem;
 				
@@ -379,6 +301,9 @@
 				}
 			}
 			
+			/**
+			 * Open project selected in project list
+			 * */
 			protected function openProject(event:IndexChangeEvent = null):void {
 				var project:IProject = projectsList.selectedItem;
 				
@@ -393,7 +318,9 @@
 				}
 			}
 			
-			
+			/**
+			 * Handle login result
+			 * */
 			protected function loginPopUp_closeHandler(event:Event):void {
 				if (radiate.isUserLoggedIn) {
 					checkForProjects();
@@ -405,21 +332,11 @@
 				}
 			}
 			
+			/**
+			 * Check online status after logout
+			 * */
 			protected function logoutPopUp_closeHandler(event:Event):void {
-				
 				checkOnline();
-			}
-			
-			private function exportPopUp_closeHandler(event:Event):void {
-				
-			}
-			
-			private function printPopUp_closeHandler(event:Event):void {
-				
-			}
-			
-			protected function printItem_itemClickHandler(event:MenuEvent):void {
-				
 			}
 			
 			/**
@@ -429,6 +346,9 @@
 				radiate.getLoggedInStatus();
 			}
 			
+			/**
+			 * Work offline clicked. May not be functioning at this time? 
+			 * */
 			protected function workOfflineMenuItem_itemClickHandler(event:MenuEvent):void {
 				if (workOfflineMenuItem.toggled) {
 					checkOnlineEffect.stop();
@@ -440,6 +360,9 @@
 				}
 			}
 			
+			/**
+			 * Create a new project
+			 * */
 			protected function createNewProjectLabel_clickHandler(event:Event):void {
 				var openNewProject:OpenPopUp = event.currentTarget as OpenPopUp;
 				var popUp:NewDocumentWindow = openNewProject.popUp as NewDocumentWindow;
@@ -460,14 +383,26 @@
 				}
 			}
 			
+			/**
+			 * Get projects by user that is logged in. 
+			 * Right now this is checking a remote WP server. We could have it point 
+			 * to a local directory of projects or workspace. 
+			 * */
 			protected function getProjectsByUser_clickHandler(event:MouseEvent):void {
 				checkForProjects(true);
 			}
 			
+			/**
+			 * Get public projects / examples. There are no public or shared examples yet. 
+			 * */
 			protected function getPublicProjects_clickHandler(event:MouseEvent):void {
 				checkForProjects(false);
 			}
 			
+			/**
+			 * Get a list of projects by user or that are shared by the public or are examples. 
+			 * Shared public projects and example projects should be in their own category. 
+			 * */
 			protected function checkForProjects(byUser:Boolean = false):void {
 				//projectsList.dataProvider = null;
 				projectsList.selectedItem = null;
@@ -486,34 +421,30 @@
 				}
 			}
 			
-			protected function removeDocument_itemClickHandler(event:MenuEvent):void {
-				
-			}
-			
+			/**
+			 * Check for projects 
+			 * */
 			protected function removeProject_itemClickHandler(event:MenuEvent):void {
 				checkForProjects();
 			}
 			
+			/**
+			 * Undo last action
+			 * */
 			protected function undo_itemClickHandler(event:MenuEvent):void {
 				Radiate.undo();
 			}
 			
+			/**
+			 * Redo last action
+			 * */
 			protected function redo_itemClickHandler(event:MenuEvent):void {
 				Radiate.redo();
 			}
 			
 			/**
-			 * Test data for pop up menu
+			 * Check if connected to remote WP server and update checkbox
 			 * */
-			[Bindable]
-	        public var popUpMenuDataProvider:Array = [
-	            {label: "Inbox", data: "inbox", type:"check", children:[{label: "Calendar 1", data: "calendar"}]},
-	            {label: "Calendar", data: "calendar"}, 
-	            {label: "Sent", data: "sent"},
-	            {label: "Deleted Items", data: "deleted"},
-	            {label: "Spam", data: "spam"}
-			];
-			
 			protected function isConnectedCheckbox_clickHandler(event:MouseEvent):void {
 				if (radiate.isUserConnected) {
 					isConnectedCheckbox.selected = radiate.isUserConnected;
@@ -522,6 +453,9 @@
 				checkOnline();
 			}
 			
+			/**
+			 * Show project string for debugging purposes
+			 * */
 			protected function showProjectSource_itemClickHandler(event:MenuEvent):void {
 				var iProject:IProject = radiate.selectedProject;
 				
@@ -530,6 +464,9 @@
 				}
 			}
 			
+			/**
+			 * Show document string for debugging purposes
+			 * */
 			protected function showDocumentSource_itemClickHandler(event:MenuEvent):void {
 				var iDocument:IDocument = radiate.selectedDocument;
 				
@@ -540,10 +477,16 @@
 				
 			}
 			
+			/**
+			 * Handle if user icon is not available
+			 * */
 			protected function userIcon_securityErrorHandler(event:SecurityErrorEvent):void {
 				//trace("security error ");
 			}
 			
+			/**
+			 * Handle if user icon is not available
+			 * */
 			protected function userIcon_ioErrorHandler(event:IOErrorEvent):void {
 				//trace("ioerror ");
 				userIcon.source = null;
@@ -554,6 +497,7 @@
 	</fx:Script>
 	
 	<fx:Declarations>
+		
 		<!--- show about popup -->
 		<handlers:EventHandler target="{logo}" eventName="click">
 			<popup:ShowPopupAnchor target="{aboutPopUp}" closeOnMouseOut="true" displayObjectExceptions="{[logo]}"/>
@@ -563,7 +507,6 @@
 		<handlers:EventHandler target="{popUpGroup}" eventName="mouseDownOutside">
 			<popup:HidePopupAnchor target="{aboutPopUp}" />
 		</handlers:EventHandler>
-		
 		
 		<!--- show contact popup -->
 		<handlers:EventHandler targets="{[contactLabel,feedbackLabel]}" eventName="click" >
@@ -576,7 +519,6 @@
 						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
-		<!--- show logout popup -->
 		<handlers:EventHandler targets="{[logoutLabel,logoutLabel2]}" eventName="click" >
 			<fc:OpenPopUp id="openLogoutPopUp" 
 						  popUpType="{LoginWindow}" 
@@ -589,7 +531,6 @@
 						  close="logoutPopUp_closeHandler(event)"/>
 		</handlers:EventHandler>
 		
-		<!--- show delete project popup -->
 		<handlers:EventHandler targets="{[newProjectButton,menuNewProject,newDocumentButton]}" eventNames="{['click','itemClick']}" >
 			<fc:OpenPopUp id="openNewProjectPopUp" 
 						  popUpType="{NewDocumentWindow}" 
@@ -603,7 +544,6 @@
 						  />
 		</handlers:EventHandler>
 		
-		<!--- show delete project popup -->
 		<handlers:EventHandler target="{removeDocument}" eventName="itemClick" >
 			<fc:OpenPopUp id="openDeleteDocumentPopUp" 
 						  popUpType="{DeleteDocumentWindow}" 
@@ -616,18 +556,15 @@
 						  />
 		</handlers:EventHandler>
 		
-		<!--- hide about logo popup -->
 		<handlers:EventHandler target="{logoPopUpGroup}" eventName="mouseDownOutside">
 			<popup:HidePopupAnchor target="{logoPopUp}" />
 		</handlers:EventHandler>
 		
-		<!--- open more info URL -->
 		<handlers:EventHandler target="{moreInfoLabel}" eventName="click">
 			<popup:HidePopupAnchor target="{aboutPopUp}" />
 			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=2" window="_blank" />
 		</handlers:EventHandler>
 				
-		<!--- show delete project popup -->
 		<handlers:EventHandler targets="{[deleteProjectIcon,removeProject]}" eventNames="{['click','itemClick']}" >
 			<fc:OpenPopUp id="openDeleteProjectPopUp" 
 						  popUpType="{DeleteDocumentWindow}" 
@@ -641,7 +578,6 @@
 						  />
 		</handlers:EventHandler>
 		
-		<!--- show save as popup -->
 		<handlers:EventHandler eventName="itemClick" target="{saveDocumentAs}">
 			<fc:OpenPopUp id="openExportPopUp" 
 						  popUpType="{ExportDocumentWindow}" 
@@ -649,11 +585,9 @@
 						  percentWidth="75"
 						  percentHeight="90"
 						  width="800"
-						  parent="{parentApplication}"
-						  close="exportPopUp_closeHandler(event)"/>
+						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
-		<!--- show import document popup -->
 		<handlers:EventHandler eventName="itemClick" target="{importMenuItem}">
 			<fc:OpenPopUp id="openImportPopUp" 
 						  popUpType="{ImportWindow}" 
@@ -661,12 +595,10 @@
 						  percentWidth="75"
 						  percentHeight="90"
 						  width="600"
-						  parent="{parentApplication}"
-						  close="importPopUp_closeHandler(event)"/>
+						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
 		
-		<!--- show print popup -->
 		<handlers:EventHandler eventName="itemClick" target="{printItem}">
 			<fc:OpenPopUp id="openPrintPopUp" 
 						  popUpType="{PrintWindow}" 
@@ -674,11 +606,9 @@
 						  percentWidth="75"
 						  percentHeight="90"
 						  width="600"
-						  parent="{parentApplication}"
-						  close="printPopUp_closeHandler(event)"/>
+						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
-		<!--- show login popup -->
 		<handlers:EventHandler eventName="click" targets="{[loginLabel,loginLabel2]}">
 			<fc:OpenPopUp id="openLoginPopUp" 
 						  popUpType="{LoginWindow}" 
@@ -691,7 +621,6 @@
 						  close="loginPopUp_closeHandler(event)"/>
 		</handlers:EventHandler>
 		
-		<!--- show register popup -->
 		<handlers:EventHandler eventName="click" targets="{[registerLabel,registerLabel2]}">
 			<fc:OpenPopUp popUpType="{LoginWindow}" 
 						  modalDuration="150" 
@@ -719,10 +648,10 @@
 				<model:MenuItem label="Save All Documents" itemClick="{radiate.saveAllDocuments()}"/>
 				<model:MenuItem id="saveDocumentAs" label="Save Document As..." />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="removeDocument" label="Remove Document" itemClick="removeDocument_itemClickHandler(event)"/>
+				<model:MenuItem id="removeDocument" label="Remove Document" />
 				<model:MenuItem id="removeProject" label="Remove Project" itemClick="removeProject_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="printItem" label="Print" itemClick="printItem_itemClickHandler(event)"/>
+				<model:MenuItem id="printItem" label="Print" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="importMenuItem" label="Import..." />
 				<model:MenuItem type="separator"/>
@@ -778,6 +707,10 @@
 						 method="checkOnline" 
 						 repeatDelay="60000"/>
 		
+		<!--
+		Enable CMD click on a display object and get information in the console about it 
+		Should be turned off in release build. 
+		-->
 		<utils:MiniInspector showDisplayObjectOutlines="true"
 							 showRuler="false"
 							 showStyleInheritanceInformation="false"
@@ -1054,7 +987,7 @@
 					change="menuItemEventHandler(event)"
 					>
 		</mx:MenuBar>
-		
+		<!--
 	    <mx:PopUpMenuButton id="p1"
 							showRoot="true"
 							useHandCursor="true"
@@ -1067,11 +1000,11 @@
 							skin="com.flexcapacitor.skins.PopUpButtonSkin"
 							visible="false"
 							includeInLayout="false"
-							/>
+							/>-->
 		
 		<s:Spacer width="100%"/>
 		
-		<s:CheckBox id="loadCompatible" label="Compatible" selected="false" visible="false"/>
+		<!--<s:CheckBox id="loadCompatible" label="Compatible" selected="false" visible="false"/>
 		<s:CheckBox id="trustContent" label="Trust Content" selected="true" visible="false"/>
 		<s:TextInput id="appURL" width="90%" prompt="Enter a URL to a SWF" text="" visible="false" enter="textinput1_enterHandler(event)"/>
 		<s:Label id="loadLabel" 
@@ -1095,7 +1028,7 @@
 				 textAlign="center"
 				 visible="false"
 				 includeInLayout="false"
-				 click="closeLabel_clickHandler(event)" />
+				 click="closeLabel_clickHandler(event)" />-->
 		
 		<s:Label id="loginLabel" 
 				 text="Login" 

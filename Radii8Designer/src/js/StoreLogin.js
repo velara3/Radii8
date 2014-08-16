@@ -1,149 +1,165 @@
+/**
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
 
-//refactor this into a class 
+      http://www.apache.org/licenses/LICENSE-2.0
 
-				var DocumentManager = {
-					get: function(el) {
-						if (typeof el === 'string') {
-							return document.getElementById(el);
-						} else {
-							return el;
-						}
-					},
-					add: function(el, dest) {
-						var el = this.get(el);
-						var dest = this.get(dest);
-						if (!dest) dest = document.body;
-						dest.appendChild(el);
-					},
-					remove: function(el) {
-						var el = this.get(el);
-						el.parentNode.removeChild(el);
-					}
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+//TODO: Refactor this into a StoreLogin class 
+
+var DocumentManager = {
+	get: function(el) {
+		if (typeof el === 'string') {
+			return document.getElementById(el);
+		} else {
+			return el;
+		}
+	},
+	add: function(el, dest) {
+		var el = this.get(el);
+		var dest = this.get(dest);
+		if (!dest) dest = document.body;
+		dest.appendChild(el);
+	},
+	remove: function(el) {
+		var el = this.get(el);
+		el.parentNode.removeChild(el);
+	}
+};
+
+var EventManager = {
+	add: function() {
+		if (window.addEventListener) {
+			return function(el, type, fn) {
+				DocumentManager.get(el).addEventListener(type, fn, false);
+			};
+		} else if (window.attachEvent) {
+			return function(el, type, fn) {
+				var f = function() {
+					fn.call(DocumentManager.get(el), window.event);
 				};
-			
-				var EventManager = {
-					add: function() {
-						if (window.addEventListener) {
-							return function(el, type, fn) {
-								DocumentManager.get(el).addEventListener(type, fn, false);
-							};
-						} else if (window.attachEvent) {
-							return function(el, type, fn) {
-								var f = function() {
-									fn.call(DocumentManager.get(el), window.event);
-								};
-								DocumentManager.get(el).attachEvent('on' + type, f);
-							};
-						}
-					}()
-				};
-			
-				function resizeApplication(id, value) {
-					var el = DocumentManager.get(id);
-					el.style.height = value;
-					return true;
-				}
-				
-				function insertForm(id) {
-					var form 		= document.createElement('form');
-					var textinput 	= document.createElement('input');
-					var password 	= document.createElement('input');
-			
-					form.id 		= id;
-					textinput.id 	= "username";
-					password.id 	= "password";
-					password.type 	= "password";
-			
-					form.appendChild(textinput);
-					form.appendChild(password);
-					DocumentManager.add(form);
-			
-					return true;
-				}
-				
-				function setFormValues(username, password) {
-					var usernameInput = DocumentManager.get('username');
-					var passwordInput = DocumentManager.get('password');
-					usernameInput.value = username;
-					passwordInput.value = password;
-					return true;
-				}
-				
-				function getFormValues() {
-					var usernameInput = DocumentManager.get('username');
-					var passwordInput = DocumentManager.get('password');
-					return [usernameInput.value, passwordInput.value];
-				}
-				
-				function clearFormValues() {
-					var usernameInput = DocumentManager.get('username');
-					var passwordInput = DocumentManager.get('password');
-					usernameInput.value = "";
-					passwordInput.value = "";
-					return true;
-				}
-			
-				function getUsername() {
-					var usernameInput = DocumentManager.get('username');
-					return usernameInput.value;
-				}
-				
-				function getPassword() {
-					var passwordInput = DocumentManager.get('password');
-					return passwordInput.value;
-				}
-				
-				function submitForm(id) {
-					var form = DocumentManager.get(id);
-					//form.action = window.location.href;
-					form.submit();
-					form.submit();// chrome
-					return true;
-				}
-			
-				function noDirectLogin(){
-					return false;
-				}
+				DocumentManager.get(el).attachEvent('on' + type, f);
+			};
+		}
+	}()
+};
 
-				function checkForPassword(username) {
-					var usernameInput = DocumentManager.get('username');
-					var passwordInput = DocumentManager.get('password');
-					usernameInput.value = username;
-					if (username!="") {
-						usernameInput.focus();
-						usernameInput.blur();
-					}
-					else {
-						passwordInput.value = "";
-					}
-					//passwordInput.focus();
-					return passwordInput.value;
-				}
-				
-				function setFocusOnFlash(id) {
-					var application = DocumentManager.get(id);
-					application.tabIndex = 0;
-					application.focus();
-					return true;
-				}
-			
-				function formExists(id) {
-					var form = DocumentManager.get(id);
-					return form!=null;
-				}
-				
-				function showForm(id) {
-					var form = DocumentManager.get(id);
-					form.style.display = "block";
-					return true;
-				}
-				
-				function hideForm(id) {
-					var form = DocumentManager.get(id);
-					form.style.display = "none";
-					return true;
-				}
-			
-				function scriptConfirmation() {
-					return true;
-				}
+function resizeApplication(id, value) {
+	var el = DocumentManager.get(id);
+	el.style.height = value;
+	return true;
+}
+
+function insertForm(id) {
+	var form 		= document.createElement('form');
+	var textinput 	= document.createElement('input');
+	var password 	= document.createElement('input');
+
+	form.id 		= id;
+	textinput.id 	= "username";
+	password.id 	= "password";
+	password.type 	= "password";
+
+	form.appendChild(textinput);
+	form.appendChild(password);
+	DocumentManager.add(form);
+
+	return true;
+}
+
+function setFormValues(username, password) {
+	var usernameInput = DocumentManager.get('username');
+	var passwordInput = DocumentManager.get('password');
+	usernameInput.value = username;
+	passwordInput.value = password;
+	return true;
+}
+
+function getFormValues() {
+	var usernameInput = DocumentManager.get('username');
+	var passwordInput = DocumentManager.get('password');
+	return [usernameInput.value, passwordInput.value];
+}
+
+function clearFormValues() {
+	var usernameInput = DocumentManager.get('username');
+	var passwordInput = DocumentManager.get('password');
+	usernameInput.value = "";
+	passwordInput.value = "";
+	return true;
+}
+
+function getUsername() {
+	var usernameInput = DocumentManager.get('username');
+	return usernameInput.value;
+}
+
+function getPassword() {
+	var passwordInput = DocumentManager.get('password');
+	return passwordInput.value;
+}
+
+function submitForm(id) {
+	var form = DocumentManager.get(id);
+	//form.action = window.location.href;
+	form.submit();
+	form.submit();// chrome
+	return true;
+}
+
+function noDirectLogin(){
+	return false;
+}
+
+function checkForPassword(username) {
+	var usernameInput = DocumentManager.get('username');
+	var passwordInput = DocumentManager.get('password');
+	usernameInput.value = username;
+	if (username!="") {
+		usernameInput.focus();
+		usernameInput.blur();
+	}
+	else {
+		passwordInput.value = "";
+	}
+	//passwordInput.focus();
+	return passwordInput.value;
+}
+
+function setFocusOnFlash(id) {
+	var application = DocumentManager.get(id);
+	application.tabIndex = 0;
+	application.focus();
+	return true;
+}
+
+function formExists(id) {
+	var form = DocumentManager.get(id);
+	return form!=null;
+}
+
+function showForm(id) {
+	var form = DocumentManager.get(id);
+	form.style.display = "block";
+	return true;
+}
+
+function hideForm(id) {
+	var form = DocumentManager.get(id);
+	form.style.display = "none";
+	return true;
+}
+
+function scriptConfirmation() {
+	return true;
+}
