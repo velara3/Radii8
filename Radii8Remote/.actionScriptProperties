@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<actionScriptProperties analytics="false" mainApplicationPath="Radii8Remote.mxml" projectUUID="13a56b92-38a6-4a48-a772-efccfe7b6f49" version="10">
-  <compiler additionalCompilerArguments="-locale en_US" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="false" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="true" htmlHistoryManagement="true" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="false" useDebugRSLSwfs="true" verifyDigests="true" warn="true">
+<actionScriptProperties analytics="false" mainApplicationPath="Radii8Remote.mxml" projectUUID="13a56b92-38a6-4a48-a772-efccfe7b6f49" version="11">
+  <compiler additionalCompilerArguments="-locale en_US" autoRSLOrdering="true" copyDependentFiles="true" flexSDK="Apache Flex 4.12.1 FP13.0 AIR13.0 en_US" fteInMXComponents="false" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="true" htmlHistoryManagement="true" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="false" useDebugRSLSwfs="true" useFlashSDK="false" verifyDigests="true" warn="true">
     <compilerSourcePath/>
     <libraryPath defaultLinkType="0">
       <libraryPathEntry kind="4" path="">
@@ -9,7 +9,6 @@
           <libraryPathEntry kind="3" linkType="1" path="${PROJECT_FRAMEWORKS}/libs/core.swc" useDefaultLinkType="false"/>
         </excludedEntries>
       </libraryPathEntry>
-      <libraryPathEntry kind="1" linkType="1" path="libs"/>
       <libraryPathEntry kind="3" linkType="1" path="/Radii8Library/bin/Radii8Library.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="/MyLibrary/bin/MyLibrary.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="/Radii8LibraryAssets/bin/Radii8LibraryAssets.swc" useDefaultLinkType="false"/>
@@ -23,9 +22,10 @@
   <modules>
     <module application="src/Radii8Remote.mxml" destPath="modules/PropertiesExample.swf" optimize="true" sourcePath="src/modules/PropertiesExample.mxml"/>
     <module application="src/Radii8Remote.mxml" destPath="modules/Layers.swf" optimize="true" sourcePath="src/modules/Layers.mxml"/>
-    <module destPath="modules/Tools.swf" optimize="false" sourcePath="src/modules/Tools.mxml"/>
-    <module destPath="modules/InspectorContainer.swf" optimize="false" sourcePath="src/modules/InspectorContainer.mxml"/>
+    <module application="src/Radii8Remote.mxml" destPath="modules/Tools.swf" optimize="false" sourcePath="src/modules/Tools.mxml"/>
+    <module application="src/Radii8Remote.mxml" destPath="modules/InspectorContainer.swf" optimize="false" sourcePath="src/modules/InspectorContainer.mxml"/>
   </modules>
+  <workers/>
   <buildCSSFiles/>
   <flashCatalyst validateFlashCatalystCompatibility="false"/>
 </actionScriptProperties>
