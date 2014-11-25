@@ -34,10 +34,10 @@
 					}
 					else {
 						if (item.instance is Application) {
-							path = "assets/images/components/BorderContainer.png";
+							path = Radiate.componentsIconNotFoundPath;
 						}
 						else {
-							path = "assets/images/components/" + item.name + ".png";
+							path = Radiate.componentsIconPath + item.name + ".png";
 						}
 						
 						if (path!=iconImage.source) {
@@ -64,7 +64,7 @@
 			}
 			
 			protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
-				iconImage.source = "assets/images/components/BorderContainer.png";
+				iconImage.source = Radiate.componentsIconNotFoundPath;
 				//Radiate.log.info("LayersRenderer: "+event.text);
 			}
 
@@ -72,6 +72,10 @@
 				var item:ComponentDescription = data as ComponentDescription;
 				var visible:Boolean = !item.instance.visible;
 				
+				// setting visible with history support
+				Radiate.setProperty(item.instance, "visible", visible);
+				
+				// old method not sure what parts are ok to remove
 				item.instance.visible = visible;
 				item.visible = visible;
 				visibleGroup.visible = visible;
@@ -80,7 +84,6 @@
 				var visibility:Boolean = DisplayObjectUtils.getGreatestVisibility(IVisualElement(item.instance), rootApplicationDescription); 
 				
 				DisplayObjectUtils.setVisibilityFlag(item, item.visible);
-				
 				//parentVisibleGroup.visible = !visibility;
 				
 			}

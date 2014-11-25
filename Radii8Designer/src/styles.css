@@ -4,14 +4,14 @@
 @namespace local "*";
 @namespace skins "com.flexcapacitor.skins.*";
 @namespace controls "com.flexcapacitor.controls.*";
-		
-s|Scroller
-{
+
+
+s|Scroller {
 	skinClass: ClassReference("com.flexcapacitor.skins.MinimalScrollerSkin");
 }
 
 global {
-	fontFamily: Arial;
+	fontFamily: Verdana;
 	selectionColor: #d8d8d8;
 	rollOverColor: #d8d8d8;
 	caretColor: #d8d8d8;
@@ -129,10 +129,18 @@ mx|TabNavigator {
 }
 
 mx|TabNavigator .tabStyle {
-	fontFamily: "Verdana";
+	fontFamily: Verdana;
 	fontSize: 10;
 	cornerRadius: 10;
 }
+
+/*
+mx|TabBar {
+   fillColors: #006699, #cccc66;
+   upSkin: ClassReference("CustomSkinClass");
+   overSkin: ClassReference("CustomSkinClass");
+   downSkin: ClassReference("CustomSkinClass");
+}*/
 
 /* used to set the label width of the dynamic property inspector panels */
 .inspectablePanel {

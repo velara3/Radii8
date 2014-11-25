@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 creationComplete="creationCompleteHandler(event)">
+	
+	
+	<!-- 
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.DocumentData;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.IProject;
+			
+			import mx.events.FlexEvent;
+
+			
+			
+			private var radiate:Radiate = Radiate.instance;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+				
+				updateSaveButtons();
+			}
+			
+			/**
+			 * History changed. Select the last applied item in the history array. 
+			 * */
+			protected function historyChangeHandler(event:Event):void {
+				updateSaveButtons();
+			}
+
+			
+			public function updateSaveButtons():void {
+				var historyIndex:int = Radiate.historyIndex;
+				var totalItems:int = Radiate.history ? Radiate.history.length : 0;
+				var hasItems:Boolean = totalItems>0;
+				var selectedProject:IProject = radiate.selectedProject;
+				
+				if (selectedProject) {
+					if (selectedProject.isChanged) {
+						saveDocumentIcon.alpha = 1;
+					}
+					else {
+						saveDocumentIcon.alpha = .5;
+					}
+				}
+				
+			}
+			
+			protected function saveDocumentIcon_clickHandler(event:MouseEvent):void {
+				//radiate.saveProject(radiate.project);
+				var document:IDocument = radiate.selectedDocument;
+				
+				
+				if (document) {
+					var saveRemote:Boolean = radiate.isUserConnected && radiate.isUserLoggedIn;
+					var savedLocation:String = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
+					
+					var savedLocally:Boolean = radiate.saveDocument(document, savedLocation);
+					
+					//Radiate.log.info("Saved locally: " + savedLocally);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	
+	<s:layout>
+		<s:HorizontalLayout paddingTop="4" verticalAlign="baseline" />
+	</s:layout>
+
+	<c:ImageButton id="saveDocumentIcon" 
+				   source="{Radii8LibraryAssets.save}" 
+				   height="15"
+				   toolTip="Save Document"
+				   click="saveDocumentIcon_clickHandler(event)"
+				   />
+</s:Group>

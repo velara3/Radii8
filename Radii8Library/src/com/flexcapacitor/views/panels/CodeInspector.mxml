@@ -279,9 +279,10 @@
 					else if (codeType.selectedItem==HTML) {
 						var includePreviewCode:Boolean = true;
 						
-						if (htmlExporter==null) {
-							htmlExporter = new HTMLDocumentExporter();
+						if (iDocument.htmlExporter==null) {
+							iDocument.htmlExporter = new HTMLDocumentExporter();
 						}
+						htmlExporter = iDocument.htmlExporter as HTMLDocumentExporter;
 						
 						//htmlExporter.document = iDocument;
 						htmlExporter.showFullHTMLPageSource = showFullHTMLPageSource;
@@ -301,7 +302,7 @@
 						htmlExporter.showOnlyCSS = showOnlyCSS;
 						htmlExporter.showScreenshotBackground = showBackgroundImage;
 						
-						output = htmlExporter.export(iDocument, false, target);
+						output = htmlExporter.export(iDocument, targetDescription, false);
 						
 						errorMessage = htmlExporter.errorMessage;
 					}
@@ -418,6 +419,13 @@
 			
 			/**
 			 * Get the document code and dispatch a preview event.
+			 * 
+			 * Got this error: 
+			 * WARNING: For content targeting Flash Player version 14 or higher, 
+			 * ExternalInterface escapes strings using JSON conventions. To maintain compatibility, 
+			 * content published to earlier Flash Player versions continues to use the legacy escaping behavior.
+			 * 
+			 * Don't know what to do with it but gonna leave it for now. 
 			 * */
 			protected function previewButton_clickHandler(event:MouseEvent):void {
 				var document:Object;

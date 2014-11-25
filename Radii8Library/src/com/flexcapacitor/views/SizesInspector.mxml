@@ -269,6 +269,9 @@
 				skinClass="com.flexcapacitor.views.skins.OrientationButton"
 				useHandCursor="true"
 				buttonMode="true"
+				top="10"
+				includeInLayout="false"
+				visible="false"
 				/>
 	<s:Spacer width="1"/>
 	<s:DropDownList id="sizesComboBox" 
@@ -297,6 +300,7 @@
 			   includeInLayout="{showCenterButton}"
 			   source="{Radii8LibraryAssets.centerAlignment}" 
 			   click="centerButton_clickHandler(event)"
+			   height="100%"
 			   />
 	
 	<c:ImageButton id="fitSizeButton" 
@@ -305,6 +309,7 @@
 			   includeInLayout="{showFitSize}"
 			   source="{Radii8LibraryAssets.zoomToFit}" 
 			   click="fitSizeButton_clickHandler(event)"
+			   height="100%"
 			   />
 	
 	<c:ImageButton id="actualSizeButton" 
@@ -313,6 +318,7 @@
 			   includeInLayout="{showRestoreSize}"
 			   source="{Radii8LibraryAssets.actualSize}" 
 			   click="actualSize_clickHandler(event)"
+			   height="100%"
 			   />
 	
 

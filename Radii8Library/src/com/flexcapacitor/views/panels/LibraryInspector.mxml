@@ -743,7 +743,7 @@
 				>
 			<s:itemRenderer>
 				<fx:Component>
-					<s:ItemRenderer width="100%" height="100%" minHeight="22" >
+					<s:ItemRenderer width="100%" height="100%" minHeight="32" >
 						<fx:Script>
 							<![CDATA[
 								import com.flexcapacitor.controller.Radiate;
@@ -818,7 +818,8 @@
 									 contentLoader="{Radiate.contentCache}"
 									 ioError="iconImage_ioErrorHandler(event)"
 									 securityError="iconImage_securityErrorHandler(event)"
-									 width="16" height="16"/>
+									 width="30" height="30"
+									 scaleMode="zoom"/>
 							<s:Label id="labelDisplay" 
 									 fontSize="11"/>
 							<s:Spacer width="100%"/>
@@ -840,84 +841,98 @@
 		
 	</mx:VDividedBox>
 	
-	
-	<s:HGroup width="100%"
-			 height="24"
-			 minHeight="24"
-			 verticalAlign="middle"
-			 >
+	<s:BorderContainer width="100%" borderWeight="0" borderVisible="false">
+		<s:layout>
+			<s:VerticalLayout />
+		</s:layout>
 		
-		<c:ImageButton id="browseForFileIcon" 
+		<c:ImageButton id="browseForFileIcon2" 
 				 source="{Radii8LibraryAssets.newFile}" 
 				 toolTip="Add"
+				 visible="{libraryCollection.length==0}" includeInLayout="{libraryCollection.length==0}"
+				 />
+		<s:Label text="Select an item to add to the library" 
+				 visible="{libraryCollection.length==0}" includeInLayout="{libraryCollection.length==0}"
 				 />
 		
-		
-		<s:TextInput id="imageURLInput" 
-					   left="0" right="0" top="0" 
-					   width="100%"
-					   minWidth="60" 
-					   prompt=""
-					   styleName="inputStyles"
-					   />
-		
-		<s:HGroup verticalAlign="bottom">
-					
-			<s:BorderContainer id="thumnailImage" 
-							   width="12" height="12"
-							   backgroundColor="#cccccc"
-							   borderVisible="false"
-							   useHandCursor="true"
-							   buttonMode="true"
-							   toolTip="Thumbnail URL"
-							   click="thumbnailImage_clickHandler(event)"
-							   />
+		<s:HGroup width="100%"
+				 height="24"
+				 minHeight="24"
+				 verticalAlign="middle"
+				 >
 			
-			<!--<s:BorderContainer id="smallImage" 
-							   width="12" height="12"
-							   backgroundColor="gray"
-							   borderVisible="false"
-							   useHandCursor="true"
-							   buttonMode="true"
-							   toolTip="Small Image URL"
-							   click="smallImage_clickHandler(event)"
-							   />-->
-			<s:BorderContainer id="mediumImage" 
-							   width="14" height="14"
-							   backgroundColor="#cccccc"
-							   borderVisible="false"
-							   useHandCursor="true"
-							   buttonMode="true"
-							   toolTip="Medium Image URL"
-							   click="mediumImage_clickHandler(event)"
-							   />
-			
-			<s:BorderContainer id="fullImage" 
-							   width="14" height="16"
-							   backgroundColor="#cccccc"
-							   borderVisible="false"
-							   useHandCursor="true"
-							   buttonMode="true"
-							   toolTip="Original Image URL"
-							   click="fullImage_clickHandler(event)"
-							   />
+			<c:ImageButton id="browseForFileIcon" 
+					 source="{Radii8LibraryAssets.newFile}" 
+					 toolTip="Add"
+					 />
 			
 			
+			<s:TextInput id="imageURLInput" 
+						   left="0" right="0" top="0" 
+						   width="100%"
+						   minWidth="60" 
+						   prompt=""
+						   styleName="inputStyles"
+						   />
+			
+			<s:HGroup verticalAlign="bottom">
+						
+				<s:BorderContainer id="thumnailImage" 
+								   width="12" height="12"
+								   backgroundColor="#cccccc"
+								   borderVisible="false"
+								   useHandCursor="true"
+								   buttonMode="true"
+								   toolTip="Thumbnail URL"
+								   click="thumbnailImage_clickHandler(event)"
+								   />
+				
+				<!--<s:BorderContainer id="smallImage" 
+								   width="12" height="12"
+								   backgroundColor="gray"
+								   borderVisible="false"
+								   useHandCursor="true"
+								   buttonMode="true"
+								   toolTip="Small Image URL"
+								   click="smallImage_clickHandler(event)"
+								   />-->
+				<s:BorderContainer id="mediumImage" 
+								   width="14" height="14"
+								   backgroundColor="#cccccc"
+								   borderVisible="false"
+								   useHandCursor="true"
+								   buttonMode="true"
+								   toolTip="Medium Image URL"
+								   click="mediumImage_clickHandler(event)"
+								   />
+				
+				<s:BorderContainer id="fullImage" 
+								   width="14" height="16"
+								   backgroundColor="#cccccc"
+								   borderVisible="false"
+								   useHandCursor="true"
+								   buttonMode="true"
+								   toolTip="Original Image URL"
+								   click="fullImage_clickHandler(event)"
+								   />
+				
+				
+			</s:HGroup>
+			<c:ImageButton id="copyIcon" 
+					 source="{Radii8LibraryAssets.copy}" 
+					 toolTip="Copy the image URL to the Clipboard"/>
+			
+			<c:ImageButton id="refreshIcon" 
+					 source="{Radii8LibraryAssets.refresh}" 
+					 toolTip="Refresh"
+					 click="refreshIcon_clickHandler(event)"/>
+			
+			<c:ImageButton id="deleteAttachmentIcon" 
+						   source="{Radii8LibraryAssets.trashCan}" 
+						   toolTip="Remove Attachment"
+						   />
 		</s:HGroup>
-		<c:ImageButton id="copyIcon" 
-				 source="{Radii8LibraryAssets.copy}" 
-				 toolTip="Copy the image URL to the Clipboard"/>
-		
-		<c:ImageButton id="refreshIcon" 
-				 source="{Radii8LibraryAssets.refresh}" 
-				 toolTip="Refresh"
-				 click="refreshIcon_clickHandler(event)"/>
-		
-		<c:ImageButton id="deleteAttachmentIcon" 
-					   source="{Radii8LibraryAssets.trashCan}" 
-					   toolTip="Remove Attachment"
-					   />
-	</s:HGroup>	
+	</s:BorderContainer>
 	
 	
 </s:Group>

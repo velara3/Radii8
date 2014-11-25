@@ -32,7 +32,6 @@
 			
 			import mx.core.mx_internal;
 			import mx.events.FlexEvent;
-			import mx.managers.PopUpManager;
 			
 			use namespace mx_internal;
 			
@@ -93,6 +92,7 @@
 				
 				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, saveResultsHandler);
 				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_FAULT, saveResultsHandler);
+				radiate.removeEventListener(RadiateEvent.PROJECT_SAVED, saveResultsHandler);
 				
 				if (data && data is Object && "status" in data) {
 					//closePopUp.startDelay = 250;
@@ -133,17 +133,20 @@
 				
 				
 				saveWarningsLabel.text = message;
-			
 				
 				if (successful) {
+					radiate.closeVisibleDocument();
 					infoLabel.text = "Saved";
 					closePopUp.startDelay = 500;
 					closePopUp.play();
 				}
+				else {
+					infoLabel.text = "Document was not saved";
+				}
 			}
 			
 			protected function cancelButton_clickHandler(event:MouseEvent):void {
-				callLater(PopUpManager.removePopUp, [this]);
+				closePopUp.play();
 			}
 			
 			protected function panel1_creationCompleteHandler(event:FlexEvent):void {
@@ -164,6 +167,24 @@
 				if (documentData) {
 					documentName = documentData.name;
 				}
+			}
+			
+			private function closeWithoutSaving():void {
+				radiate = Radiate.getInstance();
+				
+				if (currentState==DOCUMENT) {
+					if (radiate.selectedDocument) {
+						radiate.closeDocument(radiate.selectedDocument);
+					}
+				}
+				else if (currentState==PROJECT) {
+					if (radiate.selectedProject) {
+						radiate.closeProject(radiate.selectedProject);
+					}
+				}
+				
+				closePopUp.startDelay = 500;
+				closePopUp.play();
 			}
 			
 		]]>
@@ -198,9 +219,9 @@
 				 gap="10"
 				 >
 		
-		<s:Label text="Are you sure you want to save the project, '{documentName}'?" 
+		<s:Label text="Save the project, '{documentName}' before closing?" 
 				 fontSize="16" includeIn="project"/>
-		<s:Label text="Are you sure you want to save the document, '{documentName}'?" 
+		<s:Label text="Save the document, '{documentName}' before closing?" 
 				 fontSize="16" includeIn="document"/>
 		
 		<s:Label id="saveWarningsLabel" 
@@ -215,8 +236,9 @@
 					 visible="{inProgress}"
 					 />
 			<s:Spacer width="100%"/>
-			<s:Button id="cancelButton" label="Close" click="cancelButton_clickHandler(event)" />
-			<s:Button label="Save" click="saveResource()" />
+			<s:Button id="cancelButton" label="Cancel" click="cancelButton_clickHandler(event)" />
+			<s:Button label="Close without Saving" click="closeWithoutSaving()" />
+			<s:Button label="Save and close" click="saveResource()" />
 		</s:HGroup>
 		
 	</s:VGroup>

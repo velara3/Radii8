@@ -76,11 +76,11 @@
 				
 				target = radiate.target;
 				
-				if (!sameType) {
+				//if (!sameType) {
 					inspectors = radiate.getInspectors(target);
 					
 					updateInspectors(inspectors);
-				}
+				//}
 			}
 			
 			
@@ -111,6 +111,15 @@
 					}
 				}
 				
+				if (length==0) {
+					noInspectorsLabel.visible = true;
+					noInspectorsLabel.includeInLayout = true;
+				}
+				else {
+					noInspectorsLabel.visible = false;
+					noInspectorsLabel.includeInLayout = false;
+				}
+				
 			}
 		]]>
 	</fx:Script>
@@ -120,4 +129,13 @@
 		<s:VGroup id="contentGroup" width="100%" paddingRight="12" paddingBottom="12" />
 	</s:Scroller>
 	
+	
+	<s:Label id="noInspectorsLabel" 
+			 verticalCenter="0" 
+			 textAlign="center"
+			 width="100%"
+			 paddingLeft="10" paddingRight="10"
+			 color="#666666"
+			 text="The property list is not available for this component yet. Please switch to the all properties view."
+			 />
 </s:Group>

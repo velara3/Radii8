@@ -95,10 +95,12 @@
 						  height="15"
 						  alpha=".8"
 						  click="undo()" 
+						  toolTip="Undo"
 						  />
 	<c:ImageButton id="forwardButton" source="{Radii8LibraryAssets.redo}"
 						  height="15"
 						  alpha=".8"
 						  click="redo()" 
+						  toolTip="Redo"
 						  />
 </s:Group>

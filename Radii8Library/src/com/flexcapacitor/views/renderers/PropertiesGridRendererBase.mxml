@@ -218,7 +218,7 @@
 				else if (format=="Color") {
 					actualValue = colorChooser.selectedColor;
 				}
-				else if (type=="Number") {
+				else if (type=="Number" || (type=="int" && targetValueText==null)) {
 					actualValue = numericStepper.value;
 					
 					if (property.indexOf("lpha")!=-1) {//round down to two places
@@ -325,18 +325,16 @@
 						else if (value=="false") {
 							booleanDisabledRadioButton.selected = true;
 						}
-						
-						clearStyleButton.visible = isStyle;
 					}
 					else if (format=="Color") {
 						colorChooser.selectedColor = value;
-						clearStyleButton.visible = isStyle;
+						
 					}
 					else if (enumeration && enumeration.length>0) {
 						if (!formatsCollection) formatsCollection = new ArrayCollection();
 						formatsCollection.source = enumeration;
 						formatCombobox.selectedItem = propertyObject.value;
-						clearStyleButton.visible = isStyle;
+						
 					}
 					else if (type=="Number") {
 						numericStepper.value = propertyObject.value;
@@ -368,14 +366,18 @@
 							numericStepper.stepSize = 1;
 						}
 						
-						clearStyleButton.visible = isStyle;
 					}
 					else {
 						actualValue = Radiate.getTypedValue(targetValueText.text, type);
 						targetValueText.text= propertyObject.value;
-						clearStyleButton.visible = isStyle;
 					}
-				
+					
+					if (showClearButton) { 
+						showClearStyleButton(isStyle);
+					}
+					else {
+						showClearStyleButton(false);
+					}
 					
 					Radiate.getInstance().dispatchPropertySelectedEvent(property, propertyObject);
 				}
@@ -412,10 +414,10 @@
 					enumeration = propertyObject.enumeration;
 					
 					if (showClearButton && isStyle) { 
-						clearStyleButton.visible = isStyle;
+						showClearStyleButton(isStyle);
 					}
 					else {
-						clearStyleButton.visible = false;
+						showClearStyleButton(false);
 					}
 						
 					if (type=="Boolean") {
@@ -462,7 +464,7 @@
 							dropDownListBase.selectedItem = propertyObject.value;
 						}
 					}
-					else if (type=="Number") {
+					else if (type=="Number" || (type=="int" && targetValueText==null)) {
 						numericStepper.value = propertyObject.value;
 						
 						if (!isNaN(propertyObject.minValue)) {
@@ -503,6 +505,12 @@
 				}
 				
 			}
+			
+			public function showClearStyleButton(isStyle:Boolean):void {
+				clearStyleButton.visible = isStyle;
+				clearStyleButton.includeInLayout = isStyle;
+			}
+			
 		]]>
 	</fx:Script>
 	

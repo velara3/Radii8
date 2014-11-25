@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<r:PropertiesGridRendererBase xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" 
+		xmlns:c="com.flexcapacitor.components.*"
+		xmlns:r="com.flexcapacitor.views.renderers.*"
+
+		clipAndEnableScrolling="true"
+		creationComplete="createFormats()">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.skins.ClearButton;
+			
+			import mx.collections.ArrayCollection;
+			
+			import spark.layouts.BasicLayout;
+			import spark.layouts.TileLayout;
+			import spark.layouts.VerticalLayout;
+			import spark.layouts.supportClasses.LayoutBase;
+			
+			private function createFormats():void {
+				//formatsCollection.source = itemsArray;
+			}
+			
+			override public function setTargetValue(clearStyle:Boolean = false):void {
+				var layoutFormat:String = formatCombobox.selectedItem ? formatCombobox.selectedItem.name : "basic";
+				var layout:LayoutBase;
+				var target:Object = Radiate.getInstance().target;
+				var property:String = "layout";
+				var valueSuccessfullyApplied:Boolean;
+				
+				if (layoutFormat=="horizontal" && !(layout is HorizontalLayout)) {
+					layout = new HorizontalLayout();
+					valueSuccessfullyApplied = Radiate.setProperty(target, property, layout);
+				}
+				else if (layoutFormat=="vertical" && !(layout is VerticalLayout)) {
+					layout = new VerticalLayout();
+					valueSuccessfullyApplied = Radiate.setProperty(target, property, layout);
+				}
+				else if (layoutFormat=="tile" && !(layout is TileLayout)) {
+					layout = new TileLayout();
+					valueSuccessfullyApplied = Radiate.setProperty(target, property, layout);
+				}
+				else if (layoutFormat=="basic" && !(layout is BasicLayout)) {
+					layout = new BasicLayout();
+					valueSuccessfullyApplied = Radiate.setProperty(target, property, layout);
+				}
+				
+			}
+			
+			
+			override public function updateSubComponentsValue():void {
+				var target:Object = Radiate.getInstance().target;
+				var layout:LayoutBase = target && "layout" in target ? target.layout : null;
+				var property:String = "layout";
+				var layoutFormat:String;
+				
+				if (formatsCollection==null) {
+					formatsCollection = new ArrayCollection();
+					formatsCollection.source = itemsArray;
+				}
+				
+				if (layout && layout is HorizontalLayout) {
+					layoutFormat = "horizontal";
+				}
+				else if (layout && layout is VerticalLayout) {
+					layoutFormat = "vertical";
+				}
+				else if (layout && layout is TileLayout) {
+					layoutFormat = "tile";
+				}
+				else if (layout && layout is BasicLayout) {
+					layoutFormat = "basic";
+				}
+				else {
+					//layoutFormat = "Basic";
+				}
+				
+				var length:int = itemsArray.length;
+				for (var i:int;i<length;i++) {
+					if (formatsCollection.getItemAt(i).name==layoutFormat) {
+						formatCombobox.selectedItem = formatsCollection.getItemAt(i);
+						break;
+					}
+				}
+				
+				//if (formatCombobox.value==layoutFormat) {
+				//	formatCombobox.text==layoutFormat
+				//}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:ArrayList id="items">
+			<fx:Object label="Basic"
+					   name="basic" type="ClassDefinition"/>
+			<fx:Object label="Horizontal"
+					   name="horizontal" type="ClassDefinition"/>
+			<fx:Object label="Tile"
+					   name="tile" type="ClassDefinition"/>
+			<fx:Object label="Vertical"
+					   name="vertical" type="ClassDefinition"/>
+		</mx:ArrayList>
+		<fx:Array id="itemsArray">
+			<fx:Object label="Basic"
+					   name="basic" type="ClassDefinition"/>
+			<fx:Object label="Horizontal"
+					   name="horizontal" type="ClassDefinition"/>
+			<fx:Object label="Tile"
+					   name="tile" type="ClassDefinition"/>
+			<fx:Object label="Vertical"
+					   name="vertical" type="ClassDefinition"/>
+		</fx:Array>
+	</fx:Declarations>
+	
+	<r:layout>
+		<s:HorizontalLayout />
+	</r:layout>
+	
+	<s:ComboBox id="formatCombobox" 
+					width="100%" labelField="label"
+					change="setTargetValue()"
+					dataProvider="{formatsCollection}"/> 
+	<s:Button id="clearStyleButton"
+			  skinClass="com.flexcapacitor.skins.ClearButton"
+			  click="setTargetValue(true);"
+			  right="0" 
+			  verticalCenter="0"/>
+</r:PropertiesGridRendererBase>

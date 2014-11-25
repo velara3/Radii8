@@ -24,7 +24,6 @@ package com.flexcapacitor.utils {
 		/**
 		 * Indicates if the XML validation
 		 * */
-		[Bindable]
 		public function get isValid():Boolean {
 			return _isValid;
 		}
@@ -42,7 +41,6 @@ package com.flexcapacitor.utils {
 		/**
 		 * Validation error
 		 * */
-		[Bindable]
 		public function get error():Error {
 			return _error;
 		}
@@ -60,7 +58,6 @@ package com.flexcapacitor.utils {
 		/**
 		 * Validation error message
 		 * */
-		[Bindable]
 		public function get errorMessage():String {
 			return _errorMessage;
 		}
@@ -78,7 +75,6 @@ package com.flexcapacitor.utils {
 		/**
 		 * Error messages
 		 * */
-		[Bindable]
 		public function get errors():Array {
 			return _errors;
 		}
@@ -95,7 +91,6 @@ package com.flexcapacitor.utils {
 		/**
 		 * Warning messages
 		 * */
-		[Bindable]
 		public function get warnings():Array {
 			return _warnings;
 		}

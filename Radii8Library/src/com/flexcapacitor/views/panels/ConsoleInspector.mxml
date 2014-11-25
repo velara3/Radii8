@@ -14,7 +14,9 @@
 	
 				Radiate.log.info("Document SHOW event");
 				Radiate.log.error(event.text);
+		TO DO: 
 	
+		Store previous value when overflow 
 	-->
 	<fx:Script>
 		<![CDATA[
@@ -23,6 +25,7 @@
 			import mx.events.FlexEvent;
 			import mx.logging.AbstractTarget;
 			
+			import spark.components.TextArea;
 			import spark.components.VScrollBar;
 			import spark.events.TextOperationEvent;
 			
@@ -37,10 +40,13 @@
 			 * In one test during debug in Properties view, the time to call describe type 
 			 * on a target increased by 1 or 3 ms for each line of text.
 			 * 
-			 * If the font size is 10 px and max position is 200 lines 
-			 * since 2000/10.   
+			 * If the font size is 10 px and maxScrollPosition is 2000 
+			 * then the max number of lines is 200
+			 * since 2000pixels/10px=200lines.
 			 * */
-			public var maxScrollPosition:int = 3000; 
+			public var maxLines:int = 300;
+			public var defaultMaxLines:int = 300;
+			public var previousConsoleValue:String;
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				
@@ -66,19 +72,46 @@
 				scrollToTheBottom()
 			}
 			
+			protected function consoleTextAreaMX_changeHandler(event:Event):void {
+				scrollToTheBottom()
+			}
+			
 			public function scrollToTheBottom():void {
-				var scrollBar:VScrollBar = consoleTextArea.scroller.verticalScrollBar;
-				scrollBar.value = scrollBar.maximum;
-				consoleTextArea.validateNow();
 				
-				if (scrollBar.value != scrollBar.maximum) {
+				if (consoleTextArea is spark.components.TextArea) {
+					var scrollBar:VScrollBar = spark.components.TextArea(consoleTextArea).scroller.verticalScrollBar;
+					
 					scrollBar.value = scrollBar.maximum;
 					consoleTextArea.validateNow();
+					
+					if (scrollBar.value != scrollBar.maximum) {
+						scrollBar.value = scrollBar.maximum;
+						consoleTextArea.validateNow();
+					}
+					
+					if (scrollBar.maximum>maxLines*consoleTextArea.getStyle("fontSize")) {
+						previousConsoleValue = consoleTextArea.text;
+						consoleTextArea.text = "";
+					}
+				}
+				else if (consoleTextArea is mx.controls.TextArea) {
+					var mxTextArea:mx.controls.TextArea = mx.controls.TextArea(consoleTextArea);
+					
+					mxTextArea.verticalScrollPosition = mxTextArea.maxVerticalScrollPosition
+					mxTextArea.validateNow();
+					
+					if (mxTextArea.verticalScrollPosition != mxTextArea.maxVerticalScrollPosition) {
+						mxTextArea.verticalScrollPosition = mxTextArea.maxVerticalScrollPosition;
+						mxTextArea.validateNow();
+					}
+					
+					if (mxTextArea.maxVerticalScrollPosition>maxLines*consoleTextArea.getStyle("fontSize")) {
+						previousConsoleValue = mxTextArea.text;
+						mxTextArea.text = "";
+					}
+					
 				}
 				
-				if (scrollBar.maximum>maxScrollPosition) {
-					consoleTextArea.text = "";
-				}
 			}
 			
 		]]>
@@ -98,7 +131,7 @@
 			 buttonMode="true"
 			 click="clearTextAreaHandler(event)"
 			 />
-	<s:TextArea id="consoleTextArea" 
+	<!--<s:TextArea id="consoleTextArea" 
 				top="12"
 				width="100%" height="100%"
 				tabFocusEnabled="false"
@@ -108,6 +141,18 @@
 				fontFamily="Courier New"
 				borderVisible="false"
 				change="consoleTextArea_changeHandler(event)"
+				valueCommit="consoleTextArea_valueCommitHandler(event)"
+				/>-->
+	<mx:TextArea id="consoleTextArea" 
+				top="20"
+				width="100%" height="100%"
+				tabFocusEnabled="false"
+				fontWeight="normal"
+				fontSize="13"
+				focusAlpha="0"
+				fontFamily="Courier New"
+				borderVisible="false"
+				change="consoleTextAreaMX_changeHandler(event)"
 				valueCommit="consoleTextArea_valueCommitHandler(event)"
 				/>
 	<controls:ImageButton source="{Radii8LibraryAssets.clear}" 

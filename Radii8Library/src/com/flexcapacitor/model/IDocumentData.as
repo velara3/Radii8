@@ -19,6 +19,12 @@ package com.flexcapacitor.model {
 		function get exporter():IDocumentExporter;
 		
 		/**
+		 * Exporter that exports the document to HTML
+		 * */
+		function set htmlExporter(value:IDocumentExporter):void;
+		function get htmlExporter():IDocumentExporter;
+		
+		/**
 		 * Original source code of the document before importing
 		 * */
 		function set originalSource(value:String):void;

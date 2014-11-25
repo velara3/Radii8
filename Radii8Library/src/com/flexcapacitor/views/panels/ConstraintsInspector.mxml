@@ -337,13 +337,52 @@
 				var combobox:ComboBox = event.currentTarget as ComboBox;
 				var checkbox:CheckBox = event.currentTarget as CheckBox;
 				var property:String;
+				var clearWidth:Boolean;
+				var clearHeight:Boolean;
 				
 				if (!target) return;
 				
 				if (combobox && combobox.selectedIndex != -1) { // not used
 					//TypeUtils.applyProperty(combobox, combobox.selectedItem.name, combobox.selectedItem.label, combobox.selectedItem.type);
 				}
-
+				
+				
+				if (checkbox) {
+					var value:Boolean = checkbox.selected;
+					property = checkbox.name.indexOf(":") ? checkbox.name.split(":")[0]:checkbox.name;
+					
+					// clear out width values if auto size is selected otherwise restore size and set focus
+					if (property=="widthAutoSize") {
+						property = "width";
+						
+						if (widthAutoSizeCheckbox.selected) {
+							Radiate.setProperty(DisplayObject(target), property, undefined);
+							widthText.enabled = false;
+						}
+						else {
+							updateTargetDimensionsLayout();
+							widthText.enabled = true;
+							widthText.setFocus();
+						}
+					}
+					else if (property=="heightAutoSize") {
+						property = "height";
+						
+						// clear out height values if auto size is selected otherwise restore size and set focus
+						if (heightAutoSizeCheckbox.selected) {
+							Radiate.setProperty(DisplayObject(target), property, undefined);
+							heightText.enabled = false;
+						}
+						else {
+							updateTargetDimensionsLayout();
+							heightText.enabled = true;
+							heightText.setFocus();
+						}
+					}
+					else {
+						Radiate.setProperty(DisplayObject(target), property, value);
+					}
+				}
 				else if (textInput) {
 					property = textInput.name.indexOf(":") ? textInput.name.split(":")[0]:textInput.name;
 					
@@ -364,12 +403,6 @@
 						Radiate.setProperty(DisplayObject(target), property, textInput.text);
 					}
 					
-				}
-
-				else if (checkbox) {
-					var value:Boolean = checkbox.selected;
-					property = checkbox.name.indexOf(":") ? checkbox.name.split(":")[0]:checkbox.name;
-					Radiate.setProperty(DisplayObject(target), property, value);
 				}
 
 				updateTargetDimensionsLayout();
@@ -473,7 +506,9 @@
 
 				Radiate.setProperty(target, constraint, value);
 				updateTargetDimensionsLayout();
-				callLater(focusComponent.setFocus);
+				if (focusComponent) {
+					callLater(focusComponent.setFocus);
+				}
 			}
 
 			/**
@@ -577,14 +612,17 @@
 				if (isPercentWidth) {
 					widthText.text = "";
 					widthText.prompt = String(element.percentWidth) + "%";
+					clearWidthButton.enabled = true;
 				}
 				else {
 					if ("explicitWidth" in target && target.width==target.explicitWidth) {
 						widthText.text = String(target.width);
+						clearWidthButton.enabled = true;
 					}
 					else {
 						widthText.text = "";
 						widthText.prompt = String(target.width);
+						clearWidthButton.enabled = false;
 					}
 				}
 			}
@@ -1161,8 +1199,17 @@
 			
 			private const relevantProperties:Array = [ "width", "height", "percentWidth", "percentHeight", "x",
 													"y", "top", "left", "right", "bottom", "verticalCenter",
-													"horizontalCenter", "baseline"]
+													"horizontalCenter", "baseline"];
 			
+			public function clearWidth():void {
+				Radiate.clearProperties(target, ["width", "percentWidth"]);
+				updateView();
+			}
+			
+			public function clearHeight():void {
+				Radiate.clearProperties(target, ["height", "percentHeight"]);
+				updateView();
+			}
 		]]>
 	</fx:Script>
 
@@ -1273,9 +1320,23 @@
 							   id="clickHandler">
 			
 			<handlers:eventStart>
-					<![CDATA[
-					constraintHandler(event.currentTarget.event);
-					]]>
+				<![CDATA[
+				constraintHandler(event.currentTarget.event);
+				]]>
+			</handlers:eventStart>
+			
+		</handlers:EventHandler>
+		<handlers:EventHandler eventName="{Event.CHANGE}"
+							   targets="{[
+							   heightAutoSizeCheckbox,
+							   widthAutoSizeCheckbox]}"
+							   keepEvent="true"
+							   id="clickHandler2">
+			
+			<handlers:eventStart>
+				<![CDATA[
+				applyPropertiesToTargetHandler(event.currentTarget.event);
+				]]>
 			</handlers:eventStart>
 			
 		</handlers:EventHandler>
@@ -1287,45 +1348,88 @@
 	<!-- NAMING CONVENTION IS USED -->
 	
 	<!-- POSITIONING -->
-	<s:Group horizontalCenter="0" y="30" 
-			 styleName="constraintStyles">
+	<s:HGroup left="20" y="30" 
+			 styleName="constraintStyles"
+			 verticalAlign="middle">
+		
+		<s:Label text="Width:" minWidth="48"
+				 styleName="constraintStyles"
+				 x="2" y="7"/>
+		<s:CheckBox id="widthAutoSizeCheckbox" 
+					fontSize="12"
+					styleName="inputStyles"
+					x="104" y="0"
+					name="widthAutoSize:Boolean"
+					toolTip="Fit to content"
+					includeInLayout="false"
+					visible="false"/>
 		<s:TextInput id="widthText" 
 					 fontSize="12"
 					 styleName="inputStyles"
-					 width="70" x="44" y="0"
+					 width="50" x="44" y="0"
 					 restrict="0-9%"
-					 name="width:Number"/>
-		<s:TextInput id="heightText"
-					 fontSize="12"
-					 styleName="inputStyles" 
-					 width="70" x="174" y="0"
-					 restrict="0-9%"
-					 name="height:Number"/>
+					 name="width:Number"
+					 toolTip="Width in pixels or percent"/>
+		
+		<s:Button id="clearWidthButton" 
+				  skinClass="com.flexcapacitor.skins.ClearButton"
+				  click="clearWidth()"/>
+		
+		<s:Spacer width="20" />
+		
+		<s:Label text="X:" minWidth="15"
+				 styleName="constraintStyles"
+				 x="30" y="42"/>
 		<s:TextInput id="xText" 
 					 fontSize="12"
 					 styleName="inputStyles"
-					 width="70" x="44" y="35"
+					 width="50" x="44" y="35"
 					 restrict="0-9-"
 					 name="x:Number"/>
+		
+	</s:HGroup>
+	
+	<s:HGroup left="20" y="60" 
+			  verticalAlign="middle"
+			  styleName="constraintStyles">
+		
+		
+		<s:Label text="Height:" minWidth="48"
+				 styleName="constraintStyles"
+				 x="126" y="7"/>
+		<s:CheckBox id="heightAutoSizeCheckbox" 
+					fontSize="12"
+					styleName="inputStyles"
+					x="184" y="0"
+					name="heightAutoSize:Boolean"
+					toolTip="Fit to content"
+					includeInLayout="false"
+					visible="false"/>
+		<s:TextInput id="heightText"
+					 fontSize="12"
+					 styleName="inputStyles" 
+					 width="50" x="174" y="0"
+					 restrict="0-9%"
+					 name="height:Number"
+					 toolTip="Height in pixels or percent"
+					 />
+		
+		<s:Button id="clearHeightButton" 
+				  skinClass="com.flexcapacitor.skins.ClearButton"
+				  click="clearHeight()"/>
+		
+		<s:Spacer width="20" />
+		
+		<s:Label text="Y:" minWidth="15"
+				 styleName="constraintStyles"
+				 x="160" y="42"/>
 		<s:TextInput id="yText" 
 					 fontSize="12"
 					 styleName="inputStyles"
-					 width="70" x="174" y="35"
+					 width="50" x="174" y="35"
 					 restrict="0-9-"
 					 name="y:Number"/>
-		<s:Label text="Height:" 
-				 styleName="constraintStyles"
-				 x="126" y="7"/>
-		<s:Label text="Width:" 
-				 styleName="constraintStyles"
-				 x="2" y="7"/>
-		<s:Label text="X:" 
-				 styleName="constraintStyles"
-				 x="30" y="42"/>
-		<s:Label text="Y:" 
-				 styleName="constraintStyles"
-				 x="160" y="42"/>
-	</s:Group>
+	</s:HGroup>
 
 	
 	<!-- CONSTRAINTS PANEL -->

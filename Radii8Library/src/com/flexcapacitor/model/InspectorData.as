@@ -52,11 +52,17 @@ package com.flexcapacitor.model {
 		public var icon:Object;
 		
 		/**
+		 * Property name. Optional
+		 * */
+		public var propertyName:String;
+		
+		/**
 		 * Import from XML data
 		 * */
 		public function unmarshall(data:XML):InspectorData {
 			name = data.attribute("name");
 			className = data.attribute("className");
+			propertyName = data.attribute("propertyName");
 			//defaults = data.defaults;
 			
 			return this;

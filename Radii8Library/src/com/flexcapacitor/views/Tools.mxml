@@ -130,10 +130,12 @@
 								if (definition) {
 									if (definition.icon) {
 										iconImage.source = definition.icon;
+										iconImage.toolTip = definition.name;
 									}
 									else {
 										path = "assets/images/tools/" + definition.name + ".png";
 										iconImage.source = path;
+										iconImage.toolTip = definition.name;
 									}
 								}
 							}

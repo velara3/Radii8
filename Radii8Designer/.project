@@ -31,5 +31,10 @@
 			<type>2</type>
 			<location>/Applications/MAMP/htdocs/Radii8-debug</location>
 		</link>
+		<link>
+			<name>bin-release</name>
+			<type>2</type>
+			<location>/Applications/MAMP/htdocs/Radii8</location>
+		</link>
 	</linkedResources>
 </projectDescription>

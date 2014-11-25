@@ -275,16 +275,16 @@
 									minWidth="180"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Font Weight" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:DropDownListRenderer id="fontWeightRenderer" height="24" />
-	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Font Size" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
 		<renderers:NumberRenderer id="fontSizeRenderer" height="24" showClearButton="true"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Font Style" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
 		<renderers:DropDownListRenderer id="fontStyleRenderer" height="24"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Font Weight" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:DropDownListRenderer id="fontWeightRenderer" height="24" />
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Color" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>

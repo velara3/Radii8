@@ -1,6 +1,7 @@
 
 package com.flexcapacitor.utils {
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.IDocumentExporter;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.views.supportClasses.Styles;
 	
@@ -23,6 +24,7 @@ package com.flexcapacitor.utils {
 	
 	import spark.components.BorderContainer;
 	import spark.components.HGroup;
+	import spark.components.VGroup;
 	import spark.components.supportClasses.GroupBase;
 	import spark.layouts.BasicLayout;
 	import spark.layouts.HorizontalLayout;
@@ -33,11 +35,16 @@ package com.flexcapacitor.utils {
 	/**
 	 * Exports a document to HTML
 	 * */
-	public class HTMLDocumentExporter extends DocumentExporter {
+	public class HTMLDocumentExporter extends DocumentExporter implements IDocumentExporter {
 		
 		public function HTMLDocumentExporter() {
 		
 		}
+		
+		/**
+		 * Version
+		 */
+		public var version:String = "1.0.0";
 		
 		/**
 		 * Sets explicit size regardless if size is explicit
@@ -140,6 +147,12 @@ package com.flexcapacitor.utils {
 		public var showFullHTMLPageSource:Boolean = false;
 		
 		/**
+		 * Convert bitmap data to graphic data
+		 * */
+		[Bindable]
+		public var createImageDataForGraphics:Boolean = false;
+		
+		/**
 		 * Last source code
 		 * */
 		[Bindable]
@@ -159,6 +172,11 @@ package com.flexcapacitor.utils {
 		public var wrapInPreview:Boolean;
 		
 		/**
+		 * URL to transparent Gif used for spacing
+		 * */
+		public var transparentGifURL:String = "/spacer.gif";
+		
+		/**
 		 * 
 		 * */
 		public var useWrapperDivs:Boolean;
@@ -168,7 +186,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * @inheritDoc
 		 * */
-		public function export(iDocument:IDocument, reference:Boolean = false, target:Object = null):String {
+		public function export(iDocument:IDocument, target:ComponentDescription = null, reference:Boolean = false):* {
 			var XML1:XML;
 			var application:Object = iDocument ? iDocument.instance : null;
 			var targetDescription:ComponentDescription;
@@ -180,7 +198,7 @@ package com.flexcapacitor.utils {
 			cssOutput = "";
 			
 			// find target in display list and get it's code
-			targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, componentTree);
+			targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target.instance, componentTree);
 			
 			
 			if (targetDescription) {
@@ -375,14 +393,17 @@ package com.flexcapacitor.utils {
 			var componentName:String = component.name ? component.name.toLowerCase() : "";
 			var htmlName:String = componentName ? componentName : "";
 			var componentChild:ComponentDescription;
+			var componentInstance:Object = component.instance;
+			var instanceName:String = "name" in componentInstance ? componentInstance.name : "";
+			var instanceID:String = "id" in componentInstance ? componentInstance.id : "";
 			var contentToken:String = "[child_content]";
 			var styleValue:String = "position:absolute;";
 			var styles:Styles = new Styles();
 			var wrapperStyles:Styles = new Styles();
-			var isHorizontalLayout:Boolean;
-			var isVerticalLayout:Boolean;
-			var isBasicLayout:Boolean;
-			var isTileLayout:Boolean;
+			var isInHorizontalLayout:Boolean;
+			var isInVerticalLayout:Boolean;
+			var isInBasicLayout:Boolean;
+			var isInTileLayout:Boolean;
 			var childContent:String = "";
 			var wrapperTag:String = "";
 			var centeredHorizontally:Boolean;
@@ -396,6 +417,7 @@ package com.flexcapacitor.utils {
 			var index:int;
 			var value:*;
 			var gap:int;
+			var parentVerticalAlign:String;
 			
 			
 			// we are setting the styles in a string now
@@ -407,7 +429,7 @@ package com.flexcapacitor.utils {
 			if (component.parent && component.parent.instance is IVisualElementContainer) {
 				
 				if (component.parent.instance.layout is HorizontalLayout) {
-					isHorizontalLayout = true;
+					isInHorizontalLayout = true;
 					styleValue = styleValue.replace("absolute", "relative");
 					//styleValue += "vertical-align:middle;";
 					styles.position = Styles.RELATIVE;
@@ -416,7 +438,8 @@ package com.flexcapacitor.utils {
 					wrapperTagStyles += hasExplicitSizeSet(component.instance as IVisualElement) ? "display:inline-block;" : "display:inline;";
 					wrapperStyles.display = hasExplicitSizeSet(component.instance as IVisualElement) ? Styles.INLINE_BLOCK : Styles.INLINE;
 					gap = HorizontalLayout(component.parent.instance.layout).gap - 4;
-					
+					parentVerticalAlign = component.parent.instance.verticalAlign;
+					wrapperTagStyles += getParentVerticalAlign(parentVerticalAlign);
 					
 					if (index<numElements-1 && numElements>1) {
 						//wrapperTagStyles += "padding-right:" + gap + "px;";
@@ -429,7 +452,7 @@ package com.flexcapacitor.utils {
 				}
 				else if (component.parent.instance.layout is TileLayout) {
 					//isHorizontalLayout = true;
-					isTileLayout = true;
+					isInTileLayout = true;
 					styleValue = styleValue.replace("absolute", "relative");
 					styles.position = Styles.RELATIVE;
 					index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
@@ -437,6 +460,8 @@ package com.flexcapacitor.utils {
 					wrapperTagStyles += hasExplicitSizeSet(component.instance as IVisualElement) ? "display:inline-block;" : "display:inline;";
 					wrapperStyles.display = hasExplicitSizeSet(component.instance as IVisualElement) ? Styles.INLINE_BLOCK : Styles.INLINE;
 					gap = TileLayout(component.parent.instance.layout).horizontalGap - 4;
+					parentVerticalAlign = component.parent.instance.verticalAlign;
+					wrapperTagStyles += getParentVerticalAlign(parentVerticalAlign);
 					
 					if (index<numElements-1 && numElements>1) {
 						//wrapperTagStyles += "padding-right:" + gap + "px;";
@@ -450,12 +475,14 @@ package com.flexcapacitor.utils {
 				}
 				
 				else if (component.parent.instance.layout is VerticalLayout) {
-					isVerticalLayout = true;
+					isInVerticalLayout = true;
 					styleValue = styleValue.replace("absolute", "relative");
 					styles.position = Styles.RELATIVE;
 					index = GroupBase(component.parent.instance).getElementIndex(component.instance as IVisualElement);
 					numElements = GroupBase(component.parent.instance).numElements;
 					gap = VerticalLayout(component.parent.instance.layout).gap;
+					parentVerticalAlign = component.parent.instance.verticalAlign;
+					wrapperTagStyles += getParentVerticalAlign(parentVerticalAlign);
 					
 					
 					if (index<numElements-1 && numElements>1) {
@@ -469,7 +496,7 @@ package com.flexcapacitor.utils {
 				}
 				
 				else if (component.parent.instance.layout is BasicLayout) {
-					isBasicLayout = true;
+					isInBasicLayout = true;
 					
 					
 					
@@ -488,8 +515,8 @@ package com.flexcapacitor.utils {
 			}
 			
 			// constraints take higher authority
-			var isHorizontalSet:Boolean;
-			var isVerticalSet:Boolean;
+			var isHorizontalCenterSet:Boolean;
+			var isVerticalCenterSet:Boolean;
 			
 			// loop through assigned properties
 			for (var propertyName:String in property) {
@@ -500,13 +527,13 @@ package com.flexcapacitor.utils {
 				}
 				
 				
-				if (verticalPositions.indexOf(propertyName)!=-1 && !isVerticalSet) {
-					styleValue = getVerticalPositionHTML(component.instance as IVisualElement, styles, styleValue, isBasicLayout);
-					isVerticalSet = true;
+				if (verticalPositions.indexOf(propertyName)!=-1 && !isVerticalCenterSet) {
+					styleValue = getVerticalPositionHTML(component.instance as IVisualElement, styles, styleValue, isInBasicLayout);
+					isVerticalCenterSet = true;
 				}
-				else if (horizontalPositions.indexOf(propertyName)!=-1 && !isHorizontalSet) {
-					styleValue = getHorizontalPositionHTML(component.instance as IVisualElement, styles, styleValue, isBasicLayout);
-					isHorizontalSet = true;
+				else if (horizontalPositions.indexOf(propertyName)!=-1 && !isHorizontalCenterSet) {
+					styleValue = getHorizontalPositionHTML(component.instance as IVisualElement, styles, styleValue, isInBasicLayout);
+					isHorizontalCenterSet = true;
 				}
 				
 			}
@@ -576,8 +603,9 @@ package com.flexcapacitor.utils {
 						output += properties ? " " + properties : "";
 						styleValue += "width:" + component.instance.width+ "px;";
 						styleValue += "height:" + component.instance.height+ "px;";
-						styleValue += "border:1px solid black";
+						styleValue += "border:1px solid black;";
 						styleValue += "background-color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("backgroundColor"), true) + ";";
+						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 						//output += properties ? " " : "";
 						output += setStyles(component.instance, styleValue);
 						output += contentToken;
@@ -591,7 +619,11 @@ package com.flexcapacitor.utils {
 					output += "<div " + properties;
 					output = getIdentifierAttribute(component.instance, output);
 					output += properties ? " " : "";
-					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
+					if (componentInstance is VGroup) {
+						styleValue += "text-align:" + VGroup(componentInstance).horizontalAlign + ";";
+					}
 					
 					//styleValue += "width:" + component.instance.width+ "px;";
 					//styleValue += "height:" + component.instance.height+ "px;";
@@ -605,15 +637,16 @@ package com.flexcapacitor.utils {
 					htmlName = "div";
 					output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					output += "<div " + properties;
-					output = getIdentifierAttribute(component.instance, output);
+					output = getIdentifierAttribute(componentInstance, output);
 					output += properties ? " " : "";
-					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
 					styleValue += getBorderString(component.instance as BorderContainer);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					//styleValue += getColorString(component.instance as BorderContainer);
 					//styles += component.instance as BorderContainer);
 					
 					output += setStyles(component.instance, styleValue);
-					output += contentToken;
+					output += componentInstance.numElements==0? "&#160;": contentToken;
 					output += "\n" + tabs + "</div>";
 					output += getWrapperTag(wrapperTag, true);
 					
@@ -627,19 +660,25 @@ package com.flexcapacitor.utils {
 					
 					//styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 					if (component.name=="HGroup") {
-						styleValue += "width:" + Math.max(HGroup(component.instance).contentWidth, component.instance.width)+ "px;";
+						styleValue = getWidthString(componentInstance, styleValue, isHorizontalCenterSet, isVerticalCenterSet, false);
 					}
 					else {
-						styleValue += "width:" + component.instance.width+ "px;";
+						styleValue = getWidthString(componentInstance, styleValue, isHorizontalCenterSet, isVerticalCenterSet, false);
 					}
 					
-					styleValue += "height:" + component.instance.height+ "px;";
-					//var verical:String = component.instance.getStyle("verticalAlign");
-					var vericalAlign:String = component.instance.verticalAlign;
-					if (componentName.toLowerCase()=="hgroup" && vericalAlign=="middle") {
-						styleValue += "line-height:" + component.instance.height + "px;";
-					}
+					styleValue = getHeightString(componentInstance, styleValue, isHorizontalCenterSet, isVerticalCenterSet, false);
 					
+					//var vertical:String = component.instance.getStyle("verticalAlign");
+					var verticalAlign:String = component.instance.verticalAlign;
+					if (componentName.toLowerCase()=="hgroup") {
+						if (verticalAlign=="middle") {
+							styleValue += "line-height:" + component.instance.height + "px;";
+						}
+					}
+					if (componentInstance is HGroup) {
+						styleValue += "text-align:" + HGroup(componentInstance).horizontalAlign + ";";
+					}
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					output += properties ? " " : "";
 					output += setStyles(component.instance, styleValue);
 					output += contentToken;
@@ -653,7 +692,8 @@ package com.flexcapacitor.utils {
 					output = getIdentifierAttribute(component.instance, output);
 					output += " type=\"" + htmlName.toLowerCase() + "\"" ;
 					output += properties ? " " + properties : "";
-					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 					styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 					output += " value=\"" + component.instance.label + "\"";
@@ -667,7 +707,8 @@ package com.flexcapacitor.utils {
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<label ";
 						output = getIdentifierAttribute(component.instance, output, "_Label");
-						styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
+						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 						//styleValue += "width:" + (component.instance.width + 6)+ "px;";
 						//styleValue += "height:" + component.instance.height+ "px;";
 						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
@@ -701,7 +742,8 @@ package com.flexcapacitor.utils {
 						output = getIdentifierAttribute(component.instance, output, "_Label");
 						//styleValue += "width:" + (component.instance.width + 8)+ "px;";
 						//styleValue += "height:" + component.instance.height+ "px;";
-						styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
+						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 						styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 						styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 						output += setStyles("#"+getIdentifierOrName(component.instance, true, "_Label"), styleValue);
@@ -714,7 +756,8 @@ package com.flexcapacitor.utils {
 						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						output += "<input type=\"" + htmlName.toLowerCase() + "\" " + properties;
 						output = getIdentifierAttribute(component.instance, output);
-						styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+						styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
+						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 						//styleValue = getSizeString(component.instance as IVisualElement, styleValue);
 						output += setStyles(component.instance, styleValue);
 					}
@@ -730,10 +773,14 @@ package com.flexcapacitor.utils {
 					output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					output += "<input ";
 					output = getIdentifierAttribute(component.instance, output);
+					if (componentInstance.prompt) {
+						output += "placeholder=\"" + componentInstance.prompt + "\"";
+					}
 					output += " type=\"input\" "  + properties;
 					//styleValue += "width:" + component.instance.width+ "px;";
 					//styleValue += "height:" + component.instance.height+ "px;";
-					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 					styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 					styleValue += "padding:0;border:1px solid " + DisplayObjectUtils.getColorInHex(component.instance.getStyle("borderColor"), true) + ";";
@@ -757,7 +804,8 @@ package com.flexcapacitor.utils {
 					output += " type=\"input\" "  + properties;
 					//styleValue += "width:" + component.instance.width+ "px;";
 					//styleValue += "height:" + component.instance.height+ "px;";
-					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 					styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 					styleValue += "padding:0;border:1px solid " + DisplayObjectUtils.getColorInHex(component.instance.getStyle("borderColor"), true) + ";";
@@ -773,7 +821,8 @@ package com.flexcapacitor.utils {
 					output = getIdentifierAttribute(component.instance, output);
 					//styleValue += "width:" + component.instance.width+ "px;";
 					//styleValue += "height:" + component.instance.height+ "px;";
-					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
 					styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
 					//styles += getBorderString(component.instance as IStyleClient);
@@ -796,13 +845,20 @@ package com.flexcapacitor.utils {
 					output = getIdentifierAttribute(component.instance, output);
 					//styleValue += "width:" + component.instance.width+ "px;";
 					//styleValue += "height:" + component.instance.height+ "px;";
-					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet, isVerticalSet);
+					//styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
+					styleValue = getWidthString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
+					styleValue = getHeightString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					//styleValue += wrapperTagStyles;
-					styleValue += "color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("color"), true) + ";";
-					styleValue += "font-weight:" + component.instance.getStyle("fontWeight") + ";";
-					styleValue += "font-family:" + component.instance.getStyle("fontFamily") + ";";
+					styleValue += "color:" + DisplayObjectUtils.getColorInHex(componentInstance.getStyle("color"), true) + ";";
+					styleValue += "font-weight:" + componentInstance.getStyle("fontWeight") + ";";
+					styleValue += "font-family:" + componentInstance.getStyle("fontFamily") + ";";
+					var fontSize:Number = component.instance.getStyle("fontSize");
+					var paddingFromBrowserTextEngine:Number = .34615;
+					var marginTop:int = fontSize * paddingFromBrowserTextEngine * -1;
 					styleValue += "font-size:" + component.instance.getStyle("fontSize") + "px;";
-					styleValue += "line-height:" + "1;";
+					styleValue += "line-height:" + parseInt(componentInstance.getStyle("lineHeight"))/100 + ";";
+					styleValue += "margin-top:" + marginTop + "px;";
 					//styles += getBorderString(component.instance as IStyleClient);
 					
 					output += properties ? " " : "";
@@ -816,25 +872,49 @@ package com.flexcapacitor.utils {
 					}
 				}
 				else if (htmlName=="image") {
-					htmlName = "img";
 					output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					output += "<img " + properties;
 					output = getIdentifierAttribute(component.instance, output);
 					//styleValue += "width:" + component.instance.width+ "px;";
 					//styleValue += "height:" + component.instance.height+ "px;";
-					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet);
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock(component.instance) : "";
+					styleValue += getVisibleDisplay(component.instance);
 					output += properties ? " " : "";
 					
-					if (component.instance.source is BitmapData) {
+					if (component.instance.source is BitmapData && createImageDataForGraphics) {
 						output += " src=\"" + getDataURI(component.instance.source, "jpeg") + "\"";
 					}
 					else if (component.instance.source is String) {
 						output += " src=\"" + component.instance.source + "\"";
 					}
+					
 					output += setStyles(component.instance, styleValue);
 					output += getWrapperTag(wrapperTag, true);
 				}
-				
+				else if (htmlName=="spacer") {
+					//move to image
+					// show placeholder NOT actual component
+					htmlName = "div";
+					if (useWrapperDivs) {
+						output = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					}
+					else {
+						output = tabs;
+					}
+					output += "<div "  + properties;
+					output = getIdentifierAttribute(component.instance, output);
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
+					
+					output += properties ? " " : "";
+					output += setStyles(component.instance, wrapperTagStyles+styleValue);
+					//output += "&#160;"
+					output += "</div>";
+					if (useWrapperDivs) {
+						output += getWrapperTag(wrapperTag, true);
+					}
+				}
 				else {
 					// show placeholder NOT actual component
 					htmlName = "label";
@@ -848,7 +928,8 @@ package com.flexcapacitor.utils {
 					output = getIdentifierAttribute(component.instance, output);
 					//styleValue += "width:" + component.instance.width+ "px;";
 					//styleValue += "height:" + component.instance.height+ "px;";
-					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalSet, isVerticalSet);
+					styleValue = getSizeString(component.instance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					//styleValue += wrapperTagStyles;
 					styleValue += "color:" + DisplayObjectUtils.getColorInHex(component.instance.getStyle("color"), true) + ";";
 					styleValue += "font-weight:" + component.instance.getStyle("fontWeight") + ";";
@@ -933,7 +1014,7 @@ package com.flexcapacitor.utils {
 		 * If explicit width is set then we should use inline-block 
 		 * because inline does not respect width and height
 		 * */
-		public function getSizeString(instance:IVisualElement, styleValue:String = "", isHorizontalAlignSet:Boolean = false, isVerticalSet:Boolean = false):String {
+		public function getSizeString(instance:IVisualElement, styleValue:String = "", isHorizontalAlignSet:Boolean = false, isVerticalSet:Boolean = false, fitToContent:Boolean = false):String {
 			var hasExplicitSize:Boolean;
 			var hasBorder:Boolean;
 			var border:int;
@@ -979,6 +1060,105 @@ package com.flexcapacitor.utils {
 			
 			return styleValue;
 			
+		}
+		
+		/**
+		 * Get height styles
+		 * If explicit width is set then we should use inline-block 
+		 * because inline does not respect width and height
+		 * */
+		public function getHeightString(instance:Object, styleValue:String = "", isHorizontalCenterSet:Boolean = false, isVerticalCenterSet:Boolean = false, fitToContent:Boolean = false):String {
+			var hasExplicitSize:Boolean;
+			
+			if (fitToContent) {
+				return "";
+			}
+			
+			// percent height causes some issues - have to figure out what the deal is
+			if (!isNaN(instance.percentHeight)) {
+				styleValue += "height:" + instance.percentHeight + "%;";
+			}
+			else if ("explicitHeight" in instance) {
+				if (Object(instance).explicitHeight!=null && !isNaN(Object(instance).explicitHeight)) {
+					styleValue += "height:" + instance.height + "px;";
+					hasExplicitSize = true;
+				}
+			}
+			
+			
+			// If explicit height is set then we should use inline-block 
+			// because inline does not respect width and height
+			if (!isVerticalCenterSet && hasExplicitSize) {
+				styleValue += "display:" + Styles.INLINE_BLOCK + ";";
+			}
+			
+			return styleValue;
+			
+		}
+		
+		/**
+		 * Get width styles
+		 * If explicit width is set then we should use inline-block 
+		 * because inline does not respect width and height
+		 * */
+		public function getWidthString(instance:Object, styleValue:String = "", isHorizontalAlignSet:Boolean = false, isVerticalSet:Boolean = false, fitToContent:Boolean = false):String {
+			var hasExplicitSize:Boolean;
+			
+			if (fitToContent) {
+				return "";
+			}
+			
+			if (!isNaN(instance.percentWidth)) {
+				styleValue += "width:" + instance.percentWidth + "%;";
+			}
+			else if ("explicitWidth" in instance) {
+				if (Object(instance).explicitWidth!=null && !isNaN(Object(instance).explicitWidth)) {
+					styleValue += "width:" + instance.width + "px;";
+					hasExplicitSize = true;
+				}
+			}
+			
+			// If explicit width is set then we should use inline-block 
+			// because inline does not respect width and height
+			if (!isHorizontalAlignSet && hasExplicitSize) {
+				styleValue += "display:" + Styles.INLINE_BLOCK + ";";
+			}
+			
+			return styleValue;
+			
+		}
+		
+		/**
+		 * Get block display
+		 * */
+		public function getDisplayBlock(instance:Object = null):String {
+			if (instance) {
+				if (!instance.visible) {
+					return "display:none;";
+				}
+			}
+			
+			return "display:block;";
+		}
+		
+		/**
+		 * Get visible display
+		 * */
+		public function getVisibleDisplay(instance:Object = null):String {
+			if (instance) {
+				if (!instance.visible) {
+					return "display:none;";
+				}
+			}
+			
+			return "";
+		}
+		
+		/**
+		 * Get parent vertical align display
+		 * */
+		public function getParentVerticalAlign(value:String = null):String {
+			return value ? "vertical-align:" + value + ";" : "";
 		}
 		
 		/**

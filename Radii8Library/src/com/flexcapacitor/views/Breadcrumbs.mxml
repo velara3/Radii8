@@ -80,7 +80,7 @@
 				var isDraggable:Boolean = event.target as Sprite;
 				var isParentDraggable:Boolean = (event.target.parent != null && event.target.parent is Sprite);
 
-				radiate.dispatchTargetChangeEvent(event.target);
+				radiate.setTarget(event.target);
 			}
 
 
@@ -88,9 +88,7 @@
 				if (list.selectedItem) {
 					var element:DisplayObject = VisualElementVO(list.selectedItem).element as DisplayObject;
 					
-					if (element!=target) {
-						radiate.dispatchTargetChangeEvent(element);
-					}
+					radiate.setTarget(element, true);
 				}
 			}
 			

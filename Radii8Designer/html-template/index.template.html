@@ -38,7 +38,7 @@
         -->
         <style type="text/css" media="screen"> 
             html, body  { height:100%; }
-            body { margin:0; padding:0; overflow:auto; text-align:center; 
+            body { margin:0; padding:0; overflow:auto; text-align:left; 
                    background-color: ${bgcolor}; }   
             object:focus { outline:none; }
             #flashContent { display:none; }
@@ -60,8 +60,7 @@
         <script>
 
 		function onloadHandler() {
-			radiate = Radiate.getInstance();
-			//console.log("radiate: " + radiate);
+			radiate = Radiate.getInstance(); //console.log("radiate: " + radiate);
 			window.onbeforeunload = radiate.beforeUnloadHandler;
 		}
 		

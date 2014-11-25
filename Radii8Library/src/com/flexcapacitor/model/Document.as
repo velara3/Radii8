@@ -3,12 +3,15 @@ package com.flexcapacitor.model {
 	
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
+	import com.flexcapacitor.utils.HTMLDocumentExporter;
+	import com.flexcapacitor.utils.MXMLDocumentExporter;
 	import com.flexcapacitor.utils.MXMLDocumentImporter;
 	import com.flexcapacitor.utils.XMLUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
 	import flash.display.DisplayObject;
 	import flash.events.IEventDispatcher;
+	import flash.net.URLVariables;
 	import flash.utils.Dictionary;
 	
 	import mx.collections.ArrayCollection;
@@ -396,7 +399,9 @@ package com.flexcapacitor.model {
 					//Radiate.log.info("Document history is empty!");
 				}
 				
-				if (isChanged || source==null || source=="") {
+				// value was not saving so ignoring is changed property
+				//if (isChanged || source==null || source=="") {
+				if (true) {
 					value = internalExporter.export(this);
 				}
 				else if (source) {
@@ -405,6 +410,7 @@ package com.flexcapacitor.model {
 				else if (originalSource) {
 					value = originalSource;
 				}
+				//Radiate.log.info("Saving this=" + value);
 				
 				/*
 				Radiate.log.info("is changed=" + isChanged);
@@ -428,6 +434,56 @@ package com.flexcapacitor.model {
 			}
 			// return source;
 			return source;
+		}
+		
+		/**
+		 * Default class that exports the document to HTML
+		 * */
+		[Transient]
+		public static var htmlExporter:IDocumentExporter = new HTMLDocumentExporter();
+		
+		/**
+		 * Get HTML source code for document. 
+		 * Exporters may not work if the document is not open. 
+		 * */
+		public function getHTMLSource(target:Object = null):String {
+			var value:String;
+			
+			if (isOpen) {
+				if (this.historyIndex==-1) {
+					//Radiate.log.info("Document history is empty!");
+				}
+				
+				// value was not saving so ignoring is changed property
+				//if (isChanged || source==null || source=="") {
+				if (true) {
+					value = htmlExporter.export(this, componentDescription);
+				}
+				else if (source) {
+					value = source;
+				}
+				else if (originalSource) {
+					value = originalSource;
+				}
+				
+				//Radiate.log.info("Saving this HTML=" + value);
+				
+				return value;
+				
+			}
+			
+			return source;
+		}
+		
+		/**
+		 * Add HTML to output sound
+		 * */
+		override public function toSaveFormObject():URLVariables {
+			var object:URLVariables = super.toSaveFormObject();
+			
+			object["custom[html]"] = getHTMLSource();
+			
+			return object;
 		}
 		
 		/**

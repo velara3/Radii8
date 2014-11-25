@@ -209,10 +209,51 @@ package com.flexcapacitor.tools {
 		 * */
 		public function enable():void {
 			radiate = Radiate.getInstance();
+			removeAllListeners();
 			
 			if (radiate.selectedDocument) {
 				updateDocument(radiate.selectedDocument);
 			}
+			
+			addRadiateListeners();
+		}
+	
+		/**
+		 * Disable this tool.
+		 * */
+		public function disable():void {
+			
+			removeAllListeners();
+			removeRadiateListeners();
+			clearSelection();
+		}
+		
+		/**
+		 * Add all listeners
+		 * */
+		public function addAllListeners():void {
+			addApplicationListeners();
+			addCanvasListeners();
+			addKeyboardListeners();
+			// add so transparent groups work (they need a listener to be detected)
+			addTargetListeners(lastTarget); // also added on drag
+		}
+		
+		/**
+		 * Remove all listeners
+		 * */
+		public function removeAllListeners():void {
+			removeApplicationListeners();
+			removeKeyboardListeners();
+			removeTargetListeners();
+			removeCanvasListeners();
+		}
+		
+		/**
+		 * Adds listeners to radiate instance
+		 * */
+		public function addRadiateListeners():void {
+			radiate = Radiate.getInstance();
 			
 			// handle events last so that we get correct size
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
@@ -221,90 +262,165 @@ package com.flexcapacitor.tools {
 			radiate.addEventListener(RadiateEvent.SCALE_CHANGE, 		scaleChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 		}
-	
+		
 		/**
-		 * Disable this tool.
+		 * Removes listeners from radiate instance
 		 * */
-		public function disable():void {
+		public function removeRadiateListeners():void {
+			radiate = Radiate.getInstance();
 			
-			removeTargetEventListeners();
-				
-			clearSelection();
+			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler);
+			radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, 		targetChangeHandler);
+			radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, 		propertyChangeHandler);
+			radiate.removeEventListener(RadiateEvent.SCALE_CHANGE, 			scaleChangeHandler);
+			radiate.removeEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, 	scaleChangeHandler);
 		}
 		
+		/**
+		 * Add listeners to the application
+		 * */
+		public function addApplicationListeners():void {
+			if (targetApplication) {
+				Object(targetApplication).addEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler, false, 0, true);
+			}
+		}
 		
 		/**
-		 * What a mess. Trying to listen for keyboard events. 
-		 * One thing we could do is set the focus to the stage when the document is 
-		 * first loaded or when the user selects a document by clicking on it's tab
+		 * Remove listeners from the application
 		 * */
-		public function updateDocument(document:IDocument):void {
-			var stage:Stage;
-			
-			// remove listeners
-			if (targetApplication && targetApplication!=document) {
+		public function removeApplicationListeners():void {
+			if (targetApplication) {
 				Object(targetApplication).removeEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler);
-				
-				if ("systemManager" in targetApplication) {
-					stage = Object(targetApplication).systemManager.stage;
-					Object(targetApplication).systemManager.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
-					//Object(targetApplication).systemManager.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
-					//Object(targetApplication).systemManager.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
-					//Object(targetApplication).stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, false);
-					stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
-					//Object(targetApplication).stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler, false);
-					stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler, true);
-				}
+			}
+		}
+		
+		/**
+		 * Get stage for keyboard events
+		 * */
+		public function getCurrentStage(application:Object = null):Stage {
+			var systemManager:SystemManager = getCurrentSystemManager(application);
+			
+			return systemManager.stage;
+		}
+		
+		/**
+		 * Get top most system manager or system manager from passed in application
+		 * */
+		public function getCurrentSystemManager(application:Object = null):SystemManager {
+			
+			// get system manager from application
+			if (application && "systemManager" in application) {
+				return application.systemManager;
 			}
 			
-			this.document = document;
-			targetApplication = document ? document.instance : null;
+			// get system manager from top level system managers
+			return SystemManagerGlobals.topLevelSystemManagers[0];
+		}
+		
+		/**
+		 * Add keyboard listeners
+		 * 
+		 * EventPriority.CURSOR_MANAGEMENT; //200
+		 * EventPriority.BINDING;//100
+		 * EventPriority.EFFECT;//-100
+		 * EventPriority.DEFAULT;// 0
+		 * EventPriority.DEFAULT_HANDLER;//-50
+		 * */
+		public function addKeyboardListeners(application:Object = null):void {
+			application = application ? application : targetApplication;
+			var systemManager:SystemManager = getCurrentSystemManager(application);
+			var stage:Stage = getCurrentStage(application);
+			
+			systemManager.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
+			
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, true, 0, true);
+			stage.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, true, 0, true);
+			//Radiate.log.info("Adding keyboard listeners");
+		}
+		
+		/**
+		 * Removes keyboard listeners
+		 * */
+		public function removeKeyboardListeners(application:Object = null):void {
+			application = application ? application : targetApplication;
+			var systemManager:SystemManager = getCurrentSystemManager(application);
+			var stage:Stage = getCurrentStage(application);
+			
+			systemManager.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false);
+			
+			stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, true);
+			stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
+			stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler, true);
+			//Radiate.log.info("Removing keyboard listeners");
+			
+			/*
+			if (targetApplication && "systemManager" in targetApplication) {
+				Object(targetApplication).systemManager.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
+				Object(targetApplication).systemManager.stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
+				Object(targetApplication).systemManager.stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, false);
+				Object(targetApplication).systemManager.stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
+			}*/
+			/*
+				var toppestSystemManager:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+				
+				var topLevelApplication:Object = FlexGlobals.topLevelApplication;
+				var topSystemManager:ISystemManager = ISystemManager(topLevelApplication.systemManager);
+				var marshallPlanSystemManager:Object = topSystemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
+				
+				if (marshallPlanSystemManager && marshallPlanSystemManager.useSWFBridge()) {
+					var sandBoxRoot:Object = Sprite(topSystemManager.getSandboxRoot());
+				}
+			*/
+		}
+		
+		/**
+		 * Add drag manager listeners
+		 * */
+		public function addDragManagerListeners():void {
+			
+			if (dragManagerInstance) {
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop, false, 0, true);
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_OVER, handleDragOver, false, 0, true);
+			}
+			
+		}
+		
+		/**
+		 * Remove drag manager listeners
+		 * */
+		public function removeDragManagerListeners():void {
+			
+			if (dragManagerInstance) {
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_OVER, handleDragOver);
+			}
+		}
+		
+		/**
+		 * Add event listeners to new document and remove listeners from previous
+		 * */
+		public function updateDocument(iDocument:IDocument):void {
+			
+			// remove listeners
+			if (targetApplication && targetApplication!=iDocument.instance) {
+				removeAllListeners();
+			}
+			
+			document = iDocument;
+			targetApplication = iDocument ? iDocument.instance : null;
 			
 			// add listeners
 			if (targetApplication) {
-				Object(targetApplication).addEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler, false, 0, true);
-				
-				if ("systemManager" in targetApplication) {
-					var systemManager1:ISystemManager = Object(targetApplication).systemManager;
-					stage = systemManager1.stage;
-					var toppestSystemManager:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
-					
-					var topLevelApplication:Object = FlexGlobals.topLevelApplication;
-					var topSystemManager:ISystemManager = ISystemManager(topLevelApplication.systemManager);
-					var marshallPlanSystemManager:Object = topSystemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
-					
-					if (marshallPlanSystemManager && marshallPlanSystemManager.useSWFBridge()) {
-						var sandBoxRoot:Object = Sprite(topSystemManager.getSandboxRoot());
-					}
-					
-					
-					systemManager1.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
-					
-					// get keyboard events
-					/*systemManager1.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerCapture, true, 1001, true);
-					systemManager1.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, false, 1001, true);
-					topSystemManager.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, false, 1001, true);
-					topSystemManager.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, true, 1001, true);
-					*/
-					//targetApplication.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, false, 0, true);
-					//targetApplication.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, true, 0, true);
-					stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, true, 0, true);
-					stage.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, true, 0, true);
-					//targetApplication.stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerTopSystemManager, false, 0, true);
-					//targetApplication.stage.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, false, 0, true);
-					//systemManager1.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, false, 0, true);
-					
-					/*
-					EventPriority.CURSOR_MANAGEMENT; //200
-					EventPriority.BINDING;//100
-					EventPriority.EFFECT;//-100
-					EventPriority.DEFAULT;// 0
-					EventPriority.DEFAULT_HANDLER;//-50
-					*/
-				}
+				addAllListeners();
 			}
 			
-			
+		}
+		
+		/**
+		 * Add canvas listeners for scrolling
+		 * */
+		public function addCanvasListeners():void {
+			removeCanvasListeners();
 			
 			if (radiate && radiate.toolLayer) {
 				toolLayer = radiate.toolLayer;
@@ -315,64 +431,57 @@ package com.flexcapacitor.tools {
 			}
 			
 			if (radiate && radiate.canvasBackground && radiate.canvasBackground.parent) {
-				if (canvasBackgroundParent) {
-					canvasBackgroundParent.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges);
-				}
 				canvasBackgroundParent = radiate.canvasBackground.parent;
 				canvasBackgroundParent.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges, false, 1000, true);
 			}
 			
 			if (radiate && radiate.canvasScroller) {
-				if (canvasScroller) {
-					
-				}
 				canvasScroller = radiate.canvasScroller;
 				canvasScroller.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges, false, 1000, true);
 			}
 		}
 		
 		/**
-		 * Remove event listeners. 
-		 * 
-		 * THIS NEEDS TO BE REFACTORED
+		 * Removes canvas listeners
 		 * */
-		public function removeTargetEventListeners():void {
-		
-			if (lastTarget && lastTarget is Image) {
-				lastTarget.removeEventListener(FlexEvent.READY, setSelectionLaterHandler);
-				lastTarget.removeEventListener(Event.COMPLETE, setSelectionLaterHandler);
-				lastTarget.removeEventListener(IOErrorEvent.IO_ERROR, setSelectionLaterHandler);
-				lastTarget.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, setSelectionLaterHandler);
-			}
+		public function removeCanvasListeners():void {
 			
-			if (targetApplication) {
-				Object(targetApplication).removeEventListener(FlexEvent.UPDATE_COMPLETE, updateCompleteHandler);
-			}
-			
-			if (targetApplication && "systemManager" in targetApplication) {
-				Object(targetApplication).systemManager.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
-				Object(targetApplication).systemManager.stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler);
-				Object(targetApplication).systemManager.stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, false);
-				Object(targetApplication).systemManager.stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
-			}
-			
-			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
-			radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-			radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
-			
-			if (dragManagerInstance) {
-				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
-				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_OVER, handleDragOver);
-			}
-			
-			
-			if (radiate.canvasBackground) {
+			if (canvasBackgroundParent) {
 				canvasBackgroundParent.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges);
 			}
 			
-			if (radiate.canvasScroller) {
+			if (canvasScroller) {
 				canvasScroller.removeEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges);
 			}
+		}
+		
+		/**
+		 * Add target drag listeners
+		 * */
+		public function addTargetListeners(target:Object):void {
+			
+			if (target) {
+				target.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+			}
+		}
+		
+		/**
+		 * Remove target event listeners. 
+		 * */
+		public function removeTargetListeners(target:Object = null):void {
+			target = target ? target : lastTarget;
+			
+			if (target) {
+				target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				
+				if (target is Image) {
+					target.removeEventListener(FlexEvent.READY, setSelectionLaterHandler);
+					target.removeEventListener(Event.COMPLETE, setSelectionLaterHandler);
+					target.removeEventListener(IOErrorEvent.IO_ERROR, setSelectionLaterHandler);
+					target.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, setSelectionLaterHandler);
+				}
+			}
+			
 		}
 		
 		/**
@@ -436,21 +545,11 @@ package com.flexcapacitor.tools {
 		 * */
 		public function updateSelectionAroundTarget(target:Object):void {
 			
-			if (lastTarget && lastTarget is Image) {
-				lastTarget.removeEventListener(FlexEvent.READY, setSelectionLaterHandler);
-				lastTarget.removeEventListener(Event.COMPLETE, setSelectionLaterHandler);
-				lastTarget.removeEventListener(IOErrorEvent.IO_ERROR, setSelectionLaterHandler);
-				lastTarget.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, setSelectionLaterHandler);
-			}
+			removeTargetListeners();
 			
 			lastTarget = target;
 			
-			if (target && target is Image) {
-				target.addEventListener(FlexEvent.READY, setSelectionLaterHandler, false, 0, true);
-				target.addEventListener(Event.COMPLETE, setSelectionLaterHandler, false, 0, true);
-				target.addEventListener(IOErrorEvent.IO_ERROR, setSelectionLaterHandler, false, 0, true);
-				target.addEventListener(SecurityErrorEvent.SECURITY_ERROR, setSelectionLaterHandler, false, 0, true);
-			}
+			addTargetListeners(target);
 			
 			
 			if (showSelection && 
@@ -584,7 +683,7 @@ package com.flexcapacitor.tools {
 				//Radiate.log.info("Selection Mouse down");
 				
 				// select target on mouse up or drag drop whichever comes first
-				target.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+				addTargetListeners(target);
 				
 				if (target!=targetApplication) {
 					
@@ -595,8 +694,7 @@ package com.flexcapacitor.tools {
 					
 					//target.visible = false;
 					dragManagerInstance.listenForDragBehavior(target as IUIComponent, document, event);
-					dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop, false, 0, true);
-					dragManagerInstance.addEventListener(DragDropEvent.DRAG_OVER, handleDragOver, false, 0, true);
+					addDragManagerListeners();
 				}
 			}
 			else if (target && !enableDrag) {
@@ -642,7 +740,7 @@ package com.flexcapacitor.tools {
 				//Radiate.log.info("3 has event listener");
 			}
 			
-			target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			removeTargetListeners();
 			
 			if (target.hasEventListener(MouseEvent.MOUSE_UP)) {
 				//Radiate.log.info("4 has event listener");
@@ -669,8 +767,7 @@ package com.flexcapacitor.tools {
 			
 			dragLocation = "";
 			
-			dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
-			dragManagerInstance.removeEventListener(DragDropEvent.DRAG_OVER, handleDragOver);
+			removeDragManagerListeners();
 		}
 	
 		/**
@@ -691,7 +788,7 @@ package com.flexcapacitor.tools {
 				//Radiate.log.info("1 has event listener");
 			}
 			
-			target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			removeTargetListeners(target);
 			
 			if (target.hasEventListener(MouseEvent.MOUSE_UP)) {
 				//Radiate.log.info("2 has event listener");

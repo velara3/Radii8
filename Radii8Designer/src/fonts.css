@@ -1,0 +1,149 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+
+/**** Verdana ************************************/
+
+@font-face {
+   src: url("/assets/fonts/Verdana.ttf");
+   fontFamily: Verdana;
+   embedAsCFF: true;
+   fontWeight: normal;
+   fontStyle:  normal;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Verdana Italic.ttf");
+   fontFamily: Verdana;
+   embedAsCFF: true;
+   fontWeight: normal;
+   fontStyle:  italic;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Verdana Bold.ttf");
+   fontFamily: Verdana;
+   embedAsCFF: true;
+   fontWeight: bold;
+   fontStyle:  normal;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Verdana Bold Italic.ttf");
+   fontFamily: Verdana;
+   embedAsCFF: true;
+   fontWeight: bold;
+   fontStyle:  italic;
+   unicodeRange: U+0020-007E;
+}
+
+/* Embed as CFF as false */
+/*
+@font-face {
+   src: url("/assets/fonts/Verdana.ttf");
+   fontFamily: GlobalFont;
+   embedAsCFF: false;
+   fontStyle:  normal;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Verdana Italic.ttf");
+   fontFamily: GlobalFont;
+   embedAsCFF: false;
+   fontStyle:  italic;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Verdana Bold.ttf");
+   fontFamily: GlobalFont;
+   embedAsCFF: false;
+   fontWeight: bold;
+   fontStyle:  normal;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Verdana Bold Italic.ttf");
+   fontFamily: GlobalFont;
+   embedAsCFF: false;
+   fontWeight: bold;
+   fontStyle:  italic;
+}*/
+
+/**** Arial ************************************/
+
+@font-face {
+   src: url("/assets/fonts/Arial.ttf");
+   fontFamily: Arial;
+   embedAsCFF: true;
+   fontStyle:  normal;
+   fontWeight: normal;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Arial Italic.ttf");
+   fontFamily: Arial;
+   embedAsCFF: true;
+   fontStyle:  italic;
+   fontWeight: normal;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Arial Bold.ttf");
+   fontFamily: Arial;
+   embedAsCFF: true;
+   fontStyle:  normal;
+   fontWeight: bold;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Arial Bold Italic.ttf");
+   fontFamily: Arial;
+   embedAsCFF: true;
+   fontStyle:  italic;
+   fontWeight: bold;
+   unicodeRange: U+0020-007E;
+}
+
+
+
+/**** Verdana ************************************/
+/*
+@font-face {
+   src: url("/assets/fonts/Chalkduster.ttf");
+   fontFamily: Arial;
+   embedAsCFF: true;
+   fontStyle:  normal;
+   fontWeight: normal;
+   unicodeRange: U+0020-007E;
+}*/
+/* 
+@font-face {
+   src: url("/assets/fonts/Chalkduster.ttf");
+   fontFamily: GlobalFont2;
+   embedAsCFF: true;
+   fontStyle:  italic;
+   fontWeight: normal;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Chalkduster.ttf");
+   fontFamily: GlobalFont2;
+   embedAsCFF: true;
+   fontWeight: bold;
+   fontStyle:  normal;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Chalkduster.ttf");
+   fontFamily: GlobalFont2;
+   embedAsCFF: true;
+   fontWeight: bold;
+   fontStyle:  italic;
+}*/

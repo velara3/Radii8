@@ -3,18 +3,21 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:views="com.flexcapacitor.views.*"
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 
 		 width="200" height="100%"
 		 creationComplete="creationCompleteHandler(event)" 
-		 implements="com.flexcapacitor.views.IInspector"
+		 implements="com.flexcapacitor.views.IInspector" 
 		 >
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.renderers.LayersRenderer;
@@ -58,6 +61,7 @@
 				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
 					updateTarget(radiate.target);
@@ -72,6 +76,7 @@
 					radiate.removeEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
 					radiate.removeEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler);
 					radiate.removeEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
 					
 					target = null;
 				}
@@ -143,10 +148,6 @@
 				
 				target = selectedItem;
 				
-				if (item && target!=item.instance) {
-					//updateComponentDisplayList();
-				}
-				
 				if (collection.length==0) {
 					updateComponentDisplayList();
 					collection = displayListTree.dataProvider as ArrayCollection;
@@ -189,6 +190,10 @@
 				//openAllItems();
 				updateTreeHeight();
 				scrollIntoView();
+				
+				// update alpha
+				updateAlphaProperty();
+				
 			}
 			
 			/**
@@ -606,14 +611,28 @@
 				closeAllItems();
 			}
 			
+			protected function removeItem_clickHandler(event:MouseEvent):void {
+				if (displayListTree.selectedItem) {
+					var componentDescription:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
+					Radiate.removeElement(componentDescription.instance);
+				}
+			}
+			
+			public function updateAlphaProperty():void {
+				var textAccessor:AccessorMetaData = ClassUtils.getMetaDataOfProperty(target, "alpha");
+
+				alphaRenderer.data = textAccessor;
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				callLater(updateAlphaProperty);
+			}
 		]]>
 	</fx:Script>
 	
 	<s:layout>
 		<s:VerticalLayout gap="0"/>
 	</s:layout>
-	<!--
-	<views:BlendMode height="20" width="50%" />-->
 	
 	<s:Scroller id="scroller" width="100%" height="100%"
 				top="0"
@@ -654,11 +673,19 @@
 	
 	
 	<s:HGroup width="100%"
-			 height="24"
+			 height="26"
 			 minHeight="24"
 			 verticalAlign="middle"
 			 paddingRight="8"
+			 paddingLeft="8"
 			 >
+		<c:ImageButton id="removeItem" 
+					   source="{Radii8LibraryAssets.trashCan}" 
+					   toolTip="Remove"
+					   click="removeItem_clickHandler(event)"
+					   />
+		<renderers:NumberRenderer id="alphaRenderer" height="26" width="44"/>
+		<views:BlendMode height="22" minWidth="100" />
 		<s:Spacer width="100%"/>
 		<c:ImageButton id="closeAllNodes" 
 					   source="{Radii8LibraryAssets.treeViewClosed}" 
@@ -666,7 +693,7 @@
 					   click="closeAllNodes_clickHandler(event)"
 					   />
 		<c:ImageButton id="expandAllNodes" 
-					   source="{Radii8LibraryAssets.treeView}" 
+					   source="{Radii8LibraryAssets.treeViewOpen}" 
 					   toolTip="Expand All"
 					   click="expandAllNodes_clickHandler(event)"
 					   />

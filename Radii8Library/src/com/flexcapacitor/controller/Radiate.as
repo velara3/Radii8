@@ -23,6 +23,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.events.HistoryEventItem;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.logging.RadiateLogTarget;
+	import com.flexcapacitor.managers.layoutClasses.LayoutDebugHelper;
 	import com.flexcapacitor.model.AttachmentData;
 	import com.flexcapacitor.model.Device;
 	import com.flexcapacitor.model.Document;
@@ -66,11 +67,15 @@ package com.flexcapacitor.controller {
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
+	import flash.events.FocusEvent;
 	import flash.events.IEventDispatcher;
 	import flash.events.IOErrorEvent;
+	import flash.events.MouseEvent;
 	import flash.events.SecurityErrorEvent;
+	import flash.events.UncaughtErrorEvent;
 	import flash.external.ExternalInterface;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
 	import flash.globalization.DateTimeStyle;
 	import flash.net.FileReference;
 	import flash.net.SharedObject;
@@ -93,8 +98,10 @@ package com.flexcapacitor.controller {
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
+	import mx.core.UIComponentGlobals;
 	import mx.core.mx_internal;
 	import mx.effects.effectClasses.PropertyChanges;
+	import mx.events.FlexEvent;
 	import mx.graphics.ImageSnapshot;
 	import mx.graphics.SolidColor;
 	import mx.logging.AbstractTarget;
@@ -102,7 +109,9 @@ package com.flexcapacitor.controller {
 	import mx.logging.Log;
 	import mx.logging.LogEventLevel;
 	import mx.managers.ILayoutManager;
+	import mx.managers.ISystemManager;
 	import mx.managers.LayoutManager;
+	import mx.managers.SystemManagerGlobals;
 	import mx.printing.FlexPrintJob;
 	import mx.printing.FlexPrintJobScaleType;
 	import mx.states.AddItems;
@@ -118,6 +127,7 @@ package com.flexcapacitor.controller {
 	import spark.components.Image;
 	import spark.components.Label;
 	import spark.components.NavigatorContent;
+	import spark.components.RichEditableText;
 	import spark.components.Scroller;
 	import spark.components.SkinnableContainer;
 	import spark.components.supportClasses.GroupBase;
@@ -742,6 +752,12 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public var buildTime:String;
+		
+		/**
+		 * Reference to the application
+		 */
+		[Bindable]
+		public static var application:Application;
 		
 		//----------------------------------
 		//
@@ -1502,11 +1518,20 @@ package com.flexcapacitor.controller {
 		 * Startup 
 		 * */
 		public static function startup():void {
+			application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler, false, 0, true);
 			
 			//ExternalInterface.call("Radiate.getInstance");
 			ExternalInterface.call("Radiate.instance.setFlashInstance", ExternalInterface.objectID);
 			
-			//instance.getLoggedInStatus();
+			WP_HOST = "http://www.radii8.com";
+			WP_PATH = "/r8m/";
+			
+			instance.getLoggedInStatus();
+			
+			UIComponentGlobals.designMode = true; // can we do it???
+			//radiate.openInitialProjects();
+			//LayoutManager.getInstance().usePhasedInstantiation = false;
+			
 		}
 		
 		/**
@@ -2229,6 +2254,9 @@ package com.flexcapacitor.controller {
 		
 		private static var _console:Object;
 		
+		public static var componentsIconPath:String = "assets/icons/components/";
+		public static var componentsIconNotFoundPath:String = componentsIconPath + "/BorderContainer.png";
+		
 		public static var SETTINGS_DATA_NAME:String = "settingsData";
 		public static var SAVED_DATA_NAME:String 	= "savedData";
 		public static var WP_HOST:String = "http://www.radii8.com";
@@ -2335,7 +2363,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Sets the selected tool
+		 * Sets the selected tool to the tool passed in
 		 * */
 		public function setTool(value:ITool, dispatchEvent:Boolean = true, cause:String = ""):void {
 			
@@ -2351,6 +2379,36 @@ package com.flexcapacitor.controller {
 			
 			if (dispatchEvent) {
 				instance.dispatchToolChangeEvent(selectedTool);
+			}
+			
+		}
+		
+		/**
+		 * Enables the selected tool
+		 * */
+		public function enableTool(dispatchEvent:Boolean = true, cause:String = ""):void {
+			
+			if (selectedTool) {
+				selectedTool.enable();
+			}
+			
+			if (dispatchEvent) {
+				//instance.dispatchToolChangeEvent(selectedTool);
+			}
+			
+		}
+		
+		/**
+		 * Disables the selected tool
+		 * */
+		public function disableTool(dispatchEvent:Boolean = true, cause:String = ""):void {
+			
+			if (selectedTool) {
+				selectedTool.disable();
+			}
+			
+			if (dispatchEvent) {
+				//instance.dispatchToolChangeEvent(selectedTool);
 			}
 			
 		}
@@ -3489,16 +3547,53 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Returns true if the property was changed. Use setProperties for 
-		 * setting multiple properties.<br/><br/>
+		 * Returns true if the style was cleared.<br/><br/>
 		 * 
 		 * Usage:<br/>
-		 * <pre>Radiate.setProperty(myButton, "x", 40);</pre>
-		 * <pre>Radiate.setProperty([myButton,myButton2], "x", 40);</pre>
+		 * <pre>Radiate.clearStyle(myButton, "fontFamily");</pre>
 		 * */
-		public static function clearStyle(target:Object, style:String, description:String = null):Boolean {
+		public static function clearStyle(target:Object, style:String, description:String = null, dispatchEvents:Boolean = true):Boolean {
 			
-			return setStyle(target, style, undefined, description, true);
+			return setStyle(target, style, undefined, description, true, dispatchEvents);
+		}
+		
+		/**
+		 * Clears the styles of the target.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>Radiate.clearStyles(myButton, ["fontFamily", "fontWeight"]);</pre>
+		 * */
+		public static function clearStyles(target:Object, styles:Array, description:String = null, dispatchEvents:Boolean = true):Boolean {
+			var object:Object = {};
+			for (var i:int;i<styles.length;i++) {
+				object[styles[i]] = undefined;
+			}
+			return setStyles(target, styles, object, description, true, dispatchEvents);
+		}
+		
+		/**
+		 * Returns true if the property was cleared.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>Radiate.clearProperty(myButton, "width");</pre>
+		 * */
+		public static function clearProperty(target:Object, property:String, description:String = null, dispatchEvents:Boolean = true):Boolean {
+			
+			return setProperty(target, property, undefined, description, true, dispatchEvents);
+		}
+		
+		/**
+		 * Returns true if the property was cleared.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>Radiate.clearProperties(myButton, ["width", "percentWidth"]);</pre>
+		 * */
+		public static function clearProperties(target:Object, properties:Array, description:String = null, dispatchEvents:Boolean = true):Boolean {
+			var object:Object = {};
+			for (var i:int;i<properties.length;i++) {
+				object[properties[i]] = undefined;
+			}
+			return setProperties(target, properties, object, description, true, dispatchEvents);
 		}
 		
 		/**
@@ -3529,7 +3624,9 @@ package com.flexcapacitor.controller {
 				
 				updateComponentStyles(targets, styleChanges);
 				
-				addHistoryEvents(historyEvents, description);
+				if (!doNotAddEventsToHistory) {
+					addHistoryEvents(historyEvents, description);
+				}
 				
 				if (dispatchEvents) {
 					instance.dispatchPropertyChangeEvent(targets, styleChanges, ArrayUtil.toArray(style));
@@ -3567,17 +3664,19 @@ package com.flexcapacitor.controller {
 				
 				historyEvents = createHistoryEvents(targets, propertyChanges, property, null, value);
 				
-				addHistoryEvents(historyEvents, description);
+				if (!doNotAddEventsToHistory) {
+					addHistoryEvents(historyEvents, description);
+				}
 				
 				updateComponentProperties(targets, propertyChanges);
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(targets, propertyChanges, ArrayUtil.toArray(property));
+					instance.dispatchPropertyChangeEvent(target, propertyChanges, ArrayUtil.toArray(property));
 				}
 				
 				if (dispatchEvents) {
 					if (targets.indexOf(instance.selectedDocument.instance)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, [property])) {
-						instance.dispatchDocumentSizeChangeEvent(targets);
+						instance.dispatchDocumentSizeChangeEvent(target);
 					}
 				}
 				
@@ -3604,7 +3703,7 @@ package com.flexcapacitor.controller {
 		 * @see setStyles()
 		 * @see setProperty()
 		 * */
-		public static function setProperties(target:Object, properties:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
+		public static function setProperties(target:Object, properties:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var propertyChanges:Array;
 			var historyEvents:Array;
 			var targets:Array;
@@ -3624,15 +3723,20 @@ package com.flexcapacitor.controller {
 				
 				historyEvents = createHistoryEvents(targets, propertyChanges, properties, null, value);
 				
-				addHistoryEvents(historyEvents, description);
+				if (!doNotAddEventsToHistory) {
+					addHistoryEvents(historyEvents, description);
+				}
 				
 				updateComponentProperties(targets, propertyChanges);
 				
-				instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties);
+				if (dispatchEvents) {
+					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties);
+				}
 				
 				if (targets.indexOf(instance.selectedDocument)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, properties)) {
 					instance.dispatchDocumentSizeChangeEvent(targets);
 				}
+				
 				return true;
 			}
 			
@@ -3640,7 +3744,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Returns true if the property(s) were changed.<br/><br/>
+		 * Sets the style on the target object.<br/><br/>
 		 * 
 		 * Usage:<br/>
 		 * <pre>setProperties([myButton,myButton2], ["x","y"], {x:40,y:50});</pre>
@@ -3651,7 +3755,7 @@ package com.flexcapacitor.controller {
 		 * @see setProperty()
 		 * @see setProperties()
 		 * */
-		public static function setStyles(target:Object, styles:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false):Boolean {
+		public static function setStyles(target:Object, styles:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var stylesChanges:Array;
 			var historyEvents:Array;
 			var targets:Array;
@@ -3670,11 +3774,16 @@ package com.flexcapacitor.controller {
 				
 				historyEvents = createHistoryEvents(targets, stylesChanges, null, styles, value);
 				
-				addHistoryEvents(historyEvents, description);
+				if (!doNotAddEventsToHistory) {
+					addHistoryEvents(historyEvents, description);
+				}
 				
 				updateComponentStyles(targets, stylesChanges);
 				
-				instance.dispatchPropertyChangeEvent(targets, stylesChanges, styles);
+				if (dispatchEvents) {
+					instance.dispatchPropertyChangeEvent(targets, stylesChanges, styles);
+				}
+				
 				return true;
 			}
 			
@@ -4000,8 +4109,11 @@ package com.flexcapacitor.controller {
 					LayoutManager.getInstance().validateNow();
 				}
 				
+				
 				// add to history
-				addHistoryEvents(historyEvents);
+				if (!doNotAddEventsToHistory) {
+					addHistoryEvents(historyEvents);
+				}
 				
 				// check for changes before dispatching
 				if (changes.indexOf(moveItems)!=-1) {
@@ -4019,8 +4131,11 @@ package com.flexcapacitor.controller {
 			catch (error:Error) {
 				// this is clunky - needs to be upgraded
 				Radiate.log.error("Move error: " + error.message);
-				removeHistoryEvent(changes);
-				removeHistoryItem(changes);
+				
+				if (!doNotAddEventsToHistory) {
+					removeHistoryEvent(changes);
+					removeHistoryItem(changes);
+				}
 				return String(error.message);
 			}
 			
@@ -4066,6 +4181,12 @@ package com.flexcapacitor.controller {
 				
 				if ("textDisplay" in component && component.textDisplay) {
 					component.textDisplay.enabled = false;
+				}
+				
+				// show editor on double click
+				if (component is Label) {
+					component.doubleClickEnabled = true;
+					component.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
 				}
 			}
 			
@@ -4294,7 +4415,9 @@ package com.flexcapacitor.controller {
 				
 				
 				// add to history
-				addHistoryEvents(historyEvents);
+				if (!doNotAddEventsToHistory) {
+					addHistoryEvents(historyEvents);
+				}
 				
 				// check for changes before dispatching
 				instance.dispatchRemoveItemsEvent(items, changes, null);
@@ -4306,12 +4429,130 @@ package com.flexcapacitor.controller {
 			catch (error:Error) {
 				// this is clunky - needs to be upgraded
 				Radiate.log.error("Remove error: " + error.message);
-				removeHistoryEvent(changes);
-				removeHistoryItem(changes);
+				if (!doNotAddEventsToHistory) {
+					removeHistoryEvent(changes);
+					removeHistoryItem(changes);
+				}
 				return String(error.message);
 			}
 			
 			return REMOVE_ERROR;
+		}
+		
+		/**
+		 * Handles double click on text to show text editor
+		 * */
+		public static function showTextEditor(event:MouseEvent):void {
+			var target:TextBase = instance.target as TextBase;
+			
+			if (target) {
+				currentEditableComponent = target;
+				var layoutDebugHelper:LayoutDebugHelper = new LayoutDebugHelper();
+				var iDocument:IDocument = instance.selectedDocument;
+				var targetComponentDescription:ComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, iDocument.componentDescription);
+				var parentComponentDescription:ComponentDescription = targetComponentDescription.parent;
+				var rectangle:Rectangle = layoutDebugHelper.getRectangleBounds(target, iDocument.instance);
+				var propertyNames:Array = ["x", "y", "text", "minWidth"];
+				var properties:Object = {};
+				var isBasicLayout:Boolean;
+				
+				if ((parentComponentDescription.instance is GroupBase || parentComponentDescription.instance is BorderContainer)
+					&& parentComponentDescription.instance.layout is BasicLayout) {
+					isBasicLayout = true;
+					rectangle = layoutDebugHelper.getRectangleBounds(target, parentComponentDescription.instance);
+				}
+				
+				properties.x = rectangle.x;
+				properties.y = rectangle.y;
+				const MIN_WIDTH:int = 22;
+				properties.minWidth = MIN_WIDTH;
+				//properties.width = "100";
+				if (!isNaN(target.explicitWidth)) {
+					propertyNames.push("width");
+					properties.width = rectangle.width;
+				}
+				else if (!isNaN(target.percentWidth)) {
+					// if basic layout we can get percent width
+					if (isBasicLayout) {
+						propertyNames.push("percentWidth");
+						properties.percentWidth = target.percentWidth;
+					}
+					else {
+						propertyNames.push("width");
+						properties.width = rectangle.width;
+					}
+				}
+				editableRichTextField.width = undefined;
+				editableRichTextField.percentWidth = NaN;
+				//properties.height = rectangle.height;
+				properties.text = target.text;
+				currentEditableComponent.visible = false;
+				editableRichTextField.styleName = currentEditableComponent;
+				editableRichTextField.focusRect = null;
+				editableRichTextField.setStyle("focusAlpha", 0.25);
+				
+				doNotAddEventsToHistory = true;
+				if (isBasicLayout) {
+					addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, properties);
+				}
+				else {
+					addElement(editableRichTextField, iDocument.instance, propertyNames, null, properties);
+				}
+				doNotAddEventsToHistory = false;
+				
+				var topSystemManager:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+				topSystemManager.stage.stageFocusRect = false;
+				editableRichTextField.selectAll();
+				editableRichTextField.setFocus();
+				editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues, false, 0, true);
+				editableRichTextField.addEventListener(FlexEvent.ENTER, commitTextEditorValues, false, 0, true);
+				editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues, false, 0, true);
+				instance.disableTool();
+			}
+		}
+		
+		/**
+		 * Component that is in edit mode. Typically a Label. 
+		 * */
+		public static var currentEditableComponent:Object;
+		public static var editableRichTextField:RichEditableText = new RichEditableText();
+		
+		/**
+		 * Set the value of the user typed in
+		 * */
+		public static function commitTextEditorValues(event:Event):void {
+			var newValue:String = editableRichTextField.text;
+			var oldValue:String = currentEditableComponent.text;
+			var doSomething:Boolean;
+			
+			if (event is FlexEvent) {
+				doSomething = true;
+			}
+			else {
+				doSomething = true;
+			}
+			
+			if (doSomething) {
+				if (currentEditableComponent && newValue!=oldValue) {
+					setProperty(currentEditableComponent, "text", newValue);
+					//currentEditableComponent = null;
+				}
+				
+				currentEditableComponent.visible = true;
+				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
+				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
+				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
+				if (editableRichTextField.parent) {
+					doNotAddEventsToHistory = true;
+					removeElement(editableRichTextField);
+					doNotAddEventsToHistory = false;
+				}
+			}
+			
+			instance.enableTool();
+			
+			event.preventDefault();
+			event.stopImmediatePropagation();
 		}
 		
 		/**
@@ -4342,8 +4583,10 @@ package com.flexcapacitor.controller {
 			
 			component = classFactory.newInstance();
 			
-			for (var property:String in item.defaultProperties) {
-				setProperty(component, property, [item.defaultProperties[property]]);
+			if (setDefaults) {
+				for (var property:String in item.defaultProperties) {
+					setProperty(component, property, [item.defaultProperties[property]]);
+				}
 			}
 			
 			componentDescription.instance = component;
@@ -5446,8 +5689,15 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Get the index of the document in documents tab navigator
+		 * 
 		 * */
 		public function getDocumentTabIndex(document:Object, isPreview:Boolean = false):int {
+			//TypeError: Error #1009: Cannot access a property or method of a null object reference.
+			//	at com.flexcapacitor.controller::Radiate/getDocumentTabIndex()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/controller/Radiate.as:5649]
+			if (documentsTabNavigator==null) {
+				Radiate.log.info("Documents tab navigator is not created yet so for now you must open the document manually.");
+				return -1;
+			}
 			var openTabs:Array = documentsTabNavigator.getChildren();
 			var tabCount:int = openTabs.length;
 			var tab:NavigatorContent;
@@ -7807,6 +8057,12 @@ package com.flexcapacitor.controller {
 		 * */
 		public static var historyEventsDictionary:Dictionary = new Dictionary(true);
 		
+		/**
+		 * Flag to set if you do not want to add an event to history. 
+		 * Remember to set this back to false when you are done
+		 * */
+		[Bindable]
+		public static var doNotAddEventsToHistory:Boolean;
 		
 		/**
 		 * Travel to the specified history index.
@@ -8773,7 +9029,9 @@ package com.flexcapacitor.controller {
 		 * Adds property change items to the history array
 		 * */
 		public static function addHistoryItem(historyEventItem:HistoryEventItem, description:String = null):void {
-			addHistoryEvents(ArrayUtil.toArray(historyEventItem), description);
+			if (!doNotAddEventsToHistory) {
+				addHistoryEvents(ArrayUtil.toArray(historyEventItem), description);
+			}
 		}
 		
 		/**
@@ -8860,6 +9118,30 @@ package com.flexcapacitor.controller {
 		public function isSameClassType(target:Object, target1:Object):Boolean {
 			return ClassUtils.isSameClassType(target, target1);
 		}
+		
+		/**
+		 * Catch uncaught errors
+		 */
+		public function uncaughtErrorHandler(event:UncaughtErrorEvent):void {
+			event.preventDefault();
+			
+			//to capture the error message
+			var errorMessage:String = new String();
+			
+			if (event.error is Error) {
+				errorMessage = Error( event.error ).message;
+			}
+			else if (event.error is ErrorEvent) {
+				errorMessage = ErrorEvent( event.error ).text;
+			}
+			else {
+				errorMessage = event.error.toString();
+			}
+			
+			Radiate.log.error(errorMessage);
+			
+		}
+
 	}
 }
 

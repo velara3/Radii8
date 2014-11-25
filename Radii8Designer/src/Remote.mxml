@@ -47,7 +47,6 @@
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.views.IInspector;
-			import com.flexcapacitor.views.windows.ContactWindow;
 			import com.flexcapacitor.views.windows.SaveBeforeCloseWindow;
 			
 			import mx.core.UIComponent;
@@ -84,7 +83,12 @@
 			}
 			
 			protected function closeDocumentIcon_clickHandler():void {
-				radiate.closeVisibleDocument();
+				if (radiate.selectedDocument && radiate.isDocumentPreviewOpen(radiate.selectedDocument)) {
+					radiate.closeVisibleDocument();
+				}
+				else {
+					openSaveBeforeClosePopUp.play();
+				}
 			}
 			
 			protected function navigatorContent_changeHandler(event:IndexChangedEvent):void {
@@ -224,21 +228,18 @@
 			}
 			
 			protected function targetChange(event:RadiateEvent):void {
-				var targetNameValue:String = ClassUtils.getClassNameOrID(event.selectedItem);
+				var targetNameValue:String = ClassUtils.getIdentifierOrName(event.selectedItem, true, true);
 				
-				if (targetNameValue) {
-					targetName = targetNameValue;
-				}
-				else {
-					targetName = null;
+				if (targetNameLabel) {
+					if (targetNameValue) {
+						targetNameLabel.text = targetNameValue;
+					}
+					else {
+						targetNameLabel.text = "";
+					}
 				}
 			}
 			
-			/**
-			 * Name or class name of target
-			 * */
-			[Bindable]
-			public var targetName:String;
 		]]>
 	</fx:Script>
 	
@@ -277,22 +278,22 @@
 		</handlers:EventHandler>-->
 		
 		
-		<!--- show contact popup -->
-		<handlers:EventHandler target="{closeDocument}" eventName="click" >
-			<fc:OpenPopUp id="openSaveBeforeClosePopUp" 
-						  popUpType="{SaveBeforeCloseWindow}" 
-						  modalDuration="100" 
-						  percentWidth="75"
-						  percentHeight="90"
-						  width="600"
-						  parent="{parentApplication}"/>
-		</handlers:EventHandler>
+		<!--- show save document popup -->
+		<fc:OpenPopUp id="openSaveBeforeClosePopUp" 
+					  popUpType="{SaveBeforeCloseWindow}" 
+					  modalDuration="100" 
+					  percentWidth="75"
+					  percentHeight="90"
+					  width="600"
+					  parent="{parentApplication}"/>
 	</fx:Declarations>
 	
 	
 	<s:Group width="100%" height="100%" bottom="35" left="5" right="5">
 		
-		<s:HGroup id="toolBarGroup" width="100%" height="26" >
+		<s:HGroup id="toolBarGroup" width="100%" height="26" right="10" >
+			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStripIcon}"/>
+			<views:SaveDocumentToolBar />
 			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStripIcon}"/>
 			<views:SelectedToolToolBar />
 			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStripIcon}"/>
@@ -449,9 +450,8 @@
 					<!-- PROPERTIES -->
 					<s:NavigatorContent label="PROPERTIES">
 						<!-- TODO Convert this into a composite component -->
-						<s:HGroup width="100%" verticalAlign="baseline">
-							<s:Label width="100%" text="{targetName}" paddingLeft="6" color="#888888"/>
-							<s:Spacer width="100%" />
+						<s:HGroup width="100%" verticalAlign="baseline" >
+							<s:Label id="targetNameLabel" width="100%" paddingLeft="6" color="#888888"/>
 							<mx:LinkBar dataProvider="{forthViewStack}" right="0"/>
 						</s:HGroup>
 						
@@ -503,9 +503,9 @@
 					</s:NavigatorContent>
 					
 					<!-- PROFILING -->
-					<s:NavigatorContent width="100%" height="100%" label="PROFILE">
+					<!--<s:NavigatorContent width="100%" height="100%" label="PROFILE">
 						<panels:Profiling height="100%" width="100%"/>
-					</s:NavigatorContent>
+					</s:NavigatorContent>-->
 					
 				</mx:TabNavigator>
 				
@@ -637,10 +637,10 @@
 							  height="16"
 							  horizontalAlign="center"
 							  verticalAlign="middle"
+							  click="closeDocumentIcon_clickHandler()"
 							  />
 	</s:Group>
 
-					
 	<!--<s:List id="shortcutList" 
 			width="100%" 
 			height="14" 

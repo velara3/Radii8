@@ -28,9 +28,24 @@ package {
 		public static const toolsManifestDefaults:Class;
 		
 		
+		
+		
 		///////////////////////////////////////////////////////
 		// ICONS
 		///////////////////////////////////////////////////////
+		
+		/**
+		 * 
+		 * 
+		 * ICONS ARE IN 
+		 * 
+		 * Radii8Library/src/assets/tools NOT HERE
+		 * 
+		 * Define icons in tools-manifest-defaults.xml
+		 * 
+		 * */
+		
+		
 		
 		[Embed(source="assets/icons/tools/BlackArrow.png")]
 		public static const BlackArrowIcon:Class;
@@ -38,7 +53,7 @@ package {
 		[Embed(source="assets/icons/tools/WhiteArrow.png")]
 		public static const WhiteArrowIcon:Class;
 		
-		[Embed(source="assets/icons/tools/dragStripIcon.png")]
+		[Embed(source="assets/icons/tools/DragStripIcon.png")]
 		public static const DragStripIcon:Class;
 		
 		[Embed(source="assets/icons/tools/EyeDropper.png")]

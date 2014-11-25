@@ -161,7 +161,7 @@
 			  click="actualSize_clickHandler(event)"/>-->
 	
 	<s:ComboBox id="zoomComboBox" 
-				width="80" 
+				width="65" 
 				height="100%"
 				focusAlpha="0" 
 				selectedIndex="8"

@@ -7,6 +7,7 @@ package com.flexcapacitor.model {
 	import com.flexcapacitor.services.WPService;
 	import com.flexcapacitor.services.WPServiceBase;
 	import com.flexcapacitor.services.WPServiceEvent;
+	import com.flexcapacitor.utils.HTMLDocumentExporter;
 	import com.flexcapacitor.utils.MXMLDocumentExporter;
 	
 	import flash.events.IEventDispatcher;
@@ -61,6 +62,29 @@ package com.flexcapacitor.model {
 		public function set exporter(value:IDocumentExporter):void {
 			_exporter = value;
 		}
+		
+		/**
+		 * List of exporters
+		 * */
+		public var exporters:Array = [];
+		
+		private var _htmlExporter:IDocumentExporter = new HTMLDocumentExporter();
+
+		/**
+		 * Default class that exports the document to HTML 
+		 * */
+		[Transient]
+		public function get htmlExporter():IDocumentExporter {
+			return _htmlExporter;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set htmlExporter(value:IDocumentExporter):void {
+			_htmlExporter = value;
+		}
+
 		
 		/**
 		 * Constant used to save locally to a shared object
@@ -405,15 +429,16 @@ package com.flexcapacitor.model {
 			var object:URLVariables = new URLVariables();
 			var value:String = getSource();
 			object.title = name;
-			object.content = value;
-			object["custom[uid]"] = uid;
-			object["custom[source]"] = value;
-			object["custom[sponge]"] = 1;
-			object["custom[sandpaper]"] = 1;
+			//object.content = value;
 			object.categories = "document";
 			
 			if (id) 		object.id 		= id;
 			if (status)		object.status 	= status;
+			
+			object["custom[uid]"] = uid;
+			object["custom[sponge]"] = 1;
+			object["custom[sandpaper]"] = 1;
+			object["custom[source]"] = value;
 			
 			return object;
 		}

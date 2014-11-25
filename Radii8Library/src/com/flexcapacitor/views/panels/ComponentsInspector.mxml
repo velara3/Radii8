@@ -69,7 +69,7 @@
 				var item:ComponentDefinition;
 				var application:Application;
 				var component:Object;
-				var document:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = radiate.selectedDocument;
 				var rowGroup:Group;
 				
 				item = ComponentDefinition(data);
@@ -81,11 +81,11 @@
 				event.stopImmediatePropagation();
 				//list.dragEnabled = false;
 				
-				application = document && document.instance ? document.instance as Application : null;
+				application = iDocument && iDocument.instance ? iDocument.instance as Application : null;
 				
 				if (!application) return;
 				
-				component = Radiate.createComponentForAdd(document, item);
+				component = Radiate.createComponentForAdd(iDocument, item);
 				
 				
 				if (!dragManagerInstance) {
@@ -96,7 +96,7 @@
 				rowGroup.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
 				
 				//dragManagerInstance.listenForDragBehavior(rowGroup, application, event, component);
-				dragManagerInstance.listenForDragBehavior(rowGroup, document, event, component);
+				dragManagerInstance.listenForDragBehavior(rowGroup, iDocument, event, component);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
 				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
@@ -301,21 +301,22 @@
 								super.data = value;
 								var definition:ComponentDefinition = value as ComponentDefinition;
 								var path:String;
+								var iconsPath:String = Radiate.componentsIconPath;
 								
 								
 								if (definition) {
 									if (definition.icon) {
-										iconImage.source = definition.icon;
+										iconImage.source = iconsPath + definition.icon;
 									}
 									else {
-										path = "assets/images/components/" + definition.name + ".png";
+										path = iconsPath + definition.name + ".png";
 										iconImage.source = path;
 									}
 								}
 							}
 							
 							protected function iconImage_ioErrorHandler(event:Event):void {
-								iconImage.source = "assets/images/components/BorderContainer.png";
+								iconImage.source = Radiate.componentsIconPath + "BorderContainer.png";
 							}
 							
 							protected function groupMouseDownHandler(event:MouseEvent):void

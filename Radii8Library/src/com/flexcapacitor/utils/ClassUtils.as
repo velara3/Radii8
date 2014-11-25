@@ -30,7 +30,6 @@ package com.flexcapacitor.utils {
 	import mx.utils.NameUtil;
 	import mx.utils.ObjectUtil;
 	
-	import avmplus.DescribeType;
 
 	public class ClassUtils {
 
@@ -58,6 +57,20 @@ package com.flexcapacitor.utils {
 		public static function getClassNameOrID(element:Object, includeClassName:Boolean = false, delimiter:String = "."):String {
 			var name:String = NameUtil.getUnqualifiedClassName(element);
 			var id:String = element && "id" in element ? element.id : null;
+			
+			return !id ? name : includeClassName ? name + "." + id : id;
+		}
+		
+		/**
+		 * Get unqualified class name of the target object and name or ID. <br/>
+		 * 
+		 * If target has the id of myImage and include class name is true then the result is
+		 * "Image.myImage". If delimiter is "_" then the result is "Image_myImage". 
+		 * If includeClassName is false then the result is, "myImage". 
+		 * */
+		public static function getClassNameAndNameOrID(element:Object, includeClassName:Boolean = false, delimiter:String = "."):String {
+			var name:String = getClassName(element);
+			var id:String = getIdentifierOrName(element, true);
 			
 			return !id ? name : includeClassName ? name + "." + id : id;
 		}
@@ -130,12 +143,12 @@ package com.flexcapacitor.utils {
 
 
 		/**
-		 * Gets the ID of the target object
+		 * Gets the ID of the object or name or if name is not available gets the class name or null. 
 		 * 
-		 * @param name if id is not available then if true then use name
-		 * @param className if id is not available then if true use class name
+		 * @param name if id is not available then return name
+		 * @param className if id and name are not available get class name
 		 * 
-		 * returns id or name or class name or null if no ID is specified
+		 * returns id or name or class name or null if none are found
 		 * */
 		public static function getIdentifierOrName(element:Object, name:Boolean = false, className:Boolean = false):String {
 

@@ -99,7 +99,8 @@ package com.flexcapacitor.utils {
 			
 	
 			if (componentDefinition!=null) {
-				instance = Radiate.createComponentForAdd(document, componentDefinition, true);
+				//instance = Radiate.createComponentForAdd(document, componentDefinition, true);
+				instance = Radiate.createComponentForAdd(document, componentDefinition, false);
 				//Radiate.log.info("MXML Importer adding: " + elementName);
 				
 				// calling add before setting properties because some 

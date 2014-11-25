@@ -23,11 +23,13 @@
 	
 	<!-- label -->
 	<s:BitmapImage includeIn="disabled,down,over,up" 
-				   x="0"  
+				   x="0" 
+				   height="20" width="20"
 				   smooth="true" 
 				   source="{Radii8LibraryAssets.landscapeMode}"/>
 	<s:BitmapImage includeIn="disabledAndSelected,downAndSelected,overAndSelected,upAndSelected" 
 				   x="0" 
+				   height="20" width="20"
 				   smooth="true"
 				   verticalAlign="middle"
 				   source="{Radii8LibraryAssets.portraitMode}" />

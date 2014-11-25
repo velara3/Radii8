@@ -711,6 +711,7 @@
 					minHeight="48"
 					rowHeight="18"
 					variableRowHeight="true"
+					rowSeparatorAlpha="0"
 					click="eventsGrid_clickHandler(event)"
 					selectionChange="eventsGrid_selectionChangeHandler(event)"
 					dataProvider="{filteredPropertiesCollection}"
