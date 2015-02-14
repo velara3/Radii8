@@ -834,23 +834,12 @@ package com.flexcapacitor.model {
 			}
 			
 			if (!currentDocumentData.openSuccessful) {
+				currentDocumentData.isOpen = false;
 				Radiate.log.info("The document '" + currentDocumentData.name + "' could not be loaded because of the following error: " + event.message);
 				
 				if (event.faultEvent) {
 					Radiate.log.info(event.faultEvent + "");
 				}
-			}
-			
-			// ALSO NEED TO UPDATE CODE IN OPEN RESULTS HANDLER
-			// all documents opened
-			if (resultsNotIn.length==0) {
-				
-				if (openNotSuccessful.length>0) {
-					//Radiate.log.info("These documents could not be opened: " + openNotSuccessful);
-					//Radiate.log.info("Document error occurred for "+documentData.name+": " + event.message);
-				}
-				
-				dispatchProjectOpened();
 			}
 			
 			// open document now that it's loaded
@@ -866,7 +855,27 @@ package com.flexcapacitor.model {
 				// we are over writing the previous instance - 
 				// but should we unmarshall it? 
 				Radiate.instance.addDocument(iDocument, this, true);
-				Radiate.instance.openDocument(iDocument);
+				currentDocumentData.isOpen = false;
+				//Radiate.instance.openDocument(iDocument);
+			}
+			
+			
+			// ALSO NEED TO UPDATE CODE IN OPEN RESULTS HANDLER
+			// all documents opened
+			if (resultsNotIn.length==0) {
+				
+				if (openNotSuccessful.length>0) {
+					//Radiate.log.info("These documents could not be opened: " + openNotSuccessful);
+					//Radiate.log.info("Document error occurred for "+documentData.name+": " + event.message);
+				}
+				
+				// open the last document if valid
+				if (iDocument) {
+					Radiate.instance.openDocument(iDocument);
+				}
+				
+				
+				dispatchProjectOpened();
 			}
 			
 			/*if (deferOpen) {

@@ -128,6 +128,7 @@ package com.flexcapacitor.controller {
 	import spark.components.Label;
 	import spark.components.NavigatorContent;
 	import spark.components.RichEditableText;
+	import spark.components.RichText;
 	import spark.components.Scroller;
 	import spark.components.SkinnableContainer;
 	import spark.components.supportClasses.GroupBase;
@@ -406,6 +407,11 @@ package com.flexcapacitor.controller {
 		 * Create references for classes we need.
 		 * */
 		public static var radiateReferences:RadiateReferences;
+		
+		/**
+		 * Is running on desktop
+		 * */
+		public static var isDesktop:Boolean;
 		
 		/**
 		 * If true then importing document
@@ -1521,7 +1527,9 @@ package com.flexcapacitor.controller {
 			application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler, false, 0, true);
 			
 			//ExternalInterface.call("Radiate.getInstance");
-			ExternalInterface.call("Radiate.instance.setFlashInstance", ExternalInterface.objectID);
+			if (ExternalInterface.available) {
+				ExternalInterface.call("Radiate.instance.setFlashInstance", ExternalInterface.objectID);
+			}
 			
 			WP_HOST = "http://www.radii8.com";
 			WP_PATH = "/r8m/";
@@ -1615,6 +1623,8 @@ package com.flexcapacitor.controller {
 					}
 					else {
 						log.error("Component class not found: " + className);
+						// we need to add it to Radii8LibraryAssets 
+						// such as Radii8LibrarySparkAssets
 					}
 					
 				}
@@ -1690,7 +1700,7 @@ package com.flexcapacitor.controller {
 							classType = ApplicationDomain.currentDomain.getDefinition(className);
 						}
 						else {
-							log.error("Inspector class not found: " + className);
+							log.error("Inspector class not found: " + className + " Add a reference to RadiateReferences");
 						}
 						
 						// not passing in classType now since we may load it in later dynamically
@@ -4184,7 +4194,7 @@ package com.flexcapacitor.controller {
 				}
 				
 				// show editor on double click
-				if (component is Label) {
+				if (component is Label || component is RichText) {
 					component.doubleClickEnabled = true;
 					component.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
 				}
@@ -4440,7 +4450,8 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Handles double click on text to show text editor
+		 * Handles double click on text to show text editor. 
+		 * To support more components add the elements in the addElement method
 		 * */
 		public static function showTextEditor(event:MouseEvent):void {
 			var target:TextBase = instance.target as TextBase;

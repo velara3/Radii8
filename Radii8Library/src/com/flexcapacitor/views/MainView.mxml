@@ -23,6 +23,37 @@
 	
 	<fx:Script>
 		<![CDATA[
+	/**
+	 * the library would not compile and had random errors that were not errors. 
+		I couldn't figure out what it was. it looks like it's fixed. 
+		what i did was change -swf-version=18 from -swf-version=19 and 
+		also went into properties then classes and instead of include all i selected
+		the files to include. which were not the assets directory but the com.flexcapacitor directory
+		let's hope it stays fixed
+		 
+		 * it did not stay fixed. it complained about PNGEncoderOptions which isn't available below 
+		 * swf version 18 or 19. so i tried cleaning, changing swf version up and down 
+		 * and many other things and nothing worked still errors. so i switched sdk and that 
+		 * removed the errors. 
+		
+		i still get this warning: 
+		The swc '/Users/monkeypunch/Documents/ProjectsGithub/flexcapacitor/MainLibrary/bin/FCLibrary.swc' 
+		has style defaults and is in the library-path, which means dependencies will be linked in without the styles.  
+		This can cause applications, which use the output swc, to have missing skins.  
+		The swc should be put in the external-library-path.
+		
+		i think i fixed the above warning by putting adding the FCLibrary.swc as a swc rather than a project
+		
+		i added all other projects except the radiate projects as swc instead of as projects
+		
+		i also added reference to PNGEncoderOptions encoder to RadiateReferences.as
+	 * 
+	 */
+		]]>
+	</fx:Script>
+	
+	<fx:Script>
+		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.effects.popup.OpenPopUp;
 			import com.flexcapacitor.events.RadiateEvent;
@@ -128,6 +159,7 @@
 					}
 				}
 				else {
+					
 					if (statusLabel) {
 						statusLabel.text = "You must be logged in to save projects";
 					}
@@ -192,7 +224,7 @@
 							project.parseAttachments(post.attachments);
 						}
 						// if id is not set in the XML set it manually
-						// we need id for delete
+						// we need id for  delete
 						if (project.id==null) {
 							project.id = post.id;
 						}
@@ -762,22 +794,35 @@
 						 color="#989898"
 						 visible="false"
 						 includeInLayout="false"/>
+				
+				<s:Label id="noProjectsLabel" 
+						 text="No projects created..." 
+						 fontStyle="italic"
+						 color="#989898"
+						 visible="{projectsCollection.length==0 &amp;&amp; !radiate.isUserLoggedIn}"
+						 includeInLayout="{projectsCollection.length==0 &amp;&amp; !radiate.isUserLoggedIn}"/>
 				<s:List id="projectsList" 
 						width="100%"
 						maxHeight="110"
+						height="110"
 						borderVisible="false"
 						dataProvider="{projectsCollection}"
 						labelField="name"
 						change="projectsList_changeHandler(event)"
 						itemRenderer="com.flexcapacitor.views.renderers.EditableProjectRenderer"
 						/>
-				
 				<s:Label id="projectLastSavedLabel" text="" 
 						 visible="false" includeInLayout="false"/>
 			</s:VGroup>
 			
 			<s:VGroup width="100%">
 				<s:Label text="Examples" fontWeight="bold"/>
+				<s:Label id="noExamplesLabel" 
+						 text="No examples available..." 
+						 fontStyle="italic"
+						 color="#989898"
+						 visible="{examplesCollection.length==0}"
+						 includeInLayout="{examplesCollection.length==0}"/>
 				<s:List width="100%" borderVisible="false"
 						dataProvider="{examplesCollection}"
 						labelField="name"
@@ -843,17 +888,18 @@
 					  right="0" 
 					  height="100%" 
 					  >
-				<renderers:ItemRendererButton id="openPreviousProject" 
-											  iconSource="{Radii8LibraryAssets.openFolder}"
-											  label="Open Previous Project"
-											  click="openLastProject()"
-											  enabled="false"
-											  />
 				
 				<renderers:ItemRendererButton iconSource="{Radii8LibraryAssets.openFolder}"
 											  label="Open Project"
 											  click="openProject()"
 											  enabled="{projectsList.selectedItem!=null}"
+											  />
+				
+				<renderers:ItemRendererButton id="openPreviousProject" 
+											  iconSource="{Radii8LibraryAssets.openFolder}"
+											  label="Open Previous Project"
+											  click="openLastProject()"
+											  enabled="false"
 											  />
 				
 				<renderers:ItemRendererButton id="deleteProjectIcon" 
@@ -874,7 +920,7 @@
 			 includeIn="home"
 			 />
 	
-	<local:Remote id="remote" width="100%" height="100%" top="38" includeIn="design" />
+	<views:Remote id="remote" width="100%" height="100%" top="38" includeIn="design" />
 	
 	<s:PopUpAnchor id="logoPopUp" width="100" height="100" top="34" left="10" >
 		<s:Group id="logoPopUpGroup" 

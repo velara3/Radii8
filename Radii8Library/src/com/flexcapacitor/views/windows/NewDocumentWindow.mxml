@@ -156,6 +156,7 @@
 						 focusAlpha="0"
 						 borderColor="#cccccc"
 						 text="My Project"
+						 enter="finish_clickHandler()"
 						 />
 		</s:HGroup>
 		<!--<s:HGroup verticalAlign="middle">
@@ -177,6 +178,7 @@
 						 minWidth="250"
 						 focusAlpha="0"
 						 borderColor="#cccccc"
+						 enter="finish_clickHandler()"
 						 />
 		</s:HGroup>
 		

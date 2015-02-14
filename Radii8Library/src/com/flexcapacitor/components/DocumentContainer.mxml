@@ -80,8 +80,11 @@
 				//radiate.setCanvas(canvasBorder, canvasBackground, canvasScroller);				
 				
 				
-				
-				systemManager.allowDomain("*");
+				// SecurityError: Error #3207: Application-sandbox content cannot access this feature.
+				// this is not necessary on AIR since AIR can access all content
+				if (Capabilities.playerType!="Desktop") {
+					systemManager.allowDomain("*");
+				}
 				
 				var context:LoaderContext = new LoaderContext();
 				
@@ -103,7 +106,12 @@
 					projectLoader.trustContent = !trustContent;
 				}
 				
-				projectLoader.source = url;//URL.text; // "http://yourdomain.com/SubApp3.swf";
+				if (Capabilities.playerType!="Desktop") {
+					projectLoader.source = url;//URL.text; // "http://yourdomain.com/SubApp3.swf";
+				}
+				else {
+					projectLoader.source = "assets/applications/" + url
+				}
 				
 				//projectLoader.autoLoad = autoLoad;
 				//load();

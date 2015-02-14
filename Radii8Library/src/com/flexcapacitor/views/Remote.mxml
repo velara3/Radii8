@@ -334,10 +334,10 @@
 				</s:layout>-->
 				
 				<!-- TOOLS -->
-				<s:VGroup width="100%" height="48" minHeight="48">
-					<s:Label text="TOOLS" width="100%" styleName="formItem"/>
+				<s:HGroup width="100%" height="24" minHeight="24">
+					<s:BitmapImage source="{Radii8LibraryToolAssets.DragStripIcon}"/>
 					<views:Tools width="100%" height="24"/>
-				</s:VGroup>
+				</s:HGroup>
 				
 				<!--<s:Spacer height="8"/>-->
 				

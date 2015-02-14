@@ -3,7 +3,7 @@ package com.flexcapacitor.model {
 	import mx.styles.IStyleClient;
 	
 	/**
-	 * Contains information on style metadata
+	 * Contains information on style metadata. For property metadata see AccessorMetaData
 	 * */
 	public class StyleMetaData extends MetaData {
 		

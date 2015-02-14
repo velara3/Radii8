@@ -1,4 +1,6 @@
 package {
+	import com.flexcapacitor.controls.Hyperlink;
+	
 	import mx.controls.LinkButton;
 	import mx.graphics.LinearGradient;
 	import mx.graphics.RadialGradient;
@@ -11,6 +13,8 @@ package {
 	import spark.components.ButtonBar;
 	import spark.components.Grid;
 	import spark.components.RadioButton;
+	import spark.components.RichEditableText;
+	import spark.components.RichText;
 	import spark.components.TabBar;
 	import spark.components.TileGroup;
 	import spark.components.ToggleButton;
@@ -145,6 +149,10 @@ package {
 		///////////////////////////////////////////////////////
 		// CONTROLS
 		///////////////////////////////////////////////////////
+		[Embed(source="assets/icons/spark/controls/Link.png")]
+		public static const LinkIcon:Class;
+		public static var link:Hyperlink;
+		
 		[Embed(source="assets/icons/spark/controls/Image.png")]
 		public static const BitmapImageIcon:Class;
 		public static var bitmapImage:BitmapImage;
@@ -229,9 +237,11 @@ package {
 		
 		[Embed(source="assets/icons/spark/controls/RichEditableText.png")]
 		public static const RichEditableTextIcon:Class;
+		public static var richEditableTextIcon:RichEditableText;
 		
 		[Embed(source="assets/icons/spark/controls/RichText.png")]
 		public static const RichTextIcon:Class;
+		public static var richText:RichText;
 		
 		[Embed(source="assets/icons/spark/controls/Scroller.png")]
 		public static const ScrollerIcon:Class;

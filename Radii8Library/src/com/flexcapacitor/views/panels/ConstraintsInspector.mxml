@@ -1210,6 +1210,16 @@
 				Radiate.clearProperties(target, ["height", "percentHeight"]);
 				updateView();
 			}
+			
+			public function clearX():void {
+				Radiate.clearProperties(target, ["x", "left", "right", "horizontalCenter"]);
+				updateView();
+			}
+			
+			public function clearY():void {
+				Radiate.clearProperties(target, ["y", "top", "bottom", "verticalCenter"]);
+				updateView();
+			}
 		]]>
 	</fx:Script>
 
@@ -1367,7 +1377,7 @@
 					 fontSize="12"
 					 styleName="inputStyles"
 					 width="50" x="44" y="0"
-					 restrict="0-9%"
+					 restrict="-0-9%"
 					 name="width:Number"
 					 toolTip="Width in pixels or percent"/>
 		
@@ -1384,8 +1394,12 @@
 					 fontSize="12"
 					 styleName="inputStyles"
 					 width="50" x="44" y="35"
-					 restrict="0-9-"
+					 restrict="-0-9"
 					 name="x:Number"/>
+		
+		<s:Button id="clearXButton" 
+				  skinClass="com.flexcapacitor.skins.ClearButton"
+				  click="clearX()"/>
 		
 	</s:HGroup>
 	
@@ -1409,7 +1423,7 @@
 					 fontSize="12"
 					 styleName="inputStyles" 
 					 width="50" x="174" y="0"
-					 restrict="0-9%"
+					 restrict="-0-9%"
 					 name="height:Number"
 					 toolTip="Height in pixels or percent"
 					 />
@@ -1427,8 +1441,12 @@
 					 fontSize="12"
 					 styleName="inputStyles"
 					 width="50" x="174" y="35"
-					 restrict="0-9-"
+					 restrict="-0-9-"
 					 name="y:Number"/>
+		
+		<s:Button id="clearYButton" 
+				  skinClass="com.flexcapacitor.skins.ClearButton"
+				  click="clearY()"/>
 	</s:HGroup>
 
 	
@@ -1443,39 +1461,39 @@
 		<s:TextInput id="topText"
 					 styleName="inputStyles"
 					 width="40" x="205" y="47"
-					 restrict="0-9-"
+					 restrict="-0-9-"
 					 name="top:style"/>
 		<s:TextInput id="verticalCenterText"
 					 styleName="inputStyles"
 					 width="40" x="205" y="95"
-					 restrict="0-9-"
+					 restrict="-0-9-"
 					 name="verticalCenter:style"/>
 		<s:TextInput id="bottomText"
 					 styleName="inputStyles"
 					 width="40" x="205" y="143"
-					 restrict="0-9"
+					 restrict="-0-9"
 					 name="bottom:style"/>
 		<s:TextInput id="baselineText"
 					 styleName="inputStyles"
 					 width="40" x="205" y="165"
-					 restrict="0-9"
+					 restrict="-0-9"
 					 visible="false"
 					 name="baseline:style"/>
 		
 		<s:TextInput id="rightText"
 					 styleName="inputStyles"
 					 width="40" x="147" y="189"
-					 restrict="0-9"
+					 restrict="-0-9"
 					 name="right:style"/>
 		<s:TextInput id="horizontalCenterText"
 					 styleName="inputStyles"
 					 width="40" x="99" y="189"
-					 restrict="0-9"
+					 restrict="-0-9"
 					 name="horizontalCenter:style"/>
 		<s:TextInput id="leftText"
 					 styleName="inputStyles"
 					 width="40" x="50" y="189"
-					 restrict="0-9"
+					 restrict="-0-9"
 					 name="left:style"/>
 		
 		<s:CheckBox id="leftConstraint"

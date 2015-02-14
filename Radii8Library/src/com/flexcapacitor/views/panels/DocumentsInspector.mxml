@@ -198,18 +198,26 @@
 			 * */
 			protected function newDocumentIcon_clickHandler(event:MouseEvent):void {
 				var newDocument:IDocument = radiate.addDocument(radiate.createDocument(), radiate.selectedProject, true, true);
-				radiate.openDocument(newDocument, DocumentData.INTERNAL_LOCATION, true); 
+				radiate.openDocument(newDocument, DocumentData.INTERNAL_LOCATION, true);
+				
+				//if (!Radiate.isDesktop) {
+					var saveRemote:Boolean = radiate.isUserConnected && radiate.isUserLoggedIn;
+					var savedLocation:String = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
+					
+					var savedLocally:Boolean = radiate.saveDocument(newDocument, savedLocation);
+					radiate.saveProject(radiate.selectedProject, savedLocation);
+				//}
 			}
 			
 			protected function saveDocumentIcon_clickHandler(event:MouseEvent):void {
 				//radiate.saveProject(radiate.project);
-				var document:IDocument = list.selectedItem as IDocument;
+				var iDocument:IDocument = list.selectedItem as IDocument;
 				
-				if (document) {
+				if (iDocument) {
 					var saveRemote:Boolean = radiate.isUserConnected && radiate.isUserLoggedIn;
 					var savedLocation:String = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
 					
-					var savedLocally:Boolean = radiate.saveDocument(document, savedLocation);
+					var savedLocally:Boolean = radiate.saveDocument(iDocument, savedLocation);
 					
 					//Radiate.log.info("Saved locally: " + savedLocally);
 				}

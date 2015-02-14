@@ -218,14 +218,14 @@
 				else if (format=="Color") {
 					actualValue = colorChooser.selectedColor;
 				}
-				else if (type=="Number" || (type=="int" && targetValueText==null)) {
+				else if (type=="Number" || (type=="int" && targetValueText==null) || numericStepper) {
 					actualValue = numericStepper.value;
 					
 					if (property.indexOf("lpha")!=-1) {//round down to two places
 						actualValue = int(actualValue*100)/100;
 					}
 				}
-				else if (type=="String" && enumeration && enumeration.length>0) {
+				else if (type=="String" && (formatDropDownList || formatCombobox)) {
 					
 					if (formatDropDownList) {
 						if (valueIsField && labelField) {
@@ -260,7 +260,12 @@
 					}
 				}
 				else {
-					valueSuccessfullyApplied = Radiate.setProperty(target, property, actualValue);
+					if (clearStyle) {
+						valueSuccessfullyApplied = Radiate.clearProperty(target, property);
+					}
+					else {
+						valueSuccessfullyApplied = Radiate.setProperty(target, property, actualValue);
+					}
 				}
 				
 				settingProperties = false;
@@ -413,8 +418,8 @@
 					format = propertyObject.format;
 					enumeration = propertyObject.enumeration;
 					
-					if (showClearButton && isStyle) { 
-						showClearStyleButton(isStyle);
+					if (showClearButton) { 
+						showClearStyleButton(showClearButton);
 					}
 					else {
 						showClearStyleButton(false);
@@ -440,7 +445,7 @@
 						var dropDownListBase:DropDownListBase = formatCombobox ? formatCombobox : formatDropDownList;
 						
 						if (!formatsCollection) formatsCollection = new ArrayCollection();
-						formatsCollection.source = enumeration;
+						if (enumeration) formatsCollection.source = enumeration;
 						
 						if (labelField) dropDownListBase.labelField = labelField;
 						
@@ -464,7 +469,9 @@
 							dropDownListBase.selectedItem = propertyObject.value;
 						}
 					}
-					else if (type=="Number" || (type=="int" && targetValueText==null)) {
+					else if (type=="Number" || (type=="int" && targetValueText==null) ||
+							(type=="Object" && numericStepper)) { // trackingRight 
+						
 						numericStepper.value = propertyObject.value;
 						
 						if (!isNaN(propertyObject.minValue)) {

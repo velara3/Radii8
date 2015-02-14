@@ -53,29 +53,6 @@
 				callLater(update);
 			}
 			
-			public function update():void {
-				var fontFamilyStyle:StyleMetaData = ClassUtils.getMetaDataOfStyle(target, "fontFamily"); // font
-				var fontSizeStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "fontSize"); // size
-				var fontWeightStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "fontWeight"); // bold
-				var fontStyleStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "fontStyle"); // italic
-				var textDecorationStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "textDecoration"); // underline 
-				var colorStyle:StyleMetaData  = ClassUtils.getMetaDataOfStyle(target, "color"); // color
-				
-				if (fonts==null) {
-					fonts = getFontInformationDetails(target);
-				}
-				
-				fontFamilyStyle.enumeration = fonts;
-				//fontsRenderer.data = data;
-				fontsRenderer.data = fontFamilyStyle;
-				fontSizeRenderer.data = fontSizeStyle;
-				fontWeightRenderer.data = fontWeightStyle;
-				fontStyleRenderer.data = fontStyleStyle;
-				colorRenderer.data = colorStyle;
-			}
-				
-				
-			
 			/**
 			 * Gets details about the embedded fonts
 			 * */
@@ -258,7 +235,32 @@
 				}
 				
 				return false;
+			}
+			
+			
+			public function update():void {
+				var fontFamilyStyle:StyleMetaData 		= ClassUtils.getMetaDataOfStyle(target, "fontFamily"); // font
+				var fontSizeStyle:StyleMetaData  		= ClassUtils.getMetaDataOfStyle(target, "fontSize"); // size
+				var trackingLeftStyle:StyleMetaData  	= ClassUtils.getMetaDataOfStyle(target, "trackingLeft"); // tracking
+				var trackingRightStyle:StyleMetaData 	= ClassUtils.getMetaDataOfStyle(target, "trackingRight"); // tracking
+				var fontWeightStyle:StyleMetaData  		= ClassUtils.getMetaDataOfStyle(target, "fontWeight"); // bold
+				var fontStyleStyle:StyleMetaData  		= ClassUtils.getMetaDataOfStyle(target, "fontStyle"); // italic
+				var textDecorationStyle:StyleMetaData  	= ClassUtils.getMetaDataOfStyle(target, "textDecoration"); // underline 
+				var colorStyle:StyleMetaData 			= ClassUtils.getMetaDataOfStyle(target, "color"); // color
 				
+				if (fonts==null) {
+					fonts = getFontInformationDetails(target);
+				}
+				
+				fontFamilyStyle.enumeration = fonts;
+				//fontsRenderer.data = data;
+				fontsRenderer.data = fontFamilyStyle;
+				fontSizeRenderer.data = fontSizeStyle;
+				fontWeightRenderer.data = fontWeightStyle;
+				fontStyleRenderer.data = fontStyleStyle;
+				colorRenderer.data = colorStyle;
+				trackingLeftRenderer.data = trackingLeftStyle;
+				trackingRightRenderer.data = trackingRightStyle;
 			}
 			
 		]]>
@@ -289,5 +291,13 @@
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Color" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
 		<renderers:ColorPickerRenderer id="colorRenderer" height="24" includeCopyIcon="false"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Tracking Right" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:NumberRenderer id="trackingRightRenderer" height="24"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Tracking Left" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:NumberRenderer id="trackingLeftRenderer" height="24"/>
 	</s:HGroup>
 </s:Group>

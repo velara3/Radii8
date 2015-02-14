@@ -97,6 +97,16 @@
 		</s:fill>
 	</s:Rect>-->
 	
+	<s:Label id="isChangedLabel2" 
+			 bottom="0"
+			 left="0"
+			 text=" "
+			 height="100%"
+			 width="4"
+			 backgroundColor="#989898"
+			 backgroundAlpha="1"
+			 visible="{data &amp;&amp; DocumentData(data).isChanged}"/>
+	
 	<s:BitmapImage id="icon" 
 				   source="{Radii8LibraryAssets.documentIcon}"
 				   left="5"
@@ -113,14 +123,36 @@
 				   >
 	</s:BitmapImage>
 	
-	<!--click event is not getting dispatched <s:Image id="openIcon" 
-				   source="{Radii8LibraryAssets.openFolder}"
+	<s:Label id="saveLabel" 
+				   text="Saving..."
+				   textAlign="right"
+				   right="35"
+				   top="3" 
+				   height="100%"
+				   verticalAlign="middle"
+				   visible="{data &amp;&amp; (DocumentData(data).saveInProgress)}"
+				   >
+	</s:Label>
+	<s:Label id="openLabel" 
+				   text="Opening..."
+				   textAlign="right"
+				   right="35"
+				   top="3" 
+				   height="100%"
+				   verticalAlign="middle"
+				   visible="{data &amp;&amp; (DocumentData(data).openInProgress)}"
+				   >
+	</s:Label>
+	
+	<!---click event is not getting dispatched -->
+	<s:Image id="openIcon" 
+				   source="{Radii8LibraryAssets.closedFolder}"
 				   right="5"
 				   top="5" 
-				   visible="{data &amp;&amp; !(DocumentData(data).isOpen &amp;&amp; !DocumentData(data).openInProgress)}"
+				   visible="{data &amp;&amp; !(DocumentData(data).isOpen)}"
 				   click="openIcon_clickHandler(event)"
 				   >
-	</s:Image>-->
+	</s:Image>
 	
 	
 	<s:Label id="labelDisplay" 
@@ -141,16 +173,6 @@
 			 itemCreationPolicy="immediate"
 			 includeIn="hovered, normal, selected"
 			 visible="{(data as DocumentData).isChanged}"/>-->
-	
-	<s:Label id="isChangedLabel2" 
-			 bottom="0"
-			 left="0"
-			 text=" "
-			 height="100%"
-			 width="4"
-			 backgroundColor="#989898"
-			 backgroundAlpha="1"
-			 visible="{data &amp;&amp; DocumentData(data).isChanged}"/>
 	
 	<s:TextInput id="textInput" 
 				 left="18"

@@ -87,6 +87,10 @@
     	<defaults width="166" />
     </component>
     
+    <component id="Hyperlink" class="com.flexcapacitor.controls.Hyperlink" include="true">
+    	<defaults text="Link"/>
+    </component>
+    
     <component id="Image" class="spark.components.Image">
     	<defaults source="assets/images/components/Image.png" scaleMode="stretch"/>
     </component>
@@ -123,11 +127,11 @@
     <component id="RadioButtonGroup" class="spark.components.RadioButtonGroup" include="false"/>
     
     <component id="RichEditableText" class="spark.components.RichEditableText" include="false">
-    	<defaults width="120" height="66" text="Rich Editable Text" editable="false" selectable="false"/>
+    	<defaults text="Rich Editable Text" editable="false" selectable="false"/>
     </component>
     
     <component id="RichText" class="spark.components.RichText" include="true">
-    	<defaults width="166" height="23" text="Rich Text"/>
+    	<defaults text="Rich Text"/>
     </component>
     
     <component id="Scroller" class="spark.components.Scroller" include="false">

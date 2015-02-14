@@ -120,6 +120,12 @@ package com.flexcapacitor.utils {
 		public var startingPoint:Point;
 		
 		public var includeSkins:Boolean;
+		
+		/**
+		 * Keep a reference to groups that have mouse enabled where transparent 
+		 * and mouse handler support added when addGroupMouseSupport is called
+		 * Stored so it can be removed with removeGroupMouseSupport
+		 * */
 		public var applicationGroups:Dictionary;
 		
 		/**
@@ -1707,6 +1713,9 @@ package com.flexcapacitor.utils {
 			_displayList = value;
 		}
 		
+		/**
+		 * @see com.flexcapacitor.utils.DisplayObjectUtils#enableDragBehaviorOnDisplayList
+		 * */
 		public function addGroupListeners(element:IVisualElement):void {
 			//enableDragBehaviorOnDisplayList(displayObject);
 			applicationGroups = DisplayObjectUtils.enableDragBehaviorOnDisplayList(element, true);

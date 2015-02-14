@@ -880,7 +880,9 @@
 			
 			protected function editor_resizeHandler(event:ResizeEvent):void {
 				//trace("resize from : " + event.currentTarget);
-				ExternalInterface.call("resizeEditor");
+				if (!Radiate.isDesktop && ExternalInterface.available) {
+					//ExternalInterface.call("resizeEditor");
+				}
 			}
 			
 			public var settingEditorText:Boolean;

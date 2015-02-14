@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 styleName="inspectablePanel">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.AccessorMetaData;
+			import com.flexcapacitor.model.StyleMetaData;
+			import com.flexcapacitor.utils.ClassUtils;
+			
+			import mx.collections.ArrayCollection;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			public var targets:Array = ["", "_blank", "new", "_parent", "_self", "_top"];
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				if (!targetsRenderer.formatsCollection) {
+					targetsRenderer.formatsCollection = new ArrayCollection(targets);
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+				radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				callLater(update);
+			}
+			
+			public function update():void {
+				var urlStyle:AccessorMetaData = ClassUtils.getMetaDataOfProperty(target, "url"); // href
+				var targetStyle:AccessorMetaData  = ClassUtils.getMetaDataOfProperty(target, "target"); // target
+				
+				urlRenderer.data = urlStyle;
+				targetsRenderer.data = targetStyle;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	
+	
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="URL" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:TextRenderer id="urlRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Target" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:ComboBoxRenderer id="targetsRenderer" height="24" 
+									valueIsField="false" fieldIsValue="true"
+									minWidth="180" showClearButton="true"/>
+	</s:HGroup>
+</s:Group>

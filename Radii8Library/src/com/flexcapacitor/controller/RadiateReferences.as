@@ -14,11 +14,15 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.Gap;
 	import com.flexcapacitor.views.inspectors.GroupAlign;
 	import com.flexcapacitor.views.inspectors.GroupLayoutInspector;
+	import com.flexcapacitor.views.inspectors.HyperLink;
 	import com.flexcapacitor.views.inspectors.Identity;
 	import com.flexcapacitor.views.inspectors.Image;
 	import com.flexcapacitor.views.inspectors.Layout;
 	import com.flexcapacitor.views.inspectors.StyleNameInspector;
 	import com.flexcapacitor.views.inspectors.TextInspector;
+	
+	import flash.display.JPEGEncoderOptions;
+	import flash.display.PNGEncoderOptions;
 	
 	/**
 	 * Create references so classes are included. 
@@ -30,6 +34,13 @@ package com.flexcapacitor.controller {
 		{
 			
 		}
+		
+		///////////////////////////////////////////////////////
+		// ENCODING OPTIONS - We get errors if not included
+		///////////////////////////////////////////////////////
+		
+		public static var jpegEncoderOptions:JPEGEncoderOptions;
+		public static var pngEncoderOptions:PNGEncoderOptions;
 		
 		///////////////////////////////////////////////////////
 		// TOOLS CLASSES
@@ -61,6 +72,7 @@ package com.flexcapacitor.controller {
 		public static var gapInspector:com.flexcapacitor.views.inspectors.Gap;
 		public static var layoutInspector:com.flexcapacitor.views.inspectors.Layout;
 		public static var styleNameInspector:com.flexcapacitor.views.inspectors.StyleNameInspector;
+		public static var hyperLinkInspector:com.flexcapacitor.views.inspectors.HyperLink;
 		public static var groupAlignInspector:com.flexcapacitor.views.inspectors.GroupAlign;
 		
 		

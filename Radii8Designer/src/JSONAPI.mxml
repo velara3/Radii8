@@ -1753,7 +1753,7 @@ function onWrite(e:MultipartURLLoaderEvent):void {
 					 change="permalinkCheckbox_changeHandler(event)"/>
 		<s:CheckBox id="redirectToUserSiteCheckbox" label="Redirect After Login"
 					 change="redirectToUserSiteCheckbox_changeHandler(event)"/>
-		<controls:Link id="visitBlogLabel4" text="Visit blog" click="visitBlogLabel_clickHandler(event)"/>
+		<controls:Hyperlink id="visitBlogLabel4" text="Visit blog" click="visitBlogLabel_clickHandler(event)"/>
 		<s:Spacer width="100%"/>
 		<s:Label id="userNameLabel" />
 		<s:Image id="userIcon" width="24" height="24"/>

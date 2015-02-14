@@ -72,8 +72,10 @@
 				var savePassword:StoreLogin = new StoreLogin();
 				var savePasswordCreated:Boolean;
 				
-				savePasswordCreated = savePassword.initialize(); // places our javascript onto the page
-				checkForValues();
+				if (ExternalInterface.available) {
+					savePasswordCreated = savePassword.initialize(); // places our javascript onto the page
+					checkForValues();
+				}
 				
 				radiate = Radiate.getInstance();
 				//trace("creation");

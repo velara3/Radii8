@@ -236,6 +236,7 @@ package com.flexcapacitor.tools {
 			addCanvasListeners();
 			addKeyboardListeners();
 			// add so transparent groups work (they need a listener to be detected)
+			addTransparentGroupListeners();
 			addTargetListeners(lastTarget); // also added on drag
 		}
 		
@@ -244,9 +245,10 @@ package com.flexcapacitor.tools {
 		 * */
 		public function removeAllListeners():void {
 			removeApplicationListeners();
+			removeCanvasListeners();
 			removeKeyboardListeners();
 			removeTargetListeners();
-			removeCanvasListeners();
+			removeTransparentGroupListeners();
 		}
 		
 		/**
@@ -379,8 +381,9 @@ package com.flexcapacitor.tools {
 		public function addDragManagerListeners():void {
 			
 			if (dragManagerInstance) {
-				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop, false, 0, true);
 				dragManagerInstance.addEventListener(DragDropEvent.DRAG_OVER, handleDragOver, false, 0, true);
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop, false, 0, true);
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete, false, 0, true);
 			}
 			
 		}
@@ -391,8 +394,9 @@ package com.flexcapacitor.tools {
 		public function removeDragManagerListeners():void {
 			
 			if (dragManagerInstance) {
-				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_OVER, handleDragOver);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
 			}
 		}
 		
@@ -482,6 +486,26 @@ package com.flexcapacitor.tools {
 				}
 			}
 			
+		}
+		
+		/**
+		 * Add listeners to enable transparent groups to detect mouse events
+		 * */
+		public function addTransparentGroupListeners():void {
+			
+			if (targetApplication) {
+				DisplayObjectUtils.enableDragBehaviorOnDisplayList(targetApplication as IVisualElement, true);
+			}
+		}
+		
+		/**
+		 * Remove listeners to disable transparent groups from detecting mouse events
+		 * */
+		public function removeTransparentGroupListeners():void {
+			
+			if (targetApplication) {
+				DisplayObjectUtils.enableDragBehaviorOnDisplayList(targetApplication as IVisualElement, false);
+			}
 		}
 		
 		/**
@@ -724,7 +748,7 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * Handles mouse up event on the target
+		 * Handles drag drop event on drag manager
 		 * */
 		protected function handleDragDrop(event:DragDropEvent):void {
 			// select target
@@ -768,6 +792,21 @@ package com.flexcapacitor.tools {
 			dragLocation = "";
 			
 			removeDragManagerListeners();
+			
+			// drag manager removes these because it doesn't know or care what
+			// the current tool it has to add group mouse handlers. 
+			addTransparentGroupListeners();
+		}
+		
+		/**
+		 * Handles drag drop event on drag manager
+		 * */
+		protected function handleDragDropComplete(event:DragDropEvent):void {
+			
+			// drag manager removes these because it doesn't know or care what
+			// the current tool it has to add group mouse handlers. 
+			// it's all like, "whateva, whateva i do what i want"
+			addTransparentGroupListeners();
 		}
 	
 		/**

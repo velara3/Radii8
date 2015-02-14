@@ -389,13 +389,14 @@ package com.flexcapacitor.utils {
 		 * There is partial work with CSS properties objects but those are not implemented yet. 
 		 * */
 		public function getHTMLOutputString(iDocument:IDocument, component:ComponentDescription, addLineBreak:Boolean = false, tabs:String = "", includePreview:Boolean = false):String {
+			var componentInstance:Object = component.instance;
+			if (componentInstance==null) return "";
 			var property:Object = component.properties;
 			var componentName:String = component.name ? component.name.toLowerCase() : "";
 			var htmlName:String = componentName ? componentName : "";
 			var componentChild:ComponentDescription;
-			var componentInstance:Object = component.instance;
-			var instanceName:String = "name" in componentInstance ? componentInstance.name : "";
-			var instanceID:String = "id" in componentInstance ? componentInstance.id : "";
+			var instanceName:String = componentInstance && "name" in componentInstance ? componentInstance.name : "";
+			var instanceID:String = componentInstance && "id" in componentInstance ? componentInstance.id : "";
 			var contentToken:String = "[child_content]";
 			var styleValue:String = "position:absolute;";
 			var styles:Styles = new Styles();
