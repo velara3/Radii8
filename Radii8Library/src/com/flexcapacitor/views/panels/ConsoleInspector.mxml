@@ -2,18 +2,19 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
-		 xmlns:controls="com.flexcapacitor.controls.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
 		 
 		 width="200" height="100"
 		 creationComplete="group1_creationCompleteHandler(event)" 
+		 implements="com.flexcapacitor.views.IInspector" 
 		 >
 	
 	
 	<!-- to use
 	
 	
-				Radiate.log.info("Document SHOW event");
-				Radiate.log.error(event.text);
+		Radiate.info("Document SHOW event");
+		Radiate.error(event.text);
 		TO DO: 
 	
 		Store previous value when overflow 
@@ -21,6 +22,9 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controls.IAceEditor;
+			import com.flexcapacitor.utils.AceEditorUtils;
+			import com.flexcapacitor.views.IInspector;
 			
 			import mx.events.FlexEvent;
 			import mx.logging.AbstractTarget;
@@ -47,21 +51,68 @@
 			public var maxLines:int = 300;
 			public var defaultMaxLines:int = 300;
 			public var previousConsoleValue:String;
+			public var aceEditor:Object;
+			
+			public function activate():void {
+				
+				if (logTarget==null && !Radiate.isDesktop) {
+					logTarget = Radiate.logTarget;
+					Radiate.setLoggingTarget(logTarget, null, consoleTextArea);
+				}
+				
+				if (Radiate.isDesktop) {
+					consoleTextArea.visible = false;
+					consoleTextArea.includeInLayout = false;
+					
+					if (aceEditor && aceEditor.editor) {
+						Radiate.setLoggingTarget(logTarget, null, aceEditor);
+					}
+					
+				}
+			}
+			
+			public function deactivate():void {
+				// keep logging
+			}
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				
-				/*
-				logTarget = new RadiateLogTarget();
-				Radiate.setLoggingTarget(logTarget, null, consoleTextArea);
-				*/
-				
 				logTarget = Radiate.logTarget;
-				Radiate.setLoggingTarget(logTarget, null, consoleTextArea);
+				
+				if (!aceEditor) {
+					aceEditor = AceEditorUtils.createCommonEditor(null, this);
+					aceEditor.showGutter = false;
+					aceEditor.top = -10;
+
+					aceEditor.addEventListener("editorReady", editorReadyHandler);
+					aceEditor.validateNow();
+					//aceEditor.margin = "";
+				}
+				
+				if (Radiate.isDesktop && aceEditor.editor) {
+					Radiate.setLoggingTarget(logTarget, null, aceEditor);
+				}
+				else {
+					Radiate.setLoggingTarget(logTarget, null, consoleTextArea);
+				}
 				
 			}
 			
+			protected function editorReadyHandler(event:Event):void {
+				
+				if (Radiate.isDesktop && aceEditor.editor) {
+					Radiate.setLoggingTarget(logTarget, null, aceEditor);
+				}
+			}
+			
 			protected function clearTextAreaHandler(event:MouseEvent):void {
-				consoleTextArea.text = "";
+				
+				if (Radiate.isDesktop) {
+					aceEditor.text = "";
+				}
+				else {
+					consoleTextArea.text = "";
+				}
 			}
 			
 			protected function consoleTextArea_valueCommitHandler(event:FlexEvent):void {
@@ -76,8 +127,18 @@
 				scrollToTheBottom()
 			}
 			
+			/**
+			 * Scrolls to the bottom of the texgt area.
+			 * 
+			 * Because of the degradation of performance with the 
+			 * Spark and MX TextArea with lots of text we are 
+			 * truncating the output at a certain number of lines.
+			 * 
+			 * We are going to use Ace Editor to allow for much higher performance 
+			 * */
 			public function scrollToTheBottom():void {
 				
+				// SPARK TEXT AREA
 				if (consoleTextArea is spark.components.TextArea) {
 					var scrollBar:VScrollBar = spark.components.TextArea(consoleTextArea).scroller.verticalScrollBar;
 					
@@ -89,11 +150,13 @@
 						consoleTextArea.validateNow();
 					}
 					
-					if (scrollBar.maximum>maxLines*consoleTextArea.getStyle("fontSize")) {
+					if (scrollBar.maximum>maxLines * consoleTextArea.getStyle("fontSize")) {
 						previousConsoleValue = consoleTextArea.text;
 						consoleTextArea.text = "";
 					}
 				}
+				
+				// MX TEXT AREA
 				else if (consoleTextArea is mx.controls.TextArea) {
 					var mxTextArea:mx.controls.TextArea = mx.controls.TextArea(consoleTextArea);
 					
@@ -105,13 +168,17 @@
 						mxTextArea.validateNow();
 					}
 					
-					if (mxTextArea.maxVerticalScrollPosition>maxLines*consoleTextArea.getStyle("fontSize")) {
+					if (mxTextArea.maxVerticalScrollPosition>maxLines * consoleTextArea.getStyle("fontSize")) {
 						previousConsoleValue = mxTextArea.text;
 						mxTextArea.text = "";
 					}
 					
 				}
 				
+				// ACE EDITOR
+				else if (consoleTextArea is IAceEditor) {
+					Object(aceEditor).navigateFileEnd();
+				}
 			}
 			
 		]]>
@@ -155,7 +222,7 @@
 				change="consoleTextAreaMX_changeHandler(event)"
 				valueCommit="consoleTextArea_valueCommitHandler(event)"
 				/>
-	<controls:ImageButton source="{Radii8LibraryAssets.clear}" 
+	<c:BeveledImageButton source="{Radii8LibraryAssets.clear}" 
 						  right="8"
 						  click="clearTextAreaHandler(event)"
 						  width="18"

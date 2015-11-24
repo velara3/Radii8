@@ -11,6 +11,8 @@ package com.flexcapacitor.events {
 	
 	public class DragDropEvent extends Event {
 		
+		public static var DRAG_START:String = "dragStart";
+		public static var DRAG_END:String = "dragEnd";
 		public static var DRAG_OVER:String = "dragOver";
 		public static var DRAG_DROP:String = "dragDrop";
 		public static var DRAG_DROP_COMPLETE:String = "dragDropComplete";

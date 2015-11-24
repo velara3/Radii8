@@ -174,7 +174,10 @@
 				
 				if (currentState==DOCUMENT) {
 					if (radiate.selectedDocument) {
-						radiate.closeDocument(radiate.selectedDocument);
+						radiate.closeDocument(radiate.selectedDocument, false, true);
+						if (radiate.documents.length) {
+							
+						}
 					}
 				}
 				else if (currentState==PROJECT) {

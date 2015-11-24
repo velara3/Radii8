@@ -7,7 +7,7 @@
 		 
 		 creationComplete="group1_creationCompleteHandler(event)"
 		 >
-
+	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
@@ -56,7 +56,7 @@
 			public function updateTool(tool:ITool):void {
 				var zoomValue:Number;
 				zoomValue = zoomTool.getScale();
-					
+				
 				updateZoomInComboBox(zoomValue);
 			}
 			
@@ -140,41 +140,48 @@
 			
 		]]>
 	</fx:Script>
-
+	
 	<s:layout>
 		<s:HorizontalLayout paddingLeft="4" />
 	</s:layout>
 	
+	
 	<!--<s:CheckBox label="Scrub Zoom" />-->
-	<c:ImageButton id="actualSizeButton" 
-			   visible="{showActualSize}"
-			   includeInLayout="{showActualSize}"
-			   source="{Radii8LibraryAssets.actualSize}" 
-			   toolTip="Actual"
-			   click="actualSize_clickHandler(event)"
-			   height="100%"
-			   />
+	<c:BeveledImageButton id="actualSizeButton" 
+						  visible="{showActualSize}"
+						  includeInLayout="{showActualSize}"
+						  source="{Radii8LibraryAssets.actualSize}" 
+						  toolTip="Actual"
+						  click="actualSize_clickHandler(event)"
+						  height="100%"
+						  />
 	
 	<!--<s:Button id="fitSize" label="Fit Size"
-			  visible="{showActualSize}"
-			  includeInLayout="{showActualSize}"
-			  click="actualSize_clickHandler(event)"/>-->
+	visible="{showActualSize}"
+	includeInLayout="{showActualSize}"
+	click="actualSize_clickHandler(event)"/>-->
 	
 	<s:ComboBox id="zoomComboBox" 
 				width="65" 
-				height="100%"
+				height="21"
 				focusAlpha="0" 
 				selectedIndex="8"
 				change="zoomComboBox_changeHandler(event)"
-				openOnInput="true" arrowKeysWrapFocus="true"
+				openOnInput="true" 
+				arrowKeysWrapFocus="false"
 				doubleClickEnabled="true"
 				doubleClick="zoomComboBox_doubleClickHandler(event)"
 				>
-        <s:layout>
-            <s:VerticalLayout gap="0"
-                    horizontalAlign="contentJustify"
-                    requestedRowCount="10" />
-        </s:layout>
+		<!--
+		Pressing ESC key in combox results in the error below when using a custom layout: 
+		
+	TypeError: Error #1009: Cannot access a property or method of a null object reference. at spark.components.supportClasses::DropDownListBase/http://www.adobe.com/2006/flex/mx/internal::positionIndexInView()[E:\dev\4.y\frameworks\projects\spark\src\spark\components\supportClasses\DropDownListBase.as:659]
+		-->
+<!--		<s:layout>
+			<s:VerticalLayout gap="0"
+							  horizontalAlign="contentJustify"
+							  requestedRowCount="10" />
+		</s:layout>-->
 		<s:dataProvider>
 			<s:ArrayList>
 				<fx:String>600%</fx:String>
@@ -186,12 +193,17 @@
 				<fx:String>150%</fx:String>
 				<fx:String>125%</fx:String>
 				<fx:String>100%</fx:String>
-				<fx:String>75%</fx:String>
+				<fx:String>90%</fx:String>
+				<fx:String>80%</fx:String>
+				<fx:String>70%</fx:String>
+				<fx:String>60%</fx:String>
 				<fx:String>50%</fx:String>
-				<fx:String>25%</fx:String>
+				<fx:String>40%</fx:String>
+				<fx:String>30%</fx:String>
+				<fx:String>20%</fx:String>
 				<fx:String>10%</fx:String>
 			</s:ArrayList>
 		</s:dataProvider>
 	</s:ComboBox>
-
+	
 </s:Group>

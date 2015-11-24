@@ -43,7 +43,7 @@ package com.flexcapacitor.model {
 		 * Exports to an XML string. When reference is true it returns
 		 * a shorter string with a URI to the document details
 		 * */
-		function export(document:IDocument, target:ComponentDescription = null, reference:Boolean = false):*;
+		function export(document:IDocument, target:ComponentDescription = null, options:ExportOptions = null):SourceData;
 		
 		/**
 		 * Export to XML. When reference is true it returns

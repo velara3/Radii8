@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:filters="com.flexcapacitor.filters.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			
+			import mx.core.IStateClient2;
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			
+			public var radiate:Radiate;
+			
+			public var view:IStateClient2;
+			
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+			}
+			
+			
+			protected function buttonbar_changeHandler(event:IndexChangeEvent):void
+			{
+				if (buttonbar.selectedItem=="Design") {
+					view.currentState = "design";
+				}
+				else if (buttonbar.selectedItem=="Develop") {
+					view.currentState = "develop";
+				}
+				else if (buttonbar.selectedItem=="Code") {
+					view.currentState = "code";
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="4" />
+	</s:layout>
+	
+	<s:ButtonBar id="buttonbar" 
+				  requireSelection="true"
+				  change="buttonbar_changeHandler(event)"
+				  >
+		
+		<s:ArrayCollection>
+			<fx:String>Design</fx:String>
+			<fx:String>Develop</fx:String>
+			<fx:String>Code</fx:String>
+		</s:ArrayCollection>
+	</s:ButtonBar>
+</s:Group>

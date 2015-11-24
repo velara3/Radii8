@@ -10,6 +10,11 @@
 	
 	<fx:Script>
 		<![CDATA[
+			
+			/**
+			 * Features is a bug or feature request view to submit to the developer
+			 * */
+			
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.status.StatusManager;
 			
@@ -169,7 +174,7 @@
 			protected function feedbackService_faultHandler(event:FaultEvent):void {
 				StatusManager.show("An error occurred! Message may not have been sent. Please email contact@radii8.com.", 6000);
 				//StatusManager.show("An error occurred! Message may not have been sent. \n\n" + event.fault.message);
-				Radiate.log.error(event.fault.message);
+				Radiate.error(event.fault.message);
 			}
 			
 		]]>

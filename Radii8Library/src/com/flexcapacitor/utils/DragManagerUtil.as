@@ -3,6 +3,7 @@
 package com.flexcapacitor.utils {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
+	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.DragData;
@@ -51,6 +52,16 @@ package com.flexcapacitor.utils {
 	import spark.skins.spark.ListDropIndicator;
 
 	/**
+	 * Drag start 
+	 * */
+	[Event(name="dragStart", type="com.flexcapacitor.radiate.events.DragDropEvent")]
+	
+	/**
+	 * Drag end
+	 * */
+	[Event(name="dragEnd", type="com.flexcapacitor.radiate.events.DragDropEvent")]
+
+	/**
 	 * Drag over 
 	 * */
 	[Event(name="dragOver", type="com.flexcapacitor.radiate.events.DragDropEvent")]
@@ -75,7 +86,10 @@ package com.flexcapacitor.utils {
 		
 		
 		public function DragManagerUtil():void {
-			
+			if (_instance==null) _instance = this;
+			else {
+				throw new Error("Use getInstance()");
+			}
 		}
 		
 		/**
@@ -146,6 +160,7 @@ package com.flexcapacitor.utils {
 		public var adjustMouseOffset:Boolean = true;
 		public var draggedItem:Object;
 		private var topLevelApplication:Application;
+		public var testScaledMovement:Boolean;
 		
 		
 		/**
@@ -253,7 +268,7 @@ package com.flexcapacitor.utils {
 			}
 			
 		}
-		
+		public static var testSomething:Boolean;
 		/**
 		 * Start dragging
 		 * */
@@ -318,11 +333,35 @@ package com.flexcapacitor.utils {
 				snapshot = null;
 			}
 			else {
-				snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject);
+				
+				if (scale!=1) {
+					var tempScale:Number = dragInitiator.scaleX;
+					dragInitiator.scaleX = scale;
+					dragInitiator.scaleY = scale;
+					Object(dragInitiator).validateNow();
+				}
+				
+				if (testSomething) {
+					snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject, true, scale, scale);
+				}
+				else {
+					snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject);
+				}
 				//snapshot = DisplayObjectUtils.getSpriteSnapshot(dragInitiator as DisplayObject);
+				//DisplayObjectUtils.scaleDisplayObject(targetApplication as DisplayObject, snapshot, "stretch");
+				
+				if (scale!=1) {
+					dragInitiator.scaleX = tempScale;
+					dragInitiator.scaleY = tempScale;
+				}
 			}
 			
-			if (addDropShadow) {
+			
+			if (testScaledMovement) {
+				snapshot = null;
+			}
+			
+			if (addDropShadow && snapshot) {
 				snapshot.filters = [dropShadowFilter];
 			}
 			
@@ -333,9 +372,19 @@ package com.flexcapacitor.utils {
 			}
 			else {
 				DragManager.doDrag(dragInitiator, dragSource, event, snapshot, 0, 0, 1);
+				
+				// error when snapshot is null and running on desktop: 
+				// 
+				// TypeError: Error #1009: Cannot access a property or method of a null object reference.
+				//	at mx.managers::NativeDragManagerImpl/doDrag()[E:\dev\4.y\frameworks\projects\airframework\src\mx\managers\NativeDragManagerImpl.as:318]
+				//		at mx.managers::DragManager$/doDrag
+				// Lines from NativeDragManager: 
+				//   var dragManagerStyleDeclaration:CSSStyleDeclaration = getStyleManager(dragInitiator).getStyleDeclaration("mx.managers.DragManager");
+				//   var dragImageClass:Class = dragManagerStyleDeclaration.getStyle("defaultDragImageSkin");
+				//   - dragManagerStyleDeclaration is null 
 			}
 			
-			
+			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_START));
 		}
 		
 		private function dragEnterHandler(event:DragEvent):void {
@@ -426,7 +475,7 @@ package com.flexcapacitor.utils {
 			// check if target is self
 			if (target==draggedItem) {
 				target = parentApplication;
-				Radiate.log.info("Cannot drag onto self");
+				Radiate.info("Cannot drag onto self");
 				return;
 				//continue;
 			}
@@ -434,7 +483,7 @@ package com.flexcapacitor.utils {
 			// check if target is child of self
 			if ("contains" in draggedItem && target && 
 				draggedItem.contains(target)) {
-				Radiate.log.info("Cannot drag into child of self");
+				Radiate.info("Cannot drag into child of self");
 				return;
 			}
 			
@@ -772,7 +821,7 @@ package com.flexcapacitor.utils {
 			// check if target is self
 			if (target==draggedItem) {
 				target = targetApplication;
-				if (debug) Radiate.log.info("Cannot drag onto self");
+				if (debug) Radiate.info("Cannot drag onto self");
 				if (draggingOver) return null;
 				//continue;
 			}
@@ -780,7 +829,7 @@ package com.flexcapacitor.utils {
 			// check if target is child of self
 			if (target && "contains" in draggedItem && 
 				draggedItem.contains(target)) {
-				if (debug) Radiate.log.info("Cannot drag into child of self");
+				if (debug) Radiate.info("Cannot drag into child of self");
 				if (draggingOver) return null;
 				//return null;
 			}
@@ -789,7 +838,7 @@ package com.flexcapacitor.utils {
 			if (target && 
 				target != targetApplication && 
 				!targetApplication.contains(DisplayObject(target))) {
-				if (debug) Radiate.log.info("Target application doesn't contain drop target");
+				if (debug) Radiate.info("Target application doesn't contain drop target");
 				if (draggingOver) return null;
 				//return null;
 			}
@@ -1076,10 +1125,10 @@ package com.flexcapacitor.utils {
 			isSkinnableContainer= dragData.isSkinnableContainer;
 			isVisualElementContainer= dragData.isVisualElementContainer;
 			offscreen			= dragData.offscreen;
-			
+			/*
 			removeDragListeners(dragListener);
 			removeDragDisplayObjects();
-			removeGroupListeners(targetApplication);
+			removeGroupListeners(targetApplication);*/
 			
 			// Hide if previously showing
 			if (dropLayout) {
@@ -1125,7 +1174,10 @@ package com.flexcapacitor.utils {
 			
 			dispatchEvent(dragEvent);
 			
-			if (dragEvent.isDefaultPrevented()) return;
+			if (dragEvent.isDefaultPrevented()) {
+				
+				return;
+			}
 
 			
 			// SHOULD BE MOVED TO SELECTION CLASS?!?!
@@ -1164,10 +1216,10 @@ package com.flexcapacitor.utils {
 				}
 			}
 			
-			var eventDescription:String = "Move";
+			var eventDescription:String = HistoryManager.getMoveDescription(draggedItem);
 			
 			if (draggedItem.parent==null) {
-				eventDescription = "Add";
+				eventDescription = HistoryManager.getAddDescription(draggedItem);
 			}
 			
 			// attempt to add or move
@@ -1337,8 +1389,11 @@ package com.flexcapacitor.utils {
 		protected function dragCompleteHandler(event:DragEvent):void {
 			removeDragListeners(dragListener);
 			removeDragDisplayObjects();
-			removeGroupListeners(targetApplication);
-			event.currentTarget.removeEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);	
+			//removeGroupListeners(targetApplication);
+			removeMouseHandlers(IUIComponent(dragInitiator));
+			
+			dragInitiator.visible = hideDragInitiatorOnDrag ? true : false; // hide from view
+			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_END));
 		}
 		
 		private function addDragListeners(dragInitiator:IUIComponent, dragListener:DisplayObject):void {
@@ -1381,6 +1436,7 @@ package com.flexcapacitor.utils {
 		 * */
 		protected function mouseUpHandler(event:Event):void {
 			removeMouseHandlers(IUIComponent(event.currentTarget));
+			
 		}
 		
 		/**
@@ -1388,6 +1444,7 @@ package com.flexcapacitor.utils {
 		 * */
 		protected function removeMouseHandlers(target:IUIComponent):void {
 			
+			target.removeEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);
 			target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
 			swfRoot.removeEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
 		}
@@ -1684,15 +1741,16 @@ package com.flexcapacitor.utils {
 		private var _displayList:Array;
 		private var setDragManagerOffset:Boolean = false;
 		
-		public var hideDragInitiatorOnDrag:Boolean;
+		public var hideDragInitiatorOnDrag:Boolean = true;
 		public var dropShadowFilter:DropShadowFilter = new DropShadowFilter(4, 45, 0, 1, 2, 2, .3);
-		public var addDropShadow:Boolean = false;
+		public var addDropShadow:Boolean = true;
 
 		public var componentTree:ComponentDescription;
 
 		private var distanceFromLeft:int;
 
 		private var distanceFromTop:int;
+		private static var _instance:DragManagerUtil;
 
 		
 		/**
@@ -1780,6 +1838,11 @@ package com.flexcapacitor.utils {
 				}
 			}
 			return parentItem;
+		}
+		
+		public static function getInstance():DragManagerUtil {
+			if (_instance==null) _instance = new DragManagerUtil();
+			return _instance;
 		}
 	}
 }

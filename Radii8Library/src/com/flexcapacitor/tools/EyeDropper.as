@@ -27,15 +27,13 @@ package com.flexcapacitor.tools {
 			
 		}
 		
-		[Embed(source="assets/icons/tools/EyeDropper.png")]
-		private var _icon:Class;
+		private var _icon:Class = Radii8LibraryToolAssets.EyeDropper;
 		
 		public function get icon():Class {
 			return _icon;
 		}
 		
-		[Embed(source="assets/icons/tools/EyeDropperCursor.png")]
-		public static const Cursor:Class;
+		public static const Cursor:Class = Radii8LibraryToolAssets.EyeDropperCursor;
 		
 		public var cursors:Array;
 		public var radiate:Radiate;
@@ -69,6 +67,7 @@ package com.flexcapacitor.tools {
 			
 			updateDocument(null);
 			
+			Mouse.cursor = MouseCursor.AUTO;
 		}
 		
 		/**

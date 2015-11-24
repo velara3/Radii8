@@ -4,54 +4,346 @@
 			   xmlns:mx="library://ns.adobe.com/flex/mx" 
 			   xmlns:handlers="com.flexcapacitor.handlers.*" 
 			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:fce="com.flexcapacitor.effects.file.*"
+			   xmlns:fcb="com.flexcapacitor.effects.core.*"
 			   xmlns:views="com.flexcapacitor.views.*"
 			   xmlns:panels="com.flexcapacitor.views.panels.*"
 			   xmlns:windows="com.flexcapacitor.views.windows.*" 
-			   
-			   title="Save As..."
-			   creationComplete="panel1_creationCompleteHandler(event)" 
+			   xmlns:controls="com.flexcapacitor.controls.*" 
+
+			   title="Export release..."
+			   remove="clearFilesList()"
+			   creationComplete="creationCompleteHandler(event)" 
 			   >
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.CodeManager;
+			import com.flexcapacitor.model.ExportOptions;
+			import com.flexcapacitor.model.FileInfo;
+			import com.flexcapacitor.model.HTMLExportOptions;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.SourceData;
+			import com.flexcapacitor.model.TranscoderDescription;
+			
+			import flash.net.navigateToURL;
 			
 			import mx.events.EffectEvent;
 			import mx.events.FlexEvent;
 			
-			public static const NEW_DOCUMENT:String = "newDocument";
-			public static const CURRENT_DOCUMENT:String = "currentDocument";
-			public static const CURRENT_SELECTION:String = "currentSelection";
+			import spark.events.IndexChangeEvent;
 			
+			private var htmlOptions:HTMLExportOptions;
+			 
+			private var options:ExportOptions;
 			
-			protected function panel1_creationCompleteHandler(event:FlexEvent):void {
-				codeInspector.exportWindow = true;
-				codeInspector.activate();
+			public var sourceData:SourceData;
+			
+			[Bindable]
+			public var isHTML:Boolean;
+			
+			public var iDocument:IDocument;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				var exporters:Array = CodeManager.getAllExporters();
+				radiate = Radiate.getInstance();
+				iDocument = radiate.selectedDocument;
+				languageTypes.source = exporters;
+				languageTypeButtons.dataProvider = languageTypes;
+				isHTML = TranscoderDescription(exporters[0]).type==CodeManager.HTML.toLowerCase();
+				
+				if (radiate.exportFileLocation) {
+					updateDirectoryLabel();
+				}
 			}
 			
 			protected function eventhandler1_effectEndHandler(event:EffectEvent):void {
-				codeInspector.deactivate();
+				
 			}
 			
 			protected function saveButton_clickHandler(event:MouseEvent):void {
-				var radiate:Radiate = Radiate.getInstance();
-				var codeType:String = codeInspector.codeType.selectedItem as String;
-				var extension:String = (codeType==CodeInspector.HTML) ? "html" : (codeType==CodeInspector.MXML) ? "mxml" : "xml";
+				var transcoderDescription:TranscoderDescription = getSelectedTranscoder();
+				var language:String = transcoderDescription.label;
+				var extension:String = (language==CodeManager.HTML) ? "html" : (language==CodeManager.MXML) ? "mxml" : "xml";
+				var overwriteFiles:Boolean = true; //overwriteFilesCheckbox.selected;
+				var outputFolder:FileReference = browseForFolder.file as FileReference;
+				var templateName:String = templatesDropDownList.selectedItem;
+				var filesCreated:Boolean;
+				var template:String;
 				
-				radiate.saveFileAs(codeInspector.sourceCode, radiate.selectedDocument.name, extension);
-				radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler, false, 0, true);
+				
+				if (iDocument==null) {
+					Radiate.error("No document open. Open a document before attempting to export.");
+					return;
+				}
+				
+				filesCreatedLabel.text = "";
+				
+				extension = extensionsCombox.selectedItem;
+				
+				// templates
+				template = getSelectedTemplate(language);
+				
+				
+				// options
+				if (language == CodeManager.HTML) {
+					htmlOptions = CodeManager.getExportOptions(language) as HTMLExportOptions;
+					htmlOptions.useInlineStyles = setStylesInline.selected;
+					htmlOptions.useExternalStylesheet = useExternalStylesheetCheckbox.selected;
+					htmlOptions.createFiles = true;
+					htmlOptions.showBorders = false;
+					htmlOptions.disableTabs = false;
+
+					if (extension=="auto") {
+						if (templateName=="external") {
+							var templateFileName:String = templateFile.currentFileReference.name;
+							extension = templateFileName.substr(String(templateFileName).lastIndexOf(".")+1);
+							if (extension=="") {
+								extension = "html";
+							}
+						}
+						else {
+							extension = "html";
+						}
+					}
+					htmlOptions.fileExtension = extension;
+					htmlOptions.template = template;
+					options = htmlOptions;
+				}
+				else if (language == CodeManager.MXML) {
+					options = CodeManager.getExportOptions(language);
+					options.useInlineStyles = setStylesInline.selected;
+					if (extension=="auto") {
+						extension = transcoderDescription.extension;
+					}
+					options.template = template;
+					options.fileExtension = extension;
+					options.createFiles = true;
+				}
+				else if (language == CodeManager.ANDROID) {
+					options = CodeManager.getExportOptions(language);
+					if (extension=="auto") {
+						extension = transcoderDescription.extension;
+					}
+					options.useInlineStyles = setStylesInline.selected;
+					options.template = template;
+					options.fileExtension = extension;
+					options.createFiles = true;
+				}
+				
+				sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, language, options); 
+				
+				if (sourceData.files && sourceData.files.length<=1) {
+					
+					if (outputFolder) {
+						filesCreated = radiate.saveFiles(sourceData, outputFolder, overwriteFiles);
+					}
+					else {
+						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler, false, 0, true);
+						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler, false, 0, true);
+						radiate.saveFileAs(sourceData.source, radiate.selectedDocument.name, extension);
+					}
+				}
+				else {
+					
+					if (outputFolder) {
+						filesCreated = radiate.saveFiles(sourceData, outputFolder, overwriteFiles);
+						completeHandler();
+					}
+					else {
+						outputDirectoryLabel.setStyle("color", "red");
+					}
+				}
+				
+				var messages:String = "";
+				
+				if (sourceData.errors && sourceData.errors.length) {
+					messages = "Warning - There are " + sourceData.errors.length +  " errors. ";
+				}
+				
+				if (sourceData.warnings && sourceData.warnings.length) {
+					messages += "There are " + sourceData.warnings.length +  " warnings. ";
+				}
+				
+				if (messages) {
+					warningLabel.text = warningLabel.toolTip = messages + "Check the issues panel for more information.";
+					warningLabelContent.text = sourceData.warnings.join("\n") + "\n" + sourceData.errors.join("\n");
+				}
+				else {
+					warningLabel.text = "";
+					warningLabelContent.text = "";
+				}
+				
+				if (filesCreated) {
+					afterFilesSaved();
+					filesCreatedLabel.text = sourceData.files.length + " files created.";
+				}
 			}
 			
-			protected function completeHandler(event:Event):void {
-				codeInspector.deactivate();
-				closePopUp.startDelay = closePanelDelay;
-				closePopUp.play();
+			protected function afterFilesSaved():void {
+				navigateButton.visible = true;
+				openDirectoryButton.visible = true;
+				clearFilesLabelEffect.end();
+				clearFilesLabelEffect.play([filesCreatedLabel]);
+				cancelButton.label = "Close";
+			}
+			
+			protected function completeHandler(event:Event = null):void {
+				var transcoderDescription:TranscoderDescription = getSelectedTranscoder();
+				var language:String = transcoderDescription.label;
+				
+				if (browseForFolder.file) {
+					afterFilesSaved();
+				}
+				
+				filesCreatedLabel.text = sourceData.files.length + " files created.";
+				
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler);
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler);
 			}
 			
 			protected function cancelHandler(event:Event):void {
-				//Radiate.log.info("Canceled Save");
+				//Radiate.info("Canceled Save");
+				clearFilesList();
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler);
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler);
+			}
+			
+			/**
+			 * Updates the code to reflect the selected language 
+			 * */
+			protected function languageType_changeHandler(event:IndexChangeEvent):void {
+				var selectedLanguage:TranscoderDescription = getSelectedTranscoder();
+				
+				isHTML = selectedLanguage.type==CodeManager.HTML.toLowerCase();
+				
+				useExternalStylesheetCheckbox.visible = isHTML;
+				setStylesInline.visible = isHTML;
+				navigateButton.visible = false;
+				openDirectoryButton.visible = false;
+				filesCreatedLabel.text = "";
+			}
+			
+			private function getSelectedTranscoder():TranscoderDescription
+			{
+				//return languageTypes.getItemAt(languageTypeButtons.selectedIndex) as String;
+				var item:TranscoderDescription = languageTypeButtons.selectedItem;
+				return item;
+			}
+			
+			private function updateDirectoryLabel():void {
+				
+				if (browseForFolder.file) {
+					radiate.exportFileLocation = browseForFolder.file as File;
+				}
+				
+				if (radiate.exportFileLocation) {
+					outputDirectoryLabel.text = outputDirectoryLabel.toolTip = File(radiate.exportFileLocation).nativePath;
+					outputDirectoryLabel.clearStyle("color");
+				}
+			}
+			
+			private function updateTemplateLabel():void {
+				templateFileLabel.text = templateFileLabel.toolTip = browseForTemplate.fileNativePath;
+				templateFileLabel.clearStyle("color");
+			}
+			
+			private var request:URLRequest;
+			
+			protected function navigateButton_clickHandler(event:MouseEvent):void {
+				var files:Array = sourceData.files;
+				request = new URLRequest();
+				
+				for (var i:int;i<files.length;i++) {
+					var fileInfo:FileInfo = files[i] as FileInfo;
+					
+					if (fileInfo.fileExtension=="html" && fileInfo.created) {
+						request.url = fileInfo.url;
+						navigateToURL(request, "previewInBrowser");
+						break;
+					}
+				}
+				
+				
+				//navigateButton.visible = false;
+			}
+			
+			protected function openDirectoryButton_clickHandler(event:MouseEvent):void
+			{
+				var outputFolder:FileReference = browseForFolder.file as FileReference;
+				
+				try {
+					Object(outputFolder).openWithDefaultApplication();
+				}
+				catch (error:Error) {
+					filesCreatedLabel.text = "Can't open the directory";
+				}
+			}
+			
+			private function clearFilesList():void {
+				var files:Array = sourceData && sourceData.files ? sourceData.files : [];
+				var fileInfo:FileInfo;
+				
+				for (var i:int;i<files.length;i++) {
+					fileInfo = files[i] as FileInfo;
+					fileInfo.filePath = "";
+				}
+			}
+			
+			private function getSelectedTemplate(language:String = ""):String {
+				var templateName:String = templatesDropDownList.selectedItem;
+				var output:String;
+				
+				if (templateName=="auto" || templateName=="custom") {
+					if (iDocument.template==null && templateName!="custom" && language==CodeManager.HTML) {
+						output = new Radii8LibraryTranscodersAssets.basicHTMLDocument();
+					}
+					else {
+						output = iDocument.template;
+					}
+				}
+				else if (templateName=="external") {
+					
+					if (browseForTemplate.file==null) {
+						templateFileLabel.text = "Please select a template";
+						templateFileLabel.setStyle("color", "red");
+					}
+					else {
+						templateFileLabel.text = browseForTemplate.fileNativePath;
+						templateFileLabel.clearStyle("color");
+						output = templateFile.dataAsString;
+					}
+				}
+				else if (templateName=="html") {
+					
+					output = new Radii8LibraryTranscodersAssets.basicHTMLDocument();
+				}
+				else if (templateName=="html2") {
+					
+					output = new Radii8LibraryTranscodersAssets.basicHTMLDocumentReusable();
+				}
+				else if (templateName=="html5boilerplate_v5.2.0") {
+					
+					output = new Radii8LibraryTranscodersAssets.boilerplateHTMLDocument_v5_2_0();
+				}
+				else if (templateName=="none") {
+					
+					output = "";
+				}
+				
+				return output;
+			}
+			
+			protected function templatesDropDownList_changeHandler(event:IndexChangeEvent):void
+			{
+				if (templatesDropDownList.selectedItem!="external") {
+					templateFileLabel.text = "";
+				}
+				else {
+					templateFileLabel.text = templateFileLabel.toolTip = browseForTemplate.fileNativePath;
+				}
 			}
 			
 		]]>
@@ -65,6 +357,31 @@
 			<fc:ClosePopUp id="closePopUp" popUp="{this}" effectEnd="eventhandler1_effectEndHandler(event)"/>
 		</handlers:EventHandler>
 		
+		<!--- browse for directory -->
+		<handlers:EventHandler targets="{browseForOutputDirectoryButton}" eventName="click" >
+			<fce:BrowseForFile id="browseForFolder" browseForFolder="true" targetAncestor="{this}">
+				<fce:selectionEffect>
+					<s:Sequence>
+						<fcb:CallMethod method="updateDirectoryLabel"/>
+					</s:Sequence>
+				</fce:selectionEffect>
+			</fce:BrowseForFile>
+		</handlers:EventHandler>
+		
+		<!--- browse for template -->
+		<handlers:EventHandler targets="{templateSelectFileButton}" eventName="click" >
+			<fce:BrowseForFile id="browseForTemplate" browseForFolder="false" targetAncestor="{this}">
+				<fce:selectionEffect>
+					<s:Sequence>
+						<fce:LoadFile id="templateFile" fileReference="{browseForTemplate.fileReference}" />
+						<fcb:CallMethod method="updateTemplateLabel"/>
+					</s:Sequence>
+				</fce:selectionEffect>
+			</fce:BrowseForFile>
+		</handlers:EventHandler>
+		
+		<fcb:SetAction id="clearFilesLabelEffect" startDelay="5000" property="text" value=""/>
+		
 		<!--- hide about popup -->
 		<!--<handlers:EventHandler targets="{saveButton}" eventName="click" >
 			<s:SetAction property="action" target="{this}" value="save"/>
@@ -72,7 +389,29 @@
 		
 		<fx:String id="action"></fx:String>
 		
-		<s:RadioButtonGroup id="exportLocation"  />
+		<s:ArrayList id="languageTypes">
+			<fx:String>auto</fx:String>
+		</s:ArrayList>
+		
+		<s:ArrayList id="extensionsList">
+			<fx:String>auto</fx:String>
+			<fx:String>html</fx:String>
+			<fx:String>mxml</fx:String>
+			<fx:String>xml</fx:String>
+			<fx:String>php</fx:String>
+		</s:ArrayList>
+		
+		<s:ArrayList id="templatesList">
+			<fx:String>auto</fx:String>
+			<fx:String>html</fx:String>
+			<fx:String>html2</fx:String>
+			<fx:String>html5boilerplate_v5.2.0</fx:String>
+			<fx:String>external</fx:String>
+			<fx:String>custom</fx:String>
+			<fx:String>none</fx:String>
+		</s:ArrayList>
+		
+		
 	</fx:Declarations>
 	
 	
@@ -81,39 +420,135 @@
 				 right="20"
 				 bottom="20">
 		
-		<!--<s:Label x="15" y="65" text="Paste in the MXML code below:" fontWeight="bold"/>-->
 		
-		<panels:CodeInspector id="codeInspector" 
-							 width="100%" height="300"
-							 />
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label id="formatLabel" 
+					 text="Format:" 
+					 fontWeight="bold" 
+					 color="black"
+					 minWidth="120"/>
+			
+			<s:ButtonBar id="languageTypeButtons" 
+						 requireSelection="true"
+						 selectedIndex="0"
+						 click="languageType_changeHandler(null)">
+				<s:ArrayList >
+					<fx:String>auto</fx:String>
+				</s:ArrayList>
+			</s:ButtonBar>
+		</s:HGroup>
 		
-		<!--<s:HGroup x="14" y="31" width="100%" horizontalAlign="right" verticalAlign="baseline">
-			<s:Label x="15" y="15" text="Export:" fontWeight="bold"/>
-			<s:Spacer width="100%"/>
-			<s:RadioButton x="190" 
-						   y="130" 
-						   label="Current Document" 
-						   group="{exportLocation}"
-						   value="{CURRENT_DOCUMENT}"
-						   />
-			<s:RadioButton x="190" 
-						   y="130" 
-						   label="Selected Component" 
-						   group="{exportLocation}"
-						   value="{CURRENT_SELECTION}"
-						   />
+		<controls:HorizontalLine width="100%" alpha="1" angle="90"/>
+		
+		<s:HGroup width="100%" verticalAlign="baseline">
+			
+			<s:Label text="Template:" 
+					 color="black"
+					 fontWeight="bold"
+					 minWidth="120"/>
+			
+			<s:DropDownList id="templatesDropDownList" 
+							minWidth="170"
+							requireSelection="true"
+							selectedIndex="0"
+							toolTip="Template to use to if one is not set"
+							dataProvider="{templatesList}"
+							change="templatesDropDownList_changeHandler(event)"/>
+			
+			<s:Button id="templateSelectFileButton" 
+					  label="Select Template" 
+					  visible="{templatesDropDownList.selectedItem=='external'}"
+					  includeInLayout="{templatesDropDownList.selectedItem=='external'}"
+					  />
+			
+			<s:Label id="templateFileLabel" 
+					 width="100%"
+					 maxDisplayedLines="1"
+					 text="" 
+					 />
+		</s:HGroup>
+		
+		<controls:HorizontalLine width="100%" alpha="1" angle="90"/>
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label id="extensionLabel" 
+					 text="Extension:" 
+					 fontWeight="bold" 
+					 minWidth="120"/>
+			
+			<s:ComboBox id="extensionsCombox" 
+							width="120"
+							selectedIndex="0"
+							toolTip="Set the extension of the exported file. If not set then the extension will be automatically determined."
+							dataProvider="{extensionsList}"/>
+			
+			<s:CheckBox id="setStylesInline" 
+						selected="false"
+						toolTip="Styles in the document are declared inline"
+						label="Styles inline"/>
+			
+			<s:CheckBox id="useExternalStylesheetCheckbox" 
+						selected="true"
+						toolTip="Any styles not set inline are linked to an external stylesheet"
+						label="External Stylesheet"/>
+			
+		</s:HGroup>
+		
+		<controls:HorizontalLine width="100%" alpha="1" angle="90"/>
+		
+		<s:HGroup width="100%" verticalAlign="baseline">
+			
+			<s:Label text="Output Directory:" 
+					 color="black"
+					 fontWeight="bold"
+					 minWidth="120"/>
+			
+			<s:Button id="browseForOutputDirectoryButton" 
+					 label="Browse" 
+					 minWidth="120"/>
+			
+			<s:Label id="outputDirectoryLabel" 
+					 text="Select a directory" 
+					 color="black"
+					 width="100%"
+					 maxDisplayedLines="1"/>
+		</s:HGroup>
+		
+		<!--controls:HorizontalLine width="100%" alpha="1" angle="90"/>
+		
+		<s:HGroup width="100%" >
+			
+			<s:CheckBox id="overwriteFilesCheckbox" 
+						selected="true"
+						label="Overwrite existing files"/>
+			
+			
 		</s:HGroup>-->
 		
-		<s:Label id="warningLabel_Ha" 
-				 x="15" y="15" 
-				 text="Warning: XML is invalid" 
-				 fontWeight="bold" 
-				 color="red"
-				 includeInLayout="false"
-				 visible="false"
+		<controls:HorizontalLine width="100%" alpha="1" angle="90"/>
+		
+		<s:Label id="warningLabel" 
+				 text="" 
 				 width="100%"/>
 		
-		<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
+		<controls:RichDisplayText id="warningLabelContent" 
+				 text="" 
+				 lineHeight="150%"
+				 width="100%"/>
+		
+		<s:Label id="spacerLabel" 
+				 text=" " />
+		
+		
+		<s:HGroup width="100%" verticalAlign="baseline">
+			<s:Button id="navigateButton" label="Navigate" visible="false"
+					  click="navigateButton_clickHandler(event)"/>
+			<s:Button id="openDirectoryButton" label="Open Directory" visible="false"
+					  click="openDirectoryButton_clickHandler(event)"/>
+			<s:Label id="filesCreatedLabel" 
+					 text="" />
 			<s:Spacer width="100%"/>
 			<s:Button id="cancelButton" label="Cancel" />
 			<s:Button id="saveButton" label="Save" click="saveButton_clickHandler(event)"/>

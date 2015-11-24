@@ -25,15 +25,14 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.status.StatusManager;
 			
 			import mx.core.mx_internal;
 			import mx.events.FlexEvent;
 			import mx.events.ValidationResultEvent;
 			import mx.managers.PopUpManager;
-			import mx.rpc.events.FaultEvent;
-			import mx.rpc.events.ResultEvent;
-			import mx.validators.EmailValidator;
 			
 			use namespace mx_internal;
 			
@@ -133,7 +132,7 @@
 			
 			
 			protected function sendButton_clickHandler():void {
-				var message:Object = new Object();
+				var message:URLVariables = new URLVariables();
 				var validResultEvent:ValidationResultEvent = emailValidator.validate(emailText.text);
 				//var validEmail:Boolean = emailValidator.validate(emailText.text);
 				
@@ -143,10 +142,19 @@
 					return;
 				}
 				
-				if (messageTextArea.text=="" || messageTextArea.text.length<6) {
-					//StatusManager.show("Please enter a message.");
-					infoLabel.text = "Please enter a message";
-					return;
+				if (currentState==FEATURE) {
+					if (messageTextArea.text=="" || messageTextArea.text.length<6) {
+						//StatusManager.show("Please enter a message.");
+						infoLabel.text = "Please enter a message";
+						return;
+					}
+				}
+				else if (currentState==BUG) {
+					if (bugMessageTextArea.text=="" || bugMessageTextArea.text.length<6) {
+						//StatusManager.show("Please enter a message.");
+						infoLabel.text = "Please enter a message";
+						return;
+					}
 				}
 				
 				getPropertiesInfo();
@@ -170,12 +178,14 @@
 				else if (currentState==FEATURE) {
 					message.message = messageTextArea.text;
 				}
+				
+				serviceManager.sendFeedback(message);
+				serviceManager.addEventListener(RadiateEvent.FEEDBACK_RESULT, feedbackResultsHandler, false, 0, true);
 
-				feedbackService.send(message);
 			}
 			
-			protected function feedbackService_resultHandler(event:ResultEvent):void {
-				var result:String = event.result as String;
+			protected function feedbackResultsHandler(event:RadiateEvent):void {
+				var result:String = event.data as String;
 				//StatusManager.show("Message sent!", 3000, false, null, false, .75);
 				//nameText.text = "";
 				//emailText.prompt = emailText.text!="" ? emailText.text : emailText.prompt;
@@ -191,14 +201,12 @@
 				if (result && result.indexOf("Mail sent")!=-1) {
 					playSentSuccessfulMessage();
 				}
+				else {
+					infoLabel.text = "An error occurred! Message may not have been sent. Please email contact@radii8.com.";
+					//StatusManager.show("An error occurred! Message may not have been sent. \n\n" + event.fault.message);
+					//Radiate.error(event);
+				}
 				
-			}
-			
-			
-			protected function feedbackService_faultHandler(event:FaultEvent):void {
-				infoLabel.text = "An error occurred! Message may not have been sent. Please email contact@radii8.com.";
-				//StatusManager.show("An error occurred! Message may not have been sent. \n\n" + event.fault.message);
-				Radiate.log.error(event.fault.message);
 			}
 			
 			/**
@@ -219,6 +227,7 @@
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
+				serviceManager = ServicesManager.getInstance();
 				
 				if (radiate.isUserLoggedIn) {
 					emailText.text = radiate.userEmail;
@@ -258,16 +267,10 @@
 	
 	
 	<fx:Declarations>
-		<mx:EmailValidator id="emailValidator" />
+		<mx:EmailValidator id="emailValidator" source="{emailText}" property="text"/>
 		
 		<s:RadioButtonGroup id="featureRadioGroup" 
 							change="featureRadioGroup_changeHandler(event)"/>
-		
-		<s:HTTPService id="feedbackService"
-					   method="POST"
-					   fault="feedbackService_faultHandler(event)" 
-					   result="feedbackService_resultHandler(event)"
-					   url="http://www.radii8.com/support.php"/>
 		
 		<fx:String id="bugText">
 		<![CDATA[Summary:

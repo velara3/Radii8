@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				
+				autoDrawBackground="true"
+				width="100%" xmlns:controls="com.flexcapacitor.controls.*">
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.model.IssueData;
+			
+			public var issue:IssueData;
+			
+			/**
+			 * 
+			 * */
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				issue = value as IssueData;
+				
+				if (issue) {
+					labelDisplay.text = issue.description;
+					labelDisplay.toolTip = issue.description;
+				}
+				else {
+					labelDisplay.text = "";
+				}
+				
+			}
+		]]>
+	</fx:Script>
+	
+	<s:Label id="labelDisplay" 
+			 width="100%" 
+			 maxDisplayedLines="3" 
+			 paddingLeft="5" paddingRight="5"
+			 paddingTop="8"
+			 paddingBottom="8"/>
+	
+	<controls:HorizontalLine height="1"/>
+	
+</s:ItemRenderer>

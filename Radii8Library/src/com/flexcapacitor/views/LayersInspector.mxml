@@ -5,11 +5,33 @@
 		 xmlns:views="com.flexcapacitor.views.*"
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
 		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:core="com.flexcapacitor.effects.core.*" 
 		 
-		 width="200" height="100%"
-		 creationComplete="creationCompleteHandler(event)" 
+		 width="220" 
+		 height="100%"
 		 implements="com.flexcapacitor.views.IInspector" 
 		 >
+	
+	<!-- 
+	
+	THIS LAYERS TREE DRAGGING AND DROPPING IS REALLY BUGGY 
+	- the branch nodes don't accept items being dragged into them for the most part 
+	unless they are open already or have items already in them
+	- once an item is added it shows up double. only by switching tabs does the
+	layers get back to the right order and right count. UPDATE: Fixed by using call later
+	or timeout, don't remember, but still hacky
+	
+	UPDATE OCT 2015 - might not be as buggy since refactoring the document.componentDescription getter 
+	- that function was recreating instances of the componentDescriptions. it no longer recreates them
+	
+	Added a hgroup to a bordercontainer and this error: 
+	
+	Error: Unknown Property: '-1'.
+	at mx.collections::ListCollectionView/http://www.adobe.com/2006/actionscript/flash/proxy::getProperty()[E:\dev\4.y\frameworks\projects\framework\src\mx\collections\ListCollectionView.as:870]
+	at mx.controls.treeClasses::HierarchicalViewCursor/get current()[E:\dev\4.y\frameworks\projects\mx\src\mx\controls\treeClasses\HierarchicalViewCursor.as:212]
+	at mx.controls.treeClasses::HierarchicalViewCursor/collectionChangeHandler()[E:\dev\4.y\frameworks\projects\mx\src\mx\controls\treeClasses\HierarchicalViewCursor.as:869]
+	at flash.events::EventDispatcher/dispatchEventFunction()
+	-->
 	
 	<fx:Script>
 		<![CDATA[
@@ -20,13 +42,11 @@
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
-			import com.flexcapacitor.views.renderers.LayersRenderer;
 			import com.flexcapacitor.views.supportClasses.LayersDataDescriptor;
 			
 			import mx.collections.ArrayCollection;
 			import mx.core.mx_internal;
 			import mx.events.DragEvent;
-			import mx.events.FlexEvent;
 			import mx.events.ListEvent;
 			import mx.events.TreeEvent;
 			import mx.states.AddItems;
@@ -37,6 +57,8 @@
 			private var displayList:Array = [];
 			private var radiate:Radiate;
 			private var designDocument:IEventDispatcher;
+			
+			protected var isBranchDescriptor:LayersDataDescriptor;
 			
 			[Bindable]
 			public var components:ArrayCollection = new ArrayCollection();
@@ -54,10 +76,17 @@
 			
 			public function activate():void {
 				radiate = Radiate.instance;
+				
+				if (!isBranchDescriptor) {
+					isBranchDescriptor = new LayersDataDescriptor();
+					componentListTree.dataDescriptor = isBranchDescriptor;
+				} 
+				
 				updateComponentDisplayList();
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_REVERTED, documentChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler, false, 0, true);
@@ -73,6 +102,7 @@
 					
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_REVERTED, documentChangeHandler);
 					radiate.removeEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
 					radiate.removeEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler);
 					radiate.removeEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler);
@@ -81,26 +111,6 @@
 					target = null;
 				}
 			}
-			
-			/**
-			 * Listen for any changes to the display list
-			 * */
-			protected function creationCompleteHandler(event:FlexEvent):void {
-				/*radiate = Radiate.instance;
-				updateComponentDisplayList();
-				
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
-				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
-				radiate.addEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler);
-				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler);
-				
-				if (radiate.target) {
-					updateTarget(radiate.target);
-				}
-				*/
-			}
-			
 			
 			/**
 			 * Found on blog by Flex SDK developer (source).
@@ -126,6 +136,11 @@
 			
 			
 			private function labelFunction(data:Object):String {
+				var identity:String =  ClassUtils.getIdentifier(data.instance);
+				
+				if (identity) {
+					return data.name + " (" + identity + ")";
+				}
 				return data.name;
 			}
 			
@@ -140,8 +155,8 @@
 			 * 
 			 * */
 			public function updateTarget(selectedItem:Object):void {
-				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
-				var collection:ArrayCollection = displayListTree.dataProvider as ArrayCollection;
+				var item:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+				var collection:ArrayCollection = componentListTree.dataProvider as ArrayCollection;
 				var rootApplicationDescription:ComponentDescription;
 				var targetDescription:ComponentDescription;
 				var parent:ComponentDescription;
@@ -150,7 +165,7 @@
 				
 				if (collection.length==0) {
 					updateComponentDisplayList();
-					collection = displayListTree.dataProvider as ArrayCollection;
+					collection = componentListTree.dataProvider as ArrayCollection;
 				}
 				
 				if (target && collection.length) {
@@ -166,9 +181,9 @@
 							while (parent) {
 								
 								// open item if not open
-								if (!displayListTree.isItemOpen(parent)) {
-									displayListTree.expandItem(parent, true, false, false);
-									displayListTree.validateNow();
+								if (!componentListTree.isItemOpen(parent)) {
+									componentListTree.expandItem(parent, true, false, false);
+									componentListTree.validateNow();
 								}
 								
 								parent = parent.parent;
@@ -182,7 +197,7 @@
 								//trace("expanding");
 							}
 							
-							displayListTree.selectedItem = targetDescription;
+							componentListTree.selectedItem = targetDescription;
 						}
 					}
 				}
@@ -193,6 +208,7 @@
 				
 				// update alpha
 				updateAlphaProperty();
+				updateLockedProperty();
 				
 			}
 			
@@ -200,8 +216,8 @@
 			 * Open all items
 			 * */
 			public function openAllItems():void {
-				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
-				var collection:ArrayCollection = displayListTree.dataProvider as ArrayCollection;
+				var item:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+				var collection:ArrayCollection = componentListTree.dataProvider as ArrayCollection;
 				var rootApplicationDescription:ComponentDescription;
 				var targetDescription:ComponentDescription;
 				var parent:ComponentDescription;
@@ -211,15 +227,15 @@
 				}
 				
 				if (collection.length==0) {
-					collection = displayListTree.dataProvider as ArrayCollection;
+					collection = componentListTree.dataProvider as ArrayCollection;
 				}
 				
 				if (collection.length<1) return;
 				rootApplicationDescription = collection.getItemAt(0) as ComponentDescription;
 				
 				for (var i:int;i<rootApplicationDescription.children.length;i++) {
-					displayListTree.expandChildrenOf(rootApplicationDescription.children[i], true);
-					displayListTree.validateNow();
+					componentListTree.expandChildrenOf(rootApplicationDescription.children[i], true);
+					componentListTree.validateNow();
 				}
 				
 			}
@@ -228,8 +244,8 @@
 			 * Close all items
 			 * */
 			public function closeAllItems():void {
-				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
-				var collection:ArrayCollection = displayListTree.dataProvider as ArrayCollection;
+				var item:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+				var collection:ArrayCollection = componentListTree.dataProvider as ArrayCollection;
 				var rootApplicationDescription:ComponentDescription;
 				var targetDescription:ComponentDescription;
 				var parent:ComponentDescription;
@@ -239,15 +255,15 @@
 				}
 				
 				if (collection.length==0) {
-					collection = displayListTree.dataProvider as ArrayCollection;
+					collection = componentListTree.dataProvider as ArrayCollection;
 				}
 				
 				if (collection.length<1) return;
 				rootApplicationDescription = collection.getItemAt(0) as ComponentDescription;
 				
 				for (var i:int;i<rootApplicationDescription.children.length;i++) {
-					displayListTree.expandChildrenOf(rootApplicationDescription.children[i], false);
-					displayListTree.validateNow();
+					componentListTree.expandChildrenOf(rootApplicationDescription.children[i], false);
+					componentListTree.validateNow();
 				}
 				
 			}
@@ -256,20 +272,27 @@
 			 * 
 			 * */
 			protected function documentChangeHandler(event:Event):void {
-				if (designDocument!=radiate.selectedDocument) {
+				// commented out the check because of document reverted event (which creates new instances)
+				//if (designDocument!=radiate.selectedDocument) {
 					updateComponentDisplayList(false);
-				}
+				//}
+				
 			}
 			
 			/**
 			 * Select target
 			 * */
 			protected function displayListTree_changeHandler(event:ListEvent):void {
-				var item:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
+				var item:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
 				
 				if (item) {
 					radiate.setTarget(item.instance as IEventDispatcher, true);
 				}
+				
+				if (item && !(item.instance is Application)) {
+					documentItemRenderer.selected = false;
+				}
+				
 				/* 
 				if (!preventChange) {
 				}
@@ -284,27 +307,34 @@
 			 * Recreate the display list and open all items.
 			 * */
 			private function updateComponentDisplayList(preserveOpenItems:Boolean = true):void {
-				var openItems:Object = displayListTree.openItems;
-				var document:IDocument = radiate.selectedDocument;
+				var openItems:Object;
+				var iDocument:IDocument;
 				var display:Object;
 				var length:int;
 				
+				iDocument = radiate.selectedDocument;
 				
-				if (!document) return;
+				if (iDocument) {
+					documentItemRenderer.data = iDocument.componentDescription;
+				}
+				
+				if (!iDocument) return;
+				
+				openItems = componentListTree.openItems;
 				
 				// we need to create a list of the instances of open items
 				// componentDescription.instance not componentDescription
 				
 				// we could check for the target and update that branch
-				display = document.componentDescription;
-				displayListTree.dataProvider = display;
+				display = iDocument.componentDescription;
+				componentListTree.dataProvider = display;
 				
 				// 
 				//DisplayObjectUtils.walkDownTree(application as IVisualElement, traceTree);
 				
 				
 				if (preserveOpenItems) {
-					displayListTree.validateNow();
+					componentListTree.validateNow();
 					
 					/* for each (var item:ComponentDescription in openItems) {
 						displayListTree.expandItem(item, true, false, false);
@@ -316,8 +346,8 @@
 					// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
 					// ALSO we are resetting the dataProvider so it's not going to find the items if we do that
 					for (var i:int;i<length;i++) {
-						if (!displayListTree.isItemOpen(openItems[i])) {
-							displayListTree.expandItem(openItems[i], true, false, false);
+						if (!componentListTree.isItemOpen(openItems[i])) {
+							componentListTree.expandItem(openItems[i], true, false, false);
 						}
 						//trace("expanding");
 					}
@@ -331,7 +361,7 @@
 			/**
 			 * 
 			 * */
-			private function findTargetInDisplayList(target:Object, parentItem:ComponentDescription, depth:int = 0):ComponentDescription {
+			private function findTargetInDisplayList1(target:Object, parentItem:ComponentDescription, depth:int = 0):ComponentDescription {
 				var length:int = parentItem.children ? parentItem.children.length : 0;
 				var possibleItem:ComponentDescription;
 				var item:ComponentDescription;
@@ -346,7 +376,7 @@
 					}
 					
 					if (item.children) {
-						possibleItem = findTargetInDisplayList(target, item, depth + 1);
+						possibleItem = findTargetInDisplayList1(target, item, depth + 1);
 						
 						if (possibleItem) {
 							itemFound = true;
@@ -394,7 +424,7 @@
 				// ALSO we are resetting the dataProvider so it's not going to find the items if we do that
 				for (var i:int;i<item.children.length;i++) {
 					count++;
-					if (displayListTree.isItemOpen(item.children[i])) {
+					if (componentListTree.isItemOpen(item.children[i])) {
 						count = getTotalRowCount(item.children[i] as ComponentDescription, count);
 					}
 				}
@@ -406,23 +436,23 @@
 			 * Resize the tree to be as high as all open items
 			 * */
 			public function updateTreeHeight():void {
-				var newHeight:int = displayListTree.rowCount * displayListTree.rowHeight;
-				var numChildren:int = displayListTree.numChildren;
-				var openItems:Object = displayListTree.openItems;
-				var openItemsLength:int = displayListTree.openItems.length;
-				var dataProvider:Object = displayListTree.dataProvider;
-				var dataProviderLength:int = displayListTree.dataProvider.length;
+				var newHeight:int = componentListTree.rowCount * componentListTree.rowHeight;
+				var numChildren:int = componentListTree.numChildren;
+				var openItems:Object = componentListTree.openItems;
+				var openItemsLength:int = componentListTree.openItems.length;
+				var dataProvider:Object = componentListTree.dataProvider;
+				var dataProviderLength:int = componentListTree.dataProvider.length;
 				var item:ComponentDescription;
 				var count:int = 2; // application plus one for easier drop on last row
 				
 				var newCount:int = getTotalRowCount(dataProvider[0] as ComponentDescription, count);
 				
-				newHeight = newCount * displayListTree.rowHeight;
+				newHeight = newCount * componentListTree.rowHeight;
 				// ArgumentError: Error #2004: One of the parameters is invalid.
 				//	at flash.display::Graphics/drawRect()
 				//displayListTree.setActualSize(NaN, newHeight);
 				//displayListTree.height = newHeight;
-				displayListTree.explicitHeight = newHeight;
+				componentListTree.explicitHeight = newHeight;
 			}
 			
 			// THIS IS ALL TO HANDLE SCROLLING INSIDE ANOTHER SCROLLER THAT HAS TOUCH INTERACTION
@@ -441,14 +471,14 @@
 				var diff:int = Math.abs(event.stageY - mouseDownLocation);
 				
 				if (diff>10) {
-					displayListTree.selectable = false;
+					componentListTree.selectable = false;
 				}
 			}
 			
 			protected function mouseUpHandler(event:MouseEvent):void {
 				stage.removeEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
 				stage.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
-				displayListTree.selectable = true;
+				componentListTree.selectable = true;
 			}
 			
 			protected function displayListTree_itemCloseHandler(event:TreeEvent):void {
@@ -457,8 +487,8 @@
 			
 			private function scrollIntoView():void {
 				
-				if (displayListTree.selectedIndex>-1) {
-					displayListTree.scrollToIndex(displayListTree.selectedIndex);
+				if (componentListTree.selectedIndex>-1) {
+					componentListTree.scrollToIndex(componentListTree.selectedIndex);
 				}
 			}
 			
@@ -466,7 +496,7 @@
 			 * 
 			 * */
 			protected function displayListTree_dragDropHandler(event:DragEvent):void {
-				//Radiate.log.info("Drag drop handler");
+				//Radiate.info("Drag drop handler");
 				event.draggedItem;
 				event.target;
 				event.relatedObject;
@@ -484,13 +514,13 @@
 	                rowHeight: rowHeight, 
 	                rowIndex: rowNum };
 	            */
-	            var dropData:Object = displayListTree.mx_internal::_dropData;
+	            var dropData:Object = componentListTree.mx_internal::_dropData;
 	            var dropParent:Object = dropData.parent;
 	            var dropIndex:int = dropData.index;
 	            var rowIndex:int = dropData.rowIndex;
 	            var draggedElement:Object = (event.dragSource.dataForFormat("treeItems") as Array)[0];
 				var draggedElementParent:Object = draggedElement.parent;
-				var canDragOutOfParent:Boolean = !displayListTree.showRoot;
+				var canDragOutOfParent:Boolean = !componentListTree.showRoot;
 				var currentIndex:int;
 				
 	            if (!canDragOutOfParent && 
@@ -498,7 +528,7 @@
 					
 	                // element is an item and parent is different => can not drop                                        
 	                event.preventDefault();
-	                displayListTree.hideDropFeedback(event);
+	                componentListTree.hideDropFeedback(event);
 					return;
 	            }
 
@@ -523,7 +553,7 @@
 					// when dragging to an index after our index we have to subtract one
 					if (currentIndex<dropIndex) {
 						dropIndex--;
-						//Radiate.log.info("Lowering index");
+						//Radiate.info("Lowering index");
 					}
 				}
 				
@@ -531,7 +561,7 @@
 				// make sure application can't be dropped into itself
 				if (draggedElement.instance is Application) {
 	                event.preventDefault();
-	                displayListTree.hideDropFeedback(event);
+	                componentListTree.hideDropFeedback(event);
 					return;
 				}
 				
@@ -542,15 +572,15 @@
 					DisplayObjectContainer(draggedElement.instance).contains(dropParent.instance)) {
 					
 	                event.preventDefault();
-	                displayListTree.hideDropFeedback(event);
+	                componentListTree.hideDropFeedback(event);
 					return;
 				}
 				
 				if (dropParent) {
 					/*
-					Radiate.log.info("drop index:"+ dropIndex);
-					Radiate.log.info("row  index:" + rowIndex);
-					Radiate.log.info("item index:" + droppingIndex);*/
+					Radiate.info("drop index:"+ dropIndex);
+					Radiate.info("row  index:" + rowIndex);
+					Radiate.info("item index:" + droppingIndex);*/
 					
 					Radiate.moveElement(draggedElement.instance, dropParent.instance, [], [], null, 
 										RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
@@ -561,13 +591,13 @@
 					
 					// if not showing root then allow drop
 					if (canDragOutOfParent && dropParent==null) {
-						dropParent = ArrayCollection(displayListTree.dataProvider).getItemAt(0);
+						dropParent = ArrayCollection(componentListTree.dataProvider).getItemAt(0);
 						currentIndex = ComponentDescription(dropParent).children.getItemIndex(draggedElement);
 						
 						// when dragging to an index after our index we have to subtract one
 						if (currentIndex<dropIndex && dropParent.instance==draggedElement.parent.instance) {
 							dropIndex--;
-							//Radiate.log.info("Lowering index");
+							//Radiate.info("Lowering index");
 						}
 						
 						Radiate.moveElement(draggedElement.instance, dropParent.instance, [], [], null, 
@@ -577,9 +607,11 @@
 							
 		                // element is an item and parent is different => can not drop                                        
 		                event.preventDefault();
-		                displayListTree.hideDropFeedback(event);
+		                componentListTree.hideDropFeedback(event);
 					}
 				}
+				
+				doThingsLater.play();
 				
 			}
 			
@@ -592,8 +624,11 @@
 			 * */
 			protected function displayListTree_dragOverHandler(event:DragEvent):void {
 				
-	            var dropData:Object = displayListTree.mx_internal::_dropData;
-	            var dropParent:Object = dropData.parent;
+	            var dropData:Object = componentListTree.mx_internal::_dropData;
+				
+				// TypeError: Error #1009: Cannot access a property or method of a null object reference.
+				// we dragged outside of the design area so dropdata is null
+	            var dropParent:Object = dropData ? dropData.parent : null;
 				
                 // dragging outside of tree                                      
 	            if (dropParent==null) {
@@ -612,8 +647,8 @@
 			}
 			
 			protected function removeItem_clickHandler(event:MouseEvent):void {
-				if (displayListTree.selectedItem) {
-					var componentDescription:ComponentDescription = displayListTree.selectedItem as ComponentDescription;
+				if (componentListTree.selectedItem) {
+					var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
 					Radiate.removeElement(componentDescription.instance);
 				}
 			}
@@ -624,21 +659,56 @@
 				alphaRenderer.data = textAccessor;
 			}
 			
+			public function updateLockedProperty():void {
+				var document:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription = document.getItemDescription(target);
+				lockedItem.selected = componentDescription ? componentDescription.locked : false;
+			}
+			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
 				callLater(updateAlphaProperty);
 			}
+			
+			protected function lockItem_clickHandler(event:MouseEvent):void {
+				
+				var result:Boolean = Radiate.lockComponent(target, lockedItem.selected);
+				
+				if (!result) {
+					Radiate.info("Unable to lock the selected item");
+				}
+			}
+			
+			protected function documentItemRenderer_clickHandler(event:MouseEvent):void
+			{
+				componentListTree.selectedIndex = -1;
+				componentListTree.validateProperties();
+				documentItemRenderer.selected = true;
+				radiate.setTarget(radiate.selectedDocument.instance);
+			}
+			
 		]]>
 	</fx:Script>
+	
+	<fx:Declarations>
+		<core:CallMethod id="doThingsLater" method="activate" startDelay="50"/>
+	</fx:Declarations>
 	
 	<s:layout>
 		<s:VerticalLayout gap="0"/>
 	</s:layout>
 	
+	<renderers:LayersRenderer id="documentItemRenderer" 
+							  click="documentItemRenderer_clickHandler(event)" 
+							  autoDrawBackground="true"
+							  height="20"/>
+	
+	<c:HorizontalLine />
+	
 	<s:Scroller id="scroller" width="100%" height="100%"
 				top="0"
 				bottom="0">
 		<s:Group width="100%" height="100%">
-			<mx:Tree id="displayListTree" 
+			<mx:Tree id="componentListTree" 
 					 width="100%"
 					 focusAlpha="0"
 					 minHeight="50"
@@ -663,7 +733,6 @@
 					 dragOver="displayListTree_dragOverHandler(event)"
 					 dragDrop="displayListTree_dragDropHandler(event)"
 					 dragComplete="displayListTree_dragCompleteHandler(event)"
-					 dataDescriptor="{new LayersDataDescriptor()}"
 					 >
 
 				
@@ -673,30 +742,43 @@
 	
 	
 	<s:HGroup width="100%"
-			 height="26"
-			 minHeight="24"
+			 height="32"
+			 minHeight="28"
 			 verticalAlign="middle"
 			 paddingRight="8"
 			 paddingLeft="8"
+			 paddingBottom="8"
+			 paddingTop="8"
 			 >
-		<c:ImageButton id="removeItem" 
-					   source="{Radii8LibraryAssets.trashCan}" 
-					   toolTip="Remove"
-					   click="removeItem_clickHandler(event)"
-					   />
-		<renderers:NumberRenderer id="alphaRenderer" height="26" width="44"/>
-		<views:BlendMode height="22" minWidth="100" />
+		<renderers:NumberRenderer id="alphaRenderer" 
+								  width="54" 
+								  showClearButton="false" 
+								  snapInterval="0"
+								  toolTip="Alpha"
+								  focusAlpha="0"/>
+		<c:SolidFillToggleButton id="lockedItem" 
+								 toolTip="Lock position and prevent selection"
+								 click="lockItem_clickHandler(event)"
+								 label="Locked"
+								 />
+		<!--							  source="{Radii8LibraryAssets.locked}" -->
+		<views:BlendMode id="blendModeGroup" minWidth="100" toolTip="Blend mode"/>
 		<s:Spacer width="100%"/>
-		<c:ImageButton id="closeAllNodes" 
+		<c:BeveledImageButton id="closeAllNodes" 
 					   source="{Radii8LibraryAssets.treeViewClosed}" 
-					   toolTip="Expand All"
+					   toolTip="Close All Layers"
 					   click="closeAllNodes_clickHandler(event)"
 					   />
-		<c:ImageButton id="expandAllNodes" 
+		<c:BeveledImageButton id="expandAllNodes" 
 					   source="{Radii8LibraryAssets.treeViewOpen}" 
-					   toolTip="Expand All"
+					   toolTip="Expand All Layers"
 					   click="expandAllNodes_clickHandler(event)"
 					   />
+		<c:BeveledImageButton id="removeItem" 
+							  source="{Radii8LibraryAssets.trashCan}" 
+							  toolTip="Remove"
+							  click="removeItem_clickHandler(event)"
+							  />
 	</s:HGroup>
 	
 </s:Group>

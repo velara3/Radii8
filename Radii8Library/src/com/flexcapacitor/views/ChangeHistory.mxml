@@ -17,12 +17,14 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.HistoryEvent;
 			import com.flexcapacitor.events.HistoryEventItem;
+			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.XMLUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.collections.ArrayCollection;
+			import mx.collections.ListCollectionView;
 			import mx.collections.XMLListCollection;
 			import mx.core.IVisualElement;
 			import mx.effects.effectClasses.PropertyChanges;
@@ -57,10 +59,10 @@
 			private var reversePathOrder:Object;
 			
 			public function getHistory():String {
-				var history:ArrayCollection = Radiate.history;
+				var history:ListCollectionView = HistoryManager.history;
 				var totalHistoryLength:int = history.length;
-				var currentHistoryIndex:int = Radiate.historyIndex;
-				var changesDictionary:Dictionary = Radiate.historyEventsDictionary;
+				var currentHistoryIndex:int = HistoryManager.historyIndex;
+				var changesDictionary:Dictionary = HistoryManager.historyEventsDictionary;
 				var items:XMLListCollection = new XMLListCollection();
 				var propertyChange:PropertyChanges;
 				var setStartValues:Boolean = true;
@@ -95,7 +97,7 @@
 				change = historyArray && historyArray.length ? historyArray[0] as PropertyChanges: null;
 				
 				// get property change description object
-				historyEvent = Radiate.historyEventsDictionary[change];
+				historyEvent = HistoryManager.historyEventsDictionary[change];
 				
 				// create default xml
 				xml = <root><items/></root>;
@@ -327,9 +329,18 @@
 		<!-- EXPORT SNAPSHOT -->
 		<handlers:EventHandler eventName="click" target="{exportLabel}">
 			
-			
-			<file:PromptSaveAs data="{changesText}" fileExtension="xml" fileName="changes"
-							   targetAncestor="{this}"/>
+			<core:IsPropertySet target="{this}" targetPropertyName="changesText">
+				<core:propertySetEffect>
+					<file:PromptSaveAs data="{changesText}" 
+									   fileExtension="xml" 
+									   throwErrorOnNoData="false" 
+									   fileName="changes"
+									   targetAncestor="{this}"/>
+				</core:propertySetEffect>
+				<core:propertyNotSetEffect>
+					<status:ShowStatusMessage message="There is no data to save" />
+				</core:propertyNotSetEffect>
+			</core:IsPropertySet>
 			
 		</handlers:EventHandler>
 		
@@ -381,7 +392,7 @@
 		
 		<s:Spacer width="100%"/>
 		
-		<controls:ImageButton id="copyIcon" 
+		<controls:BeveledImageButton id="copyIcon" 
 				 source="{Radii8LibraryAssets.copy}" 
 				 toolTip="Copy the changes to the Clipboard"/>
 		

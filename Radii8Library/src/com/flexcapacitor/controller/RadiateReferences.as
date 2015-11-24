@@ -1,8 +1,11 @@
 
 package com.flexcapacitor.controller {
 	import com.flexcapacitor.tools.EyeDropper;
+	import com.flexcapacitor.tools.Hand;
 	import com.flexcapacitor.tools.Selection;
 	import com.flexcapacitor.tools.Zoom;
+	import com.flexcapacitor.utils.HTMLDocumentExporter;
+	import com.flexcapacitor.utils.MXMLDocumentImporter;
 	import com.flexcapacitor.views.EyeDropperInspector;
 	import com.flexcapacitor.views.SelectionInspector;
 	import com.flexcapacitor.views.Size;
@@ -55,6 +58,9 @@ package com.flexcapacitor.controller {
 		public static var eyeDropperTool:com.flexcapacitor.tools.EyeDropper;
 		public static var eyeDropperInspector:com.flexcapacitor.views.EyeDropperInspector;
 		
+		public static var handTool:com.flexcapacitor.tools.Hand;
+		public static var handInspector:com.flexcapacitor.views.HandInspector;
+		
 		///////////////////////////////////////////////////////
 		// TOOLS CLASSES
 		///////////////////////////////////////////////////////
@@ -75,7 +81,15 @@ package com.flexcapacitor.controller {
 		public static var hyperLinkInspector:com.flexcapacitor.views.inspectors.HyperLink;
 		public static var groupAlignInspector:com.flexcapacitor.views.inspectors.GroupAlign;
 		
+		///////////////////////////////////////////////////////
+		// TRANSCODER CLASSES
+		///////////////////////////////////////////////////////
 		
+		public static var htmlExporter:com.flexcapacitor.utils.HTMLDocumentExporter;
+		public static var mxmlExporter:com.flexcapacitor.utils.MXMLDocumentExporter;
+		public static var androidExporter:com.flexcapacitor.utils.AndroidDocumentExporter;
+		
+		public static var mxmlImporter:com.flexcapacitor.utils.MXMLDocumentImporter;
 		
 	}
 }

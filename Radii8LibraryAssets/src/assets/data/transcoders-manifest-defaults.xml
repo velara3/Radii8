@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+
+<!--
+
+    List of transcoders
+    
+    Be sure to include this class in Radii8Library
+-->
+<transcoders>
+
+    <transcoder type="html" label="HTML" exportLabel="HTML Exporter" supportsImport="false" supportsExport="true"
+    			classPath="com.flexcapacitor.utils.HTMLDocumentExporter"
+    			extension="html" />
+    <transcoder type="mxml" label="MXML" exportLabel="MXML Exporter" supportsImport="false" supportsExport="true"
+    			classPath="com.flexcapacitor.utils.MXMLDocumentExporter" 
+    			extension="mxml" />
+    <transcoder type="android" label="Android" exportLabel="Android Exporter" supportsImport="false" supportsExport="true" 
+    			classPath="com.flexcapacitor.utils.AndroidDocumentExporter" 
+    			extension="xml" />
+    
+    <transcoder type="mxml" label="MXML" importLabel="MXML Importer" supportsImport="true" supportsExport="false" 
+    			classPath="com.flexcapacitor.utils.MXMLDocumentImporter" 
+    			extension="mxml" />
+
+</transcoders>

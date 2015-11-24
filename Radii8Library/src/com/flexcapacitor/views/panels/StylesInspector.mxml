@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:status="com.flexcapacitor.effects.status.*"
+		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*"
+		 xmlns:file="com.flexcapacitor.effects.file.*"
+		 xmlns:fc="com.flexcapacitor.effects.popup.*"
+		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*"
+		 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 width="400" 
+		 height="300" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.AceEditorUtils;
+			import com.flexcapacitor.utils.DragManagerUtil;
+			import com.flexcapacitor.utils.StyleUtils;
+			import com.flexcapacitor.views.IInspector;
+			
+			import mx.core.IVisualElement;
+			import mx.core.UIComponent;
+			
+			[Bindable]
+			private var radiate:Radiate;
+			
+			private var target:Object;
+			
+			private var dragManagerInstance:DragManagerUtil;
+			
+			public var selectedItem:Object;
+			
+			public var fileReference:FileReference;
+			
+			public var stylesUtility:StyleUtils;
+			
+			
+			public function activate():void {
+				if (!radiate) {
+					radiate = Radiate.getInstance();
+				}
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				
+				if (!aceCSSEditorCreated) {
+					stylesUtility = new StyleUtils();
+					stylesUtility.minimumStyleNamePadding = 20;
+					stylesUtility.prespace = " ";
+					createEditors();
+				}
+				
+				updateStyles(radiate.target);
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				}
+				target = null;
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem;
+				updateStyles(target);
+			}
+			
+			
+			public function updateStyles(target:Object):void {
+				var styleClient:IStyleClient = target as IStyleClient;
+					
+				if (styleClient) {
+					styleInformation = stylesUtility.getStyleDetails(styleClient);
+					aceCSSEditor.text = styleInformation;
+				}
+				else {
+					aceCSSEditor.text = "";
+				}
+			}
+			
+			public var styleInformation:String;
+			
+			[Bindable]
+			public var aceCSSEditor:Object;
+			
+			public var editorMargin:String = "4px 0 8px 0px";
+			
+			private function createEditors():void {
+				
+				aceCSSEditor = AceEditorUtils.createInstance();
+				UIComponent(aceCSSEditor).percentWidth = 100;
+				UIComponent(aceCSSEditor).percentHeight = 100;
+				aceCSSEditor.top = 0;
+				aceCSSEditor.left = 0;
+				verticalContainer.addElementAt(aceCSSEditor as IVisualElement, 1);
+				aceCSSEditor.mode = "ace/mode/css";
+				aceCSSEditor.showFoldWidgets = false;
+				aceCSSEditor.margin = editorMargin;
+				aceCSSEditor.scrollSpeed = .5;
+				aceCSSEditor.isReadOnly = true;
+				aceCSSEditor.showGutter = false;
+				aceCSSEditor.showCursor = false;
+				aceCSSEditorCreated = true;
+				
+			}
+			
+			private var aceCSSEditorCreated:Boolean;
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingBottom="8"/>
+	</s:layout>
+	
+	<mx:VDividedBox id="verticalContainer" 
+					width="100%" height="100%"
+					top="0"
+					left="8" 
+					right="8" 
+					bottom="4"
+					>
+		
+		
+		<c:AceSearchTextInput id="searchInput" 
+						   prompt="Search" 
+						   minWidth="80"
+						   width="100%"
+						   focusAlpha="0"
+						   height="24"
+						   aceEditor="{aceCSSEditor}"/>
+		
+	</mx:VDividedBox>	
+</s:Group>

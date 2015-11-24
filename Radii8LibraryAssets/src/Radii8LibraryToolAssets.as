@@ -35,30 +35,44 @@ package {
 		///////////////////////////////////////////////////////
 		
 		/**
-		 * 
-		 * 
-		 * ICONS ARE IN 
-		 * 
-		 * Radii8Library/src/assets/tools NOT HERE
-		 * 
 		 * Define icons in tools-manifest-defaults.xml
-		 * 
 		 * */
 		
-		
-		
 		[Embed(source="assets/icons/tools/BlackArrow.png")]
-		public static const BlackArrowIcon:Class;
-		
-		[Embed(source="assets/icons/tools/WhiteArrow.png")]
-		public static const WhiteArrowIcon:Class;
+		public static const BlackArrow:Class;
 		
 		[Embed(source="assets/icons/tools/DragStripIcon.png")]
-		public static const DragStripIcon:Class;
+		public static const DragStrip:Class;
 		
 		[Embed(source="assets/icons/tools/EyeDropper.png")]
 		public static const EyeDropper:Class;
 		
+		[Embed(source="assets/icons/tools/EyeDropperCursor.png")]
+		public static const EyeDropperCursor:Class;
+		
+		[Embed(source="assets/icons/tools/Hand.png")]
+		public static const Hand:Class;
+		
+		[Embed(source="assets/icons/tools/HandGrab.png")]
+		public static const HandGrab:Class;
+		
+		[Embed(source="assets/icons/tools/Launch.png")]
+		public static const Launch:Class;
+		
+		[Embed(source="assets/icons/tools/Selection.png")]
+		public static const Selection:Class;
+		
+		[Embed(source="assets/icons/tools/WhiteArrow.png")]
+		public static const WhiteArrow:Class;
+		
+		[Embed(source="assets/icons/tools/Zoom.png")]
+		public static const Zoom:Class;
+		
+		[Embed(source="assets/icons/tools/ZoomIn.png")]
+		public static const ZoomIn:Class;
+		
+		[Embed(source="assets/icons/tools/ZoomOut.png")]
+		public static const ZoomOut:Class;
 		
 		
 	}

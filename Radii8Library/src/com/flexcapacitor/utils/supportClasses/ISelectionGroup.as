@@ -4,6 +4,9 @@ package com.flexcapacitor.utils.supportClasses {
 	public interface ISelectionGroup {
 		
 		
+		function get showResizeHandles():Boolean;
+		function set showResizeHandles(value:Boolean):void;
+		
 		function get showSelectionFill():Boolean;
 		function set showSelectionFill(value:Boolean):void;
 		

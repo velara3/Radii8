@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							 xmlns:s="library://ns.adobe.com/flex/spark" 
+							 xmlns:mx="library://ns.adobe.com/flex/mx" 
+							 xmlns:c="com.flexcapacitor.views.*"
+							 xmlns:handlers="com.flexcapacitor.handlers.*"
+							 xmlns:fc="com.flexcapacitor.effects.popup.*"
+							 xmlns:windows="com.flexcapacitor.views.windows.*"
+							 xmlns:controls="com.flexcapacitor.controls.*"
+							 
+							 title="Help" 
+							 >
+	
+	<fx:Script>
+		<![CDATA[
+			
+			
+			
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{okButton}" eventName="click" setTriggerEvent="true">
+			<fc:ClosePopUp popUp="{this}"  />
+		</handlers:EventHandler>
+		
+		
+	</fx:Declarations>
+	
+	
+	<s:VGroup left="15" 
+			  top="20" 
+			  right="20"
+			  bottom="20">
+		
+		<s:FormItem label="Videos"><controls:Hyperlink url="https://www.radii8.com/blog/?s=videos" text="Link"/></s:FormItem>
+		<s:FormItem label="Tutorials"><controls:Hyperlink url="https://www.radii8.com/r8m/" text="Link"/></s:FormItem>
+		<!--<s:FormItem label="Examples"> </s:FormItem>-->
+		<s:FormItem label="Contact Email"><controls:Hyperlink url="https://www.radii8.com/blog/?page_id=856" text="Link"/></s:FormItem>
+		<s:FormItem label="Support Forums"><controls:Hyperlink url="https://www.radii8.com/blog/?page_id=856" text="Link"/></s:FormItem>
+		
+		<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
+			<s:Spacer width="100%"/>
+			<s:Button id="okButton" label="OK" />
+		</s:HGroup>
+	</s:VGroup>
+	
+</windows:AnimatedPanelWindow>

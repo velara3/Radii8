@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:c="com.flexcapacitor.controls.*"
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:display="com.flexcapacitor.effects.display.*" 
 		 xmlns:bitmap="com.flexcapacitor.effects.bitmap.*" 
@@ -8,7 +9,6 @@
 		 xmlns:core="com.flexcapacitor.effects.core.*"
 		 xmlns:status="com.flexcapacitor.effects.status.*"
 		 xmlns:popup="com.flexcapacitor.effects.popup.*" 
-		 xmlns:controls="com.flexcapacitor.controls.*"
 		 
 		 creationComplete="group1_creationCompleteHandler(event)"
 		 width="400" 
@@ -66,8 +66,8 @@
 			
 			protected function group1_pasteHandler(event:Event):void {
 				/*var clipboard:Clipboard = Clipboard.generalClipboard;
-				Radiate.log.info("Formats: " + clipboard.formats.join(","));
-				Radiate.log.info("PASTED: " + clipboard.getData(ClipboardFormats.TEXT_FORMAT));*/
+				Radiate.info("Formats: " + clipboard.formats.join(","));
+				Radiate.info("PASTED: " + clipboard.getData(ClipboardFormats.TEXT_FORMAT));*/
 				/*var value:* = clipboard.getData(ClipboardFormats.BITMAP_FORMAT, ClipboardTransferMode.CLONE_ONLY);
 				var value1:* = clipboard.getData(ClipboardFormats.BITMAP_FORMAT, ClipboardTransferMode.CLONE_PREFERRED);
 				var value2:* = clipboard.getData(ClipboardFormats.BITMAP_FORMAT, ClipboardTransferMode.ORIGINAL_ONLY);
@@ -170,8 +170,8 @@
 		<s:Spacer width="100%" />
 		
 		<!--<s:TextInput paste="group1_pasteHandler(event)"/>-->
-		<controls:ImageButton id="preview" 
-							  source="assets/images/components/Image.png"
+		<c:BeveledImageButton id="preview" 
+							  source="assets/icons/components/Image.png"
 							  includeInLayout="{Boolean(rasterize.bitmapData)}"
 							  visible="{Boolean(rasterize.bitmapData)}"
 							  />

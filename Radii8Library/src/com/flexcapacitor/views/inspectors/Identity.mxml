@@ -48,7 +48,9 @@
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
-				callLater(update);
+				if (event.property=="id") {
+					callLater(update);
+				}
 			}
 			
 		]]>

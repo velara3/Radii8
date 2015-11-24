@@ -52,6 +52,8 @@
 			import mx.core.IVisualElementContainer;
 			import mx.events.FlexEvent;
 			import mx.events.ResizeEvent;
+			import mx.graphics.BitmapFill;
+			import mx.graphics.BitmapFillMode;
 			import mx.managers.SystemManager;
 			import mx.utils.NameUtil;
 			
@@ -152,7 +154,7 @@
 				hideBusyIndicators();
 				
 				
-				//Radiate.log.info("SWF Loaded");
+				//Radiate.info("SWF Loaded");
 			}
 			
 			/**
@@ -175,18 +177,21 @@
 				targetApplication.width = Radiate.DEFAULT_DOCUMENT_WIDTH;
 				targetApplication.height = Radiate.DEFAULT_DOCUMENT_HEIGHT;
 				
+				
+				drawBackgroundGrid();
 				updateBackgroundSize();
 				
 				iDocument.instance = targetApplication;
+				iDocument.addComponent(targetApplication);
 				
 				//radiate.setDocument(iDocument);
 				//radiate.setTarget(targetApplication);
 				
 				//codeAvailable = true;
-				//Radiate.log.info("Document container app complete");
+				//Radiate.info("Document container app complete");
 				if (iDocument.source) {
 					validateNow();
-					iDocument.parseSource();
+					Radiate.parseSource(iDocument);
 					iDocument.resetSaveStatus();
 					updateBackgroundSize();
 					//parseDocument(codeToLoad);
@@ -200,7 +205,7 @@
 				//radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChange, false, 0, true);
 				
-				radiate.setDocument(iDocument);
+				radiate.selectDocument(iDocument);
 				radiate.setTarget(targetApplication);
 				//updateAppScrollPosition();
 				
@@ -214,7 +219,7 @@
 				
 				radiate.centerApplication(true);
 				
-				//Radiate.log.info("Application Complete");
+				//Radiate.info("Application Complete");
 				
 			}
 			
@@ -416,7 +421,7 @@
 						projectLoader.load();
 					}
 					catch (error:Error) {
-						Radiate.log.error(error.message);
+						Radiate.error(error.message);
 						hideBusyIndicators();
 					}
 				}
@@ -452,7 +457,7 @@
 						projectLoader.load();
 					}
 					catch (error:Error) {
-						Radiate.log.error(error.message);
+						Radiate.error(error.message);
 						hideBusyIndicators();
 					}
 				}
@@ -482,7 +487,7 @@
 				}
 				
 				//Radiate.logTarget.logEvent(new LogEvent("Uncaught Error", LogEventLevel.ERROR));
-				Radiate.log.error(errorMessage);
+				Radiate.error(errorMessage);
 				//trace("Uncaught error", event);
 				
 				hideBusyIndicators();
@@ -493,7 +498,7 @@
 			 * */
 			protected function project_ioErrorHandler(event:IOErrorEvent):void {
 				//trace("ioerror");
-				Radiate.log.error(event.text);
+				Radiate.error(event.text);
 				hideBusyIndicators();
 			}
 			
@@ -503,7 +508,7 @@
 			protected function project_securityErrorHandler(event:SecurityErrorEvent):void
 			{
 				//trace("security error");
-				Radiate.log.error(event.text);
+				Radiate.error(event.text);
 				hideBusyIndicators();
 			}
 			
@@ -529,7 +534,7 @@
 			protected function project_unloadHandler(event:Event):void
 			{
 				//trace("unload");
-				Radiate.log.info("SWF unloaded");
+				Radiate.info("SWF unloaded");
 				hideBusyIndicators();
 			}
 			
@@ -578,10 +583,10 @@
 			 * */
 			protected function group1_showHandler(event:FlexEvent):void {
 				if (radiate.selectedDocument!=iDocument) {
-					radiate.setDocument(radiate.selectedDocument, true);// maybe call update document here???
+					radiate.selectDocument(radiate.selectedDocument, true);// maybe call update document here???
 				}
 				
-				Radiate.log.info("Document SHOW event");
+				Radiate.info("Document SHOW event");
 			}
 			
 			/**
@@ -735,7 +740,7 @@
 			}
 			
 			protected function projectLoader_resizeHandler(event:ResizeEvent):void {
-				//Radiate.log.info("Project loader resize");
+				//Radiate.info("Project loader resize");
 			}
 			
 			
@@ -845,6 +850,36 @@
 				canvasScrollerInstance.viewport.verticalScrollPosition  -= e.delta * 5;
 			}
 			
+			public var backgroundGridAdded:Boolean;
+			
+			protected function drawBackgroundGrid():void {
+				var popUpBackground:Rect;
+				
+				if (!backgroundGridAdded) {
+					var fillSprite:Sprite = new Sprite();
+					fillSprite.graphics.beginFill(0xCCCCCC, 1);
+					fillSprite.graphics.drawRect(0,0,10,10);
+					fillSprite.graphics.beginFill(0xFFFFFF, 1);
+					fillSprite.graphics.drawRect(10,0,10,10);
+					fillSprite.graphics.beginFill(0xFFFFFF, 1);
+					fillSprite.graphics.drawRect(0,10,10,10);
+					fillSprite.graphics.beginFill(0xCCCCCC, 1);
+					fillSprite.graphics.drawRect(10,10,10,10);
+					
+					var bitmapFill:BitmapFill = new BitmapFill();
+					bitmapFill.fillMode = BitmapFillMode.REPEAT;
+					bitmapFill.source = fillSprite;
+					
+					canvasBackgroundInstance.backgroundFill = bitmapFill;
+					backgroundGridAdded = true;
+					
+					popUpBackground = new Rect();
+					popUpBackground.percentWidth = 100;
+					popUpBackground.percentHeight = 100;
+					popUpBackground.fill = bitmapFill;
+				}
+			}
+			
 			protected function drawGrid(sprite:Sprite):void {
                 var x:int = 0;
                 var y:int = 0;
@@ -872,6 +907,7 @@
                     y = y + 20;
                 }
             }
+			
 		]]>
 	</fx:Script>
 	
@@ -949,7 +985,7 @@
 			It may also be used for skinning with different devices. 
 			-->
 			<s:BorderContainer id="canvasBackgroundInstance"
-							   borderVisible="false"
+							   borderVisible="true"
 							   backgroundAlpha="0"
 							   >
 				

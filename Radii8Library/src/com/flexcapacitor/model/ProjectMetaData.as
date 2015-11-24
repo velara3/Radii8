@@ -8,7 +8,7 @@ package com.flexcapacitor.model {
 	public class ProjectMetaData extends DocumentMetaData implements IProjectMetaData {
 		
 		public function ProjectMetaData() {
-			
+			super();
 		}
 		
 	}

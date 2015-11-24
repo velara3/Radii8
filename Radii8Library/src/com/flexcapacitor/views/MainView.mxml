@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
-		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:popup="com.flexcapacitor.effects.popup.*" 
@@ -16,13 +16,66 @@
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
 		 xmlns:filters="com.flexcapacitor.filters.*"
 		 xmlns:windows="com.flexcapacitor.views.windows.*" 
-		 xmlns:local="*"
+		 xmlns:application="com.flexcapacitor.effects.application.*"
+		 xmlns:file="com.flexcapacitor.effects.file.*" 
+		 xmlns:local="*" 
+
+		 dragEnter="list_dragEnterHandler(event)"
+		 dragExit="group1_dragExitHandler(event)"
+		 dragDrop="list_dragDropHandler(event)"
+		 dragOver="list_dragOverHandler(event)"
 		 
-		 creationComplete="group1_creationCompleteHandler(event)"
-		 width="400" height="300">
-	
+		 creationComplete="creationCompleteHandler(event)"
+		 width="400" height="300"
+		 >
+<!--		 -->
+			
+		<!-- Was getting multiple errors with JPEGENCODER classes
+		they require 11.5 or greater. Nothing was working. 
+		Finally, I think I found the cause. The playerglobal.swc may be incorrect or not existant. 
+		/11.5/playerglobal.swc may be 11.2 playerglobal.swc or IDE was looking for 11.2 and not finding it. 
+		Not sure using swf-19
+		Also, I made FCLibrary as external libraries to get rid of defaults.css warning.
+		-->
 	<fx:Script>
 		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.effects.popup.OpenPopUp;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.HistoryManager;
+			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.model.DocumentData;
+			import com.flexcapacitor.model.DocumentMetaData;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.IProject;
+			import com.flexcapacitor.model.ImageData;
+			import com.flexcapacitor.model.MenuItem;
+			import com.flexcapacitor.model.Settings;
+			import com.flexcapacitor.performance.PerformanceManager;
+			import com.flexcapacitor.views.windows.ContactWindow;
+			import com.flexcapacitor.views.windows.CreditsWindow;
+			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
+			import com.flexcapacitor.views.windows.ExportDocumentWindow;
+			import com.flexcapacitor.views.windows.FileTransferWindow;
+			import com.flexcapacitor.views.windows.HelpWindow;
+			import com.flexcapacitor.views.windows.ImportWindow;
+			import com.flexcapacitor.views.windows.LoginWindow;
+			import com.flexcapacitor.views.windows.NewDocumentWindow;
+			import com.flexcapacitor.views.windows.PrintWindow;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.core.DragSource;
+			import mx.core.IUIComponent;
+			import mx.core.UIComponent;
+			import mx.events.DragEvent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			import mx.events.MenuEvent;
+			import mx.managers.DragManager;
+			
+			import spark.effects.easing.Linear;
+			import spark.events.IndexChangeEvent;
 	/**
 	 * the library would not compile and had random errors that were not errors. 
 		I couldn't figure out what it was. it looks like it's fixed. 
@@ -35,7 +88,13 @@
 		 * swf version 18 or 19. so i tried cleaning, changing swf version up and down 
 		 * and many other things and nothing worked still errors. so i switched sdk and that 
 		 * removed the errors. 
+		 * 
+		 * UPDATE: THE PREVIOUS ISSUE WAS POSSIBLY BECAUSE THE playerglobal.swc in the 11.2 or 11.5 was not correct
+		 * check date of both they are the same. 
+		 * download the playerglobal again. OR its because the playerglobal is not there. add 11.2,11.3,11.5 etc
 		
+		 * Update 8/28/15 : had to add swf-version=16 and it now works. using sdk 4.6 and air 3.6
+		 * 
 		i still get this warning: 
 		The swc '/Users/monkeypunch/Documents/ProjectsGithub/flexcapacitor/MainLibrary/bin/FCLibrary.swc' 
 		has style defaults and is in the library-path, which means dependencies will be linked in without the styles.  
@@ -43,41 +102,14 @@
 		The swc should be put in the external-library-path.
 		
 		i think i fixed the above warning by putting adding the FCLibrary.swc as a swc rather than a project
+		 * 
+		 * UPDATE: NEED TO SELECT THE SWC AND CHOOSE EXTERNAL PATH
 		
 		i added all other projects except the radiate projects as swc instead of as projects
 		
 		i also added reference to PNGEncoderOptions encoder to RadiateReferences.as
 	 * 
 	 */
-		]]>
-	</fx:Script>
-	
-	<fx:Script>
-		<![CDATA[
-			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.effects.popup.OpenPopUp;
-			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.model.DocumentData;
-			import com.flexcapacitor.model.DocumentMetaData;
-			import com.flexcapacitor.model.IDocument;
-			import com.flexcapacitor.model.IProject;
-			import com.flexcapacitor.model.MenuItem;
-			import com.flexcapacitor.utils.XMLUtils;
-			import com.flexcapacitor.views.windows.ContactWindow;
-			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
-			import com.flexcapacitor.views.windows.ExportDocumentWindow;
-			import com.flexcapacitor.views.windows.ImportWindow;
-			import com.flexcapacitor.views.windows.LoginWindow;
-			import com.flexcapacitor.views.windows.NewDocumentWindow;
-			import com.flexcapacitor.views.windows.PrintWindow;
-			
-			import mx.events.EffectEvent;
-			import mx.events.FlexEvent;
-			import mx.events.MenuEvent;
-			
-			import spark.collections.Sort;
-			import spark.collections.SortField;
-			import spark.events.IndexChangeEvent;
 			
 			private var remoteTestURL:String = "";
 			private var testURL:String = "";
@@ -95,12 +127,123 @@
 			[Bindable]
 			public var radiate:Radiate;
 			
+			[Bindable]
+			public var serviceManager:ServicesManager;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				serviceManager = ServicesManager.getInstance();
+				
+				Radiate.showMessageLabel = instantMessageLabel;
+				Radiate.showMessageAnimation = notificationMessenger;
+				
+				PerformanceManager.addItem(Radiate.SET_TARGET_TEST, performanceLabel, "text", 500);
+				
+				updateCheckExamples();
+				updateCheckProjects();
+				updateCheckNews();
+				updateCheckLoginStatus();
+				
+				serviceManager.getLoggedInStatus();
+				serviceManager.getBlogPostsByCategory("Tutorial");
+				serviceManager.getExampleProjects();
+				
+				if (radiate.userID!=-1) {
+					serviceManager.getProjectsByUser(radiate.userID);
+				}
+				
+				serviceManager.addEventListener(RadiateEvent.BLOG_POSTS_RECEIVED, blogPostsReceivedHandler, false, 0, true);
+				serviceManager.addEventListener(RadiateEvent.LOGGED_IN_STATUS, loggedInStatusHandler, false, 0, true);
+				serviceManager.addEventListener(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED, receivedExampleProjectsHandler, false, 0, true);
+				serviceManager.addEventListener(RadiateEvent.PROJECTS_LIST_RECEIVED, receivedProjectsHandler, false, 0, true);
+				serviceManager.addEventListener(RadiateEvent.PROJECT_SET_HOME_PAGE, clearHomePageHandler, false, 0, true);
+				
+				radiate.addEventListener(RadiateEvent.DOCUMENT_ADDED, documentChangeEventHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, documentChangeEventHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_RENAME, documentChangeEventHandler, false, 0, true);
+				
+				//if (Radiate.isDesktop) {
+				if (true) {
+					mainMenuBar.visible = false;
+					mainMenuBar.includeInLayout = false;
+					mainMenuBarLine.visible = false;
+					mainMenuBarLine.includeInLayout = false;
+					//remote.top = 8;
+				}
+				
+				
+				var settings:com.flexcapacitor.model.Settings = Radiate.settings;
+				radiate.enableAutoSave = settings.enableAutoSave;
+				
+				if (Capabilities.touchscreenType==TouchscreenType.FINGER) {
+					cornerLogo_clickHandler(null);
+				}
+				//PerformanceManager.start();
+				//trace(radiate.isUserLoggedIn);
+			}
+			
+			/**
+			 * Check for news items
+			 * */
+			protected function news_clickHandler(event:MouseEvent):void {
+				updateCheckNews(-1);
+				
+				serviceManager.getBlogPostsByCategory("Tutorial");
+			}
+			
+			/**
+			 * Check for projects
+			 * */
+			protected function projectsLabel_clickHandler(event:MouseEvent):void {
+				updateCheckProjects(-1);
+				
+				serviceManager.getProjectsByUser(radiate.userID);
+			}
+			
+			/**
+			 * Check for examples
+			 * */
+			protected function examplesLabel_clickHandler(event:MouseEvent):void
+			{
+				updateCheckExamples(-1);
+				
+				serviceManager.getExampleProjects();
+			}
+			
+			protected function cornerLogo_clickHandler(event:MouseEvent):void {
+				
+				if (!ee) { if (!ripple) {
+					ripple = ApplicationDomain.currentDomain.getDefinition(String.fromCharCode(99,111,109,46,102,108,101,120,99,97,112,97,99,105,116,111,114,46,103,114,97,112,104,105,99,115,46,82,105,112,112,108,101,114));ripple=new ripple;}
+					//e.event = MouseEvent.CLICK;
+					//e.target = backgroundLogoImage;
+					ripple.event = MouseEvent.MOUSE_MOVE;
+					
+					if (targetEffect==null) targetEffect = backgroundLogoImage;
+					//ripple.useLocalCoordinates = true;
+					ripple.target = targetEffect;
+					//backgroundLogoImage.source = "background01.jpg";
+					//e.target = radiate.canvasBackground; 
+					//e.target = FlexGlobals.topLevelApplication; 
+					ee = true;
+				}
+				else {
+					ee = false;
+					//removeEventListener(MouseEvent.CLICK, stageHandler);
+					ripple.destroy();
+				}
+			}
+			
+			public var ee:Boolean;
+			public var ripple:Object;
+			public var targetEffect:Object;
+			
 			/**
 			 * Switch views on logo click
 			 * */
 			protected function logo_clickHandler(event:MouseEvent):void {
 				
 				if (currentState==HOME_STATE) {
+					if (ripple) ripple.destroy();
 					currentState = DESIGN_STATE;
 				}
 				else {
@@ -112,60 +255,61 @@
 			/**
 			 * Open project
 			 * */
-			protected function openProject_itemClickHandler(event:MenuEvent):void {
+			protected function openProject_itemClickHandler(event:Event):void {
 				radiate.openProject(radiate.selectedProject);
 			}
 			
 			/**
 			 * Open document
 			 * */
-			private function openDocument_itemClickHandler(event:MenuEvent):void {
+			private function openDocument_itemClickHandler(event:Event):void {
 				radiate.openDocument(radiate.selectedDocument, DocumentData.INTERNAL_LOCATION, true);
 			}
 			
 			/**
-			 * Redispatches our custom menu events (so we can use custom menu data types)
+			 * Redispatches on our custom menu items to our menu item models
+			 * The models have event listeners that handle the events 
+			 * The models expect mx.events.MenuEvent but in a desktop application
+			 * we get FlexNativeMenuEvent. So we get an error if we don't use generic events
+			 * in the model menu event handlers
 			 * */
-			private function menuItemEventHandler(event:MenuEvent):void {
+			public function menuItemEventHandler(event:Event):void {
+				var item:MenuItem = "item" in event ? Object(event).item : null;
+				var menu:Object = "menu" in event ? Object(event).menu : null;
+				var label:String = "label" in event ? Object(event).label : null;
+				var index:int = "index" in event ? Object(event).index : -1;
+				var menuEvent:MenuEvent;
 				
-				if (event.item is MenuItem) {
-					EventDispatcher(event.item).dispatchEvent(event);
-				} 
-				else if (event.menu && event.menu.dataProvider && 
-					event.menu.dataProvider[0] is MenuItem && 
-					event.menu.dataProvider[0].parent is MenuItem)
-				{
-					EventDispatcher(event.menu.dataProvider[0].parent).dispatchEvent(event);
+				menuEvent = new MenuEvent(event.type, event.bubbles, event.cancelable);
+				
+				if (label && item) {
+					menuEvent.index = index;
+					menuEvent.item = item;
+					menuEvent.label = label;
 				}
-			}
-			
-			/**
-			 * Handle when getting result of call that checks if user is logged in
-			 * */
-			protected function initialLoggedInStatusHandler(event:RadiateEvent):void {
-				//checkOnlineEffect.play();
 				
-				if (radiate.isUserLoggedIn) {
-					//checkOnlineEffect.play();
-					radiate.removeEventListener(RadiateEvent.LOGGED_IN_STATUS, initialLoggedInStatusHandler);
-					checkForProjects();
-					radiate.addEventListener(RadiateEvent.PROJECTS_LIST_RECEIVED, receivedProjectsHandler, false, 0, true);
+				if (item) {
+					EventDispatcher(item).dispatchEvent(menuEvent);
+				}
+				else if (menu && menu.dataProvider && 
+					menu.dataProvider[0] is MenuItem && 
+					menu.dataProvider[0].parent is MenuItem) {
+					EventDispatcher(menu.dataProvider[0].parent).dispatchEvent(menuEvent);
+				}
+				
+				if (item.data is IDocument) {
+					var iDocument:IDocument = item.data as IDocument;
 					
-					//radiate.enableAutoSave = true;
+					if (iDocument.isOpen) {
+						radiate.showDocument(iDocument);
+						//radiate.selectDocument(iDocument);
+					}
 					
-					if (statusLabel) {
-						statusLabel.text = "";
-						fadeOutStatus.play();
+					if (!iDocument.isOpen) {
+						radiate.openDocumentByData(iDocument, true);
 					}
 				}
-				else {
-					
-					if (statusLabel) {
-						statusLabel.text = "You must be logged in to save projects";
-					}
-				}
 				
-				radiate.addEventListener(RadiateEvent.LOGGED_IN_STATUS, loggedInStatusHandler, false, 0, true);
 			}
 			
 			/**
@@ -176,16 +320,12 @@
 				
 				if (radiate.isUserLoggedIn) {
 					//radiate.enableAutoSave = true;
-					
-					if (statusLabel) {
-						statusLabel.text = "";
-					}
+					updateCheckLoginStatus(1);
+					updateCheckProjects(-1);
+					serviceManager.getProjectsByUser(radiate.userID);
 				}
 				else {
-					// display you have been logged out message
-					if (statusLabel) {
-						statusLabel.text = "You must be logged in to save projects";
-					}
+					updateCheckLoginStatus(0);
 				}
 			}
 			
@@ -193,67 +333,16 @@
 			 * Handle when getting result of list of projects
 			 * */
 			protected function receivedProjectsHandler(event:RadiateEvent):void {
-				//checkOnlineEffect.play();
-				var data:Object = event.data;
-				
-				var length:int;
-				var post:Object;
-				var project:IProject
-				var xml:XML;
-				var isValid:Boolean;
-				var firstProject:IProject;
-				var potentialProjects:Array = [];
-				var source:String;
-				
-				length = data && data is Object ? data.count : 0;
-				
-				for (var i:int;i<length;i++) {
-					post = data.posts[i];
-					//isValid = XMLUtils.isValidXML(post.content);
-					source = post.custom_fields.source;
-					isValid = XMLUtils.isValidXML(source);
-					
-					if (isValid) {
-						xml = new XML(source);
-						// should have an unmarshall from data method
-						project = radiate.createProjectFromXML(xml);
-						
-						// maybe we should keep an array of the projects we just loaded
-						// then we can unmarshall them rather than creating them from xml
-						if (post.attachments) {
-							project.parseAttachments(post.attachments);
-						}
-						// if id is not set in the XML set it manually
-						// we need id for  delete
-						if (project.id==null) {
-							project.id = post.id;
-						}
-						//addProject(project);
-						potentialProjects.push(project);
-					}
-					else {
-						Radiate.log.info("Could not import project:" + post.title);
-					}
-				}
-				
-				var sort:Sort = new Sort();
-				var sortField:SortField = new SortField("dateSaved");
-				sort.fields = [sortField];
-				//projectsCollection.sort = sort;
-				projectsCollection.source = potentialProjects;
+				var projects:Array = radiate.parseProjectsData(event.data);
+				projectsCollection.source = projects;
 				documentsCollection.source = [];
 				
-				
 				if (projectsCollection.length==0 && checkingForProjectsLabel) {
-					checkingForProjectsLabel.text = "No projects.";
-					checkingForProjectsLabel.includeInLayout = true;
-					checkingForProjectsLabel.visible = true;
+					updateCheckProjects(0);
 					openPreviousProject.enabled = false;
 				}
 				else if (checkingForProjectsLabel) {
-					checkingForProjectsLabel.text = "";
-					checkingForProjectsLabel.includeInLayout = false;
-					checkingForProjectsLabel.visible = false;
+					updateCheckProjects(1);
 					openPreviousProject.enabled = true;
 					var iProject:IProject = projectsCollection.getItemAt(0) as IProject;
 					openPreviousProject.label = "Open " + iProject.name;
@@ -261,32 +350,41 @@
 				
 			}
 			
+			protected function examplesList_changeHandler(event:IndexChangeEvent):void {
+				var selectedItem:Object = examplesList.selectedItem;
+				
+				//examplesList.selectedItem = null;
+				projectsList.selectedItem = null;
+			}
+			
+			
+			/**
+			 * Handle when getting result of example list of projects
+			 * */
+			protected function receivedExampleProjectsHandler(event:RadiateEvent):void {
+				var projects:Array = radiate.parseProjectsData(event.data);
+				examplesCollection.source = projects;
+				
+				if (examplesCollection.length==0 && checkingForExampleProjectsLabel) {
+					updateCheckExamples(0);
+				}
+				else if (checkingForExampleProjectsLabel) {
+					updateCheckExamples(1);
+				}
+				
+			}
+			
+			
 			/**
 			 * Show project info and show documents in the project
 			 * */
 			protected function projectsList_changeHandler(event:IndexChangeEvent = null):void {
 				var project:IProject = projectsList.selectedItem;
+				examplesList.selectedItem = null;
 				
 				if (project && project is IProject) {
 					projectLastSavedLabel.text = "" + project.dateSaved;
 					documentsCollection.source = project.documentsMetaData;
-				}
-			}
-			
-			/**
-			 * Open project selected in project list
-			 * */
-			protected function openProject(event:IndexChangeEvent = null):void {
-				var project:IProject = projectsList.selectedItem;
-				
-				if (project && project is IProject) {
-					currentState = DESIGN_STATE;
-					validateNow();
-					radiate.addProject(project, false);
-					//radiate.openProject(project, DocumentData.REMOTE_LOCATION, true);
-					radiate.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
-					radiate.setProject(project, true);
-					//projectsList.selectedIndex = -1;
 				}
 			}
 			
@@ -312,19 +410,27 @@
 			 * */
 			protected function loginPopUp_closeHandler(event:Event):void {
 				if (radiate.isUserLoggedIn) {
+					updateCheckProjects(-1);
 					checkForProjects();
-					radiate.addEventListener(RadiateEvent.PROJECTS_LIST_RECEIVED, receivedProjectsHandler, false, 0, true);
-					statusLabel.text = "";
+					updateCheckLoginStatus(1);
+					radiate.saveExampleProjects();
 				}
 				else {
-					radiate.getLoggedInStatus();
+					serviceManager.getLoggedInStatus();
 				}
+				
+				//radiate.addEventListener(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED, receivedExampleProjectsHandler, false, 0, true);
+				//checkForExampleProjects();
 			}
 			
 			/**
 			 * Check online status after logout
 			 * */
 			protected function logoutPopUp_closeHandler(event:Event):void {
+				updateCheckProjects(0);
+				//checkForProjects();
+				projectsCollection.removeAll();
+				projectsCollection.refresh();
 				checkOnline();
 			}
 			
@@ -332,13 +438,15 @@
 			 * Check if the user is online
 			 * */
 			protected function checkOnline():void {
-				radiate.getLoggedInStatus();
+				//trace("checking online status");
+				serviceManager.getLoggedInStatus();
+				updateCheckLoginStatus(-1);
 			}
 			
 			/**
 			 * Work offline clicked. May not be functioning at this time? 
 			 * */
-			protected function workOfflineMenuItem_itemClickHandler(event:MenuEvent):void {
+			protected function workOfflineMenuItem_itemClickHandler(event:Event):void {
 				if (workOfflineMenuItem.toggled) {
 					checkOnlineEffect.stop();
 				}
@@ -367,7 +475,7 @@
 						radiate.saveProject(radiate.selectedProject);
 					}
 					else {
-						//Radiate.log.info("The project will not be saved");
+						//Radiate.info("The project will not be saved");
 					}
 				}
 			}
@@ -378,57 +486,69 @@
 			 * to a local directory of projects or workspace. 
 			 * */
 			protected function getProjectsByUser_clickHandler(event:MouseEvent):void {
-				checkForProjects(true);
+				getProjectsByUser();
 			}
 			
 			/**
 			 * Get public projects / examples. There are no public or shared examples yet. 
 			 * */
 			protected function getPublicProjects_clickHandler(event:MouseEvent):void {
-				checkForProjects(false);
+				checkForExampleProjects();
+			}
+			
+			/**
+			 * Get projects by current user
+			 * */
+			public function getProjectsByUser():void {
+				checkForProjects();
 			}
 			
 			/**
 			 * Get a list of projects by user or that are shared by the public or are examples. 
 			 * Shared public projects and example projects should be in their own category. 
 			 * */
-			protected function checkForProjects(byUser:Boolean = false):void {
-				//projectsList.dataProvider = null;
+			protected function checkForProjects():void {
 				projectsList.selectedItem = null;
 				
-				if (byUser) {
-					radiate.getProjectsByUser(radiate.userID);
-				}
-				else {
-					radiate.getProjects();
-				}
+				serviceManager.getProjectsByUser(radiate.userID);
 				
 				if (checkingForProjectsLabel) {
-					checkingForProjectsLabel.text = "Checking for projects...";
-					checkingForProjectsLabel.visible = true;
-					checkingForProjectsLabel.includeInLayout = true;
+					updateCheckProjects(-1);
 				}
+			}
+			
+			/**
+			 * Get a list of example projects 
+			 * Shared public projects and example projects should be in their own category. 
+			 * */
+			protected function checkForExampleProjects(byUser:Boolean = false):void {
+				//projectsList.dataProvider = null;
+				examplesList.selectedItem = null;
+				
+				serviceManager.getExampleProjects();
+				
+				updateCheckExamples(-1);
 			}
 			
 			/**
 			 * Check for projects 
 			 * */
-			protected function removeProject_itemClickHandler(event:MenuEvent):void {
+			protected function removeProject_itemClickHandler(event:Event):void {
 				checkForProjects();
 			}
 			
 			/**
 			 * Undo last action
 			 * */
-			protected function undo_itemClickHandler(event:MenuEvent):void {
-				Radiate.undo();
+			protected function undo_itemClickHandler(event:Event):void {
+				HistoryManager.undo(radiate.selectedDocument, true);
 			}
 			
 			/**
 			 * Redo last action
 			 * */
-			protected function redo_itemClickHandler(event:MenuEvent):void {
-				Radiate.redo();
+			protected function redo_itemClickHandler(event:Event):void {
+				HistoryManager.redo(radiate.selectedDocument, true);
 			}
 			
 			/**
@@ -445,23 +565,24 @@
 			/**
 			 * Show project string for debugging purposes
 			 * */
-			protected function showProjectSource_itemClickHandler(event:MenuEvent):void {
+			protected function showProjectSource_itemClickHandler(event:Event):void {
 				var iProject:IProject = radiate.selectedProject;
 				
 				if (iProject) {
-					Radiate.log.info(iProject.toString());
+					Radiate.info(iProject.toString());
 				}
 			}
 			
 			/**
 			 * Show document string for debugging purposes
 			 * */
-			protected function showDocumentSource_itemClickHandler(event:MenuEvent):void {
+			protected function showDocumentSource_itemClickHandler(event:Event):void {
 				var iDocument:IDocument = radiate.selectedDocument;
+				var source:String;
 				
 				if (iDocument) {
-					var source:String = iDocument.marshall(DocumentMetaData.STRING_TYPE, true) as String;
-					Radiate.log.info(source);
+					source = iDocument.marshall(DocumentMetaData.STRING_TYPE, true) as String;
+					Radiate.info(source);
 				}
 				
 			}
@@ -483,18 +604,497 @@
 			}
 			
 			protected function fadeOutStatus_effectEndHandler(event:EffectEvent):void {
-				statusLabel.visible = true;
-				statusLabel.text = "";
-				statusLabel.alpha = 1;
+				updateCheckLoginStatus(1);
 			}
 			
-			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
-				radiate.addEventListener(RadiateEvent.LOGGED_IN_STATUS, initialLoggedInStatusHandler, false, 0, true);
+			protected function examplesList_doubleClickHandler(event:MouseEvent):void {
+				var project:IProject = examplesList.selectedItem;
 				
-				if (statusLabel) {
-					statusLabel.text = "Checking to see if you're logged in... one second.";
+				if (project) {
+					openExampleProject(project);
 				}
+				
+			}
+			
+			/**
+			 * Makes a duplicate of the example project
+			 * Once it's loaded we need to clear the fields out and
+			 * then save the project
+			 * */
+			protected function openExampleProject(project:IProject):void {
+				
+				if (project && project is IProject) {
+					currentState = DESIGN_STATE;
+					validateNow();
+					exampleProject = project;
+					radiate.addProject(project, false);
+					//radiate.openProject(project, DocumentData.REMOTE_LOCATION, true);
+					radiate.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
+					radiate.addEventListener(RadiateEvent.PROJECT_OPENED, exampleProjectOpened, false, 0, true);
+					radiate.setProject(project, true);
+					//projectsList.selectedIndex = -1;
+				}
+			}
+			
+			protected function exampleProjectOpened(event:Event):void {
+				if (exampleProject) {
+					radiate.clearExampleProjectData(exampleProject);
+					radiate.saveExampleProjects()
+					//radiate.saveProject(exampleProject);
+					exampleProject = null;
+				}
+			}
+			
+			public var exampleProject:IProject;
+			
+			protected function projectsList_doubleClickHandler(event:MouseEvent):void {
+				
+				var project:IProject = projectsList.selectedItem;
+				
+				if (project && project is IProject && !project.isOpen) {
+					currentState = DESIGN_STATE;
+					validateNow();
+					radiate.addProject(project, false);
+					radiate.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
+					radiate.setProject(project, true);
+				}
+				else if (project && project is IProject && project.isOpen) {
+					currentState = DESIGN_STATE;
+					validateNow();
+					radiate.setProject(project, true);
+				}
+			}
+			
+			/**
+			 * Open project selected in project list
+			 * */
+			protected function openProject(project:IProject):void {
+				
+				if (project && project is IProject) {
+					currentState = DESIGN_STATE;
+					validateNow();
+					radiate.addProject(project, false);
+					radiate.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
+					radiate.setProject(project, true);
+				}
+				else if (project && project is IProject && project.isOpen) {
+					currentState = DESIGN_STATE;
+					validateNow();
+					radiate.setProject(project, true);
+				}
+			}
+			
+			
+			protected function newsList_doubleClickHandler(event:MouseEvent):void {
+				var request:URLRequest = new URLRequest();
+				request.url = newsList.selectedItem.url;
+				navigateToURL(request, "previewInBrowser");
+				
+			}
+			
+			protected function newsList_changeHandler(event:IndexChangeEvent):void
+			{
+				
+				
+			}
+			
+			protected function blogPostsReceivedHandler(event:RadiateEvent):void
+			{
+				var posts:Array = serviceManager.parsePostsData(event.data);
+				newsCollection.source = posts;
+				
+				if (newsCollection.length==0) {
+					updateCheckNews(0);
+					//openPreviousProject.enabled = false;
+				}
+				else {
+					updateCheckNews(1);
+				}
+			}
+			
+			/**
+			 * Updates the label checking for examples
+			 * -1 = checking
+			 * 0 = no examples available
+			 * 1 = examples found
+			 * */
+			private function updateCheckExamples(param0:int = -1):void
+			{
+				
+				if (param0==-1) {
+					checkingForExampleProjectsLabel.text = "Checking for examples...";
+					checkingForExampleProjectsLabel.includeInLayout = true;
+					checkingForExampleProjectsLabel.visible = true;
+				}
+				else if (param0==0) {
+					checkingForExampleProjectsLabel.text = "No examples available";
+					checkingForExampleProjectsLabel.includeInLayout = true;
+					checkingForExampleProjectsLabel.visible = true;
+				}
+				else if (param0==1) {
+					checkingForExampleProjectsLabel.text = "";
+					checkingForExampleProjectsLabel.includeInLayout = false;
+					checkingForExampleProjectsLabel.visible = false;
+				}
+			}
+			
+			/**
+			 * Updates the label checking for projects
+			 * -1 = checking
+			 * 0 = no projects available
+			 * 1 = projects found
+			 * */
+			private function updateCheckProjects(param0:int = -1):void
+			{
+				
+				if (param0==-1) {
+					checkingForProjectsLabel.text = "Checking for projects...";
+					checkingForProjectsLabel.includeInLayout = true;
+					checkingForProjectsLabel.visible = true;
+				}
+				else if (param0==0) {
+					checkingForProjectsLabel.text = "No projects available";
+					checkingForProjectsLabel.includeInLayout = true;
+					checkingForProjectsLabel.visible = true;
+				}
+				else if (param0==1) {
+					checkingForProjectsLabel.text = "";
+					checkingForProjectsLabel.includeInLayout = false;
+					checkingForProjectsLabel.visible = false;
+				}
+			}
+			
+			/**
+			 * Updates the label checking for news
+			 * -1 = checking
+			 * 0 = no news available
+			 * 1 = projects found
+			 * */
+			private function updateCheckNews(param0:int = -1):void
+			{
+				
+				if (param0==-1) {
+					checkingForNewsLabel.text = "Checking for news...";
+					checkingForNewsLabel.includeInLayout = true;
+					checkingForNewsLabel.visible = true;
+				}
+				else if (param0==0) {
+					checkingForNewsLabel.text = "No tutorials available";
+					checkingForNewsLabel.includeInLayout = true;
+					checkingForNewsLabel.visible = true;
+				}
+				else if (param0==1) {
+					checkingForNewsLabel.text = "";
+					checkingForNewsLabel.includeInLayout = false;
+					checkingForNewsLabel.visible = false;
+				}
+			}
+			
+			/**
+			 * Updates the label checking for login status
+			 * -1 = checking
+			 * 0 = no news available
+			 * 1 = projects found
+			 * */
+			private function updateCheckLoginStatus(param0:int = -1):void {
+				
+				if (param0==-1) {
+					statusLabel.text = "Checking to see if you're logged in... one second.";
+					statusLabel.includeInLayout = true;
+					statusLabel.visible = true;
+				}
+				else if (param0==0) {
+					statusLabel.text = "You are not logged in. You must be logged in to save projects";
+					statusLabel.includeInLayout = true;
+					statusLabel.visible = true;
+				}
+				else if (param0==1) {
+					statusLabel.text = "";
+					statusLabel.includeInLayout = false;
+					statusLabel.visible = false;
+				}
+			}
+			
+			
+			private function revertDocument():void {
+				radiate.revertDocument(radiate.selectedDocument);
+			}
+			
+			protected function instantMessengerContainer_clickHandler(event:MouseEvent):void
+			{
+				if (notificationMessenger.isPlaying) {
+					notificationMessenger.stop();
+					notificationMessenger.play(null, true);
+				}
+				else {
+					//notificationMessenger.play();
+					notificationMessenger.end();
+				}
+			}
+			
+			protected function sizeDocumentToSelection_itemClickHandler(event:MenuEvent):void
+			{
+				Radiate.sizeDocumentToSelection();
+			}
+			
+			protected function sizeSelectionToDocument_itemClickHandler(event:MenuEvent):void
+			{
+				Radiate.sizeSelectionToDocument();
+			}
+			
+			protected function copySelectionIntoLibrary_itemClickHandler(event:MenuEvent):void
+			{
+				var result:Object = Radiate.saveToLibrary(radiate.target);
+				
+				if (result is Error) {
+					Radiate.error("Could not create a snapshot of the selected item. " + result); 
+				}
+				else if (result) {
+					Radiate.info("Selection was saved to the library.");
+				}
+			}
+			
+			protected function userLabel_clickHandler(event:MouseEvent):void
+			{
+				Radiate.openUsersLoginPage();
+			}
+			
+			protected function userIcon_clickHandler(event:MouseEvent):void
+			{
+				Radiate.openUsersProfile();
+			}
+			
+			protected function visitSiteLabel_clickHandler(event:MouseEvent):void
+			{
+				Radiate.openUsersWebsite();
+			}
+			
+			private var isWin:Boolean; 
+			private var isMac:Boolean; 
+			
+			private function init():void { 
+				isWin = (Capabilities.os.indexOf("Windows") >= 0); 
+				isMac = (Capabilities.os.indexOf("Mac OS") >= 0); 
+			} 
+			
+			private function keyEquivalentModifiers(item:Object):Array { 
+				var result:Array = new Array();
+				var menu:Object;
+				
+				//var keyEquivField:String = menu.keyEquivalentField;
+				var keyEquivField:String = menu.keyEquivalentField;
+				var altKeyField:String;
+				var controlKeyField:String;
+				var shiftKeyField:String;
+				
+				if (item is XML) { 
+					altKeyField = "@altKey";
+					controlKeyField = "@controlKey";
+					shiftKeyField = "@shiftKey";
+				}
+				else if (item is Object) { 
+					altKeyField = "altKey";
+					controlKeyField = "controlKey";
+					shiftKeyField = "shiftKey";
+				}
+				
+				if (item[keyEquivField] == null || item[keyEquivField].length == 0) { 
+					return result;
+				}
+				
+				if (item[altKeyField] != null && item[altKeyField] == true) 
+				{
+					if (isWin)
+					{
+						result.push(Keyboard.ALTERNATE); 
+					}
+				}
+				
+				if (item[controlKeyField] != null && item[controlKeyField] == true) 
+				{
+					if (isWin)
+					{
+						result.push(Keyboard.CONTROL);
+					}
+					else if (isMac) 
+					{
+						result.push(Keyboard.COMMAND);
+					}
+				}
+				
+				if (item[shiftKeyField] != null && item[shiftKeyField] == true) 
+				{
+					result.push(Keyboard.SHIFT);
+				}
+				
+				return result;
+			}
+			
+			protected function saveMenuItem_itemClickHandler(event:MenuEvent):void
+			{
+				//Radiate.info("Saved");
+				if (radiate.selectedDocument) {
+					radiate.saveDocument(radiate.selectedDocument);
+				}
+			}
+			
+			protected function clearProjectHomePage_itemClickHandler(event:MenuEvent):void
+			{
+				serviceManager.setProjectHomePage(0);
+			}
+			
+			protected function clearHomePageHandler(event:RadiateEvent):void
+			{
+				if (event.successful) {
+					Radiate.info("Home pagee cleard");
+				}
+			}
+			
+			protected function openProjectButton_clickHandler(event:MouseEvent):void
+			{
+				var project:IProject = projectsList.selectedItem;
+				if (project==null) {
+					project = examplesList.selectedItem;
+				}
+
+				if (project) {
+					openProject(project);
+				}
+				
+			}
+			
+			/**
+			 * Returns true if it's a type of content we can accept to be dragged and dropped
+			 * */
+			public function acceptableFileFormat(dragSource:DragSource):Boolean {
+				if (dragSource==null) return false;
+				
+				if (dragSource.hasFormat("air:file list") || 
+					dragSource.hasFormat("air:url")) {
+					return true;
+				}
+				
+				return false;
+			}
+			protected function list_dragEnterHandler(event:DragEvent):void
+			{
+				var dragSource:DragSource = event.dragSource;
+				
+				if (acceptableFileFormat(dragSource)) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+					dropImagesLocation.visible = true;
+				}
+			}
+			
+			protected function list_dragOverHandler(event:DragEvent):void
+			{
+				if (acceptableFileFormat(event.dragSource)) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+					dropImagesLocation.visible = true;
+				}
+				
+			}
+			
+			public function list_dragDropHandler(event:DragEvent):void {
+				var initiator:UIComponent;
+				var snapshotTest:Boolean;
+				var snapshot:Object;
+				var data:ImageData;
+				var format:String;
+				var dragSource:DragSource;
+				var hasURLFormat:Boolean;
+				var hasFileListFormat:Boolean;
+				var hasFilePromiseListFormat:Boolean;
+				dropImagesLocation.visible = false;
+				
+				var isSelf:Boolean = event.dragInitiator ? this.contains(event.dragInitiator as DisplayObject) : false;
+				if (isSelf) return;
+				
+				dragSource = event.dragSource;
+				hasURLFormat = dragSource.hasFormat(ClipboardFormats.URL_FORMAT);
+				hasFileListFormat = dragSource.hasFormat(ClipboardFormats.FILE_LIST_FORMAT);
+				hasFilePromiseListFormat = dragSource.hasFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT);
+				
+				
+				if (acceptableFileFormat(dragSource)) {
+					data = new ImageData();
+					initiator = event.dragInitiator as UIComponent;
+					
+					var droppedFiles:Object = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT);
+					var urlFormatData:Object = dragSource.dataForFormat(ClipboardFormats.URL_FORMAT);
+					var path_txt:String;
+					var extension:String;
+					var fileSafeList:Array = [];
+					
+					for each (var file:FileReference in droppedFiles) {
+						extension = file.extension.toLowerCase();
+						
+						if (extension=="png" || extension=="jpg" || extension=="jpeg") {
+							fileSafeList.push(file);
+						}
+						else {
+							path_txt = "Not a recognised file format";  
+						}
+					}
+					
+					if (fileSafeList.length>0) {
+						loadFile.filesArray = fileSafeList;
+						loadFile.play();
+					}
+					
+				}
+			}
+			
+			/**
+			 * File load complete
+			 * */
+			protected function loadFile_completeHandler(event:Event):void {
+				
+				var data:ImageData = new ImageData();
+				data.bitmapData = loadFile.bitmapData;
+				data.byteArray = loadFile.data;
+				data.name = loadFile.currentFileReference.name;
+				data.contentType = loadFile.loaderContentType;
+				data.file = loadFile.currentFileReference;
+				
+				radiate.addAsset(data);
+				radiate.addAssetToDocument(data, radiate.selectedDocument);
+				//list.selectedItem = data;
+				
+				//uploadAttachment(loadFile.fileReference);
+			}
+			
+			protected function group1_dragExitHandler(event:DragEvent):void
+			{
+				dropImagesLocation.visible = false;
+				
+				
+			}
+			
+			protected function openDeleteDocumentPopUp_closeHandler(event:Event):void
+			{
+				if (radiate.selectedProject) {
+					radiate.selectedProject.save();
+				}
+			}
+			
+			protected function loginThroughWebsite_itemClickHandler(event:MenuEvent):void
+			{
+				if (radiate.isUserLoggedIn) {
+					Radiate.loginThroughBrowser();
+				}
+			}
+			
+			protected function miniinspector1_changeHandler(event:MouseEvent):void
+			{
+				if (event.relatedObject as DisplayObject) {
+					targetEffect = event.relatedObject;
+				}
+			}
+			
+			protected function documentChangeEventHandler(event:Event):void
+			{
+				radiate.updateWindowMenu(windowMenu);
 			}
 			
 		]]>
@@ -502,18 +1102,20 @@
 	
 	<fx:Declarations>
 		
-		<!--- show about popup -->
-		<handlers:EventHandler target="{logo}" eventName="click">
-			<popup:ShowPopupAnchor target="{aboutPopUp}" closeOnMouseOut="true" displayObjectExceptions="{[logo]}"/>
+		<!--- show about popup
+		<handlers:EventHandler target="{cornerLogo}" eventName="click">
+			<popup:ShowPopupAnchor target="{aboutPopUp}" closeOnMouseOut="true" displayObjectExceptions="{[cornerLogo]}"/>
 		</handlers:EventHandler>
 		
-		<!--- hide about popup -->
+		 hide about popup 
 		<handlers:EventHandler target="{popUpGroup}" eventName="mouseDownOutside">
 			<popup:HidePopupAnchor target="{aboutPopUp}" />
 		</handlers:EventHandler>
 		
-		<!--- show contact popup -->
-		<handlers:EventHandler targets="{[contactLabel,feedbackLabel]}" eventName="click" >
+		show contact popup 
+		-->
+		<handlers:EventHandler target="{contactLabel}" eventName="click" 
+							   traceHandler="false">
 			<fc:OpenPopUp id="openContactPopUp" 
 						  popUpType="{ContactWindow}" 
 						  modalDuration="100" 
@@ -535,7 +1137,7 @@
 						  close="logoutPopUp_closeHandler(event)"/>
 		</handlers:EventHandler>
 		
-		<handlers:EventHandler targets="{[newProjectButton,menuNewProject,newDocumentButton]}" eventNames="{['click','itemClick']}" >
+		<handlers:EventHandler targets="{[newProjectButton,menuNewProject]}" eventNames="{['click','itemClick']}" >
 			<fc:OpenPopUp id="openNewProjectPopUp" 
 						  popUpType="{NewDocumentWindow}" 
 						  modalDuration="100" 
@@ -557,6 +1159,7 @@
 						  width="600"
 						  parent="{parentApplication}"
 						  popUpOptions="{{currentState:DeleteDocumentWindow.DOCUMENT}}"
+						  close="openDeleteDocumentPopUp_closeHandler(event)"
 						  />
 		</handlers:EventHandler>
 		
@@ -564,10 +1167,10 @@
 			<popup:HidePopupAnchor target="{logoPopUp}" />
 		</handlers:EventHandler>
 		
-		<handlers:EventHandler target="{moreInfoLabel}" eventName="click">
+		<!--<handlers:EventHandler target="{moreInfoLabel}" eventName="click">
 			<popup:HidePopupAnchor target="{aboutPopUp}" />
 			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=2" window="_blank" />
-		</handlers:EventHandler>
+		</handlers:EventHandler>-->
 		
 		<handlers:EventHandler targets="{[deleteProjectIcon,removeProject]}" eventNames="{['click','itemClick']}" >
 			<fc:OpenPopUp id="openDeleteProjectPopUp" 
@@ -578,13 +1181,27 @@
 						  width="600"
 						  parent="{parentApplication}"
 						  popUpOptions="{{currentState:DeleteDocumentWindow.PROJECT, documentData:projectsList.selectedItem}}"
-						  close="checkForProjects();"
+						  close="getProjectsByUser();"
 						  />
+		</handlers:EventHandler>
+		
+		<handlers:EventHandler eventName="itemClick" target="{revertDocumentMenuItem}">
+			<core:CallMethod method="revertDocument"/> 
 		</handlers:EventHandler>
 		
 		<handlers:EventHandler eventName="itemClick" target="{saveDocumentAs}">
 			<fc:OpenPopUp id="openExportPopUp" 
 						  popUpType="{ExportDocumentWindow}" 
+						  modalDuration="150" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="800"
+						  parent="{parentApplication}"/>
+		</handlers:EventHandler>
+		
+		<handlers:EventHandler eventName="itemClick" target="{uploadMenuItem}">
+			<fc:OpenPopUp id="openFileTransferPopUp" 
+						  popUpType="{FileTransferWindow}" 
 						  modalDuration="150" 
 						  percentWidth="75"
 						  percentHeight="90"
@@ -636,21 +1253,49 @@
 						  close="loginPopUp_closeHandler(event)"/>
 		</handlers:EventHandler>
 		
+		<handlers:EventHandler eventName="itemClick" target="{creditsMenuItem}">
+			<fc:OpenPopUp popUpType="{CreditsWindow}" 
+						  modalDuration="150" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="720"
+						  parent="{parentApplication}"/>
+		</handlers:EventHandler>
+		
+		<handlers:EventHandler eventName="itemClick" target="{helpMenuItem}">
+			<fc:OpenPopUp popUpType="{HelpWindow}" 
+						  modalDuration="150" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="600"
+						  parent="{parentApplication}"/>
+		</handlers:EventHandler>
+		
+		<handlers:EventHandler eventName="itemClick" target="{quitApplication}">
+			<application:CloseApplication />
+		</handlers:EventHandler>
+		
+		<model:MenuItem id="workOfflineMenuItem" label="Work Offline" type="check" itemClick="workOfflineMenuItem_itemClickHandler(event)"/>
+		
 		<model:MenuItem id="rootMenu">
 			<model:MenuItem label="File">
 				<model:MenuItem id="menuNewDocument" label="New Document" itemClick="{radiate.createNewDocument()}"/>
 				<model:MenuItem id="menuNewProject" label="New Project" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem label="Open Project" itemClick="openProject_itemClickHandler(event)"/>
 				<model:MenuItem label="Open Document" itemClick="openDocument_itemClickHandler(event)"/>
+				<model:MenuItem label="Open Project" itemClick="openProject_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>
 				<model:MenuItem label="Close Document" itemClick="{radiate.closeDocument(radiate.selectedDocument)}"/>
+				<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>
 				<model:MenuItem type="separator"/>
+				<model:MenuItem id="saveMenuItem" label="Save" keyEquivalent="s" commandKey="true" itemClick="saveMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem label="Save Project" itemClick="{radiate.saveProject(radiate.selectedProject)}"/>
-				<model:MenuItem label="Save Document" itemClick="{radiate.saveDocument(radiate.selectedDocument)}"/>
 				<model:MenuItem label="Save All Documents" itemClick="{radiate.saveAllDocuments()}"/>
-				<model:MenuItem id="saveDocumentAs" label="Save Document As..." />
+				<model:MenuItem id="saveDocumentAs" label="Export release..." />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="revertDocumentMenuItem" label="Revert..." />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="uploadMenuItem" label="Upload..." />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="removeDocument" label="Remove Document" />
 				<model:MenuItem id="removeProject" label="Remove Project" itemClick="removeProject_itemClickHandler(event)"/>
@@ -659,21 +1304,30 @@
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="importMenuItem" label="Import..." />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="workOfflineMenuItem" label="Work Offline" type="check" itemClick="workOfflineMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="quitApplication" label="Quit" />
 			</model:MenuItem>
 			<model:MenuItem label="Edit" >
 				<model:MenuItem id="undo" label="Undo" itemClick="undo_itemClickHandler(event)" 
-								enabled="{Radiate.canUndo}"/>
+								enabled="{HistoryManager.canUndo}"/>
 				<model:MenuItem id="redo" label="Redo" itemClick="redo_itemClickHandler(event)"
-								enabled="{Radiate.canRedo}"/>
+								enabled="{HistoryManager.canRedo}"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="cut" label="Cut" enabled="false"/>
-				<model:MenuItem id="copy" label="Copy" enabled="false"/>
-				<model:MenuItem id="paste" label="Paste" name="paste" enabled="false"/>
+				<model:MenuItem id="cut" label="Cut" name="cut" enabled="true" keyEquivalent="x" controlKey="true"/>
+				<model:MenuItem id="copy" label="Copy" name="copy" enabled="true" keyEquivalent="c" controlKey="true"/>
+				<model:MenuItem id="paste" label="Paste" name="paste" enabled="true" keyEquivalent="v" controlKey="true"/>
+				<model:MenuItem id="delete" label="Delete" name="delete" enabled="true"/>
+				<model:MenuItem id="selectAll" label="Select All" name="selectAll" enabled="true" keyEquivalent="a" controlKey="true"/>
 			</model:MenuItem>
 			<model:MenuItem label="Commands" >
+				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="clearProjectHomePage_itemClickHandler(event)" />
+				<model:MenuItem id="copySelectionIntoLibrary" label="Merge selection into an image" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
+				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
 				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="showProjectSource_itemClickHandler(event)" />
 				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="showDocumentSource_itemClickHandler(event)"/>
+				<!--<model:MenuItem id="loginThroughWebsite" label="Login to your website" itemClick="loginThroughWebsite_itemClickHandler(event)"/>-->
 			</model:MenuItem>
 			<!--			<model:MenuItem label="Edit" menuShow="editHandler(event)">
 			<model:MenuItem id="cut" label="Cut" itemClick="cutHandler(event)"/>
@@ -688,10 +1342,16 @@
 				<model:MenuItem id="d3" label="Document 3" group="docs" name="d3" toggled="false"
 				type="radio"/>
 				<model:MenuItem label="Document 4" group="docs" toggled="false" type="radio"/>-->
+				<model:MenuItem label="No documents" />
+			</model:MenuItem>
+			<model:MenuItem id="helpMenu" label="Help">
+				<model:MenuItem id="helpMenuItem" label="Online Documentation" />
+				<model:MenuItem id="creditsMenuItem" label="Notices and Credits"/>
 			</model:MenuItem>
 		</model:MenuItem>
 		
 		<mx:ArrayCollection id="projectsCollection" />
+		<mx:ArrayCollection id="newsCollection" />
 		<mx:ArrayCollection id="documentsCollection" />
 		<mx:ArrayCollection id="examplesCollection" />
 		<mx:ArrayCollection id="templatesCollection" />
@@ -702,9 +1362,26 @@
 						autoCenterProjection="true" 
 						autoCenterTransform="true" 
 						duration="250"
-						target="{logo3}" />
-			<s:Fade alphaFrom="0" alphaTo="1" target="{logo3}" duration="250" />
+						target="{mainLogo}" />
+			<s:Fade alphaFrom="0" alphaTo="1" target="{mainLogo}" duration="250" />
 		</s:Parallel>
+		
+		<s:Parallel id="requestAnimation" >
+			<s:Fade alphaFrom="0" alphaTo="1" target="{busyLogo}" duration="500" />
+			<s:Sequence id="rotationAnimation" suspendBackgroundProcessing="true" repeatCount="0">
+				<s:Rotate3D angleZFrom="0" 
+							angleZTo="360" 
+							easer="{new Linear(0,0)}" 
+							autoCenterProjection="true" 
+							autoCenterTransform="true" 
+							duration="1000"
+							target="{busyLogo}" />
+			</s:Sequence>
+		</s:Parallel>
+		
+		<s:Sequence id="fadeOutRequest" effectEnd="requestAnimation.end();">
+			<mx:AnimateProperty  property="alpha" fromValue="1" toValue="0" target="{busyLogo}" duration="1050" />
+		</s:Sequence>
 		
 		<s:Fade id="fadeOutStatus" target="{statusLabel}" alphaFrom="1" alphaTo="0" 
 				effectEnd="fadeOutStatus_effectEndHandler(event)"/>
@@ -713,6 +1390,11 @@
 						 repeatCount="0" 
 						 method="checkOnline" 
 						 repeatDelay="60000"/>
+		
+		<s:Sequence id="notificationMessenger" target="{instantMessengerContainer}" >
+			<mx:AnimateProperty duration="250" fromValue="-2" toValue="28" property="top"/>
+			<mx:AnimateProperty startDelay="3000" duration="250" toValue="-2" fromValue="28" property="top"/>
+		</s:Sequence>
 		
 		<!--
 		Enable CMD click on a display object and get information in the console about it 
@@ -723,7 +1405,15 @@
 							 showStyleInheritanceInformation="false"
 							 showAllStyleDeclarations="false"
 							 showColorUnderMouse="false"
+							 change="miniinspector1_changeHandler(event)"
 							 />
+		
+		<file:LoadFile id="loadFile" 
+					   loadIntoLoader="true"
+					   loaderComplete="loadFile_completeHandler(event)"
+					   >
+			
+		</file:LoadFile>
 	</fx:Declarations>
 	
 	<s:states>
@@ -744,10 +1434,12 @@
 	
 	<!-- HOME SCREEN MENU -->
 	<s:RectangularDropShadow height="380" width="640" 
-							 horizontalCenter="0" verticalCenter="-20"
+							 horizontalCenter="0" 
+							 verticalCenter="-20"
 							 includeIn="home"
 							 blurX="6" blurY="6"
-							 distance="0"/>
+							 distance="0"
+							 />
 	
 	<!-- HOME SCREEN MENU -->
 	<s:BorderContainer height="380" width="640" 
@@ -755,52 +1447,70 @@
 					   includeIn="home">
 		<s:BorderContainer left="0" x="81" top="0" y="82" height="120" 
 						   right="0" borderVisible="false" backgroundColor="#CCCCCC"/>
-		<s:Image id="logo3" x="0" y="0" width="128" height="128" source="{Radii8LibraryAssets.logo256}"
-				 rollOver="{fadeInLogo.play()}" rollOut="{fadeInLogo.play(null, true)}"
+		<s:Image id="mainLogo" x="0" y="0" width="128" height="128" 
+				 source="{Radii8LibraryAssets.logo256}"
+				 rollOver="{fadeInLogo.play()}" 
+				 rollOut="{fadeInLogo.play(null, true)}"
 				 alpha="0"/>
-		<s:BitmapImage id="logo4" x="32" y="32" source="{Radii8LibraryAssets.logo64}"/>
-		<s:Label x="130" y="44" text="Radiate" fontSize="45">
+		<s:BitmapImage id="logo4" x="32" y="32" 
+					   source="{Radii8LibraryAssets.logo64}"/>
+		<s:Label x="130" y="44" text="Radiate" fontSize="45" fontWeight="bold">
 			<s:filters> 
 				<filters:BorderStrokeFilter color="#EEEEEE" weight="1"/>
 				<filters:BorderStrokeFilter color="#DDDDDD" weight="1"/>
-				<filters:BorderStrokeFilter color="#CFCFCF" weight="1"/>
+				<filters:BorderStrokeFilter color="#CFCFCF" weight="2"/>
 			</s:filters>
 		</s:Label>
+		<s:Image id="busyLogo" 
+				 source="{Radii8LibraryAssets.logo256}" 
+				 width="60" height="60"
+				 verticalAlign="middle" 
+				 horizontalAlign="center"
+				 useHandCursor="true"
+				 buttonMode="true"
+				 right="40"
+				 y="10"
+				   includeInLayout="false"
+				   visible="false"
+				 >
+		</s:Image>
 		
 		<s:HGroup left="20" y="170" width="100%" right="20">
 			
-			<s:VGroup width="100%" gap="0">
-				
-				<s:Spacer height="8"/>
-				<renderers:EditableDocumentRenderer id="newProjectButton" label="New Project" width="100%"
-													useHandCursor="true" buttonMode="true"
-													autoDrawBackground="false"/>
-				<renderers:EditableDocumentRenderer id="newDocumentButton" label="New Document" width="100%"
-													useHandCursor="true" buttonMode="true"
-													autoDrawBackground="false"/>
-				<renderers:EditableDocumentRenderer label="Get My Projects" width="100%"
-													useHandCursor="true" buttonMode="true"
-													click="getProjectsByUser_clickHandler(event)"/>
-				<renderers:EditableDocumentRenderer label="Get All Projects" width="100%"
-													useHandCursor="true" buttonMode="true"
-													click="getPublicProjects_clickHandler(event)"/>
+			
+			<s:VGroup width="100%">
+				<c:LabelButton id="examplesLabel" text="Examples" fontWeight="bold" click="examplesLabel_clickHandler(event)"/>
+				<s:Label id="checkingForExampleProjectsLabel" 
+						 text="" 
+						 fontStyle="italic"
+						 color="#989898"
+						 visible="false"
+						 includeInLayout="false"/>
+				<s:List id="examplesList"
+						width="100%" 
+						borderVisible="false"
+						dataProvider="{examplesCollection}"
+						labelField="name"
+						maxHeight="110"
+						height="110"
+						doubleClickEnabled="true"
+						doubleClick="examplesList_doubleClickHandler(event)"
+						change="examplesList_changeHandler(event)"
+						itemRenderer="com.flexcapacitor.views.renderers.ProjectRenderer"
+						/>
 			</s:VGroup>
 			
 			<s:VGroup width="100%">
-				<s:Label text="Projects" fontWeight="bold"/>
+				<c:LabelButton id="projectsLabel" 
+						 text="Projects" 
+						 fontWeight="bold"
+						 click="projectsLabel_clickHandler(event)"/>
 				<s:Label id="checkingForProjectsLabel" 
 						 text="Checking for projects..." 
 						 fontStyle="italic"
 						 color="#989898"
 						 visible="false"
 						 includeInLayout="false"/>
-				
-				<s:Label id="noProjectsLabel" 
-						 text="No projects created..." 
-						 fontStyle="italic"
-						 color="#989898"
-						 visible="{projectsCollection.length==0 &amp;&amp; !radiate.isUserLoggedIn}"
-						 includeInLayout="{projectsCollection.length==0 &amp;&amp; !radiate.isUserLoggedIn}"/>
 				<s:List id="projectsList" 
 						width="100%"
 						maxHeight="110"
@@ -808,47 +1518,67 @@
 						borderVisible="false"
 						dataProvider="{projectsCollection}"
 						labelField="name"
+						doubleClickEnabled="true"
+						doubleClick="projectsList_doubleClickHandler(event)"
 						change="projectsList_changeHandler(event)"
-						itemRenderer="com.flexcapacitor.views.renderers.EditableProjectRenderer"
+						itemRenderer="com.flexcapacitor.views.renderers.ProjectRenderer"
 						/>
 				<s:Label id="projectLastSavedLabel" text="" 
 						 visible="false" includeInLayout="false"/>
 			</s:VGroup>
 			
-			<s:VGroup width="100%">
-				<s:Label text="Examples" fontWeight="bold"/>
-				<s:Label id="noExamplesLabel" 
-						 text="No examples available..." 
-						 fontStyle="italic"
-						 color="#989898"
-						 visible="{examplesCollection.length==0}"
-						 includeInLayout="{examplesCollection.length==0}"/>
-				<s:List width="100%" borderVisible="false"
-						dataProvider="{examplesCollection}"
-						labelField="name"
-						maxHeight="110"
-						/>
-			</s:VGroup>
-			
 			<s:VGroup width="100%" includeInLayout="false" visible="false">
-				<s:Label text="Templates" fontWeight="bold"/>
+				<c:LabelButton text="Templates" fontWeight="bold"/>
 				<s:List width="100%" 
 						dataProvider="{templatesCollection}"
 						/>
 			</s:VGroup>
 			
+			<s:VGroup width="100%">
+				
+				<c:LabelButton text="News and Tutorials" fontWeight="bold" click="news_clickHandler(event)"/>
+				<s:Label id="checkingForNewsLabel" 
+						 text="Checking for news..." 
+						 fontStyle="italic"
+						 color="#989898"
+						 visible="false"
+						 includeInLayout="false"/>
+				<s:List id="newsList" 
+						width="100%"
+						maxHeight="110"
+						height="110"
+						borderVisible="false"
+						dataProvider="{newsCollection}"
+						labelField="title"
+						doubleClickEnabled="true"
+						click="newsList_doubleClickHandler(event)"
+						change="newsList_changeHandler(event)"
+						/>
+				<!--<renderers:ProjectRenderer id="newDocumentButton" label="New Document" width="100%"
+				autoDrawBackground="true"/>
+				<renderers:ProjectRenderer label="Get My Projects" width="100%"
+				click="getProjectsByUser_clickHandler(event)"
+				visible="{radiate.isUserLoggedIn}"
+				includeInLayout="{radiate.isUserLoggedIn}"
+				/>
+				<renderers:ProjectRenderer label="Get All Projects" width="100%"
+				useHandCursor="true" buttonMode="true"
+				click="getPublicProjects_clickHandler(event)"
+				
+				visible="false"
+				includeInLayout="false"/>-->
+			</s:VGroup>
+			
 		</s:HGroup>
 		
 		
-		<s:Label id="statusLabel" top="142" horizontalCenter="0" textAlign="left"/>
+		<s:Label id="statusLabel" top="308" horizontalCenter="0" textAlign="left" fontStyle="italic"/>
 		
 		<s:HGroup bottom="20" left="20" right="20"
 				  width="100%"
 				  verticalAlign="middle">
-			<s:Label id="logoutLabel2" 
+			<c:LabelButton id="logoutLabel2" 
 					 text="Logout" 
-					 useHandCursor="true"
-					 buttonMode="true"
 					 verticalAlign="middle" 
 					 textAlign="center"
 					 styleName="loginLabel"
@@ -856,10 +1586,8 @@
 					 includeInLayout="{radiate.isUserLoggedIn}"
 					 />
 			
-			<s:Label id="loginLabel2" 
+			<c:LabelButton id="loginLabel2" 
 					 text="Login" 
-					 useHandCursor="true"
-					 buttonMode="true"
 					 verticalAlign="middle" 
 					 textAlign="center"
 					 styleName="loginLabel"
@@ -870,10 +1598,8 @@
 			<c:VerticalLine visible="{!radiate.isUserLoggedIn}"
 							includeInLayout="{!radiate.isUserLoggedIn}"/>
 			
-			<s:Label id="registerLabel2" 
+			<c:LabelButton id="registerLabel2" 
 					 text="Register" 
-					 useHandCursor="true"
-					 buttonMode="true"
 					 verticalAlign="middle" 
 					 textAlign="center"
 					 styleName="loginLabel"
@@ -891,36 +1617,47 @@
 				
 				<renderers:ItemRendererButton iconSource="{Radii8LibraryAssets.openFolder}"
 											  label="Open Project"
-											  click="openProject()"
-											  enabled="{projectsList.selectedItem!=null}"
+											  click="openProjectButton_clickHandler(event)"
+											  enabled="{projectsList.selectedItem!=null || examplesList.selectedItem!=null}"
 											  />
-				
 				<renderers:ItemRendererButton id="openPreviousProject" 
 											  iconSource="{Radii8LibraryAssets.openFolder}"
 											  label="Open Previous Project"
 											  click="openLastProject()"
 											  enabled="false"
+											  visible="false"
+											  includeInLayout="false"
 											  />
 				
 				<renderers:ItemRendererButton id="deleteProjectIcon" 
 											  iconSource="{Radii8LibraryAssets.trashCan}"
-											  label="Trash"
+											  label="Remove"
 											  enabled="{projectsList.selectedItem!=null}"
 											  />
+				
+				<renderers:ProjectRenderer id="newProjectButton" 
+										   bottom="20" 
+										   horizontalCenter="0" 
+										   label="New Project" 
+										   autoDrawBackground="true"/>
+				
 				
 			</s:HGroup>
 		</s:HGroup>
 		
 	</s:BorderContainer>
 	
-	<s:Label id="productionLabel" text="Not ready for production work" 
-			 typographicCase="lowercaseToSmallCaps" bottom="60" horizontalCenter="0" 
+	<s:Label id="productionLabel" 
+			 text="Radiate is in development. Email features and bug reports." 
+			 typographicCase="lowercaseToSmallCaps" 
+			 bottom="60" horizontalCenter="0" 
 			 textAlign="left"
 			 color="#888888"
 			 includeIn="home"
+			 fontSize="10"
 			 />
 	
-	<views:Remote id="remote" width="100%" height="100%" top="38" includeIn="design" />
+	<views:Remote id="remote" itemCreationPolicy="immediate" width="100%" height="100%" top="38" includeIn="design" />
 	
 	<s:PopUpAnchor id="logoPopUp" width="100" height="100" top="34" left="10" >
 		<s:Group id="logoPopUpGroup" 
@@ -951,6 +1688,23 @@
 		</s:Group>
 	</s:PopUpAnchor>
 	
+	
+	
+	<!-- MESSAGES BAR --> 
+	<c:BorderContainer id="instantMessengerContainer" 
+					   width="100%" 
+					   height="30" 
+					   top="-2" 
+					   borderColor="#0000ff"
+					   borderAlpha="0" 
+					   borderWeight="0"
+					   borderVisible="false"
+					   backgroundAlpha=".8"
+					   click="instantMessengerContainer_clickHandler(event)">
+		<s:Label id="instantMessageLabel" width="100%" height="100%"
+				 verticalAlign="middle" textAlign="center"/>
+	</c:BorderContainer>
+	
 	<!-- TOP MENU BAR --> 
 	<s:BorderContainer backgroundColor="#3d3d3d"
 					   borderVisible="false"
@@ -966,38 +1720,41 @@
 								gap="8"/>
 		</s:layout>
 		
-		<s:Image id="logo" 
-				 source="{Radii8LibraryAssets.logo}" 
-				 width="20" height="20"
-				 verticalAlign="middle" 
-				 horizontalAlign="center"
-				 includeInLayout="true"
-				 useHandCursor="true"
-				 buttonMode="true"
-				 >
-		</s:Image>
+		<s:Group >
+			<s:Image id="cornerLogo" 
+					 source="{Radii8LibraryAssets.logo}" 
+					 width="20" height="20"
+					 verticalAlign="middle" 
+					 horizontalAlign="center"
+					 includeInLayout="true"
+					 useHandCursor="true"
+					 buttonMode="true"
+					 click="cornerLogo_clickHandler(event)"
+					 >
+			</s:Image>
+		</s:Group>
 		
 		<s:Spacer width="-6"/>
 		
-		<s:Label text="RADII8" 
+		<c:LabelButton text="RADIATE" 
 				 fontSize="12" 
 				 fontWeight="bold"
 				 color="#ffffff"
 				 paddingTop="2"
 				 top="10"
 				 left="10"
-				 buttonMode="true"
-				 useHandCursor="true"
 				 click="logo_clickHandler(event)"/>
-		<s:Label text="alpha" 
-				 fontSize="8" 
+		<s:Label text="beta" 
+				 fontSize="7" 
 				 fontWeight="bold"
 				 color="#ffffff"
 				 paddingBottom="6"
 				 top="10"
 				 left="10"/>
 		
-		<c:VerticalLine includeIn="design"/>
+		<c:VerticalLine id="mainMenuBarLine" 
+						itemCreationPolicy="immediate"
+						includeIn="design"/>
 		
 		<mx:MenuBar id="mainMenuBar" 
 					dataProvider="{rootMenu}"
@@ -1007,6 +1764,7 @@
 					buttonMode="true"
 					showRoot="false"
 					includeIn="design"
+					itemCreationPolicy="immediate"
 					menuShow="menuItemEventHandler(event)" 
 					menuHide="menuItemEventHandler(event)"
 					itemClick="menuItemEventHandler(event)" 
@@ -1015,53 +1773,11 @@
 					change="menuItemEventHandler(event)"
 					>
 		</mx:MenuBar>
-		<!--
-		<mx:PopUpMenuButton id="p1"
-		showRoot="true"
-		useHandCursor="true"
-		buttonMode="true"
-		dataProvider="{popUpMenuDataProvider}" 
-		openAlways="true"
-		rollOver="p1.open()"
-		color="#EEEEEE"
-		paddingBottom="1"
-		skin="com.flexcapacitor.skins.PopUpButtonSkin"
-		visible="false"
-		includeInLayout="false"
-		/>-->
 		
 		<s:Spacer width="100%"/>
 		
-		<!--<s:CheckBox id="loadCompatible" label="Compatible" selected="false" visible="false"/>
-		<s:CheckBox id="trustContent" label="Trust Content" selected="true" visible="false"/>
-		<s:TextInput id="appURL" width="90%" prompt="Enter a URL to a SWF" text="" visible="false" enter="textinput1_enterHandler(event)"/>
-		<s:Label id="loadLabel" 
-		text="Load" 
-		useHandCursor="true"
-		buttonMode="true"
-		verticalAlign="middle" 
-		textAlign="center"
-		click="loadProject_clickHandler(event)" 
-		visible="false"/>
-		<s:Label id="resetLabel" 
-		text="Restore" 
-		verticalAlign="middle" 
-		textAlign="center"
-		visible="false"
-		includeInLayout="false"
-		click="loadNewProject_clickHandler(event)" />
-		<s:Label id="closeLabel" 
-		text="Close" 
-		verticalAlign="middle" 
-		textAlign="center"
-		visible="false"
-		includeInLayout="false"
-		click="closeLabel_clickHandler(event)" />-->
-		
-		<s:Label id="loginLabel" 
+		<c:LabelButton id="loginLabel" 
 				 text="Login" 
-				 useHandCursor="true"
-				 buttonMode="true"
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
@@ -1078,10 +1794,8 @@
 				 />
 		
 		
-		<s:Label id="registerLabel" 
+		<c:LabelButton id="registerLabel" 
 				 text="Register" 
-				 useHandCursor="true"
-				 buttonMode="true"
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
@@ -1093,45 +1807,58 @@
 						includeInLayout="{!radiate.isUserLoggedIn}"
 						/>
 		
-		<s:Label id="userLabel" 
+		<c:LabelButton id="userLabel" 
 				 text="Hello, {radiate.userDisplayName}" 
-				 useHandCursor="true"
-				 buttonMode="true"
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
+				 toolTip="Open website dashboard"
 				 visible="{radiate.isUserLoggedIn}"
 				 includeInLayout="{radiate.isUserLoggedIn}"
+				 click="userLabel_clickHandler(event)"
 				 />
 		
 		<s:Image id="userIcon" 
 				 width="22" height="22" 
 				 top="3"
+				 useHandCursor="true"
+				 buttonMode="true"
 				 source="{radiate.userAvatar}"
 				 showErrorSkin="false"
 				 smooth="true"
 				 clearOnLoad="false"
+				 toolTip="Open website profile"
 				 securityError="userIcon_securityErrorHandler(event)"
 				 ioError="userIcon_ioErrorHandler(event)"
+				 click="userIcon_clickHandler(event)"
 				 />
+		
+		<c:VerticalLine />
+		
+		<c:LabelButton id="visitSiteLabel" 
+				 text="Visit Site" 
+				 verticalAlign="middle" 
+				 textAlign="center"
+				 color="#DDDDDD"
+				 visible="{radiate.isUserLoggedIn}"
+				 includeInLayout="{radiate.isUserLoggedIn}"
+				 click="visitSiteLabel_clickHandler(event)"
+				 />
+		
 		
 		<c:VerticalLine 
 			visible="{radiate.isUserLoggedIn}"
 			includeInLayout="{radiate.isUserLoggedIn}"/>
 		
-		<s:Label id="logoutLabel" 
+		
+		<c:LabelButton id="logoutLabel" 
 				 text="Logout" 
-				 useHandCursor="true"
-				 buttonMode="true"
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
 				 visible="{radiate.isUserLoggedIn}"
 				 includeInLayout="{radiate.isUserLoggedIn}"
 				 />
-		
-		<c:VerticalLine />
-		
 		
 		<s:ToggleButton id="isConnectedCheckbox" 
 						selected="{radiate.isUserConnected}"
@@ -1139,7 +1866,7 @@
 						useHandCursor="true"
 						buttonMode="true"
 						enabled="true"
-						toolTip="Indicates if Radii8 is reachable."
+						toolTip="Indicates if Radii8 service is reachable. Click to refresh."
 						click="isConnectedCheckbox_clickHandler(event)"
 						/>
 		
@@ -1147,57 +1874,16 @@
 		<!---http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=96 // assets/avatar/gravar-default-96.png -->
 	</s:BorderContainer>
 	
-	<s:PopUpAnchor id="aboutPopUp" width="250" height="250" top="30" left="10" >
-		<s:Group id="popUpGroup" 
-				 mouseEnabledWhereTransparent="true" 
-				 width="250" height="100%" 
-				 >
-			
-			<s:Rect width="100%" height="100%" radiusX="8" radiusY="8">
-				<s:fill>
-					<s:SolidColor color="#ffffff" alpha=".9" />
-				</s:fill>
-				<s:stroke>
-					<s:SolidColorStroke color="#000000" pixelHinting="true" weight="2" />
-				</s:stroke>
-			</s:Rect>
-			
-			<s:VGroup paddingLeft="12" paddingRight="12" paddingTop="12" paddingBottom="12"
-					  gap="8">
-				<s:HGroup verticalAlign="middle">
-					<s:Label text="Build Date:" minWidth="100" /> 
-					<s:Label text="{radiate.buildDate}" /> 
-				</s:HGroup>
-				<s:HGroup verticalAlign="middle">
-					<s:Label text="Build Time:" minWidth="100" /> 
-					<s:Label text="{radiate.buildTime}" /> 
-				</s:HGroup>
-				<s:HGroup verticalAlign="middle">
-					<s:Label text="Build Number:" width="100" />
-					<s:Label text="{radiate.buildNumber}" />
-					<s:Label text="" />
-				</s:HGroup>
-				<s:HGroup verticalAlign="middle">
-					<s:Label id="moreInfoLabel" text="More info" color="blue" fontWeight="bold"
-							 useHandCursor="true" buttonMode="true"/>
-				</s:HGroup>
-				<s:HGroup verticalAlign="middle">
-					<s:Label id="feedbackLabel" text="Feedback" color="blue" fontWeight="bold"
-							 useHandCursor="true" buttonMode="true"/>
-				</s:HGroup>
-			</s:VGroup>
-			<s:filters>
-				<s:DropShadowFilter distance="6" blurX="3" blurY="3" strength=".35"/>
-			</s:filters>
-		</s:Group>
-	</s:PopUpAnchor>
 	
-	
-	<s:Rect width="100%" height="28" bottom="0">
-		<s:fill>
-			<s:SolidColor color="#3d3d3d"/>
-		</s:fill>
-	</s:Rect>
+	<c:BorderContainer width="100%" 
+					   height="28" 
+					   bottom="0" 
+					   backgroundColor="#3d3d3d"
+					   borderWeight="0"
+					   >
+					   <!--click="instantMessageLabel.text='test'; moveInstantMessanger.play()"-->
+
+	</c:BorderContainer>
 	
 	
 	
@@ -1217,22 +1903,35 @@
 		<s:Spacer width="1"/>
 		<c:VerticalLine height="16" />
 		<s:Spacer width="1"/>
-		<s:Label text="Build Date:"  />
+		<!--<s:Label text="Build Date:"  />
 		<s:Label id="buildDate" text="{radiate.buildDate}" />
 		<s:Label text="Build Time:" /> 
 		<s:Label id="buildTime" text="{radiate.buildTime}" />
 		<s:Label text="Build Number:" />
 		<s:Label id="buildNumber" text="{radiate.buildNumber}" />
+		<s:Label text="Version:" />-->
+		<s:Label id="versionNumber" text="{radiate.versionNumber}" />
 		
 		<s:Spacer width="100%"/>
-		<s:Label text="Last saved:"  includeInLayout="{radiate.lastSaveDate!=null}" visible="{radiate.lastSaveDate!=null}"/>
-		<s:Label id="lastSavedDate" text="{radiate.lastSaveDate}" includeInLayout="{radiate.lastSaveDate!=null}" visible="{radiate.lastSaveDate!=null}"/>
-		<c:VerticalLine height="100%" includeInLayout="{radiate.lastSaveDate!=null}" visible="{radiate.lastSaveDate!=null}"/>
+		<s:Label text="Last saved:" includeInLayout="{radiate.lastSaveDateFormatted!=null}" visible="{radiate.lastSaveDateFormatted!=null}"/>
+		<s:Label id="lastSavedDate" text="{radiate.lastSaveDateFormatted}" includeInLayout="{radiate.lastSaveDateFormatted!=null}" visible="{radiate.lastSaveDateFormatted!=null}"/>
+		<c:VerticalLine height="100%" includeInLayout="{false}" visible="{false}"/>
 		
-		<s:Label right="10" 
+		<s:Label id="usefulLabel" 
+				 right="10" 
 				 bottom="6"
 				 textAlign="right" 
-				 text=""
+				 text="{radiate.lastSaveDateDifference}"
+				 />
+		
+		<s:Label id="performanceLabel" 
+				 textAlign="right" 
+				 color="white"
 				 />
 	</s:HGroup>
+	
+	<s:BorderContainer id="dropImagesLocation" width="100%" height="100%" backgroundColor="#04527b" backgroundAlpha=".75" 
+					   visible="false" >
+		<s:Label text="Drop files into the library" verticalCenter="0" horizontalCenter="0" fontSize="58" color="#ffffff"/>
+	</s:BorderContainer>
 </s:Group>

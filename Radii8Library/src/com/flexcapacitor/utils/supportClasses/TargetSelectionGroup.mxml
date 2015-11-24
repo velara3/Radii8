@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:s="library://ns.adobe.com/flex/spark" 
-				
-				autoDrawBackground="false"
 				mouseChildren="false"
 				mouseEnabled="false"
 				buttonMode="false"
 				mouseEnabledWhereTransparent="false"
+				autoDrawBackground="false"
 				width="20" height="20"
 				implements="com.flexcapacitor.utils.supportClasses.ISelectionGroup"
 				>
 	
+<!---->
 	
 	<fx:Script>
 		<![CDATA[
@@ -46,6 +46,20 @@
 				trace("selection group is getting drag events");
 				dispatchEvent(event.clone());
 			}
+			
+			private var _showResizeHandles:Boolean;
+
+			public function get showResizeHandles():Boolean
+			{
+				return _showResizeHandles;
+			}
+
+			public function set showResizeHandles(value:Boolean):void
+			{
+				_showResizeHandles = value;
+				invalidateDisplayList();
+			}
+
 			
 			private var _showSelectionFill:Boolean = true;
 
@@ -158,6 +172,13 @@
 					labelDisplay.visible = false;
 				}
 				
+				if (showResizeHandles) {
+					topRight.visible = true;
+				}
+				else {
+					topRight.visible = false;
+				}
+				
 			}
 			
 			
@@ -165,7 +186,7 @@
 	</fx:Script>
 	
 	
-	<s:Rect id="selectionFill"  width="{width}" height="{height}">
+	<s:Rect id="selectionFill" width="{width}" height="{height}">
 		<s:fill>
 			<s:SolidColor color="0x2da6e9" alpha=".08" />
 		</s:fill>
@@ -176,6 +197,27 @@
 			<s:SolidColorStroke color="0x2da6e9" weight="0" alpha="1"/>
 		</s:stroke>
 	</s:Rect>
+	
+	<!-- BOTTOM RIGHT DRAG BOX -->
+	<!--<s:Rect id="dragRectangle" width="16" height="16" right="-8" bottom="-8" >
+	<s:stroke>
+	<s:SolidColorStroke color="0x2da6e9" weight="0" alpha="1"/>
+	</s:stroke>
+	</s:Rect>-->
+	
+	<s:BorderContainer id="topRight" 
+					   visible="false"
+					   width="8" height="8" 
+								right="-4" top="-4"
+								borderColor="#0000FF" 
+								borderWeight="1" 
+								backgroundColor="#0000FF"
+								backgroundAlpha="1"
+								rollOver="trace('rollover')"
+								rollOut="trace('roll out')"
+								click="trace('clicked')">
+	
+	</s:BorderContainer>
 	
 	<s:Label id="labelDisplay" 
 			 top="-14"

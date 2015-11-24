@@ -4,8 +4,7 @@ package com.flexcapacitor.model {
 	
 	import flash.utils.Dictionary;
 	
-	import mx.collections.ArrayCollection;
-	import mx.core.IVisualElement;
+	import mx.collections.ListCollectionView;
 	
 	
 	/**
@@ -44,6 +43,12 @@ package com.flexcapacitor.model {
 		function set containerTypeName(value:String):void;
 		
 		/**
+		 * Language to export this document to
+		 * */
+		function get language():String;
+		function set language(value:String):void;
+		
+		/**
 		 * Reference to the document instance. 
 		 * */
 		function get instance():Object;
@@ -58,8 +63,20 @@ package com.flexcapacitor.model {
 		/**
 		 * Collection of history events
 		 * */
-		function get history():ArrayCollection;
-		function set history(value:ArrayCollection):void;
+		function get history():ListCollectionView;
+		function set history(value:ListCollectionView):void;
+		
+		/**
+		 * Errors 
+		 * */
+		function get errors():Array;
+		function set errors(value:Array):void;
+		
+		/**
+		 * Warnings 
+		 * */
+		function get warnings():Array;
+		function set warnings(value:Array):void;
 		
 		/**
 		 * Current history event index
@@ -80,7 +97,8 @@ package com.flexcapacitor.model {
 		function set isPreviewOpen(value:Boolean):void;
 		
 		/**
-		 * A dictionary of information about...
+		 * Use this to get a reference to a component description by component instance
+		 * var descriptor:ComponentDescription = selectedDocument.descriptionsDictionary[component];
 		 * */
 		function get descriptionsDictionary():Dictionary;
 		function set descriptionsDictionary(value:Dictionary):void;
@@ -92,9 +110,14 @@ package com.flexcapacitor.model {
 		function set scale(value:Number):void;
 		
 		/**
-		 * Parses the code in the source property or the passed in value if set
+		 * Gets the component description for the item from the component dictionary
 		 * */
-		function parseSource(value:String = null, container:IVisualElement = null):void;
+		function getItemDescription(value:*):ComponentDescription;
+		
+		/**
+		 * Adds the element to the component description dictionary
+		 * */
+		function addComponent(value:*):ComponentDescription;
 		
 		/**
 		 * Resets the save status after loading a document

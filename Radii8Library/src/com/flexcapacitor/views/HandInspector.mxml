@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:g="com.flexcapacitor.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:filters="com.flexcapacitor.filters.*"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:c="com.flexcapacitor.controls.*" 
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
+		 xmlns:status="com.flexcapacitor.effects.status.*" 
+		 
+		 creationComplete="group1_creationCompleteHandler(event)" 
+		 >
+
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.tools.Hand;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.events.FlexEvent;
+			
+			public var radiate:Radiate;
+			public var color:uint;
+			public var tool:ITool;
+			private var isOverDocument:Boolean;
+			
+			/**
+			 * 
+			 * */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				//radiate.addEventListener(RadiateEvent.COLOR_SELECTED, colorSelectedHandler, false, 0, true);
+				//radiate.addEventListener(RadiateEvent.COLOR_PREVIEW, colorPreviewHandler, false, 0, true);
+				
+				tool = radiate.selectedTool;
+				
+				//Hand(tool).addEventListener(MouseEvent.ROLL_OUT, rollOutHandler, false, 0, true);
+				//Hand(tool).addEventListener(MouseEvent.ROLL_OVER, rollOverHandler, false, 0, true);
+				//EyeDropper(tool).addEventListener(MouseEvent.MOUSE_MOVE, rollOverHandler, false, 0, true);
+				
+				//Radiate.info("INSPECTOR TOOL CREATED");
+				
+				updateTool(tool);
+			}
+			
+			/**
+			 * Update UI components to tool settings
+			 * */
+			public function updateTool(tool:ITool):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				
+				if (toolDescription && toolDescription.instance 
+					&& toolDescription.instance is Hand) {
+					var handTool:Hand = Hand(toolDescription.instance);
+					//showSelection.selected = selectionTool.showSelection;
+					//showLabel.selected = selectionTool.showSelectionLabel;
+				}
+			}
+			
+			
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		
+		
+	</fx:Declarations>
+
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="4" />
+	</s:layout>
+	
+</s:Group>

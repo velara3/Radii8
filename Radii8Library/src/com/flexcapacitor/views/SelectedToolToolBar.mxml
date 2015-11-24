@@ -4,12 +4,10 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 
-		 creationComplete="group1_creationCompleteHandler(event)">
+		 creationComplete="group1_creationCompleteHandler(event)"
+		 >
 	
 	
-	<!-- 
-	
-	-->
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
@@ -28,6 +26,9 @@
 			public var componentDescription:ComponentDescription;
 
 			private var _tool:ITool;
+			
+			[Bindable]
+			public var hasInspector:Boolean;
 			
 			public function get tool():ITool {
 				return _tool;
@@ -65,6 +66,9 @@
 				var inspectorInstance:UIComponent;
 				
 				if (tool!=newTool) {
+					if (inspectorInstance && inspectorInstance is IInspector) {
+						IInspector(inspectorInstance).deactivate();
+					}
 					removeAllElements();
 				}
 				
@@ -76,7 +80,17 @@
 					
 					if (inspectorInstance) {
 						addElement(inspectorInstance);
+						if (inspectorInstance is IInspector) {
+							IInspector(inspectorInstance).activate();
+						}
+						hasInspector = true;
 					}
+					else {
+						hasInspector = false;
+					}
+				}
+				else {
+					hasInspector = false;
 				}
 			}
 		]]>

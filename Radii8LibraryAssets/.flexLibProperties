@@ -1,6 +1,37 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
   <includeClasses/>
-  <includeResources/>
+  <includeResources>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/js/vendor/jquery-1.11.3.min.js" sourcePath="assets/templates/html5-boilerplate_v5.2.0/js/vendor/jquery-1.11.3.min.js"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/css/main.css" sourcePath="assets/templates/html5-boilerplate_v5.2.0/css/main.css"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/tile.png" sourcePath="assets/templates/html5-boilerplate_v5.2.0/tile.png"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/js.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/js.md"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/LICENSE.txt" sourcePath="assets/templates/html5-boilerplate_v5.2.0/LICENSE.txt"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/.editorconfig" sourcePath="assets/templates/html5-boilerplate_v5.2.0/.editorconfig"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/404.html" sourcePath="assets/templates/html5-boilerplate_v5.2.0/404.html"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/js/plugins.js" sourcePath="assets/templates/html5-boilerplate_v5.2.0/js/plugins.js"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/apple-touch-icon.png" sourcePath="assets/templates/html5-boilerplate_v5.2.0/apple-touch-icon.png"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/.gitignore" sourcePath="assets/templates/html5-boilerplate_v5.2.0/.gitignore"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/misc.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/misc.md"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/crossdomain.xml" sourcePath="assets/templates/html5-boilerplate_v5.2.0/crossdomain.xml"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/favicon.ico" sourcePath="assets/templates/html5-boilerplate_v5.2.0/favicon.ico"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/html.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/html.md"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/.gitattributes" sourcePath="assets/templates/html5-boilerplate_v5.2.0/.gitattributes"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/img/.gitignore" sourcePath="assets/templates/html5-boilerplate_v5.2.0/img/.gitignore"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/js/vendor/modernizr-2.8.3.min.js" sourcePath="assets/templates/html5-boilerplate_v5.2.0/js/vendor/modernizr-2.8.3.min.js"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/js/main.js" sourcePath="assets/templates/html5-boilerplate_v5.2.0/js/main.js"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/extend.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/extend.md"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/robots.txt" sourcePath="assets/templates/html5-boilerplate_v5.2.0/robots.txt"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/browserconfig.xml" sourcePath="assets/templates/html5-boilerplate_v5.2.0/browserconfig.xml"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/humans.txt" sourcePath="assets/templates/html5-boilerplate_v5.2.0/humans.txt"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/css/normalize.css" sourcePath="assets/templates/html5-boilerplate_v5.2.0/css/normalize.css"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/faq.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/faq.md"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/tile-wide.png" sourcePath="assets/templates/html5-boilerplate_v5.2.0/tile-wide.png"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/.htaccess" sourcePath="assets/templates/html5-boilerplate_v5.2.0/.htaccess"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/index.html" sourcePath="assets/templates/html5-boilerplate_v5.2.0/index.html"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/css.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/css.md"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/TOC.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/TOC.md"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/usage.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/usage.md"/>
+  </includeResources>
   <namespaceManifests/>
 </flexLibProperties>

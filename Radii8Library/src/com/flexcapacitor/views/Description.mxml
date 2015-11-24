@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
-		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 
 		 width="100%" 
 		 xmlns:controls="com.flexcapacitor.controls.*" 
-		 creationComplete="group2_creationCompleteHandler(event)">
+		 creationComplete="group2_creationCompleteHandler(event)"
+		 >
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.events.InspectorEvent;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.utils.InspectorUtils;
+			import com.flexcapacitor.utils.ClassUtils;
 			
-			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			
 			[Bindable]
@@ -83,27 +83,22 @@
 				if (value==null) {
 					_target = null;
 					selectedItemDescription = "No Selection";
-					enabled = false;
 					return;
-				}
-				else {
-					enabled = true;
 				}
 				
 				_target = value;
 				
-				var parentName:String = target is UIComponent ? InspectorUtils.getClassName(UIComponent(target).parentDocument) : "";
 				
 				// description of target  
-				selectedItemQualifiedClass 			= InspectorUtils.getQualifiedClassName(target);
-				selectedItemClass 					= InspectorUtils.getClassName(target);
-				selectedItemName 					= InspectorUtils.getName(target);
-				selectedItemID 						= InspectorUtils.getIdentifier(target) || "";
-				selectedItemSuperClass 				= InspectorUtils.getSuperClassName(target);
-				selectedItemSuperClassPackage 		= InspectorUtils.getSuperClassPackage(target);
-				selectedItemPackage 				= InspectorUtils.getPackageName(target);
-				selectedItemParentDocument			= InspectorUtils.getParentDocumentName(target) || "";
-				selectedItemDocument 				= InspectorUtils.getDocumentName(target) || "";
+				selectedItemQualifiedClass 			= ClassUtils.getQualifiedClassName(target);
+				selectedItemClass 					= ClassUtils.getClassName(target);
+				selectedItemName 					= ClassUtils.getName(target);
+				selectedItemID 						= ClassUtils.getIdentifier(target) || "";
+				selectedItemSuperClass 				= ClassUtils.getSuperClassName(target);
+				selectedItemSuperClassPackage 		= ClassUtils.getSuperClassPackage(target);
+				selectedItemPackage 				= ClassUtils.getPackageName(target);
+				selectedItemParentDocument			= ClassUtils.getParentDocumentName(target) || "";
+				selectedItemDocument 				= ClassUtils.getDocumentName(target) || "";
 				
 				// example, if ID exists, "myButtonID:Button in MyComponent"
 				// if ID isn't set, "Button0 in MyComponent"
@@ -114,41 +109,11 @@
 				}
 			}
 			
-			/**
-			 * Notify host components when we change the target
-			 * */
-			public function changeTarget(newTarget:Object):void {
-				var selectionChangeEvent:InspectorEvent = new InspectorEvent(InspectorEvent.CHANGE);
-				selectionChangeEvent.targetItem = newTarget;
-				dispatchEvent(selectionChangeEvent);
-			}
-			
-			/**
-			 * Go to the next state
-			 * */
-			protected function group1_clickHandler(event:MouseEvent):void {
-				var selectedStateIndex:int = includedItems.indexOf(currentState);
-				
-				if (selectedStateIndex==-1 || selectedStateIndex + 1==includedItems.length) {
-					currentState = includedItems.length>0 ? includedItems[0] : "";
-				}
-				else {
-					currentState = includedItems[selectedStateIndex+1];
-				}
-
-			}
-			
-			/**
-			 * Copies the value displayed to the clipboard
-			 * */
-			public function copySelectedValue():void {
-				InspectorUtils.copyToClipboard(descriptionTextValue.text);
-			}
 			
 			public var radiate:Radiate = Radiate.instance;
 			
 			protected function group2_creationCompleteHandler(event:FlexEvent):void {
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				//radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 			}
 			
 			protected function targetChangeHandler(event:RadiateEvent):void {
@@ -174,69 +139,44 @@
 		<s:State name="parentDocument"/>
 	</s:states>
 	
-	<s:HGroup width="100%" verticalAlign="middle">
-		<s:Image source="{Radii8LibraryAssets.componentIcon}" 
-				 height="16" 
-				 width="16"
-				 source.document="{Radii8LibraryAssets.componentIcon}" 
-				 includeInLayout="{showIcon}"
-				 source.package="{Radii8LibraryAssets.packageIcon}" 
-				 visible="{showIcon}"
-				 useHandCursor="true" 
-				 mouseChildren="false" 
-				 buttonMode="true"
-				 toolTip="The document that contains this item"/>
-		
-		<s:Label id="descriptionTextName" paddingTop="4"
-				 minWidth="50"
-				 color="#2F3030" fontWeight="bold"
-				 includeInLayout="{showDescriptionLabel}"
-				 visible="{showDescriptionLabel}"
-				 text.normal=""
-				 text.class="Class:"
-				 text.id="ID:   "
-				 text.name="Name:"
-				 text.document="Document:"
-				 text.package="Package:"
-				 text.parentDocument="Parent Document:"
-				 text.superClass="Super Class:"
-				 useHandCursor="true" 
-				 mouseChildren="false" 
-				 buttonMode="true"
-				 click="group1_clickHandler(event)"/>
+	<s:Form >
+		<s:layout>
+			<s:FormLayout paddingBottom="0" paddingTop="0" gap="-4"/>
+		</s:layout>
+		<s:FormItem label="Class:"><s:Label >{selectedItemClass}</s:Label></s:FormItem>
+		<!--<s:FormItem label="Identity:"><s:Label >{selectedItemID}</s:Label></s:FormItem>
+		<s:FormItem label="Name:"><s:Label >{selectedItemName}</s:Label></s:FormItem>-->
+		<s:FormItem label="Super Class:"><s:Label >{selectedItemSuperClass}</s:Label></s:FormItem>
+		<s:FormItem label="Document:"><s:Label >{selectedItemDocument}</s:Label></s:FormItem>
+		<s:FormItem label="Package:"><s:Label >{selectedItemPackage}</s:Label></s:FormItem>
+		<s:FormItem label="Parent Document:"><s:Label >{selectedItemParentDocument}</s:Label></s:FormItem>
+	</s:Form>
+	<!--
 		
 		<s:RichText id="descriptionTextValue" 
 					width="100%" 
 					paddingTop="4"
-					maxDisplayedLines="1"
-					color="#2F3030" fontWeight="normal"
-					text.normal="{selectedItemDescription}" 
-					text.class="{selectedItemClass}"
-					text.id="{selectedItemID}"
-					text.name="{selectedItemName}"
-					text.superClass="{selectedItemSuperClass}"
-					text.document="{selectedItemDocument}"
-					text.package="{selectedItemPackage}"
-					text.parentDocument="{selectedItemParentDocument}"
-					/>
-		<mx:UIComponent width="100%"
-						includeInLayout="{showCopyIcon}"
-						visible="{showCopyIcon}"/>
+					color="#2F3030" 
+					fontWeight="normal"
+					>
+			<s:textFlow>
+				<s:TextFlow fontFamily="Arial" fontSize="10" paddingBottom="2" paddingLeft="2" paddingRight="2" paddingTop="2" 
+						  whiteSpaceCollapse="preserve" 
+						  xmlns="http://ns.adobe.com/textLayout/2008">
+					<s:p tabStops="s155" ><s:span>Class:<s:tab/>{selectedItemClass}</s:span></s:p>
+					<s:p tabStops="s155" ><s:span>Identity:<s:tab/>{selectedItemID}</s:span></s:p>
+					<s:p tabStops="s155" ><s:span>Name:<s:tab/>{selectedItemName}</s:span></s:p>
+					<s:p tabStops="s155" ><s:span>Super Class:<s:tab/>{selectedItemSuperClass}</s:span></s:p>
+					<s:p tabStops="s155" ><s:span>Document:<s:tab/>{selectedItemDocument}</s:span></s:p>
+					<s:p tabStops="s155" ><s:span>Package:<s:tab/>{selectedItemPackage}</s:span></s:p>
+					<s:p tabStops="s155" ><s:span>Parent Document:<s:tab/>{selectedItemParentDocument}</s:span></s:p>
+				</s:TextFlow>
+			</s:textFlow>
+		</s:RichText>-->
+		<!--<mx:UIComponent width="100%"/>
 		<s:Image source="{Radii8LibraryAssets.copy}" height="16" width="16"
-				 includeInLayout="{showCopyIcon}"
-				 visible="{showCopyIcon}"
 				 useHandCursor="true" mouseChildren="false" buttonMode="true"
-				 click="copySelectedValue()"
-				 toolTip="Copy the text to the clipboard"/>
+				 toolTip="Copy the text to the clipboard"/>-->
 		
-	</s:HGroup>
 	
-	<s:Group width="100%" height="100%" 
-			 click="group1_clickHandler(event)" >
-		<s:Rect width="100%" height="100%" >
-			<s:fill>
-				<s:SolidColor color="0" alpha="0"/>
-			</s:fill>
-		</s:Rect>
-	</s:Group>
 </s:Group>

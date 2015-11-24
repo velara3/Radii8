@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:filters="com.flexcapacitor.filters.*"
+		 
+		 implements="com.flexcapacitor.tools.IToolInspector"
+		 creationComplete="creationCompleteHandler(event)"
+		 >
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.tools.Selection;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.events.FlexEvent;
+			
+			public var radiate:Radiate;
+			
+			public var tool:ITool;
+
+			[Bindable]
+			public var selectionTool:Selection;
+			
+			[Bindable]
+			public var showDropLocation:Boolean;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, handleToolChange, false, 0, true);
+				
+				tool = radiate.selectedTool;
+				
+				updateTool(tool);
+				
+				if (tool) {
+					IEventDispatcher(tool).addEventListener(Selection.KEY_EVENT, keyEventHandler, false, 0, true);
+					IEventDispatcher(tool).addEventListener(Selection.EDIT_EVENT, editEventHandler, false, 0, true);
+				}
+			}
+			
+			protected function handleToolChange(event:RadiateEvent):void {
+				
+				updateTool(event.tool);
+			}
+			
+			/**
+			 * Update UI components to tool value
+			 * */
+			public function updateTool(tool:ITool):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				
+				if (toolDescription && toolDescription.instance 
+					&& toolDescription.instance is Selection) {
+					selectionTool = Selection(toolDescription.instance);
+				}
+			}
+			
+			/**
+			 * Show selection checkbox change handler
+			 * */
+			protected function showSelection_changeHandler(event:Event):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var selectedTool:ITool = tool;
+				
+				if (toolDescription.instance) {
+					var selectionTool:Selection = Selection(toolDescription.instance);
+				}
+				
+			}
+			
+			/**
+			 * Show label change handler
+			 * */
+			protected function showLabel_changeHandler(event:Event):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var selectedTool:ITool = tool;
+				
+				if (toolDescription.instance) {
+					var selectionTool:Selection = Selection(toolDescription.instance);
+				}
+			}
+			
+			protected function editEventHandler(event:Event):void {
+				var targetPath:Object;
+				var direction:String;
+				
+				if (selectionTool.editType==Selection.COPY) {
+					direction = Selection.COPY;
+					targetPath = copyLabel;
+				}
+				else if (selectionTool.editType==Selection.PASTE) {
+					direction = Selection.PASTE;
+					targetPath = pasteLabel;
+				}
+				else if (selectionTool.editType==Selection.UNDO) {
+					direction = Selection.UNDO;
+					targetPath = undoLabel;
+				}
+				else if (selectionTool.editType==Selection.REDO) {
+					direction = Selection.REDO;
+					targetPath = redoLabel;
+				}
+				else {
+					direction = "";
+					targetPath = null;
+				}
+				
+				if (targetPath && fadeOutKeyLabel.isPlaying) {
+					//trace("is playing");
+					fadeOutKeyLabel.end();
+				}
+				
+				if (targetPath) {
+					//trace("showing key press");
+					fadeOutKeyLabel.play([targetPath]);
+				}
+			}
+			
+			protected function keyEventHandler(event:Event):void {
+				var targetPath:Object;
+				var direction:String;
+				
+				if (selectionTool.keyCode==Keyboard.UP) {
+					direction = "up";
+					targetPath = up;
+				}
+				else if (selectionTool.keyCode==Keyboard.DOWN) {
+					direction = "down";
+					targetPath = down;
+				}
+				else if (selectionTool.keyCode==Keyboard.RIGHT) {
+					direction = "right";
+					targetPath = right;
+				}
+				else if (selectionTool.keyCode==Keyboard.LEFT) {
+					direction = "left";
+					targetPath = left;
+				}
+				else {
+					direction = "";
+					targetPath = null;
+				}
+				
+				if (fadeOutKeyLabel.isPlaying) {
+					//trace("is playing");
+					fadeOutKeyLabel.end();
+				}
+				
+				if (targetPath) {
+					//trace("showing key press");
+					fadeOutKeyLabel.play([targetPath]);
+				}
+				
+				if (false) {
+					//keyPressedLabel.text = direction;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Fade id="fadeOutKeyLabel" alphaFrom="1" alphaTo="0" duration="500" />
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="4" verticalAlign="middle"/>
+	</s:layout>
+	
+	
+	<s:Label text="Drop Location: " paddingLeft="4" visible="{showDropLocation}" includeInLayout="{showDropLocation}"/>
+	<s:Label id="dropLocation" text="{selectionTool.dragLocation}" visible="{showDropLocation}" includeInLayout="{showDropLocation}"/>
+
+	<!--- go forward -->
+	<s:Group id="iconGroup" 
+			 minWidth="40"
+			 height="16"
+			 verticalCenter="0"
+			 useHandCursor="false"
+			 buttonMode="false">
+		<s:Path data="M 0 0 L 0 16 L 16 8 L 0 0 Z" height="14" width="14" visible="true">
+			<s:fill>
+				<s:SolidColor id="right" color="#000000" alpha="0"/>
+			</s:fill>
+		</s:Path>
+		<s:Path data="M 8 0 L 8 16 L 0 8 Z" height="14" width="14" visible="true">
+			<s:fill>
+				<s:SolidColor id="left" color="#000000" alpha="0"/>
+			</s:fill>
+		</s:Path>
+		<s:Path data="M 0 8 L 16 8 L 8 0 z" height="14" width="14" visible="true">
+			<s:fill>
+				<s:SolidColor id="up" color="#000000" alpha="0"/>
+			</s:fill>
+		</s:Path>
+		<s:Path data="M 0 0 L 8 8 L 16 0 z" height="14" width="14" visible="true">
+			<s:fill>
+				<s:SolidColor id="down" color="#000000" alpha="0"/>
+			</s:fill>
+		</s:Path>
+		<s:Label id="copyLabel" text="copy" typographicCase="capsToSmallCaps" fontWeight="bold" alpha="0"/>
+		<s:Label id="pasteLabel" text="paste" typographicCase="capsToSmallCaps" fontWeight="bold" alpha="0"/>
+		<s:Label id="undoLabel" text="undo" typographicCase="capsToSmallCaps" fontWeight="bold" alpha="0"/>
+		<s:Label id="redoLabel" text="redo" typographicCase="capsToSmallCaps" fontWeight="bold" alpha="0"/>
+	</s:Group>
+	<!--<s:Label id="keyPressedLabel" text=""/>-->
+	
+</s:Group>

@@ -14,6 +14,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.HistoryManager;
 			
 			import mx.events.FlexEvent;
 
@@ -38,7 +39,7 @@
 			 * 
 			 * */
 			public function redo():void {
-				var historyIndex:int = Radiate.redo(true);
+				var historyIndex:int = HistoryManager.redo(radiate.selectedDocument, true);
 				
 				
 				//Radiate.history.refresh();
@@ -53,7 +54,7 @@
 			 * 
 			 * */
 			public function undo():void {
-				var historyIndex:int = Radiate.undo(true);
+				var historyIndex:int = HistoryManager.undo(radiate.selectedDocument, true);
 				
 				//Radiate.history.refresh();
 				
@@ -63,8 +64,8 @@
 			}
 			
 			public function updateNavigationButtons():void {
-				var historyIndex:int = Radiate.historyIndex;
-				var totalItems:int = Radiate.history ? Radiate.history.length : 0;
+				var historyIndex:int = HistoryManager.historyIndex;
+				var totalItems:int = HistoryManager.history ? HistoryManager.history.length : 0;
 				var hasItems:Boolean = totalItems>0;
 				
 				// has forward history
@@ -91,13 +92,13 @@
 		<s:HorizontalLayout paddingTop="4" verticalAlign="baseline" />
 	</s:layout>
 
-	<c:ImageButton id="backButton" source="{Radii8LibraryAssets.undo}" 
+	<c:BeveledImageButton id="backButton" source="{Radii8LibraryAssets.undo}" 
 						  height="15"
 						  alpha=".8"
 						  click="undo()" 
 						  toolTip="Undo"
 						  />
-	<c:ImageButton id="forwardButton" source="{Radii8LibraryAssets.redo}"
+	<c:BeveledImageButton id="forwardButton" source="{Radii8LibraryAssets.redo}"
 						  height="15"
 						  alpha=".8"
 						  click="redo()" 

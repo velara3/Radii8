@@ -37,6 +37,12 @@ package com.flexcapacitor.model {
 		function get source():String;
 		
 		/**
+		 * Set the template for a document
+		 * */
+		function get template():String;
+		function set template(value:String):void;
+		
+		/**
 		 * Reference to the document
 		 * */
 		function set document(value:IDocument):void;
@@ -61,6 +67,12 @@ package com.flexcapacitor.model {
 		function get isChanged():Boolean;
 		
 		/**
+		 * Is example 
+		 * */
+		function set isExample(value:Boolean):void;
+		function get isExample():Boolean;
+		
+		/**
 		 * Indicates if last save was successful. Only valid immediately after call to save. 
 		 * */
 		function set saveSuccessful(value:Boolean):void;
@@ -77,6 +89,12 @@ package com.flexcapacitor.model {
 		 * */
 		function set saveInProgress(value:Boolean):void;
 		function get saveInProgress():Boolean;
+		
+		/**
+		 * If connected to WordPress represents the post object 
+		 * */
+		function set post(value:Object):void;
+		function get post():Object;
 		
 		/**
 		 * True if open is in progress. 
@@ -125,6 +143,16 @@ package com.flexcapacitor.model {
 		 * Close the document 
 		 * */
 		function close():void;
+		
+		/**
+		 * Mark the document changed or dirty.
+		 * */
+		function markDirty():void;
+		
+		/**
+		 * Mark the document not changed or dirty.
+		 * */
+		function markClean():void;
 		
 		/**
 		 * Get source of document such as MXML, HTML, etc

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:c="com.flexcapacitor.controls.*"
@@ -9,10 +9,14 @@
 		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*"
 		 xmlns:file="com.flexcapacitor.effects.file.*"
 		 xmlns:fc="com.flexcapacitor.effects.popup.*"
+		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*"
 		 
 		 implements="com.flexcapacitor.views.IInspector" 
-		 
-		 width="400" height="300"
+		 width="400" 
+		 height="100%" 
+		 paddingLeft="8" 
+		 paddingRight="8" 
+		 paddingBottom="8" 
 		 >
 	
 	<!-- 
@@ -33,31 +37,31 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.DragDropEvent;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.managers.layoutClasses.LayoutDebugHelper;
 			import com.flexcapacitor.model.AttachmentData;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.services.WPAttachmentService;
+			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.DragManagerUtil;
 			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
-			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.IInspector;
+			import com.flexcapacitor.views.ImageView;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			
+			import mx.containers.VDividedBox;
 			import mx.core.ClassFactory;
+			import mx.core.DragSource;
+			import mx.core.UIComponent;
 			import mx.events.DragEvent;
-			import mx.events.FlexEvent;
-			import mx.managers.ISystemManager;
-			import mx.managers.SystemManagerGlobals;
+			import mx.managers.DragManager;
 			
 			import spark.components.Application;
 			import spark.components.Group;
 			import spark.components.Image;
 			import spark.components.Label;
 			import spark.events.IndexChangeEvent;
-			import spark.primitives.BitmapImage;
 			
 			[Bindable]
 			private var radiate:Radiate;
@@ -70,19 +74,6 @@
 			
 			public var fileReference:FileReference;
 			
-			
-			/**
-			 *  
-			 * */
-			protected function creationCompleteHandler(event:FlexEvent):void {
-				/*radiate = Radiate.getInstance();
-				
-				radiate.addEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived, false, 0, true);
-				radiate.addEventListener(RadiateEvent.ASSET_ADDED, assetAdded, false, 0, true);
-				radiate.addEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved, false, 0, true);
-				
-				updateAssets();*/
-			}
 			
 			
 			public function activate():void {
@@ -150,7 +141,7 @@
 				
 				
 				if (!dragManagerInstance) {
-					dragManagerInstance = new DragManagerUtil();
+					dragManagerInstance = DragManagerUtil.getInstance();
 				}
 				
 				rowGroup.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
@@ -158,6 +149,7 @@
 				
 				//dragManagerInstance.listenForDragBehavior(rowGroup, application, event, component);
 				dragManagerInstance.listenForDragBehavior(rowGroup, iDocument, event, component);
+				
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
 				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
@@ -199,7 +191,7 @@
 				// if text based or combo box we need to prevent 
 				// interaction with cursor
 				
-				// UPDATE THIS IN DRAG DROP COMPLETE
+				// UPDATE THIS IN HANDLE DRAG DROP COMPLETE
 				/*
 				if (component is TextBase || component is SkinnableTextBase) {
 					component.mouseChildren = false;
@@ -214,20 +206,6 @@
 				
 				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
 			}
-
-		    private static var _layoutDebugHelper:LayoutDebugHelper;
-		    
-		    public static function get debugHelper():LayoutDebugHelper
-		    {
-		        if (!_layoutDebugHelper)
-		        {
-		            _layoutDebugHelper = new LayoutDebugHelper();
-		            _layoutDebugHelper.mouseEnabled = false;
-		            var sm:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0]
-		            sm.addChild(_layoutDebugHelper);
-		        }
-		        return _layoutDebugHelper;
-		    }
 			
 			private function deferredInstanceFromFunction():Array {
 				var label:Label = new Label();
@@ -239,7 +217,6 @@
 			 * is not canceled this event happens. 
 			 * */
 			protected function handleDragDropComplete(event:DragDropEvent):void {
-				var o:LayoutDebugHelper = debugHelper;
 				var component:Object = event.draggedItem;
 				var image:Image = component as Image;
 				var attachmentData:AttachmentData = selectedItem as AttachmentData;
@@ -320,7 +297,7 @@
 			
 			protected function handleDragOver(event:Event):void {
 				
-				//Radiate.log.info("target: " + dragManagerInstance.lastTargetCandidate);
+				//Radiate.info("target: " + dragManagerInstance.lastTargetCandidate);
 				//dropTargetLabel.text = "Drag over: " + dragManagerInstance.dropTargetName;
 			}
 			
@@ -335,29 +312,6 @@
 			}
 			
 
-			/**
-			 * Pressing enter would retrieve the style value.
-			 * 
-			 * This is no longer necessary since values are updated on property change events. 
-			 * */
-			protected function searchPropertyInput_enterHandler(event:FlexEvent):void {
-				var searchText:String = filterInput.text;
-				var item:XML;
-				
-			}
-			
-			/**
-			 * Move from search text input to properties grid on down arrow key
-			 * */
-			protected function filterInput_keyUpHandler(event:KeyboardEvent):void {
-				/*if (event.keyCode==Keyboard.DOWN) {
-					propertiesGrid.setFocus();
-					if (propertiesGrid.selectedIndex ==-1) {
-						propertiesGrid.setSelectedIndex(0);
-					}
-				}*/
-			}
-			
 			public var SMALL:String = "small";
 			public var MEDIUM:String = "medium";
 			public var FULL:String = "full";
@@ -428,6 +382,16 @@
 				if (selectedItem) {
 					radiate.dispatchObjectSelectedEvent(selectedItem);
 				}
+				
+				
+				if (imageData && openPopUp.popUp) {
+					if (imageData.bitmapData) {
+						ImageView(openPopUp.popUp).data = imageData.bitmapData;
+					}
+					else if (imageData.url) {
+						ImageView(openPopUp.popUp).data = imageData.url;
+					}
+				}
 			}
 			
 			protected function openIcon_clickHandler(event:MouseEvent):void {
@@ -470,9 +434,9 @@
 				var data:ImageData = new ImageData();
 				data.bitmapData = loadFile.bitmapData;
 				data.byteArray = loadFile.data;
-				data.name = loadFile.currentFile.name;
+				data.name = loadFile.currentFileReference.name;
 				data.contentType = loadFile.loaderContentType;
-				data.file = loadFile.currentFile;
+				data.file = loadFile.currentFileReference;
 				
 				radiate.addAsset(data);
 				
@@ -494,7 +458,7 @@
 						uploadAttachment(data);
 					}
 					else {
-						Radiate.log.warn("This item is already uploaded.");
+						Radiate.warn("This item is already uploaded.");
 					}
 				}
 				else {
@@ -523,7 +487,7 @@
 				}
 				
 				if (postID==null) {
-					Radiate.log.info("Please save the document or project first.");
+					Radiate.info("Please save the document or project first.");
 				}
 				
 				if (fileReference) {
@@ -557,6 +521,9 @@
 					// might need to loop through all documents in project
 					DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData);*/
 				}
+				else {
+					Radiate.warn("Upload not successful for some reason");
+				}
 				
 				// cause the list to update and rerender the rows
 				libraryCollection.refresh();
@@ -570,9 +537,11 @@
 				var postID:String = radiate.selectedProject ? radiate.selectedProject.id : null;
 				var id:int;
 				
+				// if not project id then get document id
 				if (postID==null) {
 					postID = radiate.selectedDocument ? radiate.selectedDocument.id : null;
 				}
+				
 				if (postID==null) {
 					id = 0;
 				}
@@ -593,7 +562,7 @@
 			
 			private function updateAssets():void {
 				
-				// not sure why it's not deleteing the last item
+				// not sure why it's not deleting the last item
 				if (radiate.assets.length==0) {
 					// RangeError: Index '-1' specified is out of bounds. 
 					// - when setting source to empty array before hand 
@@ -608,6 +577,146 @@
 				}
 			}
 			
+			/**
+			 * Returns true if it's a type of content we can accept to be dragged and dropped
+			 * */
+			public function acceptableFileFormat(dragSource:DragSource):Boolean {
+				if (dragSource==null) return false;
+				
+				if (dragSource.hasFormat("UIComponent") || 
+					dragSource.hasFormat("air:file list") || 
+					dragSource.hasFormat("air:url")) {
+					return true;
+				}
+				
+				return false;
+			}
+			protected function list_dragEnterHandler(event:DragEvent):void
+			{
+				var dragSource:DragSource = event.dragSource;
+				
+				if (acceptableFileFormat(dragSource)) {
+					DragManager.acceptDragDrop(VDividedBox(event.currentTarget));
+				}
+			}
+			
+			protected function list_dragOverHandler(event:DragEvent):void
+			{
+				if (acceptableFileFormat(event.dragSource)) {
+					DragManager.acceptDragDrop(VDividedBox(event.currentTarget));
+				}
+			}
+			
+			public function list_dragDropHandler(event:DragEvent):void {
+				var initiator:UIComponent;
+				var snapshotTest:Boolean;
+				var snapshot:Object;
+				var data:ImageData;
+				var format:String;
+				var dragSource:DragSource;
+				var hasURLFormat:Boolean;
+				var hasFileListFormat:Boolean;
+				var hasFilePromiseListFormat:Boolean;
+				
+				var isSelf:Boolean = event.dragInitiator ? verticalContainer.contains(event.dragInitiator as DisplayObject) : false;
+				if (isSelf) return;
+				
+				dragSource = event.dragSource;
+				hasURLFormat = dragSource.hasFormat(ClipboardFormats.URL_FORMAT);
+				hasFileListFormat = dragSource.hasFormat(ClipboardFormats.FILE_LIST_FORMAT);
+				hasFilePromiseListFormat = dragSource.hasFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT);
+				
+				
+				if (acceptableFileFormat(dragSource)) {
+					data = new ImageData();
+					initiator = event.dragInitiator as UIComponent;
+					
+					var droppedFiles:Object = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT);
+					var urlFormatData:Object = dragSource.dataForFormat(ClipboardFormats.URL_FORMAT);
+					var path_txt:String;
+					var extension:String;
+					var fileSafeList:Array = [];
+					
+					for each (var file:FileReference in droppedFiles) {
+						extension = file.extension.toLowerCase();
+						
+						if (extension=="png" || extension=="jpg" || extension=="jpeg") {
+							fileSafeList.push(file);
+						}
+						else {
+							path_txt = "Not a recognised file format";  
+						}
+					}
+					
+					if (fileSafeList.length>0) {
+						loadFile.filesArray = fileSafeList;
+						loadFile.play();
+					}
+					
+					if (initiator) {
+						
+						if (snapshotTest) {
+							snapshot = DisplayObjectUtils.getSnapshotWithQuality(initiator);
+						}
+						else {
+							snapshot = DisplayObjectUtils.rasterizeComponentWithQuality(initiator);
+						}
+						
+						if (snapshot is BitmapData) {
+							data.bitmapData = snapshot as BitmapData;
+							data.byteArray = DisplayObjectUtils.getBitmapByteArray(snapshot as BitmapData);
+							data.name = ClassUtils.getIdentifierNameOrClass(initiator) + ".png";
+							data.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
+							data.file = null;
+							
+							radiate.addAsset(data);
+							
+							list.selectedItem = data;
+						}
+						else {
+							Radiate.error("Could not create a snapshot of the selected item. " + snapshot); 
+						}
+					}
+				}
+			}
+			
+			public function list_keyUpHandler(event:KeyboardEvent):void {
+				if (event.keyCode==Keyboard.SPACE) {
+					// show full view of image
+					//trace("space button pressed");
+					var imageData:ImageData = list.selectedItem as ImageData;
+					
+					if (imageData) {
+						if (imageData.bitmapData) {
+							openPopUp.data = ImageData(list.selectedItem).bitmapData;
+						}
+						else if (imageData.url) {
+							openPopUp.data = imageData.url;
+						}
+					}
+					
+					if (openPopUp.popUp==null || openPopUp.popUp.stage==null) {
+						openPopUp.play();
+					}
+					
+				}
+				if (event.keyCode==Keyboard.ESCAPE) {
+					openPopUp.close();
+				}
+			}
+			
+			protected function openInBrowserButton_clickHandler(event:MouseEvent):void
+			{
+				var imageData:ImageData = list.selectedItem as ImageData;
+				
+				if (imageData && imageData.url) {
+					Radiate.openInBrowser(imageData);
+				}
+				else {
+					Radiate.warn("You must upload the file before being able to view it online.");
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -618,26 +727,24 @@
 		<handlers:EventHandler eventName="creationComplete" >
 			<collections:SortCollection target="{libraryCollection}" fields="{['name']}" />
 		</handlers:EventHandler>
+
 		
-		<!-- FILTER BY NAME -->
-		<handlers:EventHandler eventName="change" 
-							   targets="{[filterInput,showAllItemsOnEmpty,caseSensitive,searchAtStart]}"
-							   >
-			<collections:FilterCollection target="{libraryCollection}" 
-								   source="{filterInput}" 
-								   sourcePropertyName="text"
-								   fieldName="name"
-								   showAllItemsOnEmpty="{showAllItemsOnEmpty.selected}"
-								   caseSensitive="{caseSensitive.selected}"
-								   searchAtStart="{searchAtStart.selected}"
-								   />
-		</handlers:EventHandler>
-		
+		<!-- PREVIEW -->
+		<fc:OpenPopUp id="openPopUp" 
+						 modalDuration="250"
+						 showDropShadow="true"
+						 popUpType="{ImageView}"
+						 autoCenter="true"
+						 percentWidth="80"
+						 percentHeight="80"
+						 closePreviousInstanceIfOpen="true"
+						 closeOnMouseDownOutside="true"
+						 closeOnMouseDownInside="true"/>
 		
 		<!-- COPY TO THE CLIPBOARD -->
 		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
 			
-			<clipboard:CopyToClipboard data="{imageURLInput.text}" targetAncestor="{this}" allowNullData="true">
+			<clipboard:CopyToClipboard id="copyToClipboard" data="{imageURLInput.text}" targetAncestor="{this}" allowNullData="true">
 				<clipboard:successEffect>
 					<status:ShowStatusMessage message="URL copied to the clipboard"/>
 				</clipboard:successEffect>
@@ -652,7 +759,7 @@
 		</handlers:EventHandler>
 		
 		<!-- BROWSE FOR FILE --> 
-		<handlers:EventHandler eventName="click" target="{browseForFileIcon}">
+		<handlers:EventHandler eventName="click" targets="{[browseForFileIcon,addImageLabel]}">
 			<file:BrowseForFile id="browseForFile"
 								fileTypes="png,jpg,jpeg,gif"
 								targetAncestor="{this}"
@@ -684,16 +791,6 @@
 		</handlers:EventHandler>
 	</fx:Declarations>
 	
-	<!--
-	<s:Rect>
-		<s:fill>
-			<s:SolidColor color=""
-		</s:fill>
-	</s:Rect>-->
-	
-	<s:layout>
-		<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingBottom="8"/>
-	</s:layout>
 	
 	<mx:VDividedBox id="verticalContainer" 
 					width="100%" height="100%"
@@ -701,32 +798,14 @@
 					left="8" 
 					right="8" 
 					bottom="4"
+					dragEnter="list_dragEnterHandler(event)"
+					dragDrop="list_dragDropHandler(event)"
+					dragOver="list_dragOverHandler(event)"
 					>
+		<inspectors:SearchCollection dataProvider="{libraryCollection}" 
+									 minHeight="24"
+									 maxHeight="60"/>
 		
-		<s:Group height="24" 
-				 minHeight="24"
-				 maxHeight="60"
-				 width="100%" 
-				 >
-				
-			<c:SearchTextInput id="filterInput" 
-							   left="0" right="0" top="0" 
-							   width="100%"
-							   minWidth="60" 
-							   prompt="Search"
-							   styleName="inputStyles"
-							   enter="searchPropertyInput_enterHandler(event)"
-							   keyUp="filterInput_keyUpHandler(event)"
-							   />
-			
-			<s:HGroup width="100%" top="32" left="4" verticalAlign="baseline">
-				<s:CheckBox id="showAllItemsOnEmpty" label="All" selected="true"/>
-				<s:CheckBox id="caseSensitive" label="Case" selected="false"/>
-				<s:CheckBox id="searchAtStart" label="At start" selected="false"/>
-				<s:Spacer width="100%"/>
-				<s:Label text="Results: {libraryCollection.length}"/>
-			</s:HGroup>
-		</s:Group>
 		
 		
 		<s:List id="list" 
@@ -740,102 +819,9 @@
 				dataProvider="{libraryCollection}"
 				dragStart="list_dragStartHandler(event)"
 				change="list_changeHandler(event)"
+				itemRenderer="com.flexcapacitor.views.renderers.LibraryInspectorRenderer"
+				keyUp="list_keyUpHandler(event)"
 				>
-			<s:itemRenderer>
-				<fx:Component>
-					<s:ItemRenderer width="100%" height="100%" minHeight="32" >
-						<fx:Script>
-							<![CDATA[
-								import com.flexcapacitor.controller.Radiate;
-								import com.flexcapacitor.model.AttachmentData;
-								import com.flexcapacitor.model.ImageData;
-								
-								public var imageData:ImageData;
-								public var attachmentData:AttachmentData;
-								
-								override public function set data(value:Object):void {
-									super.data = value;
-									var path:String;
-									attachmentData = value as AttachmentData;
-									imageData = value as ImageData;
-									
-									if (data) {
-										
-										if (imageData) {
-											if (imageData.thumbnailURL) {
-												iconImage.source = imageData.thumbnailURL;
-											}
-											else if (imageData.bitmapData) {
-												iconImage.source = imageData.bitmapData;
-											}
-										}
-										
-									}
-								
-									// show the upload icon if not uploaded
-									if (attachmentData && attachmentData.id==null) {
-										uploadFileIcon.visible = true;
-										uploadFileIcon.enabled = true;
-									}
-									else {
-										uploadFileIcon.enabled = false;
-										uploadFileIcon.visible = false;
-									}
-								}
-								
-								protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
-									iconImage.source = "assets/images/components/BorderContainer.png";
-								}
-								
-								protected function groupMouseDownHandler(event:MouseEvent):void {
-									outerDocument.rowGroupMouseDownHandler(event, data, itemIndex);
-								}
-								
-								protected function iconImage_securityErrorHandler(event:SecurityErrorEvent):void {
-									Radiate.log.warn("Library: Icon not found");
-								}
-								
-								protected function uploadFileIcon_clickHandler(event:MouseEvent):void {
-									
-									if (!Radiate.getInstance().uploadAttachmentInProgress) {
-										uploadFileIcon.enabled = false;
-										outerDocument.uploadFile(attachmentData);
-									}
-								}
-								
-							]]>
-						</fx:Script>
-						
-						<s:HGroup id="rowGroup" 
-								  width="100%" 
-								  height="100%" 
-								  verticalAlign="middle"
-								  paddingLeft="5" 
-								  mouseEnabledWhereTransparent="true"
-								  mouseDown="groupMouseDownHandler(event)">
-							<s:Image id="iconImage"
-									 smooth="true"
-									 contentLoader="{Radiate.contentCache}"
-									 ioError="iconImage_ioErrorHandler(event)"
-									 securityError="iconImage_securityErrorHandler(event)"
-									 width="30" height="30"
-									 scaleMode="zoom"/>
-							<s:Label id="labelDisplay" 
-									 fontSize="11"/>
-							<s:Spacer width="100%"/>
-							<c:ImageButton id="uploadFileIcon" 
-									 source="{Radii8LibraryAssets.upload}" 
-									 toolTip="Upload"
-									 click="uploadFileIcon_clickHandler(event)"
-									 visible="false"
-									 />
-							<s:Spacer width="1"/>
-						</s:HGroup>
-						
-					</s:ItemRenderer>
-				</fx:Component>
-				
-			</s:itemRenderer>
 		</s:List>
 	
 		
@@ -855,6 +841,20 @@
 				 textAlign="center"
 				 />
 		
+		<c:LabelButton id="addImageLabel" 
+					   text="Click here to add an image to the library or drag and drop images onto the app"
+					   color="#888888"
+					   paddingTop="50"
+					   paddingBottom="50"
+					   paddingLeft="10"
+					   paddingRight="10"
+					   horizontalCenter="0" verticalCenter="0"
+					   visible="{libraryCollection.length==0}" 
+					   includeInLayout="{libraryCollection.length==0}"
+					   width="100%"
+					   textAlign="center"
+					   />
+		
 		<s:Spacer height="100%"/>
 		
 		<s:HGroup width="100%"
@@ -863,10 +863,16 @@
 				 verticalAlign="middle"
 				 >
 			
-			<c:ImageButton id="browseForFileIcon" 
+			<c:BeveledImageButton id="browseForFileIcon" 
 					 source="{Radii8LibraryAssets.newFile}" 
-					 toolTip="Add"
+					 toolTip="Add an image to the document library"
 					 />
+			
+			<c:BeveledImageButton id="openInBrowserButton" 
+								  source="{Radii8LibraryEffectsAssets.play}" 
+								  toolTip="View in the browser"
+								  click="openInBrowserButton_clickHandler(event)"
+								  />
 			
 			
 			<s:TextInput id="imageURLInput" 
@@ -875,10 +881,15 @@
 						   minWidth="60" 
 						   prompt=""
 						   styleName="inputStyles"
+						   includeInLayout="false"
+						   visible="false"
 						   />
 			
-			<s:HGroup verticalAlign="bottom">
-						
+			<s:HGroup verticalAlign="bottom"
+					  includeInLayout="true"
+					  visible="false"
+					  width="100%">
+				<s:Spacer width="4"/>
 				<s:BorderContainer id="thumnailImage" 
 								   width="12" height="12"
 								   backgroundColor="#cccccc"
@@ -920,22 +931,20 @@
 				
 				
 			</s:HGroup>
-			<c:ImageButton id="copyIcon" 
+			<c:BeveledImageButton id="copyIcon" 
 					 source="{Radii8LibraryAssets.copy}" 
 					 toolTip="Copy the image URL to the Clipboard"/>
 			
-			<c:ImageButton id="refreshIcon" 
+			<c:BeveledImageButton id="refreshIcon" 
 					 source="{Radii8LibraryAssets.refresh}" 
 					 toolTip="Refresh"
 					 click="refreshIcon_clickHandler(event)"/>
 			
-			<c:ImageButton id="deleteAttachmentIcon" 
+			<c:BeveledImageButton id="deleteAttachmentIcon" 
 						   source="{Radii8LibraryAssets.trashCan}" 
 						   toolTip="Remove Attachment"
 						   />
 		</s:HGroup>
 	</s:BorderContainer>
 	
-	
-	
-</s:Group>
+</s:VGroup>

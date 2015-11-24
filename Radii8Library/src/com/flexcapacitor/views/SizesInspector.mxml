@@ -32,7 +32,7 @@
 			 * Shows the show center button
 			 * */
 			[Bindable]
-			public var showCenterButton:Boolean = true;
+			public var showCenterButton:Boolean = false;
 			
 			/**
 			 * Shows devices list
@@ -294,7 +294,7 @@
         </s:layout>
 	</s:DropDownList>
 	
-	<c:ImageButton id="centerButton" 
+	<c:BeveledImageButton id="centerButton" 
 			   toolTip="Center"
 			   visible="{showCenterButton}"
 			   includeInLayout="{showCenterButton}"
@@ -303,7 +303,7 @@
 			   height="100%"
 			   />
 	
-	<c:ImageButton id="fitSizeButton" 
+	<c:BeveledImageButton id="fitSizeButton" 
 			   toolTip="Fit"
 			   visible="{showFitSize}"
 			   includeInLayout="{showFitSize}"
@@ -312,7 +312,7 @@
 			   height="100%"
 			   />
 	
-	<c:ImageButton id="actualSizeButton" 
+	<c:BeveledImageButton id="actualSizeButton" 
 			   toolTip="Actual"
 			   visible="{showRestoreSize}"
 			   includeInLayout="{showRestoreSize}"

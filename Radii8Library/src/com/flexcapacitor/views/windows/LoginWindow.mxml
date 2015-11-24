@@ -35,7 +35,11 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.utils.PersistentStorage;
 			import com.flexcapacitor.utils.StoreLogin;
+			
+			import flash.net.navigateToURL;
 			
 			import mx.core.Singleton;
 			import mx.core.mx_internal;
@@ -72,12 +76,19 @@
 				var savePassword:StoreLogin = new StoreLogin();
 				var savePasswordCreated:Boolean;
 				
-				if (ExternalInterface.available) {
+				
+				if (!Radiate.isDesktop) {
 					savePasswordCreated = savePassword.initialize(); // places our javascript onto the page
-					checkForValues();
 				}
 				
+				// todo: Check if user has remember login checked
+				
+				checkForLoginValues();
+				
 				radiate = Radiate.getInstance();
+				
+				serviceManager = ServicesManager.getInstance();
+				
 				//trace("creation");
 				// apply after opened
 				//setStyle("moveEffect", moveEffect);
@@ -86,16 +97,30 @@
 			/**
 			 * Gets form values from page
 			 * */
-			protected function checkForValues():void {
+			protected function checkForLoginValues():void {
 				var savePassword:StoreLogin = new StoreLogin();
-				var loginItems:Array;
+				var loginItems:Array = [];
 				
-				loginItems = savePassword.getFormValues(); // gets existing form values
-				
-				if (loginItems.length>0) {
+				if (!Radiate.isDesktop) {
+					loginItems = savePassword.getFormValues(); // gets existing form values
+					
+					if (loginItems.length>0) {
+						if (currentState=="login") {
+							usernameTextInput.text = loginItems[0];
+							passwordTextInput.text = loginItems[1];
+						}
+					}
+				}
+				else {
 					if (currentState=="login") {
-						usernameTextInput.text = loginItems[0];
-						passwordTextInput.text = loginItems[1];
+						if (usernameTextInput) {
+							var value:Object = PersistentStorage.read(Radiate.USER_STORE);
+							
+							if (value!=null) {
+								usernameTextInput.text = value.u;
+								passwordTextInput.text = value.p;
+							}
+						}
 					}
 				}
 			}
@@ -111,16 +136,31 @@
 			 **/
 			protected function login():void {
 				var savePassword:StoreLogin = new StoreLogin();
-				var setValues:Boolean = savePassword.setFormValues(usernameTextInput.text, passwordTextInput.text);
+				var setValues:Boolean;
 				var results:Boolean;
 				
-				if (rememberLoginCheckbox.selected) {
-					results = savePassword.submitForm();
+				
+				if (!Radiate.isDesktop) {
+					setValues = savePassword.setFormValues(usernameTextInput.text, passwordTextInput.text);
+					
+					if (rememberLoginCheckbox.selected) {
+						results = savePassword.submitForm();
+					}
+					
+				}
+				else {
+					if (PersistentStorage.isSupported) {
+						var user:Object = {};
+						user.u = usernameTextInput.text;
+						user.p = passwordTextInput.text;
+						
+						PersistentStorage.write(Radiate.USER_STORE, user);
+					}
 				}
 				
 				loginWarningsLabel.text = "";
-				radiate.login(usernameTextInput.text, passwordTextInput.text);
-				radiate.addEventListener(RadiateEvent.LOGIN_RESULTS, loginResultsHandler, false, 0, true);
+				serviceManager.login(usernameTextInput.text, passwordTextInput.text);
+				serviceManager.addEventListener(RadiateEvent.LOGIN_RESULTS, loginResultsHandler, false, 0, true);
 				inProgress = true;
 			}
 			
@@ -133,13 +173,15 @@
 			// Let the user type in a name / username and then when they tab to password
 			// 7. check if the browser has filled in the password after username is entered
 			// 8. fill in our password field with the password
-			protected function username_focusOutHandler(event:FocusEvent):void {
+			protected function username_focusOutHandler(event:FocusEvent = null):void {
 				var savePassword:StoreLogin = new StoreLogin();
 				var results:Object;
 				var value:String;
 				
-				// if username or password is blank check for password after supplying username
-				value = savePassword.checkForPassword(usernameTextInput.text);
+				if (!Radiate.isDesktop) {
+					// if username or password is blank check for password after supplying username
+					value = savePassword.checkForPassword(usernameTextInput.text);
+				}
 				
 				if (value!="") {
 					passwordTextInput.text = value;
@@ -149,31 +191,31 @@
 				// set focus on our text field
 				passwordTextInput.setFocus();
 				
-				// we have to focus back on flash because of the javascript we use
-				results = savePassword.setFocusOnFlash();
+				if (!Radiate.isDesktop) {
+					// we have to focus back on flash because of the javascript we use
+					results = savePassword.setFocusOnFlash();
+				}
 				
 			}
 			
 			private function logout():void {
 				logoutWarningsLabel.text = "";
-				radiate = Radiate.getInstance();
-				radiate.addEventListener(RadiateEvent.LOGOUT_RESULTS, logoutResultsHandler, false, 0, true);
-				radiate.logout();
+				serviceManager.addEventListener(RadiateEvent.LOGOUT_RESULTS, logoutResultsHandler, false, 0, true);
+				serviceManager.logout();
 				inProgress = true;
 			}
 			
 			private function register():void {
 				registrationWarningsLabel.text = "";
-				radiate = Radiate.getInstance();
-				radiate.addEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler, false, 0, true);
-				radiate.register(newUsernameTextInput.text, emailTextInput.text);
+				serviceManager.addEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler, false, 0, true);
+				serviceManager.register(newUsernameTextInput.text, emailTextInput.text);
 				inProgress = true;
 			}
 			
 			private function registerUserAndSite():void {
 				registrationWarningsLabel.text = "";
-				radiate.addEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler, false, 0, true);
-				radiate.registerUserAndSite(newUsernameTextInput.text, emailTextInput.text, newSiteTextInput.text, newSiteTitleTextInput.text);
+				serviceManager.addEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler, false, 0, true);
+				serviceManager.registerUserAndSite(newUsernameTextInput.text, emailTextInput.text, newSiteTextInput.text, newSiteTitleTextInput.text);
 				inProgress = true;
 			}
 			
@@ -195,7 +237,7 @@
 			
 			protected function goToLoginState():void {
 				currentState = LOGIN;
-				checkForValues();
+				checkForLoginValues();
 			}
 			
 			protected function goToLostPasswordState():void {
@@ -241,19 +283,19 @@
 				inProgress = true;
 				lostPasswordWarningsLabel.text = "";
 				username = usernameOrEmailTextInput.text;
-				radiate.addEventListener(RadiateEvent.LOST_PASSWORD_RESULTS, onLostPasswordResults, false, 0, true);
-				radiate.lostPassword(usernameOrEmailTextInput.text);
+				serviceManager.addEventListener(RadiateEvent.LOST_PASSWORD_RESULTS, onLostPasswordResults, false, 0, true);
+				serviceManager.lostPassword(usernameOrEmailTextInput.text);
 			}
 			
 			protected function changePasswordButton_clickHandler(event:MouseEvent):void {
 				inProgress = true;
 				changePasswordWarningsLabel.text = "";
-				radiate.addEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS, onChangePasswordResults, false, 0, true);
-				radiate.changePassword(confirmationCodeTextInput.text, username, newPasswordTextInput.text, newPasswordTextInput2.text);
+				serviceManager.addEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS, onChangePasswordResults, false, 0, true);
+				serviceManager.changePassword(confirmationCodeTextInput.text, username, newPasswordTextInput.text, newPasswordTextInput2.text);
 			}
 			
 			protected function generatePasswordButton_clickHandler(event:MouseEvent):void {
-				var password:String = createRandomPassword(12, true, true, true, false);
+				var password:String = createRandomPassword(14, true, true, true, false);
 				newPasswordTextInput.text = password;
 				newPasswordTextInput2.text = password;
 			}
@@ -280,7 +322,7 @@
 				}
 			}
 			
-			protected function cancelButton_clickHandler(event:MouseEvent):void {
+			protected function cancelButton_clickHandler(event:MouseEvent=null):void {
 				callLater(PopUpManager.removePopUp, [this]);
 			}
 			
@@ -300,7 +342,7 @@
 				var label:Label;
 				var message:String = "";
 				
-				radiate.removeEventListener(RadiateEvent.LOGOUT_RESULTS, logoutResultsHandler);
+				serviceManager.removeEventListener(RadiateEvent.LOGOUT_RESULTS, logoutResultsHandler);
 				
 				logoutWarningsLabel.text = "";
 
@@ -332,6 +374,8 @@
 				if (data && data is Object && data.loggedIn==false) {
 					closePopUp.startDelay = closePanelDelay;
 					closePopUp.play();
+					
+					setTimeout(Radiate.info, 1000, ["Logout successful"]);
 				}
 				
 				logoutWarningsLabel.text = message;
@@ -348,7 +392,7 @@
 				var successful:Boolean = event.successful;
 				var errors:Array;
 				
-				radiate.removeEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler);
+				serviceManager.removeEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler);
 				
 				registrationWarningsLabel.text = "";
 		
@@ -430,7 +474,12 @@
 				var message:String = "";
 				var successful:Boolean = event.successful;
 
-				radiate.removeEventListener(RadiateEvent.LOGIN_RESULTS, loginResultsHandler);
+				serviceManager.removeEventListener(RadiateEvent.LOGIN_RESULTS, loginResultsHandler);
+				
+				if (!successful && !data) {
+					loginWarningsLabel.text = "An unknown error has occured. Try again?";
+					return;
+				}
 				
 				loginWarningsLabel.text = "";
 				
@@ -471,6 +520,8 @@
 					dispatchEvent(new Event(LOGIN));
 					closePopUp.startDelay = 250;
 					closePopUp.play();
+					
+					setTimeout(Radiate.info, 1000, ["Login successful. Save any new projects you have started."]);
 				}
 				
 				
@@ -508,7 +559,7 @@
 					}
 				}
 				
-				radiate.removeEventListener(RadiateEvent.LOST_PASSWORD_RESULTS, onLostPasswordResults);
+				serviceManager.removeEventListener(RadiateEvent.LOST_PASSWORD_RESULTS, onLostPasswordResults);
 			}
 			
 			protected function onChangePasswordResults(event:RadiateEvent):void {
@@ -552,14 +603,31 @@
 						changePasswordWarningsLabel.text += error;
 					}
 				}
-					
-				radiate.removeEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS, onChangePasswordResults);
+				
+				serviceManager.removeEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS, onChangePasswordResults);
 			}
 			
 			protected function stateChangeCompleteHandler(event:FlexEvent):void {
 				
 				addMoveEffect();
 				PopUpManager.centerPopUp(this);
+				
+				checkForLoginValues()
+			}
+			
+			protected function loginAtWebsiteLabel_clickHandler(event:MouseEvent):void {
+				var loginURL:String = Radiate.getWPLoginURL();
+				var urlRequest:URLRequest = new URLRequest(loginURL);
+				navigateToURL(urlRequest);
+				addEventListener(Event.ACTIVATE, activateHandler, false, 0, true);
+			}
+			
+			protected function activateHandler(event:Event):void {
+				serviceManager.getLoggedInStatus();
+			}
+			
+			protected function passwordTextInput_enterHandler(event:FlexEvent):void {
+				
 			}
 			
 		]]>
@@ -600,7 +668,7 @@
 	<!-- REGISTRATION -->
 	<s:Label text.register="Please enter a user name and email."
 			 text.registrationWithSite="Please enter a user name, email, site name and title. If you leave the site name and site title blank your username will be used. "
-			 fontSize="13"
+			 
 			 top="70"
 			 right="20"
 			 width="45%"
@@ -616,44 +684,38 @@
 				 includeIn="register, registrationWithSite"
 				 >
 		
-		<s:Label text="Username" fontSize="18" styleName="textInputStyles"/>
+		<s:Label text="Username"  styleName="textInputStyles"/>
 		<s:TextInput id="newUsernameTextInput" 
 					 text="" 
 					 prompt="Username"
 					 minWidth="220"
-					 fontSize="18" 
 					 styleName="textInputStyles"
 					 />
-		<s:Label text="E-mail" fontSize="18" styleName="textInputStyles"/>
+		<s:Label text="E-mail"  styleName="textInputStyles"/>
 		<s:TextInput id="emailTextInput" 
 					 text="" 
 					 prompt="Email"
-					 fontSize="18" 
 					 minWidth="220"
 					 styleName="textInputStyles"
 					 />
 		
 		<!-- registration of site -->
 		<s:Label text="Site Name" 
-				 fontSize="18" 
 				 styleName="textInputStyles"
 				 includeIn="registrationWithSite"/>
 		<s:TextInput id="newSiteTextInput" 
 					 text="" 
 					 prompt="Site name"
 					 minWidth="220"
-					 fontSize="18" 
 					 styleName="textInputStyles"
 					 includeIn="registrationWithSite"
 					 />
 		<s:Label text="Site Title" 
-				 fontSize="18" 
 				 styleName="textInputStyles"
 				 includeIn="registrationWithSite"/>
 		<s:TextInput id="newSiteTitleTextInput" 
 					 text="" 
 					 prompt="Title"
-					 fontSize="18" 
 					 minWidth="220"
 					 styleName="textInputStyles"
 					 includeIn="registrationWithSite"
@@ -677,6 +739,8 @@
 					 visible="{inProgress}"
 					 />
 			<s:Spacer width="100%"/>
+			<s:Button label="Cancel" 
+					  click="cancelButton_clickHandler()"/>
 			<s:Button label="Register" 
 					  click.register="register()" 
 					  click.registrationWithSite="registerUserAndSite()"/>
@@ -687,14 +751,29 @@
 	<!-- LOGIN AFTER REGISTRATION -->
 	<s:TextArea id="loginAfterRegistrationLabel" 
 			 text="A password will be emailed to you. Check your email for login information. If you don't see the email check your spam folder. " 
-			 fontSize="13"
+			 
+			 top="30"
+			 right="20"
+			 width="45%"
+			 height="110"
+			 includeIn="loginAfterRegistration"
+			 editable="false"
+			 borderVisible="false"/>
+
+	<!-- LOGIN AT WEBSITE -->
+	<s:TextArea id="loginAtWebsiteLabel" 
+			 text="You can login using your browser. Click here to continue. When you have logged in switch back to this application." 
+			 
 			 top="30"
 			 right="20"
 			 width="45%"
 			 height="130"
-			 includeIn="loginAfterRegistration"
+			 includeIn="login"
 			 editable="false"
-			 borderVisible="false"/>
+			 click="loginAtWebsiteLabel_clickHandler(event)"
+			 borderVisible="false"
+			 visible="false"
+			 includeInLayout="false"/>
 	
 	<controls:VerticalLine height="60%" horizontalCenter="0" top="20" includeIn="loginAfterRegistration"/>
 	
@@ -707,19 +786,20 @@
 				 includeIn="login"
 				 >
 		
-		<s:Label text="Username" fontSize="18" />
+		<s:Label text="Username" />
 		<s:TextInput id="usernameTextInput" 
 					 text="" 
 					 focusOut="username_focusOutHandler(event)" 
 					 prompt="Username"
-					 fontSize="18" styleName="textInputStyles"
+					 styleName="textInputStyles"
 					 />
-		<s:Label text="Password" fontSize="18" />
+		<s:Label text="Password"  />
 		<s:TextInput id="passwordTextInput" 
 					 text="" 
 					 displayAsPassword="true" 
 					 prompt="Password"
-					 fontSize="18" styleName="textInputStyles"
+					 styleName="textInputStyles"
+					 enter="login()"
 					 />
 		
 		<s:Label id="loginWarningsLabel" 
@@ -754,7 +834,7 @@
 	
 	<!-- LOST PASSWORD -->
 	<s:Label text="Please enter your username or email address. You will receive a passkey to create a new password via email." 
-			 fontSize="14"
+			 
 			 top="30"
 			 right="20"
 			 width="45%"
@@ -771,11 +851,11 @@
 				 includeIn="lostPassword"
 				 >
 		
-		<s:Label text="Username or email" fontSize="18" />
+		<s:Label text="Username or email"  />
 		<s:TextInput id="usernameOrEmailTextInput" 
 					 text="" 
 					 prompt="Username or email"
-					 fontSize="18" styleName="textInputStyles"
+					  styleName="textInputStyles"
 					 width="240" 
 					 keyUp="usernameOrEmailTextInput_keyUpHandler(event)"
 					 />
@@ -806,7 +886,7 @@
 	<!-- LOST PASSWORD CONFIRMATION -->
 	
 	<s:Label text="Check your email.&#xd;&#xd;A message was sent containing a confirmation code. Enter the code here and choose a new password." 
-			 fontSize="14"
+			 
 			 top="70"
 			 right="20"
 			 width="45%"
@@ -822,26 +902,31 @@
 				 includeIn="lostPasswordConfirmation"
 				 >
 		
-		<s:Label text="Confirmation Code" fontSize="18" />
+		<s:Label text="Confirmation Code"  />
 		<s:TextInput id="confirmationCodeTextInput" 
 					 text="" 
-					 fontSize="18" styleName="textInputStyles"
+					  styleName="textInputStyles"
 					 width="240"
 					 />
-		<s:Label text="New Password" fontSize="18" />
+		<s:Label text="New Password"  />
 		<s:TextInput id="newPasswordTextInput" 
 					 text="" 
-					 fontSize="18" styleName="textInputStyles"
+					  styleName="textInputStyles"
 					 width="240"
 					 displayAsPassword="true"
 					 />
-		<s:Label text="Confirm Password" fontSize="18" />
+		<s:Label text="Confirm Password"  />
 		<s:TextInput id="newPasswordTextInput2" 
 					 text="" 
-					 fontSize="18" styleName="textInputStyles"
+					  styleName="textInputStyles"
 					 width="240"
 					 displayAsPassword="true"
 					 />
+		
+		<s:Button id="generatePasswordButton" 
+				  label="Generate Password For Me" 
+				  toolTip="It is recommended that you create a random password and not use a password you use regularly"
+				  click="generatePasswordButton_clickHandler(event)" />
 		
 		<s:Label id="changePasswordWarningsLabel" 
 				 x="15" y="15" 
@@ -860,7 +945,6 @@
 					 visible="{inProgress}"
 					 />
 			<s:Spacer width="100%"/>
-			<s:Button id="generatePasswordButton" label="Generate Password For Me" click="generatePasswordButton_clickHandler(event)" />
 			<s:Button id="changePasswordButton" label="Change Password" click="changePasswordButton_clickHandler(event)" />
 		</s:HGroup>
 		
@@ -869,7 +953,7 @@
 	
 	<!-- PASSWORD CHANGED -->
 	<s:Label text="Your password has been changed!&#xd;&#xd;Please store it in a safe place. Your password has been filled in for you. You may now login. " 
-			 fontSize="13"
+			 
 			 top="50"
 			 right="20"
 			 width="45%"
@@ -889,7 +973,7 @@
 				 includeIn="logout"
 				 >
 		
-		<s:Label text="Are you sure you want to logout?" fontSize="18" />
+		<s:Label text="Are you sure you want to logout?"  />
 		
 		<s:Spacer height="100%"/>
 		

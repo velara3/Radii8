@@ -45,13 +45,32 @@
 						}
 					}
 					
-					labelDisplay.text =  treeListData.label;
+					if (treeListData) {
+						labelDisplay.text = treeListData.label;
+					}
+					else {
+						if (item.name) {
+							labelDisplay.text = item.name;
+						}
+						else {
+							labelDisplay.text = item.className=="application" || item.instance is Application ? "Document" : item.className;
+						}
+					}
 					
+					// show if visible
 					if (item.instance && item.instance.visible) {
 						visibleGroup.visible = true;
 					}
 					else {
 						visibleGroup.visible = false;
+					}
+					
+					// show if item is locked
+					if (item.locked) {
+						lockedGroup.visible = true;
+					}
+					else {
+						lockedGroup.visible = false;
 					}
 				}
 				
@@ -61,16 +80,28 @@
 				else {
 					disclosureGroup.visible = false;
 				}
+				
+				if (item && item.instance is Application) {
+					_visibleButtonGroup.visible = false;
+					hgroup.left = 2;
+				}
+				else {
+					_visibleButtonGroup.visible = true;
+					hgroup.left = 0;
+				}
 			}
 			
 			protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
 				iconImage.source = Radiate.componentsIconNotFoundPath;
-				//Radiate.log.info("LayersRenderer: "+event.text);
+				//Radiate.info("LayersRenderer: "+event.text);
 			}
 
 			protected function visibleGroupClicked():void {
 				var item:ComponentDescription = data as ComponentDescription;
+				if (!item) return;
 				var visible:Boolean = !item.instance.visible;
+				var rootApplicationDescription:ComponentDescription;
+				var visibility:Boolean;
 				
 				// setting visible with history support
 				Radiate.setProperty(item.instance, "visible", visible);
@@ -80,10 +111,16 @@
 				item.visible = visible;
 				visibleGroup.visible = visible;
 				
-				var rootApplicationDescription:ComponentDescription = Tree(owner).dataProvider.getItemAt(0) as ComponentDescription;
-				var visibility:Boolean = DisplayObjectUtils.getGreatestVisibility(IVisualElement(item.instance), rootApplicationDescription); 
-				
-				DisplayObjectUtils.setVisibilityFlag(item, item.visible);
+				if (owner is Tree) {
+					rootApplicationDescription = Tree(owner).dataProvider.getItemAt(0) as ComponentDescription;
+					
+					visibility = DisplayObjectUtils.getGreatestVisibility(IVisualElement(item.instance), rootApplicationDescription); 
+					
+					DisplayObjectUtils.setVisibilityFlag(item, item.visible);
+				}
+				else if (owner) {
+					
+				}
 				//parentVisibleGroup.visible = !visibility;
 				
 			}
@@ -123,19 +160,18 @@
 	</s:states>
 	
 	<s:Group width="100%" height="100%" left="0" right="2">
-		<s:Rect width="100%" height="100%" alpha="1">
+		<s:Rect width="100%" height="100%" alpha="0">
 			<s:fill>
 				<s:SolidColor color="#f6f6f6"/>
 			</s:fill>
 		</s:Rect>
 	</s:Group>
 	
-	<s:HGroup left="0" 
+	<s:HGroup id="hgroup" left="0"
 			  right="0"
 			  gap="2"
 			  verticalCenter="0"
 			  verticalAlign="middle">
-		
 		<s:Spacer width="0"/>
 		
 		<!--- visible -->
@@ -169,15 +205,6 @@
 			</s:fill>
 		</s:Rect>
 		
-		<!--- lock -->
-		<s:Group includeInLayout="false" visible="false">
-			<s:Rect width="16" height="16" alpha=".1">
-				<s:fill>
-					<s:SolidColor color="#666666"/>
-				</s:fill>
-			</s:Rect>
-		</s:Group>
-		
 		<!--- divider -->
 		<s:Rect width="1" height="100%" visible="false" includeInLayout="false">
 			<s:fill>
@@ -207,6 +234,16 @@
 		<s:Label id="labelDisplay" 
 				 fontSize="10"
 				 paddingLeft="3"
+				 paddingTop="1"
 				 typographicCase="lowercaseToSmallCaps"/>
+		
+		<s:Spacer width="100%"/>
+		
+		<!--- lock -->
+		<s:Group id="lockedGroup" visible="false" >
+			<s:BitmapImage source="{Radii8LibraryAssets.locked}" />
+		</s:Group>
+		
+		<s:Spacer width="4"/>
 	</s:HGroup>
 </s:MXTreeItemRenderer>

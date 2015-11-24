@@ -15,12 +15,14 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:filters="com.flexcapacitor.filters.*" 
-		 xmlns:controls="com.flexcapacitor.controls.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
 		 xmlns:inspectors="com.flexcapacitor.inspectors.*"
-
-		 implements="com.flexcapacitor.views.Inspector" 
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
+		 xmlns:status="com.flexcapacitor.effects.status.*" 
 		 
-		 creationComplete="group1_creationCompleteHandler(event)" xmlns:handlers="com.flexcapacitor.handlers.*" xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" xmlns:status="com.flexcapacitor.effects.status.*" 
+		 implements="com.flexcapacitor.views.Inspector" 
+		 creationComplete="group1_creationCompleteHandler(event)" 
 		 >
 	
 	<s:layout>
@@ -190,7 +192,7 @@
 		
 		<!--<s:Spacer width="100%"/>-->
 		
-		<controls:ImageButton id="copyIcon" 
+		<c:BeveledImageButton id="copyIcon" 
 							  source="{Radii8LibraryAssets.copy}" 
 							  filters="{selectFiltersOff}"
 							  toolTip="Copy the search pattern to the Clipboard"/>

@@ -1,18 +1,1294 @@
 package com.flexcapacitor.managers
 {
 	
+	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.events.HistoryEvent;
+	import com.flexcapacitor.events.HistoryEventItem;
+	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.states.AddItems;
+	import com.flexcapacitor.utils.ClassUtils;
+	
 	import flash.events.EventDispatcher;
+	import flash.utils.Dictionary;
+	import flash.utils.getTimer;
+	
+	import mx.collections.ArrayCollection;
+	import mx.collections.IList;
+	import mx.collections.ListCollectionView;
+	import mx.core.ClassFactory;
+	import mx.core.IVisualElement;
+	import mx.core.IVisualElementContainer;
+	import mx.core.UIComponent;
+	import mx.core.mx_internal;
+	import mx.effects.effectClasses.PropertyChanges;
+	import mx.managers.LayoutManager;
+	import mx.utils.ArrayUtil;
+	
+	import spark.components.Application;
+	import spark.components.Group;
+	import spark.components.supportClasses.GroupBase;
+	import spark.layouts.BasicLayout;
+
+	use namespace mx_internal;
 
 	
 	/**
-	 * Track changes
+	* History Management
+	
+	* NOTE: THIS IS WRITTEN THIS WAY TO WORK WITH FLEX STATES AND TRANSITIONS
+	* there is probably a better way but I am attempting to use the flex sdk's
+	* own code to apply changes. we could extract that code, create commands, 
+	* etc but it seemed like less work and less room for error at the time
+	
+	* update oct 27, 2013
+	* i think it would be better to move these calls and data to the document class
+	* then different document types can handle undo, redo in the way that best 
+	* makes sense to it's own needs. 
+	* For example, an text editor will handle undo redo differently than 
+	* a design or application document. 
+	* 
+	* and another way we could do history management is create a sequence and 
+	* add actions to it (SetAction, AddItem, RemoveItem, etc)
+	* that would probably enable easy to use automation and playback
+	* if we had proxied these methods here we could have extended the default
+	* document and over wrote the methods to try the sequence method
 	 * */
 	public class HistoryManager extends EventDispatcher {
 		
 		
-		public function HistoryManager():void {
+		public function HistoryManager(s:SINGLEDOUBLE):void {
 			
 		}
 		
+		private static var _instance:HistoryManager;
+		
+		public static function get instance():HistoryManager
+		{
+			if (!_instance) {
+				_instance = new HistoryManager(new SINGLEDOUBLE());
+			}
+			return _instance;
+		}
+		
+		public static function getInstance():HistoryManager {
+			return instance;
+		}
+		
+		public static var radiate:Radiate;
+		public static var layoutManager:LayoutManager = LayoutManager.getInstance();
+		
+		public static var REMOVE_ITEM_DESCRIPTION:String = "Remove";
+		public static var ADD_ITEM_DESCRIPTION:String = "Add";
+		public static var MOVE_ITEM_DESCRIPTION:String = "Move";
+		private static var BEGINNING_OF_HISTORY:String = "Reverted";
+		
+		/**
+		 * Indicates if undo is available
+		 * */
+		[Bindable]
+		public static var canUndo:Boolean;
+		
+		/**
+		 * Indicates if redo is available
+		 * */
+		[Bindable]
+		public static var canRedo:Boolean;
+		
+		/**
+		 * Collection of items in the property change history
+		 * */
+		[Bindable]
+		public static var history:ListCollectionView = new ArrayCollection();
+		
+		/**
+		 * Dictionary of property change objects
+		 * */
+		public static var historyEventsDictionary:Dictionary = new Dictionary(true);
+		
+		/**
+		 * Flag to set if you do not want to add an event to history. 
+		 * Remember to set this back to false when you are done
+		 * */
+		[Bindable]
+		public static var doNotAddEventsToHistory:Boolean;
+		
+		/**
+		 * Get generic move description 
+		 * */
+		public static function getMoveDescription(element:Object = null):String {
+			if (element==null) {
+				return MOVE_ITEM_DESCRIPTION;
+			}
+			return MOVE_ITEM_DESCRIPTION + " " + ClassUtils.getClassName(element);
+		}
+		
+		/**
+		 * Get generic add description 
+		 * */
+		public static function getAddDescription(element:Object = null):String {
+			if (element==null) {
+				return ADD_ITEM_DESCRIPTION;
+			}
+			return ADD_ITEM_DESCRIPTION + " " + ClassUtils.getClassName(element);
+		}
+		
+		/**
+		 * Get generic remove description 
+		 * */
+		public static function getRemoveDescription(element:Object = null):String {
+			if (element==null) {
+				return REMOVE_ITEM_DESCRIPTION;
+			}
+			return REMOVE_ITEM_DESCRIPTION + " " + ClassUtils.getClassName(element);
+		}
+		
+		/**
+		 * Travel to the specified history index.
+		 * Going too fast may cause some issues. Need to test thoroughly 
+		 * We may need to call validateNow somewhere and set usePhasedInstantiation? or call calllater()
+		 * */
+		public static function goToHistoryIndex(document:IDocument, index:int, dispatchEvents:Boolean = false):int {
+			//var document:IDocument = instance.selectedDocument;
+			var newIndex:int = index;
+			var oldIndex:int = document.historyIndex;
+			var time:int = getTimer();
+			var currentIndex:int;
+			var difference:int;
+			var phasedInstantiation:Boolean = layoutManager.usePhasedInstantiation;
+			
+			layoutManager.usePhasedInstantiation = false;
+			
+			if (newIndex<oldIndex) {
+				difference = oldIndex - newIndex;
+				for (var i:int;i<difference;i++) {
+					if (difference>1) {
+						// if we're not on last redo then use faster redo
+						if (i+1!=difference) { 
+							currentIndex = undo(document, false, dispatchEvents, false);
+						}
+						else {
+							currentIndex = undo(document, dispatchEvents, dispatchEvents);
+						}
+					}
+					else {
+						currentIndex = undo(document, dispatchEvents, dispatchEvents);
+					}
+				}
+			}
+			else if (newIndex>oldIndex) {
+				difference = oldIndex<0 ? newIndex+1 : newIndex - oldIndex;
+				for (var j:int;j<difference;j++) {
+					if (difference>1) {
+						// if we're not on last redo then use faster redo
+						if (j+1!=difference) {
+							currentIndex = redo(document, false, dispatchEvents, false); 
+						}
+						else {
+							currentIndex = redo(document, dispatchEvents, dispatchEvents);
+						}
+					}
+					else {
+						currentIndex = redo(document, dispatchEvents, dispatchEvents);
+					}
+				}
+			}
+			
+			layoutManager.usePhasedInstantiation = phasedInstantiation;
+			
+			document.history.refresh();
+			setHistoryIndex(document, getHistoryPosition(document));
+			
+			radiate.dispatchHistoryChangeEvent(document, historyIndex, oldIndex);
+			
+			
+			return currentIndex;
+		}
+		
+		/**
+		 * Undo last change. Returns the current index in the changes array. 
+		 * The property change object sets the property "reversed" to 
+		 * true.
+		 * Going too fast causes some issues (call validateNow somewhere)?
+		 * I think the issue with RangeError: Index 2 is out of range.
+		 * is that the History List does not always do the first item in the 
+		 * List. So we need to add a first item that does nothing, like a
+		 * open history event. 
+		 * OR we need to wait. If we could use callLater and not use validateNow
+		 * I think it may solve some issues and not lock the UI
+		 * 
+		 * We might also try not dispatching events until we are at the last or second to last index of a long
+		 * undo list.
+		 * */
+		public static function undo(document:IDocument, dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true, dispatchSetTargets:Boolean = true):int {
+			var changeIndex:int = getPreviousHistoryIndex(document); // index of next change to undo 
+			var currentIndex:int = getHistoryPosition(document);
+			var historyLength:int = getHistoryLength(document);
+			var historyEventItem:HistoryEventItem;
+			var previousHistoryEvent:HistoryEvent;
+			var currentTargetDocument:Application;
+			var setStartValues:Boolean = true;
+			var historyEvent:HistoryEvent;
+			var affectsDocument:Boolean;
+			var historyEvents:Array;
+			var dictionary:Dictionary;
+			var reverseItems:AddItems;
+			var eventTargets:Array;
+			var eventsLength:int;
+			var targetsLength:int;
+			var addItems:AddItems;
+			var added:Boolean;
+			var removed:Boolean;
+			var action:String;
+			var isInvalid:Boolean;
+			var documentHistory:ListCollectionView;
+			
+			currentTargetDocument = document.instance as Application;
+			documentHistory = document.history;
+			
+			// no changes
+			if (!historyLength) {
+				return -1;
+			}
+			
+			// all changes have already been undone
+			if (changeIndex<0) {
+				if (dispatchEvents && instance.hasEventListener(RadiateEvent.BEGINNING_OF_UNDO_HISTORY)) {
+					instance.dispatchEvent(new RadiateEvent(RadiateEvent.BEGINNING_OF_UNDO_HISTORY));
+				}
+				
+				return -1;
+			}
+			
+			// get current change to be redone
+			historyEvent = documentHistory.length ? documentHistory.getItemAt(changeIndex) as HistoryEvent : null;
+			historyEvents = historyEvent.historyEventItems;
+			eventsLength = historyEvents.length;
+			
+			
+			// loop through changes
+			for (var i:int=eventsLength;i--;) {
+				//changesLength = changes ? changes.length: 0;
+				
+				historyEventItem = historyEvents[i];
+				addItems = historyEventItem.addItemsInstance;
+				action = historyEventItem.action;//==RadiateEvent.MOVE_ITEM && addItems ? RadiateEvent.MOVE_ITEM : RadiateEvent.PROPERTY_CHANGE;
+				affectsDocument = dispatchForApplication && historyEventItem.targets.indexOf(currentTargetDocument)!=-1;
+				
+				// undo the add
+				if (action==RadiateEvent.ADD_ITEM) {
+					eventTargets = historyEventItem.targets;
+					targetsLength = eventTargets.length;
+					dictionary = historyEventItem.reverseAddItemsDictionary;
+					
+					for (var j:int=0;j<targetsLength;j++) {
+						reverseItems = dictionary[eventTargets[j]];
+						addItems.remove(null);
+						
+						// check if it's reverse or property changes
+						if (reverseItems) {
+							reverseItems.apply(reverseItems.destination as UIComponent);
+							
+							// was it added - can be refactored
+							if (reverseItems.destination==null) {
+								added = true;
+							}
+						}
+					}
+					
+					historyEventItem.reversed = true;
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						radiate.dispatchRemoveItemsEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties);
+					}
+				}
+				
+				// undo the move - (most likely an add action with x and y changes)
+				if (action==RadiateEvent.MOVE_ITEM) {
+					eventTargets = historyEventItem.targets;
+					targetsLength = eventTargets.length;
+					dictionary = historyEventItem.reverseAddItemsDictionary;
+					
+					for (j=0;j<targetsLength;j++) {
+						reverseItems = dictionary[eventTargets[j]];
+						
+						// check if it's remove items or property changes
+						if (reverseItems) {
+							isInvalid = layoutManager.isInvalid();
+							if (isInvalid) {
+								layoutManager.validateNow();
+								layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 1.") : 0;
+							}
+							
+							addItems.remove(null);
+							isInvalid = layoutManager.isInvalid();
+							if (isInvalid) {
+								layoutManager.validateNow();
+								layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 2.") : 0;
+							}
+							
+							/*
+							RangeError: Index 2 is out of range.
+										at spark.components::Group/checkForRangeError()[E:\dev\4.y\frameworks\projects\spark\src\spark\components\Group.as:1310]
+										at spark.components::Group/setElementIndex()[E:\dev\4.y\frameworks\projects\spark\src\spark\components\Group.as:1474]
+										at spark.components::Group/addElementAt()[E:\dev\4.y\frameworks\projects\spark\src\spark\components\Group.as:1371]
+										at mx.states::AddItems/addItemsToContentHolder()[E:\dev\4.y\frameworks\projects\framework\src\mx\states\AddItems.as:782]
+										at mx.states::AddItems/apply()[E:\dev\4.y\frameworks\projects\framework\src\mx\states\AddItems.as:563]
+										at com.flexcapacitor.managers::HistoryManager$/undo()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/managers/HistoryManager.as:325]
+										at com.flexcapacitor.managers::HistoryManager$/goToHistoryIndex()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/managers/HistoryManager.as:168]
+										at com.flexcapacitor.managers::HistoryManager$/revert()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/managers/HistoryManager.as:1211] 
+							*/
+							
+							// check if out of range 
+							//var newIndex:int = isOutOfRange(group,index,true);
+							reverseItems.apply(reverseItems.destination as UIComponent);
+							
+							if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+								radiate.dispatchRemoveItemsEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties);
+							}
+							
+							// was it added - note: can be refactored
+							if (reverseItems.destination==null) {
+								added = true;
+							}
+						}
+						else { // property change
+							Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles,
+								setStartValues);
+							historyEventItem.reversed = true;
+							
+							if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+								radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
+							}
+						}
+					}
+					
+					historyEventItem.reversed = true;
+				}
+					// undo the remove
+				else if (action==RadiateEvent.REMOVE_ITEM) {
+					isInvalid = layoutManager.isInvalid();
+					if (isInvalid) {
+						layoutManager.validateNow();
+						layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 3") : 0;
+					}
+					addItems.apply(addItems.destination as UIComponent);
+					historyEventItem.reversed = true;
+					removed = true;
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						radiate.dispatchAddEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties);
+					}
+				}
+					// undo the property changes
+				else if (action==RadiateEvent.PROPERTY_CHANGED) {
+					
+					Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles,
+						setStartValues);
+					historyEventItem.reversed = true;
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
+					}
+				}
+			}
+			
+			historyEvent.reversed = true;
+			
+			// select the target
+			if (selectTargetOnHistoryChange) {
+				var currentHistoryEvent:HistoryEvent = currentIndex>0 ? documentHistory.getItemAt(currentIndex-1) as HistoryEvent : null;
+				
+				if (currentHistoryEvent) {
+					radiate.setTargets(currentHistoryEvent.targets, dispatchSetTargets);
+				}
+				else {
+					radiate.setTarget(currentTargetDocument, dispatchSetTargets);
+				}
+				/*
+				if (added) { 
+					// item was added and now unadded - select previous available targets
+					if (currentIndex>0) {
+						
+						var previousTargets:Array = getNextPreviousTargets(document, currentIndex);
+						
+						if (previousTargets) {
+							//Radiate.info("Previous targets found");
+							radiate.setTarget(previousTargets, dispatchSetTargets);
+						}
+						else {
+							//Radiate.warn("Previous target NOT found. Selecting document");
+							radiate.setTarget(currentTargetDocument, dispatchSetTargets);
+						}
+					}
+					else {
+						radiate.setTarget(currentTargetDocument, dispatchSetTargets);
+					}
+				}
+				else if (removed) {
+					radiate.setTargets(historyEventItem.targets, dispatchSetTargets);
+				}
+				else {
+					radiate.setTargets(historyEventItem.targets, dispatchSetTargets);
+				}
+				*/
+			}
+			
+			if (eventsLength) {
+				setHistoryIndex(document, getHistoryPosition(document));
+				
+				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+					radiate.dispatchHistoryChangeEvent(document, historyIndex, currentIndex);
+				}
+				return changeIndex-1;
+			}
+			
+			return historyLength;
+		}
+		
+		
+		/**
+		 *  @private 
+		 *  Checks the range of index to make sure it's valid. 
+		 * 
+		 * Returns 0 if not out of range, -1 if less than zero and maxIndex if greater than range.
+		 * 
+		 * Use if (isOutOfRange(group,index,true)==0)  // not out of range
+		 * Use if (isOutOfRange(group,index,true)<0)  // out of range - too low - use 0
+		 * Use if (isOutOfRange(group,index,true)>0)  // out of range - too high - use var newIndex:int = isOutOfRange(group,index,true)
+		 */ 
+		public static function isOutOfRange(group:Group, index:int, addingElement:Boolean = false):int {
+			var mxmlContent:Array = group.getMXMLContent();
+			
+			// figure out the maximum allowable index
+			var maxIndex:int = (mxmlContent == null ? -1 : mxmlContent.length - 1);
+			
+			// if adding an element, we allow an extra index at the end
+			if (addingElement) {
+				maxIndex++;
+			}
+			
+			if (index < 0) {
+				return -1;
+			}
+			if (index > maxIndex) {
+				return maxIndex;
+			}
+			
+			return 0;
+		}
+		
+		/**
+		 * Get the targets from the previous history event as long as 
+		 * the first one is on the stage
+		 * */
+		public static function getNextPreviousTargets(document:IDocument, index:int):Array {
+			var previousHistoryEvent:HistoryEvent;
+			
+			while (index>0) {
+				index--;
+				previousHistoryEvent = document.history.getItemAt(index) as HistoryEvent;
+				if (previousHistoryEvent.targets && previousHistoryEvent.targets.length
+					&& previousHistoryEvent.targets[0].stage) {
+					return previousHistoryEvent.targets;
+				}
+			}	
+			
+			return null;
+		}
+		
+		/**
+		 * Redo last change. See notes in undo method. 
+		 * @see undo
+		 * */
+		public static function redo(document:IDocument, dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true, dispatchSetTargets:Boolean = true):int {
+			//var currentDocument:IDocument = instance.selectedDocument;
+			var historyCollection:ListCollectionView = document.history;
+			var currentTargetDocument:Application = document.instance as Application; // should be typed
+			var historyLength:int = historyCollection.length;
+			var changeIndex:int = getNextHistoryIndex(document);
+			var currentIndex:int = getHistoryPosition(document);
+			var historyEvent:HistoryEventItem;
+			var historyItem:HistoryEvent;
+			var affectsDocument:Boolean;
+			var setStartValues:Boolean;
+			var historyEvents:Array;
+			var addItems:AddItems;
+			var isInvalid:Boolean;
+			var eventsLength:int;
+			var remove:Boolean;
+			var action:String;
+			
+			
+			// need to make sure everything is validated first
+			// think about doing the following:
+			// layoutManager.usePhasedInstantiation = false;
+			// layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid. Needs a fix.") : 0;
+			// also use in undo()
+			
+			// no changes made
+			if (!historyLength) {
+				return -1;
+			}
+			
+			// cannot redo any more changes
+			if (changeIndex==-1 || changeIndex>=historyLength) {
+				if (instance.hasEventListener(RadiateEvent.END_OF_UNDO_HISTORY)) {
+					instance.dispatchEvent(new RadiateEvent(RadiateEvent.END_OF_UNDO_HISTORY));
+				}
+				return historyLength-1;
+			}
+			
+			// get current change to be redone
+			historyItem = historyCollection.length ? historyCollection.getItemAt(changeIndex) as HistoryEvent : null;
+			
+			historyEvents = historyItem.historyEventItems;
+			eventsLength = historyEvents.length;
+			//changes = historyEvents;
+			
+			for (var j:int;j<eventsLength;j++) {
+				historyEvent = HistoryEventItem(historyEvents[j]);
+				//changesLength = changes ? changes.length: 0;
+				
+				addItems = historyEvent.addItemsInstance;
+				action = historyEvent.action;
+				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentTargetDocument)!=-1;
+				
+				
+				if (action==RadiateEvent.ADD_ITEM) {
+					isInvalid = layoutManager.isInvalid();
+					if (isInvalid) {
+						layoutManager.validateNow();
+						layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 4.") : 0;
+					}
+					// redo the add
+					addItems.apply(addItems.destination as UIComponent);
+					historyEvent.reversed = false;
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						radiate.dispatchAddEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+					}
+					
+				}
+				else if (action==RadiateEvent.MOVE_ITEM) {
+					// redo the move
+					if (addItems) {
+						
+						// RangeError: Index 2 is out of range. 
+						// we must validate
+						isInvalid = layoutManager.isInvalid();
+						if (isInvalid) {
+							layoutManager.validateNow();
+							layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 5") : 0;
+						}
+						
+						// RangeError: Index 2 is out of range. 
+						// should we use a try catch? delay it somehow?
+						try {
+							addItems.apply(addItems.destination as UIComponent);
+						}
+						catch (e:*) {
+							// if RangeError: Index 2 is out of range.
+							historyEvent.reversed = false;
+							undo(document, false, false, false);
+							
+							Radiate.error("There was an error moving one of the components. You may need to restart.");
+							return -1;
+							//return redo(document, dispatchEvents, dispatchForApplication, dispatchSetTargets);;
+						}
+							historyEvent.reversed = false;
+						
+						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+							radiate.dispatchMoveEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+						}
+					}
+					else {
+						
+						Radiate.applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
+							setStartValues);
+						historyEvent.reversed = false;
+						
+						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+							radiate.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles);
+						}
+					}
+					
+				}
+				else if (action==RadiateEvent.REMOVE_ITEM) {
+					
+					isInvalid = layoutManager.isInvalid();
+					if (isInvalid) {
+						layoutManager.validateNow();
+						layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 6") : 0;
+					}
+					
+					// redo the remove
+					addItems.remove(addItems.destination as UIComponent);
+					historyEvent.reversed = false;
+					remove = true;
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						radiate.dispatchRemoveItemsEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
+					}
+				}
+				else if (action==RadiateEvent.PROPERTY_CHANGED) {
+					Radiate.applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
+						setStartValues);
+					historyEvent.reversed = false;
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						radiate.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles);
+					}
+				}
+			}
+			
+			
+			historyItem.reversed = false;
+			
+			// select target
+			if (selectTargetOnHistoryChange) {
+				if (remove) {
+					radiate.setTargets(currentTargetDocument, dispatchSetTargets);
+				}
+				else {
+					radiate.setTargets(historyEvent.targets, dispatchSetTargets);
+				}
+			}
+			
+			if (eventsLength) {
+				setHistoryIndex(document, getHistoryPosition(document));
+				
+				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+					radiate.dispatchHistoryChangeEvent(document, historyIndex, currentIndex);
+				}
+				
+				return changeIndex;
+			}
+			
+			return historyLength;
+		}
+		
+		//private static var _historyIndex:int = -1;
+		
+		/**
+		 * Selects the target on undo and redo
+		 * */
+		public static var selectTargetOnHistoryChange:Boolean = true;
+		
+		private static var _historyIndex:int = -1;
+		
+		/**
+		 * Current history index. 
+		 * The history index is the index of last applied change. Or
+		 * to put it another way the index of the last reversed change minus 1. 
+		 * If there are 10 total changes and one has been reversed then 
+		 * we would be at the 9th change. The history index would 
+		 * be 8 since 9-1 = 8 since the array is a zero based index. 
+		 * 
+		 * value -1 means no history
+		 * value 0 means one item
+		 * value 1 means two items
+		 * value 2 means three items
+		 * */
+		public static function get historyIndex():int {
+			
+			return _historyIndex;
+			//var document:IDocument = instance.selectedDocument;
+			//return document ? document.historyIndex : -1;
+		}
+		
+		/**
+		 * @private
+		 */
+		public static function setHistoryIndex(document:IDocument, value:int):void {
+			if (document==null) return;
+			
+			if (document.historyIndex==value) {
+				//
+			}
+			else {
+				document.historyIndex = value;
+			}
+			
+			_historyIndex = value;
+			
+			var totalItems:int = document.history ? document.history.length : 0;
+			var hasItems:Boolean = totalItems>0;
+			
+			// has forward history
+			if (hasItems && historyIndex+1<totalItems) {
+				canRedo = true;
+			}
+			else {
+				canRedo = false;
+			}
+			
+			// has previous items
+			if (hasItems && historyIndex>-1) {
+				canUndo = true;
+			}
+			else {
+				canUndo = false;
+			}
+		}
+		
+		/**
+		 * Get the index of the next item that can be undone. 
+		 * If there are 10 changes and one has been reversed the 
+		 * history index would be 8 since 10-1=9-1=8 since the array is 
+		 * a zero based index. 
+		 * */
+		public static function getPreviousHistoryIndex(document:IDocument):int {
+			var historyLength:int = getHistoryLength(document);var listCollectionView:ListCollectionView = document.history;
+			var historyEvent:HistoryEvent;
+			var index:int;
+			
+			for (var i:int;i<historyLength;i++) {
+				historyEvent = listCollectionView.getItemAt(i) as HistoryEvent;
+				
+				if (historyEvent.reversed) {
+					return i-1;
+				}
+			}
+			
+			return historyLength-1;
+		}
+		
+		/**
+		 * Get the index of the next item that can be redone in the history array. 
+		 * If there are 10 changes and one has been reversed the 
+		 * next history index would be 9 since 10-1=9-1=8+1=9 since the array is 
+		 * a zero based index. 
+		 * */
+		public static function getNextHistoryIndex(document:IDocument):int {
+			var historyLength:int = getHistoryLength(document);
+			var historyItem:HistoryEvent;
+			var index:int;
+			
+			// start at the beginning and find the next item to redo
+			for (var i:int;i<historyLength;i++) {
+				historyItem = document.history.getItemAt(i) as HistoryEvent;
+				
+				if (historyItem.reversed) {
+					return i;
+				}
+			}
+			
+			return historyLength;
+		}
+		
+		/**
+		 * Get history index. This should return the index of the 
+		 * last action that was performed. 
+		 * */
+		public static function getHistoryPosition(document:IDocument):int {
+			var historyLength:int = getHistoryLength(document);
+			var historyEvent:HistoryEvent;
+			var events:IList = document.history as IList;
+			
+			// go through and find last item that is reversed
+			for (var i:int;i<historyLength;i++) {
+				historyEvent = events.getItemAt(i) as HistoryEvent;
+				
+				if (historyEvent.reversed) {
+					return i-1;
+				}
+			}
+			
+			return historyLength-1;
+		}
+		
+		/**
+		 * Returns the current history event. Think about adding an "Open"
+		 * event so we always have something to work with.
+		 * */
+		public static function getCurrentHistoryEvent(document:IDocument):HistoryEvent {
+			var index:int = getHistoryPosition(document);
+			var historyEvent:HistoryEvent = getHistoryEventAtIndex(document, index) as HistoryEvent;
+			
+			return historyEvent;
+		}
+		
+		/**
+		 * Returns the history event by index
+		 * */
+		public static function getHistoryEventAtIndex(document:IDocument, index:int):HistoryEvent {
+			var historyLength:int = getHistoryLength(document);
+			var historyEvent:HistoryEvent;
+			
+			// no changes
+			if (historyLength < 1) {
+				return null;
+			}
+			
+			// all changes have already been undone
+			if (index<0) {
+				return null;
+			}
+			
+			// get history event 
+			historyEvent = document.history.length ? document.history.getItemAt(index) as HistoryEvent : null;
+			
+			return historyEvent;
+		}
+		
+		/**
+		 * Returns the history event by index
+		 * */
+		public static function removeHistoryItemAtIndex(document:IDocument, index:int, purge:Boolean = true):HistoryEvent {
+			var historyLength:int = getHistoryLength(document);
+			var historyEvent:HistoryEvent;
+			
+			// no changes
+			if (historyLength < 1) {
+				return null;
+			}
+			
+			// all changes have already been undone
+			if (index<0) {
+				return null;
+			}
+			
+			// get removed history 
+			historyEvent = historyLength ? document.history.removeItemAt(index) as HistoryEvent : null;
+			
+			if (purge) {
+				historyEvent.purge();
+			}
+			
+			return historyEvent;
+		}
+		
+		private static var _disableHistoryManagement:Boolean;
+		
+		/**
+		 * Disables history management. We do this when importing documents since
+		 * it creates the document 5x faster. 
+		 * */
+		public static function get disableHistoryManagement():Boolean {
+			return _disableHistoryManagement;
+		}
+		
+		/**
+		 * @private
+		 */
+		[Bindable(event="disableHistoryManagement")]
+		public static function set disableHistoryManagement(value:Boolean):void {
+			if (_disableHistoryManagement == value) return;
+			_disableHistoryManagement = value;
+		}
+		
+		
+		/**
+		 * Creates a history event items that will be stored in the history collection. 
+		 * Changes can contain a property or style changes or add items. 
+		 * Must call addHistoryEvent with the event items returned from this call.
+		 * */
+		public static function createHistoryEventItems(targets:Array, changes:Array, properties:*, styles:*, value:*, description:String = null, action:String=RadiateEvent.PROPERTY_CHANGED, remove:Boolean = false):Array {
+			var factory:ClassFactory = new ClassFactory(HistoryEventItem);
+			var historyEventItem:HistoryEventItem;
+			var reverseAddItems:AddItems;
+			var eventItems:Array = [];
+			var change:Object;
+			var targetsLength:int;
+			var changesLength:int = changes ? changes.length : 0;
+			
+			if (disableHistoryManagement) return [];
+			
+			// create property change objects for each
+			for (var i:int;i<changesLength;i++) {
+				change = changes[i];
+				
+				historyEventItem 						= factory.newInstance();
+				historyEventItem.action 				= action;
+				historyEventItem.targets 				= targets;
+				historyEventItem.description 			= description;
+				
+				// check for property change or add display object
+				if (change is PropertyChanges) {
+					historyEventItem.properties 		= ArrayUtil.toArray(properties);
+					historyEventItem.styles 			= ArrayUtil.toArray(styles);
+					historyEventItem.propertyChanges 	= PropertyChanges(change);
+				}
+				else if (change is AddItems && !remove) {
+					historyEventItem.addItemsInstance 	= AddItems(change);
+					targetsLength = targets.length;
+					
+					// trying to add support for multiple targets - it's not all there yet
+					// probably not the best place to get the previous values or is it???
+					for (var j:int=0;j<targetsLength;j++) {
+						historyEventItem.reverseAddItemsDictionary[targets[j]] = createReverseAddItems(targets[j]);
+					}
+				}
+				else if (change is AddItems && remove) {
+					historyEventItem.removeItemsInstance 	= AddItems(change);
+					targetsLength = targets.length;
+					
+					// trying to add support for multiple targets - it's not all there yet
+					// probably not the best place to get the previous values or is it???
+					for (j=0;j<targetsLength;j++) {
+						historyEventItem.reverseRemoveItemsDictionary[targets[j]] = createReverseAddItems(targets[j]);
+					}
+				}
+				
+				eventItems[i] = historyEventItem;
+			}
+			
+			return eventItems;
+			
+		}
+		
+		/**
+		 * Creates a remove item from an add item. 
+		 * */
+		public static function createReverseAddItems(target:Object):AddItems {
+			var elementContainer:IVisualElementContainer;
+			var position:String = AddItems.LAST;
+			var visualElement:IVisualElement;
+			var reverseAddItems:AddItems;
+			var elementIndex:int = -1;
+			var propertyName:String; 
+			var destination:Object;
+			var description:String;
+			var relativeTo:Object; 
+			var vectorClass:Class;
+			var isStyle:Boolean; 
+			var isArray:Boolean; 
+			var index:int = -1; 
+			
+			if (!target) return null;
+			
+			// create add items with current values we can revert back to
+			reverseAddItems = new AddItems();
+			reverseAddItems.destination = target.parent;
+			reverseAddItems.items = target;
+			
+			destination = reverseAddItems.destination;
+			
+			visualElement = target as IVisualElement;
+			
+			// set default
+			if (!position) {
+				position = AddItems.LAST;
+			}
+			
+			// Check for non basic layout destination
+			// if destination is not a basic layout
+			// find the position and set the relative object 
+			if (destination is IVisualElementContainer 
+				&& destination.numElements>0) {
+				elementContainer = destination as IVisualElementContainer;
+				index = elementContainer.getElementIndex(visualElement);
+				
+				
+				if (elementContainer is GroupBase 
+					&& !(GroupBase(elementContainer).layout is BasicLayout)) {
+					
+					
+					// add as first item
+					if (index==0) {
+						position = AddItems.FIRST;
+					}
+						
+						// get relative to object
+					else if (index<=elementContainer.numElements) {
+						
+						
+						// if element is already child of container account for remove of element before add
+						if (visualElement && visualElement.parent == destination) {
+							elementIndex = destination.getElementIndex(visualElement);
+							index = elementIndex < index ? index-1: index;
+							
+							if (index<=0) {
+								position = AddItems.FIRST;
+							}
+							else {
+								relativeTo = destination.getElementAt(index-1);
+								position = AddItems.AFTER;
+							}
+						}
+							// add as last item
+						else if (index>=destination.numElements) {
+							position = AddItems.LAST;
+						}
+							// add after first item
+						else if (index>0) {
+							relativeTo = destination.getElementAt(index-1);
+							position = AddItems.AFTER;
+						}
+					}
+				}
+			}
+			
+			
+			reverseAddItems.destination = destination;
+			reverseAddItems.position = position;
+			reverseAddItems.relativeTo = relativeTo;
+			reverseAddItems.propertyName = propertyName;
+			reverseAddItems.isArray = isArray;
+			reverseAddItems.isStyle = isStyle;
+			reverseAddItems.vectorClass = vectorClass;
+			
+			return reverseAddItems;
+		}
+		
+		/**
+		 * Stores a history event in the history events dictionary
+		 * Changes can contain a property changes object or add items object
+		 * UPDATE: Looks like this is old code. Not sure this is removing 
+		 * history event items?
+		 * */
+		public static function removeHistoryEvent(changes:Array):void {
+			var change:Object;
+			
+			// delete change objects
+			for each (change in changes) {
+				historyEventsDictionary[change] = null;
+				delete historyEventsDictionary[change];
+			}
+			
+		}
+		
+		/**
+		 * Adds a single event change to the history collection
+		 * */
+		public static function addHistoryEvent(document:IDocument, historyEventItem:HistoryEventItem, description:String = null):void {
+			if (!doNotAddEventsToHistory) {
+				addHistoryEvents(document, ArrayUtil.toArray(historyEventItem), description);
+			}
+		}
+		
+		/**
+		 * Creates a new entry with multiple changes to the history collection
+		 * Changes include property changes, add or remove event items 
+		 * */
+		public static function addHistoryEvents(document:IDocument, historyEventItems:Array, description:String = null, mergeWithPrevious:Boolean = false):void {
+			if (doNotAddEventsToHistory) { return }
+			var currentIndex:int = getHistoryPosition(document);
+			var historyEventsLength:int = getHistoryLength(document);
+			var historyEventItemsLength:int;
+			var historyEventItem:HistoryEventItem;
+			var historyEvent:HistoryEvent;
+			var historyTargetsLength:int;
+			var historyTargets:Array;
+			var historyTarget:Object;
+			var noPreviousChanges:Boolean = !hasPreviousEvents(document);
+			
+			if (disableHistoryManagement) return;
+			
+			document.history.disableAutoUpdate();
+			
+			// trim history 
+			if (currentIndex!=historyEventsLength-1) {
+				for (var i:int = historyEventsLength-1;i>currentIndex;i--) {
+					historyEvent = document.history.removeItemAt(i) as HistoryEvent;
+					historyEvent.purge();
+				}
+			}
+			
+			if (!mergeWithPrevious || noPreviousChanges) {
+				historyEvent = new HistoryEvent();
+				historyEvent.description = description ? HistoryEventItem(historyEventItems[0]).description : description;
+				historyEvent.historyEventItems = historyEventItems;
+			}
+			else {
+				historyEvent = getHistoryEventAtIndex(document, i);
+				historyEvent.historyEventItems.concat(historyEventItems);
+			}
+			
+			historyEventItemsLength = historyEventItems.length;
+			// UPDATE: We could remove the following and let other code pull the targets from the event item changes
+			// add targets that are affected by this history change
+			// so we can select them later
+			// we should remember to remove these references when truncating history
+			for (i=0;i<historyEventItemsLength;i++) {
+				historyEventItem = historyEventItems[i];
+				historyTargets = historyEventItem.targets;
+				historyTargetsLength = historyTargets.length;
+				
+				for (var j:int=0;j<historyTargetsLength;j++) {
+					historyTarget = historyTargets[j];
+					
+					if (historyEvent.targets.indexOf(historyTarget)==-1) {
+						historyEvent.targets.push(historyTarget);
+					}
+				}
+			}
+			
+			if (!mergeWithPrevious || noPreviousChanges) {
+				document.history.addItem(historyEvent);
+				document.historyIndex = getHistoryPosition(document);
+			}
+			
+			document.history.enableAutoUpdate();
+			
+			// the next few lines could be refactored. 
+			// we created a history manager class and 
+			// now document is passed in rather than a member
+			// so we can probably fix what this is trying to do...
+			document.historyIndex = getHistoryPosition(document);
+			
+			setHistoryIndex(document, getHistoryPosition(document));
+			
+			if (!mergeWithPrevious || noPreviousChanges) {
+				radiate.dispatchHistoryChangeEvent(document, currentIndex+1, currentIndex);
+			}
+			else {
+				radiate.dispatchHistoryChangeEvent(document, currentIndex, currentIndex);
+			}
+		}
+		
+		/**
+		 * Merges last history event with history event before it if one exists.
+		 * The description of the oldest event is used unless you pass one in. 
+		 * Returns HistoryEvent with merged changes or null if no merges available
+		 * */
+		public static function mergeLastHistoryEvent(document:IDocument, description:String = null):HistoryEvent {
+			var currentPosition:int = getHistoryPosition(document);
+			var historyEventsLength:int = getHistoryLength(document);
+			var currentHistoryEvent:HistoryEvent;
+			var previousHistoryEvent:HistoryEvent;
+			var historyEventItemsLength:int;
+			var historyEventItems:Array;
+			var historyEventItem:HistoryEventItem;
+			var historyTargetsLength:int;
+			var historyTargets:Array;
+			var historyTarget:Object;
+			
+			// more than one thing has happened
+			if (!hasPreviousEvents(document)) {
+				return null;
+			}
+			
+			currentHistoryEvent = getHistoryEventAtIndex(document, currentPosition);
+			previousHistoryEvent = getHistoryEventAtIndex(document, currentPosition-1);
+			
+			previousHistoryEvent.historyEventItems.concat(currentHistoryEvent.historyEventItems);
+			
+			if (description!=null) {
+				previousHistoryEvent.description = description;
+			}
+			
+			if (disableHistoryManagement) return null;
+			
+			document.history.disableAutoUpdate();
+			
+			historyEventItems = previousHistoryEvent.historyEventItems;
+			historyEventItemsLength = historyEventItems.length;
+			
+			// add targets so we can select them later
+			// we should remember to remove these references when truncating history
+			for (var i:int=0;i<historyEventItemsLength;i++) {
+				historyEventItem = historyEventItems[i];
+				historyTargets = historyEventItem.targets;
+				historyTargetsLength = historyTargets.length;
+				
+				for (var j:int=0;j<historyTargetsLength;j++) {
+					historyTarget = historyTargets[j];
+					
+					if (previousHistoryEvent.targets.indexOf(historyTarget)==-1) {
+						previousHistoryEvent.targets.push(historyTarget);
+					}
+				}
+			}
+			
+			
+			document.history.enableAutoUpdate();
+			
+			// the next few lines could be refactored. 
+			// we created a history manager class and 
+			// now document is passed in rather than a member
+			// so we can probably fix what this is trying to do...
+			document.historyIndex = getHistoryPosition(document);
+			
+			setHistoryIndex(document, getHistoryPosition(document));
+			
+			radiate.dispatchHistoryChangeEvent(document, currentPosition-1, currentPosition);
+			
+			return previousHistoryEvent;
+		}
+		
+		/**
+		 * Returns true if previous history events are available.
+		 * Prevents merge into nothing
+		 * */
+		public static function hasPreviousEvents(document:IDocument):Boolean {
+			var currentPosition:int = getHistoryPosition(document);
+			
+			// more than one thing has happened
+			if (currentPosition<1) {
+				return false;
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Get length of history events
+		 * */
+		public static function getHistoryLength(document:IDocument):int
+		{
+			return document && document.history ? document.history.length : 0;
+		}
+		
+		/**
+		 * Removes property change items in the history array. May be outdated 
+		 * and broken.
+		 * */
+		public static function removeHistoryItem(document:IDocument, changes:Array):void {
+			var currentIndex:int = getHistoryPosition(document);
+			
+			// haven't checked this but this may not work and be old code
+			// history should be storing history events not changes
+			var itemIndex:int = document.history.getItemIndex(changes);
+			
+			if (itemIndex>0) {
+				document.history.removeItemAt(itemIndex);
+			}
+			
+			document.historyIndex = getHistoryPosition(document);
+			setHistoryIndex(document, getHistoryPosition(document));
+			
+			radiate.dispatchHistoryChangeEvent(document, currentIndex-1, currentIndex);
+		}
+		
+		/**
+		 * Removes all history in the history array. 
+		 * Note: We should set the changes to null. 
+		 * */
+		public static function removeAllHistory(document:IDocument):void {
+			//var document:IDocument = instance.selectedDocument;
+			var currentIndex:int = getHistoryPosition(document);
+			document.history.removeAll();
+			document.history.refresh(); // we should loop through and run purge on each HistoryItem
+			radiate.dispatchHistoryChangeEvent(document, -1, currentIndex);
+		}
+		
+		/**
+		 * Reverts the document to the opening state.
+		 * This means it removes all action events and the document should be blank.
+		 * */
+		public static function revert(iDocument:IDocument):void
+		{
+			goToHistoryIndex(iDocument, -1);
+			removeAllHistory(iDocument);
+		}
+		
+		/**
+		 * Selects the targets at the specific history event
+		 * */
+		public static function selectTargetsAtIndex(document:IDocument, index:int, dispatchEvent:Boolean = true):void {
+			var historyEvent:HistoryEvent = getHistoryEventAtIndex(document, index);
+			Radiate.setTargets(historyEvent.targets, dispatchEvent);
+		}
+		
+		/**
+		 * Selects the targets of the current history event
+		 * */
+		public static function selectCurrentEventTargets(document:IDocument, dispatchEvent:Boolean = true):void {
+			var historyEvent:HistoryEvent = getCurrentHistoryEvent(document);
+			Radiate.setTargets(historyEvent.targets, dispatchEvent);
+		}
 	}
 }
+
+class SINGLEDOUBLE{}

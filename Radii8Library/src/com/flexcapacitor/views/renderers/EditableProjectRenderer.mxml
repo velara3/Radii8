@@ -17,8 +17,8 @@
 	
 	<fx:Script>
 	<![CDATA[
-		import com.flexcapacitor.model.IProject;
 		import com.flexcapacitor.model.DocumentData;
+		import com.flexcapacitor.model.IProject;
 		
 		import spark.components.List;
 		import spark.components.supportClasses.ListBase;
@@ -66,6 +66,13 @@
 			currentState = "normal";
 		}
 		
+		protected function textInput_keyDownHandler(event:KeyboardEvent):void {
+			if (event.keyCode==Keyboard.ESCAPE) {
+				currentState = "normal";
+				textInput.text = "";
+			}
+		}
+		
 	]]>
 	</fx:Script>
 	
@@ -87,7 +94,7 @@
 	</s:Rect>-->
 	
 	<s:BitmapImage id="icon" 
-				   source="{data &amp;&amp; DocumentData(data).isOpen ? Radii8LibraryAssets.openFolder : Radii8LibraryAssets.projectIcon}"
+				   source="{data &amp;&amp; DocumentData(data).isOpen ? Radii8LibraryAssets.openFolder : Radii8LibraryAssets.project}"
 				   top="4"
 				   left="5"
 				   >
@@ -125,7 +132,8 @@
 	<s:TextInput id="textInput" 
 				 left="20"
 				 includeIn="edit" 
-				 focusAlpha="0"
+				 focusAlpha="0" 
+				 keyDown="textInput_keyDownHandler(event)"
 				 enter="dataChangeHandler()" 
 				 focusOut="textInput_focusOutHandler(event)"
 				 width="100%" height="100%"/>

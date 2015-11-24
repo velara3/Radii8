@@ -79,13 +79,13 @@
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Corner Radius" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:NumberRenderer id="cornerRadiusRenderer" height="24" />
+		<renderers:NumberRenderer id="cornerRadiusRenderer" height="24" stepSize="1" snapInterval="0"/>
 	</s:HGroup>
 	
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Border Weight" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:NumberRenderer id="borderWeightRenderer" height="24" />
+		<renderers:NumberRenderer id="borderWeightRenderer" height="24" stepSize="1"/>
 	</s:HGroup>
 	
 	

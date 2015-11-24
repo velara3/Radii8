@@ -215,8 +215,6 @@ package {
 		[Embed(source="assets/icons/mx/core/Repeater.png")]
 		public static const RepeaterIcon:Class;
 		
-		[Embed(source="/assets/data/spark-manifest-defaults.xml", mimeType="application/octet-stream")]
-		public static const sparkManifestDefaults:Class;
 		
 	}
 }

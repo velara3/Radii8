@@ -165,7 +165,7 @@
 						message += "Error. The item was not deleted. " + data.error + " ";
 					}
 					else {
-						message += "Error. The item was not deleted. It may have been deleted already. Resave the project. ";
+						message += "Error. The item was not deleted. It may have been deleted already or was never saved. Save the project. ";
 					}
 				}
 				else {
@@ -265,11 +265,11 @@
 				 >
 		
 		<s:Label text="Are you sure you want to delete the project, '{documentName}'?" 
-				 fontSize="16" includeIn="project" width="100%"/>
+				 includeIn="project" width="100%"/>
 		<s:Label text="Are you sure you want to delete the document, '{documentName}'?" 
-				 fontSize="16" includeIn="document" width="100%"/>
+				 includeIn="document" width="100%"/>
 		<s:Label text="Are you sure you want to delete the resource, '{documentName}'?" 
-				 fontSize="16" includeIn="resource" width="100%"/>
+				 includeIn="resource" width="100%"/>
 		
 		<s:Label id="deleteWarningsLabel" 
 				 x="15" y="15" 

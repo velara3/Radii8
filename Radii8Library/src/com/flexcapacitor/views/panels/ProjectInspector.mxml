@@ -132,7 +132,7 @@
 					radiate.removeProject(selectedProject);
 				}
 				else {
-					Radiate.log.info("Please select a project");
+					Radiate.info("Please select a project");
 				}
 			}*/
 			
@@ -193,8 +193,19 @@
 			
 			protected function autoSaveToggle_clickHandler(event:MouseEvent):void {
 				radiate.enableAutoSave = autoSaveToggle.selected;
+				radiate.saveSettings();
 			}
 			
+			protected function openHomePageInBrowserButton_clickHandler():void {
+				
+				if (Radiate.instance.projectHomePageID<1) {
+					Radiate.warn("A home page has not been set. Showing the default theme home page");
+					Radiate.callAfter(2000, Radiate.openUsersWebsite);
+				}
+				else {
+					Radiate.openUsersWebsite();
+				}
+			}
 		]]>
 	</fx:Script>
 	
@@ -245,6 +256,7 @@
 			width="100%" 
 			height="100%"
 			labelFunction="labelFunction"
+			requireSelection="true"
 			borderAlpha=".2"
 			dataProvider="{projects}"
 			change="list_changeHandler(event)"
@@ -263,14 +275,14 @@
 				  visible="false"
 				  includeInLayout="false"/>
 		
-		<c:ImageButton id="removeSavedDataIcon" 
+		<c:BeveledImageButton id="removeSavedDataIcon" 
 					   source="{Radii8LibraryAssets.clear}" 
 					   toolTip="Remove All Locally Saved Projects and Documents"
 					   click="removeSavedDataIcon_clickHandler(event)"
 					   visible="false"
 					   includeInLayout="false"
 					   />
-		<c:ImageButton id="getProjectsIcon" 
+		<c:BeveledImageButton id="getProjectsIcon" 
 					   source="{Radii8LibraryAssets.openFolder}" 
 					   toolTip="Load all locally Saved Projects and documents"
 					   click="getSavedProjectsIcon_clickHandler(event)"
@@ -287,6 +299,11 @@
 					click="autoSaveToggle_clickHandler(event)"
 					/>
 		
+		<c:BeveledImageButton id="openHomePageInBrowserButton" 
+							  source="{Radii8LibraryEffectsAssets.play}" 
+							  toolTip="View home page in browser"
+							  click="openHomePageInBrowserButton_clickHandler()"
+							  />
 		<s:Spacer width="100%"/>
 		<!--<c:ImageButton id="closeProjectIcon" 
 					   source="{Radii8LibraryAssets.closedFolder}" 
@@ -298,18 +315,18 @@
 					   toolTip="Open Project"
 					   click="openProjectsIcon_clickHandler(event)"
 					   />-->
-		<c:ImageButton id="saveProjectIcon" 
+		<c:BeveledImageButton id="saveProjectIcon" 
 					   source="{Radii8LibraryAssets.save}" 
 					   toolTip="Save Project"
 					   click="saveProjectIcon_clickHandler(event)"
 					   height="15"
 					   />
-		<c:ImageButton id="newProjectIcon" 
+		<c:BeveledImageButton id="newProjectIcon" 
 					   source="{Radii8LibraryAssets.newFile}" 
 					   toolTip="New Project"
 					   click="newProjectIcon_clickHandler(event)"
 					   />
-		<c:ImageButton id="deleteProjectIcon" 
+		<c:BeveledImageButton id="deleteProjectIcon" 
 					   source="{Radii8LibraryAssets.trashCan}" 
 					   toolTip="Remove Project"
 					   />

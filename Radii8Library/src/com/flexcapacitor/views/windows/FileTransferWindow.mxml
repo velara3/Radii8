@@ -1,0 +1,848 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							 xmlns:s="library://ns.adobe.com/flex/spark" 
+							 xmlns:mx="library://ns.adobe.com/flex/mx" 
+							 xmlns:handlers="com.flexcapacitor.handlers.*" 
+							 xmlns:fc="com.flexcapacitor.effects.popup.*"
+							 xmlns:fce="com.flexcapacitor.effects.file.*"
+							 xmlns:fcb="com.flexcapacitor.effects.core.*"
+							 xmlns:views="com.flexcapacitor.views.*"
+							 xmlns:panels="com.flexcapacitor.views.panels.*"
+							 xmlns:windows="com.flexcapacitor.views.windows.*" 
+							 xmlns:controls="com.flexcapacitor.controls.*" 
+							 xmlns:form="com.flexcapacitor.form.*" 
+							 xmlns:vo="com.flexcapacitor.form.vo.*" 
+							 xmlns:core="pl.maliboo.ftp.core.*"
+							 
+							 title="Transfer to Server..."
+							 creationComplete="creationCompleteHandler(event)" 
+							 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.model.FileInfo;
+			import com.flexcapacitor.utils.StringUtils;
+			import com.flexcapacitor.views.skins.OnlineToggleButton;
+			
+			import flash.data.EncryptedLocalStore;
+			import flash.net.navigateToURL;
+			
+			import mx.core.IDataRenderer;
+			import mx.events.EffectEvent;
+			import mx.events.FileEvent;
+			import mx.events.FlexEvent;
+			
+			import pl.maliboo.ftp.FTPFile;
+			import pl.maliboo.ftp.events.FTPEvent;
+			import pl.maliboo.ftp.utils.ConsoleListener;
+			
+			private var request:URLRequest;
+			
+			private var consoleListener:ConsoleListener;
+
+			private var host:String;
+
+			private var port:int;
+
+			private var u:String;
+
+			private var p:String;
+			
+			private var files:Array = [];
+			
+			public var connectedToServer:String = "You have connected to ";
+			public var loginMessage:String = "You have logged in to ";
+			public var ioErrorMessage:String = "Could not connect to the server. ";
+			public var securityErrorMessage:String = "Security error: ";
+			
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				var bytes:ByteArray;
+				var input:String;
+				var jsonObject:Object;
+				
+				radiate = Radiate.getInstance();
+				
+				sslCheckbox.enabled = SecureSocket.isSupported;
+				
+				if (!SecureSocket.isSupported) {
+					sslCheckbox.selected = false;
+				}
+				
+				// check if export location is set if not try and find it
+				if (!radiate.exportFileLocation) {
+					transferGroup.visible = false;
+					transferGroup.includeInLayout = false;
+					
+					if (EncryptedLocalStore.isSupported) {
+						bytes = EncryptedLocalStore.getItem(Radiate.RELEASE_DIRECTORY_STORE);
+						
+						if (bytes && bytes.length) {
+							input = bytes.readUTFBytes(bytes.length);
+							
+							var file:File = new File(input);
+							if (file.exists && file.isDirectory) {
+								radiate.exportFileLocation = file;
+							}
+						}
+					}
+				}
+				
+				if (radiate.exportFileLocation) {
+					localFileSystemGrid.directory = radiate.exportFileLocation as File;
+					localDirectory.text = File(radiate.exportFileLocation).nativePath;
+					transferGroup.visible = true;
+					transferGroup.includeInLayout = true;
+				}
+				
+				if (!EncryptedLocalStore.isSupported) {
+					// not supported
+					return;
+				}
+				
+				bytes = EncryptedLocalStore.getItem(Radiate.TRANSFER_STORE);
+				
+				if (bytes && bytes.length) {
+					input = bytes.readUTFBytes(bytes.length);
+					try {
+						jsonObject = JSON.parse(input);
+						serverInput.text = jsonObject.h;
+						portInput.text = jsonObject.t;
+						usernameInput.text = jsonObject.u;
+						passwordInput.text = jsonObject.p;
+						saveLoginCheckbox.selected = true;
+					}
+					catch (error:Error) {
+						Radiate.error("Invalid JSON. " + error.message);
+					}
+				}
+				
+			}
+			
+			protected function eventhandler1_effectEndHandler(event:EffectEvent):void {
+				if (client) {
+					client.close();
+					appendText("Is connected: " + client.isConnected);
+					//trace("client connected:" + client.isConnected);
+				}
+				
+				showConnected(false);
+			}
+			
+			protected function uploadButton_clickHandler(event:MouseEvent):void {
+				var outputFolder:FileReference = browseForFolder.file as FileReference;
+				filesUploadedLabel.text = "";
+				
+				
+				if (!client.isConnected) {
+					showConnected(false);
+					appendText("You are not connected to the server. Connect to the server before clicking Upload.");
+					return;
+				}
+				
+				if (outputFolder) {
+					//completeHandler();
+				}
+				else {
+					releaseDirectoryLabel.setStyle("color", "red");
+				}
+				
+				var messages:String = "";
+				var errors:Array = [];
+				var warnings:Array = [];
+				
+				if (errors.length) {
+					messages = "Warning - There are " + errors.length +  " errors. ";
+				}
+				
+				if (warnings.length) {
+					messages += "There are " + warnings.length +  " warnings. ";
+				}
+				
+				if (messages) {
+					warningLabel.text = warningLabel.toolTip = messages + "Check the issues panel for more information.";
+				}
+				else {
+					warningLabel.text = "";
+					//outputTextArea.text = "";
+				}
+				
+				//if (filesCreated) {
+					afterFilesSaved();
+					filesUploadedLabel.text = "All files uploaded.";
+				//}
+			}
+			
+			protected function afterFilesSaved():void {
+				navigateButton.visible = true;
+				//openDirectoryButton.visible = true;
+				clearFilesLabelEffect.end();
+				clearFilesLabelEffect.play([filesUploadedLabel]);
+				cancelButton.label = "Close";
+			}
+			
+			protected function completeHandler(event:Event = null):void {
+				
+				if (browseForFolder.file) {
+					afterFilesSaved();
+				}
+				
+				filesUploadedLabel.text = files.length + " files uploaded.";
+			}
+			
+			protected function cancelHandler(event:Event):void {
+				//Radiate.info("Canceled Save");
+			}
+			
+			private function updateReleaseDirectoryLabel():void {
+				releaseDirectoryLabel.text = browseForFolder.fileNativePath;
+				releaseDirectoryLabel.toolTip = browseForFolder.fileNativePath;
+				releaseDirectoryLabel.clearStyle("color");
+				
+				localFileSystemGrid.directory = browseForFolder.file as File;
+				localDirectory.text = browseForFolder.fileNativePath;
+				localDirectory.selectAll();
+				localDirectory.selectRange(400, 400);
+				
+				radiate.exportFileLocation = browseForFolder.file as FileReference;
+				if (radiate.exportFileLocation) {
+					localFileSystemGrid.visible = true;
+				}
+			}
+			
+			protected function navigateButton_clickHandler(event:MouseEvent):void {
+				request = new URLRequest();
+				
+				for (var i:int;i<files.length;i++) {
+					var fileInfo:FileInfo = files[i] as FileInfo;
+					
+					if (fileInfo.fileExtension=="html" && fileInfo.created) {
+						request.url = fileInfo.url;
+						navigateToURL(request, "previewInBrowser");
+						break;
+					}
+				}
+			}
+			
+			protected function openDirectoryButton_clickHandler(event:MouseEvent):void {
+				var outputFolder:FileReference = browseForFolder.file as FileReference;
+				
+				try {
+					Object(outputFolder).openWithDefaultApplication();
+				}
+				catch (error:Error) {
+					filesUploadedLabel.text = "Can't open the directory.";
+				}
+			}
+			
+			
+			protected function loginButton_clickHandler(event:MouseEvent):void {
+				updateLocalValues();
+				
+				handleHandler();
+				
+				clearOutput();
+				
+				var valid:Boolean = form.validate(formAdapter);
+				
+				if (valid) {
+					makeConnection(host, port);
+				}
+			}
+			
+			protected function handleHandler(event:Event=null):void {
+				
+				if (!EncryptedLocalStore.isSupported) {
+					Radiate.info("Can't save. Encrypted Local Store not supported.");
+					return;
+				}
+				
+				if (saveLoginCheckbox.selected) {
+					updateLocalValues();
+					var o:Object = {};
+					o.u = u;
+					o.p = p;
+					o.h = host;
+					o.t = port;
+					var out:String = JSON.stringify(o);
+					var bytes:ByteArray = new ByteArray();
+					bytes.writeUTFBytes(out);
+					EncryptedLocalStore.setItem(Radiate.TRANSFER_STORE, bytes);
+				}
+				else {
+					EncryptedLocalStore.removeItem(Radiate.TRANSFER_STORE);
+				}
+				
+			}
+			
+			public var connectingMessage:String = "Connecting to server...";
+			public function makeConnection(host:String, port:Number):void {
+				
+				// this doesn't seem to work
+				if (consoleListener == null) {
+					consoleListener = new ConsoleListener(client, outputTextArea);
+				}
+				
+				consoleListener.enabled = false;
+				
+				appendText(connectingMessage);
+				
+				client.addEventListener(FTPEvent.CONNECTED, handleConnected, false, 0, true);
+				client.addEventListener(FTPEvent.RESPONSE, handleResponse, false, 0, true);
+				client.addEventListener(FTPEvent.PROGRESS, handleProgress, false, 0, true);
+				client.addEventListener(FTPEvent.UPLOADED, handleUpload, false, 0, true);
+				client.addEventListener(FTPEvent.INVOKE_ERROR, handleInvokeError, false, 0, true);
+				client.addEventListener(IOErrorEvent.IO_ERROR, handleIOError, false, 0, true);
+				client.addEventListener(SecurityErrorEvent.SECURITY_ERROR, handleSecurityError, false, 0, true);
+				client.useSecureSocketConnection = sslCheckbox.selected;
+				client.connect(host, port);
+			}
+			
+			public function handleConnected(event:FTPEvent):void {
+				appendText(connectedToServer + event.hostname);
+				client.addEventListener(FTPEvent.LOGGED, handleLoggedIn, false, 0, true);
+				client.login(u, p);
+			}
+			
+			public function handleLoggedIn(event:FTPEvent):void {
+				appendText(loginMessage + event.hostname);
+				//currentState = "connected";
+				client.addEventListener(FTPEvent.LISTING, handleListing, false, 0, true);
+				client.addEventListener(FTPEvent.CHANGE_DIR, handleChangeDirectory, false, 0, true);
+				client.list();
+				transferGroup.visible = true;
+				transferGroup.includeInLayout = true;
+				showConnected(true);
+			}
+			
+			protected function handleChangeDirectory(event:FTPEvent):void {
+				
+			}
+			
+			protected function handleListing(event:FTPEvent):void {
+				var files:Array = event.listing;
+				var fileNames:Array = [];
+				
+				for (var i:int = 0; i < files.length; i++) 
+				{
+					fileNames.push(files[i].name);
+				}
+				
+				
+				appendText("Files retrieved"); //: " + fileNames);
+				
+				remoteFileList.dataProvider = event.listing;
+				
+				remoteFileList.visible = true;
+			}
+			
+			protected function handleIOError(event:IOErrorEvent):void {
+				//http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/net/SecureSocket.html
+				// Error #2031: Socket Error. URL: blackboard.dreamhost.com
+				if (client.secureCtrlSocket) {
+					appendText(ioErrorMessage + event.text + "\nCertificate Status: " + client.secureCtrlSocket.serverCertificateStatus);
+				}
+				else {
+					appendText(ioErrorMessage + event.text);
+				}
+				
+				if (!client.isConnected) {
+					showConnected(false);
+				}
+			}
+			
+			protected function handleSecurityError(event:SecurityErrorEvent):void {
+				appendText(ioErrorMessage + ": " + event.text);
+				
+				if (!client.isConnected) {
+					showConnected(false);
+				}
+			}
+			
+			private function updateLocalValues():void {
+				host = StringUtils.trim(serverInput.text);
+				port = parseInt(portInput.text);
+				u = StringUtils.trim(usernameInput.text);
+				p = StringUtils.trim(passwordInput.text);
+			}
+			
+			protected function handleResponse(event:FTPEvent):void
+			{
+				//appendText("Response Code: " + event.response.code + " Message: " + StringUtils.trim(event.response.message));
+			}
+			
+			protected function handleInvokeError(event:FTPEvent):void {
+				appendText("Invoke Error: " + event.error.name + " - " + StringUtils.trim(event.error.message));
+				
+				if (!client.isConnected) {
+					showConnected(false);
+				}
+			}
+			
+			public function appendText(value:String):void {
+				
+				//if (outputTextArea.text!="") {
+					value = value + "\n";
+				//}
+				outputTextArea.appendText(value);
+			}
+			
+			public function clearOutput():void {
+				
+				outputTextArea.text = "";
+			}
+			
+			
+			public function remoteFileListDoubleClickHandler (evt:Event):void {
+				var file:FTPFile = (evt.target as IDataRenderer).data as FTPFile;
+				
+				// check it is not a header row
+				if (file) {
+					if (file.isDirectory)
+					{
+						client.changeDirectory(file.name);
+					}
+					else
+					{
+						client.getFile(file.fullPath, (localFileSystemGrid.selectedItem as File).nativePath+file.name);
+					}
+				}
+			}
+			
+			public function handleFileSystemDoubleClickHandler(event:Event):void {
+				// mx.controls.dataGridClasses.FTEDataGridItemRenderer 
+				
+				if (event.target is IDataRenderer) {
+					if (client.isConnected) {
+						var file:File = (event.target as IDataRenderer).data as File;
+						
+						if (file && !file.isDirectory) {
+							client.putFile(file.nativePath, client.createPath(file.name));
+							appendText("Uploading file: " + client.createPath(file.name));
+						}
+					}
+					
+					if (!client.isConnected) {
+						showConnected(false);
+						appendText("You have been disconnected possibly due to no activity. Please login again.");
+					}
+				}
+			}
+			
+			private var kilobyte:int = 1024;
+			private var megabyte:int = kilobyte*kilobyte;
+			private var gigabyte:int = kilobyte*kilobyte*kilobyte;
+			
+			/**
+			 * Label function for the local files data grid
+			 * */
+			public function labelFunction(data:Object, dataGridColumn:DataGridColumn):String {
+				var dataField:String = dataGridColumn.dataField;
+				var isDirectory:Boolean = data.isDirectory;
+				var size:int;
+				
+				if (dataField=="size") {
+					if (isDirectory) return "";
+					size = data[dataField];
+					return getFormattedFileSize(size);
+				}
+				
+				if (isDirectory && dataField=="name") {
+					return "/" + data[dataField];
+				}
+				
+				return data[dataField];
+			}
+			
+			/**
+			 * Label function for the remote files data grid
+			 * */
+			public function remoteLabelFunction(data:FTPFile, dataGridColumn:DataGridColumn):String {
+				var dataField:String = dataGridColumn.dataField;
+				var isDirectory:Boolean = data.isDirectory;
+				var size:int;
+				
+				if (dataField=="size") {
+					if (isDirectory) return "";
+					size = data[dataField];
+					return getFormattedFileSize(size);
+				}
+				
+				if (isDirectory && dataField=="name") {
+					return "/" + data[dataField];
+				}
+				
+				return data[dataField];
+			}
+			
+			protected function refreshRemoteDirectoryIcon_clickHandler(event:MouseEvent):void {
+				
+				if (!client.isConnected) {
+					showConnected(false);
+					appendText("You have been disconnected possibly due to no activity. Please login again.");
+					return;x
+				}
+				
+				client.list();
+			}
+			
+			protected function refreshLocalDirectoryIcon_clickHandler(event:MouseEvent):void {
+				localFileSystemGrid.refresh();
+			}
+			
+			protected function localFileSystemGrid_directoryChangingHandler(event:FileEvent):void
+			{
+				
+				
+			}
+			
+			protected function handleProgress(event:FTPEvent):void {
+				var totalWidth:int = baselineLine.width;
+				var position:Number = event.bytes/event.bytesTotal;
+				//appendText("Uploading: " + int(position*100) +"% " );
+				progressLine.width = int(totalWidth*position);
+			}
+			
+			protected function handleUpload(event:FTPEvent):void {
+				var time:String = String(Number(Number(event.time/1000).toFixed(1)));
+				appendText("Uploaded: " + event.file + " " + time + " seconds");
+				progressLine.width = 0;
+			}
+			
+			private function debugCheckboxHandler():void
+			{
+				if (client) {
+					client.debug = debugCheckbox.selected;
+				}
+			}
+			
+			protected function remotePath_enterHandler(event:FlexEvent):void {
+				var path:String = remotePath.text;
+				
+				if (remotePath.text=="") {
+					path = "/";
+				}
+				
+				if (client.controlSocket.connected) {
+					client.changeDirectory(path);
+				}
+			}
+			
+			public function getFormattedFileSize(size:int):String {
+				var out:String;
+				
+				if (size==0) {
+					return "";
+				}
+				
+				if (size >= gigabyte) {
+					out = Number(Number(size/gigabyte).toFixed(1)) + " GB";
+				}
+				else if (size >= megabyte) {
+					out = Number(Number(size/megabyte).toFixed(1)) + " MB";
+				}
+				else if (size >= kilobyte) {
+					out = Number(Number(size/kilobyte).toFixed(0)) + " KB";
+				}
+				else if (size <= kilobyte) {
+					out = "<1 KB";
+				}
+				
+				return out;
+			}
+			
+			protected function showConnected(show:Boolean):void
+			{
+				isConnectedCheckbox.selected = show;
+			}
+			
+			protected function sslCheckbox_changeHandler(event:Event):void
+			{
+				// http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/net/SecureSocket.html
+				if (sslCheckbox.selected) {
+				//	portInput.text = "21";
+				}
+				else {
+				//	portInput.text = "22";
+				}
+				
+				// not sure which port so not changing it
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="click" >
+			<s:SetAction property="action" target="{this}" value="cancel"/>
+			<fc:ClosePopUp id="closePopUp" popUp="{this}" effectEnd="eventhandler1_effectEndHandler(event)"/>
+		</handlers:EventHandler>
+		
+		<!--- browse for directory -->
+		<handlers:EventHandler targets="{browseForExportDirectoryButton}" eventName="click" >
+			<fce:BrowseForFile id="browseForFolder" browseForFolder="true" targetAncestor="{this}">
+				<fce:selectionEffect>
+					<s:Sequence>
+						<fcb:CallMethod method="updateReleaseDirectoryLabel"/>
+					</s:Sequence>
+				</fce:selectionEffect>
+			</fce:BrowseForFile>
+		</handlers:EventHandler>
+		
+		<fcb:SetAction id="clearFilesLabelEffect" startDelay="5000" property="text" value=""/>
+		
+		<fx:String id="action"></fx:String>
+		
+		
+		<form:FormAdapter id="formAdapter">
+			<form:items>
+				<vo:FormElement targetComponent="{serverInput}" >
+					<vo:validator>
+						<mx:StringValidator trigger="{serverInput}"/>
+					</vo:validator>
+				</vo:FormElement>
+				<vo:FormElement targetComponent="{usernameInput}" >
+					<vo:validator>
+						<mx:StringValidator trigger="{usernameInput}"/>
+					</vo:validator>
+				</vo:FormElement>
+				<vo:FormElement targetComponent="{portInput}" >
+					<vo:validator>
+						<mx:StringValidator trigger="{portInput}"/>
+					</vo:validator>
+				</vo:FormElement>
+			</form:items>
+		</form:FormAdapter>
+		
+		<form:FormManager id="form" >
+			
+		</form:FormManager>
+		
+		<core:FTPClient id="client" debug="false"/>
+	</fx:Declarations>
+	
+	<windows:states>
+		<mx:State name="login"/>
+		<mx:State name="connected"/>
+	</windows:states>
+	
+	<s:Label id="warningLabel" 
+			 text="Connection Information:" 
+			 fontWeight="bold" 
+			 width="100%"
+			 includeInLayout="false" visible="false"/>
+	
+	<s:TextArea id="outputTextArea" 
+				top="20" 
+				right="40"
+				text="" 
+				borderAlpha="0"
+				focusAlpha="0"
+				width="280"
+				height="100"
+				fontSize="11"
+				includeIn="login"/>
+	
+	<s:ToggleButton id="isConnectedCheckbox" 
+					top="20" 
+					right="20"
+					selected="false"
+					skinClass="com.flexcapacitor.views.skins.OnlineToggleButton"
+					useHandCursor="true"
+					buttonMode="true"
+					enabled="true"
+					toolTip="Indicates if you are connected to your server."
+					/>
+	
+	
+	<s:VGroup left="15" 
+			  top="20" 
+			  right="20"
+			  bottom="20">
+		
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label id="serverLabel" 
+					 text="Server:" 
+					 fontWeight="bold" 
+					 minWidth="120"/>
+			
+			<s:TextInput id="serverInput" 
+						 prompt="FTP Server" 
+						 minWidth="220"/>
+			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label text="Port:" 
+					 fontWeight="bold" 
+					 minWidth="120"/>
+			
+			<s:TextInput id="portInput" 
+						 prompt="FTP Port" 
+						 text="21"
+						 minWidth="120"/>
+			
+			<s:CheckBox id="sslCheckbox" 
+						selected="false"
+						label="Secure Socket (if available)"
+						change="sslCheckbox_changeHandler(event)"
+						toolTip="The supported encryption protocols are SSL 3.0 and higher, and TLS 1.0 and higher. This feature is supported on all desktop operating systems, but is not supported on all devices. "
+						/>
+			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label id="usernameLabel" 
+					 text="Username:" 
+					 fontWeight="bold" 
+					 minWidth="120"/>
+			
+			<s:TextInput id="usernameInput" 
+						 prompt="Username" 
+						 minWidth="120"/>
+			
+		</s:HGroup>
+		
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label id="passwordLabel" 
+					 text="Password:" 
+					 fontWeight="bold" 
+					 minWidth="120"/>
+			
+			<s:TextInput id="passwordInput" 
+						 prompt="Password" 
+						 minWidth="120"
+						 displayAsPassword="true"/>
+			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="baseline">
+			
+			<s:Label text="Save Login:" 
+					 fontWeight="bold"
+					 minWidth="120"/>
+			
+			<s:CheckBox id="saveLoginCheckbox" 
+						selected="false"
+						change="handleHandler()"
+						/>
+			
+			<s:Spacer width="80"/>
+			<s:CheckBox id="debugCheckbox" 
+						selected="false"
+						change="debugCheckboxHandler()"
+						label="debug"
+						toolTip="If you are having trouble connecting to your server enable this."
+						/>
+			<s:Spacer width="100%"/>
+			<s:Button id="validateLoginButton" label="Login" click="loginButton_clickHandler(event)"/>
+		</s:HGroup>
+		
+		<controls:HorizontalLine id="baselineLine" width="100%" alpha="1" angle="90" />
+		
+		
+		<s:HGroup id="transferGroup" width="100%" verticalAlign="top" gap="30">
+			
+			<s:VGroup width="50%" >
+				<s:Label text="Upload Directory:" 
+						 fontWeight="bold"
+						 minWidth="120"
+						 includeInLayout="false"
+						 visible="false"
+						 />
+				
+				<s:Label id="releaseDirectoryLabel" 
+						 text="Select a location of local files" 
+						 width="100%"
+						 maxDisplayedLines="1"
+						 includeInLayout="false"
+						 visible="false"
+						 />
+				<s:HGroup verticalAlign="middle" width="100%">
+					
+					<controls:BeveledImageButton id="browseForExportDirectoryButton" 
+										  source="{Radii8LibraryAssets.openFolder}" 
+										  toolTip="Open Directory"
+										  />
+					<s:TextInput id="localDirectory" 
+								 text="" 
+								 prompt="Local Directory" 
+								 width="100%"/>
+					<controls:BeveledImageButton id="refreshLocalIcon" 
+												 source="{Radii8LibraryAssets.refresh}" 
+												 toolTip="Refresh Local Directory"
+												 click="refreshLocalDirectoryIcon_clickHandler(event)"/>
+				</s:HGroup>
+				
+				<mx:FileSystemDataGrid id="localFileSystemGrid" 
+								   width="100%" 
+								   height="100%"
+								   showIcons="true"
+								   showExtensions="true"
+								   labelFunction="labelFunction"
+								   doubleClickEnabled="true" 
+								   doubleClick="handleFileSystemDoubleClickHandler(event)"
+								   directoryChanging="localFileSystemGrid_directoryChangingHandler(event)">
+					
+					<mx:columns>
+						<mx:DataGridColumn headerText="Name" dataField="name" minWidth="190" />
+						<mx:DataGridColumn headerText="Size" dataField="size" width="65" textAlign="right"/>
+					</mx:columns>
+				</mx:FileSystemDataGrid>
+			</s:VGroup>
+			
+			<s:VGroup width="50%" height="100%">
+				<s:HGroup width="100%" verticalAlign="middle">
+					<s:TextInput id="remotePath" 
+							  prompt="Path on remote server"
+							  text="{client.workingDirectory}" 
+							  enter="remotePath_enterHandler(event)" 
+							  width="100%"/>
+					
+					<controls:BeveledImageButton id="refreshRemoteIcon" 
+										  source="{Radii8LibraryAssets.refresh}" 
+										  toolTip="Refresh Remote Directory"
+										  click="refreshRemoteDirectoryIcon_clickHandler(event)"/>
+				</s:HGroup>
+				<mx:DataGrid id="remoteFileList" 
+							 width="100%"
+							 height="100%"
+							 doubleClick="remoteFileListDoubleClickHandler(event)" 
+							 doubleClickEnabled="true"
+							 labelFunction="remoteLabelFunction">
+					<mx:columns>
+						<mx:DataGridColumn headerText="Name" dataField="name"/>
+						<mx:DataGridColumn headerText="Size" dataField="size" width="60"/>
+						<mx:DataGridColumn headerText="Directory" dataField="isDirectory" width="35"/>
+					</mx:columns>
+				</mx:DataGrid>
+			</s:VGroup>
+		</s:HGroup>
+		
+		<controls:HorizontalLine id="progressLine" width="0" alpha="1" angle="90" 
+								 strokeColor="#0000ff"/>
+		
+		<s:Label id="spacerLabel" 
+				 text=" " />
+		
+		<s:HGroup width="100%" verticalAlign="baseline">
+			<s:Button id="navigateButton" label="Visit" visible="false"
+					  click="navigateButton_clickHandler(event)"/>
+			<s:Label id="filesUploadedLabel" 
+					 text="" />
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Cancel" />
+			<s:Button id="uploadButton" label="Upload" click="uploadButton_clickHandler(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+</windows:AnimatedPanelWindow>

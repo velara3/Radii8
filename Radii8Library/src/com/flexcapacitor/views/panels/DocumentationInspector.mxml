@@ -18,9 +18,15 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.MetaData;
+			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.HTMLUtils;
 			
 			import flash.net.navigateToURL;
+			
+			import mx.core.IUIComponent;
+			import mx.core.IVisualElement;
+			import mx.core.UIComponent;
 			
 			
 			/**
@@ -30,26 +36,62 @@
 			
 			public var lastURL:String;
 			public var declaredBy:String;
+			public var documentationViewer:IUIComponent;
 			
 			public function activate():void {
 				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				
+				if (Radiate.isDesktop) {
+					currentState = "desktop";
+					
+					if (documentationViewer==null) {
+						documentationViewer = HTMLUtils.createInstance();
+						UIComponent(documentationViewer).percentWidth = 100;
+						UIComponent(documentationViewer).percentHeight = 100;
+						IVisualElement(documentationViewer).top = 28;
+						addElementAt(IVisualElement(documentationViewer), numElements);
+					}
+				}
+				else {
+					currentState = "web";
+				}
+				
+				
+				updateTarget();
+				//updateDocumentation();
 			}
 			
 			public function deactivate():void {
 				if (radiate) {
 					radiate.removeEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 				}
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				updateTarget();
+				
 			}
 			 
 			protected function propertySelectedHandler(event:RadiateEvent):void {
 				var metadata:MetaData = MetaData(event.selectedItem);
+				
+				// if we are deactivated or invisible should we still update the documentation?
 				var isVisible:Boolean = DisplayObjectUtils.getGreatestVisibilityDisplayList(this);
 				var path:String = "";
 				var prefix:String = "";
+				var url:String;
+				url = Radiate.getURLToHelp(metadata);
 				
-				lastURL  = Radiate.getURLToHelp(metadata);
+				// don't keep loading pages if you already loaded them
+				if (url==lastURL) {
+					return;
+				}
+				
+				lastURL = url;
 				declaredBy = metadata.declaredBy;
 				
 				if (!isVisible || !showDocsCheckbox.selected) {
@@ -62,6 +104,30 @@
 				
 			}
 			
+			private function updateTarget():void {
+				
+				if (radiate.target) {
+					// if we are deactivated or invisible should we still update the documentation?
+					//var isVisible:Boolean = DisplayObjectUtils.getGreatestVisibilityDisplayList(this);
+					
+					var className:String = ClassUtils.getQualifiedClassName(radiate.target);
+					var url:String;
+					
+					if (className) {
+						
+						url = Radiate.getURLToHelp(className);
+						
+						// don't keep loading pages if you already loaded them
+						if (url==lastURL) {
+							return;
+						}
+						
+						lastURL = url;
+						updateDocumentation();
+					}
+				}
+			}
+			
 			protected function showDocsCheckbox_changeHandler(event:Event):void {
 				
 				updateDocumentation();
@@ -70,6 +136,10 @@
 			protected function openInSeparateWindow_changeHandler(event:Event):void {
 				
 				updateDocumentation();
+				
+				if (openInSeparateWindow.selected) {
+					Radiate.info("Opening documentation in separate window. Updates will appear there.");
+				}
 			}
 			
 			public function updateDocumentation():void {
@@ -78,14 +148,26 @@
 					
 					if (openInSeparateWindow.selected) {
 						var request:URLRequest = new URLRequest(lastURL);
+						
 						navigateToURL(request, "asdocs");
 						
-						if (docsFrame.source!="" || docsFrame.source!="about:blank") {
-							docsFrame.source = "";
+						if (Radiate.isDesktop) {
+							Object(documentationViewer).location = "";
+						}
+						else {
+							if (docsFrame.source!="" || docsFrame.source!="about:blank") {
+								docsFrame.source = "";
+							}
 						}
 					}
 					else {
-						docsFrame.source = lastURL;
+						
+						if (Radiate.isDesktop) {
+							Object(documentationViewer).location = lastURL;
+						}
+						else {
+							docsFrame.source = lastURL;
+						}
 					}
 					
 					if (showURL.selected) {
@@ -96,7 +178,13 @@
 					}
 				}
 				else {
-					docsFrame.source = "about:blank";
+					
+					if (Radiate.isDesktop) {
+						Object(documentationViewer).location = "about:blank";
+					}
+					else {
+						docsFrame.source = "about:blank";
+					}
 					textURL.text = "";
 				}
 			}
@@ -113,6 +201,12 @@
 		]]>
 	</fx:Script>
 	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="desktop"/>
+		<s:State name="web"/>
+	</s:states>
+	
 	<s:HGroup left="0" right="0" 
 			  width="100%"
 			  clipAndEnableScrolling="true" 
@@ -125,8 +219,10 @@
 					 borderColor="#A5A5A5"
 					 borderVisible="false"
 					 focusAlpha="0"
+					 editable="false"
 					 prompt="No documentation available. Select a property, style or event."/>
 		<s:CheckBox id="showURL" label="Show URL" 
+					selected="true"
 					change="showURL_changeHandler(event)"/>
 		<s:CheckBox id="openInSeparateWindow" label="Open in Window" 
 					change="openInSeparateWindow_changeHandler(event)"/>
@@ -137,6 +233,8 @@
 					/>
 	</s:HGroup>
 	
-	<flexiframe:IFrame id="docsFrame" top="28" width="100%" height="100%" />
+	<flexiframe:IFrame includeIn="web" id="docsFrame" top="28" width="100%" height="100%" />
+	
+	<s:Label includeIn="desktop" text="Documentation not supported on desktop yet" top="28" left="10"/>
 	
 </s:Group>

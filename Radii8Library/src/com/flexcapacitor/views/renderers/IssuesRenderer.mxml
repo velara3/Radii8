@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:MXTreeItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  width="100%" 
+					  minHeight="18" 
+					  autoDrawBackground="true"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.model.IssueData;
+			
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				if (value is IssueData) {
+					var issueData:IssueData = value as IssueData;
+					
+					label = " • " + issueData.label + ": " + issueData.description;
+				}
+				else {
+					label = value.label + " (" + value.children.length + ")";
+				}
+			}
+			
+			protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
+				//iconImage.source = Radiate.componentsIconNotFoundPath;
+			}
+			
+		]]>
+	</fx:Script>
+
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="selected"/>
+	</s:states>
+	
+	
+	<s:HGroup left="0" 
+			  right="0"
+			  gap="2"
+			  top="0"
+			  height="100%"
+			  verticalAlign="middle">
+		
+		<s:Spacer width="{treeListData.indent}"/>
+		
+		<s:Group id="disclosureGroup">
+			<s:BitmapImage source="{treeListData.disclosureIcon}" 
+						   height="16" 
+						   visible="{treeListData.hasChildren}" />
+		</s:Group>
+		<!--<s:BitmapImage id="iconImage" 
+					   source="{treeListData.icon}" 
+					   contentLoader="{Radiate.contentCache}"
+					   ioError="iconImage_ioErrorHandler(event)"
+					   width="16" height="16"/>-->
+		<s:Label id="labelDisplay" 
+				 fontSize="10"
+				 paddingLeft="3" 
+				 width="100%"/>
+	</s:HGroup>
+</s:MXTreeItemRenderer>

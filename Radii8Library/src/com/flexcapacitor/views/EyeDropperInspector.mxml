@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+<s:Group xmlns:g="com.flexcapacitor.graphics.*"
 		 xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:filters="com.flexcapacitor.filters.*"
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:c="com.flexcapacitor.controls.*" 
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
+		 xmlns:status="com.flexcapacitor.effects.status.*" 
 		 
-		 creationComplete="group1_creationCompleteHandler(event)" xmlns:controls1="com.flexcapacitor.controls.*" xmlns:handlers="com.flexcapacitor.handlers.*" xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" xmlns:status="com.flexcapacitor.effects.status.*" 
+		 creationComplete="group1_creationCompleteHandler(event)" 
 		 >
 
 	
@@ -41,7 +45,7 @@
 				EyeDropper(tool).addEventListener(MouseEvent.ROLL_OVER, rollOverHandler, false, 0, true);
 				//EyeDropper(tool).addEventListener(MouseEvent.MOUSE_MOVE, rollOverHandler, false, 0, true);
 				
-				//Radiate.log.info("INSPECTOR TOOL CREATED");
+				//Radiate.info("INSPECTOR TOOL CREATED");
 				
 				updateTool(tool);
 			}
@@ -64,7 +68,7 @@
 			 * When user clicks on a location apply the values
 			 * */
 			protected function colorSelectedHandler(event:RadiateEvent):void {
-				//Radiate.log.info("COLOR CHANGE");
+				//Radiate.info("COLOR CHANGE");
 				
 				updateDisplay(event.color, event.invalid, false);
 			}
@@ -73,7 +77,7 @@
 			 * When user previews a location (mouse movement) show in preview components
 			 * */
 			protected function colorPreviewHandler(event:RadiateEvent):void {
-				//Radiate.log.info("COLOR PREVIEW");
+				//Radiate.info("COLOR PREVIEW");
 				
 				updateDisplay(event.color, event.invalid, true);
 			}
@@ -155,12 +159,12 @@
 		<s:HorizontalLayout paddingLeft="4" />
 	</s:layout>
 	
-	<mx:ColorPicker id="colorPicker" height="21" change="colorPicker_changeHandler(event)"/>
+	<c:ColorPicker id="colorPicker" height="21" change="colorPicker_changeHandler(event)"/>
 	
 	<s:TextInput id="colorTextInput" widthInChars="6" height="21"/>
 	
 	
-	<controls1:ImageButton id="copyIcon" 
+	<c:BeveledImageButton id="copyIcon" 
 						   height="100%"
 						   filters="{selectFiltersOff}"
 						   toolTip="Copy the color to the Clipboard"

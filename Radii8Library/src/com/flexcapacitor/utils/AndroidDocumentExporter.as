@@ -1,6 +1,8 @@
 
 package com.flexcapacitor.utils {
+	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.SourceData;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
 	import mx.core.IVisualElement;
@@ -12,10 +14,10 @@ package com.flexcapacitor.utils {
 	/**
 	 * Exports a document to Android markup
 	 * */
-	public class AndroidDocumentExporter extends DocumentExporter {
+	public class AndroidDocumentExporter extends DocumentTranscoder {
 		
 		public function AndroidDocumentExporter() {
-		
+			supportsExport = true;
 		}
 		
 		/**
@@ -34,11 +36,8 @@ package com.flexcapacitor.utils {
 		/**
 		 * @inheritDoc
 		 * */
-		public function exportXMLString(iDocument:IDocument, reference:Boolean = false, target:Object = null):String {
-			var XML1:XML;
-			//document = iDocument;
+		override public function export(iDocument:IDocument, componentDescription:ComponentDescription = null, options:ExportOptions = null):SourceData {
 			var application:Object = iDocument ? iDocument.instance : null;
-			var targetDescription:ComponentDescription;
 			var componentTree:ComponentDescription;
 			var output:String = "";
 			var xml:XML;
@@ -47,57 +46,52 @@ package com.flexcapacitor.utils {
 			
 			
 			// find target in display list and get it's code
-			targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, componentTree);
+			//targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, componentTree);
 			
 			
-			if (targetDescription) {
+			if (componentDescription) {
 				
 				// see the top of this document on how to generate source code
-				getAppliedPropertiesFromHistory(iDocument, targetDescription);
+				getAppliedPropertiesFromHistory(iDocument, componentDescription);
 			
-				if (!reference) {
-					//output = getAndroidOutputString(document.componentDescription);
+				//output = getAndroidOutputString(document.componentDescription);
+				
+				var includePreviewCode:Boolean = true;
+				
+				output = getAndroidOutputString(iDocument, componentDescription, true, "", includePreviewCode);
+				output = output + "\n";
 					
-					var includePreviewCode:Boolean = true;
+				try {
+					// don't use XML for Android output because it converts this:
+					// <div ></div>
+					// to this:
+					// <div />
+					// and that breaks the Android page
 					
-					output = getAndroidOutputString(iDocument, targetDescription, true, "", includePreviewCode);
-					output = output + "\n";
-						
-					try {
-						// don't use XML for Android output because it converts this:
-						// <div ></div>
-						// to this:
-						// <div />
-						// and that breaks the Android page
-						
-						// we can still try it to make sure it's valid
-						xml = new XML(output); // check if valid
-						
-						sourceCode = output;
-						// passing the raw string not the xml
-						//setTextareaCode(output);
-					}
-					catch (error:Error) {
-						// Error #1083: The prefix "s" for element "Group" is not bound.
-						// <s:Group x="93" y="128">
-						//	<s:Button x="66" y="17"/>
-						//</s:Group>
-						sourceCode = output;
-						//setTextareaCode(output);
-					}
+					// we can still try it to make sure it's valid
+					xml = new XML(output); // check if valid
+					
+					sourceCode = output;
+					// passing the raw string not the xml
+					//setTextareaCode(output);
 				}
-				else {
-					XML1 = <document />;
-					XML1.@host = iDocument.host;
-					XML1.@id = iDocument.id;
-					XML1.@name = iDocument.name;
-					XML1.@uid = iDocument.uid;
-					XML1.@uri = iDocument.uri;
-					output = XML1.toXMLString();
+				catch (error:Error) {
+					// Error #1083: The prefix "s" for element "Group" is not bound.
+					// <s:Group x="93" y="128">
+					//	<s:Button x="66" y="17"/>
+					//</s:Group>
+					sourceCode = output;
+					//setTextareaCode(output);
 				}
 			}
 			
-			return output;
+			var sourceData:SourceData = new SourceData();
+			
+			sourceData.source = output;
+			sourceData.markup = output;
+			//sourceData.css = output;
+			
+			return sourceData;
 		}
 	
 

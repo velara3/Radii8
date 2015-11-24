@@ -7,6 +7,7 @@
 		 xmlns:fc="com.flexcapacitor.effects.popup.*"
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*" 
 		 
 		 width="100%" 
 		 height="100%"
@@ -17,10 +18,12 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IDocumentData;
 			import com.flexcapacitor.model.IProject;
+			import com.flexcapacitor.services.WPService;
 			import com.flexcapacitor.views.IInspector;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			import com.flexcapacitor.views.windows.ImportWindow;
@@ -34,8 +37,8 @@
 			private var rootDisplayObject:DisplayObject;
 			private var displayList:Array = [];
 			
-			[Bindable]
 			private var radiate:Radiate;
+			private var services:ServicesManager;
 			private var designDocument:IEventDispatcher;
 			
 			public var project:IProject;
@@ -43,6 +46,8 @@
 
 			public function activate():void {
 				radiate = Radiate.instance;
+				services = ServicesManager.instance;
+				
 				
 				radiate.addEventListener(RadiateEvent.PROJECT_CHANGE, projectChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_ADDED, documentAddedHandler, false, 0, true);
@@ -51,6 +56,10 @@
 				radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, documentRemovedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_DELETED, documentRemovedHandler, false, 0, true);
 				
+				services.addEventListener(RadiateEvent.PROJECT_GET_HOME_PAGE, getHomePageHandler, false, 0, true);
+				services.addEventListener(RadiateEvent.PROJECT_SET_HOME_PAGE, setHomePageHandler, false, 0, true);
+
+
 				update();
 			}
 			
@@ -63,6 +72,11 @@
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_REMOVED, documentRemovedHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_DELETED, documentRemovedHandler);
 				}
+				
+				if (services) {
+					services.removeEventListener(RadiateEvent.PROJECT_GET_HOME_PAGE, getHomePageHandler);
+					services.removeEventListener(RadiateEvent.PROJECT_SET_HOME_PAGE, setHomePageHandler);
+				}
 			}
 			
 			public function update():void {
@@ -71,7 +85,7 @@
 					setProjectsDocuments(radiate.selectedProject);
 				}
 				
-				if (radiate.selectedDocument && radiate.selectedDocument) {
+				if (radiate.selectedDocument) {
 					selectDocument(radiate.selectedDocument);
 				}
 			}
@@ -122,28 +136,6 @@
 				if (selectedDocument) {
 					radiate.dispatchObjectSelectedEvent(selectedDocument);
 				}*/
-			}
-
-			/**
-			 * Update document
-			 * */
-			private function selectDocument(iDocument:IDocumentData):void {
-				var jDocument:IDocumentData;
-				list.validateNow();
-				
-				if (list.selectedItem != iDocument) {
-					
-					var length:int = documentsCollection.length;
-					for (var i:int;i<length;i++) {
-						jDocument = IDocumentData(documentsCollection.getItemAt(i));
-						
-						
-						if (jDocument.uid==iDocument.uid) {
-							list.selectedItem = IDocumentData(documentsCollection.getItemAt(i));
-							break;
-						}
-					}
-				}
 			}
 			
 			/**
@@ -219,7 +211,7 @@
 					
 					var savedLocally:Boolean = radiate.saveDocument(iDocument, savedLocation);
 					
-					//Radiate.log.info("Saved locally: " + savedLocally);
+					//Radiate.info("Saved locally: " + savedLocally);
 				}
 			}
 			
@@ -241,6 +233,8 @@
 				if (documentData) {
 					radiate.dispatchObjectSelectedEvent(documentData);
 				}
+				
+				updateDocumentStatus(documentData);
 			}
 			
 			protected function documentAddedHandler(event:RadiateEvent):void {
@@ -263,7 +257,7 @@
 					radiate.removeDocument(selectedDocument);
 				}
 				else {
-					Radiate.log.info("Please select a document");
+					Radiate.info("Please select a document");
 				}
 			}
 			
@@ -279,7 +273,7 @@
 					radiate.closeDocument(selectedDocument);
 				}
 				else {
-					Radiate.log.info("Please select a document");
+					Radiate.info("Please select a document");
 				}
 			}
 			
@@ -290,7 +284,7 @@
 					radiate.openDocument(selectedDocument, DocumentData.REMOTE_LOCATION, true);
 				}
 				else {
-					Radiate.log.info("Please select a document");
+					Radiate.info("Please select a document");
 				}
 			}
 			
@@ -301,7 +295,7 @@
 					//radiate.importMXMLDocument(radiate.selectedProject, selectedDocument, code);
 				}
 				else {
-					Radiate.log.info("Please select a document");
+					Radiate.info("Please select a document");
 				}
 			}
 			
@@ -323,36 +317,14 @@
 						if (radiate.target is IVisualElement) {
 							radiate.importMXMLDocument(radiate.selectedProject, selectedDocument, IVisualElement(radiate.target), code);
 						}
-						Radiate.log.info("Please select a visual element");
+						Radiate.info("Please select a visual element");
 					}
 					else {
-						Radiate.log.info("Please select a document");
+						Radiate.info("Please select a document");
 					}
 				}
 			}
 
-			/**
-			 * Pressing enter would retrieve the style value.
-			 * 
-			 * This is no longer necessary since values are updated on property change events. 
-			 * */
-			protected function searchPropertyInput_enterHandler(event:FlexEvent):void {
-				var searchText:String = filterInput.text;
-				var item:XML;
-				
-			}
-			
-			/**
-			 * Move from search text input to properties grid on down arrow key
-			 * */
-			protected function filterInput_keyUpHandler(event:KeyboardEvent):void {
-				/*if (event.keyCode==Keyboard.DOWN) {
-					propertiesGrid.setFocus();
-					if (propertiesGrid.selectedIndex ==-1) {
-						propertiesGrid.setSelectedIndex(0);
-					}
-				}*/
-			}
 			
 			protected function list_doubleClickHandler(event:MouseEvent):void {
 				var documentData:IDocument = list.selectedItem ? IDocument(list.selectedItem) : null;
@@ -362,16 +334,192 @@
 				}
 			}
 			
+			protected function documentStatusList_changeHandler(event:IndexChangeEvent):void
+			{
+				var iDocument:IDocument = radiate.selectedDocument;
+				var status:String = documentStatusList.selectedItem;
+				
+				if (iDocument && status!=WPService.STATUS_NONE && iDocument.status!=status) {
+					iDocument.status = status;
+					updateCollection();
+					iDocument.markDirty();
+				}
+			}
+			
+			/**
+			 * Refreshes the collection which refreshes the list
+			 * */
+			public function updateCollection():void {
+				if (documentsCollection) {
+					documentsCollection.refresh();
+				}
+			}
+			
+			/**
+			 * Update document
+			 * */
+			private function selectDocument(iDocument:IDocumentData):void {
+				var jDocument:IDocumentData;
+				var documentFound:Boolean;
+				list.validateNow();
+				
+				if (list.selectedItem != iDocument) {
+					
+					var length:int = documentsCollection.length;
+					for (var i:int;i<length;i++) {
+						jDocument = IDocumentData(documentsCollection.getItemAt(i));
+						
+						
+						if (jDocument.uid==iDocument.uid) {
+							list.selectedItem = IDocumentData(documentsCollection.getItemAt(i));
+							documentFound = true;
+							break;
+						}
+					}
+				}
+				else {
+					documentFound = true;
+				}
+				
+				if (documentFound) {
+					updateDocumentStatus(iDocument);
+				}
+				else {
+					clearDocumentStatus();
+				}
+			}
+			
 			private function selectDocumentByUID(uid:String):void {
-				var length:int = documentsCollection.length;
-				for (var i:int;i<length;i++) {
-					var iDocumentData:IDocumentData = IDocumentData(documentsCollection.getItemAt(i));
+				var numberOfDocuments:int = documentsCollection.length;
+				var documentFound:Boolean;
+				var iDocumentData:IDocumentData;
+				
+				for (var i:int;i<numberOfDocuments;i++) {
+					iDocumentData = IDocumentData(documentsCollection.getItemAt(i));
+					
 					if (iDocumentData.uid==uid) {
 						list.selectedItem = iDocumentData;
+						documentFound = true;
 						break;
 					}
 				}
 				
+				
+				if (documentFound) {
+					updateDocumentStatus(iDocumentData);
+				}
+				else {
+					clearDocumentStatus();
+				}
+				
+			}
+			
+			private function updateDocumentStatus(jDocument:IDocumentData):void {
+	
+				if (jDocument) {
+					if (jDocument.status==WPService.STATUS_DRAFT || jDocument.status==WPService.STATUS_PUBLISH) {
+						documentStatusList.selectedItem = jDocument.status;
+					}
+				}
+				else {
+					clearDocumentStatus();
+				}
+			}
+			
+			private function clearDocumentStatus():void {
+				documentStatusList.selectedIndex = 0;
+			}
+			
+			public var documentNotPublishedWarning:Boolean;
+			
+			protected function openInBrowserButton_clickHandler(event:MouseEvent):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (iDocument) {
+					
+					if (iDocument.status!=WPService.STATUS_PUBLISH) {
+						if (documentNotPublishedWarning) {
+							Radiate.openInBrowser(iDocument);
+						}
+						else {
+							documentNotPublishedWarning = true;
+							Radiate.warn("The document is not published. You may need to login in your browser to see it. Otherwise set to publish and save.")
+							setTimeout(Radiate.openInBrowser, 2500, iDocument);
+						}
+					}
+					else {
+						Radiate.openInBrowser(iDocument);
+					}
+				}
+			}
+			
+			protected function list_clickHandler(event:MouseEvent):void {
+				var documentData:IDocument = list.selectedItem ? IDocument(list.selectedItem) : null;
+				
+				if (documentData) {
+					updateDocumentStatus(documentData);
+				}
+			}
+			
+			protected function setHomePageDocumentIcon_clickHandler(event:MouseEvent):void {
+				var documentData:IDocument = list.selectedItem ? IDocument(list.selectedItem) : null;
+				
+				if (documentData) {
+					if (documentData.id==null) {
+						Radiate.warn("Save the document before setting as home page. No ID is set.");
+					}
+					else {
+						documentBeingSaved = documentData;
+						services.setProjectHomePage(int(documentData.id));
+					}
+				}
+			}
+			
+			public var documentBeingSaved:IDocument;
+			
+			protected function setHomePageHandler(event:RadiateEvent):void {
+				//trace(event.data);
+				var data:Object = event.data;
+				
+				if (data) {
+					if (documentBeingSaved && documentBeingSaved.id==data.newValue) {
+						documentBeingSaved.project.homePage = documentBeingSaved.id!=null ? int(documentBeingSaved.id) : 0;
+						documentBeingSaved.project.markDirty();
+					}
+					
+					Radiate.instance.projectHomePageID = data.newValue;
+					documentsCollection.refresh();
+				}
+			}
+			
+			protected function getHomePageHandler(event:RadiateEvent):void {
+				//trace(event.data);
+				
+			}
+			
+			protected function getHomePageDocumentIcon_clickHandler(event:MouseEvent):void {
+				
+				if (services) {
+					services.getProjectHomePage();
+				}
+			}
+			
+			protected function editDocumentIcon_clickHandler(event:MouseEvent):void
+			{
+				if (radiate.selectedDocument) {
+					Radiate.editDocumentInBrowser(radiate.selectedDocument);
+				}
+			}
+			
+			protected function openHomePageInBrowserButton_clickHandler():void {
+				
+				if (Radiate.instance.projectHomePageID<1) {
+					Radiate.warn("A home page has not been set. Showing the default theme home page");
+					Radiate.callAfter(2000, Radiate.openUsersWebsite);
+				}
+				else {
+					Radiate.openUsersWebsite();
+				}
 			}
 			
 		]]>
@@ -380,29 +528,11 @@
 	<fx:Declarations>
 		<s:ArrayCollection id="documentsCollection" />
 		
-		
-		
 		<!-- SORT BY NAME -->
 		<handlers:EventHandler eventName="creationComplete" >
 			<collections:SortCollection target="{documentsCollection}" 
 								 fields="{['name']}" />
 		</handlers:EventHandler>
-		
-		<!-- FILTER BY NAME -->
-		<handlers:EventHandler eventName="change" 
-							   targets="{[filterInput,showAllItemsOnEmpty,caseSensitive,searchAtStart]}"
-							   >
-			<collections:FilterCollection target="{documentsCollection}" 
-								   source="{filterInput}" 
-								   sourcePropertyName="text"
-								   fieldName="name"
-								   showAllItemsOnEmpty="{showAllItemsOnEmpty.selected}"
-								   caseSensitive="{caseSensitive.selected}"
-								   searchAtStart="{searchAtStart.selected}"
-								   />
-		</handlers:EventHandler>
-		
-		
 		
 		<!--- show import document popup -->		
 		<handlers:EventHandler eventName="click" target="{importDocumentIcon}">
@@ -509,25 +639,12 @@
 		
 		<s:Group height="24" 
 				 minHeight="24"
+				 maxHeight="60"
 				 width="100%" 
 				 >
 					
-			<c:SearchTextInput id="filterInput" 
-							   left="0" right="0" top="0" 
-							   width="100%"
-							   minWidth="60" 
-							   styleName="inputStyles"
-							   prompt="Search"
-							   enter="searchPropertyInput_enterHandler(event)"
-							   keyUp="filterInput_keyUpHandler(event)"
-							   />
-			<s:HGroup width="100%" top="32" left="4" verticalAlign="baseline">
-				<s:CheckBox id="showAllItemsOnEmpty" label="All" selected="true"/>
-				<s:CheckBox id="caseSensitive" label="Case" selected="false"/>
-				<s:CheckBox id="searchAtStart" label="At start" selected="false"/>
-				<s:Spacer width="100%"/>
-				<s:Label text="Results: {documentsCollection.length}"/>
-			</s:HGroup>
+			<inspectors:SearchCollection dataProvider="{documentsCollection}"
+										 fieldName="name"/>
 		</s:Group>
 		
 		
@@ -540,6 +657,7 @@
 				borderAlpha=".2"
 				dataProvider="{documentsCollection}"
 				change="list_changeHandler(event)"
+				click="list_clickHandler(event)"
 				doubleClick="list_doubleClickHandler(event)"
 				doubleClickEnabled="true"
 				itemRenderer="com.flexcapacitor.views.renderers.EditableDocumentRenderer"
@@ -554,33 +672,89 @@
 			 minHeight="24"
 			 verticalAlign="middle"
 			 >
-		<c:ImageButton id="importDocumentIcon" 
+		<c:BeveledImageButton id="importDocumentIcon" 
 					   source="{Radii8LibraryAssets.importIcon}" 
 					   toolTip="Import Document"
 					   />
+		<s:Spacer width="-1"/>
+		<s:Group top="1">
+			<c:BeveledImageButton id="setHomePageDocumentIcon" 
+								  source="{Radii8LibraryAssets.document}" 
+								  toolTip="Set the site home page"
+								  click="setHomePageDocumentIcon_clickHandler(event)"
+								  />
+			<s:BitmapImage id="homePageIcon" 
+					 left="5"
+					 top="-3"
+					 source="{Radii8LibraryAssets.property}"
+					 >
+			</s:BitmapImage>
+		</s:Group>
+		<s:Group click="openHomePageInBrowserButton_clickHandler()">
+			<!--<s:BitmapImage source="{Radii8LibraryAssets.home}" visible="true"
+						   />-->
+			<c:BeveledImageButton id="openHomePageInBrowserButton" 
+								  source="{Radii8LibraryAssets.home}" 
+								  toolTip="View home page in browser"
+								  smoothingQuality="high"
+								  smooth="true"
+								  width="15"
+								  height="16"
+								  click="openHomePageInBrowserButton_clickHandler()"
+								  />
+			<s:BitmapImage left="5"
+						   top="-3"
+						   visible="false"
+						   includeInLayout="false"
+						   source="{Radii8LibraryAssets.property}"
+						   
+						   >
+			</s:BitmapImage>
+		</s:Group>
+		<s:Spacer width="-1"/>
+		<s:DropDownList id="documentStatusList" 
+						width="80"
+						toolTip="If the document is a private draft only viewable to you or a published document viewable to anyone"
+						dataProvider="{Radiate.documentStatuses}" 
+						change="documentStatusList_changeHandler(event)">
+		</s:DropDownList>
+		<c:BeveledImageButton id="openInBrowserButton" 
+							  source="{Radii8LibraryEffectsAssets.play}" 
+							  toolTip="View in browser"
+							  click="openInBrowserButton_clickHandler(event)"
+							  />
 		<s:Spacer width="100%"/>
-		<c:ImageButton id="closeDocumentIcon" 
+		<c:BeveledImageButton id="editDocumentIcon" 
+							  source="{Radii8LibraryAssets.edit}" 
+							  toolTip="Edit Document (opens a browser window)"
+							  click="editDocumentIcon_clickHandler(event)"
+							  />
+		<c:BeveledImageButton id="closeDocumentIcon" 
 					   source="{Radii8LibraryAssets.closedFolder}" 
 					   toolTip="Close Document"
 					   click="closeDocumentIcon_clickHandler(event)"
+					   visible="{list.selectedItem.isOpen}"
+					   includeInLayout="{list.selectedItem.isOpen}"
 					   />
-		<c:ImageButton id="openDocumentIcon" 
+		<c:BeveledImageButton id="openDocumentIcon" 
 					   source="{Radii8LibraryAssets.openFolder}" 
 					   toolTip="Open Document"
 					   click="openDocumentIcon_clickHandler(event)"
+					   visible="{!list.selectedItem.isOpen}"
+					   includeInLayout="{!list.selectedItem.isOpen}"
 					   />
-		<c:ImageButton id="saveDocumentIcon" 
+		<c:BeveledImageButton id="saveDocumentIcon" 
 					   source="{Radii8LibraryAssets.save}" 
 					   toolTip="Save Document"
 					   click="saveDocumentIcon_clickHandler(event)"
 					   height="15"
 					   />
-		<c:ImageButton id="newDocumentIcon" 
+		<c:BeveledImageButton id="newDocumentIcon" 
 					   source="{Radii8LibraryAssets.newFile}" 
 					   toolTip="New Document"
 					   click="newDocumentIcon_clickHandler(event)"
 					   />
-		<c:ImageButton id="deleteDocumentIcon" 
+		<c:BeveledImageButton id="deleteDocumentIcon" 
 					   source="{Radii8LibraryAssets.trashCan}" 
 					   toolTip="Remove Document"
 					   />

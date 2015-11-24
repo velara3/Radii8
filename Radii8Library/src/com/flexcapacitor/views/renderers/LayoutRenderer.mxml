@@ -25,7 +25,7 @@
 			}
 			
 			override public function setTargetValue(clearStyle:Boolean = false):void {
-				var layoutFormat:String = formatCombobox.selectedItem ? formatCombobox.selectedItem.name : "basic";
+				var layoutFormat:String = formatDropDownList.selectedItem ? formatDropDownList.selectedItem.name : "basic";
 				var layout:LayoutBase;
 				var target:Object = Radiate.getInstance().target;
 				var property:String = "layout";
@@ -81,7 +81,12 @@
 				var length:int = itemsArray.length;
 				for (var i:int;i<length;i++) {
 					if (formatsCollection.getItemAt(i).name==layoutFormat) {
-						formatCombobox.selectedItem = formatsCollection.getItemAt(i);
+						if (formatCombobox) {
+							formatCombobox.selectedItem = formatsCollection.getItemAt(i);
+						}
+						else if (formatDropDownList) {
+							formatDropDownList.selectedItem = formatsCollection.getItemAt(i);
+						}
 						break;
 					}
 				}
@@ -120,8 +125,9 @@
 		<s:HorizontalLayout />
 	</r:layout>
 	
-	<s:ComboBox id="formatCombobox" 
-					width="100%" labelField="label"
+	<s:DropDownList id="formatDropDownList" 
+					width="100%" 
+					labelField="label"
 					change="setTargetValue()"
 					dataProvider="{formatsCollection}"/> 
 	<s:Button id="clearStyleButton"

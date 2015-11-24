@@ -5,79 +5,138 @@ package com.flexcapacitor.utils {
 	
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.ImportOptions;
+	import com.flexcapacitor.model.IssueData;
+	import com.flexcapacitor.model.SourceData;
+	import com.flexcapacitor.model.ValuesObject;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
+	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
-	import flash.events.EventDispatcher;
 	import flash.system.ApplicationDomain;
 	import flash.utils.getTimer;
 	
 	import mx.core.IVisualElement;
+	import mx.core.IVisualElementContainer;
 
 	
 	/**
 	 * Import MXML into a IDocument. Basic support of creating components and apply properties and styles. 
 	 * */
-	public class MXMLDocumentImporter extends EventDispatcher {
-	
-		public var document:IDocument;
+	public class MXMLDocumentImporter extends DocumentTranscoder {
 
 		/**
 		 * Import the MXML document into the IDocument. 
 		 * */
-		public function MXMLDocumentImporter(iDocument:IDocument, id:String, mxml:XML, container:IVisualElement) {
-			document = iDocument;
+		public function MXMLDocumentImporter() {
+			supportsImport = true;
+		}
+		
+		//override public function importare(iDocument:IDocument, id:String, container:IVisualElement) {
+		override public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, options:ImportOptions = null):SourceData {
+			var componentDefinition:ComponentDefinition;
+			var sourceData:SourceData;
+			var container:IVisualElementContainer;
+			var rootNodeName:String = "RootWrapperNode";
+			var elName:String;
+			var root:String;
+			var timer:int;
+			var mxml:XML;
+			var updatedCode:String;
+			var isValid:Boolean;
 			
-			var elName:String = mxml.localName();
-			var timer:int = getTimer(); 
 			
-			Radiate.importingDocument = true;
+			// VALID XML BEFORE IMPORTING
+			isValid = XMLUtils.isValidXML(source);
+			sourceData = new SourceData();
 			
-			// TODO this is a special case we check for since 
-			// we should have already created the application by now
-			// we should handle this case before we get here (pass in the children of the application xml not application itself)
-			if (elName=="Application") {
-				Radiate.setAttributesOnComponent(document.instance, mxml);
+			if (!isValid) {
+				// not valid so try adding namespaces and a root node
+				root = "<"+rootNodeName + " " + defaultNamespaceDeclarations + ">";
+				updatedCode = root + "\n" + source + "\n</"+rootNodeName+">";
+				
+				isValid = XMLUtils.isValidXML(updatedCode);
+				
+				if (!isValid) {
+					//codeToParse = updatedCode;
+					Radiate.error("Could not parse code source code. " + XMLUtils.validationErrorMessage);
+					Radiate.editImportingCode(updatedCode);
+					sourceData.errors = [IssueData.getIssue(XMLUtils.validationError.name, XMLUtils.validationErrorMessage)];
+					return sourceData;
+				}
 			}
 			else {
-				createChildFromNode(mxml, container);
+				updatedCode = source;
 			}
 			
 			
-			for each (var childNode:XML in mxml.children()) {
-				createChildFromNode(childNode, container);
+			// SHOULD BE VALID - TRY IMPORTING INTO XML OBJECT
+			try {
+				mxml = new XML(updatedCode);
+			}
+			catch (error:Error) {
+				Radiate.error("Could not parse code " + document.name + ". " + error.message);
+			}
+			
+			// IF VALID XML OBJECT BEGIN IMPORT 
+			if (mxml) {
+				elName = mxml.localName();
+				timer = getTimer();
+				container = componentDescription.instance as IVisualElementContainer;
+				
+				// set import to true to prevent millions of events from dispatching all over the place
+				Radiate.importingDocument = true;
+				
+				// TODO this is a special case we check for since 
+				// we should have already created the application by now
+				// we should handle this case before we get here (pass in the children of the application xml not application itself)
+				if (elName=="Application") {
+					componentDefinition = Radiate.getDynamicComponentType(elName);
+					Radiate.setAttributesOnComponent(document.instance, mxml, componentDefinition);
+				}
+				else {
+					createChildFromNode(mxml, container, document);
+				}
+				
+				// LOOP THROUGH EACH CHILD NODE
+				for each (var childNode:XML in mxml.children()) {
+					createChildFromNode(childNode, container, document, 1);
+				}
 			}
 			
 			Radiate.importingDocument = false;
 			
 			// using importing document flag it goes down from 5 seconds to 1 second
-			//Radiate.log.info("Time to import: " + (getTimer()-timer));
+			//Radiate.info("Time to import: " + (getTimer()-timer));
 			
+			sourceData.source = source;
+			
+			return sourceData;
 		}
 
 		/**
 		 * Create child from node
 		 * */
-		private function createChildFromNode(node:XML, parent:Object):IVisualElement {
+		private function createChildFromNode(node:XML, parent:Object, document:IDocument, depth:int = 0):IVisualElement {
 			var elementName:String = node.localName();
 			var domain:ApplicationDomain = ApplicationDomain.currentDomain;
 			var componentDefinition:ComponentDefinition = Radiate.getDynamicComponentType(elementName);
+			var includeChildren:Boolean = true;
 			var className:String;
 			var classType:Class;
-			var includeChildren:Boolean = true;
 			var instance:Object;
 			
 			if (componentDefinition==null) {
 				
 			}
 			
-			className =componentDefinition ? componentDefinition.className :null;
+			className = componentDefinition ? componentDefinition.className :null;
 			classType = componentDefinition ? componentDefinition.classType as Class :null;
 			
 			
 			if (componentDefinition==null && elementName!="RootWrapperNode") {
 				//message += " Add this class to Radii8LibrarySparkAssets.sparkManifestDefaults or add the library to the project that contains it.";
 				var message:String = "Could not find definition for " + elementName + ". The document will be missing elements.";
-				Radiate.log.error(message);
+				Radiate.error(message);
 				return null;
 			}
 			
@@ -99,24 +158,43 @@ package com.flexcapacitor.utils {
 			
 	
 			if (componentDefinition!=null) {
+				
+				// we should NOT be setting defaults on import!!!
+				// defaults should only be used when creating NEW components
+				// when you save the document the first time the properties will be saved
+				// so the next time you import you shouldn't need to set them again
+				// the user may have even removed the defaults
+				
 				//instance = Radiate.createComponentForAdd(document, componentDefinition, true);
 				instance = Radiate.createComponentForAdd(document, componentDefinition, false);
-				//Radiate.log.info("MXML Importer adding: " + elementName);
+				//Radiate.info("MXML Importer adding: " + elementName);
 				
 				// calling add before setting properties because some 
-				// properties such as borderVisible need to be set after 
+				// properties such as borderVisible and trackingLeft/trackingRight need to be set after 
 				// the component is added (maybe)
-				Radiate.addElement(instance, parent);
+				var valuesObject:ValuesObject = Radiate.getPropertiesStylesFromNode(instance, node, componentDefinition);
+				var attributes:Array = valuesObject.attributes;
 				
-				Radiate.setAttributesOnComponent(instance, node);
+				Radiate.addElement(instance, parent, valuesObject.properties, valuesObject.styles, valuesObject.values);
 				
+				Radiate.removeExplictSizeOnComponent(instance, node, componentDefinition, false);
+				var lockedName:String = "library://ns.flexcapacitor.com/flex/::locked";
+				
+				if (attributes.indexOf(lockedName)!=-1) {
+					var item:ComponentDescription = document.getItemDescription(instance);
+					item.locked = valuesObject.values[lockedName];
+				}
+				// might want to get a properties object from the attributes 
+				// and then use that in the add element call above 
+				//Radiate.setAttributesOnComponent(instance, node, componentDefinition, false);
+				//HistoryManager.mergeLastHistoryEvent(document);
 			}
 			
 			
 			if (includeChildren) {
 				
 				for each (var childNode:XML in node.children()) {
-					createChildFromNode(childNode, instance);
+					createChildFromNode(childNode, instance, document, depth+1);
 				}
 			}
 			

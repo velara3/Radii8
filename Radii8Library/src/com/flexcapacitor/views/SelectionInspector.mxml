@@ -4,11 +4,20 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:filters="com.flexcapacitor.filters.*"
 		 
-		 creationComplete="group1_creationCompleteHandler(event)">
+		 implements="com.flexcapacitor.tools.IToolInspector, com.flexcapacitor.views.IInspector" 
+		 creationComplete="creationCompleteHandler(event)" xmlns:controls1="com.flexcapacitor.controls.*"
+		 >
 
 	<fx:Script>
 		<![CDATA[
+			/**
+			 * 
+				Unknown	org.eclipse.core.internal.resources.Marker@fafa5a79 is not of a displayable type
+				Attribute "implements" was already specified for element "s:Group".	
+
+			 */
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.tools.Selection;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -22,15 +31,88 @@
 			public var selectionTool:Selection;
 			
 			[Bindable]
-			public var showDropLocation:Boolean;
+			public var showDropLocation:Boolean = true;
 			
-			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+			public function get target():Object {
+				return _target;
+			}
+			
+			[Bindable]
+			public function set target(value:Object):void {
+				_target = value;
+			}
+			
+			private var _target:Object;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				
 				
 				tool = radiate.selectedTool;
 				
 				updateTool(tool);
+				
+			}
+			
+			public function activate():void {
+				addListeners();
+				
+				if (radiate.target) {
+					target = radiate.target;
+					updateTarget();
+				}
+			}
+			
+			public function deactivate():void {
+				removeListeners();
+				updateTarget();
+			}
+			
+			protected function addListeners():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+			}
+			
+			protected function removeListeners():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
+				}
+			}
+			
+			/**
+			 * Get current target
+			 * */
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem;
+				updateTarget();
+			}
+			
+			/**
+			 * Updates the view when a property is changed externally
+			 * */
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				var properties:Array = event.properties;
+				var styles:Array = event.properties;
+				//var numberOfProperties:int = event.properties ? event.properties.length : 0;
+				//var numberOfStyles:int = event.styles ? event.styles.length : 0;
+				updateTarget();
+			}
+			
+			protected function historyChangeHandler(event:RadiateEvent):void {
+				if (event.newIndex==-1 || !event.historyEventItem) return;
+				var properties:Array = event.historyEventItem.properties;
+				var numberOfProperties:int = properties ? properties.length : 0;
+				
+				if (!target) {
+					//enabled = false;
+					return;
+				}
+				updateTarget();
 			}
 			
 			/**
@@ -39,11 +121,14 @@
 			public function updateTool(tool:ITool):void {
 				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
 				
-				if (toolDescription && toolDescription.instance 
-					&& toolDescription.instance is Selection) {
+				if (toolDescription && 
+					toolDescription.instance && 
+					toolDescription.instance is Selection) {
+					
 					selectionTool = Selection(toolDescription.instance);
-					showSelection.selected = selectionTool.showSelection;
+					showSelectionOutline.selected = selectionTool.showSelection;
 					showLabel.selected = selectionTool.showSelectionLabel;
+					selectGroup.selected = selectionTool.selectGroup;
 					
 				}
 			}
@@ -51,14 +136,15 @@
 			/**
 			 * Show selection checkbox change handler
 			 * */
-			protected function showSelection_changeHandler(event:Event):void {
+			protected function showSelectionOutline_changeHandler(event:Event):void {
 				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
 				var selectedTool:ITool = tool;
+				var selectionTool:Selection;
 				
 				
 				if (toolDescription.instance) {
-					var selectionTool:Selection = Selection(toolDescription.instance);
-					selectionTool.showSelection = showSelection.selected;
+					selectionTool = Selection(toolDescription.instance);
+					selectionTool.showSelection = showSelectionOutline.selected;
 				}
 				
 			}
@@ -69,26 +155,67 @@
 			protected function showLabel_changeHandler(event:Event):void {
 				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
 				var selectedTool:ITool = tool;
+				var selectionTool:Selection;
 				
 				if (toolDescription.instance) {
-					var selectionTool:Selection = Selection(toolDescription.instance);
+					selectionTool = Selection(toolDescription.instance);
 					selectionTool.showSelectionLabel = showLabel.selected;
 				}
 				
+			}
+			
+			/**
+			 * Select group change handler
+			 * */
+			protected function selectGroup_changeHandler(event:Event):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var selectedTool:ITool = tool;
+				var selectionTool:Selection;
 				
+				if (toolDescription.instance) {
+					selectionTool = Selection(toolDescription.instance);
+					selectionTool.selectGroup = selectGroup.selected;
+				}
+				
+			}
+			
+			private function updateTarget():void {
+				var rectangle:Rectangle;
+				
+				if (target) {
+					rectangle = Radiate.getPosition(target);
+				}
+				
+				if (rectangle) {
+					dropLocation.text = rectangle.x + "x" + rectangle.y;
+				}
+				else {
+					dropLocation.text = "";
+				}
 			}
 			
 		]]>
 	</fx:Script>
 	
+	<fx:Declarations>
+	</fx:Declarations>
+	<!--
 	<s:layout>
 		<s:HorizontalLayout paddingLeft="4" verticalAlign="baseline"/>
 	</s:layout>
+	-->
 	
+	<s:HGroup width="100%" verticalAlign="top" height="100%" paddingTop="2">
+		<s:CheckBox id="showSelectionOutline" label="Selection" change="showSelectionOutline_changeHandler(event)"
+					toolTip="Show an outline around the selected component(s)"/>
+		<s:CheckBox id="showLabel" label="Label" change="showLabel_changeHandler(event)"
+					toolTip="Show a label above the selected component(s)"/>
+		<s:CheckBox id="selectGroup" label="Select Group" change="selectGroup_changeHandler(event)"
+					toolTip="Select only group elements or elements on the root"/>
+		<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}" verticalAlign="top"/>
+		<!--<s:Label text="Drop Location: " paddingLeft="4" visible="false" includeInLayout="false"/>-->
+		<s:Label id="dropLocation" minWidth="65"  paddingTop="5" textAlign="center"/>
+		
+	</s:HGroup>
 	
-	<s:CheckBox id="showSelection" label="Show Selection" change="showSelection_changeHandler(event)"/>
-	<s:CheckBox id="showLabel" label="Show Label" change="showLabel_changeHandler(event)"/>
-	<s:Label text="Drop Location: " paddingLeft="4" visible="{showDropLocation}" includeInLayout="{showDropLocation}"/>
-	<s:Label id="dropLocation" text="{selectionTool.dragLocation}" visible="{showDropLocation}" includeInLayout="{showDropLocation}"/>
-
 </s:Group>

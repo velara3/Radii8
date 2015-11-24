@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 
+		 width="100%" 
+		 height="100%"
+		 implements="com.flexcapacitor.views.IInspector" 
+		 >
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import spark.events.TextOperationEvent;
+			
+			
+			private var radiate:Radiate = Radiate.instance;
+			
+			[Bindable]
+			public var target:Object;
+			public var componentDescription:ComponentDescription;
+			
+			
+			public function activate():void {
+				
+				if (radiate.target) {
+					needToUpdate(null);
+				}
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, needToUpdate, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, needToUpdate, false, 0, true);
+			}
+			
+			public function deactivate():void {
+				
+				if (radiate.selectedDocument) {
+					target = null;
+					componentDescription = null;
+				}
+			}
+			
+			
+			protected function needToUpdate(event:RadiateEvent = null):void
+			{
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (radiate.target!=target) {
+					target = radiate.target;
+					componentDescription = iDocument.getItemDescription(target);
+				}
+				
+				if (componentDescriptor) {
+					componentCSS.text = componentDescription.userStyles;
+					
+					embedSnapshopIntoBackground.selected = componentDescription.createBackgroundSnapshot;
+					convertElementToImage.selected = componentDescription.convertElementToImage;
+				}
+			}
+			
+			public var componentDescriptor:ComponentDescription;
+			
+			protected function componentCSS_changeHandler(event:TextOperationEvent):void
+			{
+				if (componentDescription) {
+					componentDescription..userStyles = componentCSS.text;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="HTML"/>
+		<s:State name="MXML"/>
+		<s:State name="ANDROID"/>
+	</s:states>
+	
+	<s:CheckBox id="embedSnapshopIntoBackground" label="Embed snapshot into element background" />
+	<s:CheckBox id="convertElementToImage" label="Convert element into image" />
+	<s:Label text="Enter your own CSS here" />
+	
+	
+	<s:TextArea id="componentCSS" width="100%" height="100%" change="componentCSS_changeHandler(event)">
+		
+	</s:TextArea>
+	
+</s:VGroup>

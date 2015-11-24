@@ -82,11 +82,11 @@
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Scale Mode" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:ComboBoxRenderer id="scaleModeRenderer" height="24"/>
+		<renderers:DropDownListRenderer id="scaleModeRenderer" height="24"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Fill Mode" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:ComboBoxRenderer id="fillModeRenderer" height="24"/>
+		<renderers:DropDownListRenderer id="fillModeRenderer" height="24"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Content Grouping" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>

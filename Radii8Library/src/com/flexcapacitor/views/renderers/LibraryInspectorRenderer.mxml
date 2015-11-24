@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				xmlns:controls="com.flexcapacitor.controls.*" 
+				
+				width="100%" 
+				height="100%" 
+				minHeight="36" 
+				>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import mx.graphics.BitmapFill;
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.model.AttachmentData;
+			import com.flexcapacitor.model.ImageData;
+			
+			public var imageData:ImageData;
+			public var attachmentData:AttachmentData;
+			public var checkeredFill:BitmapFill;
+			
+			override public function set data(value:Object):void {
+				super.data = value;
+				var path:String;
+				attachmentData = value as AttachmentData;
+				imageData = value as ImageData;
+				
+				if (data) {
+					
+					if (imageData) {
+						if (imageData.thumbnailURL) {
+							iconImage.source = imageData.thumbnailURL;
+						}
+						else if (imageData.bitmapData) {
+							iconImage.source = imageData.bitmapData;
+						}
+					}
+					
+				}
+				
+				if (checkeredFill==null) {
+					checkeredFill = DisplayObjectUtils.createCheckeredFill(2, 2);
+					backgroundIconImageFill.fill = checkeredFill;
+				}
+				
+				// show the upload icon if not uploaded
+				if (attachmentData && attachmentData.id==null) {
+					uploadFileIcon.visible = true;
+					uploadFileIcon.enabled = true;
+				}
+				else {
+					uploadFileIcon.enabled = false;
+					uploadFileIcon.visible = false;
+				}
+			}
+			
+			protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
+				iconImage.source = "assets/images/components/BorderContainer.png";
+			}
+			
+			protected function groupMouseDownHandler(event:MouseEvent):void {
+				Object(owner).document.rowGroupMouseDownHandler(event, data, itemIndex);
+			}
+			
+			protected function iconImage_securityErrorHandler(event:SecurityErrorEvent):void {
+				Radiate.warn("Library: Icon not found");
+			}
+			
+			protected function uploadFileIcon_clickHandler(event:MouseEvent):void {
+				
+				if (!Radiate.getInstance().uploadAttachmentInProgress) {
+					uploadFileIcon.enabled = false;
+					Object(owner).document.uploadFile(attachmentData);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal" />            
+		<s:State name="hovered" />
+		<s:State name="selected" />
+		<s:State name="normalAndShowsCaret"/>
+		<s:State name="hoveredAndShowsCaret"/>
+		<s:State name="selectedAndShowsCaret"/>
+		<s:State name="dragging"/>
+	</s:states>
+	
+	<s:Rect id="backgroundIconImageFill" width="40" height="100%" bottom="1" >
+		
+	</s:Rect>
+	
+	<s:HGroup id="rowGroup" 
+			  width="100%" 
+			  height="100%" 
+			  verticalAlign="middle"
+			  paddingLeft="5" 
+			  mouseEnabledWhereTransparent="true"
+			  gap="12"
+			  mouseDown="groupMouseDownHandler(event)">
+		<s:Image id="iconImage"
+				 smooth="true"
+				 contentLoader="{Radiate.contentCache}"
+				 ioError="iconImage_ioErrorHandler(event)"
+				 securityError="iconImage_securityErrorHandler(event)"
+				 width="30" height="30"
+				 scaleMode="zoom"/>
+		<s:Label id="labelDisplay" visible.dragging="false"
+				 fontSize="11"/>
+		<s:Spacer width="100%"/>
+		<controls:BeveledImageButton id="uploadFileIcon" 
+							  source="{Radii8LibraryAssets.upload}" 
+							  toolTip="Upload"
+							  click="uploadFileIcon_clickHandler(event)"
+							  visible="false"
+							  visible.dragging="false"
+							  />
+		<s:Spacer width="1"/>
+	</s:HGroup>
+	
+</s:ItemRenderer>

@@ -61,6 +61,6 @@
 			 
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Gap" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:NumberRenderer id="gapRenderer" height="24" />
+		<renderers:NumberRenderer id="gapRenderer" height="24" stepSize="1"/>
 	</s:HGroup>
 </s:Group>

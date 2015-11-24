@@ -3,12 +3,11 @@ package com.flexcapacitor.model {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.services.IWPServiceEvent;
+	import com.flexcapacitor.utils.XMLUtils;
 	
 	import flash.events.Event;
 	import flash.events.IEventDispatcher;
 	import flash.net.URLVariables;
-	
-	import mx.utils.UIDUtil;
 	
 	/**
 	 * Dispatched when project is saved
@@ -29,9 +28,9 @@ package com.flexcapacitor.model {
 		 * Constructor
 		 * */
 		public function Project() {
+			super();
 			nodeName = "project";
 			nameIndex++;
-			uid = UIDUtil.createUID();
 		}
 		
 		public static var PROJECT_OPENED:String = "projectOpened";
@@ -40,6 +39,23 @@ package com.flexcapacitor.model {
 		 * Used when creating incremental project names
 		 * */
 		public static var nameIndex:int;
+		
+
+		/**
+		 * Identity of post that is the home page for this project. Default is 0. 
+		 * */
+		public function get homePage():int {
+			return _homePage;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set homePage(value:int):void {
+			_homePage = value;
+		}
+		private var _homePage:int;
+
 		
 		/**
 		 * Used when creating incremental document names
@@ -137,7 +153,7 @@ package com.flexcapacitor.model {
 				isChanged = true;
 			}
 			else {
-				Radiate.log.info("Document already added");
+				Radiate.info("Document already added");
 			}
 		}
 		
@@ -151,12 +167,12 @@ package com.flexcapacitor.model {
 				var removedArray:Array = documents.splice(documentIndex, 1);
 				
 				if (removedArray.length!=0 && removedArray[0]==document) {
-					//Radiate.log.info("Document removed " + document.name);
+					//Radiate.info("Document removed " + document.name);
 				}
 				isChanged = true;
 			}
 			else {
-				//Radiate.log.info("Document not removed " + document.name);
+				//Radiate.info("Document not removed " + document.name);
 			}
 		}
 		
@@ -424,12 +440,20 @@ package com.flexcapacitor.model {
 				if (data is IProjectData) {
 					documentsMetaData = IProjectData(data).documents;
 				}
+				
+				if (data.homePage) {
+					homePage = data.homePage;
+				}
 			}
 			else if (data is XML) {
 				var documentsMetaDataList:XMLList = data.documents.document;
 				
 				source = XML(data).toXMLString();
 				originalSource = XML(data).toXMLString();
+				
+				if (data && XMLUtils.hasAttribute(data as XML, "homePage")) {
+					homePage = data.@homePage;
+				}
 				
 				if (data && documentsMetaDataList.length()>0) {
 					var documentsCount:int = documentsMetaDataList.length();
@@ -532,7 +556,7 @@ package com.flexcapacitor.model {
 								DocumentData(iDocument).addEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler, false, 0, true);
  							}
 							
-							//Radiate.log.info("calling retrieve on document " + iDocument.name);
+							//Radiate.info("calling retrieve on document " + iDocument.name);
 							iDocument.retrieve();
 						}
 						
@@ -566,7 +590,7 @@ package com.flexcapacitor.model {
 							DocumentData(documentData).addEventListener(DocumentData.RETRIEVED_RESULTS, documentRetrievedResultsHandler, false, 0, true);
 						}
 						
-						Radiate.log.info("calling retrieve on document " + documentData.name);
+						Radiate.info("calling retrieve on document " + documentData.name);
 						documentData.retrieve();
 					}
 					else {
@@ -617,7 +641,7 @@ package com.flexcapacitor.model {
 				if (!documentCreated) {
 					iDocument = radiate.createDocumentFromMetaData(documentMetaData);
 					DocumentData(iDocument).addEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler, false, 0, true);
-					//Radiate.log.info("calling retrieve on document " + iDocument.name);
+					//Radiate.info("calling retrieve on document " + iDocument.name);
 					iDocument.retrieve();
 					documents.push(iDocument);
 					iDocument.project = this;
@@ -664,7 +688,7 @@ package com.flexcapacitor.model {
 					DocumentData(documentData).addEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler, false, 0, true);
 				}
 				
-				Radiate.log.info("calling open on document " + documentData.name);
+				Radiate.info("calling open on document " + documentData.name);
 				documentData.retrieve(local);
 				
 				if (documentData.id==null) {
@@ -686,7 +710,7 @@ package com.flexcapacitor.model {
 		 * @inheritDoc
 		 * */
 		override public function save(locations:String = REMOTE_LOCATION, options:Object = null):Boolean {
-			var length:int = documents.length;
+			var numOfDocuments:int = documents.length;
 			var documentData:IDocumentData;
 			var saveRemote:Boolean = locations.indexOf(REMOTE_LOCATION)!=-1;
 			var saveLocally:Boolean = locations.indexOf(LOCAL_LOCATION)!=-1;
@@ -700,10 +724,12 @@ package com.flexcapacitor.model {
 			}
 			
 			// save documents
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numOfDocuments;i++) {
 				documentData = IDocumentData(documents[i]);
 				
-				if (documentData.isChanged || documentData.id==null) {
+				// gonna save anyway even if not changed bc change system has flaws
+				//if (documentData.isChanged || documentData.id==null) {
+				//if (documentData.id==null) {
 					if (saveRemote && documentData is DocumentData) {
 						DocumentData(documentData).addEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler, false, 0, true);
 					}
@@ -713,7 +739,7 @@ package com.flexcapacitor.model {
 					}
 					
 					documentData.save(locations);
-				}
+				//}
 			}
 			
 			if (!needToWaitForDocumentsSaveResults) {
@@ -740,6 +766,7 @@ package com.flexcapacitor.model {
 			content = String(marshall(STRING_TYPE, false));
 			object.content = content;
 			object["custom[source]"] = content;
+			object["custom[homePage]"] = homePage;
 			source = content;
 			
 			return object;
@@ -752,7 +779,7 @@ package com.flexcapacitor.model {
 			super.saveFaultHandler(event);
 			
 			//trace("Save Project Fault");
-			Radiate.log.info("Error when trying to save "+ name + ".");
+			Radiate.error("Error when trying to save "+ name + ".");
 			deferSave = false;
 			dispatchEvent(event as Event);
 		}
@@ -774,7 +801,7 @@ package com.flexcapacitor.model {
 				dispatchEvent(event as Event);
 				//Radiate.instance.setLastSaveDate();
 			}
-			//Radiate.log.info("PROJECT - Success saving project "+ name + ".");
+			//Radiate.info("PROJECT - Success saving project "+ name + ".");
 		}
 		
 		/**
@@ -793,7 +820,7 @@ package com.flexcapacitor.model {
 		 * Project opened
 		 * */
 		public function dispatchProjectOpened():void {
-			//Radiate.log.info("Project open complete");
+			//Radiate.info("Project open complete");
 			isOpen = true;
 			dispatchEvent(new Event(PROJECT_OPENED));
 		}
@@ -804,19 +831,19 @@ package com.flexcapacitor.model {
 		public function documentRetrievedResultsHandler(event:LoadResultsEvent):void {
 			var currentDocumentData:IDocumentData = IDocumentData(event.currentTarget);
 			var documentsArray:Array = documents; //documentsMetaData;//documents.length ? documents : documentsMetaData;
-			var length:int = documentsArray.length;
+			var numberOfDocuments:int = documentsArray.length;
 			var documentData:IDocumentData;
 			var iDocument:IDocument;
 			var resultsNotIn:Array = [];
 			var openNotSuccessful:Array = [];
 			var data:Object = event.data;
 			
-			//Radiate.log.info("Is document " + event.currentTarget.name + " open: "+ event.successful);
+			//Radiate.info("Is document " + event.currentTarget.name + " open: "+ event.successful);
 			
 			DocumentData(currentDocumentData).removeEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler);
 			
 			// check if all documents have loaded
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				documentData = IDocumentData(documentsArray[i]);
 				
 				if (documentData is DocumentData) {
@@ -835,10 +862,10 @@ package com.flexcapacitor.model {
 			
 			if (!currentDocumentData.openSuccessful) {
 				currentDocumentData.isOpen = false;
-				Radiate.log.info("The document '" + currentDocumentData.name + "' could not be loaded because of the following error: " + event.message);
+				Radiate.info("The document '" + currentDocumentData.name + "' could not be loaded because of the following error: " + event.message);
 				
 				if (event.faultEvent) {
-					Radiate.log.info(event.faultEvent + "");
+					Radiate.info(event.faultEvent + "");
 				}
 			}
 			
@@ -865,8 +892,8 @@ package com.flexcapacitor.model {
 			if (resultsNotIn.length==0) {
 				
 				if (openNotSuccessful.length>0) {
-					//Radiate.log.info("These documents could not be opened: " + openNotSuccessful);
-					//Radiate.log.info("Document error occurred for "+documentData.name+": " + event.message);
+					//Radiate.info("These documents could not be opened: " + openNotSuccessful);
+					//Radiate.info("Document error occurred for "+documentData.name+": " + event.message);
 				}
 				
 				// open the last document if valid
@@ -891,8 +918,8 @@ package com.flexcapacitor.model {
 		 * */
 		public function documentSaveResultsHandler(event:SaveResultsEvent):void {
 			//trace("Document save results");
-			//Radiate.log.info("Is document " + event.currentTarget.name + " saved: "+ event.successful);
-			var length:int = documents.length;
+			//Radiate.info("Is document " + event.currentTarget.name + " saved: "+ event.successful);
+			var numberOfDocuments:int = documents.length;
 			var document:IDocumentData;
 			var resultsNotIn:Array = [];
 			var unsuccessfulSaves:Array = [];
@@ -904,7 +931,7 @@ package com.flexcapacitor.model {
 				IEventDispatcher(currentDocument).removeEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler);
 			}
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				document = IDocumentData(documents[i]);
 				
 				if (document is DocumentData) {
@@ -918,29 +945,32 @@ package com.flexcapacitor.model {
 					if (!document.saveSuccessful) {
 						unsuccessfulSaves.push(document.name);
 					}
+					else {
+						DocumentData(document).markClean();
+					}
 				}
 			}
 			
 			if (!currentDocument.saveSuccessful) {
 				
 				if (!Radiate.getInstance().isUserLoggedIn) {
-					Radiate.log.info("The document, '" + currentDocument.name + "' was not saved because the user is not logged in.");
+					Radiate.info("The document, '" + currentDocument.name + "' was not saved because the user is not logged in.");
 				}
 				else {
-					Radiate.log.info("The document, '" + currentDocument.name + "' was not saved because of the following error: " + event.message);
+					Radiate.info("The document, '" + currentDocument.name + "' was not saved because of the following error: " + event.message);
 				}
 				
 				if (event.faultEvent) {
-					Radiate.log.info(event.faultEvent + "");
+					Radiate.info(event.faultEvent + "");
 				}
 			}
 			
 			if (resultsNotIn.length==0) {
-				//Radiate.log.info(name + " save complete");
+				//Radiate.info(name + " save complete");
 				
 				// if document was not saved recently saveSuccessful may be false?
 				if (unsuccessfulSaves.length>0) {
-					//Radiate.log.info("These documents could not be saved: " + unsuccessfulSaves);
+					//Radiate.info("These documents could not be saved: " + unsuccessfulSaves);
 				}
 				else {
 					//isChanged = false; // hardcoding for now until checkProjectHasChanged is fixed
@@ -996,7 +1026,7 @@ package com.flexcapacitor.model {
 			
 			for (var i:int;i<length;i++) {
 				iDocument = IDocument(documents[i]);
-				//Radiate.log.info("Exporting document " + iDocument.name);
+				//Radiate.info("Exporting document " + iDocument.name);
 				
 				if (open) {
 					if (iDocument.isOpen) {
@@ -1005,7 +1035,7 @@ package com.flexcapacitor.model {
 						}
 						else {
 							documentsArray.push(iDocument.marshall());
-							//Radiate.log.info("Exporting document " + iDocument.source);
+							//Radiate.info("Exporting document " + iDocument.source);
 						}
 					}
 				}

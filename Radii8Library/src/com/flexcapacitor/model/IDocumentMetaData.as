@@ -67,6 +67,11 @@ package com.flexcapacitor.model {
 		function set dateSaved(value:String):void;
 		
 		/**
+		 * Creates UID. 
+		 * */
+		function createUID():String;
+		
+		/**
 		 * Serializes document. Export. 
 		 * */
 		function marshall(type:String = "", representation:Boolean = true):Object;

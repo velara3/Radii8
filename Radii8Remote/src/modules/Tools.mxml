@@ -260,11 +260,11 @@
 	</fx:Declarations>
 	
 	<s:HGroup width="100%">
-		<controls:ImageButton source="{Radii8LibraryAssets.applicationIcon}"
+		<controls:BeveledImageButton source="{Radii8LibraryAssets.applicationIcon}"
 							  useButtonUpStyle="true"
 							  click="image2_clickHandler(event)"
 							  />
-		<controls:ImageButton id="selectionButton" 
+		<controls:BeveledImageButton id="selectionButton" 
 							  useButtonUpStyle="true"
 							  backgroundColor="#0"
 							  backgroundAlpha="0"

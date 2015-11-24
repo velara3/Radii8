@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:collections="com.flexcapacitor.effects.collections.*" 
+		 xmlns:handlers="com.flexcapacitor.handlers.*"
+		 xmlns:controls="com.flexcapacitor.controls.*" 
+		 
+		 height="24"
+		 maxHeight="60"
+		 width="100%" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			protected function filterInput_enterHandler(event:FlexEvent):void {
+				var searchText:String = filterInput.text;
+				var item:XML;
+				
+				if (dataProvider.length==1) {
+					item = dataProvider.getItemAt(0) as XML;
+					
+					if (item) {
+						item.@value = target is UIComponent ? UIComponent(target).getStyle(searchText) : "";
+						dataProvider.itemUpdated(item, "@value");
+						dataProvider.refresh();
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!-- FILTER BY NAME -->
+		<handlers:EventHandler eventName="change" 
+							   targets="{[filterInput,showAllItemsOnEmpty,caseSensitive,searchAtStart]}"
+							   >
+			<collections:FilterCollection target="{dataProvider}" 
+										  source="{filterInput}" 
+										  sourcePropertyName="{sourcePropertyName}"
+										  fieldName="{fieldName}"
+										  showAllItemsOnEmpty="{showAllItemsOnEmpty.selected}"
+										  caseSensitive="{caseSensitive.selected}"
+										  searchAtStart="{searchAtStart.selected}"
+										  />
+		</handlers:EventHandler>
+		
+		<fx:Object id="dataProvider"/>
+		<fx:String id="fieldName">name</fx:String>
+		<fx:String id="sourcePropertyName">text</fx:String>
+		<fx:Object id="target"/>
+	</fx:Declarations>
+	
+	<controls:SearchTextInput id="filterInput" 
+					   left="0" right="0" top="0" 
+					   width="100%"
+					   minWidth="60" 
+					   prompt="Search"
+					   styleName="inputStyles"
+					   enter="filterInput_enterHandler(event)"
+					   />
+	
+	<s:HGroup width="100%" top="32" left="4" verticalAlign="baseline">
+		<s:CheckBox id="showAllItemsOnEmpty" label="All" selected="true" 
+					toolTip="Show all items when search field is empty"/>
+		<s:CheckBox id="caseSensitive" label="Case" selected="false"
+					toolTip="Is search case sensitive"/>
+		<s:CheckBox id="searchAtStart" label="At start" selected="false"
+					toolTip="Search from any where or search at the start"/>
+		<s:Spacer width="100%"/>
+		<s:Label text="Results: {dataProvider.length}"/>
+	</s:HGroup>
+</s:Group>

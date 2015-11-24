@@ -1,6 +1,10 @@
 
 package com.flexcapacitor.model {
+	import com.flexcapacitor.services.WPService;
+	
 	import flash.events.EventDispatcher;
+	
+	import mx.utils.UIDUtil;
 	
 	/**
 	 * Used to store the least amount of information about a document so it can be retrieved later.
@@ -18,7 +22,7 @@ package com.flexcapacitor.model {
 		 * Constructor
 		 * */
 		public function DocumentMetaData() {
-		
+			uid = createUID();
 		}
 
 		[Transient]
@@ -210,7 +214,28 @@ package com.flexcapacitor.model {
 		 * @private
 		 * */
 		public function set status(value:String):void {
+			// only change to one of these three values
+			if (value!=WPService.STATUS_DRAFT && 
+				value!=WPService.STATUS_TRASH && 
+				value!=WPService.STATUS_PUBLISH) {
+				return;
+			}
 			_status = value;
+		}
+		
+		private var _notes:String;
+		
+		/**
+		 * Notes
+		 * */
+		public function get notes():String
+		{
+			return _notes;
+		}
+		
+		public function set notes(value:String):void
+		{
+			_notes = value;
 		}
 
 		private var _dateSaved:String;
@@ -224,6 +249,13 @@ package com.flexcapacitor.model {
 
 		public function set dateSaved(value:String):void {
 			_dateSaved = value;
+		}
+		
+		/**
+		 * Sets the UID
+		 * */
+		public function createUID():String {
+			return UIDUtil.createUID();
 		}
 
 		/**
@@ -246,7 +278,7 @@ package com.flexcapacitor.model {
 				metadata.dateSaved = getTimeInHistory();
 				metadata.host = host;
 				metadata.id = id;
-				metadata.isOpen = isOpen;
+				//metadata.isOpen = isOpen;
 				metadata.name = name;
 				metadata.type = type;
 				metadata.uid = uid;
@@ -261,8 +293,9 @@ package com.flexcapacitor.model {
 				documentData.dateSaved = getTimeInHistory();
 				documentData.host = host;
 				documentData.id = id;
-				documentData.isOpen = isOpen;
+				//documentData.isOpen = isOpen;
 				documentData.name = name;
+				documentData.notes = notes;
 				documentData.type = type;
 				documentData.uid = uid;
 				documentData.uri = uri;
@@ -276,7 +309,7 @@ package com.flexcapacitor.model {
 				xml.@dateSaved = getTimeInHistory();
 				xml.@host = host;
 				xml.@id = id!=null ? id : "";
-				xml.@isOpen = isOpen;
+				//xml.@isOpen = isOpen;
 				xml.@name = name;
 				xml.@type = type!=null ? type : "";
 				xml.@uid = uid;
@@ -304,8 +337,9 @@ package com.flexcapacitor.model {
 				dateSaved 	= data.dateSaved;
 				host 		= data.host;
 				id 			= data.id;
-				isOpen 		= data.isOpen; // note we are repurposing this at runtime
+				//isOpen 		= data.isOpen; // note we are repurposing this at runtime
 				name 		= data.name;
+				notes 		= data.notes;
 				parentId 	= data.parentId;
 				type 		= data.type;
 				uid 		= data.uid;
@@ -317,8 +351,9 @@ package com.flexcapacitor.model {
 				dateSaved 	= data.@dateSaved;
 				host 		= data.@host;
 				id 			= data.@id=="null" ? null : data.@id;
-				isOpen 		= data.@isOpen;
+				//isOpen 		= data.@isOpen;
 				name 		= data.@name;
+				notes 		= data.@notes;
 				parentId 	= data.@parentId;
 				type 		= data.@type=="null" ? null : data.@type;
 				uid 		= data.@uid;

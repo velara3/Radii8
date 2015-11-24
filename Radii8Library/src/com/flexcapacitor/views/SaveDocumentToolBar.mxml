@@ -4,7 +4,8 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 
-		 creationComplete="creationCompleteHandler(event)">
+		 creationComplete="creationCompleteHandler(event)"
+		 >
 	
 	
 	<!-- 
@@ -14,6 +15,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
@@ -39,8 +41,8 @@
 
 			
 			public function updateSaveButtons():void {
-				var historyIndex:int = Radiate.historyIndex;
-				var totalItems:int = Radiate.history ? Radiate.history.length : 0;
+				var historyIndex:int = HistoryManager.historyIndex;
+				var totalItems:int = HistoryManager.history ? HistoryManager.history.length : 0;
 				var hasItems:Boolean = totalItems>0;
 				var selectedProject:IProject = radiate.selectedProject;
 				
@@ -49,14 +51,32 @@
 						saveDocumentIcon.alpha = 1;
 					}
 					else {
-						saveDocumentIcon.alpha = .5;
+						//saveDocumentIcon.alpha = .5;
+						saveDocumentIcon.alpha = 1;
 					}
 				}
 				
 			}
 			
-			protected function saveDocumentIcon_clickHandler(event:MouseEvent):void {
+			protected function saveProjectIcon_clickHandler(event:MouseEvent):void {
 				//radiate.saveProject(radiate.project);
+				
+				// SAVING PROJECT FOR NOW
+				var project:IProject = radiate.selectedProject;
+				
+				
+				if (project) {
+					var saveRemote:Boolean = radiate.isUserConnected && radiate.isUserLoggedIn;
+					var savedLocation:String = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
+					
+					var savedLocally:Boolean = radiate.saveProject(project, savedLocation);
+					
+					//Radiate.info("Saved locally: " + savedLocally);
+				}
+				
+			}
+			
+			protected function saveDocumentIcon_clickHandler(event:MouseEvent):void {
 				var document:IDocument = radiate.selectedDocument;
 				
 				
@@ -66,11 +86,10 @@
 					
 					var savedLocally:Boolean = radiate.saveDocument(document, savedLocation);
 					
-					//Radiate.log.info("Saved locally: " + savedLocally);
+					//Radiate.info("Saved locally: " + savedLocally);
 				}
 			}
-			
-		]]>
+		]]> 
 	</fx:Script>
 	
 	
@@ -78,10 +97,17 @@
 		<s:HorizontalLayout paddingTop="4" verticalAlign="baseline" />
 	</s:layout>
 
-	<c:ImageButton id="saveDocumentIcon" 
+	<c:BeveledImageButton id="saveProjectIcon" 
+				   source="{Radii8LibraryAssets.multipleSave}" 
+				   height="15"
+				   toolTip="Save project including all of it's documents and images"
+				   click="saveProjectIcon_clickHandler(event)"
+				   />
+
+	<c:BeveledImageButton id="saveDocumentIcon" 
 				   source="{Radii8LibraryAssets.save}" 
 				   height="15"
-				   toolTip="Save Document"
+				   toolTip="Save current document and images added to it"
 				   click="saveDocumentIcon_clickHandler(event)"
 				   />
 </s:Group>

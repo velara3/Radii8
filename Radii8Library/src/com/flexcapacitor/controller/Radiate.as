@@ -18,17 +18,23 @@
 package com.flexcapacitor.controller {
 	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.components.IDocumentContainer;
+	import com.flexcapacitor.controls.Hyperlink;
 	import com.flexcapacitor.effects.core.CallMethod;
-	import com.flexcapacitor.events.HistoryEvent;
-	import com.flexcapacitor.events.HistoryEventItem;
+	import com.flexcapacitor.effects.core.PlayerType;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.logging.RadiateLogTarget;
-	import com.flexcapacitor.managers.layoutClasses.LayoutDebugHelper;
+	import com.flexcapacitor.managers.CodeManager;
+	import com.flexcapacitor.managers.HistoryEffect;
+	import com.flexcapacitor.managers.HistoryManager;
+	import com.flexcapacitor.managers.ServicesManager;
 	import com.flexcapacitor.model.AttachmentData;
 	import com.flexcapacitor.model.Device;
 	import com.flexcapacitor.model.Document;
 	import com.flexcapacitor.model.DocumentData;
+	import com.flexcapacitor.model.DocumentDescription;
 	import com.flexcapacitor.model.EventMetaData;
+	import com.flexcapacitor.model.ExportOptions;
+	import com.flexcapacitor.model.FileInfo;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.IDocumentData;
 	import com.flexcapacitor.model.IDocumentMetaData;
@@ -38,19 +44,32 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.model.InspectableClass;
 	import com.flexcapacitor.model.InspectorData;
+	import com.flexcapacitor.model.IssueData;
+	import com.flexcapacitor.model.MenuItem;
 	import com.flexcapacitor.model.MetaData;
 	import com.flexcapacitor.model.Project;
 	import com.flexcapacitor.model.SaveResultsEvent;
 	import com.flexcapacitor.model.SavedData;
 	import com.flexcapacitor.model.Settings;
+	import com.flexcapacitor.model.SourceData;
 	import com.flexcapacitor.model.StyleMetaData;
+	import com.flexcapacitor.model.TranscoderDescription;
+	import com.flexcapacitor.model.ValuesObject;
+	import com.flexcapacitor.performance.PerformanceMeter;
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.services.WPAttachmentService;
 	import com.flexcapacitor.services.WPService;
-	import com.flexcapacitor.services.WPServiceEvent;
+	import com.flexcapacitor.skins.BorderContainerSkin;
+	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.tools.ITool;
+	import com.flexcapacitor.tools.Selection;
+	import com.flexcapacitor.utils.Base64;
 	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
+	import com.flexcapacitor.utils.DocumentTranscoder;
+	import com.flexcapacitor.utils.HTMLUtils;
+	import com.flexcapacitor.utils.MXMLDocumentImporter;
+	import com.flexcapacitor.utils.PersistentStorage;
 	import com.flexcapacitor.utils.SharedObjectUtils;
 	import com.flexcapacitor.utils.TypeUtils;
 	import com.flexcapacitor.utils.XMLUtils;
@@ -64,6 +83,7 @@ package com.flexcapacitor.controller {
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display.IBitmapDrawable;
+	import flash.display.Sprite;
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -79,12 +99,16 @@ package com.flexcapacitor.controller {
 	import flash.globalization.DateTimeStyle;
 	import flash.net.FileReference;
 	import flash.net.SharedObject;
+	import flash.net.URLRequest;
+	import flash.net.navigateToURL;
 	import flash.system.ApplicationDomain;
+	import flash.system.Capabilities;
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursorData;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
+	import flash.utils.setTimeout;
 	
 	import mx.collections.ArrayCollection;
 	import mx.containers.Grid;
@@ -94,12 +118,13 @@ package com.flexcapacitor.controller {
 	import mx.controls.LinkButton;
 	import mx.core.ClassFactory;
 	import mx.core.DeferredInstanceFromFunction;
+	import mx.core.IInvalidating;
 	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
-	import mx.core.UIComponentGlobals;
 	import mx.core.mx_internal;
+	import mx.effects.Sequence;
 	import mx.effects.effectClasses.PropertyChanges;
 	import mx.events.FlexEvent;
 	import mx.graphics.ImageSnapshot;
@@ -108,17 +133,18 @@ package com.flexcapacitor.controller {
 	import mx.logging.ILogger;
 	import mx.logging.Log;
 	import mx.logging.LogEventLevel;
-	import mx.managers.ILayoutManager;
 	import mx.managers.ISystemManager;
 	import mx.managers.LayoutManager;
 	import mx.managers.SystemManagerGlobals;
 	import mx.printing.FlexPrintJob;
 	import mx.printing.FlexPrintJobScaleType;
-	import mx.states.AddItems;
 	import mx.styles.IStyleClient;
 	import mx.utils.ArrayUtil;
 	import mx.utils.ObjectUtil;
+	import mx.utils.UIDUtil;
 	
+	import spark.collections.Sort;
+	import spark.collections.SortField;
 	import spark.components.Application;
 	import spark.components.BorderContainer;
 	import spark.components.Button;
@@ -136,7 +162,6 @@ package com.flexcapacitor.controller {
 	import spark.components.supportClasses.TextBase;
 	import spark.core.ContentCache;
 	import spark.core.IViewport;
-	import spark.effects.SetAction;
 	import spark.formatters.DateTimeFormatter;
 	import spark.layouts.BasicLayout;
 	import spark.primitives.BitmapImage;
@@ -150,69 +175,74 @@ package com.flexcapacitor.controller {
 	use namespace mx_internal;
 	
 	/**
+	 * Dispatched on history change
+	 * */
+	[Event(name="historyChange", type="com.flexcapacitor.events.RadiateEvent")]
+	
+	/**
 	 * Dispatched when register results are received
 	 * */
-	[Event(name="registerResults", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="registerResults", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a print job is cancelled
 	 * */
-	[Event(name="printCancelled", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="printCancelled", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when an item is added to the target
 	 * */
-	[Event(name="addItem", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="addItem", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when an item is removed from the target
 	 * */
-	[Event(name="removeItem", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="removeItem", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when an item is removed from the target
 	 * */
-	[Event(name="removeTarget", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="removeTarget", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the target is changed
 	 * */
-	[Event(name="targetChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="targetChange", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the document is changed
 	 * */
-	[Event(name="documentChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="documentChange", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a document is opening
 	 * */
-	[Event(name="documentOpening", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="documentOpening", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a document is opened
 	 * */
-	[Event(name="documentOpen", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="documentOpen", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a document is renamed
 	 * */
-	[Event(name="documentRename", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="documentRename", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the project is changed
 	 * */
-	[Event(name="projectChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="projectChange", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the project is deleted
 	 * */
-	[Event(name="projectDeletedResults", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="projectDeletedResults", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the project is created
 	 * */
-	[Event(name="projectCreated", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="projectCreated", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a property on the target is changed. 
@@ -220,72 +250,77 @@ package com.flexcapacitor.controller {
 	 * tag using propertyChange:
 	 * TypeError: Error #1034: Type Coercion failed: cannot convert mx.events::PropertyChangeEvent@11d2187b1 to com.flexcapacitor.events.RadiateEvent.
 	 * */
-	[Event(name="propertyChanged", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="propertyChanged", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a property is selected on the target
 	 * */
-	[Event(name="propertySelected", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="propertySelected", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a property edit is requested
 	 * */
-	[Event(name="propertyEdit", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="propertyEdit", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the tool changes
 	 * */
-	[Event(name="toolChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="toolChange", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the scale changes
 	 * */
-	[Event(name="scaleChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="scaleChange", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the document size or scale changes
 	 * */
-	[Event(name="documentSizeChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="documentSizeChange", type="com.flexcapacitor.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when the document preview uncaught event occurs
+	 * */
+	[Event(name="uncaughtExceptionEvent", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Not used yet. 
 	 * */
-	[Event(name="initialized", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="initialized", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Used when the tools list has been updated. 
 	 * */
-	[Event(name="toolsUpdated", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="toolsUpdated", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Used when the components list is updated. 
 	 * */
-	[Event(name="componentsUpdated", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="componentsUpdated", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Used when the document canvas is updated. 
 	 * */
-	[Event(name="canvasChange", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="canvasChange", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Event to request a preview if available. Used for HTML preview. 
 	 * */
-	[Event(name="requestPreview", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="requestPreview", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when the generated code is updated. 
 	 * */
-	[Event(name="codeUpdated", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="codeUpdated", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a color is selected. 
 	 * */
-	[Event(name="colorSelected", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="colorSelected", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when an object is selected 
 	 * */
-	[Event(name="objectSelected", type="com.flexcapacitor.radiate.events.RadiateEvent")]
+	[Event(name="objectSelected", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Main class and API that handles the interactions between the view and the models. 
@@ -311,7 +346,7 @@ package com.flexcapacitor.controller {
 	 * 
 	 * To set a property or style call setProperty or setStyle. 
 	 * To add a component call addElement. 
-	 * To log a message to the console call Radiate.log.info() or error().
+	 * To log a message to the console call Radiate.info() or error().
 	 * 
 	 * To undo call undo
 	 * To redo call redo
@@ -333,8 +368,10 @@ package com.flexcapacitor.controller {
 		public static const ADD_ERROR:String = "addError";
 		public static const REMOVE_ERROR:String = "removeError";
 		public static const RADIATE_LOG:String = "radiate";
-		public static const LOGGED_IN:String = "loggedIn";
-		public static const LOGGED_OUT:String = "loggedOut";
+		
+		public static const USER_STORE:String = "userStore";
+		public static const TRANSFER_STORE:String = "transferStore";
+		public static const RELEASE_DIRECTORY_STORE:String = "releaseDirectoryStore";
 		
 		public function Radiate(s:SINGLEDOUBLE) {
 			super(target as IEventDispatcher);
@@ -403,6 +440,10 @@ package com.flexcapacitor.controller {
 			return instance;
 		}
 		
+		private static var historyManager:HistoryManager;
+		
+		private static var serviceManager:ServicesManager;
+		
 		/**
 		 * Create references for classes we need.
 		 * */
@@ -411,12 +452,25 @@ package com.flexcapacitor.controller {
 		/**
 		 * Is running on desktop
 		 * */
-		public static var isDesktop:Boolean;
+		public static function get isDesktop():Boolean
+		{
+			return Capabilities.playerType == PlayerType.DESKTOP;
+		}
 		
 		/**
 		 * If true then importing document
 		 * */
 		public static var importingDocument:Boolean;
+		
+		/**
+		 * Editor source data
+		 * */
+		public var editorSource:SourceData;
+		
+		/**
+		 * Export file location if one is selected
+		 * */
+		public var exportFileLocation:FileReference;
 		
 		/**
 		 * Upload attachment
@@ -449,36 +503,6 @@ package com.flexcapacitor.controller {
 		public var deleteProjectService:WPService;
 		
 		/**
-		 * Service to request reset the password
-		 * */
-		public var lostPasswordService:WPService;
-		
-		/**
-		 * Service to change the password
-		 * */
-		public var changePasswordService:WPService;
-		
-		/**
-		 * Service to login
-		 * */
-		public var loginService:WPService;
-		
-		/**
-		 * Service to logout
-		 * */
-		public var logoutService:WPService;
-		
-		/**
-		 * Service to register
-		 * */
-		public var registerService:WPService;
-		
-		/**
-		 * Service to check if user is logged in
-		 * */
-		public var getLoggedInStatusService:WPService;
-		
-		/**
 		 * Set to true when a document is being saved to the server
 		 * */
 		[Bindable]
@@ -491,42 +515,6 @@ package com.flexcapacitor.controller {
 		public var saveProjectInProgress:Boolean;
 		
 		/**
-		 * Set to true when checking if user is logged in
-		 * */
-		[Bindable]
-		public var getLoggedInStatusInProgress:Boolean;
-		
-		/**
-		 * Set to true when lost password call is made
-		 * */
-		[Bindable]
-		public var lostPasswordInProgress:Boolean;
-		
-		/**
-		 * Set to true when changing password
-		 * */
-		[Bindable]
-		public var changePasswordInProgress:Boolean;
-		
-		/**
-		 * Set to true when registering
-		 * */
-		[Bindable]
-		public var registerInProgress:Boolean;
-		
-		/**
-		 * Set to true when logging in
-		 * */
-		[Bindable]
-		public var loginInProgress:Boolean;
-		
-		/**
-		 * Set to true when logging out
-		 * */
-		[Bindable]
-		public var logoutInProgress:Boolean;
-		
-		/**
 		 * Set to true when deleting a project
 		 * */
 		[Bindable]
@@ -537,6 +525,21 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public var deleteDocumentInProgress:Boolean;
+		
+		/**
+		 * When deleting a document this is the id of the project it was part of
+		 * since you need to save the project after a delete.
+		 * */
+		[Bindable]
+		public var deleteDocumentProjectId:int;
+		
+		/**
+		 * When deleting a document 
+		 * you need to save the project after. Set this to true to save 
+		 * after results are in from document delete call.
+		 * */
+		[Bindable]
+		public var saveProjectAfterDelete:Boolean;
 		
 		/**
 		 * Set to true when deleting an attachment
@@ -573,6 +576,18 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public var defaultStorageLocation:String;
+		
+		/**
+		 * Application menu
+		 * */
+		[Bindable]
+		public var applicationMenu:Object;
+		
+		/**
+		 * Application window menu
+		 * */
+		[Bindable]
+		public var applicationWindowMenu:Object;
 		
 		/**
 		 * Can user connect to the service
@@ -614,6 +629,12 @@ package com.flexcapacitor.controller {
 		public var userID:int = -1;
 		
 		/**
+		 * Home page id
+		 * */
+		[Bindable]
+		public var projectHomePageID:int = -1;
+		
+		/**
 		 * User sites
 		 * */
 		[Bindable]
@@ -632,10 +653,22 @@ package com.flexcapacitor.controller {
 		public var userDisplayName:String = "guest";
 		
 		/**
-		 * Last save date
+		 * Last save date formatted
 		 * */
 		[Bindable]
-		public var lastSaveDate:String;
+		public var lastSaveDateFormatted:String;
+		
+		/**
+		 * Last save date 
+		 * */
+		[Bindable]
+		public var lastSaveDate:Date;
+		
+		/**
+		 * Last save date difference
+		 * */
+		[Bindable]
+		public var lastSaveDateDifference:String;
 		
 		/**
 		 * Cut data
@@ -643,9 +676,28 @@ package com.flexcapacitor.controller {
 		public var cutData:Object;
 		
 		/**
-		 * Cut data
+		 * Copy data
 		 * */
 		public var copiedData:Object;
+		
+		/**
+		 * Reference to the document of the cut or copied data
+		 * */
+		public var copiedDataDocument:Object;
+		
+		/**
+		 * Reference to the source of the copied or cut data. Useful if reference to copied
+		 * item is gone. In other words, user copied an item from their document
+		 * and then deleted the document. They could still paste it.
+		 * */
+		public var copiedDataSource:String;
+		
+		/**
+		 * The different statuses a document can have
+		 * Based on WordPress posts status, "draft", "publish", etc
+		 * */
+		[Bindable]
+		public static var documentStatuses:ArrayCollection = new ArrayCollection();
 		
 		/**
 		 * Auto save locations
@@ -687,9 +739,9 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Interval to check to save project
+		 * Interval to check to save project. Default 2 minutes.
 		 * */
-		public var autoSaveInterval:int = 30000;
+		public var autoSaveInterval:int = 120000;
 		
 		/**
 		 * Effect to auto save
@@ -760,6 +812,12 @@ package com.flexcapacitor.controller {
 		public var buildTime:String;
 		
 		/**
+		 * Version number
+		 * */
+		[Bindable]
+		public var versionNumber:String;
+		
+		/**
 		 * Reference to the application
 		 */
 		[Bindable]
@@ -772,12 +830,26 @@ package com.flexcapacitor.controller {
 		//----------------------------------
 		
 		/**
-		 * Dispatch attachments received event
+		 * Dispatch example projects list received results event
+		 * */
+		public function dispatchGetExampleProjectsListResultsEvent(data:Object):void {
+			var projectsListResultEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED)) {
+				projectsListResultEvent = new RadiateEvent(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED);
+				projectsListResultEvent.data = data;
+				dispatchEvent(projectsListResultEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch projects list received results event
 		 * */
 		public function dispatchGetProjectsListResultsEvent(data:Object):void {
-			var projectsListResultEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECTS_LIST_RECEIVED);
+			var projectsListResultEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECTS_LIST_RECEIVED)) {
+				projectsListResultEvent = new RadiateEvent(RadiateEvent.PROJECTS_LIST_RECEIVED);
 				projectsListResultEvent.data = data;
 				dispatchEvent(projectsListResultEvent);
 			}
@@ -787,9 +859,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch print cancelled event
 		 * */
 		public function dispatchPrintCancelledEvent(data:Object, printJob:FlexPrintJob):void {
-			var printCancelledEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PRINT_CANCELLED);
+			var printCancelledEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PRINT_CANCELLED)) {
+				printCancelledEvent = new RadiateEvent(RadiateEvent.PRINT_CANCELLED);
 				printCancelledEvent.data = data;
 				printCancelledEvent.selectedItem = printJob;
 				dispatchEvent(printCancelledEvent);
@@ -800,9 +873,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch print complete event
 		 * */
 		public function dispatchPrintCompleteEvent(data:Object, printJob:FlexPrintJob):void {
-			var printCompleteEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PRINT_COMPLETE);
+			var printCompleteEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PRINT_COMPLETE)) {
+				printCompleteEvent = new RadiateEvent(RadiateEvent.PRINT_COMPLETE);
 				printCompleteEvent.data = data;
 				printCompleteEvent.selectedItem = printJob;
 				dispatchEvent(printCompleteEvent);
@@ -812,23 +886,11 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch attachments received event
 		 * */
-		public function dispatchLoginStatusEvent(loggedIn:Boolean, data:Object):void {
-			var loggedInStatusEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOGGED_IN_STATUS);
-			
-			if (hasEventListener(RadiateEvent.LOGGED_IN_STATUS)) {
-				loggedInStatusEvent.status = loggedIn ? LOGGED_IN : LOGGED_OUT;
-				loggedInStatusEvent.data = data;
-				dispatchEvent(loggedInStatusEvent);
-			}
-		}
-		
-		/**
-		 * Dispatch attachments received event
-		 * */
 		public function dispatchAttachmentsResultsEvent(successful:Boolean, attachments:Array):void {
-			var attachmentsReceivedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ATTACHMENTS_RECEIVED, false, false, attachments);
+			var attachmentsReceivedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.ATTACHMENTS_RECEIVED)) {
+				attachmentsReceivedEvent = new RadiateEvent(RadiateEvent.ATTACHMENTS_RECEIVED, false, false, attachments);
 				attachmentsReceivedEvent.successful = successful;
 				attachmentsReceivedEvent.status = successful ? "ok" : "fault";
 				attachmentsReceivedEvent.targets = ArrayUtil.toArray(attachments);
@@ -840,9 +902,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch upload attachment received event
 		 * */
 		public function dispatchUploadAttachmentResultsEvent(successful:Boolean, attachments:Array, data:Object):void {
-			var uploadAttachmentEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ATTACHMENT_UPLOADED, false, false);
+			var uploadAttachmentEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.ATTACHMENT_UPLOADED)) {
+				uploadAttachmentEvent = new RadiateEvent(RadiateEvent.ATTACHMENT_UPLOADED, false, false);
 				uploadAttachmentEvent.successful = successful;
 				uploadAttachmentEvent.status = successful ? "ok" : "fault";
 				uploadAttachmentEvent.data = attachments;
@@ -852,12 +915,27 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Dispatch feedback results event
+		 * */
+		public function dispatchFeedbackResultsEvent(successful:Boolean, data:Object):void {
+			var feedbackResultsEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.FEEDBACK_RESULT)) {
+				feedbackResultsEvent = new RadiateEvent(RadiateEvent.FEEDBACK_RESULT);
+				feedbackResultsEvent.data = data;
+				feedbackResultsEvent.successful = successful;
+				dispatchEvent(feedbackResultsEvent);
+			}
+		}
+		
+		/**
 		 * Dispatch login results event
 		 * */
 		public function dispatchLoginResultsEvent(successful:Boolean, data:Object):void {
-			var loginResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOGIN_RESULTS);
+			var loginResultsEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.LOGIN_RESULTS)) {
+				loginResultsEvent = new RadiateEvent(RadiateEvent.LOGIN_RESULTS);
 				loginResultsEvent.data = data;
 				loginResultsEvent.successful = successful;
 				dispatchEvent(loginResultsEvent);
@@ -868,9 +946,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch logout results event
 		 * */
 		public function dispatchLogoutResultsEvent(successful:Boolean, data:Object):void {
-			var logoutResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOGOUT_RESULTS);
+			var logoutResultsEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.LOGOUT_RESULTS)) {
+				logoutResultsEvent = new RadiateEvent(RadiateEvent.LOGOUT_RESULTS);
 				logoutResultsEvent.data = data;
 				logoutResultsEvent.successful = successful;
 				dispatchEvent(logoutResultsEvent);
@@ -881,9 +960,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch register results event
 		 * */
 		public function dispatchRegisterResultsEvent(successful:Boolean, data:Object):void {
-			var registerResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.REGISTER_RESULTS);
+			var registerResultsEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.REGISTER_RESULTS)) {
+				registerResultsEvent = new RadiateEvent(RadiateEvent.REGISTER_RESULTS);
 				registerResultsEvent.data = data;
 				registerResultsEvent.successful = successful;
 				dispatchEvent(registerResultsEvent);
@@ -894,9 +974,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch change password results event
 		 * */
 		public function dispatchChangePasswordResultsEvent(successful:Boolean, data:Object):void {
-			var changePasswordResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.CHANGE_PASSWORD_RESULTS);
+			var changePasswordResultsEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS)) {
+				changePasswordResultsEvent = new RadiateEvent(RadiateEvent.CHANGE_PASSWORD_RESULTS);
 				changePasswordResultsEvent.data = data;
 				changePasswordResultsEvent.successful = successful;
 				dispatchEvent(changePasswordResultsEvent);
@@ -907,9 +988,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch lost password results event
 		 * */
 		public function dispatchLostPasswordResultsEvent(successful:Boolean, data:Object):void {
-			var lostPasswordResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOST_PASSWORD_RESULTS);
+			var lostPasswordResultsEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.LOST_PASSWORD_RESULTS)) {
+				lostPasswordResultsEvent = new RadiateEvent(RadiateEvent.LOST_PASSWORD_RESULTS);
 				lostPasswordResultsEvent.data = data;
 				lostPasswordResultsEvent.successful = successful;
 				dispatchEvent(lostPasswordResultsEvent);
@@ -920,9 +1002,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch project deleted results event
 		 * */
 		public function dispatchProjectDeletedEvent(successful:Boolean, data:Object):void {
-			var deleteProjectResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_DELETED);
+			var deleteProjectResultsEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_DELETED)) {
+				deleteProjectResultsEvent = new RadiateEvent(RadiateEvent.PROJECT_DELETED);
 				deleteProjectResultsEvent.data = data;
 				deleteProjectResultsEvent.successful = successful;
 				deleteProjectResultsEvent.status = successful ? "ok" : "error";
@@ -934,9 +1017,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch document deleted results event
 		 * */
 		public function dispatchDocumentDeletedEvent(successful:Boolean, data:Object):void {
-			var deleteDocumentResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_DELETED);
+			var deleteDocumentResultsEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_DELETED)) {
+				deleteDocumentResultsEvent = new RadiateEvent(RadiateEvent.DOCUMENT_DELETED);
 				deleteDocumentResultsEvent.data = data;
 				deleteDocumentResultsEvent.successful = successful;
 				deleteDocumentResultsEvent.status = successful ? "ok" : "error";
@@ -948,9 +1032,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch asset added event
 		 * */
 		public function dispatchAssetAddedEvent(data:Object):void {
-			var assetAddedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ASSET_ADDED);
+			var assetAddedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.ASSET_ADDED)) {
+				assetAddedEvent = new RadiateEvent(RadiateEvent.ASSET_ADDED);
 				assetAddedEvent.data = data;
 				dispatchEvent(assetAddedEvent);
 			}
@@ -960,25 +1045,45 @@ package com.flexcapacitor.controller {
 		 * Dispatch asset removed event
 		 * */
 		public function dispatchAssetRemovedEvent(data:IDocumentData, successful:Boolean = true):void {
-			var assetRemovedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ASSET_REMOVED);
+			var assetRemovedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.ASSET_REMOVED)) {
+				assetRemovedEvent = new RadiateEvent(RadiateEvent.ASSET_REMOVED);
 				assetRemovedEvent.data = data;
 				dispatchEvent(assetRemovedEvent);
 			}
 		}
 		
+		public static var SET_TARGET_TEST:String = "setTargetTest";
 		/**
 		 * Dispatch target change event
 		 * */
 		public function dispatchTargetChangeEvent(target:*, multipleSelection:Boolean = false):void {
 			if (importingDocument) return;
-			var targetChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.TARGET_CHANGE, false, false, target, null, null, multipleSelection);
+			var targetChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.TARGET_CHANGE)) {
+				targetChangeEvent = new RadiateEvent(RadiateEvent.TARGET_CHANGE, false, false, target);
 				targetChangeEvent.selectedItem = target && target is Array ? target[0] : target;
 				targetChangeEvent.targets = ArrayUtil.toArray(target);
+				PerformanceMeter.start(SET_TARGET_TEST, true, false);
 				dispatchEvent(targetChangeEvent);
+				PerformanceMeter.stop(SET_TARGET_TEST, false);
+			}
+		}
+		
+		/**
+		 * Dispatch a history change event
+		 * */
+		public function dispatchHistoryChangeEvent(document:IDocument, newIndex:int, oldIndex:int):void {
+			var event:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.HISTORY_CHANGE)) {
+				event = new RadiateEvent(RadiateEvent.HISTORY_CHANGE);
+				event.newIndex = newIndex;
+				event.oldIndex = oldIndex;
+				event.historyEvent = HistoryManager.getHistoryEventAtIndex(document, newIndex);
+				dispatchEvent(event);
 			}
 		}
 		
@@ -986,9 +1091,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch scale change event
 		 * */
 		public function dispatchScaleChangeEvent(target:*, scaleX:Number = NaN, scaleY:Number = NaN):void {
-			var scaleChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.SCALE_CHANGE, false, false, target, null, null);
+			var scaleChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.SCALE_CHANGE)) {
+				scaleChangeEvent = new RadiateEvent(RadiateEvent.SCALE_CHANGE, false, false, target);
 				scaleChangeEvent.scaleX = scaleX;
 				scaleChangeEvent.scaleY = scaleY;
 				dispatchEvent(scaleChangeEvent);
@@ -999,9 +1105,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch document size change event
 		 * */
 		public function dispatchDocumentSizeChangeEvent(target:*):void {
-			var scaleChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SIZE_CHANGE, false, false, target, null, null);
+			var scaleChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE)) {
+				scaleChangeEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SIZE_CHANGE, false, false, target);
 				dispatchEvent(scaleChangeEvent);
 			}
 		}
@@ -1009,12 +1116,13 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch preview event
 		 * */
-		public function dispatchPreviewEvent(code:String, type:String):void {
-			var previewEvent:RadiateEvent = new RadiateEvent(RadiateEvent.REQUEST_PREVIEW);
+		public function dispatchPreviewEvent(sourceData:SourceData, type:String):void {
+			var previewEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.REQUEST_PREVIEW)) {
+				previewEvent = new RadiateEvent(RadiateEvent.REQUEST_PREVIEW);
 				previewEvent.previewType = type;
-				previewEvent.value = code;
+				previewEvent.value = sourceData;
 				dispatchEvent(previewEvent);
 			}
 		}
@@ -1023,12 +1131,13 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch code updated event. Type is usually "HTML". 
 		 * */
-		public function dispatchCodeUpdatedEvent(code:String, type:String, openInWindow:Boolean = false):void {
-			var codeUpdatedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.CODE_UPDATED);
+		public function dispatchCodeUpdatedEvent(sourceData:SourceData, type:String, openInWindow:Boolean = false):void {
+			var codeUpdatedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.CODE_UPDATED)) {
+				codeUpdatedEvent = new RadiateEvent(RadiateEvent.CODE_UPDATED);
 				codeUpdatedEvent.previewType = type;
-				codeUpdatedEvent.value = code;
+				codeUpdatedEvent.value = sourceData;
 				codeUpdatedEvent.openInBrowser = openInWindow;
 				dispatchEvent(codeUpdatedEvent);
 			}
@@ -1038,9 +1147,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch color selected event
 		 * */
 		public function dispatchColorSelectedEvent(color:uint, invalid:Boolean = false):void {
-			var colorSelectedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.COLOR_SELECTED);
+			var colorSelectedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.COLOR_SELECTED)) {
+				colorSelectedEvent = new RadiateEvent(RadiateEvent.COLOR_SELECTED);
 				colorSelectedEvent.color = color;
 				colorSelectedEvent.invalid = invalid;
 				dispatchEvent(colorSelectedEvent);
@@ -1064,9 +1174,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch color preview event
 		 * */
 		public function dispatchColorPreviewEvent(color:uint, invalid:Boolean = false):void {
-			var colorPreviewEvent:RadiateEvent = new RadiateEvent(RadiateEvent.COLOR_PREVIEW);
+			var colorPreviewEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.COLOR_PREVIEW)) {
+				colorPreviewEvent = new RadiateEvent(RadiateEvent.COLOR_PREVIEW);
 				colorPreviewEvent.color = color;
 				colorPreviewEvent.invalid = invalid;
 				dispatchEvent(colorPreviewEvent);
@@ -1077,9 +1188,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch canvas change event
 		 * */
 		public function dispatchCanvasChangeEvent(canvas:*, canvasBackgroundParent:*, scroller:Scroller):void {
-			var targetChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.CANVAS_CHANGE);
+			var targetChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.CANVAS_CHANGE)) {
+				targetChangeEvent = new RadiateEvent(RadiateEvent.CANVAS_CHANGE);
 				dispatchEvent(targetChangeEvent);
 			}
 		}
@@ -1088,9 +1200,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch tool change event
 		 * */
 		public function dispatchToolChangeEvent(value:ITool):void {
-			var toolChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.TOOL_CHANGE);
+			var toolChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.TOOL_CHANGE)) {
+				toolChangeEvent = new RadiateEvent(RadiateEvent.TOOL_CHANGE);
 				toolChangeEvent.selectedItem = target && target is Array ? target[0] : target;
 				toolChangeEvent.targets = targets;
 				toolChangeEvent.tool = value;
@@ -1100,11 +1213,13 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Dispatch target change event with a null target. 
+		 * Target change to nothing.
 		 * */
 		public function dispatchTargetClearEvent():void {
-			var targetChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.TARGET_CHANGE);
+			var targetChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.TARGET_CHANGE)) {
+				targetChangeEvent = new RadiateEvent(RadiateEvent.TARGET_CHANGE);
 				dispatchEvent(targetChangeEvent);
 			}
 		}
@@ -1112,14 +1227,16 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch property change event
 		 * */
-		public function dispatchPropertyChangeEvent(target:*, changes:Array, properties:Array, multipleSelection:Boolean = false):void {
+		public function dispatchPropertyChangeEvent(target:*, changes:Array, properties:Array, styles:Array, events:Array = null):void {
 			if (importingDocument) return;
-			var propertyChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROPERTY_CHANGED, false, false, target, changes, properties, multipleSelection);
+			var propertyChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROPERTY_CHANGED)) {
+				propertyChangeEvent = new RadiateEvent(RadiateEvent.PROPERTY_CHANGED, false, false, target);
+				propertyChangeEvent.property = properties ? properties[0] : null;
 				propertyChangeEvent.properties = properties;
+				propertyChangeEvent.styles = styles;
 				propertyChangeEvent.changes = changes;
-				propertyChangeEvent.multipleSelection = multipleSelection;
 				propertyChangeEvent.selectedItem = target && target is Array ? target[0] : target;
 				propertyChangeEvent.targets = ArrayUtil.toArray(target);
 				dispatchEvent(propertyChangeEvent);
@@ -1130,9 +1247,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch object selected event
 		 * */
 		public function dispatchObjectSelectedEvent(target:*):void {
-			var objectSelectedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.OBJECT_SELECTED, false, false, target);
+			var objectSelectedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.OBJECT_SELECTED)) {
+				objectSelectedEvent = new RadiateEvent(RadiateEvent.OBJECT_SELECTED, false, false, target);
 				dispatchEvent(objectSelectedEvent);
 			}
 		}
@@ -1142,10 +1260,11 @@ package com.flexcapacitor.controller {
 		 * */
 		public function dispatchAddEvent(target:*, changes:Array, properties:Array, multipleSelection:Boolean = false):void {
 			if (importingDocument) return;
-			var event:RadiateEvent = new RadiateEvent(RadiateEvent.ADD_ITEM, false, false, target, changes, properties, multipleSelection);
+			var event:RadiateEvent;
 			var length:int = changes ? changes.length : 0;
 			
 			if (hasEventListener(RadiateEvent.ADD_ITEM)) {
+				event = new RadiateEvent(RadiateEvent.ADD_ITEM, false, false, target);
 				event.properties = properties;
 				event.changes = changes;
 				event.multipleSelection = multipleSelection;
@@ -1158,66 +1277,75 @@ package com.flexcapacitor.controller {
 						event.moveItemsInstance = changes[i];
 					}
 				}
+				
 				dispatchEvent(event);
 			}
 		}
 		
 		/**
-		 * Dispatch add items event
+		 * Dispatch move items event
 		 * */
 		public function dispatchMoveEvent(target:*, changes:Array, properties:Array, multipleSelection:Boolean = false):void {
 			if (importingDocument) return;
-			var event:RadiateEvent = new RadiateEvent(RadiateEvent.MOVE_ITEM, false, false, target, changes, properties, multipleSelection);
-			var length:int = changes ? changes.length : 0;
+			var moveEvent:RadiateEvent;
+			var numOfChanges:int;
 			
 			if (hasEventListener(RadiateEvent.MOVE_ITEM)) {
-				event.properties = properties;
-				event.changes = changes;
-				event.multipleSelection = multipleSelection;
-				event.selectedItem = target && target is Array ? target[0] : target;
-				event.targets = ArrayUtil.toArray(target);
+				moveEvent = new RadiateEvent(RadiateEvent.MOVE_ITEM, false, false, target);
+				moveEvent.properties = properties;
+				moveEvent.changes = changes;
+				moveEvent.multipleSelection = multipleSelection;
+				moveEvent.selectedItem = target && target is Array ? target[0] : target;
+				moveEvent.targets = ArrayUtil.toArray(target);
+				numOfChanges = changes ? changes.length : 0;
 				
-				for (var i:int;i<length;i++) {
+				for (var i:int;i<numOfChanges;i++) {
 					if (changes[i] is AddItems) {
-						event.addItemsInstance = changes[i];
-						event.moveItemsInstance = changes[i];
+						moveEvent.addItemsInstance = changes[i];
+						moveEvent.moveItemsInstance = changes[i];
 					}
 				}
-				dispatchEvent(event);
+				
+				dispatchEvent(moveEvent);
 			}
 		}
 		
 		/**
 		 * Dispatch remove items event
 		 * */
-		public function dispatchRemoveItemsEvent(target:*, changes:Array, properties:*, multipleSelection:Boolean = false):void {
-			var event:RadiateEvent = new RadiateEvent(RadiateEvent.REMOVE_ITEM, false, false, target, changes, properties, multipleSelection);
-			var length:int = changes ? changes.length : 0;
+		public function dispatchRemoveItemsEvent(target:*, changes:Array, properties:*):void {
+			var removeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.REMOVE_ITEM, false, false, target);
+			var numOfChanges:int;
 			
 			if (hasEventListener(RadiateEvent.REMOVE_ITEM)) {
-				event.properties = properties;
-				event.changes = changes;
-				event.multipleSelection = multipleSelection;
-				event.selectedItem = target && target is Array ? target[0] : target;
-				event.targets = ArrayUtil.toArray(target);
+				removeEvent.changes = changes;
+				removeEvent.properties = properties;
+				removeEvent.selectedItem = target && target is Array ? target[0] : target;
+				removeEvent.targets = ArrayUtil.toArray(target);
 				
-				for (var i:int;i<length;i++) {
+				numOfChanges = changes ? changes.length : 0;
+				
+				for (var i:int;i<numOfChanges;i++) {
 					if (changes[i] is AddItems) {
-						event.addItemsInstance = changes[i];
-						event.moveItemsInstance = changes[i];
+						removeEvent.addItemsInstance = changes[i];
+						removeEvent.moveItemsInstance = changes[i];
 					}
 				}
-				dispatchEvent(event);
+				
+				dispatchEvent(removeEvent);
 			}
 		}
 		
 		/**
 		 * Dispatch to invoke property edit event
 		 * */
-		public function dispatchTargetPropertyEditEvent(target:Object, changes:Array, properties:Array, multipleSelection:Boolean = false):void {
-			var propertyEditEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROPERTY_EDIT, false, false, target, changes, properties, null, multipleSelection);
+		public function dispatchTargetPropertyEditEvent(target:Object, changes:Array, properties:Array, styles:Array, events:Array=null):void {
+			var propertyEditEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROPERTY_EDIT)) {
+				propertyEditEvent = new RadiateEvent(RadiateEvent.PROPERTY_EDIT, false, false, target);
+				propertyEditEvent.changes = changes;
+				propertyEditEvent.properties = properties;
 				dispatchEvent(propertyEditEvent);
 			}
 		}
@@ -1226,9 +1354,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch document change event
 		 * */
 		public function dispatchDocumentChangeEvent(document:IDocument):void {
-			var documentChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_CHANGE, false, false, document);
+			var documentChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_CHANGE)) {
+				documentChangeEvent = new RadiateEvent(RadiateEvent.DOCUMENT_CHANGE, false, false, document);
 				dispatchEvent(documentChangeEvent);
 			}
 		}
@@ -1237,9 +1366,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch document rename event
 		 * */
 		public function dispatchDocumentRenameEvent(document:IDocument, name:String):void {
-			var documentRenameEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_RENAME, false, false, document);
+			var documentRenameEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_RENAME)) {
+				documentRenameEvent = new RadiateEvent(RadiateEvent.DOCUMENT_RENAME, false, false, document);
 				dispatchEvent(documentRenameEvent);
 			}
 		}
@@ -1248,9 +1378,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch project rename event
 		 * */
 		public function dispatchProjectRenameEvent(project:IProject, name:String):void {
-			var projectRenameEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_RENAME, false, false, project);
+			var projectRenameEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_RENAME)) {
+				projectRenameEvent = new RadiateEvent(RadiateEvent.PROJECT_RENAME, false, false, project);
 				dispatchEvent(projectRenameEvent);
 			}
 		}
@@ -1259,9 +1390,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch documents set
 		 * */
 		public function dispatchDocumentsSetEvent(documents:Array):void {
-			var documentChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENTS_SET, false, false, documents);
+			var documentChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENTS_SET)) {
+				documentChangeEvent = new RadiateEvent(RadiateEvent.DOCUMENTS_SET, false, false, documents);
 				dispatchEvent(documentChangeEvent);
 			}
 		}
@@ -1270,10 +1402,11 @@ package com.flexcapacitor.controller {
 		 * Dispatch document opening event
 		 * */
 		public function dispatchDocumentOpeningEvent(document:IDocument, isPreview:Boolean = false):Boolean {
-			var documentOpeningEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_OPENING, false, true, document);
+			var documentOpeningEvent:RadiateEvent;
 			var dispatched:Boolean;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_OPENING)) {
+				documentOpeningEvent = new RadiateEvent(RadiateEvent.DOCUMENT_OPENING, false, true, document);
 				dispatched = dispatchEvent(documentOpeningEvent);
 			}
 			
@@ -1284,9 +1417,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch document open event
 		 * */
 		public function dispatchDocumentOpenEvent(document:IDocument):void {
-			var documentOpenEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_OPEN, false, false);
+			var documentOpenEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_OPEN)) {
+				documentOpenEvent = new RadiateEvent(RadiateEvent.DOCUMENT_OPEN, false, false);
 				documentOpenEvent.selectedItem = document;
 				dispatchEvent(documentOpenEvent);
 			}
@@ -1296,9 +1430,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch document removed event
 		 * */
 		public function dispatchDocumentRemovedEvent(document:IDocument, successful:Boolean = true):void {
-			var documentRemovedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_REMOVED, false, false);
+			var documentRemovedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_REMOVED)) {
+				documentRemovedEvent = new RadiateEvent(RadiateEvent.DOCUMENT_REMOVED, false, false);
 				documentRemovedEvent.successful = successful;
 				documentRemovedEvent.selectedItem = document;
 				dispatchEvent(documentRemovedEvent);
@@ -1306,13 +1441,13 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Dispatch document save as complete event
+		 * Dispatch project saved event
 		 * */
 		public function dispatchProjectSavedEvent(project:IProject):void {
-			var projectSaveEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_SAVED, false, false);
+			var projectSaveEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_SAVED)) {
-				
+				projectSaveEvent = new RadiateEvent(RadiateEvent.PROJECT_SAVED, false, false);
 				projectSaveEvent.selectedItem = project;
 				dispatchEvent(projectSaveEvent);
 			}
@@ -1322,10 +1457,24 @@ package com.flexcapacitor.controller {
 		 * Dispatch document save complete event
 		 * */
 		public function dispatchDocumentSaveCompleteEvent(document:IDocument):void {
-			var documentSaveAsCompleteEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SAVE_COMPLETE, false, false, document);
+			var documentSaveAsCompleteEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE)) {
+				documentSaveAsCompleteEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SAVE_COMPLETE, false, false, document);
 				dispatchEvent(documentSaveAsCompleteEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch HTML preview uncaught exceptions
+		 * */
+		public function dispatchExceptionEvent(event:Event):void {
+			var uncaughtExceptionEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.UNCAUGHT_EXCEPTION_EVENT)) {
+				uncaughtExceptionEvent = new RadiateEvent(RadiateEvent.UNCAUGHT_EXCEPTION_EVENT, false, false);
+				uncaughtExceptionEvent.data = event;
+				dispatchEvent(uncaughtExceptionEvent);
 			}
 		}
 		
@@ -1333,9 +1482,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch document not saved event
 		 * */
 		public function dispatchDocumentSaveFaultEvent(document:IDocument):void {
-			var documentSaveFaultEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SAVE_FAULT, false, false, document);
+			var documentSaveFaultEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_SAVE_FAULT)) {
+				documentSaveFaultEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SAVE_FAULT, false, false, document);
 				dispatchEvent(documentSaveFaultEvent);
 			}
 		}
@@ -1344,9 +1494,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch document save as cancel event
 		 * */
 		public function dispatchDocumentSaveAsCancelEvent(document:IDocument):void {
-			var documentSaveAsCancelEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, false, false, document);
+			var documentSaveAsCancelEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL)) {
+				documentSaveAsCancelEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, false, false, document);
 				dispatchEvent(documentSaveAsCancelEvent);
 			}
 		}
@@ -1356,10 +1507,23 @@ package com.flexcapacitor.controller {
 		 * Dispatch document add event
 		 * */
 		public function dispatchDocumentAddedEvent(document:IDocument):void {
-			var documentAddedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_ADDED, false, false, document, null, null);
+			var documentAddedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_ADDED)) {
+				documentAddedEvent = new RadiateEvent(RadiateEvent.DOCUMENT_ADDED, false, false, document);
 				dispatchEvent(documentAddedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document reverted event
+		 * */
+		public function dispatchDocumentRevertedEvent(document:IDocument):void {
+			var documentRevertedEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_REVERTED)) {
+				documentRevertedEvent = new RadiateEvent(RadiateEvent.DOCUMENT_REVERTED, false, false, document);
+				dispatchEvent(documentRevertedEvent);
 			}
 		}
 		
@@ -1367,9 +1531,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch project closing event
 		 * */
 		public function dispatchProjectClosingEvent(project:IProject):void {
-			var projectClosingEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_CLOSING, false, false, project, null, null);
+			var projectClosingEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_CLOSING)) {
+				projectClosingEvent = new RadiateEvent(RadiateEvent.PROJECT_CLOSING, false, false, project);
 				dispatchEvent(projectClosingEvent);
 			}
 		}
@@ -1378,9 +1543,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch project closed event
 		 * */
 		public function dispatchProjectOpenedEvent(project:IProject):void {
-			var projectOpenedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_OPENED, false, false, project, null, null);
+			var projectOpenedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_OPENED)) {
+				projectOpenedEvent = new RadiateEvent(RadiateEvent.PROJECT_OPENED, false, false, project);
 				dispatchEvent(projectOpenedEvent);
 			}
 		}
@@ -1389,9 +1555,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch project closed event
 		 * */
 		public function dispatchProjectClosedEvent(project:IProject):void {
-			var projectClosedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_CLOSED, false, false, project, null, null);
+			var projectClosedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_CLOSED)) {
+				projectClosedEvent = new RadiateEvent(RadiateEvent.PROJECT_CLOSED, false, false, project);
 				dispatchEvent(projectClosedEvent);
 			}
 		}
@@ -1400,9 +1567,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch project removed event
 		 * */
 		public function dispatchProjectRemovedEvent(project:IProject):void {
-			var projectRemovedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_REMOVED, false, false, project, null, null);
+			var projectRemovedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_REMOVED)) {
+				projectRemovedEvent = new RadiateEvent(RadiateEvent.PROJECT_REMOVED, false, false, project);
 				dispatchEvent(projectRemovedEvent);
 			}
 		}
@@ -1411,9 +1579,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch project change event
 		 * */
 		public function dispatchProjectChangeEvent(project:IProject, multipleSelection:Boolean = false):void {
-			var projectChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_CHANGE, false, false, project, null, null, multipleSelection);
+			var projectChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_CHANGE)) {
+				projectChangeEvent = new RadiateEvent(RadiateEvent.PROJECT_CHANGE, false, false, project);
 				dispatchEvent(projectChangeEvent);
 			}
 		}
@@ -1422,9 +1591,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch projects set event
 		 * */
 		public function dispatchProjectsSetEvent(projects:Array, multipleSelection:Boolean = false):void {
-			var projectChangeEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECTS_SET, false, false, projects, null, null, multipleSelection);
+			var projectChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECTS_SET)) {
+				projectChangeEvent = new RadiateEvent(RadiateEvent.PROJECTS_SET, false, false, projects);
 				dispatchEvent(projectChangeEvent);
 			}
 		}
@@ -1433,9 +1603,10 @@ package com.flexcapacitor.controller {
 		 * Dispatch project created event
 		 * */
 		public function dispatchProjectAddedEvent(project:IProject):void {
-			var projectCreatedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_ADDED, false, false, project, null, null);
+			var projectCreatedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_ADDED)) {
+				projectCreatedEvent = new RadiateEvent(RadiateEvent.PROJECT_ADDED, false, false, project);
 				dispatchEvent(projectCreatedEvent);
 			}
 		}
@@ -1444,24 +1615,11 @@ package com.flexcapacitor.controller {
 		 * Dispatch project created event
 		 * */
 		public function dispatchProjectCreatedEvent(project:IProject):void {
-			var projectCreatedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_CREATED, false, false, project, null, null);
+			var projectCreatedEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.PROJECT_CREATED)) {
+				projectCreatedEvent = new RadiateEvent(RadiateEvent.PROJECT_CREATED, false, false, project);
 				dispatchEvent(projectCreatedEvent);
-			}
-		}
-		
-		/**
-		 * Dispatch a history change event
-		 * */
-		public function dispatchHistoryChangeEvent(newIndex:int, oldIndex:int):void {
-			var event:RadiateEvent = new RadiateEvent(RadiateEvent.HISTORY_CHANGE);
-			
-			if (hasEventListener(RadiateEvent.HISTORY_CHANGE)) {
-				event.newIndex = newIndex;
-				event.oldIndex = oldIndex;
-				event.historyEventItem = getHistoryItemAtIndex(newIndex);
-				dispatchEvent(event);
 			}
 		}
 		
@@ -1502,14 +1660,20 @@ package com.flexcapacitor.controller {
 		 * Creates the list of components and tools.
 		 * */
 		public static function initialize():void {
-			var componentsXML:XML 	= new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
+			var componentsXML:XML 	= new XML(new Radii8LibrarySparkAssets.componentsManifestDefaults());
 			var toolsXML:XML 		= new XML(new Radii8LibraryToolAssets.toolsManifestDefaults());
 			var inspectorsXML:XML 	= new XML(new Radii8LibraryInspectorAssets.inspectorsManifestDefaults());
 			var devicesXML:XML		= new XML(new Radii8LibraryDeviceAssets.devicesManifestDefaults());
+			var exportersXML:XML	= new XML(new Radii8LibraryTranscodersAssets.transcodersManifestDefaults());
+			//var documentsXML:XML	= new XML(new Radii8LibraryTranscodersAssets.transcodersManifestDefaults());
 			
 			createSettingsData();
 
 			createSavedData();
+			
+			createDocumentTranscoders(exportersXML);
+			
+			//createDocumentTypesList(documentsXML);
 			
 			createComponentList(componentsXML);
 			
@@ -1518,12 +1682,20 @@ package com.flexcapacitor.controller {
 			createToolsList(toolsXML);
 			
 			createDevicesList(devicesXML);
+			
+			documentStatuses.source = [WPService.STATUS_NONE, WPService.STATUS_DRAFT, WPService.STATUS_PUBLISH];
 		}
 		
 		/**
 		 * Startup 
 		 * */
 		public static function startup():void {
+			serviceManager 			= ServicesManager.getInstance();
+			historyManager 			= HistoryManager.getInstance();
+			
+			serviceManager.radiate 	= instance;
+			HistoryManager.radiate 	= instance;
+			
 			application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler, false, 0, true);
 			
 			//ExternalInterface.call("Radiate.getInstance");
@@ -1531,14 +1703,97 @@ package com.flexcapacitor.controller {
 				ExternalInterface.call("Radiate.instance.setFlashInstance", ExternalInterface.objectID);
 			}
 			
-			WP_HOST = "http://www.radii8.com";
+			WP_HOST = "https://www.radii8.com";
 			WP_PATH = "/r8m/";
 			
-			instance.getLoggedInStatus();
+			DisplayObjectUtils.Base64Encoder2 = Base64;
+			XMLUtils.initialize();
 			
-			UIComponentGlobals.designMode = true; // can we do it???
+			
+			// we use this to prevent hyperlinks from opening web pages when in design mode
+			// we don't know what changes this causes with other components 
+			// so it was disabled for a while
+			// caused some issues with hyperlinks opening so disabling 
+			//UIComponentGlobals.designMode = true;
+			
 			//radiate.openInitialProjects();
 			//LayoutManager.getInstance().usePhasedInstantiation = false;
+			
+		}
+		
+		/**
+		 * Create the list of document view types.
+		 * */
+		public static function createDocumentTypesList(xml:XML):void {
+			var hasDefinition:Boolean;
+			var items:XMLList;
+			var item:XML;
+			var length:uint;
+			var classType:Object;
+			 
+			// get list of transcoder classes 
+			items = XML(xml).transcoder;
+			
+			length = items.length();
+			
+			for (var i:int;i<length;i++) {
+				item = items[i];
+				
+				var documentDescription:DocumentDescription = new DocumentDescription();
+				documentDescription.importXML(item);
+				
+				hasDefinition = ClassUtils.hasDefinition(documentDescription.classPath);
+				
+				if (hasDefinition) {
+					//classType = ClassUtils.getDefinition(transcoder.classPath);
+					
+					//CodeManager.registerTranscoder(documentDescription);
+				}
+				else {
+					error("Document transcoder class for " + documentDescription.name + " not found: " + documentDescription.classPath);
+					// we need to add it to Radii8LibraryExporters
+					// such as Radii8LibraryExporters
+				}
+			}
+			
+		}
+		
+		/**
+		 * Create the list of document transcoders.
+		 * var languages:Array = CodeManager.getLanguages();
+		 * var sourceData:SourceData = CodeManager.getSourceData(target, iDocument, language, options);	
+		 * */
+		public static function createDocumentTranscoders(xml:XML):void {
+			var hasDefinition:Boolean;
+			var items:XMLList;
+			var item:XML;
+			var length:uint;
+			var classType:Object;
+			 
+			// get list of transcoder classes 
+			items = XML(xml).transcoder;
+			
+			length = items.length();
+			
+			for (var i:int;i<length;i++) {
+				item = items[i];
+				
+				var transcoder:TranscoderDescription = new TranscoderDescription();
+				transcoder.importXML(item);
+				
+				hasDefinition = ClassUtils.hasDefinition(transcoder.classPath);
+				
+				if (hasDefinition) {
+					//classType = ClassUtils.getDefinition(transcoder.classPath);
+					
+					CodeManager.registerTranscoder(transcoder);
+				}
+				else {
+					error("Document transcoder class for " + transcoder.type + " not found: " + transcoder.classPath);
+					// we need to add it to Radii8LibraryExporters
+					// such as Radii8LibraryExporters
+				}
+			}
 			
 		}
 		
@@ -1548,6 +1803,7 @@ package com.flexcapacitor.controller {
 		public static function createComponentList(xml:XML):void {
 			var length:uint;
 			var items:XMLList;
+			var item:XML;
 			var className:String;
 			var skinClassName:String;
 			var inspectors:Array;
@@ -1558,7 +1814,6 @@ package com.flexcapacitor.controller {
 			var attributesLength:int;
 			var defaults:Object;
 			var propertyName:String;
-			var item:XML;
 			
 			
 			// get list of component classes 
@@ -1585,14 +1840,14 @@ package com.flexcapacitor.controller {
 					className.indexOf("windowClasses")==-1 &&
 					className.indexOf("supportClasses")==-1) {
 					
-					hasDefinition = ApplicationDomain.currentDomain.hasDefinition(className);
+					hasDefinition = ClassUtils.hasDefinition(className);
 					
 					if (hasDefinition) {
-						classType = ApplicationDomain.currentDomain.getDefinition(className);
+						classType = ClassUtils.getDefinition(className);
 						
 						// need to check if we have the skin as well
 						
-						//hasDefinition = ApplicationDomain.currentDomain.hasDefinition(skinClassName);
+						//hasDefinition = ClassUtils.hasDefinition(skinClassName);
 						
 						if (hasDefinition) {
 							
@@ -1618,11 +1873,11 @@ package com.flexcapacitor.controller {
 							addComponentType(item.@id, className, classType, inspectors, null, defaults, null, includeItem);
 						}
 						else {
-							log.error("Component skin class, '" + skinClassName + "' not found for '" + className + "'.");
+							error("Component skin class, '" + skinClassName + "' not found for '" + className + "'.");
 						}
 					}
 					else {
-						log.error("Component class not found: " + className);
+						error("Component class not found: " + className);
 						// we need to add it to Radii8LibraryAssets 
 						// such as Radii8LibrarySparkAssets
 					}
@@ -1677,7 +1932,7 @@ package com.flexcapacitor.controller {
 					inspectableClassesDictionary[className] = inspectableClass;
 				}
 				else {
-					log.warn("Inspectable class, '" + className + "', was listed more than once during import.");
+					warn("Inspectable class, '" + className + "', was listed more than once during import.");
 				}
 					
 			}
@@ -1694,20 +1949,20 @@ package com.flexcapacitor.controller {
 					
 					if (inspectorsDictionary[className]==null) {
 						
-						hasDefinition = ApplicationDomain.currentDomain.hasDefinition(className);
+						hasDefinition = ClassUtils.hasDefinition(className);
 						
 						if (hasDefinition) {
-							classType = ApplicationDomain.currentDomain.getDefinition(className);
+							classType = ClassUtils.getDefinition(className);
 						}
 						else {
-							log.error("Inspector class not found: " + className + " Add a reference to RadiateReferences");
+							error("Inspector class not found: " + className + " Add a reference to RadiateReferences");
 						}
 						
 						// not passing in classType now since we may load it in later dynamically
 						addInspectorType(inspectorData.name, className, null, inspectorData.icon, defaults);
 					}
 					else {
-						//log.warn("Inspector class: " + className + ", is already in the dictionary");
+						//warn("Inspector class: " + className + ", is already in the dictionary");
 					}
 				}
 			}
@@ -1717,7 +1972,8 @@ package com.flexcapacitor.controller {
 		
 		
 		/**
-		 * Creates the list of tools.
+		 * Creates the list of tools. Read the howto.txt to see how to add 
+		 * new tools. 
 		 * */
 		public static function createToolsList(xml:XML):void {
 			var inspectorClassName:String;
@@ -1768,10 +2024,10 @@ package com.flexcapacitor.controller {
 				
 				if (!includeItem) continue;
 				
-				hasDefinition = ApplicationDomain.currentDomain.hasDefinition(className);
+				hasDefinition = ClassUtils.hasDefinition(className);
 				
 				if (hasDefinition) {
-					toolClassDefinition = ApplicationDomain.currentDomain.getDefinition(className);
+					toolClassDefinition = ClassUtils.getDefinition(className);
 					
 					
 					// get default values
@@ -1800,10 +2056,10 @@ package com.flexcapacitor.controller {
 					
 					// create inspector
 					if (inspectorClassName!="") {
-						hasDefinition = ApplicationDomain.currentDomain.hasDefinition(inspectorClassName);
+						hasDefinition = ClassUtils.hasDefinition(inspectorClassName);
 						
 						if (hasDefinition) {
-							inspectorClassDefinition = ApplicationDomain.currentDomain.getDefinition(inspectorClassName);
+							inspectorClassDefinition = ClassUtils.getDefinition(inspectorClassName);
 							
 							// Create tool inspector
 							inspectorClassFactory = new ClassFactory(inspectorClassDefinition as Class);
@@ -1814,7 +2070,7 @@ package com.flexcapacitor.controller {
 						else {
 							var errorMessage:String = "Could not find inspector, '" + inspectorClassName + "' for tool, '" + className + "'. ";
 							errorMessage += "You may need to add a reference to it in RadiateReferences.";
-							log.error(errorMessage);
+							error(errorMessage);
 						}
 					}
 					
@@ -1853,6 +2109,9 @@ package com.flexcapacitor.controller {
 							cursorClass = toolClassDefinition["Cursor"];
 						}
 						
+						if (cursorClass==null) {
+							error("Tool cursor not found: " + cursorName);
+						}
 						cursorBitmap = new cursorClass();
 						
 						// Pass the value to the bitmapDatas vector 
@@ -1877,7 +2136,7 @@ package com.flexcapacitor.controller {
 				}
 				else {
 					//trace("Tool class not found: " + classDefinition);
-					log.error("Tool class not found: " + toolClassDefinition);
+					error("Tool class not found: " + toolClassDefinition);
 				}
 				
 			}
@@ -1948,7 +2207,6 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Helper method to get the ID of the mouse cursor by name.
-		 * 
 		 * */
 		public function getMouseCursorID(tool:ITool, name:String = "Cursor"):String {
 			var component:ComponentDescription = getToolDescription(tool);
@@ -2106,7 +2364,7 @@ package com.flexcapacitor.controller {
 		/**
 		 *  @private
 		 */
-		[Bindable(event="documentChange")]
+		[Bindable]
 		public function set selectedDocument(value:IDocument):void {
 			if (value==_selectedDocument) return;
 			_selectedDocument = value;
@@ -2269,14 +2527,60 @@ package com.flexcapacitor.controller {
 		
 		public static var SETTINGS_DATA_NAME:String = "settingsData";
 		public static var SAVED_DATA_NAME:String 	= "savedData";
-		public static var WP_HOST:String = "http://www.radii8.com";
+		public static var CONTACT_FORM_URL:String = "http://www.radii8.com/support.php";
+		public static var WP_HOST:String = "https://www.radii8.com";
 		public static var WP_PATH:String = "/r8m/";
 		public static var WP_USER_PATH:String = "";
+		public static var WP_EXAMPLES_PATH:String = "/r8m/";
+		public static var WP_NEWS_PATH:String = "";
+		public static var WP_LOGIN_PATH:String = "/wp-admin/";
+		public static var WP_PROFILE_PATH:String = "/wp-admin/profile.php";
+		public static var WP_EDIT_POST_PATH:String = "/wp-admin/post.php";
 		public static var DEFAULT_DOCUMENT_WIDTH:int = 800;
 		public static var DEFAULT_DOCUMENT_HEIGHT:int = 792;
+		public static var DEFAULT_NAVIGATION_WINDOW:String = "userNavigation";
 		
+		/**
+		 * Gets the URL to the examples site
+		 * */
+		public static function getExamplesWPURL():String {
+			return WP_HOST + WP_EXAMPLES_PATH;
+		}
+		
+		/**
+		 * Gets the URL to the examples site
+		 * */
+		public static function getNewsWPURL():String {
+			return WP_HOST + WP_NEWS_PATH;
+		}
+		
+		/**
+		 * Get's the path to the multiuser wordpress site
+		 * */
 		public static function getWPURL():String {
 			return WP_HOST + WP_PATH + WP_USER_PATH;
+		}
+		
+		/**
+		 * Get's the URL to the login page for users to login manually
+		 * */
+		public static function getWPLoginURL():String {
+			return WP_HOST + WP_PATH + WP_USER_PATH + WP_LOGIN_PATH;
+		}
+		
+		/**
+		 * Get's the URL to the profile page for the user
+		 * */
+		public static function getWPProfileURL():String {
+			return WP_HOST + WP_PATH + WP_USER_PATH + WP_PROFILE_PATH;
+		}
+		
+		/**
+		 * Get's the URL to edit the current post
+		 * */
+		public static function getWPEditPostURL(documentData:IDocumentData):String {
+			//http://www.radii8.com/r8m/wp-admin/post.php?post=5227&action=edit
+			return WP_HOST + WP_PATH + WP_USER_PATH + WP_EDIT_POST_PATH + "?post=" + documentData.id + "&action=edit";
 		}
 		
 		/**
@@ -2372,6 +2676,8 @@ package com.flexcapacitor.controller {
 			return definition;
 		}
 		
+		public var previousSelectedTool:ITool;
+		
 		/**
 		 * Sets the selected tool to the tool passed in
 		 * */
@@ -2379,6 +2685,7 @@ package com.flexcapacitor.controller {
 			
 			if (selectedTool) {
 				selectedTool.disable();
+				previousSelectedTool = selectedTool;
 			}
 			
 			_selectedTool = value;
@@ -2392,6 +2699,16 @@ package com.flexcapacitor.controller {
 			}
 			
 		}
+		
+		/**
+		 * Restores the previously selected tool
+		 * */
+		public function restoreTool(dispatchEvent:Boolean = true, cause:String = ""):void {
+			if (previousSelectedTool && previousSelectedTool!=selectedTool) {
+				setTool(previousSelectedTool, dispatchEvent, cause);
+			}
+		}
+			
 		
 		/**
 		 * Enables the selected tool
@@ -2442,7 +2759,9 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Get tool by name.
+		 * Get tool by name. Pass in the class name. 
+		 * List of class names are in tools-manifest-defaults.xml or radiate.toolsDescription
+		 * @see getToolByType()
 		 * */
 		public function getToolByName(name:String):ComponentDescription {
 			var length:int = toolsDescriptions.length;
@@ -2684,11 +3003,19 @@ package com.flexcapacitor.controller {
 		 * Sets the zoom of the target application to value. 
 		 * */
 		public function setScale(value:Number, dispatchEvent:Boolean = true):void {
+			var maxScale:int = 10;
+			var minScale:Number = .05;
 			
+			if (value>maxScale) {
+				value = maxScale;
+			}
+			if (value<minScale) {
+				value = minScale;
+			}
 			if (selectedDocument && !isNaN(value) && value>0) {
 				//DisplayObject(selectedDocument.instance).scaleX = value;
 				//DisplayObject(selectedDocument.instance).scaleY = value;
-				selectedDocument.scale = value;
+				selectedDocument.scale = Math.min(value, maxScale);
 				
 				if (dispatchEvent) {
 					dispatchScaleChangeEvent(selectedDocument, value, value);
@@ -2711,6 +3038,62 @@ package com.flexcapacitor.controller {
 		/**
 		 * Center the application
 		 * */
+		public function setScrollPosition(x:int, y:int):void {
+			if (!canvasScroller) return;
+			
+			var viewport:IViewport = canvasScroller.viewport;
+			var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 11;
+			var hsbHeight:int = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 11;
+			var availableWidth:int = canvasScroller.width;// - vsbWidth;
+			var availableHeight:int = canvasScroller.height;// - hsbHeight;
+			
+			viewport.horizontalScrollPosition = Math.max(0, x);
+			viewport.verticalScrollPosition = Math.max(0, y);
+			
+		}
+		
+		/**
+		 * Center the application on the point
+		 * */
+		public function centerOnPoint(point:Point):void {
+			if (!canvasScroller) return;
+			var viewport:IViewport = canvasScroller.viewport;
+			var availableWidth:int = canvasScroller.width;// - vsbWidth;
+			var availableHeight:int = canvasScroller.height;// - hsbHeight;
+			var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 11;
+			var hsbHeight:int = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 11;
+			var documentVisualElement:IVisualElement = IVisualElement(selectedDocument.instance);
+			var currentScale:Number = getScale();
+			var contentWidth:int = documentVisualElement.width * currentScale;
+			var contentHeight:int = documentVisualElement.height * currentScale;
+			
+			//var horScrollPos:int = viewportWidth/2 - contentWidth/2;
+			var newX:int = availableWidth/2 - (contentWidth/2 - point.x);
+			newX = availableWidth/2 - (contentWidth/2 + (contentWidth/2-point.x));
+			newX = (contentWidth/2 + (contentWidth/2-(point.x*currentScale))) - availableWidth/2;
+			//newX = availableWidth/2 - (contentWidth/2 - (contentWidth/2-point.x));
+			//newX = (availableWidth- contentWidth)/2 - point.x;
+			//newX = (availableWidth - contentWidth + vsbWidth) / 2 - point.x;
+			var newY:int = (contentHeight/2 + (contentHeight/2-(point.y*currentScale))) - availableHeight/2;
+			newY = canvasScroller.verticalScrollBar.value;		
+			setScrollPosition(newX, newY);
+			// (495 - 750) - 736
+			// (-255) - 736
+			// -991
+			
+			// 495 - (750-736)
+			// 495 - (14)
+			// 481
+			
+			// 495 - (750-736*1)
+			// 495 - (14)
+			// 481
+			
+		}
+		
+		/**
+		 * Center the application
+		 * */
 		public function centerApplication(vertically:Boolean = true, verticallyTop:Boolean = true, totalDocumentPadding:int = 0):void {
 			if (!canvasScroller) return;
 			var viewport:IViewport = canvasScroller.viewport;
@@ -2718,12 +3101,12 @@ package com.flexcapacitor.controller {
 			//var contentHeight:int = viewport.contentHeight * getScale();
 			//var contentWidth:int = viewport.contentWidth * getScale();
 			// get document size NOT scroll content size
-			var contentHeight:int = documentVisualElement.height * getScale();
 			var contentWidth:int = documentVisualElement.width * getScale();
+			var contentHeight:int = documentVisualElement.height * getScale();
 			var newHorizontalPosition:int;
 			var newVerticalPosition:int;
 			var needsValidating:Boolean;
-			var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 11;
+			//var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 11;
 			var hsbHeight:int = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 11;
 			var availableWidth:int = canvasScroller.width;// - vsbWidth;
 			var availableHeight:int = canvasScroller.height;// - hsbHeight;
@@ -2842,7 +3225,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Returns the URL to the help document online based on MetaData passed to it. 
 		 * */
-		public static function getURLToHelp(metadata:MetaData, useBackupURL:Boolean = true):String {
+		public static function getURLToHelp(metadata:Object, useBackupURL:Boolean = true):String {
 			var path:String = "";
 			var currentClass:String;
 			var sameClass:Boolean;
@@ -2852,7 +3235,11 @@ package com.flexcapacitor.controller {
 			var declaredBy:String;
 			var backupURLNeeded:Boolean;
 			
-			if (metadata && metadata.declaredBy) {
+			if (metadata=="application") {
+				metadata = "spark.components::Application";
+			}
+			
+			if (metadata && metadata is MetaData && metadata.declaredBy) {
 				declaredBy = metadata.declaredBy;
 				currentClass = declaredBy.replace(/::|\./g, "/");
 				
@@ -2872,6 +3259,10 @@ package com.flexcapacitor.controller {
 				
 				
 				path = currentClass + ".html#" + prefix + metadata.name;
+			}
+			else if (metadata is String) {
+				currentClass = metadata.replace(/::|\./g, "/");
+				path = currentClass + ".html";
 			}
 			
 			if (useBackupURL && backupURLNeeded) {
@@ -3006,7 +3397,7 @@ package com.flexcapacitor.controller {
 			}
 			
 			
-			var hasDefinition:Boolean = ApplicationDomain.currentDomain.hasDefinition(className);
+			var hasDefinition:Boolean = ClassUtils.hasDefinition(className);
 			
 			
 			if (hasDefinition) {
@@ -3051,7 +3442,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Add an asset
+		 * Add an asset to the document assets collection
 		 * */
 		public function addAsset(data:DocumentData, dispatchEvent:Boolean = true):void {
 			var length:int = assets.length;
@@ -3077,7 +3468,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Remove an asset
+		 * Remove an asset from the documents assets collection
 		 * */
 		public function removeAsset(iDocumentData:IDocumentData, locations:String = null, dispatchEvents:Boolean = true):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
@@ -3123,6 +3514,43 @@ package com.flexcapacitor.controller {
 			dispatchAssetRemovedEvent(iDocumentData, removedInternally);
 			
 			return removedInternally;
+		}
+		
+		/**
+		 * Adds an asset to the document
+		 * */
+		public function addAssetToDocument(assetData:ImageData, iDocument:IDocument):void {
+			var item:ComponentDefinition;
+			var application:Application;
+			var componentInstance:Object;
+			var path:String;
+			
+			item = Radiate.getComponentType("Image");
+			
+			
+			application = iDocument && iDocument.instance ? iDocument.instance as Application : null;
+			
+			if (!application) return;
+			
+			
+			componentInstance = Radiate.createComponentForAdd(iDocument, item);
+			
+			
+			addElement(componentInstance, iDocument.instance);
+			
+			if (assetData is ImageData) {
+				path = assetData.url;
+				
+				if (path) {
+					componentInstance.width = undefined;
+					componentInstance.height = undefined;
+					//image.source = null;//force it to show up in change history
+					Radiate.setProperty(componentInstance, "source", path);
+				}
+				else if (assetData.bitmapData) {
+					Radiate.setProperty(componentInstance, "source", assetData.bitmapData);
+				}
+			}
 		}
 		
 		/**
@@ -3216,9 +3644,9 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Sets the current document
+		 * Selects the current document
 		 * */
-		public function setDocument(value:IDocument, dispatchEvent:Boolean = true, cause:String = ""):void {
+		public function selectDocument(value:IDocument, dispatchEvent:Boolean = true, cause:String = ""):void {
 			
 			if (selectedDocument != value) {
 				selectedDocument = value;
@@ -3233,9 +3661,9 @@ package com.flexcapacitor.controller {
 				canvasScroller = container.canvasScroller;
 			}
 			
-			history = selectedDocument ? selectedDocument.history : null;
-			history ? history.refresh() : void;
-			historyIndex = getHistoryIndex();
+			HistoryManager.history = selectedDocument ? selectedDocument.history : null;
+			HistoryManager.history ? HistoryManager.history.refresh() : void;
+			HistoryManager.setHistoryIndex(selectedDocument, HistoryManager.getHistoryPosition(selectedDocument));
 			
 			if (dispatchEvent) {
 				instance.dispatchDocumentChangeEvent(selectedDocument);
@@ -3244,9 +3672,9 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Selects the target
+		 * Selects the documents
 		 * */
-		public function setDocuments(value:*, dispatchEvent:Boolean = true, cause:String = ""):void {
+		public function selectDocuments(value:*, dispatchEvent:Boolean = true, cause:String = ""):void {
 			value = ArrayUtil.toArray(value);
 			
 			// remove listeners from previous documents
@@ -3284,14 +3712,24 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Selects the target
+		 * @see setTargets
+		 * @see target
+		 * @see targets
 		 * */
 		public function setTarget(value:*, dispatchEvent:Boolean = true, cause:String = ""):void {
-			if (_targets.length == 1 && target==value) return;
+			var _tempTarget:* = value && value is Array && value.length ? value[0] : value;
+			
+			if (_targets.length == 1 && target==_tempTarget) {
+				return;
+			}
 			
 			_targets = null;// without this, the contents of the array would change across all instances
 			_targets = [];
 			
-			if (value) {
+			if (value is Array) {
+				_targets[0] = _tempTarget;
+			}
+			else {
 				_targets[0] = value;
 			}
 			
@@ -3303,6 +3741,10 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Selects the target
+		 * 
+		 * @see setTarget
+		 * @see target
+		 * @see targets
 		 * */
 		public function setTargets(value:*, dispatchEvent:Boolean = true, cause:String = ""):void {
 			value = ArrayUtil.toArray(value);
@@ -3404,14 +3846,14 @@ package com.flexcapacitor.controller {
 		 * Selects the document
 		 * */
 		public static function setDocuments(value:Object, dispatchEvent:Boolean = false, cause:String = ""):void {
-			instance.setDocuments(value, dispatchEvent, cause);
+			instance.selectDocuments(value, dispatchEvent, cause);
 		}
 		
 		/**
 		 * Deselects the documents
 		 * */
 		public static function desetDocuments(dispatchEvent:Boolean = true, cause:String = ""):void {
-			instance.setDocuments(null, dispatchEvent, cause);
+			instance.selectDocuments(null, dispatchEvent, cause);
 		}
 		
 		/**
@@ -3432,6 +3874,21 @@ package com.flexcapacitor.controller {
 			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
 			cutData = item;
 			copiedData = null;
+			copiedDataDocument = selectedDocument;
+			
+			// convert to string and then import to selected target or document
+			var options:ExportOptions = new ExportOptions();
+			var sourceItemData:SourceData;
+			options.useInlineStyles = true;
+			
+			if (selectedDocument.getItemDescription(item)) {
+				sourceItemData = CodeManager.getSourceData(target, selectedDocument, CodeManager.MXML, options);
+				
+				if (sourceItemData) {
+					copiedDataSource = sourceItemData.source;
+				}
+			}
+			
 		}
 		
 		/**
@@ -3441,6 +3898,7 @@ package com.flexcapacitor.controller {
 			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
 			cutData = null;
 			copiedData = item;
+			copiedDataDocument = selectedDocument;
 			
 			var clipboard:Clipboard = Clipboard.generalClipboard;
 			var serializable:Boolean = true;
@@ -3453,6 +3911,19 @@ package com.flexcapacitor.controller {
 			}
 				
 			try {
+				// convert to string and then import to selected target or document
+				var options:ExportOptions = new ExportOptions();
+				var sourceItemData:SourceData;
+				options.useInlineStyles = true;
+				
+				if (selectedDocument.getItemDescription(item)) {
+					sourceItemData = CodeManager.getSourceData(target, selectedDocument, CodeManager.MXML, options);
+					
+					if (sourceItemData) {
+						copiedDataSource = sourceItemData.source;
+					}
+				}
+				
 				
 				if (item is String) {
 					clipboard.setDataHandler(format, handler, serializable);
@@ -3461,25 +3932,72 @@ package com.flexcapacitor.controller {
 					clipboard.setDataHandler(format, handler, serializable);
 				}
 				
-				/*
-				if (action.successEffect) {
-					playEffect(action.successEffect);
-				}
-				
-				if (action.hasEventListener(CopyToClipboard.SUCCESS)) {
-					dispatchActionEvent(new Event(CopyToClipboard.SUCCESS));
-				}*/
 			}
 			catch (error:ErrorEvent) {
 				
-				/*
-				if (action.errorEffect) {
-					playEffect(action.errorEffect);
+			}
+		}
+		
+		/**
+		 * Paste item
+		 * */
+		public function pasteItem(destination:Object):void {
+			var component:Object = Clipboard.generalClipboard.getData("Object");
+			var descriptor:ComponentDescription = component as ComponentDescription;
+			var newComponent:Object;
+			var exportOptions:ExportOptions;
+			var itemData:SourceData;
+			var useCopyObjectsTechnique:Boolean = false;
+			
+			
+			if (component is Application) {
+				error("Cannot copy and paste the application.");
+				return;
+			}
+			
+			if (component==null) {
+				return;
+			}
+			
+			if (destination && !(destination is IVisualElementContainer)) {
+				destination = destination.owner;
+			}
+			
+			if (!destination) {
+				destination = selectedDocument.instance;
+			}
+			
+			if (descriptor==null) {
+				descriptor = selectedDocument.descriptionsDictionary[component];
+			}
+			
+			if (useCopyObjectsTechnique) {
+				var item:ComponentDefinition = Radiate.getComponentType(component.className);
+				newComponent = Radiate.createComponentForAdd(selectedDocument, item, true);
+				addElement(newComponent, destination, descriptor.propertyNames, descriptor.styleNames, ObjectUtils.merge(descriptor.properties, descriptor.styles));
+				//setProperties(newComponent, descriptor.propertyNames, descriptor.properties);
+				HistoryManager.doNotAddEventsToHistory = true;
+				//setStyles(newComponent, descriptor.styleNames, descriptor.styles);
+				HistoryManager.doNotAddEventsToHistory = false;
+				setTarget(newComponent);
+			}
+			else {
+				exportOptions = new ExportOptions();
+				exportOptions.useInlineStyles = true;
+				var description:ComponentDescription = selectedDocument.getItemDescription(component);
+				
+				if (description) {
+					itemData = CodeManager.getSourceData(component, selectedDocument, CodeManager.MXML, exportOptions);
 				}
 				
-				if (action.hasEventListener(CopyToClipboard.ERROR)) {
-					dispatchActionEvent(new Event(CopyToClipboard.ERROR));
-				}*/
+				if (itemData && description) {
+					itemData = CodeManager.setSourceData(itemData.source, destination, selectedDocument, CodeManager.MXML, null);
+				}
+				else if (copiedDataSource) {
+					itemData = CodeManager.setSourceData(copiedDataSource, destination, selectedDocument, CodeManager.MXML, null);
+				}
+				
+				setTarget(destination);
 			}
 		}
 		
@@ -3497,6 +4015,11 @@ package com.flexcapacitor.controller {
 			ClipboardFormats.FILE_PROMISE_LIST_FORMAT	Array of File (AIR only)
 			Custom format name	Non-void*/
 			
+			// convert to string and then import to selected target or document
+			//var options:ExportOptions = new ExportOptions();
+			//options.useInlineStyles = true;
+			
+			//var sourceItemData:SourceData = CodeManager.getSourceData(target, selectedDocument, CodeManager.MXML, options);
 			
 			
 			if (copiedData) {
@@ -3510,16 +4033,98 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Copy item
+		 * Set attributes on a component object
 		 * */
-		public function pasteItem(destination:Object):void {
-			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
+		public static function getPropertiesStylesFromNode(elementInstance:Object, node:XML, item:ComponentDefinition = null):ValuesObject {
+			var elementName:String = node.localName();
+			var attributeName:String;
+			var attributes:Array;
+			var childNodeNames:Array;
+			var propertiesOrStyles:Array;
+			var properties:Array;
+			var styles:Array;
+			var attributesValueObject:Object;
+			var childNodeValueObject:Object;
+			var values:Object;
+			var valuesObject:ValuesObject;
+			
+			attributes 				= XMLUtils.getAttributeNames(node);
+			childNodeNames 			= XMLUtils.getChildNodeNames(node);
+			propertiesOrStyles 		= attributes.concat(childNodeNames);
+			properties 				= ClassUtils.getPropertiesFromArray(elementInstance, propertiesOrStyles);
+			styles 					= ClassUtils.getStylesFromArray(elementInstance, propertiesOrStyles);
+			attributesValueObject 	= XMLUtils.getAttributesValueObject(node);
+			childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node);
+			values 					= ObjectUtils.merge(attributesValueObject, childNodeValueObject);
+			
+			// todo get typed values
+			// temporary fix to get typed boolean values			
+			for (var i:int = 0; i < propertiesOrStyles.length; i++) 
+			{
+				var property:String = propertiesOrStyles[i];
+				var value:String = values[property];
+				if (value=="true" || value=="false") {
+					values[property] = value=="true" ? true : false;
+				}
+			}
+			
+			
+			valuesObject 					= new ValuesObject();
+			valuesObject.properties 		= properties;
+			valuesObject.styles 			= styles;
+			valuesObject.values 			= values;
+			valuesObject.attributes 		= attributes;
+			valuesObject.childNodeNames 	= childNodeNames;
+			valuesObject.childNodeValues 	= childNodeValueObject;
+			
+			var a:Object = node.namespace().prefix     //returns prefix i.e. rdf
+			var b:Object = node.namespace().uri        //returns uri of prefix i.e. http://www.w3.org/1999/02/22-rdf-syntax-ns#
+			
+			var c:Object = node.inScopeNamespaces()   //returns all inscope namespace as an associative array like above
+			
+			//returns all nodes in an xml doc that use the namespace
+			var nsElement:Namespace = new Namespace(node.namespace().prefix, node.namespace().uri);
+			
+			var usageCount:XMLList = node..nsElement::*;
+			
+			return valuesObject;
+		}
+		
+		/**
+		 * Removes explict size on a component object because 
+		 * we are setting default width and height when creating the component.
+		 * I don't know a better way to do this. Maybe use setActualSize but I 
+		 * don't think the size stays if you go back and forth in history???
+		 * */
+		public static function removeExplictSizeOnComponent(elementInstance:Object, node:XML, item:ComponentDefinition = null, dispatchEvents:Boolean = false):void {
+			var attributeName:String;
+			var elementName:String = node.localName();
+			
+			var hasWidthAttribute:Boolean = ("@width" in node);
+			var hasHeightAttribute:Boolean = ("@height" in node);
+			var hasWidthDefault:Boolean = item.defaultProperties && item.defaultProperties.width;
+			var hasHeightDefault:Boolean = item.defaultProperties && item.defaultProperties.height;
+			
+			
+			// a default height was set but the user removed it so we need to remove it
+			// flex doesn't support a height="auto" or height="content" type of value 
+			// flex just removes the height attribute in XML altogether 
+			// so if it is not in the mxml then we have to set the size to undefined 
+			if (hasHeightDefault && !hasHeightAttribute) {
+				//setProperty(elementInstance, "height", undefined, null, true, dispatchEvents);
+				elementInstance["height"] = undefined;
+			}
+			
+			if (hasWidthDefault && !hasWidthAttribute) {
+				//setProperty(elementInstance, "width", undefined, null, true, dispatchEvents);
+				elementInstance["width"] = undefined;
+			}
 		}
 		
 		/**
 		 * Set attributes on a component object
 		 * */
-		public static function setAttributesOnComponent(elementInstance:Object, node:XML, dispatchEvents:Boolean = false):void {
+		public static function setAttributesOnComponent(elementInstance:Object, node:XML, item:ComponentDefinition = null, dispatchEvents:Boolean = false):void {
 			var attributeName:String;
 			var elementName:String = node.localName();
 			//var domain:ApplicationDomain = ApplicationDomain.currentDomain;
@@ -3528,10 +4133,13 @@ package com.flexcapacitor.controller {
 			//var classType:Class = componentDefinition ? componentDefinition.classType as Class :null;
 			//var elementInstance:Object = componentDescription.instance;
 			
+			var properties:Array = [];
+			var styles:Array = [];
+			var valueObject:Object = {};
 			
 			for each (var attribute:XML in node.attributes()) {
 				attributeName = attribute.name().toString();
-				//Radiate.log.info(" found attribute: " + attributeName); 
+				//Radiate.info(" found attribute: " + attributeName); 
 				
 				
 				// TODO we should check if an attribute is an property, style or event using the component definition
@@ -3541,19 +4149,30 @@ package com.flexcapacitor.controller {
 				// check if property 
 				if (attributeName in elementInstance) {
 					
-					//Radiate.log.info(" setting property: " + attributeName);
-					setProperty(elementInstance, attributeName, attribute.toString(), null, false, dispatchEvents);
-				 	
+					//Radiate.info(" setting property: " + attributeName);
+					//setProperty(elementInstance, attributeName, attribute.toString(), null, false, dispatchEvents);
+				 	properties.push(attributeName);
+					valueObject[attributeName] = attribute.toString();
 				}
 				
 				// could be style or event
 				else {
 					if (elementInstance is IStyleClient) {
-						//Radiate.log.info(" setting style: " + attributeName);
-						setStyle(elementInstance, attributeName, attribute.toString(), null, false, dispatchEvents);
+						//Radiate.info(" setting style: " + attributeName);
+						//setStyle(elementInstance, attributeName, attribute.toString(), null, false, dispatchEvents);
+						styles.push(attributeName);
+						valueObject[attributeName] = attribute.toString();
 					}
 				}
 			}
+			
+			if (styles.length || properties.length) {
+				var propertiesStyles:Array = styles.concat(properties);
+				setPropertiesStyles(elementInstance, propertiesStyles, valueObject);
+			}
+			
+			
+			removeExplictSizeOnComponent(elementInstance, node, item);
 		}
 		
 		/**
@@ -3630,21 +4249,117 @@ package com.flexcapacitor.controller {
 				applyChanges(targets, styleChanges, null, style);
 				//LayoutManager.getInstance().validateNow(); // applyChanges calls this
 				
-				historyEvents = createHistoryEvents(targets, styleChanges, null, style, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, styleChanges, null, style, value);
 				
 				updateComponentStyles(targets, styleChanges);
 				
-				if (!doNotAddEventsToHistory) {
-					addHistoryEvents(historyEvents, description);
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
 				}
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(targets, styleChanges, ArrayUtil.toArray(style));
+					instance.dispatchPropertyChangeEvent(targets, styleChanges, null, ArrayUtil.toArray(style));
 				}
 				return true;
 			}
 			
 			return false;
+		}
+		
+		/**
+		 * Checks if changes are available. 
+		 * */
+		public static function changesAvailable(changes:Array):Boolean {
+			var length:int = changes.length;
+			var changesAvailable:Boolean;
+			var item:PropertyChanges;
+			var name:String;
+			
+			for (var i:int;i<length;i++) {
+				if (!(changes[i] is PropertyChanges)) continue;
+				
+				item = changes[i];
+				
+				for (name in item.start) {
+					changesAvailable = true;
+					return true;
+				}
+				
+				for (name in item.end) {
+					changesAvailable = true;
+					return true;
+				}
+			}
+			
+			return changesAvailable;
+		}
+		
+		/**
+		 * Apply changes to targets. You do not call this. Set properties through setProperties method. 
+		 * 
+		 * @param setStartValues applies the start values rather 
+		 * than applying the end values
+		 * 
+		 * @param property string or array of strings containing the 
+		 * names of the properties to set or null if setting styles
+		 * 
+		 * @param style string or array of strings containing the 
+		 * names of the styles to set or null if setting properties
+		 * */
+		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, setStartValues:Boolean=false):Boolean {
+			var length:int = changes ? changes.length : 0;
+			var effect:HistoryEffect = new HistoryEffect();
+			var onlyPropertyChanges:Array = [];
+			var directApply:Boolean = true;
+			var isStyle:Boolean = style && style.length>0;
+			
+			for (var i:int;i<length;i++) {
+				if (changes[i] is PropertyChanges) { 
+					onlyPropertyChanges.push(changes[i]);
+				}
+			}
+			
+			effect.targets = targets;
+			effect.propertyChangesArray = onlyPropertyChanges;
+			
+			if (isStyle) {
+				if (style && style is Array && style.length==1) {
+					//effect.property = style;
+				}
+			}
+			
+			effect.relevantProperties = property!=null ? ArrayUtil.toArray(property) : [];
+			effect.relevantStyles = style!=null ? ArrayUtil.toArray(style) : [];
+			
+			// this works for styles and properties
+			// note: the property applyActualDimensions is used to enable width and height values to stick
+			if (directApply) {
+				effect.applyEndValuesWhenDone = false;
+				effect.applyActualDimensions = false;
+				
+				if (setStartValues) {
+					effect.applyStartValues(onlyPropertyChanges, targets);
+				}
+				else {
+					effect.applyEndValues(onlyPropertyChanges, targets);
+				}
+				
+				// Revalidate after applying
+				LayoutManager.getInstance().validateNow();
+			}
+				
+				// this works for properties but not styles
+				// the style value is restored at the end
+			else {
+				
+				effect.applyEndValuesWhenDone = false;
+				effect.play(targets, setStartValues);
+				effect.playReversed = false;
+				effect.end();
+				LayoutManager.getInstance().validateNow();
+			}
+			
+			return true;
 		}
 		
 		/**
@@ -3658,7 +4373,7 @@ package com.flexcapacitor.controller {
 		public static function setProperty(target:Object, property:String, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var targets:Array = ArrayUtil.toArray(target);
 			var propertyChanges:Array;
-			var historyEvents:Array;
+			var historyEventItems:Array;
 			
 			propertyChanges = createPropertyChange(targets, property, null, value, description);
 			
@@ -3672,16 +4387,16 @@ package com.flexcapacitor.controller {
 				//LayoutManager.getInstance().validateNow(); // applyChanges calls this
 				//addHistoryItem(propertyChanges, description);
 				
-				historyEvents = createHistoryEvents(targets, propertyChanges, property, null, value);
+				historyEventItems = HistoryManager.createHistoryEventItems(targets, propertyChanges, property, null, value);
 				
-				if (!doNotAddEventsToHistory) {
-					addHistoryEvents(historyEvents, description);
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEventItems, description);
 				}
 				
 				updateComponentProperties(targets, propertyChanges);
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(target, propertyChanges, ArrayUtil.toArray(property));
+					instance.dispatchPropertyChangeEvent(target, propertyChanges, ArrayUtil.toArray(property), null);
 				}
 				
 				if (dispatchEvents) {
@@ -3731,16 +4446,16 @@ package com.flexcapacitor.controller {
 				//LayoutManager.getInstance().validateNow();
 				//addHistoryItem(propertyChanges);
 				
-				historyEvents = createHistoryEvents(targets, propertyChanges, properties, null, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, null, value);
 				
-				if (!doNotAddEventsToHistory) {
-					addHistoryEvents(historyEvents, description);
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
 				}
 				
 				updateComponentProperties(targets, propertyChanges);
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties);
+					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, null);
 				}
 				
 				if (targets.indexOf(instance.selectedDocument)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, properties)) {
@@ -3757,9 +4472,8 @@ package com.flexcapacitor.controller {
 		 * Sets the style on the target object.<br/><br/>
 		 * 
 		 * Usage:<br/>
-		 * <pre>setProperties([myButton,myButton2], ["x","y"], {x:40,y:50});</pre>
-		 * <pre>setProperties(myButton, "x", 40);</pre>
-		 * <pre>setProperties(button, ["x", "left"], {x:50,left:undefined});</pre>
+		 * <pre>setStyles([myButton,myButton2], ["fontSize","fontFamily"], {fontSize:20,fontFamily:"Arial"});</pre>
+		 * <pre>setStyles(button, ["fontSize", "fontFamily"], {fontSize:10,fontFamily:"Arial"});</pre>
 		 * 
 		 * @see setStyle()
 		 * @see setProperty()
@@ -3782,22 +4496,194 @@ package com.flexcapacitor.controller {
 				applyChanges(targets, stylesChanges, null, styles);
 				//LayoutManager.getInstance().validateNow();
 				
-				historyEvents = createHistoryEvents(targets, stylesChanges, null, styles, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, stylesChanges, null, styles, value);
 				
-				if (!doNotAddEventsToHistory) {
-					addHistoryEvents(historyEvents, description);
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
 				}
 				
 				updateComponentStyles(targets, stylesChanges);
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(targets, stylesChanges, styles);
+					instance.dispatchPropertyChangeEvent(targets, stylesChanges, null, styles);
 				}
 				
 				return true;
 			}
 			
 			return false;
+		}
+		
+		/**
+		 * Sets the properties or styles of target or targets. Returns true if the properties or styles were changed.<br/><br/>
+		 * 
+		 * Usage:<br/>
+		 * <pre>setPropertiesStyles([myButton,myButton2], ["x","y","color"], {x:40,y:50,color:"0xFF0000"});</pre>
+		 * <pre>setPropertiesStyles(myButton, "x", 40);</pre>
+		 * <pre>setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});</pre>
+		 * 
+		 * @see setStyle()
+		 * @see setStyles()
+		 * @see setProperty()
+		 * @see setProperties()
+		 * */
+		public static function setPropertiesStyles(target:Object, propertiesStyles:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
+			var propertyChanges:Array;
+			var historyEvents:Array;
+			var targets:Array;
+			var properties:Array;
+			var styles:Array;
+			
+			targets = ArrayUtil.toArray(target);
+			propertiesStyles = ArrayUtil.toArray(propertiesStyles);
+			// TODO: Add support for multiple targets
+			styles = ClassUtils.getStylesFromArray(target, propertiesStyles);
+			properties = ClassUtils.getPropertiesFromArray(target, propertiesStyles);
+			propertyChanges = createPropertyChanges(targets, properties, styles, value, description, false);
+			
+			if (!keepUndefinedValues) {
+				propertyChanges = stripUnchangedValues(propertyChanges);
+			}
+			
+			if (changesAvailable(propertyChanges)) {
+				applyChanges(targets, propertyChanges, properties, styles);
+				//LayoutManager.getInstance().validateNow();
+				//addHistoryItem(propertyChanges);
+				
+				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, styles, value);
+				
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
+				}
+				
+				updateComponentProperties(targets, propertyChanges);
+				
+				if (dispatchEvents) {
+					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, styles);
+				}
+				
+				if (targets.indexOf(instance.selectedDocument)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, propertiesStyles)) {
+					instance.dispatchDocumentSizeChangeEvent(targets);
+				}
+				
+				return true;
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Given a target or targets, properties and value object (name value pair)
+		 * returns an array of PropertyChange objects.
+		 * Value must be an object containing the properties mentioned in the properties array
+		 * */
+		public static function createPropertyChanges(targets:Array, properties:Array, styles:Array, value:Object, description:String = "", storeInHistory:Boolean = true):Array {
+			var tempEffect:HistoryEffect = new HistoryEffect();
+			var propertyChanges:PropertyChanges;
+			var changes:Array;
+			var propertyOrStyle:String;
+			var isStyle:Boolean = styles && styles.length>0;
+			
+			tempEffect.targets = targets;
+			//tempEffect.property = isStyle ? styles[0] : properties[0];
+			tempEffect.relevantProperties = properties;
+			tempEffect.relevantStyles = styles;
+			
+			// get start values for undo
+			changes = tempEffect.captureValues(null, true);
+			
+			// This may be hanging on to bindable objects
+			// set the values to be set to the property 
+			// ..later - what??? give an example
+			for each (propertyChanges in changes) {
+				
+				// for properties 
+				for each (propertyOrStyle in properties) {
+					
+					// value may be an object with properties or a string
+					// because we accept an object containing the values with 
+					// the name of the properties or styles
+					if (value && propertyOrStyle in value) {
+						propertyChanges.end[propertyOrStyle] = value[propertyOrStyle];
+					}
+					else {
+						propertyChanges.end[propertyOrStyle] = value;
+					}
+				}
+				
+				// for styles
+				for each (propertyOrStyle in styles) {
+					
+					// value may be an object with properties or a string
+					// because we accept an object containing the values with 
+					// the name of the properties or styles
+					if (value && propertyOrStyle in value) {
+						propertyChanges.end[propertyOrStyle] = value[propertyOrStyle];
+					}
+					else {
+						propertyChanges.end[propertyOrStyle] = value;
+					}
+				}
+			}
+			
+			// we should move this out
+			// add property changes array to the history dictionary
+			if (storeInHistory) {
+				return HistoryManager.createHistoryEventItems(targets, changes, properties, styles, value, description);
+			}
+			
+			return [propertyChanges];
+		}
+		
+		/**
+		 * Given a target or targets, property name and value
+		 * returns an array of PropertyChange objects.
+		 * Points to createPropertyChanges()
+		 * 
+		 * @see createPropertyChanges()
+		 * */
+		public static function createPropertyChange(targets:Array, property:String, style:String, value:*, description:String = ""):Array {
+			var values:Object = {};
+			var changes:Array;
+			
+			if (property) {
+				values[property] = value;
+			}
+			else if (style) {
+				values[style] = value;
+			}
+			
+			changes = createPropertyChanges(targets, ArrayUtil.toArray(property), ArrayUtil.toArray(style), values, description, false);
+			
+			return changes;
+		}
+		
+		/**
+		 * Removes properties changes for null or same value targets
+		 * @private
+		 */
+		public static function stripUnchangedValues(propChanges:Array):Array {
+			
+			// Go through and remove any before/after values that are the same.
+			for (var i:int = 0; i < propChanges.length; i++) {
+				if (propChanges[i].stripUnchangedValues == false)
+					continue;
+				
+				for (var prop:Object in propChanges[i].start) {
+					if ((propChanges[i].start[prop] ==
+						propChanges[i].end[prop]) ||
+						(typeof(propChanges[i].start[prop]) == "number" &&
+							typeof(propChanges[i].end[prop])== "number" &&
+							isNaN(propChanges[i].start[prop]) &&
+							isNaN(propChanges[i].end[prop])))
+					{
+						delete propChanges[i].start[prop];
+						delete propChanges[i].end[prop];
+					}
+				}
+			}
+			
+			return propChanges;
 		}
 		
 		/**
@@ -3876,7 +4762,7 @@ package com.flexcapacitor.controller {
 										   properties:Array, 
 										   styles:Array,
 										   values:Object, 
-										   description:String 	= RadiateEvent.MOVE_ITEM, 
+										   description:String 	= null, 
 										   position:String		= AddItems.LAST, 
 										   relativeTo:Object	= null, 
 										   index:int			= -1, 
@@ -3891,7 +4777,7 @@ package com.flexcapacitor.controller {
 			var childIndex:int;
 			var propertyChangeChange:PropertyChanges;
 			var changes:Array;
-			var historyEvents:Array;
+			var historyEventItems:Array;
 			var isSameOwner:Boolean;
 			var isSameParent:Boolean;
 			var removeBeforeAdding:Boolean;
@@ -3913,7 +4799,7 @@ package com.flexcapacitor.controller {
 			
 			// set default description
 			if (!description) {
-				description = ADD_ITEM_DESCRIPTION;
+				description = HistoryManager.getMoveDescription(item);
 			}
 			
 			// if it's a basic layout then don't try to add it
@@ -4046,8 +4932,7 @@ package com.flexcapacitor.controller {
 			moveItems.vectorClass = vectorClass;
 			
 			// add properties that need to be modified
-			if (properties && properties.length>0 ||
-				styles && styles.length>0) {
+			if (properties && properties.length>0 || styles && styles.length>0) {
 				changes = createPropertyChanges(items, properties, styles, values, description, false);
 				
 				// get the property change part
@@ -4075,12 +4960,12 @@ package com.flexcapacitor.controller {
 				}
 				
 				if (changes.length==0) {
-					Radiate.log.info("Move: Nothing to change or add");
+					//info("Move: Nothing to change or add");
 					return "Nothing to change or add";
 				}
 				
 				// store changes
-				historyEvents = createHistoryEvents(items, changes, properties, styles, values, description, RadiateEvent.MOVE_ITEM);
+				historyEventItems = HistoryManager.createHistoryEventItems(items, changes, properties, styles, values, description, RadiateEvent.MOVE_ITEM);
 				
 				// try moving
 				if ((!isSameParent && !isSameOwner) || movingIndexWithinParent) {
@@ -4096,13 +4981,14 @@ package com.flexcapacitor.controller {
 					// AddItems was not meant to add an element that has already been added
 					// so we remove it before hand so addItems can add it again. 
 					if (removeBeforeAdding) {
-						visualElementOwner.removeElement(visualElement);
+						visualElementOwner.removeElement(visualElement);// validate now???
+						visualElementOwner is IInvalidating ? IInvalidating(visualElementOwner).validateNow() : void;
 					}
 					
 					moveItems.apply(moveItems.destination as UIComponent);
 					
 					if (moveItems.destination is SkinnableContainer && !SkinnableContainer(moveItems.destination).deferredContentCreated) {
-						//Radiate.log.error("Not added because deferred content not created.");
+						//Radiate.error("Not added because deferred content not created.");
 						var factory:DeferredInstanceFromFunction = new DeferredInstanceFromFunction(deferredInstanceFromFunction);
 						SkinnableContainer(moveItems.destination).mxmlContentFactory = factory;
 						SkinnableContainer(moveItems.destination).createDeferredContent();
@@ -4117,12 +5003,15 @@ package com.flexcapacitor.controller {
 				if (changesAvailable([propertyChangeChange])) {
 					applyChanges(items, [propertyChangeChange], properties, styles);
 					LayoutManager.getInstance().validateNow();
+					
+					updateComponentProperties(items, [propertyChangeChange]);
+					updateComponentStyles(items, [propertyChangeChange]);
 				}
 				
 				
 				// add to history
-				if (!doNotAddEventsToHistory) {
-					addHistoryEvents(historyEvents);
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEventItems);
 				}
 				
 				// check for changes before dispatching
@@ -4133,20 +5022,20 @@ package com.flexcapacitor.controller {
 				setTargets(items, true);
 				
 				if (properties) {
-					instance.dispatchPropertyChangeEvent(items, changes, properties);
+					instance.dispatchPropertyChangeEvent(items, changes, properties, styles);
 				}
 				
 				return MOVED; // we assume moved if it got this far - needs more checking
 			}
-			catch (error:Error) {
+			catch (errorEvent:Error) {
 				// this is clunky - needs to be upgraded
-				Radiate.log.error("Move error: " + error.message);
+				error("Move error: " + errorEvent.message);
 				
-				if (!doNotAddEventsToHistory) {
-					removeHistoryEvent(changes);
-					removeHistoryItem(changes);
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					HistoryManager.removeHistoryEvent(changes);
+					HistoryManager.removeHistoryItem(instance.selectedDocument, changes);
 				}
-				return String(error.message);
+				return String(errorEvent.message);
 			}
 			
 			
@@ -4168,7 +5057,7 @@ package com.flexcapacitor.controller {
 										  properties:Array 		= null, 
 										  styles:Array			= null,
 										  values:Object			= null, 
-										  description:String 	= RadiateEvent.ADD_ITEM, 
+										  description:String 	= null, 
 										  position:String		= AddItems.LAST, 
 										  relativeTo:Object		= null, 
 										  index:int				= -1, 
@@ -4177,6 +5066,11 @@ package com.flexcapacitor.controller {
 										  isStyle:Boolean		= false, 
 										  vectorClass:Class		= null,
 										  keepUndefinedValues:Boolean = true):String {
+			
+			
+			if (!description) {
+				description = HistoryManager.getAddDescription(items);
+			}
 			
 			var results:String = moveElement(items, destination, properties, styles, values, 
 								description, position, relativeTo, index, propertyName, 
@@ -4198,6 +5092,10 @@ package com.flexcapacitor.controller {
 					component.doubleClickEnabled = true;
 					component.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
 				}
+				
+				if (component is Hyperlink) {
+					component.useHandCursor = false;
+				}
 			}
 			
 			if (component is ComboBox) {
@@ -4217,6 +5115,8 @@ package com.flexcapacitor.controller {
 				// we could probably also do this: 
 				BorderContainer(component).addElement(new Label());
 				BorderContainer(component).removeAllElements();
+				// we do this to get rid of the round joints. this skin joints default to miter
+				BorderContainer(component).setStyle("skinClass", com.flexcapacitor.skins.BorderContainerSkin);
 				
 			}
 			
@@ -4236,7 +5136,7 @@ package com.flexcapacitor.controller {
 		 * Usage:<br/>
 		 * <pre>Radiate.removeElement(radiate.targets);</pre>
 		 * */
-		public static function removeElement(items:*, description:String = RadiateEvent.REMOVE_ITEM):String {
+		public static function removeElement(items:*, description:String = null):String {
 			
 			var visualElement:IVisualElement;
 			var removeItems:AddItems;
@@ -4265,7 +5165,7 @@ package com.flexcapacitor.controller {
 			
 			// set default description
 			if (!description) {
-				description = REMOVE_ITEM_DESCRIPTION;
+				description = HistoryManager.getRemoveDescription(item);
 			}
 			/*
 			// if it's a basic layout then don't try to add it
@@ -4386,7 +5286,7 @@ package com.flexcapacitor.controller {
 			}*/
 			
 			if (visualElement is Application) {
-				log.info("You can't remove the design view");
+				info("You can't remove the design view");
 				return REMOVE_ERROR;
 			}
 			
@@ -4410,11 +5310,11 @@ package com.flexcapacitor.controller {
 			
 			// attempt to remove
 			try {
-				removeItems = createReverseAddItems(items[0]);
+				removeItems = HistoryManager.createReverseAddItems(items[0]);
 				changes.unshift(removeItems);
 				
 				// store changes
-				historyEvents = createHistoryEvents(items, changes, null, null, null, description, RadiateEvent.REMOVE_ITEM);
+				historyEvents = HistoryManager.createHistoryEventItems(items, changes, null, null, null, description, RadiateEvent.REMOVE_ITEM);
 				
 				// try moving
 				//removeItems.apply(destination as UIComponent);
@@ -4425,8 +5325,8 @@ package com.flexcapacitor.controller {
 				
 				
 				// add to history
-				if (!doNotAddEventsToHistory) {
-					addHistoryEvents(historyEvents);
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents);
 				}
 				
 				// check for changes before dispatching
@@ -4436,14 +5336,14 @@ package com.flexcapacitor.controller {
 				
 				return REMOVED; // we assume moved if it got this far - needs more checking
 			}
-			catch (error:Error) {
+			catch (errorEvent:Error) {
 				// this is clunky - needs to be upgraded
-				Radiate.log.error("Remove error: " + error.message);
-				if (!doNotAddEventsToHistory) {
-					removeHistoryEvent(changes);
-					removeHistoryItem(changes);
+				error("Remove error: " + errorEvent.message);
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					HistoryManager.removeHistoryEvent(changes);
+					HistoryManager.removeHistoryItem(instance.selectedDocument, changes);
 				}
-				return String(error.message);
+				return String(errorEvent.message);
 			}
 			
 			return REMOVE_ERROR;
@@ -4456,13 +5356,16 @@ package com.flexcapacitor.controller {
 		public static function showTextEditor(event:MouseEvent):void {
 			var target:TextBase = instance.target as TextBase;
 			
+			if (!(instance.selectedTool is Selection)) {
+				return;
+			}
+			
 			if (target) {
 				currentEditableComponent = target;
-				var layoutDebugHelper:LayoutDebugHelper = new LayoutDebugHelper();
 				var iDocument:IDocument = instance.selectedDocument;
 				var targetComponentDescription:ComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, iDocument.componentDescription);
 				var parentComponentDescription:ComponentDescription = targetComponentDescription.parent;
-				var rectangle:Rectangle = layoutDebugHelper.getRectangleBounds(target, iDocument.instance);
+				var rectangle:Rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
 				var propertyNames:Array = ["x", "y", "text", "minWidth"];
 				var properties:Object = {};
 				var isBasicLayout:Boolean;
@@ -4470,7 +5373,7 @@ package com.flexcapacitor.controller {
 				if ((parentComponentDescription.instance is GroupBase || parentComponentDescription.instance is BorderContainer)
 					&& parentComponentDescription.instance.layout is BasicLayout) {
 					isBasicLayout = true;
-					rectangle = layoutDebugHelper.getRectangleBounds(target, parentComponentDescription.instance);
+					rectangle = DisplayObjectUtils.getRectangleBounds(target, parentComponentDescription.instance);
 				}
 				
 				properties.x = rectangle.x;
@@ -4502,14 +5405,14 @@ package com.flexcapacitor.controller {
 				editableRichTextField.focusRect = null;
 				editableRichTextField.setStyle("focusAlpha", 0.25);
 				
-				doNotAddEventsToHistory = true;
+				HistoryManager.doNotAddEventsToHistory = true;
 				if (isBasicLayout) {
 					addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, properties);
 				}
 				else {
 					addElement(editableRichTextField, iDocument.instance, propertyNames, null, properties);
 				}
-				doNotAddEventsToHistory = false;
+				HistoryManager.doNotAddEventsToHistory = false;
 				
 				var topSystemManager:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
 				topSystemManager.stage.stageFocusRect = false;
@@ -4554,9 +5457,9 @@ package com.flexcapacitor.controller {
 				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
 				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
 				if (editableRichTextField.parent) {
-					doNotAddEventsToHistory = true;
+					HistoryManager.doNotAddEventsToHistory = true;
 					removeElement(editableRichTextField);
-					doNotAddEventsToHistory = false;
+					HistoryManager.doNotAddEventsToHistory = false;
 				}
 			}
 			
@@ -4577,48 +5480,57 @@ package com.flexcapacitor.controller {
 		/**
 		 * Creates an instance of the component in the descriptor and sets the 
 		 * default properties. We may need to use setActualSize type of methods here or when added. 
+		 * 
+		 * For instructions on setting default properties or adding new component types
+		 * look in Radii8Desktop/howto/HowTo.txt
 		 * */
 		public static function createComponentForAdd(iDocument:IDocument, item:ComponentDefinition, setDefaults:Boolean = true):Object {
+			var newComponentDescription:ComponentDescription = new ComponentDescription();
 			var classFactory:ClassFactory;
-			var component:Object;
-			var componentDescription:ComponentDescription = new ComponentDescription();
+			var componentInstance:Object;
 			
 			// Create component to drag
 			classFactory = new ClassFactory(item.classType as Class);
 			
 			if (setDefaults) {
-				classFactory.properties = item.defaultProperties;
-				componentDescription.properties = item.defaultProperties;
-				componentDescription.defaultProperties = item.defaultProperties;
+				//classFactory.properties = item.defaultProperties;
+				newComponentDescription.properties = item.defaultProperties;
+				newComponentDescription.defaultProperties = item.defaultProperties;
 			}
 			
-			component = classFactory.newInstance();
+			componentInstance = classFactory.newInstance();
 			
 			if (setDefaults) {
+				var properties:Array = [];
+				
 				for (var property:String in item.defaultProperties) {
-					setProperty(component, property, [item.defaultProperties[property]]);
+					//setProperty(component, property, [item.defaultProperties[property]]);
+					properties.push(property);
 				}
+				
+				// maybe do not add to history
+				setProperties(componentInstance, properties, item.defaultProperties);
 			}
 			
-			componentDescription.instance = component;
-			componentDescription.name = item.name;
+			newComponentDescription.instance = componentInstance;
+			newComponentDescription.name = item.name;
 			
-			iDocument.descriptionsDictionary[component] = componentDescription;
+			iDocument.descriptionsDictionary[componentInstance] = newComponentDescription;
 			
-			if (component is Label) {
+			if (componentInstance is Label) {
 				
 			}
 			
 			// working on grid
-			if (component is spark.components.Grid) {
-				spark.components.Grid(component).itemRenderer= new ClassFactory(DefaultGridItemRenderer);
-				spark.components.Grid(component).dataProvider = new ArrayCollection(["item 1", "item 2", "item 3"]);
+			if (componentInstance is spark.components.Grid) {
+				spark.components.Grid(componentInstance).itemRenderer= new ClassFactory(DefaultGridItemRenderer);
+				spark.components.Grid(componentInstance).dataProvider = new ArrayCollection(["item 1", "item 2", "item 3"]);
 			}
 			
 			// working on mx grid
-			if (component is mx.containers.Grid) {
-				mx.containers.Grid(component)
-				var grid:mx.containers.Grid = component as mx.containers.Grid;
+			if (componentInstance is mx.containers.Grid) {
+				mx.containers.Grid(componentInstance)
+				var grid:mx.containers.Grid = componentInstance as mx.containers.Grid;
 				var gridRow:GridRow	= new GridRow();
 				var gridItem:GridItem = new GridItem();
 				var gridItem2:GridItem = new GridItem();
@@ -4640,10 +5552,10 @@ package com.flexcapacitor.controller {
 			}
 			
 			// add fill to rect
-			if (component is Rect) {
+			if (componentInstance is Rect) {
 				var fill:SolidColor = new SolidColor();
 				fill.color = 0xf6f6f6;
-				Rect(component).fill = fill;
+				Rect(componentInstance).fill = fill;
 			}
 			
 			// we need a custom FlexSprite class to do this
@@ -4654,25 +5566,32 @@ package com.flexcapacitor.controller {
 			
 			// if text based or combo box we need to prevent 
 			// interaction with cursor
-			if (component is TextBase || component is SkinnableTextBase) {
-				component.mouseChildren = false;
+			if (componentInstance is TextBase || componentInstance is SkinnableTextBase) {
+				componentInstance.mouseChildren = false;
 				
-				if ("textDisplay" in component && component.textDisplay) {
-					component.textDisplay.enabled = false;
+				if ("textDisplay" in componentInstance && componentInstance.textDisplay) {
+					componentInstance.textDisplay.enabled = false;
 				}
 			}
 			
-			if (component is LinkButton) {
-				LinkButton(component).useHandCursor = false;
+			if (componentInstance is LinkButton) {
+				LinkButton(componentInstance).useHandCursor = false;
 			}
+			
+			if (componentInstance is Hyperlink) {
+				// prevent links from clicking use UIGlobals...designMode
+				Hyperlink(componentInstance).useHandCursor = false;
+				Hyperlink(componentInstance).preventLaunching = true;
+			}
+			
 			/*
 			if (component is IFlexDisplayObject) {
 				//component.width = IFlexDisplayObject(component).measuredWidth;
 				//component.height = IFlexDisplayObject(component).measuredHeight;
 			}*/
 			
-			if (component is GroupBase) {
-				DisplayObjectUtils.addGroupMouseSupport(component as GroupBase);
+			if (componentInstance is GroupBase) {
+				DisplayObjectUtils.addGroupMouseSupport(componentInstance as GroupBase);
 			}
 			
 			// we can't add elements if skinnablecontainer._deferredContentCreated is false
@@ -4683,7 +5602,7 @@ package com.flexcapacitor.controller {
 				BorderContainer(component).initialize();
 			}*/
 			
-			return component;
+			return componentInstance;
 		}
 		
 		/**
@@ -4749,6 +5668,11 @@ package com.flexcapacitor.controller {
 		 * */
 		public function openProject(iProject:IProject, locations:String = null, dispatchEvents:Boolean = true):Object {
 			var isAlreadyOpen:Boolean;
+			
+			if (iProject==null) {
+				error("No project to open");
+				return null;
+			}
 			
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
 			
@@ -4846,13 +5770,18 @@ package com.flexcapacitor.controller {
 		 * Closes project if open.
 		 * */
 		public function closeProject(iProject:IProject, dispatchEvents:Boolean = true):Boolean {
-			var length:int = iProject.documents.length;
-			log.info("Close project");
+			if (iProject==null) {
+				error("No project to close");
+				return false;
+			}
+			
+			var numOfDocuments:int = iProject.documents.length;
+			//info("Close project");
 			if (dispatchEvents) {
 				dispatchProjectClosingEvent(iProject);
 			}
 			
-			for (var i:int=length;i--;) {
+			for (var i:int=numOfDocuments;i--;) {
 				closeDocument(IDocument(iProject.documents[i]));
 				//removeDocument(IDocument(iProject.documents[i]));
 			}
@@ -4884,7 +5813,7 @@ package com.flexcapacitor.controller {
 				var removedProjects:Array = projects.splice(projectIndex, 1);
 				
 				if (removedProjects[0]==iProject) {
-					log.info("Project removed successfully");
+					info("Project removed successfully");
 					
 					var length:int = iProject.documents.length;
 					
@@ -5017,15 +5946,15 @@ package com.flexcapacitor.controller {
 			var newDocument:IDocument;
 			
 			newProject = createProject(projectName); // create project
-			addProject(newProject);       // add to projects array - shows up in application
+			addProject(newProject, false);       // add to projects array - shows up in application
 			
 			newDocument = createDocument(documentName); // create document
 			addDocument(newDocument, newProject); // add to project and documents array - shows up in application
 			
-			openProject(newProject); // should open documents - maybe we should do all previous steps in this function???
+			openProject(newProject, DocumentData.INTERNAL_LOCATION); // should open documents - maybe we should do all previous steps in this function???
 			openDocument(newDocument, DocumentData.INTERNAL_LOCATION, true, true); // add to application and parse source code if any
 			
-			setProject(newProject); // selects project 
+			setProject(newProject, true); // selects project 
 			
 			return newDocument;
 		}
@@ -5039,11 +5968,11 @@ package com.flexcapacitor.controller {
 			var iDocument:IDocument;
 			
 			if (Type is String && Type!="null" && Type!="") {
-				hasDefinition = ApplicationDomain.currentDomain.hasDefinition(String(Type));
+				hasDefinition = ClassUtils.hasDefinition(String(Type));
 				DocumentType = Document;
 				
 				if (hasDefinition) {
-					DocumentType = ApplicationDomain.currentDomain.getDefinition(String(Type));
+					DocumentType = ClassUtils.getDefinition(String(Type));
 					iDocument = new DocumentType();
 				}
 				else {
@@ -5108,27 +6037,39 @@ package com.flexcapacitor.controller {
 		 * Reverts a document to its open state
 		 * */
 		public function revertDocument(iDocument:IDocument, dispatchEvents:Boolean = true):Boolean {
+			if (iDocument==null) {
+				error("No document to revert");
+				return false;
+			}
 			
-			// TODO
+			if ("revert" in iDocument) {
+				Object(iDocument).revert();
+				dispatchDocumentRevertedEvent(iDocument);
+				return true;
+			}
+			
 			return false;
 		}
 		
 		/**
 		 * Removes a document from the documents array
 		 * */
-		public function removeDocument(iDocument:IDocument, locations:String = null, dispatchEvents:Boolean = true):Boolean {
+		public function removeDocument(iDocument:IDocument, locations:String = null, dispatchEvents:Boolean = true, saveProjectAfter:Boolean = true):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
 			var parentProject:IProject = iDocument.project;
 			var documentsIndex:int = parentProject.documents.indexOf(iDocument);
 			var removedDocument:IDocument;
 			var remote:Boolean = getIsRemoteLocation(locations);
 			
+			deleteDocumentProjectId = parentProject && parentProject.id!=null ? int(parentProject.id) : -1;
+			saveProjectAfterDelete = saveProjectAfter;
+			
 			if (documentsIndex!=-1) {
 				// add remove document to project
 				var removedDocuments:Array = parentProject.documents.splice(documentsIndex, 1);
 				
 				if (removedDocuments[0]==iDocument) {
-					//log.info("Document removed successfully");
+					//info("Document removed successfully");
 				}
 			}
 			
@@ -5136,7 +6077,7 @@ package com.flexcapacitor.controller {
 			// check if document is open in tab navigator
 			/*if (isDocumentOpen(iDocument)) {
 				var closed:Boolean = closeDocument(iDocument);
-				log.info("Closed " + iDocument.name);
+				info("Closed " + iDocument.name);
 			}*/
 			
 			if (remote && iDocument && iDocument.id) { 
@@ -5158,6 +6099,12 @@ package com.flexcapacitor.controller {
 				
 				if (dispatchEvents) {
 					dispatchDocumentRemovedEvent(iDocument);
+					
+					if (deleteDocumentProjectId!=-1 && saveProjectAfter) {
+						parentProject.save(locations);
+					}
+					
+					setTarget(null);
 					return true;
 				}
 			}
@@ -5171,8 +6118,10 @@ package com.flexcapacitor.controller {
 			
 			// get first or last open document and select the project it's part of
 			if (!this.selectedDocument) {
-				// to do
+
 			}
+			
+			setTarget(null);
 			
 			return true;
 		}
@@ -5210,7 +6159,7 @@ package com.flexcapacitor.controller {
 				printableObject = IUIComponent(data);
 			}
 			else {
-				Radiate.log.error("Printing failed: Object is not of accepted type.");
+				error("Printing failed: Object is not of accepted type.");
 				return false;
 			}
 			
@@ -5238,13 +6187,13 @@ package com.flexcapacitor.controller {
 			// workaround if we set the scale it reappears 
 			// so, scaleX and scaleY are set to NaN on the object when we try to print and it fails
 			if (!printJobStarted) {
-				log.error("Print job was not started");
+				error("Print job was not started");
 				dispatchPrintCancelledEvent(data, flexPrintJob);
 				return false;
 			}
 			
 			try {
-				//log.info("Print width and height: " + flexPrintJob.pageWidth + "x" + flexPrintJob.pageHeight);
+				//info("Print width and height: " + flexPrintJob.pageWidth + "x" + flexPrintJob.pageHeight);
 				flexPrintJob.addObject(printableObject, scaleType);
 				flexPrintJob.send();
 				dispatchPrintCompleteEvent(data, flexPrintJob);
@@ -5257,7 +6206,7 @@ package com.flexcapacitor.controller {
 				}
 				
 				// Printing failed: Error #2057: The page could not be added to the print job.
-				Radiate.log.error("Printing failed: " + e.message);
+				error("Printing failed: " + e.message);
 				
 				// TODO this should be print error event
 				dispatchPrintCancelledEvent(data, flexPrintJob);
@@ -5291,7 +6240,7 @@ package com.flexcapacitor.controller {
 			
 			
 			if (!newDocument) {
-				iDocument.parseSource(code, container);
+				parseSource(iDocument, code, container);
 			}
 			else {
 				iDocument.source = code;
@@ -5318,6 +6267,11 @@ package com.flexcapacitor.controller {
 			var previewName:String;
 			var index:int;
 			
+			if (iDocument==null || documentsTabNavigator==null) {
+				error("No document to open");
+				return null;
+			}
+			
 			// NOTE: If the document is empty or all of the components are in the upper left hand corner
 			// and they have no properties then my guess is that the application was never fully loaded 
 			// or activated. this happens with multiple documents opening too quickly where some 
@@ -5329,6 +6283,7 @@ package com.flexcapacitor.controller {
 			// that could mean waiting to open new documents until existing documents have 
 			// loaded. listen for the application complete event (or create a parse and import event) 
 			// ...haven't had time to do any of this yet
+			// UPDATE OCT 4, 2015 - try calling activate() on the application - see Radii8Desktop.mxml menu item
 			
 			isAlreadyOpen = isDocumentOpen(iDocument);
 			
@@ -5346,7 +6301,7 @@ package com.flexcapacitor.controller {
 				if (showDocumentInTab) {
 					//showDocument(iDocument, false, false); // the next call will dispatch events
 					showDocument(iDocument, false, dispatchEvents); // the next call will dispatch events
-					setDocument(iDocument, dispatchEvents);
+					selectDocument(iDocument, dispatchEvents);
 				}
 				return documentsContainerDictionary[iDocument];
 			}
@@ -5394,7 +6349,7 @@ package com.flexcapacitor.controller {
 			// show document
 			if (showDocumentInTab) {
 				showDocument(iDocument, false, dispatchEvents);
-				setDocument(iDocument, dispatchEvents);
+				selectDocument(iDocument, dispatchEvents);
 			}
 			
 			return documentsContainerDictionary[iDocument];
@@ -5411,6 +6366,7 @@ package com.flexcapacitor.controller {
 			var isAlreadyOpen:Boolean;
 			var index:int;
 			var iframe:IFrame;
+			var html:UIComponent;
 			var containerTypeInstance:Object;
 			var container:Object;
 			var openingEventDispatched:Boolean;
@@ -5431,7 +6387,7 @@ package com.flexcapacitor.controller {
 				
 				if (showDocument) {
 					showDocumentAtIndex(index, false); // the next call will dispatch events
-					setDocument(iDocument, dispatchEvents);
+					selectDocument(iDocument, dispatchEvents);
 				}
 				return documentsPreviewDictionary[iDocument];
 			}
@@ -5460,6 +6416,20 @@ package com.flexcapacitor.controller {
 				navigatorContent.addElement(containerTypeInstance as IVisualElement);
 				documentsPreviewDictionary[iDocument] = containerTypeInstance;
 			}
+			else if (isDesktop) {
+				// show HTML page
+				html = HTMLUtils.createInstance();
+				html.id = iDocument.name ? iDocument.name : html.name; // should we be setting id like this?
+				html.percentWidth = 100;
+				html.percentHeight = 100;
+				html.top = 20;
+				html.left = 20;
+				html.setStyle("backgroundColor", "#666666");
+				html.addEventListener("uncaughtScriptException", uncaughtScriptExceptionHandler, false, 0, true);//HTMLUncaughtScriptExceptionEvent.uncaughtScriptException
+				
+				navigatorContent.addElement(html);
+				documentsPreviewDictionary[iDocument] = html;
+			}
 			else {
 				// show HTML page
 				iframe = new IFrame();
@@ -5482,7 +6452,7 @@ package com.flexcapacitor.controller {
 			// show document
 			if (showDocument) {
 				showDocumentAtIndex(documentIndex, dispatchEvents);
-				setDocument(iDocument, dispatchEvents);
+				selectDocument(iDocument, dispatchEvents);
 			}
 			
 			return documentsPreviewDictionary[iDocument];
@@ -5515,7 +6485,7 @@ package com.flexcapacitor.controller {
 		 * Checks if document is open.
 		 * @see isDocumentSelected
 		 * */
-		public function isDocumentOpen(document:IDocument, isPreview:Boolean = false):Boolean {
+		public function isDocumentOpen(iDocument:IDocument, isPreview:Boolean = false):Boolean {
 			var openTabs:Array;
 			var tabCount:int;
 			var tab:NavigatorContent;
@@ -5528,7 +6498,7 @@ package com.flexcapacitor.controller {
 			
 			openTabs = documentsTabNavigator.getChildren();
 			tabCount = openTabs.length;
-			documentContainer = isPreview ? documentsPreviewDictionary[document] : documentsContainerDictionary[document];
+			documentContainer = isPreview ? documentsPreviewDictionary[iDocument] : documentsContainerDictionary[iDocument];
 			
 			for (var i:int;i<tabCount;i++) {
 				tab = NavigatorContent(documentsTabNavigator.getChildAt(i));
@@ -5560,13 +6530,19 @@ package com.flexcapacitor.controller {
 		 * Closes document if open.
 		 * @see isDocumentSelected
 		 * */
-		public function closeDocument(iDocument:IDocument, isPreview:Boolean = false):Boolean {
+		public function closeDocument(iDocument:IDocument, isPreview:Boolean = false, selectOtherDocument:Boolean = false):Boolean {
+			if (iDocument==null || documentsTabNavigator==null) {
+				error("No document to close");
+				return false;
+			}
+			
 			var openTabs:Array = documentsTabNavigator.getChildren();
 			var tabCount:int = openTabs.length;
 			var navigatorContent:NavigatorContent;
 			var navigatorContentDocumentContainer:Object;
 			var documentContainer:Object = isPreview ? documentsPreviewDictionary[iDocument] : documentsContainerDictionary[iDocument];
-			
+			var wasClosed:Boolean;
+			var index:int;
 			
 			// third attempt
 			
@@ -5580,6 +6556,7 @@ package com.flexcapacitor.controller {
 				var contains:Boolean = documentsTabNavigator.contains(documentContainer.owner as DisplayObject);
 				
 				if (contains) {
+					index = documentsTabNavigator.getChildIndex(documentContainer.owner);
 					documentsTabNavigator.removeChild(documentContainer.owner);
 					
 					// close previews when the main document is closed
@@ -5597,6 +6574,7 @@ package com.flexcapacitor.controller {
 						
 						delete documentsContainerDictionary[iDocument];
 						delete documentsPreviewDictionary[iDocument];
+						wasClosed = true;
 					}
 					else {
 						delete documentsPreviewDictionary[iDocument];
@@ -5611,17 +6589,30 @@ package com.flexcapacitor.controller {
 				}
 			}
 			
+			if (selectOtherDocument && wasClosed && tabCount>1) {
+				var otherDocument:IDocument = getVisibleDocument();
+				openTabs = documentsTabNavigator.getChildren();
+				tabCount = openTabs.length;
+				if (otherDocument==null) {
+					//index = index==0 ? 1 : index-1;
+					otherDocument = documents && documents.length ? documents[0] : null;
+				}
+				if (otherDocument) {
+					selectDocument(otherDocument);
+					showDocument(otherDocument);
+				}
+			}
 			
 			return true;
 			// first attempt
-			//log.info("Closing " + iDocument.name);
+			//info("Closing " + iDocument.name);
 			for (var i:int;i<tabCount;i++) {
 				navigatorContent = NavigatorContent(documentsTabNavigator.getChildAt(i));
 				navigatorContentDocumentContainer = navigatorContent.numElements ? navigatorContent.getElementAt(0) : null;
-				//log.info(" Checking tab " + tab.label);
+				//info(" Checking tab " + tab.label);
 				
 				if (iDocument.name==navigatorContent.label) {
-					//log.info(" Name Match " + iDocument.name);
+					//info(" Name Match " + iDocument.name);
 					if (IDocumentContainer(navigatorContentDocumentContainer).iDocument==iDocument) {
 						documentsTabNavigator.removeChild(navigatorContent);
 						documentsTabNavigator.validateNow();
@@ -5706,7 +6697,10 @@ package com.flexcapacitor.controller {
 			//TypeError: Error #1009: Cannot access a property or method of a null object reference.
 			//	at com.flexcapacitor.controller::Radiate/getDocumentTabIndex()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/controller/Radiate.as:5649]
 			if (documentsTabNavigator==null) {
-				Radiate.log.info("Documents tab navigator is not created yet so for now you must open the document manually.");
+				info("Documents tab navigator is not created yet so for now you must open the document manually. Close and then open the document.");
+				if (document && document is IDocument) {
+					closeDocument(IDocument(document));
+				}
 				return -1;
 			}
 			var openTabs:Array = documentsTabNavigator.getChildren();
@@ -5792,6 +6786,129 @@ package com.flexcapacitor.controller {
 			return isPreview;
 		}
 		
+		/**
+		 * Parses data into an array of usable objects 
+		 * Should be in a ServicesManager class?
+		 * */
+		public function parseProjectsData(data:Object):Array {
+			var dataLength:int;
+			var post:Object;
+			var project:IProject
+			var xml:XML;
+			var isValid:Boolean;
+			var firstProject:IProject;
+			var potentialProjects:Array = [];
+			var source:String;
+			
+			dataLength = data && data is Object ? data.count : 0;
+			
+			for (var i:int;i<dataLength;i++) {
+				post = data.posts[i];
+				//isValid = XMLUtils.isValidXML(post.content);
+				source = post.custom_fields.source;
+				isValid = XMLUtils.isValidXML(source);
+				
+				if (isValid) {
+					xml = new XML(source);
+					// should have an unmarshall from data method
+					project = createProjectFromXML(xml);
+					
+					// maybe we should keep an array of the projects we just loaded
+					// then we can unmarshall them rather than creating them from xml
+					if (post.attachments) {
+						project.parseAttachments(post.attachments);
+					}
+					// if id is not set in the XML set it manually
+					// we need id for  delete
+					if (project.id==null) {
+						project.id = post.id;
+					}
+					//addProject(project);
+					potentialProjects.push(project);
+				}
+				else {
+					Radiate.info("Could not import project:" + post.title);
+				}
+			}
+			
+			var sort:Sort = new Sort();
+			var sortField:SortField = new SortField("dateSaved");
+			sort.fields = [sortField];
+			
+			return potentialProjects;
+		}
+		
+		/**
+		 * Parses the code and builds a document. 
+		 * If code is null and source is set then parses source.
+		 * If parent is set then imports code to the parent
+		 * */
+		public static function parseSource(document:IDocument, code:String = null, parent:IVisualElement = null):void {
+			var codeToParse:String = code ? code : document.source;
+			var currentChildren:XMLList;
+			var nodeName:String;
+			var child:XML;
+			var xml:XML;
+			var root:String;
+			var isValid:Boolean;
+			var rootNodeName:String = "RootWrapperNode";
+			var updatedCode:String;
+			
+			isValid = XMLUtils.isValidXML(codeToParse);
+			
+			if (!isValid) {
+				root = '<'+rootNodeName+ mxmlDocumentImporter.defaultNamespaceDeclarations +'>';
+				updatedCode = root + codeToParse + "</"+rootNodeName+">";
+				
+				isValid = XMLUtils.isValidXML(updatedCode);
+				if (isValid) {
+					codeToParse = updatedCode;
+				}
+			}
+			
+			// check for valid XML
+			try {
+				xml = new XML(codeToParse);
+			}
+			catch (error:Error) {
+				Radiate.error("Could not parse code for document " + document.name + ". \n" + error.message + " \nCode: \n" + codeToParse);
+			}
+			
+			
+			if (xml) {
+				// loop through each item and create an instance 
+				// and set the properties and styles on it
+				/*currentChildren = xml.children();
+				while (child in currentChildren) {
+				nodeName = child.name();
+				
+				}*/
+				//Radiate.info("Importing document: " + name);
+				//var mxmlLoader:MXMLImporter = new MXMLImporter( "testWindow", new XML( inSource ), canvasHolder  );
+				var mxmlDocumentImporter:MXMLDocumentImporter;
+				var container:IVisualElement = parent ? parent as IVisualElement : instance as IVisualElement;
+				
+				// I don't like this here - should move or dispatch events to handle import
+				var transcoder:TranscoderDescription = CodeManager.getImporter(CodeManager.MXML);
+				var importer:DocumentTranscoder = transcoder.importer;
+				importer.importare(codeToParse, document, document.componentDescription);
+				
+				if (container is Application && "activate" in container) {
+					Object(container).activate();
+				}
+				//mxmlLoader = new MXMLDocumentImporter(this, "testWindow", xml, container);
+				
+				if (container) {
+					Radiate.getInstance().setTarget(container);
+				}
+			}
+			
+			
+			/*_toolTipChildren = new SystemChildrenList(this,
+			new QName(mx_internal, "topMostIndex"),
+			new QName(mx_internal, "toolTipIndex"));*/
+			//return true;
+		}
 		
 		/**
 		 * Selects the document in the tab navigator
@@ -5938,6 +7055,24 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Get project by ID
+		 * */
+		public function getProjectByID(id:int):IProject {
+			var length:int = projects.length;
+			var iProject:IProject;
+			
+			for (var i:int;i<length;i++) {
+				iProject = IProject(projects[i]);
+				
+				if (iProject.id!=null && id==int(iProject.id)) {
+					return iProject;
+				}
+			}
+			
+			return null;
+		}
+		
+		/**
 		 * Get first project that owns this document
 		 * */
 		public function getDocumentProject(iDocument:IDocument):IProject {
@@ -6055,7 +7190,7 @@ package com.flexcapacitor.controller {
 				}
 			}
 			else {
-				log.error("Could not get saved data. " + ObjectUtil.toString(result));
+				error("Could not get saved data. " + ObjectUtil.toString(result));
 			}
 			
 			return true;
@@ -6087,7 +7222,7 @@ package com.flexcapacitor.controller {
 				}
 			}
 			else {
-				log.error("Could not get saved settings data. " + ObjectUtil.toString(result));
+				error("Could not get saved settings data. " + ObjectUtil.toString(result));
 			}
 			
 			return true;
@@ -6114,7 +7249,7 @@ package com.flexcapacitor.controller {
 				}
 			}
 			else {
-				log.error("Could not get saved data. " + ObjectUtil.toString(result));
+				error("Could not get saved data. " + ObjectUtil.toString(result));
 			}
 			
 			return result;
@@ -6355,7 +7490,7 @@ package com.flexcapacitor.controller {
 				if (iDocument && iDocument.isOpen) {
 					log.info("Showing previously selected document " + iDocument.name);
 					showDocument(iDocument);
-					setDocument(iDocument);
+					selectDocument(iDocument);
 				}
 			}
 		}
@@ -6428,7 +7563,7 @@ package com.flexcapacitor.controller {
 				}
 			}
 			else {
-				log.error("Could not get saved data. " + ObjectUtil.toString(result));
+				error("Could not get saved data. " + ObjectUtil.toString(result));
 			}
 			
 			return result;
@@ -6452,7 +7587,7 @@ package com.flexcapacitor.controller {
 				}
 			}
 			else {
-				log.error("Could not remove saved data. " + ObjectUtil.toString(result));
+				error("Could not remove saved data. " + ObjectUtil.toString(result));
 			}
 			
 			return result;
@@ -6476,7 +7611,7 @@ package com.flexcapacitor.controller {
 				}
 			}
 			else {
-				log.error("Could not remove settings data. " + ObjectUtil.toString(result));
+				error("Could not remove settings data. " + ObjectUtil.toString(result));
 			}
 			
 			return result;
@@ -6499,7 +7634,7 @@ package com.flexcapacitor.controller {
 				//log.info("Saved Serrinfo: "+ ObjectUtil.toString(so.data));
 			}
 			else {
-				log.error("Could not save data. " + ObjectUtil.toString(result));
+				error("Could not save data. " + ObjectUtil.toString(result));
 				return false;
 			}
 			
@@ -6570,14 +7705,14 @@ package com.flexcapacitor.controller {
 				try {
 					so.flush();
 				}
-				catch (error:Error) {
-					log.error(error.message);
+				catch (errorEvent:Error) {
+					error(errorEvent.message);
 					return false;
 				}
 				
 			}
 			else {
-				log.error("Could not save data. " + ObjectUtil.toString(result));
+				error("Could not save data. " + ObjectUtil.toString(result));
 				return false;
 			}
 			
@@ -6613,8 +7748,27 @@ package com.flexcapacitor.controller {
 		 * */
 		public function setLastSaveDate(date:Date = null):void {
 			dateFormatter.dateStyle = DateTimeStyle.MEDIUM;
+			var diff:int;
 			if (!date) date = new Date();
-			lastSaveDate = dateFormatter.format(date);
+			//if (lastSaveDate) {
+			//	updateLastSavedDifference(date);
+			//}
+			lastSaveDateFormatted = dateFormatter.format(date);
+			
+			//updateLastSavedDifference(date);
+			
+			lastSaveDate = date;
+		}
+		
+		public function updateLastSavedDifference(date:Date):void {
+			var diff:int = (new Date().valueOf() - date.valueOf())/1000;
+			
+			if (diff>60) {
+				lastSaveDateDifference = int(diff/60) + " min ago";
+			}
+			else {
+				lastSaveDateDifference = "Less than a min ago";
+			}
 		}
 
 		/**
@@ -6623,7 +7777,16 @@ package com.flexcapacitor.controller {
 		public function saveProject(project:IProject, locations:String = null):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
 			
+			if (project==null) {
+				error("No project to save");
+				return false;
+			}
+			
 			//if (isUserLoggedIn && isUserConnected) {
+			
+			if (!isUserLoggedIn) {
+				error("You must be logged in to save a project.");
+			}
 			
 			saveProjectInProgress = false;
 			project.save(locations);
@@ -6657,8 +7820,56 @@ package com.flexcapacitor.controller {
 				//log.info("Saved Data: " + ObjectUtil.toString(so.data));
 			}
 			else {
-				log.error("Could not save data. " + ObjectUtil.toString(result));
+				error("Could not save data. " + ObjectUtil.toString(result));
 				//return false;
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Save example projects usually called after login
+		 * */
+		public function saveExampleProjects(locations:String = null):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var saveLocally:Boolean = getIsLocalLocation(locations);
+			var saveRemote:Boolean = getIsRemoteLocation(locations);
+
+			var numberOfProjects:int = projects ? projects.length : 0;
+			var numberOfDocuments:int;
+			var documentData:IDocumentData;
+			var projectData:IProjectData;
+			var url:String = getWPURL();
+			var documents:Array;
+			
+			for (var i:int; i < numberOfProjects; i++) {
+				projectData = IProjectData(projects[i]);
+				
+				if (IProject(projectData).isExample) {
+					projectData.host = url;
+					
+					if (projectData.uid=="null" || projectData.uid==null) {
+						projectData.uid = projectData.createUID();
+					}
+					
+					documents = IProjectData(projectData).documents;
+					numberOfDocuments = documents ? documents.length : 0;
+					j=0;
+					
+					for (var j:int; j < numberOfDocuments; j++) {
+						documentData = IDocumentData(documents[j]);
+						
+						if (documentData) {
+							documentData.host = url;
+							
+							if (documentData.uid=="null" || documentData.uid==null) {
+								documentData.uid = documentData.createUID();
+							}
+						}
+					}
+					
+					projectData.save();
+				}
 			}
 			
 			return true;
@@ -6673,6 +7884,12 @@ package com.flexcapacitor.controller {
 			var saveLocally:Boolean = getIsLocalLocation(locations);
 			var saveRemote:Boolean = getIsRemoteLocation(locations);
 			var saveLocallySuccessful:Boolean;
+			
+			
+			if (iDocument==null) {
+				error("No document to save");
+				return false;
+			}
 			
 			if (saveRemote && iDocument && iDocument is EventDispatcher) {
 				EventDispatcher(iDocument).addEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler, false, 0, true);
@@ -6723,6 +7940,16 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Handles uncaught errors from an HTML preview document
+		 * */
+		protected function uncaughtScriptExceptionHandler(event:*):void {
+			//var target:Object = event.currentTarget;
+			var exceptionValue:Object = event.exceptionValue;
+			
+			error("Line " + exceptionValue.line + "  " + exceptionValue.name + ": " + exceptionValue.message);
+		}
+		
+		/**
 		 * Handles results from document save
 		 * */
 		protected function documentSaveResultsHandler(event:SaveResultsEvent):void {
@@ -6732,9 +7959,9 @@ package com.flexcapacitor.controller {
 				Document(document).removeEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler);
 			}
 			
-			setLastSaveDate();
 			
 			if (event.successful) {
+				setLastSaveDate();
 				dispatchDocumentSaveCompleteEvent(document);
 			}
 			else {
@@ -6743,14 +7970,19 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Save document
+		 * Save all documents
 		 * */
 		public function saveAllDocuments(saveLocations:String = ""):Boolean {
 			var document:IDocument;
 			var project:IProject;
-			var length:int = documents.length;
+			var documentsLength:int = documents.length;
 			
-			for (var i:int;i<length;i++) {
+			if (documentsLength==0) {
+				warn("No douments to save");
+				return false;
+			}
+			
+			for (var i:int;i<documentsLength;i++) {
 				document = documents[i];
 				
 				if (document.isChanged) {
@@ -6763,8 +7995,8 @@ package com.flexcapacitor.controller {
 				}
 			}
 			
-			length = projects.length;
-			for (i = 0;i<length;i++) {
+			var projectsLength:int = projects.length;
+			for (i = 0;i<projectsLength;i++) {
 				project = projects[i];
 				
 				if (project.isChanged) {
@@ -6792,6 +8024,50 @@ package com.flexcapacitor.controller {
 			//document.saveCompleteCallback = saveData;
 			saveDocumentLocally(document);*/
 			//return true;
+		}
+
+		/**
+		 * Save multiple files
+		 * */
+		public function saveFiles(sourceData:SourceData, directory:Object, overwrite:Boolean = false):Boolean {
+			var file:Object;
+			var files:Array = sourceData.files;
+			var fileName:String;
+			var filesLength:int = files ? files.length : 0;
+			var fileClassDefinition:String = "flash.filesystem.File";
+			var fileStreamDefinition:String = "flash.filesystem.FileStream";
+			var FileClass:Object = ClassUtils.getDefinition(fileClassDefinition);
+			var FileStreamClass:Object = ClassUtils.getDefinition(fileStreamDefinition);
+			var fileStream:Object;
+			var writeFile:Boolean;
+			var filesCreated:Boolean;
+			
+			for (var i:int;i<filesLength;i++) {
+				var fileInfo:FileInfo = files[i];
+				fileInfo.created = false;
+				fileName = fileInfo.fileName + "." + fileInfo.fileExtension;
+				file = directory.resolvePath(fileName);
+				
+				if (file.exists && !overwrite) {
+					writeFile = false;
+				}
+				else {
+					writeFile = true;
+				}
+				
+				if (writeFile) {
+					fileStream = new FileStreamClass();
+					fileStream.open(file, "write");// FileMode.WRITE
+					fileStream.writeUTFBytes(fileInfo.contents);
+					fileStream.close();
+					fileInfo.created = true;
+					fileInfo.filePath = file.nativePath;
+					fileInfo.url = file.url;
+					filesCreated = true;
+				}
+			}
+			
+			return filesCreated;
 		}
 
 		/**
@@ -6875,7 +8151,7 @@ package com.flexcapacitor.controller {
 				return documentData;
 			}
 			else {
-				log.error("Could not get saved data. " + ObjectUtil.toString(result));
+				error("Could not get saved data. " + ObjectUtil.toString(result));
 			}
 			
 			return null;
@@ -6896,7 +8172,7 @@ package com.flexcapacitor.controller {
 				//log.info("Saved Data: " + ObjectUtil.toString(so.data));
 			}
 			else {
-				log.error("Could not save data. " + ObjectUtil.toString(result));
+				error("Could not save data. " + ObjectUtil.toString(result));
 				//return false;
 			}
 			
@@ -6932,6 +8208,8 @@ package com.flexcapacitor.controller {
 
 			settings.selectedProject 	= selectedProject ? selectedProject.toMetaData() : null;
 			settings.selectedDocument 	= selectedDocument ? selectedDocument.toMetaData() : null;
+			
+			settings.enableAutoSave 	= enableAutoSave;
 			
 			settings.saveCount++;
 			
@@ -7005,7 +8283,6 @@ package com.flexcapacitor.controller {
 				// we need to create service
 				if (getProjectsService==null) {
 					var service:WPService = new WPService();
-					service = new WPService();
 					service.host = getWPURL();
 					service.addEventListener(WPService.RESULT, getProjectsResultsHandler, false, 0, true);
 					service.addEventListener(WPService.FAULT, getProjectsFaultHandler, false, 0, true);
@@ -7021,158 +8298,6 @@ package com.flexcapacitor.controller {
 			if (loadLocally) {
 				
 			}
-		}
-		
-		
-		/**
-		 * Login user 
-		 * */
-		public function login(username:String, password:String):void {
-			
-			// we need to create service
-			if (loginService==null) {
-				loginService = new WPService();
-				loginService.addEventListener(WPService.RESULT, loginResultsHandler, false, 0, true);
-				loginService.addEventListener(WPService.FAULT, loginFaultHandler, false, 0, true);
-			}
-			
-			loginService.host = getWPURL();
-				
-			loginInProgress = true;
-			
-			loginService.loginUser(username, password);
-			
-		}
-		
-		/**
-		 * Logout user 
-		 * */
-		public function logout():void {
-			
-			// we need to create service
-			if (logoutService==null) {
-				logoutService = new WPService();
-				logoutService.addEventListener(WPService.RESULT, logoutResultsHandler, false, 0, true);
-				logoutService.addEventListener(WPService.FAULT, logoutFaultHandler, false, 0, true);
-			}
-			
-			logoutService.host = getWPURL();
-			
-			logoutInProgress = true;
-			
-			logoutService.logoutUser();
-			
-		}
-		
-		/**
-		 * Register user 
-		 * */
-		public function register(username:String, email:String):void {
-			
-			// we need to create service
-			if (registerService==null) {
-				registerService = new WPService();
-				registerService.addEventListener(WPService.RESULT, registerResultsHandler, false, 0, true);
-				registerService.addEventListener(WPService.FAULT, registerFaultHandler, false, 0, true);
-			}
-			
-			registerService.host = getWPURL();
-			
-			registerInProgress = true;
-			
-			registerService.registerUser(username, email);
-			
-		}
-		
-		/**
-		 * Register site 
-		 * */
-		public function registerSite(blogName:String = "", blogTitle:String = "", isPublic:Boolean = false):void {
-			
-			// we need to create service
-			if (registerService==null) {
-				registerService = new WPService();
-				registerService.addEventListener(WPService.RESULT, registerResultsHandler, false, 0, true);
-				registerService.addEventListener(WPService.FAULT, registerFaultHandler, false, 0, true);
-			}
-			
-			registerService.host = getWPURL();
-			
-			registerInProgress = true;
-			
-			registerService.registerSite(blogName, blogTitle, isPublic);
-			
-		}
-		
-		/**
-		 * Register user and site 
-		 * */
-		public function registerUserAndSite(username:String, email:String, siteName:String = "", blogTitle:String = "", isPublic:Boolean = false, requireSiteName:Boolean = false):void {
-			
-			// we need to create service
-			if (registerService==null) {
-				registerService = new WPService();
-				registerService.addEventListener(WPService.RESULT, registerResultsHandler, false, 0, true);
-				registerService.addEventListener(WPService.FAULT, registerFaultHandler, false, 0, true);
-			}
-			
-			registerService.host = getWPURL();
-			
-			registerInProgress = true;
-			
-			if (!requireSiteName) {
-				if (siteName=="") {
-					siteName = username;
-				}
-				
-				if (blogTitle=="") {
-					blogTitle = "A Radiate site";
-				}
-			}
-			
-			registerService.registerUserAndSite(username, email, siteName, blogTitle, isPublic);
-			
-		}
-		
-		/**
-		 * Request lost password. Sends an email with instructions. 
-		 * @param username or email address
-		 * */
-		public function lostPassword(usernameOrEmail:String):void {
-			
-			// we need to create service
-			if (lostPasswordService==null) {
-				lostPasswordService = new WPService();
-				lostPasswordService.addEventListener(WPService.RESULT, lostPasswordResultsHandler, false, 0, true);
-				lostPasswordService.addEventListener(WPService.FAULT, lostPasswordFaultHandler, false, 0, true);
-			}
-			
-			lostPasswordService.host = getWPURL();
-				
-			lostPasswordInProgress = true;
-			
-			lostPasswordService.lostPassword(usernameOrEmail);
-			
-		}
-		
-		/**
-		 * Reset or change password
-		 * */
-		public function changePassword(key:String, username:String, password:String, password2:String):void {
-			
-			// we need to create service
-			if (changePasswordService==null) {
-				changePasswordService = new WPService();
-				changePasswordService.addEventListener(WPService.RESULT, changePasswordResultsHandler, false, 0, true);
-				changePasswordService.addEventListener(WPService.FAULT, changePasswordFaultHandler, false, 0, true);
-			}
-			
-			changePasswordService.host = getWPURL();
-				
-			changePasswordInProgress = true;
-			
-			changePasswordService.resetPassword(key, username, password, password2);
-			
 		}
 		
 		/**
@@ -7244,44 +8369,9 @@ package com.flexcapacitor.controller {
 				uploadAttachmentService.uploadAttachment();
 			}
 			else {
-				Radiate.log.warn("No data or file is available for upload. Please select the file to upload.");
+				warn("No data or file is available for upload. Please select the file to upload.");
 			}
 			
-		}
-		
-		/**
-		 * Get projects
-		 * */
-		public function getLoggedInStatus():void {
-			// get selected document
-			var service:WPService;
-			
-			// we need to create service
-			if (getProjectsService==null) {
-				service = new WPService();
-				service.host = getWPURL();
-				service.addEventListener(WPService.RESULT, getLoggedInStatusResult, false, 0, true);
-				service.addEventListener(WPService.FAULT, getLoggedInStatusFault, false, 0, true);
-				getLoggedInStatusService = service;
-			}
-			
-			getLoggedInStatusInProgress = true;
-			
-			getLoggedInStatusService.getLoggedInUser();
-		}
-		
-		/**
-		 * Handles result to check if user is logged in 
-		 * */
-		protected function getLoggedInStatusResult(event:WPServiceEvent):void {
-			isUserConnected = true;
-			var data:Object = event.data;
-
-			updateUserInfo(data);
-			
-			getLoggedInStatusInProgress = false;
-			
-			dispatchLoginStatusEvent(isUserLoggedIn, data);
 		}
 		
 		/**
@@ -7296,6 +8386,10 @@ package com.flexcapacitor.controller {
 				userID = data.id;
 				userEmail = data.contact;
 				user = data;
+				
+				if (!isNaN(data.homePage)) {
+					projectHomePageID = data.homePage;
+				}
 				
 				if ("blogs" in user) {
 					//userSites = user.blogs;
@@ -7318,24 +8412,11 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Handles fault when checking if user is logged in
-		 * */
-		protected function getLoggedInStatusFault(event:WPServiceEvent):void {
-			var data:Object = event.data;
-			isUserConnected = false;
-			//isUserLoggedIn = false;
-			
-			getLoggedInStatusInProgress = false;
-			
-			dispatchLoginStatusEvent(isUserLoggedIn, data);
-		}
-		
-		/**
 		 * Results from call to get projects
 		 * */
 		public function getProjectsResultsHandler(event:IServiceEvent):void {
 			
-			//Radiate.log.info("Retrieved list of projects");
+			//Radiate.info("Retrieved list of projects");
 			
 			var data:Object = event.data;
 			
@@ -7388,7 +8469,7 @@ package com.flexcapacitor.controller {
 		 * */
 		public function getProjectsFaultHandler(event:IServiceEvent):void {
 			var data:Object = event.data;
-			Radiate.log.info("Could not get list of projects");
+			Radiate.info("Could not get list of projects");
 			
 			getProjectsInProgress = false;
 			
@@ -7399,7 +8480,7 @@ package com.flexcapacitor.controller {
 		 * Result get attachments
 		 * */
 		public function getAttachmentsResultsHandler(event:IServiceEvent):void {
-			Radiate.log.info("Retrieved list of attachments");
+			Radiate.info("Retrieved list of attachments");
 			var data:Object = event.data;
 			var potentialAttachments:Array = [];
 			var length:int;
@@ -7437,7 +8518,7 @@ package com.flexcapacitor.controller {
 		 * */
 		public function getAttachmentsFaultHandler(event:IServiceEvent):void {
 			
-			Radiate.log.info("Could not get list of attachments");
+			Radiate.info("Could not get list of attachments");
 			
 			getAttachmentsInProgress = false;
 			
@@ -7449,7 +8530,7 @@ package com.flexcapacitor.controller {
 		 * Result upload attachment
 		 * */
 		public function uploadAttachmentResultsHandler(event:IServiceEvent):void {
-			//Radiate.log.info("Upload attachment");
+			//Radiate.info("Upload attachment");
 			var data:Object = event.data;
 			var potentialAttachments:Array = [];
 			var successful:Boolean = data && data.status && data.status=="ok" ? true : false;
@@ -7538,7 +8619,7 @@ package com.flexcapacitor.controller {
 		 * Result from upload attachment fault
 		 * */
 		public function uploadAttachmentFaultHandler(event:IServiceEvent):void {
-			Radiate.log.info("Upload attachment fault");
+			Radiate.info("Upload attachment fault");
 			
 			uploadAttachmentInProgress = false;
 			
@@ -7547,175 +8628,10 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Login results handler
-		 * */
-		public function loginResultsHandler(event:IServiceEvent):void {
-			//Radiate.log.info("Login results");
-			var data:Object = event.data;
-			var loggedIn:Boolean;
-			
-			if (data && data is Object) {
-				
-				loggedIn = data.loggedIn==true;
-				
-				updateUserInfo(data);
-			}
-			
-			loginInProgress = false;
-			
-			
-			dispatchLoginResultsEvent(loggedIn, data);
-		}
-		
-		/**
-		 * Result from login fault
-		 * */
-		public function loginFaultHandler(event:IServiceEvent):void {
-			var data:Object = event.data;
-			
-			Radiate.log.info("Could not connect to the server to login. ");
-			
-			loginInProgress = false;
-			
-			dispatchLoginResultsEvent(false, data);
-		}
-		
-		/**
-		 * Logout results handler
-		 * */
-		public function logoutResultsHandler(event:IServiceEvent):void {
-			Radiate.log.info("Logout results");
-			var data:Object = event.data;
-			var loggedOut:Boolean;
-			
-			if (data && data is Object) {
-				
-				loggedOut = data.loggedIn==false;
-				
-				updateUserInfo(data);
-			}
-			
-			logoutInProgress = false;
-			
-			
-			dispatchLogoutResultsEvent(loggedOut, data);
-		}
-		
-		/**
-		 * Result from logout fault
-		 * */
-		public function logoutFaultHandler(event:IServiceEvent):void {
-			var data:Object = event.data;
-			
-			Radiate.log.info("Could not connect to the server to logout. ");
-			
-			logoutInProgress = false;
-			
-			dispatchLogoutResultsEvent(false, data);
-		}
-		
-		/**
-		 * Register results handler
-		 * */
-		public function registerResultsHandler(event:IServiceEvent):void {
-			//Radiate.log.info("Register results");
-			var data:Object = event.data;
-			var successful:Boolean;
-			
-			if (data && data is Object && "created" in data) {
-				
-				successful = data.created;
-				
-			}
-			
-			registerInProgress = false;
-			
-			
-			dispatchRegisterResultsEvent(successful, data);
-		}
-		
-		/**
-		 * Result from register fault
-		 * */
-		public function registerFaultHandler(event:IServiceEvent):void {
-			var data:Object = event.data;
-			
-			Radiate.log.info("Could not connect to the server to register. ");
-			
-			registerInProgress = false;
-			
-			dispatchRegisterResultsEvent(false, data);
-		}
-		
-		/**
-		 * Register results handler
-		 * */
-		public function changePasswordResultsHandler(event:IServiceEvent):void {
-			//Radiate.log.info("Change password results");
-			var data:Object = event.data;
-			var successful:Boolean;
-			
-			if (data && data is Object && "created" in data) {
-				
-				successful = data.created;
-				
-			}
-			
-			changePasswordInProgress = false;
-			
-			
-			dispatchChangePasswordResultsEvent(successful, data);
-		}
-		
-		/**
-		 * Result from change password fault
-		 * */
-		public function changePasswordFaultHandler(event:IServiceEvent):void {
-			var data:Object = event.data;
-			
-			Radiate.log.info("Could not connect to the server. " + event.faultEvent.toString());
-			
-			changePasswordInProgress = false;
-			
-			dispatchChangePasswordResultsEvent(false, data);
-		}
-		
-		/**
-		 * Lost password results handler
-		 * */
-		public function lostPasswordResultsHandler(event:IServiceEvent):void {
-			//Radiate.log.info("Change password results");
-			var data:Object = event.data;
-			var successful:Boolean;
-			
-			if (data && data is Object && "created" in data) {
-				successful = data.created;
-			}
-			
-			lostPasswordInProgress = false;
-			
-			
-			dispatchLostPasswordResultsEvent(successful, data);
-		}
-		
-		/**
-		 * Result from lost password fault
-		 * */
-		public function lostPasswordFaultHandler(event:IServiceEvent):void {
-			var data:Object = event.data;
-			
-			Radiate.log.info("Could not connect to the server. " + event.faultEvent.toString());
-			
-			lostPasswordInProgress = false;
-			
-			dispatchLostPasswordResultsEvent(false, data);
-		}
-		
-		/**
 		 * Delete project results handler
 		 * */
 		public function deleteProjectResultsHandler(event:IServiceEvent):void {
-			//Radiate.log.info("Delete project results");
+			//Radiate.info("Delete project results");
 			var data:Object = event.data;
 			var status:Boolean;
 			var successful:Boolean;
@@ -7762,7 +8678,7 @@ package com.flexcapacitor.controller {
 		public function deleteProjectFaultHandler(event:IServiceEvent):void {
 			var data:Object = event.data;
 			
-			Radiate.log.info("Could not connect to the server to delete the project. ");
+			Radiate.info("Could not connect to the server to delete the project. ");
 			
 			deleteProjectInProgress = false;
 			
@@ -7770,10 +8686,11 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Delete document results handler
+		 * Delete document results handler. You should save the project after
+		 * document is deleted.
 		 * */
 		public function deleteDocumentResultsHandler(event:IServiceEvent):void {
-			//..Radiate.log.info("Delete document results");
+			//..Radiate.info("Delete document results");
 			var data:Object = event.data;
 			//var status:Boolean;
 			var successful:Boolean;
@@ -7810,6 +8727,20 @@ package com.flexcapacitor.controller {
 			//dispatchDocumentRemovedEvent(null);
 			
 			dispatchDocumentDeletedEvent(successful, data);
+			
+			if (successful) {
+				
+				if (deleteDocumentProjectId!=-1 && saveProjectAfterDelete) {
+					var iProject:IProject = getProjectByID(deleteDocumentProjectId);
+					
+					if (iProject) {
+						iProject.save();
+					}
+				}
+				
+			}
+			
+			saveProjectAfterDelete = false;
 		}
 		
 		/**
@@ -7818,7 +8749,7 @@ package com.flexcapacitor.controller {
 		public function deleteDocumentFaultHandler(event:IServiceEvent):void {
 			var data:Object = event.data;
 			
-			Radiate.log.info("Could not connect to the server to delete the document. ");
+			Radiate.info("Could not connect to the server to delete the document. ");
 			
 			deleteDocumentInProgress = false;
 			
@@ -7848,7 +8779,7 @@ package com.flexcapacitor.controller {
 			
 			for (var i:int;i<length;i++) {
 				documentMetaData = IDocumentMetaData(documentsArray[i]);
-				//Radiate.log.info("Exporting document " + iDocument.name);
+				//Radiate.info("Exporting document " + iDocument.name);
 				
 				if (documentMetaData.uid == iDocumentData.uid) {
 					found = true;
@@ -7890,7 +8821,7 @@ package com.flexcapacitor.controller {
 			
 			for (var i:int;i<length;i++) {
 				documentMetaData = IDocumentData(projectsArray[i]);
-				//Radiate.log.info("Exporting document " + iDocument.name);
+				//Radiate.info("Exporting document " + iDocument.name);
 				
 				if (documentMetaData.uid == iProject.uid) {
 					found = true;
@@ -8029,1100 +8960,6 @@ package com.flexcapacitor.controller {
 			return projectsArray;
 		}
 		
-		//----------------------------------
-		//
-		//  History Management
-		// 
-		//----------------------------------
-		
-		// NOTE: THIS IS WRITTEN THIS WAY TO WORK WITH FLEX STATES AND TRANSITIONS
-		// there is probably a better way but I am attempting to use the flex sdk's
-		// own code to apply changes. we could extract that code, create commands, 
-		// etc but it seemed like less work and less room for error at the time
-		
-		// update oct 27, 2013
-		// i think it would be better to move these calls and data to the document class
-		// then different document types can handle undo, redo in the way that best 
-		// makes sense to it's own needs. 
-		// For example, an text editor will handle undo redo differently than 
-		// a design or application document. 
-		// 
-		// and another way we could do history management is create a sequence and 
-		// add actions to it (SetAction, AddItem, RemoveItem, etc)
-		// that would probably enable easy to use automation and playback
-		// if we had proxied these methods here we could have extended the default
-		// document and over wrote the methods to try the sequence method
-		
-		public static var REMOVE_ITEM_DESCRIPTION:String = "Remove";
-		public static var ADD_ITEM_DESCRIPTION:String = "Add";
-		private static var BEGINNING_OF_HISTORY:String;
-		
-		/**
-		 * Collection of items in the property change history
-		 * */
-		[Bindable]
-		public static var history:ArrayCollection = new ArrayCollection();
-		
-		/**
-		 * Dictionary of property change objects
-		 * */
-		public static var historyEventsDictionary:Dictionary = new Dictionary(true);
-		
-		/**
-		 * Flag to set if you do not want to add an event to history. 
-		 * Remember to set this back to false when you are done
-		 * */
-		[Bindable]
-		public static var doNotAddEventsToHistory:Boolean;
-		
-		/**
-		 * Travel to the specified history index.
-		 * Going to fast may cause some issues. Need to test thoroughly 
-		 * We may need to call validateNow somewhere and set usePhasedInstantiation?
-		 * */
-		public static function goToHistoryIndex(index:int, dispatchEvents:Boolean = false):int {
-			var document:IDocument = instance.selectedDocument;
-			var newIndex:int = index;
-			var oldIndex:int = historyIndex;
-			var time:int = getTimer();
-			var currentIndex:int;
-			var difference:int;
-			var layoutManager:ILayoutManager = LayoutManager.getInstance();
-			var phasedInstantiation:Boolean = layoutManager.usePhasedInstantiation;
-			
-			layoutManager.usePhasedInstantiation = false;
-			
-			if (newIndex<oldIndex) {
-				difference = oldIndex - newIndex;
-				for (var i:int;i<difference;i++) {
-					currentIndex = undo(dispatchEvents, dispatchEvents);
-				}
-			}
-			else if (newIndex>oldIndex) {
-				difference = oldIndex<0 ? newIndex+1 : newIndex - oldIndex;
-				for (var j:int;j<difference;j++) {
-					currentIndex = redo(dispatchEvents, dispatchEvents);
-				}
-			}
-			
-			layoutManager.usePhasedInstantiation = phasedInstantiation;
-			
-			history.refresh();
-			historyIndex = getHistoryIndex();
-			
-			instance.dispatchHistoryChangeEvent(historyIndex, oldIndex);
-			
-			
-			return currentIndex;
-		}
-		
-		/**
-		 * Undo last change. Returns the current index in the changes array. 
-		 * The property change object sets the property "reversed" to 
-		 * true.
-		 * Going too fast causes some issues (call validateNow somewhere)?
-		 * I think the issue with RangeError: Index 2 is out of range.
-		 * is that the History List does not always do the first item in the 
-		 * List. So we need to add a first item that does nothing, like a
-		 * open history event. 
-		 * OR we need to wait. If we could use callLater and not use validateNow
-		 * I think it may solve some issues and not lock the UI
-		 * */
-		public static function undo(dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true):int {
-			var changeIndex:int = getPreviousHistoryIndex(); // index of next change to undo 
-			var currentIndex:int = getHistoryIndex();
-			var historyLength:int = history.length;
-			var historyEvent:HistoryEventItem;
-			var currentDocument:IDocument = instance.selectedDocument;
-			var currentTargetDocument:Application = currentDocument.instance as Application;
-			var setStartValues:Boolean = true;
-			var historyItem:HistoryEvent;
-			var affectsDocument:Boolean;
-			var historyEvents:Array;
-			var dictionary:Dictionary;
-			var reverseItems:AddItems;
-			var eventTargets:Array;
-			var eventsLength:int;
-			var targetsLength:int;
-			var addItems:AddItems;
-			var added:Boolean;
-			var removed:Boolean;
-			var action:String;
-			var isInvalid:Boolean;
-			
-			// no changes
-			if (!historyLength) {
-				return -1;
-			}
-			
-			// all changes have already been undone
-			if (changeIndex<0) {
-				if (dispatchEvents && instance.hasEventListener(RadiateEvent.BEGINNING_OF_UNDO_HISTORY)) {
-					instance.dispatchEvent(new RadiateEvent(RadiateEvent.BEGINNING_OF_UNDO_HISTORY));
-				}
-				
-				return -1;
-			}
-			
-			// get current change to be redone
-			historyItem = history.length ? history.getItemAt(changeIndex) as HistoryEvent : null;
-			historyEvents = historyItem.historyEventItems;
-			eventsLength = historyEvents.length;
-			
-			
-			// loop through changes
-			for (var i:int=eventsLength;i--;) {
-				//changesLength = changes ? changes.length: 0;
-				
-				historyEvent = historyEvents[i];
-				addItems = historyEvent.addItemsInstance;
-				action = historyEvent.action;//==RadiateEvent.MOVE_ITEM && addItems ? RadiateEvent.MOVE_ITEM : RadiateEvent.PROPERTY_CHANGE;
-				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentTargetDocument)!=-1;
-				
-				// undo the add
-				if (action==RadiateEvent.ADD_ITEM) {
-					eventTargets = historyEvent.targets;
-					targetsLength = eventTargets.length;
-					dictionary = historyEvent.reverseAddItemsDictionary;
-					
-					for (var j:int=0;j<targetsLength;j++) {
-						reverseItems = dictionary[eventTargets[j]];
-						addItems.remove(null);
-						
-						// check if it's reverse or property changes
-						if (reverseItems) {
-							reverseItems.apply(reverseItems.destination as UIComponent);
-							
-							// was it added - can be refactored
-							if (reverseItems.destination==null) {
-								added = true;
-							}
-						}
-					}
-					
-					historyEvent.reversed = true;
-					
-					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						instance.dispatchRemoveItemsEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-					}
-				}
-				
-				// undo the move - (most likely an add action with x and y changes)
-				if (action==RadiateEvent.MOVE_ITEM) {
-					eventTargets = historyEvent.targets;
-					targetsLength = eventTargets.length;
-					dictionary = historyEvent.reverseAddItemsDictionary;
-					
-					for (j=0;j<targetsLength;j++) {
-						reverseItems = dictionary[eventTargets[j]];
-						
-						// check if it's remove items or property changes
-						if (reverseItems) {
-							isInvalid = LayoutManager.getInstance().isInvalid();
-							if (isInvalid) {
-								LayoutManager.getInstance().validateNow();
-								LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 1.") : 0;
-							}
-							
-							addItems.remove(null);
-							isInvalid = LayoutManager.getInstance().isInvalid();
-							if (isInvalid) {
-								LayoutManager.getInstance().validateNow();
-								LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 2.") : 0;
-							}
-							reverseItems.apply(reverseItems.destination as UIComponent);
-							
-							if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-								instance.dispatchRemoveItemsEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-							}
-							
-							// was it added - note: can be refactored
-							if (reverseItems.destination==null) {
-								added = true;
-							}
-						}
-						else { // property change
-							applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
-								setStartValues);
-							historyEvent.reversed = true;
-							
-							if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-								instance.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-							}
-						}
-					}
-					
-					historyEvent.reversed = true;
-				}
-				// undo the remove
-				else if (action==RadiateEvent.REMOVE_ITEM) {
-					isInvalid = LayoutManager.getInstance().isInvalid();
-					if (isInvalid) {
-						LayoutManager.getInstance().validateNow();
-						LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 3") : 0;
-					}
-					addItems.apply(addItems.destination as UIComponent);
-					historyEvent.reversed = true;
-					removed = true;
-					
-					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						instance.dispatchAddEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-					}
-				}
-				// undo the property changes
-				else if (action==RadiateEvent.PROPERTY_CHANGED) {
-				
-					applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
-						setStartValues);
-					historyEvent.reversed = true;
-					
-					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						instance.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-					}
-				}
-			}
-			
-			historyItem.reversed = true;
-			
-			// select the target
-			if (selectTargetOnHistoryChange) {
-				if (added) { // item was added and now unadded - select previous
-					if (currentIndex>0) {
-						instance.setTarget(HistoryEvent(history.getItemAt(currentIndex-1)).targets, true);
-					}
-					else {
-						instance.setTarget(currentTargetDocument, true);
-					}
-				}
-				else if (removed) {
-					instance.setTargets(historyEvent.targets, true);
-				}
-				else {
-					instance.setTargets(historyEvent.targets, true);
-				}
-			}
-			
-			if (eventsLength) {
-				historyIndex = getHistoryIndex();
-				
-				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-					instance.dispatchHistoryChangeEvent(historyIndex, currentIndex);
-				}
-				return changeIndex-1;
-			}
-			
-			return historyLength;
-		}
-		
-		/**
-		 * Redo last change. See notes in undo method. 
-		 * @see undo
-		 * */
-		public static function redo(dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true):int {
-			var currentDocument:IDocument = instance.selectedDocument;
-			var historyCollection:ArrayCollection = currentDocument.history;
-			var currentTargetDocument:Application = currentDocument.instance as Application; // should be typed
-			var historyLength:int = historyCollection.length;
-			var changeIndex:int = getNextHistoryIndex();
-			var currentIndex:int = getHistoryIndex();
-			var historyEvent:HistoryEventItem;
-			var historyItem:HistoryEvent;
-			var affectsDocument:Boolean;
-			var setStartValues:Boolean;
-			var historyEvents:Array;
-			var addItems:AddItems;
-			var isInvalid:Boolean;
-			var eventsLength:int;
-			var remove:Boolean;
-			var action:String;
-			
-			
-			// need to make sure everything is validated first
-			// think about doing the following:
-			// LayoutManager.getInstance().usePhasedInstantiation = false;
-			// LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid. Needs a fix.") : 0;
-			// also use in undo()
-			
-			// no changes made
-			if (!historyLength) {
-				return -1;
-			}
-			
-			// cannot redo any more changes
-			if (changeIndex==-1 || changeIndex>=historyLength) {
-				if (instance.hasEventListener(RadiateEvent.END_OF_UNDO_HISTORY)) {
-					instance.dispatchEvent(new RadiateEvent(RadiateEvent.END_OF_UNDO_HISTORY));
-				}
-				return historyLength-1;
-			}
-			
-			// get current change to be redone
-			historyItem = historyCollection.length ? historyCollection.getItemAt(changeIndex) as HistoryEvent : null;
-			
-			historyEvents = historyItem.historyEventItems;
-			eventsLength = historyEvents.length;
-			//changes = historyEvents;
-			
-			for (var j:int;j<eventsLength;j++) {
-				historyEvent = HistoryEventItem(historyEvents[j]);
-				//changesLength = changes ? changes.length: 0;
-				
-				addItems = historyEvent.addItemsInstance;
-				action = historyEvent.action;
-				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentTargetDocument)!=-1;
-
-				
-				if (action==RadiateEvent.ADD_ITEM) {
-					isInvalid = LayoutManager.getInstance().isInvalid();
-					if (isInvalid) {
-						LayoutManager.getInstance().validateNow();
-						LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 4.") : 0;
-					}
-					// redo the add
-					addItems.apply(addItems.destination as UIComponent);
-					historyEvent.reversed = false;
-					
-					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						instance.dispatchAddEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-					}
-					
-				}
-				else if (action==RadiateEvent.MOVE_ITEM) {
-					// redo the move
-					if (addItems) {
-						
-						// RangeError: Index 2 is out of range. 
-						// we must validate
-						isInvalid = LayoutManager.getInstance().isInvalid();
-						if (isInvalid) {
-							LayoutManager.getInstance().validateNow();
-							LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 5") : 0;
-						}
-						
-						addItems.apply(addItems.destination as UIComponent);
-						historyEvent.reversed = false;
-						
-						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-							instance.dispatchMoveEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-						}
-					}
-					else {
-						
-						applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
-							setStartValues);
-						historyEvent.reversed = false;
-						
-						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-							instance.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-						}
-					}
-					
-				}
-				else if (action==RadiateEvent.REMOVE_ITEM) {
-					
-					isInvalid = LayoutManager.getInstance().isInvalid();
-					if (isInvalid) {
-						LayoutManager.getInstance().validateNow();
-						LayoutManager.getInstance().isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 6") : 0;
-					}
-					
-					// redo the remove
-					addItems.remove(addItems.destination as UIComponent);
-					historyEvent.reversed = false;
-					remove = true;
-					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						instance.dispatchRemoveItemsEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-					}
-				}
-				else if (action==RadiateEvent.PROPERTY_CHANGED) {
-					applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
-						setStartValues);
-					historyEvent.reversed = false;
-					
-					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						instance.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-					}
-				}
-			}
-			
-			
-			historyItem.reversed = false;
-			
-			// select target
-			if (selectTargetOnHistoryChange) {
-				if (remove) {
-					instance.setTargets(currentTargetDocument, true);
-				}
-				else {
-					instance.setTargets(historyEvent.targets, true);
-				}
-			}
-			
-			if (eventsLength) {
-				historyIndex = getHistoryIndex();
-				
-				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-					instance.dispatchHistoryChangeEvent(historyIndex, currentIndex);
-				}
-				
-				return changeIndex;
-			}
-			
-			return historyLength;
-		}
-		
-		/**
-		 * Apply changes to targets. You do not call this. Set properties through setProperties method. 
-		 * 
-		 * @param setStartValues applies the start values rather 
-		 * than applying the end values
-		 * 
-		 * @param property string or array of strings containing the 
-		 * names of the properties to set or null if setting styles
-		 * 
-		 * @param style string or araray of strings containing the 
-		 * names of the styles to set or null if setting properties
-		 * */
-		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, setStartValues:Boolean=false):Boolean {
-			var length:int = changes ? changes.length : 0;
-			var effect:SetAction = new SetAction();
-			var onlyPropertyChanges:Array = [];
-			var directApply:Boolean = true;
-			var isStyle:Boolean = style && style.length>0;
-			
-			for (var i:int;i<length;i++) {
-				if (changes[i] is PropertyChanges) { 
-					onlyPropertyChanges.push(changes[i]);
-				}
-			}
-			
-			effect.targets = targets;
-			effect.propertyChangesArray = onlyPropertyChanges;
-			
-			if (isStyle) {
-				effect.property = style;
-			}
-			
-			effect.relevantProperties = ArrayUtil.toArray(property);
-			effect.relevantStyles = ArrayUtil.toArray(style);
-			
-			// this works for styles and properties
-			// note: the property applyActualDimensions is used to enable width and height values to stick
-			if (directApply) {
-				effect.applyEndValuesWhenDone = false;
-				effect.applyActualDimensions = false;
-				
-				if (setStartValues) {
-					effect.applyStartValues(onlyPropertyChanges, targets);
-				}
-				else {
-					effect.applyEndValues(onlyPropertyChanges, targets);
-				}
-				
-				// Revalidate after applying
-				LayoutManager.getInstance().validateNow();
-			}
-				
-				// this works for properties but not styles
-				// the style value is restored at the end
-			else {
-				
-				effect.applyEndValuesWhenDone = false;
-				effect.play(targets, setStartValues);
-				effect.playReversed = false;
-				effect.end();
-				LayoutManager.getInstance().validateNow();
-			}
-			
-			return true;
-		}
-		
-		/**
-		 * Removes properties changes for null or same value targets
-		 * @private
-		 */
-		public static function stripUnchangedValues(propChanges:Array):Array {
-			
-			// Go through and remove any before/after values that are the same.
-			for (var i:int = 0; i < propChanges.length; i++) {
-				if (propChanges[i].stripUnchangedValues == false)
-					continue;
-				
-				for (var prop:Object in propChanges[i].start) {
-					if ((propChanges[i].start[prop] ==
-						propChanges[i].end[prop]) ||
-						(typeof(propChanges[i].start[prop]) == "number" &&
-							typeof(propChanges[i].end[prop])== "number" &&
-							isNaN(propChanges[i].start[prop]) &&
-							isNaN(propChanges[i].end[prop])))
-					{
-						delete propChanges[i].start[prop];
-						delete propChanges[i].end[prop];
-					}
-				}
-			}
-			
-			return propChanges;
-		}
-		
-		
-		
-		/**
-		 * Checks if changes are available. 
-		 * */
-		public static function changesAvailable(changes:Array):Boolean {
-			var length:int = changes.length;
-			var changesAvailable:Boolean;
-			var item:PropertyChanges;
-			var name:String;
-			
-			for (var i:int;i<length;i++) {
-				if (!(changes[i] is PropertyChanges)) continue;
-				
-				item = changes[i];
-				
-				for (name in item.start) {
-					changesAvailable = true;
-					return true;
-				}
-				
-				for (name in item.end) {
-					changesAvailable = true;
-					return true;
-				}
-			}
-			
-			return changesAvailable;
-		}
-		
-		//private static var _historyIndex:int = -1;
-		
-		/**
-		 * Selects the target on undo and redo
-		 * */
-		public static var selectTargetOnHistoryChange:Boolean = true;
-		
-		private static var _historyIndex:int = -1;
-
-		/**
-		 * Current history index. 
-		 * The history index is the index of last applied change. Or
-		 * to put it another way the index of the last reversed change minus 1. 
-		 * If there are 10 total changes and one has been reversed then 
-		 * we would be at the 9th change. The history index would 
-		 * be 8 since 9-1 = 8 since the array is a zero based index. 
-		 * 
-		 * value -1 means no history
-		 * value 0 means one item
-		 * value 1 means two items
-		 * value 2 means three items
-		 * */
-		[Bindable]
-		public static function get historyIndex():int {
-			
-			return _historyIndex;
-			//var document:IDocument = instance.selectedDocument;
-			//return document ? document.historyIndex : -1;
-		}
-
-		/**
-		 * @private
-		 */
-		public static function set historyIndex(value:int):void {
-			var document:IDocument = instance.selectedDocument;
-			if (document.historyIndex==value) {
-				//
-			}
-			else {
-				document.historyIndex = value;
-			}
-			
-			_historyIndex = value;
-			
-			var totalItems:int = history ? 
-				history.length : 0;
-			var hasItems:Boolean = totalItems>0;
-			
-			// has forward history
-			if (hasItems && historyIndex+1<totalItems) {
-				canRedo = true;
-			}
-			else {
-				canRedo = false;
-			}
-			
-			// has previous items
-			if (hasItems && historyIndex>-1) {
-				canUndo = true;
-			}
-			else {
-				canUndo = false;
-			}
-		}
-		
-		/**
-		 * Indicates if undo is available
-		 * */
-		[Bindable]
-		public static var canUndo:Boolean;
-		
-		/**
-		 * Indicates if redo is available
-		 * */
-		[Bindable]
-		public static var canRedo:Boolean;
-		
-		/**
-		 * Get the index of the next item that can be undone. 
-		 * If there are 10 changes and one has been reversed the 
-		 * history index would be 8 since 10-1=9-1=8 since the array is 
-		 * a zero based index. 
-		 * */
-		public static function getPreviousHistoryIndex():int {
-			var document:IDocument = instance.selectedDocument;
-			var length:int = document.history.length;
-			var historyItem:HistoryEvent;
-			var index:int;
-			
-			for (var i:int;i<length;i++) {
-				historyItem = document.history.getItemAt(i) as HistoryEvent;
-				
-				if (historyItem.reversed) {
-					return i-1;
-				}
-			}
-			
-			return length-1;
-		}
-		
-		/**
-		 * Get the index of the next item that can be redone in the history array. 
-		 * If there are 10 changes and one has been reversed the 
-		 * next history index would be 9 since 10-1=9-1=8+1=9 since the array is 
-		 * a zero based index. 
-		 * */
-		public static function getNextHistoryIndex():int {
-			var document:IDocument = instance.selectedDocument;
-			var length:int = document.history.length;
-			var historyItem:HistoryEvent;
-			var index:int;
-			
-			// start at the beginning and find the next item to redo
-			for (var i:int;i<length;i++) {
-				historyItem = document.history.getItemAt(i) as HistoryEvent;
-				
-				if (historyItem.reversed) {
-					return i;
-				}
-			}
-			
-			return length;
-		}
-		
-		/**
-		 * Get history index
-		 * */
-		public static function getHistoryIndex():int {
-			var document:IDocument = instance.selectedDocument;
-			var length:int = document ? document.history.length : 0;
-			var historyItem:HistoryEvent;
-			var index:int;
-			
-			// go through and find last item that is reversed
-			for (var i:int;i<length;i++) {
-				historyItem = document.history.getItemAt(i) as HistoryEvent;
-				
-				if (historyItem.reversed) {
-					return i-1;
-				}
-			}
-			
-			return length-1;
-		}
-		
-		/**
-		 * Returns the history event by index
-		 * */
-		public function getHistoryItemAtIndex(index:int):HistoryEvent {
-			var document:IDocument = instance.selectedDocument;
-			var length:int = document ? document.history.length : 0;
-			var historyItem:HistoryEvent;
-			
-			// no changes
-			if (!length) {
-				return null;
-			}
-			
-			// all changes have already been undone
-			if (index<0) {
-				return null;
-			}
-			
-			// get change 
-			historyItem = document.history.length ? document.history.getItemAt(index) as HistoryEvent : null;
-			
-			return historyItem;
-		}
-
-		
-		/**
-		 * Given a target or targets, property name and value
-		 * returns an array of PropertyChange objects.
-		 * Points to createPropertyChanges()
-		 * 
-		 * @see createPropertyChanges()
-		 * */
-		public static function createPropertyChange(targets:Array, property:String, style:String, value:*, description:String = ""):Array {
-			var values:Object = {};
-			var changes:Array;
-			
-			if (property) {
-				values[property] = value;
-			}
-			else if (style) {
-				values[style] = value;
-			}
-			
-			changes = createPropertyChanges(targets, ArrayUtil.toArray(property), ArrayUtil.toArray(style), values, description, false);
-			
-			return changes;
-		}
-		
-		/**
-		 * Given a target or targets, properties and value object (name value pair)
-		 * returns an array of PropertyChange objects.
-		 * Value must be an object containing the properties mentioned in the properties array
-		 * */
-		public static function createPropertyChanges(targets:Array, properties:Array, styles:Array, value:Object, description:String = "", storeInHistory:Boolean = true):Array {
-			var tempEffect:SetAction = new SetAction();
-			var propertyChanges:PropertyChanges;
-			var changes:Array;
-			var propertyOrStyle:String;
-			var isStyle:Boolean = styles && styles.length>0;
-			
-			tempEffect.targets = targets;
-			tempEffect.property = isStyle ? styles[0] : properties[0];
-			tempEffect.relevantProperties = properties;
-			tempEffect.relevantStyles = styles;
-			
-			// get start values for undo
-			changes = tempEffect.captureValues(null, true);
-			
-			// This may be hanging on to bindable objects
-			// set the values to be set to the property 
-			// ..later - what??? give an example
-			for each (propertyChanges in changes) {
-				
-				// for properties 
-				for each (propertyOrStyle in properties) {
-					
-					// value may be an object with properties or a string
-					// because we accept an object containing the values with 
-					// the name of the properties or styles
-					if (value && propertyOrStyle in value) {
-						propertyChanges.end[propertyOrStyle] = value[propertyOrStyle];
-					}
-					else {
-						propertyChanges.end[propertyOrStyle] = value;
-					}
-				}
-				
-				// for styles
-				for each (propertyOrStyle in styles) {
-					
-					// value may be an object with properties or a string
-					// because we accept an object containing the values with 
-					// the name of the properties or styles
-					if (value && propertyOrStyle in value) {
-						propertyChanges.end[propertyOrStyle] = value[propertyOrStyle];
-					}
-					else {
-						propertyChanges.end[propertyOrStyle] = value;
-					}
-				}
-			}
-			
-			// we should move this out
-			// add property changes array to the history dictionary
-			if (storeInHistory) {
-				return createHistoryEvents(targets, changes, properties, styles, value, description);
-			}
-			
-			return [propertyChanges];
-		}
-		
-		private static var _disableHistoryManagement:Boolean;
-
-		/**
-		 * Disables history management. We do this when importing documents since
-		 * it creates the document 5x faster. 
-		 * */
-		public static function get disableHistoryManagement():Boolean {
-			return _disableHistoryManagement;
-		}
-
-		/**
-		 * @private
-		 */
-		[Bindable(event="disableHistoryManagement")]
-		public static function set disableHistoryManagement(value:Boolean):void {
-			if (_disableHistoryManagement == value) return;
-			_disableHistoryManagement = value;
-		}
-
-		
-		/**
-		 * Creates a history event in the history 
-		 * Changes can contain a property or style changes or add items 
-		 * */
-		public static function createHistoryEvents(targets:Array, changes:Array, properties:*, styles:*, value:*, description:String = null, action:String=RadiateEvent.PROPERTY_CHANGED, remove:Boolean = false):Array {
-			var factory:ClassFactory = new ClassFactory(HistoryEventItem);
-			var historyEvent:HistoryEventItem;
-			var events:Array = [];
-			var reverseAddItems:AddItems;
-			var change:Object;
-			var length:int;
-			
-			if (disableHistoryManagement) return [];
-			
-			// create property change objects for each
-			for (var i:int;i<changes.length;i++) {
-				change = changes[i];
-				historyEvent 						= factory.newInstance();
-				historyEvent.action 				= action;
-				historyEvent.targets 				= targets;
-				historyEvent.description 			= description;
-				
-				// check for property change or add display object
-				if (change is PropertyChanges) {
-					historyEvent.properties 		= ArrayUtil.toArray(properties);
-					historyEvent.styles 			= ArrayUtil.toArray(styles);
-					historyEvent.propertyChanges 	= PropertyChanges(change);
-				}
-				else if (change is AddItems && !remove) {
-					historyEvent.addItemsInstance 	= AddItems(change);
-					length = targets.length;
-					
-					// trying to add support for multiple targets - it's not all there yet
-					// probably not the best place to get the previous values or is it???
-					for (var j:int=0;j<length;j++) {
-						historyEvent.reverseAddItemsDictionary[targets[j]] = createReverseAddItems(targets[j]);
-					}
-				}
-				else if (change is AddItems && remove) {
-					historyEvent.removeItemsInstance 	= AddItems(change);
-					length = targets.length;
-					
-					// trying to add support for multiple targets - it's not all there yet
-					// probably not the best place to get the previous values or is it???
-					for (j=0;j<length;j++) {
-						historyEvent.reverseRemoveItemsDictionary[targets[j]] = createReverseAddItems(targets[j]);
-					}
-				}
-				events[i] = historyEvent;
-			}
-			
-			return events;
-			
-		}
-		
-		/**
-		 * Creates a remove item from an add item. 
-		 * */
-		public static function createReverseAddItems(target:Object):AddItems {
-			var elementContainer:IVisualElementContainer;
-			var position:String = AddItems.LAST;
-			var visualElement:IVisualElement;
-			var reverseAddItems:AddItems;
-			var elementIndex:int = -1;
-			var propertyName:String; 
-			var destination:Object;
-			var description:String;
-			var relativeTo:Object; 
-			var vectorClass:Class;
-			var isStyle:Boolean; 
-			var isArray:Boolean; 
-			var index:int = -1; 
-			
-			if (!target) return null;
-			
-			// create add items with current values we can revert back to
-			reverseAddItems = new AddItems();
-			reverseAddItems.destination = target.parent;
-			reverseAddItems.items = target;
-			
-			destination = reverseAddItems.destination;
-			
-			visualElement = target as IVisualElement;
-			
-			// set default
-			if (!position) {
-				position = AddItems.LAST;
-			}
-			
-			// Check for non basic layout destination
-			// if destination is not a basic layout
-			// find the position and set the relative object 
-			if (destination is IVisualElementContainer 
-				&& destination.numElements>0) {
-				elementContainer = destination as IVisualElementContainer;
-				index = elementContainer.getElementIndex(visualElement);
-				
-				
-				if (elementContainer is GroupBase 
-					&& !(GroupBase(elementContainer).layout is BasicLayout)) {
-					
-
-					// add as first item
-					if (index==0) {
-						position = AddItems.FIRST;
-					}
-					
-					// get relative to object
-					else if (index<=elementContainer.numElements) {
-						
-						
-						// if element is already child of container account for remove of element before add
-						if (visualElement && visualElement.parent == destination) {
-							elementIndex = destination.getElementIndex(visualElement);
-							index = elementIndex < index ? index-1: index;
-							
-							if (index<=0) {
-								position = AddItems.FIRST;
-							}
-							else {
-								relativeTo = destination.getElementAt(index-1);
-								position = AddItems.AFTER;
-							}
-						}
-							// add as last item
-						else if (index>=destination.numElements) {
-							position = AddItems.LAST;
-						}
-							// add after first item
-						else if (index>0) {
-							relativeTo = destination.getElementAt(index-1);
-							position = AddItems.AFTER;
-						}
-					}
-				}
-			}
-			
-			
-			reverseAddItems.destination = destination;
-			reverseAddItems.position = position;
-			reverseAddItems.relativeTo = relativeTo;
-			reverseAddItems.propertyName = propertyName;
-			reverseAddItems.isArray = isArray;
-			reverseAddItems.isStyle = isStyle;
-			reverseAddItems.vectorClass = vectorClass;
-			
-			return reverseAddItems;
-		}
-		
-		/**
-		 * Stores a history event in the history events dictionary
-		 * Changes can contain a property changes object or add items object
-		 * */
-		public static function removeHistoryEvent(changes:Array):void {
-			var historyEvent:HistoryEventItem;
-			var change:Object;
-			
-			// delete change objects
-			for each (change in changes) {
-				historyEventsDictionary[change] = null;
-				delete historyEventsDictionary[change];
-			}
-			
-		}
-		
-		/**
-		 * Adds property change items to the history array
-		 * */
-		public static function addHistoryItem(historyEventItem:HistoryEventItem, description:String = null):void {
-			if (!doNotAddEventsToHistory) {
-				addHistoryEvents(ArrayUtil.toArray(historyEventItem), description);
-			}
-		}
-		
-		/**
-		 * Adds property change items to the history array
-		 * */
-		public static function addHistoryEvents(historyEvents:Array, description:String = null):void {
-			var document:IDocument = instance.selectedDocument;
-			var historyEvent:HistoryEvent;
-			var currentIndex:int = getHistoryIndex();
-			var length:int = document ? document.history.length : 0;
-			var historyTargets:Array;
-			
-			if (disableHistoryManagement) return;
-			
-			history.disableAutoUpdate();
-			
-			// trim history 
-			if (currentIndex!=length-1) {
-				for (var i:int = length-1;i>currentIndex;i--) {
-					historyEvent = document.history.removeItemAt(i) as HistoryEvent;
-					historyEvent.purge();
-				}
-			}
-			
-			historyEvent = new HistoryEvent();
-			historyEvent.description = description ? HistoryEventItem(historyEvents[0]).description : description;
-			historyEvent.historyEventItems = historyEvents;
-			
-			// we should remember to remove these references when truncating history
-			for (i=0;i<historyEvents.length;i++) {
-				historyTargets = HistoryEventItem(historyEvents[i]).targets;
-				for (var j:int=0;j<historyTargets.length;j++) {
-					if (historyEvent.targets.indexOf(historyTargets[j])==-1) {
-						historyEvent.targets.push(historyTargets[j]);
-					}
-				}
-			}
-			
-			document.history.addItem(historyEvent);
-			document.historyIndex = getHistoryIndex();
-			document.history.enableAutoUpdate();
-			
-			document.historyIndex = getHistoryIndex();
-			
-			historyIndex = getHistoryIndex();
-			
-			instance.dispatchHistoryChangeEvent(currentIndex+1, currentIndex);
-		}
-		
-		/**
-		 * Removes property change items in the history array
-		 * */
-		public static function removeHistoryItem(changes:Array):void {
-			var document:IDocument = instance.selectedDocument;
-			var currentIndex:int = getHistoryIndex();
-			
-			var itemIndex:int = document.history.getItemIndex(changes);
-			
-			if (itemIndex>0) {
-				document.history.removeItemAt(itemIndex);
-			}
-			
-			document.historyIndex = getHistoryIndex();
-			historyIndex = getHistoryIndex();
-			
-			instance.dispatchHistoryChangeEvent(currentIndex-1, currentIndex);
-		}
-		
-		/**
-		 * Removes all history in the history array. 
-		 * Note: We should set the changes to null. 
-		 * */
-		public static function removeAllHistory():void {
-			var document:IDocument = instance.selectedDocument;
-			var currentIndex:int = getHistoryIndex();
-			document.history.removeAll();
-			document.history.refresh(); // we should loop through and run purge on each HistoryItem
-			instance.dispatchHistoryChangeEvent(-1, currentIndex);
-		}
-		
 		/**
 		 * Returns true if two objects are of the same class type
 		 * */
@@ -9149,10 +8986,486 @@ package com.flexcapacitor.controller {
 				errorMessage = event.error.toString();
 			}
 			
-			Radiate.log.error(errorMessage);
+			Radiate.error(errorMessage);
 			
 		}
-
+		
+		/**
+		 * Removes ID and location data from example projects so that the user can 
+		 * save and modify them themselves
+		 * */
+		public function clearExampleProjectData(exampleProject:IProject):Boolean {
+			if (!exampleProject) return false;
+			var documents:Array;
+			var documentsLength:int;
+			
+			exampleProject.id = null;
+			exampleProject.uid = null;
+			documents = exampleProject.documents;
+			documentsLength = documents ? documents.length :0;
+			
+			for (var i:int;i<documentsLength;i++) {
+				var document:IDocument = documents[i] as IDocument;
+				if (document) {
+					document.id = null;
+					document.uid = UIDUtil.createUID();
+					document.isExample = true;
+				}
+			}
+			
+			exampleProject.isExample = true;
+			
+			return true;
+		}
+		
+		/**
+		 * Update imported code so you can import it
+		 * */
+		public static function editImportingCode(message:String, ...Arguments):void {
+			log.info("TODO: Open dialog so user can edit code that isn't importing");
+		}
+		
+		/**
+		 * Open document for editing in browser. 
+		 * */
+		public static function editDocumentInBrowser(documentData:IDocumentData):void {
+			var request:URLRequest;
+			var url:String;
+			request = new URLRequest();
+			
+			if (documentData && documentData.id==null) {				
+				error("The document ID is not set. You may need to save the document first.");
+			}
+			
+			if (documentData is ImageData) {
+				url = ImageData(documentData).url;
+			}
+			else {
+				url = getWPEditPostURL(documentData);
+			}
+			
+			if (url) {
+				request.url = url;
+				navigateToURL(request, "editInBrowser");
+			}
+			else {
+				error("URL to document was not set. You may need to save the document first.");
+			}
+		}
+		
+		/**
+		 * Open document in browser. Right now you must be 
+		 * logged in or the document must be published
+		 * */
+		public static function openInBrowser(documentData:IDocumentData):void {
+			var request:URLRequest;
+			var url:String;
+			request = new URLRequest();
+			
+			if (documentData is ImageData) {
+				url = ImageData(documentData).url;
+			}
+			else {
+				url = documentData.uri;
+			}
+			
+			if (url) {
+				request.url = url;
+				navigateToURL(request, "previewInBrowser");
+			}
+			else {
+				error("The URL was not set. You may need to save the document first.");
+			}
+		}
+		
+		/**
+		 * Open document in browser. Right now you must be 
+		 * logged in or the document must be published
+		 * */
+		public static function loginThroughBrowser():void {
+			var value:Object = PersistentStorage.read(Radiate.USER_STORE);
+			
+			if (value!=null) {
+				serviceManager.loginThroughBrowser(value.u, value.p, true);
+			}
+			else {
+				info("No login was saved.");
+				setTimeout(openUsersLoginPage, 1000);
+			}
+		}
+		
+		/**
+		 * Traces an fatal message
+		 * */
+		public static function fatal(message:String, ...Arguments):void {
+			log.error(message, Arguments);
+			
+			if (enableDiagnosticLogs) {
+				addLogData(message, Arguments, LogEventLevel.FATAL);
+			}
+			
+			playMessage(message, LogEventLevel.FATAL);
+		}
+		
+		/**
+		 * Traces an error message
+		 * */
+		public static function error(message:String, ...Arguments):void {
+			log.error(message, Arguments);
+			
+			if (enableDiagnosticLogs) {
+				addLogData(message, Arguments, LogEventLevel.ERROR);
+			}
+			
+			playMessage(message, LogEventLevel.ERROR);
+		}
+		
+		/**
+		 * Traces an warning message
+		 * */
+		public static function warn(message:String, ...Arguments):void {
+			log.warn(message, Arguments);
+			
+			if (enableDiagnosticLogs) {
+				addLogData(message, Arguments, LogEventLevel.WARN);
+			}
+			
+			playMessage(message, LogEventLevel.WARN);
+		}
+		
+		/**
+		 * Traces an info message
+		 * */
+		public static function info(message:String, ...Arguments):void {
+			log.info(message, Arguments);
+			
+			if (enableDiagnosticLogs) {
+				addLogData(message, Arguments, LogEventLevel.INFO);
+			}
+			
+			playMessage(message, LogEventLevel.INFO);
+		}
+		
+		/**
+		 * Traces an debug message
+		 * */
+		public static function debug(message:String, ...Arguments):void {
+			log.debug(message, Arguments);
+			
+			if (enableDiagnosticLogs) {
+				addLogData(message, Arguments, LogEventLevel.DEBUG);
+			}
+			
+			playMessage(message, LogEventLevel.DEBUG);
+		}
+		
+		/**
+		 * Adds a new log item for diagnostics and to let user go back and read messages
+		 * */
+		public static function addLogData(message:String, arguments:Array, level:int = 0):void {
+			
+			var issue:IssueData = new IssueData();
+			issue.description = message;
+			issue.level = level;
+			logsCollection.addItem(issue);
+		}
+		
+		/**
+		 * Keep track of error messages
+		 * */
+		public static var logsCollection:ArrayCollection = new ArrayCollection();
+		public static var logErrorBackgroundColor:uint;
+		public static var logErrorColor:uint;
+		public static var enableDiagnosticLogs:Boolean = true;
+		
+		/**
+		 * Plays an animation for different log messages. 
+		 * Uses the log event levels for different message types,
+		 * LogEventLevel.FATAL, LogEventLevel.ERROR, etc
+		 * We do not show debug messages. Check the logsCollection or ConsoleLogInspector.
+		 * */
+		public static function playMessage(message:String, level:int=0):void {
+			if (showMessageAnimation==null) return; // UI not created yet
+			
+			var borderContainer:IStyleClient = showMessageAnimation.target as IStyleClient;
+			
+			if (level==LogEventLevel.FATAL) {
+				borderContainer.setStyle("backgroundColor", "red");
+				borderContainer.setStyle("color", "white");
+			}
+			if (level==LogEventLevel.ERROR) {
+				borderContainer.setStyle("backgroundColor", "red");
+				borderContainer.setStyle("color", "white");
+			}
+			else if (level==LogEventLevel.WARN) {
+				borderContainer.setStyle("backgroundColor", "yellow");
+				borderContainer.setStyle("color", "black");
+			}
+			else if (level==LogEventLevel.INFO) {
+				borderContainer.setStyle("backgroundColor", "blue");
+				borderContainer.setStyle("color", "white");
+			}
+			
+			showMessageLabel.text = message;
+			
+			if (showMessageAnimation.isPlaying) {
+				showMessageAnimation.end();
+			}
+			
+			showMessageAnimation.play();
+		}
+		
+		public static var showMessageAnimation:Sequence;
+		public static var showMessageLabel:Label;
+		
+		/**
+		 * Calls a function after a set amount of time. 
+		 * */
+		public static function callAfter(time:int, method:Function, ...Arguments):void {
+			var sprite:Sprite = new Sprite();
+			var startTime:int = getTimer() + time;
+			
+			sprite.addEventListener(Event.ENTER_FRAME, function(e:Event):void {
+				if (getTimer()>startTime) {
+					sprite.removeEventListener(Event.ENTER_FRAME, arguments.callee);
+					method.apply(this, Arguments);
+				}
+			});
+		}
+		
+		/**
+		 * Sizes the document to the current selected target
+		 * */
+		public static function sizeDocumentToSelection():void {
+			var iDocument:IDocument = instance.selectedDocument;
+			
+			if (instance.target && iDocument) {
+				var rectangle:Rectangle = getSize(instance.target);
+				
+				if (rectangle.width>0 && rectangle.height>0) {
+					setProperties(iDocument.instance, ["width","height"], rectangle, "Size document to selection");
+				}
+			}
+		}
+		
+		/**
+		 * Sizes the current selected target to the document
+		 * */
+		public static function sizeSelectionToDocument():void {
+			var iDocument:IDocument = instance.selectedDocument;
+			
+			if (instance.target && iDocument) {
+				var rectangle:Rectangle = getSize(iDocument.instance);
+				
+				if (rectangle.width>0 && rectangle.height>0) {
+					setProperties(instance.target, ["width","height"], rectangle, "Size selection to document");
+				}
+			}
+		}
+		
+		/**
+		 * Saves the selected target as an image in the library. 
+		 * If successful returns ImageData. If unsuccessful returns Error
+		 * */
+		public static function saveToLibrary(target:Object):Object {
+			var iDocument:IDocument = instance.selectedDocument;
+			var snapshotTest:Boolean = true;
+			var snapshot:Object;
+			var data:ImageData;
+			
+			if (target && iDocument) {
+				
+				if (snapshotTest) {
+					if (target is UIComponent) {
+						// new 2015 method from Bitmap utils
+						snapshot = DisplayObjectUtils.getSnapshotWithQuality(target as UIComponent);
+					}
+					else if (target is DisplayObject) {
+						snapshot = DisplayObjectUtils.rasterize2(target as DisplayObject);
+					}
+				}
+				else {
+					if (target is UIComponent) {
+						snapshot = DisplayObjectUtils.rasterizeComponentWithQuality(target as UIComponent);
+					}
+					else if (target is DisplayObject) {
+						snapshot = DisplayObjectUtils.rasterize2(target as DisplayObject);
+					}
+				}
+				
+				if (snapshot is BitmapData) {
+					data = new ImageData();
+					data.bitmapData = snapshot as BitmapData;
+					data.byteArray = DisplayObjectUtils.getBitmapByteArray(snapshot as BitmapData);
+					data.name = ClassUtils.getIdentifierNameOrClass(target) + ".png";
+					data.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
+					data.file = null;
+					
+					instance.addAsset(data);
+					
+					return data;
+				}
+				else {
+					//Radiate.error("Could not create a snapshot of the selected item. " + snapshot); 
+				}
+			}
+			
+			return snapshot;
+		}
+		
+		/**
+		 * Gets the size of the target if it is a UIComponent or a DisplayObject.
+		 * If it is neither or it does not have a size it returns null.
+		 * Also sets the positionRectangle width and height. Temporary fix to bigger problem.
+		 * */
+		public static function getSize(target:Object, container:Object = null):Rectangle {
+			var rectangle:Rectangle;
+			
+			if (target) {
+				
+				if (target is UIComponent) {
+					rectangle = DisplayObjectUtils.getRectangleBounds(target as UIComponent, container);
+					positionRectangle.width = rectangle.width;
+					positionRectangle.height = rectangle.height;
+					return rectangle;
+				}
+				else if (target is DisplayObject) {
+					positionRectangle.width = rectangle.width;
+					positionRectangle.height = rectangle.height;
+					rectangle = DisplayObjectUtils.getRealBounds(target as DisplayObject);
+					return rectangle;
+				}
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Reuse position rectangle. TODO reuse size rectangle
+		 * */
+		[Bindable]
+		public static var positionRectangle:Rectangle = new Rectangle();
+		
+		/**
+		 * Returns the x and y position of the target in a rectangle instance
+		 * if it has x and y properties or null if it doesn't have those properties.
+		 * */
+		public static function getPosition(target:Object):Rectangle {
+			//if (target is DisplayObject || target is IBitmapDrawable || target is IVisualElement) {
+			if ("x" in target && "y" in target) {
+				positionRectangle.x = target.x;
+				positionRectangle.y = target.y;
+				return positionRectangle;
+			}
+			else {
+				positionRectangle.x = 0;
+				positionRectangle.y = 0;
+			}
+			return null;
+		}
+		
+		/**
+		 * Open users site in a browser
+		 * */
+		public static function openUsersWebsite():void
+		{
+			var request:URLRequest;
+			request = new URLRequest();
+			request.url = getWPURL();
+			navigateToURL(request, DEFAULT_NAVIGATION_WINDOW);
+		}
+		/**
+		 * Open users login page or dashboard if already logged in in a browser
+		 * */
+		public static function openUsersLoginPage():void
+		{
+			var request:URLRequest;
+			request = new URLRequest();
+			request.url = getWPLoginURL();
+			navigateToURL(request, DEFAULT_NAVIGATION_WINDOW);
+		}
+		
+		/**
+		 * Open users profile in a browser
+		 * */
+		public static function openUsersProfile():void
+		{
+			var request:URLRequest;
+			request = new URLRequest();
+			request.url = getWPProfileURL();
+			navigateToURL(request, DEFAULT_NAVIGATION_WINDOW);
+		}
+		
+		/**
+		 * Locks or unlocks an item. You cannot lock the application at this time. 
+		 * 
+		 * @returns true if able to set lock on target. 
+		 * */
+		public static function lockComponent(target:Object, locked:Boolean = true):Boolean {
+			var iDocument:IDocument = instance.selectedDocument;
+			var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
+			
+			if (componentDescription && !(componentDescription.instance is Application)) {
+				componentDescription.locked = locked;
+				
+				return true;
+			}
+			return false;
+		}
+		
+		/**
+		 * Update the window menu item
+		 * */
+		public function updateWindowMenu(windowItem:MenuItem):void {
+			var numberOfItems:int = windowItem.children ? windowItem.children.length : 0;
+			var menu:Object;
+			var menuItem:MenuItem;
+			var numberOfDocuments:int;
+			var iDocumentData:IDocumentData;
+			var menuFound:Boolean;
+			var dataProvider:ArrayCollection;
+			
+			windowItem.removeAllChildren();
+			numberOfDocuments = documents.length;
+			
+			for (var j:int = 0; j < numberOfDocuments; j++) {
+				iDocumentData = documents[j];
+				
+				menuItem = new MenuItem();
+				menuItem.data = iDocumentData;
+				menuItem.type = ClassUtils.getQualifiedClassName(iDocumentData);
+				menuItem.label = iDocumentData.name;
+				windowItem.addChild(menuItem);
+			}
+			
+			dataProvider = applicationMenu.dataProvider;
+			var numberOfMenus:int = dataProvider ? dataProvider.length : 0;
+			
+			for (var i:int; i < numberOfMenus; i++) {
+				if (dataProvider.getItemAt(i)==applicationWindowMenu) {
+					dataProvider.removeItemAt(i);
+					dataProvider.addItemAt(windowItem, i);
+					menuFound = true;
+					break;
+				}
+			}
+			
+			if (!menuFound) {
+				dataProvider.addItem(windowItem);
+			}
+			
+			applicationMenu.dataProvider = dataProvider;
+			
+		}
+		
+		/**
+		 * Method to write straight to the console. Does not log events since
+		 * it is the logger helping to view previous logs. 
+		 * */
+		public static function logToConsole(message:String):void
+		{
+			log.info(message);
+		}
 	}
 }
 

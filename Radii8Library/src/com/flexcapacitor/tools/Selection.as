@@ -1,15 +1,32 @@
 
 package com.flexcapacitor.tools {
+	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.events.RadiateEvent;
-	import com.flexcapacitor.managers.layoutClasses.LayoutDebugHelper;
+	import com.flexcapacitor.graphics.LayoutLines;
+	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
+	import com.flexcapacitor.utils.LayoutDebugHelper;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
+	import com.jacobschatz.bk.shapes.ShapeModel;
+	import com.roguedevelopment.Flex4ChildManager;
+	import com.roguedevelopment.Flex4HandleFactory;
+	import com.roguedevelopment.ObjectChangedEvent;
+	import com.roguedevelopment.ObjectHandles;
+	import com.roguedevelopment.ObjectHandlesSelectionManager;
+	import com.roguedevelopment.constraints.MaintainProportionConstraint;
+	import com.roguedevelopment.constraints.SizeConstraint;
+	import com.roguedevelopment.constraints.SnapToGridConstraint;
+	import com.roguedevelopment.decorators.AlignmentDecorator;
+	import com.roguedevelopment.decorators.DecoratorManager;
+	import com.roguedevelopment.decorators.ObjectLinesDecorator;
+	import com.roguedevelopment.decorators.OutlineDecorator;
+	import com.roguedevelopment.decorators.WebDecorator;
 	
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
@@ -17,6 +34,7 @@ package com.flexcapacitor.tools {
 	import flash.display.Sprite;
 	import flash.display.Stage;
 	import flash.events.Event;
+	import flash.events.IEventDispatcher;
 	import flash.events.IOErrorEvent;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
@@ -41,6 +59,7 @@ package com.flexcapacitor.tools {
 	import mx.managers.SystemManager;
 	import mx.managers.SystemManagerGlobals;
 	
+	import spark.components.Application;
 	import spark.components.DataGrid;
 	import spark.components.Image;
 	import spark.components.List;
@@ -91,6 +110,12 @@ package com.flexcapacitor.tools {
 	* */
 	
 	/**
+	 * Dispatched when the selection class handles a key event. 
+	 * For example, moving the selected object. 
+	 * */
+	[Event(name="keyEvent", type="flash.events.Event")]
+	
+	/**
 	 * Finds and selects the item or items under the pointer. 
 	 * 
 	 * To do:
@@ -111,12 +136,66 @@ package com.flexcapacitor.tools {
 			
 		}
 		
-		[Embed(source="assets/icons/tools/Selection.png")]
-		private var _icon:Class;
+		public static var KEY_EVENT:String = "keyEvent";
+		public static var EDIT_EVENT:String = "editEvent";
+		
+		public static var UNDO:String = "undo";
+		public static var REDO:String = "redo";
+		
+		public static var COPY:String = "copy";
+		public static var PASTE:String = "paste";
+		
+		
+		private var _icon:Class = Radii8LibraryToolAssets.Selection;
 		
 		public function get icon():Class {
 			return _icon;
 		}
+		
+		/**
+		 * The radiate instance.
+		 * */
+		public var radiate:Radiate;
+		
+		/**
+		 * Drag helper utility.
+		 * */
+		private var dragManagerInstance:DragManagerUtil;
+		
+		/**
+		 * The document
+		 * */
+		public var document:IDocument;
+		
+		/**
+		 * The application
+		 * */
+		public var targetApplication:Object;
+		
+		/**
+		 * The background
+		 * */
+		public var canvasBackground:Object;
+		
+		/**
+		 * The background parent
+		 * */
+		public var canvasBackgroundParent:Object;
+		
+		/**
+		 * The background parent scroller
+		 * */
+		public var canvasScroller:Scroller;
+		
+		/**
+		 * Layout debug helper. Used to get the visible rectangle of the selected item
+		 * */
+		public var layoutDebugHelper:LayoutDebugHelper;
+		
+		/**
+		 * Highlights items that are locked
+		 * */
+		public var highlightLockedItems:Boolean = true;
 		
 		/**
 		 * Reference to the current or last target.
@@ -133,6 +212,8 @@ package com.flexcapacitor.tools {
 		 * Set to true to clear the selection in this case
 		 * */
 		public var hideSelectionWhenOffStage:Boolean = true;
+		public var hideSelectionOnDrag:Boolean = true;
+		private var _selectionWasShownBeforeDrag:Boolean;
 		
 		private var _showSelection:Boolean = true;
 
@@ -162,12 +243,16 @@ package com.flexcapacitor.tools {
 		
 		public var targetSelectionGroup:ItemRenderer;
 		public var mouseLocationLines:IFlexDisplayObject = new ListDropIndicator();
-		private var _showSelectionLabel:Boolean = false;
+		private var _showSelectionLabel:Boolean = true;
 
 		public function get showSelectionLabel():Boolean {
 			return _showSelectionLabel;
 		}
 
+		/**
+		 * Displays a label above the selection rectangle 
+		 * with the unqualified class name of the object selected
+		 * */
 		public function set showSelectionLabel(value:Boolean):void {
 			if (_showSelectionLabel==value) return;
 			
@@ -182,6 +267,9 @@ package com.flexcapacitor.tools {
 			return _selectionBorderColor;
 		}
 
+		/**
+		 * Sets the color used on the selection rectangle
+		 * */
 		public function set selectionBorderColor(value:uint):void {
 			if (_selectionBorderColor==value) return;
 			
@@ -189,6 +277,24 @@ package com.flexcapacitor.tools {
 			
 			updateSelectionAroundTarget(lastTarget);
 		}
+		
+		private var _showTransformControls:Boolean;
+
+		public function get showTransformControls():Boolean
+		{
+			return _showTransformControls;
+		}
+
+		/**
+		 * Shows resize icons on the selection rectangle that you can use to resize the selected object
+		 * */
+		public function set showTransformControls(value:Boolean):void
+		{
+			_showTransformControls = value;
+			
+			updateSelectionAroundTarget(lastTarget);
+		}
+
 
 		public var showSelectionLabelOnDocument:Boolean = false;
 		public var showSelectionFill:Boolean = false;
@@ -216,8 +322,36 @@ package com.flexcapacitor.tools {
 			}
 			
 			addRadiateListeners();
+			
 		}
-	
+		
+		public function setupObjectHandles():void {
+			
+			if (objectHandles==null && radiate.canvasBorder) {
+				manager = new Flex4ChildManager();
+				handleFactory = new Flex4HandleFactory();
+				selectionManager = new ObjectHandlesSelectionManager();
+				
+				//selectionManager.unselectedModelState();
+				
+				// CREATE OBJECT HANDLES
+				//objectHandles = new ObjectHandles(radiate.canvasBorder as Sprite, null, handleFactory, manager);
+				objectHandles = new ObjectHandles(document.instance as Sprite, null, handleFactory, manager);
+				objectHandles.enableMultiSelect = true;
+				objectHandles.snapGrid = true;
+				objectHandles.snapNumber = 8;
+				objectHandles.snapAngle = true;
+				
+				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVED, objectMoved);
+				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVING, objectMoving);
+				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZING, objectResizing);
+				
+				
+				//decoratorManager = new DecoratorManager(objectHandles, radiate.toolLayer as Sprite);
+				aspectRatioConstraint = new MaintainProportionConstraint();
+			}
+		}
+		
 		/**
 		 * Disable this tool.
 		 * */
@@ -249,6 +383,7 @@ package com.flexcapacitor.tools {
 			removeKeyboardListeners();
 			removeTargetListeners();
 			removeTransparentGroupListeners();
+			removeDragManagerListeners(); // Nov 6
 		}
 		
 		/**
@@ -337,7 +472,9 @@ package com.flexcapacitor.tools {
 			
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, true, 0, true);
 			stage.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, true, 0, true);
-			//Radiate.log.info("Adding keyboard listeners");
+			stage.addEventListener(Event.COPY, copyHandler, true, 0, true);
+			stage.addEventListener(Event.PASTE, pasteHandler, true, 0, true);
+			//Radiate.info("Adding keyboard listeners");
 		}
 		
 		/**
@@ -353,7 +490,9 @@ package com.flexcapacitor.tools {
 			stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, true);
 			stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
 			stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler, true);
-			//Radiate.log.info("Removing keyboard listeners");
+			stage.removeEventListener(Event.COPY, copyHandler, true);
+			stage.removeEventListener(Event.PASTE, pasteHandler, true);
+			//Radiate.info("Removing keyboard listeners");
 			
 			/*
 			if (targetApplication && "systemManager" in targetApplication) {
@@ -381,6 +520,8 @@ package com.flexcapacitor.tools {
 		public function addDragManagerListeners():void {
 			
 			if (dragManagerInstance) {
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_START, handleDragStart, false, 0, true);
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_END, handleDragEnd, false, 0, true);
 				dragManagerInstance.addEventListener(DragDropEvent.DRAG_OVER, handleDragOver, false, 0, true);
 				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop, false, 0, true);
 				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete, false, 0, true);
@@ -394,6 +535,8 @@ package com.flexcapacitor.tools {
 		public function removeDragManagerListeners():void {
 			
 			if (dragManagerInstance) {
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_START, handleDragStart);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_END, handleDragEnd);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_OVER, handleDragOver);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
@@ -535,6 +678,7 @@ package com.flexcapacitor.tools {
 		protected function documentChangeHandler(event:RadiateEvent):void {
 			clearSelection();
 			updateDocument(IDocument(event.selectedItem));
+			//setupObjectHandles();
 		}
 		
 		/**
@@ -544,12 +688,12 @@ package com.flexcapacitor.tools {
 			 if (event.source == event.target && event.property == "verticalScrollPosition") {
 				//trace(e.property, "changed to", e.newValue);
 				//drawSelection(radiate.target);
-				//Radiate.log.info("Selection scroll change");
+				//Radiate.info("Selection scroll change");
 			}
 			if (event.source == event.target && event.property == "horizontalScrollPosition") {
 				//trace(e.property, "changed to", e.newValue);
 				//drawSelection(radiate.target);
-				//Radiate.log.info("Selection scroll change");
+				//Radiate.info("Selection scroll change");
 			}
 		}
 		
@@ -584,6 +728,7 @@ package com.flexcapacitor.tools {
 				}
 				else {
 					drawSelection(target, toolLayer);
+					//addResizeHandles(target, toolLayer);
 				}
 				
 				
@@ -593,46 +738,6 @@ package com.flexcapacitor.tools {
 			}
 			
 		}
-		
-		/**
-		 * The radiate instance.
-		 * */
-		public var radiate:Radiate;
-		
-		/**
-		 * Drag helper utility.
-		 * */
-		private var dragManagerInstance:DragManagerUtil;
-
-		/**
-		 * The document
-		 * */
-		public var document:IDocument;
-
-		/**
-		 * The application
-		 * */
-		public var targetApplication:Object;
-		
-		/**
-		 * The background
-		 * */
-		public var canvasBackground:Object;
-		
-		/**
-		 * The background parent
-		 * */
-		public var canvasBackgroundParent:Object;
-		
-		/**
-		 * The background parent scroller
-		 * */
-		public var canvasScroller:Scroller;
-		
-		/**
-		 * Layout debug helper. Used to get the visible rectangle of the selected item
-		 * */
-		public var layoutDebugHelper:LayoutDebugHelper;
 		
 		/**
 		 * Add listeners to target
@@ -645,7 +750,7 @@ package com.flexcapacitor.tools {
 			var target:Object = event.target;
 			var originalTarget:Object = event.target;
 			var items:Array = [];
-			var length:int;
+			var targetsLength:int;
 			
 			
 			
@@ -679,32 +784,73 @@ package com.flexcapacitor.tools {
 				targetsUnderPoint.push(target);
 			}
 			
-			length = targetsUnderPoint.length;
+			targetsLength = targetsUnderPoint.length;
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
 			// loop through items under point until we find one on the *component* tree
 			componentTree = radiate.selectedDocument.componentDescription;
 			
 			componentTreeLoop:
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<targetsLength;i++) {
 				target = targetsUnderPoint[i];
-				
+				// check for window application
 				if (!targetApplication.contains(DisplayObject(target))) {
 					continue;
+				}
+				
+				// if somehow we get here return null so we don't select anything
+				if (target is DocumentContainer) {
+					return;
 				}
 				
 				description = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
 				
 				if (description) {
-					target = description.instance;
-					break;
+					if (description.locked==false) {
+						target = description.instance;
+						break;
+					}
+					else if (description.locked==true) {
+						if (target is ILayoutElement) {
+							
+							if (!layoutDebugHelper) {
+								layoutDebugHelper = new LayoutDebugHelper();
+							}
+							
+							if (highlightLockedItems) {
+								//layoutDebugHelper.addElement(ILayoutElement(target));
+								//layoutDebugHelper.render();
+							}
+							//layoutDebugHelper.enable();
+						}
+						
+						if (target==targetApplication) {
+							return;
+						}
+					}
 				}
 			}
 			
+			// select only groups or items on the application
+			if (selectGroup) {
+				
+				// if parent is application let user select it
+				if (description.parent==componentTree) {
+					// it's on the root so we're good
+				}
+				else if (description.instance is IVisualElementContainer) {
+					// it's a group so we're good
+				}
+				else {
+					// select group container
+					description = description.parent;
+					target = description.instance;
+				}
+			}
 			
 			if (target && enableDrag) {
 				
-				//Radiate.log.info("Selection Mouse down");
+				//Radiate.info("Selection Mouse down");
 				
 				// select target on mouse up or drag drop whichever comes first
 				addTargetListeners(target);
@@ -713,7 +859,7 @@ package com.flexcapacitor.tools {
 					
 					// listen for drag
 					if (!dragManagerInstance) {
-						dragManagerInstance = new DragManagerUtil();
+						dragManagerInstance = DragManagerUtil.getInstance();
 					}
 					
 					//target.visible = false;
@@ -733,17 +879,103 @@ package com.flexcapacitor.tools {
 				}
 			}
 			
+			if (description && description.parent) {
+				objectHandles;
+			}
+			
+		}
+		
+		protected function objectMoved(event:ObjectChangedEvent):void
+		{
+			trace("moved");
+			var model:ShapeModel = event.relatedObjects[0];
+			var component:Object = objectHandles.getDisplayForModel(model);
+			component.x = model.x;
+			component.y = model.y;
+		}
+		
+		protected function objectResizing(event:ObjectChangedEvent):void
+		{
+			trace("sizing");
+			var elements:Array = event.relatedObjects;
+			for (var i:int = 0; i < elements.length; i++) 
+			{
+				var model:ShapeModel = elements[i];
+				var component:Object = objectHandles.getDisplayForModel(model);
+				component.x = model.x;
+				component.y = model.y;
+				component.width = model.width;
+				component.height = model.height;
+			}
+		}
+		
+		protected function objectMoving(event:ObjectChangedEvent):void
+		{
+			var elements:Array = event.relatedObjects;
+			for (var i:int = 0; i < elements.length; i++) 
+			{
+				var model:ShapeModel = elements[i];
+				var component:Object = objectHandles.getDisplayForModel(model);
+				component.x = model.x;
+				component.y = model.y;
+			}
+			
+		}
+		
+		protected function oh_clickHandler(event:MouseEvent):void {
+			if (objectHandles) {
+				objectHandles.selectionManager.clearSelection();
+			}
+		}
+		
+		public var objectHandles:ObjectHandles;
+		
+		// add resize handles
+		public var manager:Flex4ChildManager;
+		public var selectionManager:ObjectHandlesSelectionManager;
+		public var decoratorManager:DecoratorManager;
+		public var alignmentDecorator:AlignmentDecorator;
+		public var webDecorator:WebDecorator;
+		public var outlineDecorator:OutlineDecorator;
+		public var objectLinesDecorator:ObjectLinesDecorator;
+		public var sizeConstraint:SizeConstraint;
+		public var snapToGridConstraint:SnapToGridConstraint;
+		public var handleFactory:Flex4HandleFactory;
+		public var aspectRatioConstraint:MaintainProportionConstraint;
+		
+		/**
+		 * Handles drag start
+		 * */
+		protected function handleDragStart(event:DragDropEvent):void {
+			
+			if (hideSelectionOnDrag) {
+				clearSelection();
+				_selectionWasShownBeforeDrag = true;
+			}
+			
+		}
+		
+		/**
+		 * Handles drag end
+		 * */
+		protected function handleDragEnd(event:DragDropEvent):void {
+			
+			if (hideSelectionOnDrag && _selectionWasShownBeforeDrag) {
+				showSelection = true;
+				_selectionWasShownBeforeDrag = false;
+			}
+			
+			removeDragManagerListeners();
 		}
 		
 		/**
 		 * Handles drag over
 		 * */
 		protected function handleDragOver(event:DragDropEvent):void {
-			//Radiate.log.info("Selection Drag Drop");
+			//Radiate.info("Selection Drag Drop");
 			var target:Object = dragManagerInstance.draggedItem;
 			// trace("Drag over")
 			dragLocation = dragManagerInstance.dropTargetLocation;
-			
 			
 		}
 		
@@ -753,7 +985,7 @@ package com.flexcapacitor.tools {
 		protected function handleDragDrop(event:DragDropEvent):void {
 			// select target
 			//radiate.target = event.draggedItem;
-			//Radiate.log.info("Selection Drag Drop");
+			//Radiate.info("Selection Drag Drop");
 			
 			var target:Object = dragManagerInstance.draggedItem;
 			
@@ -761,19 +993,19 @@ package com.flexcapacitor.tools {
 			
 			// clean up
 			if (target.hasEventListener(MouseEvent.MOUSE_UP)) {
-				//Radiate.log.info("3 has event listener");
+				//Radiate.info("3 has event listener");
 			}
 			
 			removeTargetListeners();
 			
 			if (target.hasEventListener(MouseEvent.MOUSE_UP)) {
-				//Radiate.log.info("4 has event listener");
+				//Radiate.info("4 has event listener");
 			}
 			else {
-				//Radiate.log.info("listener removed");
+				//Radiate.info("listener removed");
 			}
 			
-			//Radiate.log.info("End Selection Drag Drop");
+			//Radiate.info("End Selection Drag Drop");
 			
 			// select target
 			if (radiate.target!=target) {
@@ -791,7 +1023,6 @@ package com.flexcapacitor.tools {
 			
 			dragLocation = "";
 			
-			removeDragManagerListeners();
 			
 			// drag manager removes these because it doesn't know or care what
 			// the current tool it has to add group mouse handlers. 
@@ -814,7 +1045,7 @@ package com.flexcapacitor.tools {
 		 * */
 		protected function mouseUpHandler(event:MouseEvent):void {
 			var target:Object = event.currentTarget;
-			//Radiate.log.info("Selection Mouse up");
+			//Radiate.info("Selection Mouse up");
 			
 			if (target is List) {
 				//target.dragEnabled = true; // restore drag and drop if it was enabled
@@ -824,19 +1055,19 @@ package com.flexcapacitor.tools {
 			
 			// clean up
 			if (target.hasEventListener(MouseEvent.MOUSE_UP)) {
-				//Radiate.log.info("1 has event listener");
+				//Radiate.info("1 has event listener");
 			}
 			
 			removeTargetListeners(target);
 			
 			if (target.hasEventListener(MouseEvent.MOUSE_UP)) {
-				//Radiate.log.info("2 has event listener");
+				//Radiate.info("2 has event listener");
 			}
 			else {
-				//Radiate.log.info("listener removed");
+				//Radiate.info("listener removed");
 			}
 			
-			//Radiate.log.info("End Selection Mouse Up");
+			//Radiate.info("End Selection Mouse Up");
 			
 			// select target
 			if (radiate.target!=target) {
@@ -852,25 +1083,72 @@ package com.flexcapacitor.tools {
 			if (setFocusOnSelect && target is UIComponent) {
 				target.setFocus();
 			}
+			
+			
+			removeDragManagerListeners(); // nov 6
+		}
+		
+		/**
+		 * Helps us determine if we are interested in this particular event
+		 * */
+		public function isEventApplicable(event:Event):Boolean {
+			var systemManager:SystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+			var topLevelApplication:Object = FlexGlobals.topLevelApplication;
+			var focusedObject:Object = topLevelApplication.focusManager.getFocus();
+			
+			// still working on this
+			
+			if (focusedObject is Application || event.target is Stage) {
+				if (targetApplication) {
+					return true;
+				}
+			}
+			
+			if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
+				//event.stopImmediatePropagation();
+				
+				return true;
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Dispatches key event
+		 * */
+		public function dispatchKeyEvent(event:KeyboardEvent):void {
+			keyCode = event.keyCode;
+			keyLocation = event.keyLocation;
+			dispatchEvent(new Event(KEY_EVENT));
+		}
+		
+		/**
+		 * Dispatches edit event
+		 * */
+		public function dispatchEditEvent(event:Event, type:String):void {
+			editType = type;
+			dispatchEvent(new Event(EDIT_EVENT));
 		}
 		
 		/**
 		 * Prevent system manager from taking our events. 
-		 * This seems to be the only handler that is working of the three. 
+		 * This seems to be the only handler that is working for some keyboard events 
+		 * besides keyUpHandler
+		 * @see #keyUpHandler()
 		 * */
 	    private function keyDownHandlerStage(event:KeyboardEvent):void
 	    {
-			//Radiate.log.info("Key down: " + event.keyCode);
+			//Radiate.info("Key down: " + event.keyCode);
             switch (event.keyCode)
             {
                 case Keyboard.UP:
                 case Keyboard.DOWN:
+                case Keyboard.LEFT:
+                case Keyboard.RIGHT:
                 case Keyboard.PAGE_UP:
                 case Keyboard.PAGE_DOWN:
                 case Keyboard.HOME:
                 case Keyboard.END:
-                case Keyboard.LEFT:
-                case Keyboard.RIGHT:
                 case Keyboard.ENTER:
                 case Keyboard.DELETE:
                 {
@@ -880,34 +1158,27 @@ package com.flexcapacitor.tools {
 					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
 	                    event.stopImmediatePropagation();
 					}
-					//Radiate.log.info("Canceling key down");
+					
+					//Radiate.info("Canceling key down");
+					//dispatchKeyEvent(event);
+					break;
                 }
 				case Keyboard.Z:
 				{
-					if ((targetApplication as DisplayObjectContainer).contains(event.target as DisplayObject)) {
+					//Radiate.info("UNDO REDO: Target = " + event.target);
+					if ((targetApplication as DisplayObjectContainer).contains(event.target as DisplayObject)
+						|| event.target is Stage) {
+						
+						//trace("UNDO REDO: Target = " + event.target); 
+						// undo 
 						if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
-							Radiate.undo(true);
+							HistoryManager.undo(radiate.selectedDocument, true);
+							dispatchEditEvent(event, UNDO);
 						}
+						// redo
 						else if (event.keyCode==Keyboard.Z && event.ctrlKey && event.shiftKey) {
-							
-							Radiate.redo(true);
-						}
-					}
-				}
-				case Keyboard.C:
-				{
-					if ((targetApplication as DisplayObjectContainer).contains(event.target as DisplayObject)) {
-						if (event.keyCode==Keyboard.C) {
-							radiate.copyItem(radiate.target);
-						}
-					}
-				}
-				case Keyboard.V:
-				{
-					if ((targetApplication as DisplayObjectContainer).contains(event.target as DisplayObject)) {
-						if (event.keyCode==Keyboard.V) {
-							Radiate.log.info("Paste not implemented");
-							//radiate.pasteItem(radiate.target);
+							HistoryManager.redo(radiate.selectedDocument, true);
+							dispatchEditEvent(event, REDO);
 						}
 					}
 				}
@@ -940,7 +1211,7 @@ package com.flexcapacitor.tools {
 	                    event.stopImmediatePropagation();
 					}
                     //event.stopImmediatePropagation();
-					//Radiate.log.info("Canceling key down");
+					//Radiate.info("Canceling key down");
                 }
             }
 	    }
@@ -972,7 +1243,8 @@ package com.flexcapacitor.tools {
 	                    event.stopImmediatePropagation();
 					}
 					//event.stopImmediatePropagation();
-					//Radiate.log.info("Canceling key down");
+					//Radiate.info("Canceling key down");
+					break;
                 }
             }
 	    }
@@ -985,17 +1257,35 @@ package com.flexcapacitor.tools {
 			var constant:int = event.shiftKey ? 10 : 1;
 			var index:int;
 			var applicable:Boolean;
+			var systemManager:SystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+			var topApplication:Object = FlexGlobals.topLevelApplication;
+			var focusedObject:Object = topApplication.focusManager.getFocus();
+			var isApplication:Boolean;
+			var actionOccured:Boolean;
+			// Z = 90
+			// C = 67
+			// left = 37
+			// right = 39
+			// up = 38
+			// down = 40 
+			// backspace = 8
+			// delete = 46
+			
+			if (focusedObject is Application || event.target is Stage) {
+				isApplication = true;
+			}
 			
 			// check that the target is in the target application
-			if (targetApplication && 
-				(targetApplication.contains(event.currentTarget) || 
-					targetApplication.contains(event.target))) {
+			if (isApplication || 
+				(targetApplication && 
+				(targetApplication.contains(event.currentTarget) || targetApplication.contains(event.target)))) {
 				applicable = true;
 			}
 			else {
 				return;
 			}
-					//Radiate.log.info("Selection key up");
+			
+			//Radiate.info("Selection key up");
 			if (radiate && radiate.targets.length>0) {
 				applicable = true;
 			}
@@ -1007,6 +1297,7 @@ package com.flexcapacitor.tools {
 				}
 				
 				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["x"], null, changes);
+				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.RIGHT) {
 				for (;index<radiate.targets.length;index++) {
@@ -1014,6 +1305,7 @@ package com.flexcapacitor.tools {
 				}
 				
 				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["x"], null, changes);
+				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.UP) {
 				for (;index<radiate.targets.length;index++) {
@@ -1021,6 +1313,7 @@ package com.flexcapacitor.tools {
 				}
 				
 				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["y"], null, changes);
+				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.DOWN) {
 				for (;index<radiate.targets.length;index++) {
@@ -1028,24 +1321,44 @@ package com.flexcapacitor.tools {
 				}
 				
 				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["y"], null, changes);
+				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.BACKSPACE || event.keyCode==Keyboard.DELETE) {
 				
 				Radiate.removeElement(radiate.targets);
+				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
-				Radiate.undo(true);
+				HistoryManager.undo(radiate.selectedDocument, true);
+				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.Z && event.ctrlKey && event.shiftKey) {
-				
-				Radiate.redo(true);
+				HistoryManager.redo(radiate.selectedDocument, true);
+				actionOccured = true;
 			}
 			
-			if (applicable) {
+			if (applicable && actionOccured) {
 				event.stopImmediatePropagation();
 				event.stopPropagation();
 				event.preventDefault();
+				dispatchKeyEvent(event);
 			}
+			
+			if (actionOccured) {
+				//dispathKeyEvent(event);
+			}
+		}
+		
+		public function copyHandler(event:Event):void {
+			var applicable:Boolean = isEventApplicable(event);
+			radiate.copyItem(radiate.target);
+			dispatchEditEvent(event, COPY);
+		}
+		
+		public function pasteHandler(event:Event):void {
+			var applicable:Boolean = isEventApplicable(event);
+			radiate.pasteItem(radiate.target);
+			dispatchEditEvent(event, PASTE);
 		}
 		
 		/**
@@ -1054,12 +1367,64 @@ package com.flexcapacitor.tools {
 		public var showSelectionRectangle:Boolean = true;
 		
 		/**
+		 * Last key code handled by this class
+		 * */
+		public var keyCode:uint;
+		
+		/**
+		 * Last key code handled by this class
+		 * */
+		public var keyLocation:uint;
+		
+		/**
+		 * Last edit event type handled by this class
+		 * */
+		public var editType:String;
+		
+		/**
+		 * Indicates if the group should be selected
+		 * */
+		public var selectGroup:Boolean;
+		
+		/**
+		 * Show resize handles
+		 * */
+		public var showResizeHandles:Boolean = false;
+		
+		/**
 		 * Clears the outline around a target display object
 		 * */
 		public function clearSelection():void {
 			
 			if (targetSelectionGroup) {
 				targetSelectionGroup.visible = false;
+			}
+			
+			if (selectionManager) {
+				selectionManager.clearSelection();
+			}
+		}
+		
+		/**
+		 * Draws outline around target display object. 
+		 * Trying to add support to add different types of selection rectangles. 
+		 * */
+		public function addResizeHandles(target:Object, selection:Object = null):void {
+			var shapeModel:ShapeModel = objectHandles.getModelForDisplay(target as DisplayObject) as ShapeModel;
+			
+			if (shapeModel==null) {
+				shapeModel = new ShapeModel();
+			}
+			
+			if (target is UIComponent) {
+				shapeModel.width 	= target.getLayoutBoundsWidth();
+				shapeModel.height 	= target.getLayoutBoundsHeight();
+				shapeModel.x 		= target.getLayoutBoundsX();
+				shapeModel.y 		= target.getLayoutBoundsY();
+				shapeModel.x 		= target.x;
+				shapeModel.y 		= target.y;
+				
+				objectHandles.registerComponent(shapeModel, target as IEventDispatcher, null, true, [aspectRatioConstraint]);
 			}
 		}
 		
@@ -1087,6 +1452,7 @@ package com.flexcapacitor.tools {
 					selectionGroup.showSelectionLabel 			= showSelectionLabel;
 					selectionGroup.showSelectionLabelOnDocument = showSelectionLabelOnDocument;
 					selectionGroup.selectionBorderColor 		= selectionBorderColor;
+					selectionGroup.showResizeHandles 			= showResizeHandles;
 					
 				}
 			}
@@ -1119,7 +1485,7 @@ package com.flexcapacitor.tools {
 				if (selection && selection is IVisualElementContainer) {
 					//IVisualElementContainer(selection).addElement(targetSelectionGroup);
 					targetSelectionGroup.validateNow();
-					targetSelectionGroup.includeInLayout = false;
+					//targetSelectionGroup.includeInLayout = false;
 				}
 				
 				// draw the selection rectangle only if it's changed
@@ -1171,26 +1537,38 @@ package com.flexcapacitor.tools {
 			var isEmbeddedCoordinateSpace:Boolean;
 			var isTargetInvalid:Boolean;
 			
-			if (!layoutDebugHelper) {
-				layoutDebugHelper = new LayoutDebugHelper();
-			}
 			
 			// get content width and height
 			if (target is GroupBase) {
 				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent;
 				//rectangle = GroupBase(target).getBounds(target.parent);
 				rectangle = GroupBase(target).getBounds(targetCoordinateSpace);
+				var wreck:Rectangle = DisplayObjectUtils.getRectangleBounds(target as UIComponent, targetCoordinateSpace);
 				
 				// size and position fill
-				targetSelectionGroup.width = showContentSize ? GroupBase(target).contentWidth : rectangle.size.x -1;
-				targetSelectionGroup.height = showContentSize ? GroupBase(target).contentHeight : rectangle.size.y -1;
+				if (rectangle.width==0 && rectangle.height==0) {
+					// for some reason rectangle = GroupBase(target).getBounds(targetCoordinateSpace);
+					// returns width,height of 0 and x,y of 6710937.2
+					targetSelectionGroup.width = wreck.width;
+					targetSelectionGroup.height = wreck.height;
+				}
+				else {
+					targetSelectionGroup.width = showContentSize ? GroupBase(target).contentWidth : rectangle.size.x -1;
+					targetSelectionGroup.height = showContentSize ? GroupBase(target).contentHeight : rectangle.size.y -1;
+				}
 				
 				if (!localTargetSpace) {
 					rectangle = GroupBase(target).getVisibleRect(target.parent);
 				}
 				
-				targetSelectionGroup.x = rectangle.x;
-				targetSelectionGroup.y = rectangle.y;
+				if (rectangle.x>10000) {
+					targetSelectionGroup.x = wreck.x;
+					targetSelectionGroup.y = wreck.y;
+				}
+				else {
+					targetSelectionGroup.x = rectangle.x;
+					targetSelectionGroup.y = rectangle.y;
+				}
 				//trace("target is groupbase");
 			}
 			else if (target is Image) {
@@ -1231,7 +1609,7 @@ package com.flexcapacitor.tools {
 					rectangle.x>100000 || 
 					rectangle.y>100000) {
 					
-					//Radiate.log.info("Image not returning correct bounds");
+					//Radiate.info("Image not returning correct bounds");
 					/*
 					target.addEventListener(FlexEvent.READY, setSelectionLaterHandler, false, 0, true);
 					target.addEventListener(Event.COMPLETE, setSelectionLaterHandler, false, 0, true);
@@ -1278,8 +1656,7 @@ package com.flexcapacitor.tools {
 			}
 			// get target bounds
 			else if (target is UIComponent) {
-				var targetRectangle:Rectangle = layoutDebugHelper.getRectangleBounds(target, toolLayer);
-				layoutDebugHelper.addElement(target as ILayoutElement);
+				var targetRectangle:Rectangle = DisplayObjectUtils.getRectangleBounds(target, toolLayer);
 				// systemManager = SystemManagerGlobals.topLevelSystemManagers[0];
 				
 				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent; 
@@ -1357,7 +1734,7 @@ package com.flexcapacitor.tools {
 			}
 			
 			else if (!targetSelectionGroup.visible) {
-				targetSelectionGroup.visible = true;
+				targetSelectionGroup.visible = true;targetSelectionGroup.includeInLayout
 			}
 		}
 		
@@ -1486,7 +1863,7 @@ package com.flexcapacitor.tools {
 				if (rectangle.width==0 || rectangle.height==0
 					|| rectangle.x>100000 || rectangle.y>100000) {
 					
-					//Radiate.log.info("Image not returning correct bounds");
+					//Radiate.info("Image not returning correct bounds");
 					/*
 					target.addEventListener(FlexEvent.READY, setSelectionLaterHandler, false, 0, true);
 					target.addEventListener(Event.COMPLETE, setSelectionLaterHandler, false, 0, true);
@@ -1617,14 +1994,15 @@ package com.flexcapacitor.tools {
 			
 			
 			/*if (event.type==FlexEvent.READY) {
-				Radiate.log.info("Removing Ready listener for " + event.currentTarget);
+				Radiate.info("Removing Ready listener for " + event.currentTarget);
 				event.currentTarget.removeEventListener(FlexEvent.READY, setSelectionLaterHandler);
 			}
 			else if (event.type==Event.COMPLETE) {
-				Radiate.log.info("Removing Complete listener for " + event.currentTarget);
+				Radiate.info("Removing Complete listener for " + event.currentTarget);
 				event.currentTarget.removeEventListener(Event.COMPLETE, setSelectionLaterHandler);
 			}*/
 		}
+	
 	}
 }
 

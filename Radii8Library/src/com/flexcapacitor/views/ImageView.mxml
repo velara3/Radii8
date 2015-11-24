@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 
+		 autoDrawBackground="false">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			
+			import mx.core.IFlexDisplayObject;
+			import mx.managers.PopUpManager;
+			
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				if (value is BitmapData) {
+					//image.source = value;
+				}
+				else if (value is String) {
+					//image.source = value;
+				}
+
+				if (value) {
+					PopUpManager.centerPopUp(this as IFlexDisplayObject);
+				}
+			}
+			
+			protected function image_completeHandler(event:Event):void
+			{
+				// make this into an effect
+				PopUpManager.centerPopUp(this as IFlexDisplayObject);
+			}
+			
+			private var moveAdded:Boolean;
+			
+			public function addMoveEffect():void {
+				if (!moveAdded) {
+					//trace("added move effect");
+					//setStyle("moveEffect", moveEffect);
+					setStyle("moveEffect", "Move");
+					moveAdded = true;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Parallel id="addedEffect" target="{this}" suspendBackgroundProcessing="false">
+			<s:Scale3D scaleYFrom="0" scaleYTo="1" duration="250" disableLayout="false"
+					   autoCenterProjection="true" autoCenterTransform="true" applyChangesPostLayout="true"/>
+			<s:Fade alphaFrom="0" alphaTo="1" duration="200"/>
+			<!--<core:CallMethod method="addMoveEffect" startDelay="250"/>-->
+		</s:Parallel>
+		<s:Move id="moveEffect" target="{this}" />
+		
+		
+		<s:Resize id="resizeEffect" target="{image}"/>
+	</fx:Declarations>
+	
+	<s:Rect width="100%" height="100%">
+		<s:fill>
+			<s:SolidColor color="#ffffff"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Image id="image" 
+			 contentLoader="{Radiate.contentCache}"
+			 source="{data}" clearOnLoad="false"
+			 top="5" right="5" left="5" bottom="5" 
+			 complete="image_completeHandler(event)"/>
+	
+</s:ItemRenderer>

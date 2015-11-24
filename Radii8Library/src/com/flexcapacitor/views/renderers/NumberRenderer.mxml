@@ -9,16 +9,52 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.skins.ClearButton;
 			
+			
+			[Bindable]
+			public var includeClearButton:Boolean = true;
 			
 			/**
 			 * Format numeric stepper
 			 * Trim down to 2 decimal places.
 			 * */
 			public function formatNumericStepper(value:Number):String {
-				
-				return String(int(value*100)/100);
+				var out:String;
+				if (fixedPosition!=0) {
+					out = String(Number(value.toFixed(fixedPosition)));
+				}
+				else {
+					out = String(int(value * precision) / precision);
+				}
+				return out;
+			}
+			
+			public var precision:int = 100;
+			
+			public var fixedPosition:int = 2;
+			
+			/**
+			 * Format numeric stepper
+			 * Trim down to 2 decimal places.
+			 * */
+			public function formatNumericStepperNew(value:Number):String {
+				var out:String = String(int(value*precision)/precision);
+				return String(value);
+			}
+			
+			public function valueParseFunctionNew(value:String):Number {
+				var out:Number;
+				if (fixedPosition!=0) {
+					out = Number(Number(value).toFixed(fixedPosition));
+				}
+				else {
+					out = Number(value);
+				}
+				return out;
+			}
+			
+			public function set focusAlpha(value:Number):void {
+				numericStepper.setStyle("focusAlpha", value);
 			}
 		]]>
 	</fx:Script>
@@ -28,8 +64,12 @@
 	</r:layout>
 	
 	<s:NumericStepper id="numericStepper" 
+					  minWidth="50"
 					  width="100%"
+					  maxWidth="80"
+					  snapInterval="0"
 					  valueFormatFunction="formatNumericStepper"
+					  valueParseFunction="valueParseFunctionNew"
 					  change="setTargetValue()"/>
 	<s:Button id="clearStyleButton" 
 			  skinClass="com.flexcapacitor.skins.ClearButton"

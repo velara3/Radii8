@@ -4,7 +4,7 @@ package com.flexcapacitor.events {
 	
 	import mx.core.UIComponent;
 	import mx.effects.effectClasses.PropertyChanges;
-	import mx.states.AddItems;
+	import com.flexcapacitor.states.AddItems;
 	
 	/**
 	 * Contains the information used to go forward and back in history.

@@ -6,11 +6,21 @@ package {
 			
 		}
 		
+		/**
+		 * Attributions
+		 * */
+		[Embed(source="/assets/data/attributions.xml", mimeType="application/octet-stream")]
+		public static const attributions:Class;
+		
+		
+		/**
+		 * ICONS
+		 * */
 		[Embed(source="assets/icons/general/actual_size.png")]
 		public static const actualSize:Class;
 		
 		[Embed(source="assets/icons/general/application.png")]
-		public static const applicationIcon:Class;
+		public static const application:Class;
 		
 		[Embed(source="assets/icons/general/arrow.png")]
 		public static const arrow:Class;
@@ -28,7 +38,7 @@ package {
 		public static const closedFolder:Class;
 		
 		[Embed(source="assets/icons/general/component.png")]
-		public static const componentIcon:Class;
+		public static const component:Class;
 		
 		[Embed(source="assets/icons/general/connected.png")]
 		public static const connected:Class;
@@ -40,28 +50,37 @@ package {
 		public static const disconnected:Class;
 		
 		[Embed(source="assets/icons/general/document.png")]
-		public static const documentIcon:Class;
+		public static const document:Class;
+		
+		[Embed(source="assets/icons/general/document_published.png")]
+		public static const documentPublished:Class;
 		
 		[Embed(source="assets/icons/general/edit.png")]
 		public static const edit:Class;
 		
 		[Embed(source="assets/icons/general/effect.png")]
-		public static const effectIcon:Class;
+		public static const effect:Class;
 		
 		[Embed(source="assets/icons/general/event.png")]
-		public static const eventIcon:Class;
+		public static const event:Class;
 		
 		[Embed(source="assets/icons/general/export.png")]
-		public static const exportIcon:Class;
+		public static const export:Class;
+		
+		[Embed(source="assets/icons/general/home.png")]
+		public static const home:Class;
 		
 		[Embed(source="assets/icons/general/import.png")]
 		public static const importIcon:Class;
 		
 		[Embed(source="assets/icons/general/item_renderer.png")]
-		public static const itemRendererIcon:Class;
+		public static const itemRenderer:Class;
 		
 		[Embed(source="assets/icons/general/Landscape_mode.png")]
 		public static const landscapeMode:Class;
+		
+		[Embed(source="assets/icons/general/locked.png")]
+		public static const locked:Class;
 		
 		[Embed(source="assets/icons/general/logo.png")]
 		public static const logo:Class;
@@ -73,7 +92,7 @@ package {
 		public static const logo256:Class;
 		
 		[Embed(source="assets/icons/general/module.png")]
-		public static const moduleIcon:Class;
+		public static const module:Class;
 		
 		[Embed(source="assets/icons/general/new_file.png")]
 		public static const newFile:Class;
@@ -88,10 +107,10 @@ package {
 		public static const portraitMode:Class;
 		
 		[Embed(source="assets/icons/general/property.png")]
-		public static const propertyIcon:Class;
+		public static const property:Class;
 		
 		[Embed(source="assets/icons/general/document.png")]
-		public static const projectIcon:Class;
+		public static const project:Class;
 		
 		[Embed(source="assets/icons/general/redo.png")]
 		public static const redo:Class;
@@ -102,14 +121,17 @@ package {
 		[Embed(source="assets/icons/general/save.png")]
 		public static const save:Class;
 		
+		[Embed(source="assets/icons/general/multipleSave.png")]
+		public static const multipleSave:Class;
+		
 		[Embed(source="assets/icons/general/selection.png")]
 		public static const selection:Class;
 		
 		[Embed(source="assets/icons/general/skin.png")]
-		public static const skinIcon:Class;
+		public static const skin:Class;
 		
 		[Embed(source="assets/icons/general/style.png")]
-		public static const styleIcon:Class;
+		public static const style:Class;
 		
 		[Embed(source="assets/icons/general/trash_can.png")]
 		public static const trashCan:Class;
@@ -131,6 +153,9 @@ package {
 		
 		[Embed(source="assets/icons/general/zoom_to_fit.png")]
 		public static const zoomToFit:Class;
+		
+		[Embed(source="assets/icons/general/unlocked.png")]
+		public static const unlocked:Class;
 		
 		
 	}

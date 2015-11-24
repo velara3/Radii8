@@ -2,11 +2,9 @@
 package com.flexcapacitor.model {
 	
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.HTMLDocumentExporter;
-	import com.flexcapacitor.utils.MXMLDocumentExporter;
-	import com.flexcapacitor.utils.MXMLDocumentImporter;
-	import com.flexcapacitor.utils.XMLUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
 	import flash.display.DisplayObject;
@@ -15,6 +13,7 @@ package com.flexcapacitor.model {
 	import flash.utils.Dictionary;
 	
 	import mx.collections.ArrayCollection;
+	import mx.collections.ListCollectionView;
 	import mx.core.IVisualElement;
 	import mx.utils.UIDUtil;
 	
@@ -30,9 +29,13 @@ package com.flexcapacitor.model {
 		 * */
 		public function Document(target:IEventDispatcher=null) {
 			super(target);
-			uid = UIDUtil.createUID();
+			createTemplate();
 		}
-
+		
+		public function createTemplate():void
+		{
+			template = new Radii8LibraryTranscodersAssets.basicHTMLDocumentReusable();
+		}
 		
 		/**
 		 * URL to get code
@@ -75,6 +78,31 @@ package com.flexcapacitor.model {
 			}
 		}
 
+		private var _errors:Array;
+
+		public function get errors():Array
+		{
+			return _errors;
+		}
+
+		public function set errors(value:Array):void
+		{
+			_errors = value;
+		}
+		
+		private var _warnings:Array;
+
+		public function get warnings():Array
+		{
+			return _warnings;
+		}
+
+		public function set warnings(value:Array):void
+		{
+			_warnings = value;
+		}
+
+		
 		private var _projectID:String;
 
 		/**
@@ -89,6 +117,22 @@ package com.flexcapacitor.model {
 		 */
 		public function set projectID(value:String):void {
 			_projectID = value;
+		}
+
+		private var _language:String;
+
+		/**
+		 * Language to export document to.  
+		 * */
+		public function get language():String {
+			return _language;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set language(value:String):void {
+			_language = value;
 		}
 
 		private var _project:IProject;
@@ -143,12 +187,15 @@ package com.flexcapacitor.model {
 		 * Reference to the component description
 		 * */
 		public function get componentDescription():ComponentDescription {
+			
+			// creates initial application description
 			if (!_componentDescription) {
 				
 				if (instance) {
 					_componentDescription = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary);
 				}
 			}
+			
 			// com.flexcapacitor.utils.supportClasses.ComponentDescription (@1234c3539)
 			_componentDescription = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary);
 			
@@ -162,8 +209,23 @@ package com.flexcapacitor.model {
 			_componentDescription = value;
 		}
 
-		
 		private var _instance:Object;
+		
+		/**
+		 * Adds a component to the components dictionary.
+		 * Does not add any properties or other methods to it. 
+		 * Need to refactor. Most of the work is done by accessing the property 
+		 * componentDescription. 
+		 * */
+		public function addComponent(instance:*):ComponentDescription {
+
+			if (descriptionsDictionary[instance]==null) {
+				//descriptionsDictionary[instance] = new ComponentDescription(instance);
+				descriptionsDictionary[instance] = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary);
+			}
+			
+			return descriptionsDictionary[instance];
+		}
 
 		/**
 		 * Instance of document
@@ -182,12 +244,12 @@ package com.flexcapacitor.model {
 		/**
 		 * @private
 		 * */
-		private var _history:ArrayCollection = new ArrayCollection();
+		private var _history:ListCollectionView = new ArrayCollection();
 
 		/**
 		 * History
 		 * */
-		public function get history():ArrayCollection {
+		public function get history():ListCollectionView {
 			return _history;
 		}
 
@@ -195,7 +257,7 @@ package com.flexcapacitor.model {
 		 * @private
 		 */
 		[Bindable]
-		public function set history(value:ArrayCollection):void {
+		public function set history(value:ListCollectionView):void {
 			_history = value;
 		}
 
@@ -274,6 +336,17 @@ package com.flexcapacitor.model {
 			_descriptionsDictionary = value;
 		}
 		
+		/**
+		 * Returns the component description for the give item. 
+		 * Some items may not be in the descriptions dictionary.
+		 * If they are not null is returned.
+		 * */
+		public function getItemDescription(value:*):ComponentDescription {
+			
+			return descriptionsDictionary[value];
+			
+		}
+		
 		private var _documentData:IDocumentData;
 
 		/**
@@ -295,7 +368,7 @@ package com.flexcapacitor.model {
 		 * */
 		override public function close():void {
 			super.close();
-			//Radiate.log.info("Close:" + source);
+			//Radiate.info("Close:" + source);
 			clearHistory();
 		}
 		
@@ -320,13 +393,27 @@ package com.flexcapacitor.model {
 			return savedLocallyResult;
 		}
 		
-		
+		/**
+		 * Add HTML to output sound
+		 * */
+		override public function toSaveFormObject():URLVariables {
+			var object:URLVariables = super.toSaveFormObject();
+			
+			if (isOpen) {
+				object["custom[html]"] = getHTMLSource();
+				object["custom[notes]"] = notes ? notes : "";
+				object["custom[template]"] = template;
+			}
+			
+			return object;
+		}
 
 		/**
 		 * 
 		 * */
 		override public function toString():String {
-			var output:String = exporter.export(this);
+			var sourceData:SourceData = exporter.export(this);
+			var output:String = sourceData.source;
 			
 			return output;
 		}
@@ -390,19 +477,22 @@ package com.flexcapacitor.model {
 		/**
 		 * Get source code for document. 
 		 * Exporters may not work if the document is not open. 
+		 * Deprecated. Use CodeManager to get source. 
 		 * */
 		override public function getSource(target:Object = null):String {
+			var sourceData:SourceData;
 			var value:String;
 			
 			if (isOpen) {
 				if (this.historyIndex==-1) {
-					//Radiate.log.info("Document history is empty!");
+					//Radiate.info("Document history is empty!");
 				}
 				
 				// value was not saving so ignoring is changed property
 				//if (isChanged || source==null || source=="") {
 				if (true) {
-					value = internalExporter.export(this);
+					sourceData = internalExporter.export(this);
+					value = sourceData.source;
 				}
 				else if (source) {
 					value = source;
@@ -410,16 +500,16 @@ package com.flexcapacitor.model {
 				else if (originalSource) {
 					value = originalSource;
 				}
-				//Radiate.log.info("Saving this=" + value);
+				//Radiate.info("Saving this=" + value);
 				
 				/*
-				Radiate.log.info("is changed=" + isChanged);
-				Radiate.log.info("original source null=" + (originalSource==null));
-				Radiate.log.info("history length=" + history.length);
-				Radiate.log.info("history index=" + historyIndex);
-				Radiate.log.info("instance stage=" + (instance?instance.stage:null));
-				Radiate.log.info("date saved=" + dateSaved);
-				Radiate.log.info(value);*/
+				Radiate.info("is changed=" + isChanged);
+				Radiate.info("original source null=" + (originalSource==null));
+				Radiate.info("history length=" + history.length);
+				Radiate.info("history index=" + historyIndex);
+				Radiate.info("instance stage=" + (instance?instance.stage:null));
+				Radiate.info("date saved=" + dateSaved);
+				Radiate.info(value);*/
 /*				Main Thread (Suspended)	
 	com.flexcapacitor.model::Document/getSource	
 	com.flexcapacitor.model::DocumentData/close	
@@ -445,19 +535,22 @@ package com.flexcapacitor.model {
 		/**
 		 * Get HTML source code for document. 
 		 * Exporters may not work if the document is not open. 
+		 * Deprecated. Use CodeManager to get HTML output
 		 * */
 		public function getHTMLSource(target:Object = null):String {
+			var sourceData:SourceData;
 			var value:String;
 			
 			if (isOpen) {
 				if (this.historyIndex==-1) {
-					//Radiate.log.info("Document history is empty!");
+					//Radiate.info("Document history is empty!");
 				}
 				
 				// value was not saving so ignoring is changed property
 				//if (isChanged || source==null || source=="") {
 				if (true) {
-					value = htmlExporter.export(this, componentDescription);
+					sourceData = htmlExporter.export(this, componentDescription);
+					value = sourceData.source;
 				}
 				else if (source) {
 					value = source;
@@ -466,7 +559,7 @@ package com.flexcapacitor.model {
 					value = originalSource;
 				}
 				
-				//Radiate.log.info("Saving this HTML=" + value);
+				//Radiate.info("Saving this HTML=" + value);
 				
 				return value;
 				
@@ -476,77 +569,11 @@ package com.flexcapacitor.model {
 		}
 		
 		/**
-		 * Add HTML to output sound
+		 * Reverts to previous saved value
 		 * */
-		override public function toSaveFormObject():URLVariables {
-			var object:URLVariables = super.toSaveFormObject();
-			
-			object["custom[html]"] = getHTMLSource();
-			
-			return object;
-		}
-		
-		/**
-		 * Parses the code and builds a document. 
-		 * If code is null and source is set then parses source.
-		 * If parent is set then imports code to the parent. 
-		 * */
-		public function parseSource(code:String = null, parent:IVisualElement = null):void {
-			var codeToParse:String = code ? code : source;
-			var currentChildren:XMLList;
-			var nodeName:String;
-			var child:XML;
-			var xml:XML;
-			var root:String;
-			var isValid:Boolean;
-			var rootNodeName:String = "RootWrapperNode";
-			var updatedCode:String;
-			
-			isValid = XMLUtils.isValidXML(codeToParse);
-			
-			if (!isValid) {
-				root = '<'+rootNodeName+ ' xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex/mx">';
-				updatedCode = root + codeToParse + "</"+rootNodeName+">";
-				
-				isValid = XMLUtils.isValidXML(updatedCode);
-				if (isValid) {
-					codeToParse = updatedCode;
-				}
-			}
-			
-			// check for valid XML
-			try {
-				xml = new XML(codeToParse);
-			}
-			catch (error:Error) {
-				Radiate.log.error("Could not parse code for document " + name + ". " + error.message);
-			}
-			
-			
-			if (xml) {
-				// loop through each item and create an instance 
-				// and set the properties and styles on it
-				/*currentChildren = xml.children();
-				while (child in currentChildren) {
-					nodeName = child.name();
-					
-				}*/
-				//Radiate.log.info("Importing document: " + name);
-				//var mxmlLoader:MXMLImporter = new MXMLImporter( "testWindow", new XML( inSource ), canvasHolder  );
-				var mxmlLoader:MXMLDocumentImporter;
-				var container:IVisualElement = parent ? parent as IVisualElement : instance as IVisualElement;
-				mxmlLoader = new MXMLDocumentImporter(this, "testWindow", xml, container);
-				
-				if (container) {
-					Radiate.getInstance().setTarget(container);
-				}
-			}
-			
-			
-			/*_toolTipChildren = new SystemChildrenList(this,
-            new QName(mx_internal, "topMostIndex"),
-            new QName(mx_internal, "toolTipIndex"));*/
-			//return true;
+		public function revert(parent:IVisualElement = null):void {
+			HistoryManager.revert(this);
+			Radiate.parseSource(this, originalSource, parent);
 		}
 		
 		/**

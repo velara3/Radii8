@@ -15,6 +15,12 @@ package com.flexcapacitor.model {
 		function get documents():Array;
 		
 		/**
+		 * Project home page id
+		 * */
+		function set homePage(value:int):void;
+		function get homePage():int;
+		
+		/**
 		 * Project documents meta data
 		 * */
 		function set documentsMetaData(value:Array):void;

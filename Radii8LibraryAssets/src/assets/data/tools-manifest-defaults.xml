@@ -11,11 +11,13 @@
 -->
 <toolsPackage>
 
-    <tool id="Selection" class="com.flexcapacitor.tools.Selection" 
+    <tool id="Selection" 
+    		class="com.flexcapacitor.tools.Selection" 
     		inspector="com.flexcapacitor.views.SelectionInspector" 
     		include="true"/>
     
-    <tool id="Zoom" class="com.flexcapacitor.tools.Zoom" 
+    <tool id="Zoom" 
+    		class="com.flexcapacitor.tools.Zoom" 
     		inspector="com.flexcapacitor.views.ZoomInspector" 
     		include="true">
     		<cursors>
@@ -24,11 +26,21 @@
     		</cursors>
     </tool>
     
-    <tool id="EyeDropper" class="com.flexcapacitor.tools.EyeDropper" 
+    <tool id="EyeDropper" 
+    		class="com.flexcapacitor.tools.EyeDropper" 
     		inspector="com.flexcapacitor.views.EyeDropperInspector" 
     		include="true">
     		<cursors>
     			<cursor name="Cursor" x="0" y="17" />
+    		</cursors>
+    </tool>
+    
+    <tool id="Hand" 
+    		class="com.flexcapacitor.tools.Hand" 
+    		include="true">
+    		<cursors>
+    			<cursor name="HandOverCursor" x="0" y="0" />
+    			<cursor name="HandGrabCursor" x="0" y="0" />
     		</cursors>
     </tool>
 

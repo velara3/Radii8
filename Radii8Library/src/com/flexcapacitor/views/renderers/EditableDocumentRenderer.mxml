@@ -16,6 +16,7 @@
 		import com.flexcapacitor.controller.Radiate;
 		import com.flexcapacitor.model.DocumentData;
 		import com.flexcapacitor.model.IDocument;
+		import com.flexcapacitor.services.WPService;
 		
 		import spark.components.List;
 		import spark.components.supportClasses.ListBase;
@@ -32,8 +33,31 @@
 			
 			if (iDocument && labelDisplay) {
 				labelDisplay.text = iDocument.name;
+				labelDisplay.toolTip = iDocument.name + " (" + iDocument.id + ")";
 			}
 			
+			if (iDocument && iDocument.status) {
+				var status:String = iDocument.status;
+				
+				if (status==WPService.STATUS_DRAFT) {
+					icon.source = Radii8LibraryAssets.document;
+				}
+				else if(status==WPService.STATUS_PUBLISH) {
+					icon.source = Radii8LibraryAssets.documentPublished;
+				}
+			}
+			else {
+				icon.source = Radii8LibraryAssets.document;
+			}
+			
+			// 1176: Comparison between a value with static type int and a possibly unrelated type String.
+			// compiler error - cast to int
+			if (iDocument && Radiate.instance.projectHomePageID==int(iDocument.id)) {
+				homePageIcon.visible = true;
+			}
+			else {
+				homePageIcon.visible = false;
+			}
 		}
 
 
@@ -57,6 +81,9 @@
 		}
 		
 		protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void {
+			if (!iDocument.isOpen) {
+				return;
+			}
 			currentState = "edit";
 			textInput.text = labelDisplay.text;
 		}
@@ -108,9 +135,18 @@
 			 visible="{data &amp;&amp; DocumentData(data).isChanged}"/>
 	
 	<s:BitmapImage id="icon" 
-				   source="{Radii8LibraryAssets.documentIcon}"
-				   left="5"
+				   left="3"
 				   top="5"
+				   width="15"
+				   horizontalAlign="right"
+				   fillMode="clip"
+				   >
+	</s:BitmapImage>
+	
+	<s:BitmapImage id="homePageIcon" 
+				   left="12"
+				   top="2"
+				   source="{Radii8LibraryAssets.property}"
 				   >
 	</s:BitmapImage>
 	
@@ -119,7 +155,7 @@
 				   source="{Radii8LibraryAssets.save}"
 				   right="5"
 				   top="5" 
-				   visible="{data &amp;&amp; (DocumentData(data).saveInProgress || DocumentData(data).openInProgress)}"
+				   visible="{data &amp;&amp; (DocumentData(data).saveInProgress || DocumentData(data).openInProgress) &amp;&amp; DocumentData(data).isOpen}"
 				   >
 	</s:BitmapImage>
 	

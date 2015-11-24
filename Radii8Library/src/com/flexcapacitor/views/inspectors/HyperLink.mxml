@@ -11,7 +11,6 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.AccessorMetaData;
-			import com.flexcapacitor.model.StyleMetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			
 			import mx.collections.ArrayCollection;

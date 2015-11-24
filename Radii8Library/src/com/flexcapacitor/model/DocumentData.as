@@ -9,6 +9,7 @@ package com.flexcapacitor.model {
 	import com.flexcapacitor.services.WPServiceEvent;
 	import com.flexcapacitor.utils.HTMLDocumentExporter;
 	import com.flexcapacitor.utils.MXMLDocumentExporter;
+	import com.flexcapacitor.utils.XMLUtils;
 	
 	import flash.events.IEventDispatcher;
 	import flash.net.FileReference;
@@ -152,6 +153,25 @@ package com.flexcapacitor.model {
 			_description = value;
 		}
 
+		private var _post:Object;
+
+		/**
+		 * Data object from WordPress representing the post object
+		 * */
+		public function get post():Object
+		{
+			return _post;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set post(value:Object):void
+		{
+			_post = value;
+		}
+
+		
 		private var _file:FileReference;
 
 		/**
@@ -166,6 +186,28 @@ package com.flexcapacitor.model {
 		 */
 		public function set file(value:FileReference):void {
 			_file = value;
+		}
+		
+		private var _template:String;
+
+		public function get template():String
+		{
+			return _template;
+		}
+
+		public function set template(value:String):void
+		{
+			_template = value;
+		}
+		
+		private var _isExample:Boolean;
+		
+		public function get isExample():Boolean {
+			return _isExample;
+		}
+		
+		public function set isExample(value:Boolean):void {
+			_isExample = value;
 		}
 
 		
@@ -211,7 +253,7 @@ package com.flexcapacitor.model {
 		public function set assets(value:Array):void {
 			_assets = value;
 		}
-
+		
 
 		private var _document:IDocument;
 
@@ -230,7 +272,7 @@ package com.flexcapacitor.model {
 		private var _isChanged:Boolean;
 
 		/**
-		 * Indicates if the document is changed
+		 * Indicates if the document is changed or dirty
 		 * */
 		public function get isChanged():Boolean {
 			return _isChanged;
@@ -242,6 +284,20 @@ package com.flexcapacitor.model {
 		[Bindable]
 		public function set isChanged(value:Boolean):void {
 			_isChanged = value;
+		}
+		
+		/**
+		 * Sets the isChanged property to true. 
+		 * */
+		public function markDirty():void {
+			isChanged = true;
+		}
+		
+		/**
+		 * Sets the isChanged property to false. 
+		 * */
+		public function markClean():void {
+			isChanged = false;
 		}
 		
 		private var _saveSuccessful:Boolean;
@@ -336,7 +392,7 @@ package com.flexcapacitor.model {
 			var form:URLVariables;
 			
 			if (saveRemote) {
-			//Radiate.log.info("Save");
+			//Radiate.info("Save");
 				// we need to create service
 				if (saveService==null) {
 					var wpSaveService:WPService = new WPService();
@@ -350,6 +406,15 @@ package com.flexcapacitor.model {
 				saveInProgress = true;
 				
 				form = toSaveFormObject();
+				
+				// check that it's valid XML before saving
+				if (id!=null && !XMLUtils.isValidXML(form['custom[source]'])) {
+					var error:Object = XMLUtils.validationError;
+					error = XMLUtils.validationErrorMessage;
+					Radiate.error("XML is invalid. Not saving. " + XMLUtils.validationErrorMessage + " Please report error with XML code below: \n"+form['custom[source]']);
+					saveFaultHandler(null);
+					return false;
+				}
 				
 				// save project
 				saveService.save(form);
@@ -375,15 +440,15 @@ package com.flexcapacitor.model {
 			var loadLocally:Boolean = location==LOCAL_LOCATION;
 			
 			if (location==REMOTE_LOCATION) {
-				//Radiate.log.info("Open Document Remote");
+				//Radiate.info("Open Document Remote");
 				retrieve();
 			}
 			else if (location==LOCAL_LOCATION) {
 				//var documentData:IDocumentData = Radiate.getInstance().getDocumentLocally(this);
-				//Radiate.log.info("Open Document Local");
+				//Radiate.info("Open Document Local");
 			}
 			else {
-				//Radiate.log.info("Open Document normal");
+				//Radiate.info("Open Document normal");
 				//source = getSource();
 			}
 			
@@ -394,7 +459,7 @@ package com.flexcapacitor.model {
 		 * @inheritDoc
 		 * */
 		public function close():void {
-			//Radiate.log.info("Close Document");
+			//Radiate.info("Close Document");
 			source = getSource();
 			isOpen = false;
 		}
@@ -419,7 +484,7 @@ package com.flexcapacitor.model {
 			form = toLoadFormObject();
 			
 			// open project
-			openService.open(id);
+			openService.open(id, false);
 		}
 		
 		/**
@@ -434,10 +499,11 @@ package com.flexcapacitor.model {
 			
 			if (id) 		object.id 		= id;
 			if (status)		object.status 	= status;
+			//object.type 	= "page";
 			
 			object["custom[uid]"] = uid;
-			object["custom[sponge]"] = 1;
-			object["custom[sandpaper]"] = 1;
+			//object["custom[sponge]"] = 1;
+			//object["custom[sandpaper]"] = 1;
 			object["custom[source]"] = value;
 			
 			return object;
@@ -460,18 +526,18 @@ package com.flexcapacitor.model {
 		public function saveResultsHandler(event:IWPServiceEvent):void {
 			var saveResultsEvent:SaveResultsEvent = new SaveResultsEvent(SaveResultsEvent.SAVE_RESULTS);
 			var data:Object = event.data;
-			//var post:Object;
-			//Radiate.log.info("Save result handler on document " + name);
+			var post:Object = data ? data.post : null;
+			//Radiate.info("Save result handler on document " + name);
 			
 			saveResultsEvent.call = event.call;
 			saveResultsEvent.data = event.data;
 			saveResultsEvent.message = event.message;
 			saveResultsEvent.text = event.text;
 			
-			if (data && data.post) {
+			if (post) {
 				if (id==null) {
-					//Radiate.log.info("Document does not have an id. Needs to be resaved: "+ name);
-					id = data.post.id;
+					//Radiate.info("Document does not have an id. Needs to be resaved: "+ name);
+					id = post.id;
 					// we don't have id so we need to save again
 					// doing it in the sub classes because we need to 
 					// update the source (for project)
@@ -479,15 +545,19 @@ package com.flexcapacitor.model {
 					//return;
 				}
 				
+				uri = post.url;
+				status = post.status;
+				
 				saveResultsEvent.successful = true;
 				saveSuccessful = true;
-				//Radiate.log.info("Document saved: "+ name);
+				//Radiate.info("Document saved: "+ name);
+				markClean();
 				
 				Radiate.instance.setLastSaveDate();
 			}
 			else {
 				saveSuccessful = false;
-				//Radiate.log.info("Document not saved: "+ name);
+				//Radiate.info("Document not saved: "+ name);
 			}
 			
 			
@@ -502,7 +572,7 @@ package com.flexcapacitor.model {
 		public function saveFaultHandler(event:IServiceEvent):void {
 			var saveResultsEvent:SaveResultsEvent = new SaveResultsEvent(SaveResultsEvent.SAVE_RESULTS);
 			
-			Radiate.log.info("Error when trying to save document: "+ name + ".");
+			Radiate.error("Error when trying to save document: "+ name + ".");
 			
 			saveInProgress = false;
 			
@@ -520,46 +590,38 @@ package com.flexcapacitor.model {
 			//Radiate.log..info("Open result handler on document " + name);
 			// when the post id was null then we ended up receiving the latest post 
 			
-			if (data && data.post) {
-				post = data.post; //TODO create value object
+			if (data) {
 				
-				//source = data.post.content;
-				if ("source" in post.custom_fields) {
-					source = post.custom_fields.source;
-					originalSource = source;
+				if (data.error) {
+					if (data.status=="error" || data.error=="Not found.") {
+						
+					}
+				}
+				// we switched to pages so we assign data.post 
+				// so we assign page to data.post so we can continue to use the same code 
+				if (data.page) {
+					data.post = data.page;
+					//unmarshallPost(data.page);
+				}
+				
+				if (data.post) {
+					unmarshallPost(data.post);
+					
+					openResultsEvent.successful = true;
+					openSuccessful = true;
 				}
 				else {
-					source = post.content;
+					openResultsEvent.successful = false;
+					openSuccessful = false;
 				}
-				
-				// this is because WP adds formating to the content
-				// there is a plugin that disables formatting that was enabled on the site but not currently
-				// but you have to set custom fields on the post to enable it
-				// this should eventually be fixed
-				if (source.indexOf("<p>")==0) {
-					source = source.substr(3);
-					var li:int = source.lastIndexOf("</p>");
-					source = source.substr(0, li);
-				}
-				
-				if (source.indexOf("<br />")!=-1) {
-					source = source.replace(/<br \/>/g, "");
-				}
-				
-				if (post.attachments && post.attachments.length>0) {
-					parseAttachments(post.attachments);
-				}
-				
-				openResultsEvent.successful = true;
-				openSuccessful = true;
-				//Radiate.log.info("Document open: "+ name);
+				//Radiate.info("Document open: "+ name);
 			}
 			else {
 				
 				if (event is WPServiceEvent) {
 					openResultsEvent.message = WPServiceEvent(event).message;
 				}
-				//Radiate.log.info("Document not opened: "+ name);
+				//Radiate.info("Document not opened: "+ name);
 			}
 			
 			openResultsEvent.data = data;
@@ -571,12 +633,62 @@ package com.flexcapacitor.model {
 		}
 		
 		/**
+		 * Get values from WordPress post object
+		 * */
+		public function unmarshallPost(value:Object):void {
+			post = value; //TODO create value object
+			
+			status = post.status;
+			
+			// why aren't we setting the id here?
+			if (id==null) {
+				id = post.id;
+			}
+			
+			uri = post.url;
+			
+			// we don't use post.content because 
+			// content is formatted and modified by WordPress
+			// UPDATE: using custom fields
+			//source = data.post.content;
+			if ("source" in post.custom_fields) {
+				source = post.custom_fields.source;
+				template = post.custom_fields.template!="null" ? post.custom_fields.template : template;
+				originalSource = source;
+			}
+			else {
+				source = post.content;
+			}
+			
+			// this is because WP adds formating to the content
+			// there is a plugin that disables formatting that was enabled on the site but not currently
+			// but you have to set custom fields on the post to enable it
+			// this should eventually be fixed
+			// UPDATE: using custom fields now
+			/*
+			if (source.indexOf("<p>")==0) {
+				source = source.substr(3);
+				var li:int = source.lastIndexOf("</p>");
+				source = source.substr(0, li);
+			}
+			*/
+			
+			//if (source.indexOf("<br />")!=-1) {
+			//	source = source.replace(/<br \/>/g, "");
+			//}
+			
+			if (post.attachments && post.attachments.length>0) {
+				parseAttachments(post.attachments);
+			}
+		}
+		
+		/**
 		 * Result from open fault
 		 * */
 		public function openFaultHandler(event:IServiceEvent):void {
 			var openResultsEvent:OpenResultsEvent = new OpenResultsEvent(SaveResultsEvent.SAVE_RESULTS);
 			
-			Radiate.log.info("Error when trying to open document: "+ name + ".");
+			Radiate.info("Error when trying to open document: "+ name + ".");
 			
 			saveInProgress = false;
 			
@@ -733,9 +845,11 @@ package com.flexcapacitor.model {
 			// this should probably be overriden by sub classes
 			if (data is IDocumentData) {
 				source 	= data.source;
+				notes = data.notes;
 			}
 			else if (data is XML) {
 				source 	= data.content;
+				notes = data.notes;
 				originalSource = XML(data).toXMLString();
 			}
 		}

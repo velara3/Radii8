@@ -9,7 +9,7 @@
 -->
 <inspectorsPackage>
 
-    <item name="Application" className="Application" 
+    <item name="Document" className="Application" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
@@ -26,7 +26,7 @@
     		<inspector name="Layout" className="com.flexcapacitor.views.inspectors.Layout"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
-    
+
     <item name="Label" className="spark.components.Label" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
@@ -83,6 +83,7 @@
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Layout" className="com.flexcapacitor.views.inspectors.Layout"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
     
@@ -91,6 +92,7 @@
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Gap" className="com.flexcapacitor.views.inspectors.Gap"/>
     		<inspector name="Group Align" className="com.flexcapacitor.views.inspectors.GroupAlign"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
     
@@ -99,6 +101,7 @@
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Gap" className="com.flexcapacitor.views.inspectors.Gap"/>
     		<inspector name="Group Align" className="com.flexcapacitor.views.inspectors.GroupAlign"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
     

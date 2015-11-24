@@ -8,8 +8,8 @@
 		 xmlns:handlers="com.flexcapacitor.handlers.*"
 		 xmlns:supportClasses="com.flexcapacitor.effects.supportClasses.*"
 		 
+		 implements="com.flexcapacitor.views.IInspector" 
 		 styleName="constraintStyles"
-		 creationComplete="creationCompleteHandler(event)"
 		 width="100%"
 		 height="100%"
 		 >
@@ -53,6 +53,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.views.IInspector;
 			
 			import mx.core.FlexSprite;
 			import mx.core.IVisualElement;
@@ -61,13 +62,20 @@
 			
 			public var radiate:Radiate;
 			
-			protected function creationCompleteHandler(event:FlexEvent):void {
-				target = null;
+			public function activate():void {
+				addListeners();
+			}
+			
+			public function deactivate():void {
+				removeListeners();
+			}
+			
+			protected function addListeners():void {
+				radiate = Radiate.getInstance();
 				
-				var radiate:Radiate = Radiate.getInstance();
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
-				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
 					target = radiate.target as FlexSprite;
@@ -75,6 +83,17 @@
 					if (target is FlexSprite) {
 						showEventListeners(target as FlexSprite);
 					}
+				}
+				else {
+					target = null;
+				}
+			}
+			
+			protected function removeListeners():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
 				}
 			}
 			

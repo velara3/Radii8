@@ -14,6 +14,7 @@
 			import com.flexcapacitor.model.StyleMetaData;
 			
 			import mx.collections.ArrayCollection;
+			import mx.utils.ArrayUtil;
 			
 			import spark.components.Button;
 			import spark.components.ComboBox;
@@ -23,7 +24,11 @@
 			import spark.components.RadioButtonGroup;
 			import spark.components.TextArea;
 			import spark.components.supportClasses.DropDownListBase;
-
+			
+			/**
+			 * Indicates if property selected events should be dispatched
+			 * */
+			public var dispatchProperySelectedEvents:Boolean;
 			
 			/**
 			 * Group radio buttons, usually boolean true and false values, are part of. 
@@ -105,10 +110,21 @@
 			public var fieldIsValue:Boolean;
 			
 			/**
+			 * If true then numeric stepper is handled as a percent
+			 * */
+			public var isPercent:Boolean;
+			
+			/**
 			 * Collection of choices for combobox, drop down list or list
 			 * */
 			[Bindable]
 			public var formatsCollection:ArrayCollection;
+			
+			[Bindable]
+			public var stepSize:Number = 0.01;
+			
+			[Bindable]
+			public var snapInterval:Number = 0;
 
 			/**
 			 * Set data
@@ -129,7 +145,7 @@
 			
 			
 			/**
-			 * Set the property to the new value
+			 * Set the property on the target to the new value
 			 * */
 			public function setTargetValue(clearStyle:Boolean = false):void {
 				var item:XML = data as XML;
@@ -162,8 +178,6 @@
 					else {
 						propertyObject = new MetaData(item, target);
 					}
-					
-					
 				}
 				else if (data) {
 					propertyObject = data as MetaData;
@@ -224,20 +238,48 @@
 					if (property.indexOf("lpha")!=-1) {//round down to two places
 						actualValue = int(actualValue*100)/100;
 					}
+					else if (isPercent && numericStepper) {
+						actualValue = numericStepper.value + "%";
+					}
 				}
 				else if (type=="String" && (formatDropDownList || formatCombobox)) {
+					var arrayItems:Array;
 					
 					if (formatDropDownList) {
+						
 						if (valueIsField && labelField) {
-							actualValue = formatDropDownList.selectedItem[labelField];
+							
+							if (formatDropDownList.selectedItem is String) {
+								// user typed something into the combo box and now we are trying to find it
+								arrayItems = formatsCollection.length > 0 ? formatsCollection.source : [];
+								actualValue = ArrayUtil.getItemIndex(formatDropDownList.selectedItem, arrayItems);
+							}
+							else if (formatDropDownList.selectedItem==undefined) {
+								actualValue = undefined;
+							}
+							else {
+								actualValue = formatDropDownList.selectedItem[labelField];
+							}
 						}
 						else {
 							actualValue = formatDropDownList.selectedItem;
 						}
 					}
 					else if (formatCombobox) {
+						
 						if (valueIsField && labelField) {
-							actualValue = formatCombobox.selectedItem[labelField];
+							
+							if (formatCombobox.selectedItem is String) {
+								// user typed something into the combo box and now we are trying to find it
+								arrayItems = formatsCollection.length > 0 ? formatsCollection.source : [];
+								actualValue = ArrayUtil.getItemIndex(formatCombobox.selectedItem, arrayItems);
+							}
+							else if (formatCombobox.selectedItem==undefined) {
+								actualValue = undefined;
+							}
+							else {
+								actualValue = formatCombobox.selectedItem[labelField];
+							}
 						}
 						else {
 							actualValue = formatCombobox.selectedItem;
@@ -384,7 +426,9 @@
 						showClearStyleButton(false);
 					}
 					
-					Radiate.getInstance().dispatchPropertySelectedEvent(property, propertyObject);
+					if (dispatchProperySelectedEvents) {
+						Radiate.getInstance().dispatchPropertySelectedEvent(property, propertyObject);
+					}
 				}
 				
 			}
@@ -488,7 +532,12 @@
 						}
 						
 						if (property.indexOf("lpha")!=-1) {
-							numericStepper.stepSize = .1;
+							if (isNaN(stepSize)) {
+								numericStepper.stepSize = .01;
+							}
+							else {
+								numericStepper.stepSize = stepSize;
+							}
 							
 							if (isNaN(propertyObject.minValue)) {
 								numericStepper.minimum = 0;
@@ -498,9 +547,23 @@
 							}
 						}
 						else {
-							numericStepper.stepSize = 1;
+							if (isNaN(stepSize)) {
+								numericStepper.stepSize = 1;
+							}
+							else {
+								numericStepper.stepSize = stepSize;
+							}
 						}
 						
+						if (snapInterval) {
+							numericStepper.snapInterval = snapInterval;
+						}
+						
+						if (isPercent) {
+							if (value is String && value.indexOf("%")!=-1) {
+								numericStepper.value = parseInt(value);
+							}
+						}
 					}
 					else {
 						actualValue = Radiate.getTypedValue(targetValueText.text, type);
@@ -508,7 +571,9 @@
 					}
 				
 					
-					Radiate.getInstance().dispatchPropertySelectedEvent(property, propertyObject);
+					if (dispatchProperySelectedEvents) {
+						Radiate.getInstance().dispatchPropertySelectedEvent(property, propertyObject);
+					}
 				}
 				
 			}

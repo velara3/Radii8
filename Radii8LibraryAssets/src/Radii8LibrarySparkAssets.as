@@ -1,4 +1,5 @@
 package {
+	import com.flexcapacitor.controls.ColorPicker;
 	import com.flexcapacitor.controls.Hyperlink;
 	
 	import mx.controls.LinkButton;
@@ -7,6 +8,7 @@ package {
 	import mx.graphics.RadialGradientStroke;
 	import mx.graphics.SolidColor;
 	import mx.graphics.SolidColorStroke;
+	import mx.skins.spark.ColorPickerSkin;
 	import mx.skins.spark.LinkButtonSkin;
 	
 	import spark.components.BorderContainer;
@@ -25,6 +27,7 @@ package {
 	import spark.primitives.Rect;
 	import spark.skins.spark.BorderContainerSkin;
 	import spark.skins.spark.ButtonBarSkin;
+	import spark.skins.spark.DefaultGridItemRenderer;
 	import spark.skins.spark.RadioButtonSkin;
 	import spark.skins.spark.TabBarSkin;
 	import spark.skins.spark.ToggleButtonSkin;
@@ -33,7 +36,13 @@ package {
 	 * Classes, skins and icons. 
 	 * 
 	 * To control the list of what shows up in the component inspector  
-	 * edit the /assets/data/spark-manifest-defaults.xml
+	 * edit the /assets/data/components-manifest-defaults.xml
+	 * 
+	 * 
+	 * Warning 1110: The constant was not initialized.
+	 * public static const colorPicker:ColorPicker;
+	 * Answer: 
+	 * public static var colorPicker:ColorPicker;
 	 * */
 	public class Radii8LibrarySparkAssets {
 		
@@ -46,14 +55,14 @@ package {
 		///////////////////////////////////////////////////////
 		
 		/**
-		 * var xml:XML = new XML(new Radii8LibrarySparkAssets.sparkManifestDefaults());
+		 * var xml:XML = new XML(new Radii8LibrarySparkAssets.componentsManifestDefaults());
 		 * // get list of component classes
 		 * items = XML(xml).component;
 		 * 
 		 * NOTE: Add a reference to the classes here and in the XML file. 
 		 * */
-		[Embed(source="/assets/data/spark-manifest-defaults.xml", mimeType="application/octet-stream")]
-		public static const sparkManifestDefaults:Class;
+		[Embed(source="/assets/data/components-manifest-defaults.xml", mimeType="application/octet-stream")]
+		public static const componentsManifestDefaults:Class;
 		
 		
 		///////////////////////////////////////////////////////
@@ -170,6 +179,12 @@ package {
 		
 		//[Embed(source="assets/icons/spark/controls/ColorPicker.png")]
 		//public static const ColorPickerIcon:Class;
+		
+		[Embed(source="assets/icons/mx/controls/ColorPicker.png")]
+		public static const ColorPickerIcon:Class;
+		
+		public static var colorPicker:ColorPicker;
+		public static var colorPickerSkin:ColorPickerSkin;
 		
 		[Embed(source="assets/icons/spark/controls/ComboBox.png")]
 		public static const ComboBoxIcon:Class;

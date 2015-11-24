@@ -16,9 +16,12 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ArrayUtils;
 			
+			import mx.core.IVisualElementContainer;
 			import mx.events.FlexEvent;
 			
+			import spark.components.Group;
 			import spark.events.IndexChangeEvent;
 			
 			private var radiate:Radiate = Radiate.getInstance();
@@ -45,7 +48,12 @@
 			protected function applyPropertiesToTargetHandler(event:IndexChangeEvent = null):void {
 				
 				if (target) {
-					Radiate.setProperty(target, BLEND_MODE, blendModeCombo.selectedItem.value);
+					var value:String = blendModeCombo.selectedItem.value;
+					if (value=="auto" && !(target is IVisualElementContainer)) {
+						// trying to assign a display object to "auto" causes error
+						// ArgumentError: Error #2008: Parameter blendMode must be one of the accepted values.
+					}
+					Radiate.setProperty(target, BLEND_MODE, value);
 				}
 			}
 			
@@ -67,15 +75,16 @@
 				var currentBlendMode:String;
 				var currentIndex:int;
 				
-				var properties:Array = event.properties;
+				var properties:Array = event.properties || event.styles;
 				
 				for (var i:int;i<length;i++) {
-					if (properties[i]==BLEND_MODE) {
+					if (properties && properties[i]==BLEND_MODE) {
 						updateSelectedBlendMode();
 						break;
 					}
 				}
 			}
+			
 			
 			/**
 			 * Updates the list to reflect the current blend mode of the target
@@ -84,55 +93,30 @@
 				var displayObject:DisplayObject = target as DisplayObject;
 				var currentBlendMode:String;
 				var currentIndex:int;
+				var changed:Boolean;
+				
+				if (displayObject is Group) {
+					if (blendModesCollection.getItemAt(0)!=firstItem) {
+						blendModesCollection.addItemAt(firstItem, 0);
+						changed = true;
+					}
+				}
+				else {
+					if (blendModesCollection.getItemAt(0)==firstItem) {
+						blendModesCollection.removeItemAt(0);
+						changed = true;
+					}
+				}
+				
+				if (changed) {
+					blendModesCollection.refresh();
+				}
 				
 				if (displayObject) {
 					currentBlendMode = displayObject.blendMode;
-					currentIndex = getItemIndexByKeys(blendModes, {value:currentBlendMode});
+					currentIndex = ArrayUtils.getItemIndex(blendModesCollection, currentBlendMode, "value") as int;
 					blendModeCombo.selectedIndex = currentIndex;
 				}
-			}
-			
-			/**
-			 * Modified code from CASALIBRARY
-			 * @modified true 9/10/2011
-			 * */
-			
-			/**
-			 * Returns the index of the first item that match the key values of all 
-			 * properties of the object <code>keyValues</code>.
-			 
-			 @param inArray: Array to search for an element with every key value in the object <code>keyValues</code>.
-			 @param keyValues: An object with key value pairs.
-			 @return Returns the first matched item; otherwise <code>null</code>.
-			 @example
-			 <code>
-			 var people:Array  = new Array({name: "Aaron", sex: "Male", hair: "Brown"}, {name: "Linda", sex: "Female", hair: "Blonde"}, {name: "Katie", sex: "Female", hair: "Brown"}, {name: "Nikki", sex: "Female", hair: "Blonde"});
-			 var person:Object = ArrayUtil.getItemByKeys(people, {sex: "Female", hair: "Brown"});
-			 
-			 trace(person.name); // Traces "Katie"
-			 </code>
-			 */
-			public static function getItemIndexByKeys(array:Array, keyValues:Object):int {
-				var i:int = -1;
-				var item:*;
-				var hasKeys:Boolean;
-				
-				while (++i < array.length) {
-					item    = array[i];
-					hasKeys = true;
-					
-					for (var j:String in keyValues) {
-						if (!(j in item) || item[j] != keyValues[j]) {
-							hasKeys = false;
-						}
-					}
-					
-					if (hasKeys) {
-						return i;
-					}
-				}
-				
-				return -1;
 			}
 			
 			
@@ -155,10 +139,38 @@
 		value =="saturation" 
 		value =="color"
 		value =="luminosity"
+		
+		There is no "auto" blendMode. But it is available on Groups.
+		Should remove and add it if Group or not group.
+		
+		UIComponent:
+		add,alpha,darken,difference,erase,hardlight,invert,layer,lighten,multiply,normal,subtract,screen,
+		overlay,colordodge,colorburn,exclusion,softlight,hue,saturation,color,luminosity
+		
+		Group: 
+		auto,add,alpha,darken,difference,erase,hardlight,invert,layer,lighten,multiply,normal,subtract,screen,
+		overlay,colordodge,colorburn,exclusion,softlight,hue,saturation,color,luminosity
+		
+		From Group.as: 
+		
+		*  A value from the BlendMode class that specifies which blend mode to use. 
+		*  A bitmap can be drawn internally in two ways. 
+		*  If you have a blend mode enabled or an external clipping mask, the bitmap is drawn 
+		*  by adding a bitmap-filled square shape to the vector render. 
+		*  If you attempt to set this property to an invalid value, 
+		*  Flash Player or Adobe AIR sets the value to <code>BlendMode.NORMAL</code>. 
+		*
+		*  <p>A value of "auto" (the default) is specific to Group's use of 
+		*  blendMode and indicates that the underlying blendMode should be 
+		*  <code>BlendMode.NORMAL</code> except when <code>alpha</code> is not
+		*  equal to either 0 or 1, when it is set to <code>BlendMode.LAYER</code>. 
+		*  This behavior ensures that groups have correct
+		*  compositing of their graphic objects when the group is translucent.</p>
+		* 
 		-->
 		
 		<fx:Array id="blendModes">
-			<fx:Object label="Auto" value="auto"/>
+			<fx:Object id="firstItem" label="Auto" value="auto"/>
 			<fx:Object label="Add" value="add"/>
 			<fx:Object label="Alpha" value="alpha"/>
 			<fx:Object label="Color" value="color"/>
@@ -181,7 +193,6 @@
 			<fx:Object label="Screen" value="screen"/>
 			<fx:Object label="Softlight" value="softlight"/>
 			<fx:Object label="Subtract" value="subtract"/>
-			<fx:Object label="Normal" value="normal"/>
 		</fx:Array>
 		
 		<s:ArrayCollection id="blendModesCollection" source="{blendModes}"/>

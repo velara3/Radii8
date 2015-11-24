@@ -5,18 +5,12 @@
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*" 
 		 
 		 minWidth="200" 
 		 minHeight="100"
-		 creationComplete="group1_creationCompleteHandler(event)"
+		 implements="com.flexcapacitor.views.IInspector" 
 		 >
-	
-	
-	<!-- 
-	TODO:
-	
-	
-	-->
 	
 	<fx:Script>
 		<![CDATA[
@@ -32,7 +26,6 @@
 			import mx.core.IDataRenderer;
 			import mx.core.UIComponent;
 			import mx.effects.effectClasses.PropertyChanges;
-			import mx.events.FlexEvent;
 			import mx.utils.ObjectUtil;
 			
 			import spark.collections.Sort;
@@ -55,8 +48,7 @@
 			public var describedTypeXML:XML;
 			
 			
-			
-			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+			public function activate():void {
 				radiate = Radiate.getInstance();
 				
 				if (!showHeader) {
@@ -64,14 +56,22 @@
 					eventsGrid.columnHeaderGroup.height = hiddenHeaderHeight;
 				}
 				
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
-				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
 					target = radiate.target;
 				}
-				
 			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					target = null;
+				}
+			}
+			
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
 				target = event.selectedItem;
@@ -135,7 +135,7 @@
 					//var type2:Type = Type.forName(type.extendsClasses[0]);
 					//describedTypeXML = describeType(getDefinitionByName(type.extendsClasses[0]));
 					//var describedType:XML = ClassUtils.describeTypeCache(target);
-					var data:XMLList = ClassUtils.concatenateMetaDataXMLItems(target, "Event", new XMLList());
+					var data:XMLList = ClassUtils.getMetaData(target, "Event", new XMLList());
 					
 					//describedTypeXML = describeType(target);
 					eventsList = new XMLListCollection(data);
@@ -166,7 +166,7 @@
 					blah = styleManager.typeSelectorCache;
 					blah = styleManager.hasAdvancedSelectors(); */
 					
-					if (filterInput) filterInput.text = "";
+					if (search.filterInput) search.filterInput.text = "";
 					
 					// we check for the text flow property so we can see if fonts are embedded
 					if (target.hasOwnProperty("textFlow")) {
@@ -277,7 +277,7 @@
 			
 			protected function filterDisplayObjectChangeHandler(item:XML):Boolean {
 				var itemName:String = item.attribute("name") ? item.attribute("name") : "";
-				var value:String = filterInput.text;
+				var value:String = search.filterInput.text;
 				
 				if (itemName.toLowerCase().indexOf(value) != -1) {
 					return true;
@@ -292,7 +292,7 @@
 			 * */
 			protected function filterPropertyChangeHandler(item:XML):Boolean {
 				var itemName:String = item.attribute("name") ? item.attribute("name") : "";
-				var value:String = filterInput.text;
+				var value:String = search.filterInput.text;
 				var valueLength:int = value.length;
 				var itemNameLength:int = itemName.length;
 				var valueLowerCase:String = value.toLowerCase();
@@ -403,19 +403,6 @@
 				//propertiesGrid.editedItemPosition = null;
 			}
 
-			protected function filterInput_enterHandler(event:FlexEvent):void {
-				var searchText:String = filterInput.text;
-				var item:XML;
-				
-				if (filteredPropertiesCollection.length==1) {
-					item = filteredPropertiesCollection.getItemAt(0) as XML;
-					if (item) {
-						item.@value = target is UIComponent ? UIComponent(target).getStyle(searchText) : "";
-						filteredPropertiesCollection.itemUpdated(item, "@value");
-						filteredPropertiesCollection.refresh();
-					}
-				}
-			}
 
 			/**
 			 * Called when... 
@@ -478,7 +465,6 @@
 				
 				allItems.removeAll();
 				allItems.refresh();
-				filterInput.text = "";
 				targetValueText.text = "";
 				dataProviderProperties = new XMLListCollection();
 			}
@@ -595,9 +581,6 @@
 				}
 			}
 			
-			protected function filterInput_clearTextHandler(event:TextOperationEvent):void {
-				
-			}
 			
 			/**
 			 * Dispatch a property selected event
@@ -609,8 +592,6 @@
 			protected function eventsGrid_selectionChangeHandler(event:GridSelectionEvent):void {
 				dispatchPropertySelected();
 			}
-			
-			
 			
 			private function dispatchPropertySelected():void {
 				var item:XML = eventsGrid.selectedItem as XML;
@@ -646,32 +627,7 @@
 								 fields="{['@name']}" />
 		</handlers:EventHandler>
 		
-		<!-- FILTER BY NAME -->
-		<handlers:EventHandler eventName="change" 
-							   targets="{[filterInput,showAllItemsOnEmpty,caseSensitive,searchAtStart]}"
-							   >
-			<collections:FilterCollection target="{filteredPropertiesCollection}" 
-								   source="{filterInput}" 
-								   sourcePropertyName="text"
-								   fieldName="@name"
-								   showAllItemsOnEmpty="{showAllItemsOnEmpty.selected}"
-								   caseSensitive="{caseSensitive.selected}"
-								   searchAtStart="{searchAtStart.selected}"
-								   />
-		</handlers:EventHandler>
 	</fx:Declarations>
-	
-	<fx:Style>
-		@namespace s "library://ns.adobe.com/flex/spark";
-		@namespace c "com.flexcapacitor.controls.*";
-		@namespace mx "library://ns.adobe.com/flex/mx";
-		@namespace collections "com.flexcapacitor.effects.collections.*";
-		@namespace handlers "com.flexcapacitor.handlers.*";
-		
-		.eventsGrid {
-			
-		}
-	</fx:Style>
 
 	
 	<mx:VDividedBox id="verticalContainer" 
@@ -681,25 +637,19 @@
 					right="8" 
 					bottom="8"
 					>
-		<s:Group height="24" width="100%">
-					
-			<c:SearchTextInput id="filterInput" 
-							   top="0" 
-							   width="100%"
-							   minWidth="60" 
-							   borderAlpha=".2"
-							   color="#2F3030" 
-							   focusAlpha="0" 
-							   fontWeight="normal" 
-							   prompt="Search"
-							   enter="filterInput_enterHandler(event)"
-							   clearText="filterInput_clearTextHandler(event)"
-							   />
-			<s:HGroup width="100%" top="32" paddingLeft="2">
-				<s:CheckBox id="showAllItemsOnEmpty" label="All" selected="true"/>
-				<s:CheckBox id="caseSensitive" label="Case" selected="false"/>
-				<s:CheckBox id="searchAtStart" label="At start" selected="false"/>
-			</s:HGroup>
+		<s:Group height="24" 
+				 minHeight="24"
+				 maxHeight="60"
+				 width="100%"
+				 >
+			
+			<inspectors:SearchCollection id="search"
+										 dataProvider="{filteredPropertiesCollection}"
+										 fieldName="@name"
+										 target="{target}">
+				
+			</inspectors:SearchCollection>
+
 		</s:Group>
 		
 		<c:DataGrid id="eventsGrid"

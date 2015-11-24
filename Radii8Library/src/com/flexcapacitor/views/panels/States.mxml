@@ -2,8 +2,10 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
-		 width="400" height="250"
-		 creationComplete="group1_creationCompleteHandler(event)"
+		 
+		 width="400" 
+		 height="250"
+		 implements="com.flexcapacitor.views.IInspector" 
 		 >
 	
 	<!---
@@ -19,11 +21,9 @@
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
 			import mx.collections.ArrayCollection;
-			import mx.events.FlexEvent;
 			import mx.states.AddItems;
 			import mx.states.SetProperty;
 			
-			import spark.components.List;
 			import spark.events.IndexChangeEvent;
 			import spark.layouts.VerticalLayout;
 			
@@ -45,11 +45,22 @@
 			[Bindable]
 			public var groupsCollection:ArrayCollection;
 			
-			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
 					updateTarget(radiate.target);
+				}
+				
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					updateTarget(null);
 				}
 			}
 			
@@ -116,7 +127,7 @@
 					
 					list.selectedItem = selectedState;
 					
-					updateState(selectedState);
+					//updateState(selectedState);
 				}
 				else {
 					

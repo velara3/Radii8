@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+							 xmlns:s="library://ns.adobe.com/flex/spark" 
+							 xmlns:mx="library://ns.adobe.com/flex/mx" 
+							 xmlns:c="com.flexcapacitor.views.*"
+							 xmlns:handlers="com.flexcapacitor.handlers.*"
+							 xmlns:fc="com.flexcapacitor.effects.popup.*"
+							 xmlns:windows="com.flexcapacitor.views.windows.*"
+							 
+							 width="670"
+							 minWidth="670"
+							 title="Notices and Credits"
+							 creationComplete="animatedpanelwindow1_creationCompleteHandler(event)"
+							 >
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			
+			
+			
+			protected function animatedpanelwindow1_creationCompleteHandler(event:FlexEvent):void {
+				var credits:String = new Radii8LibraryAssets.attributions();
+				mxTextArea.text = credits;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{okButton}" eventName="click" setTriggerEvent="true">
+			<fc:ClosePopUp popUp="{this}"  />
+		</handlers:EventHandler>
+		
+		
+	</fx:Declarations>
+	
+	
+	<s:VGroup left="15" 
+			  top="20" 
+			  right="20"
+			  bottom="20">
+		
+		
+		<mx:TextArea id="mxTextArea"  
+					 focusAlpha="0"
+					 fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
+					 borderVisible="true"
+					 fontSize="12"
+					 width="100%" height="300"
+					 editable="true"
+					 leading="0"
+					 >
+			<mx:text>
+			credits go here
+			</mx:text>
+		</mx:TextArea>
+		
+		
+		<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
+			<s:Spacer width="100%"/>
+			<s:Button id="okButton" label="OK" />
+		</s:HGroup>
+	</s:VGroup>
+	
+</windows:AnimatedPanelWindow>

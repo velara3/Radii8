@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="35" height="24"
+		 
+		 creationComplete="group1_creationCompleteHandler(event)" 
+		 xmlns:ns="http://www.flexcapacitor.com/flex/2015" xmlns:controls="com.flexcapacitor.controls.*">
+	
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			import com.google.code.flexiframe.IFrame;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			
+			/**
+			 * 
+			 * */
+			private var radiate:Radiate;
+			
+			/**
+			 * 
+			 * */
+			public var selectedTool:ITool;
+			
+			/**
+			 * 
+			 * */
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler);
+				radiate.addEventListener(RadiateEvent.TOOLS_UPDATED, toolsUpdatedHandler);
+				
+				//tools.dataProvider = Radiate.toolsDescriptions;
+				
+				if (radiate.selectedTool==null) {
+					//tools.selectedIndex = 0;
+					updateTool();
+				}
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function toolChangeHandler(event:RadiateEvent):void
+			{
+				selectedTool = event.selectedItem as ITool;
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function toolsUpdatedHandler(event:RadiateEvent):void
+			{
+				//tools.dataProvider = Radiate.toolsDescriptions;
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function tools_updateCompleteHandler(event:FlexEvent):void {
+				//explicitHeight = tools.measuredHeight;
+			}
+			
+			/**
+			 * Update tool.
+			 * */
+			protected function tools_changeHandler(event:IndexChangeEvent):void {
+				updateTool();
+			}
+			
+			/**
+			 * Update the tool
+			 * */
+			public function updateTool():void {
+				var item:ComponentDescription;
+				
+				radiate = Radiate.getInstance();
+				
+				//item = tools.selectedItem as ComponentDescription;
+				
+				if (item) {
+					radiate.setTool(item.instance as ITool);
+				}
+			}
+			
+			/**
+			 * Get the document code and dispatch a preview event.
+			 * 
+			 * Got this error recently from the Flash Player during testing: 
+			 * 
+			 * 		WARNING: For content targeting Flash Player version 14 or higher, 
+			 * 		ExternalInterface escapes strings using JSON conventions. To maintain compatibility, 
+			 * 		content published to earlier Flash Player versions continues to use the legacy escaping behavior.
+			 * 
+			 * Don't know what to do with it but gonna leave it for now. 
+			 * */
+			protected function previewButton_clickHandler(event:MouseEvent):void {
+				var previewDocument:Object;
+				
+				if (!radiate.selectedDocument) return;
+				
+				/*if (!isCodeModifiedByUser) {
+					var code:String = getDocumentCode(); // puts document code into text area
+				}*/
+				
+				
+				if (Radiate.isDesktop) {
+					// allow to swap between preview and non preview
+					if (!radiate.isPreviewDocumentVisible()) {
+						radiate.openDocumentPreview(radiate.selectedDocument, true);
+						previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+						
+						if (previewDocument is UIComponent) {
+							previewDocument.htmlText = radiate.editorSource.source;
+						}
+						
+						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+					}
+					else {
+						radiate.openDocument(radiate.selectedDocument);
+						//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+					}
+				}
+				else {
+					// allow to swap between preview and non preview
+					if (!radiate.isPreviewDocumentVisible()) {
+						radiate.openDocumentPreview(radiate.selectedDocument, true);
+						previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+						
+						if (previewDocument is IFrame) {
+							previewDocument.content = radiate.editorSource.source;
+						}
+						
+						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+					}
+					else {
+						radiate.openDocument(radiate.selectedDocument);
+						//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+					}
+				}
+			}
+			
+			private function wrapInPreview(source:String):String {
+				var componentTree:ComponentDescription = radiate.selectedDocument.componentDescription;
+				var targetDescription:ComponentDescription;
+				
+				/*if (showSelection.selected) {
+					targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(radiate.target, componentTree);
+				}
+				else {*/
+					targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(radiate.selectedDocument.instance, componentTree);
+				/*}*/
+				
+				if (targetDescription==null || radiate.target == componentTree.instance) {
+					targetDescription = componentTree;
+				}
+				
+				var output:String = "<div id=\"applicationContainer\" style=\"position:absolute;";
+				//output += "width:" + (component.instance.width + 40) + "px;";
+				output += "width:100%;";
+				output += "height:" + (targetDescription.instance.height + 40) + "px;";
+				output += "background-color:#666666;\">" + source + "</div>";
+				
+				return output;
+			}
+			
+			protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
+				//iconImage.source = "assets/images/components/BorderContainer.png";
+			}
+		]]>
+	</fx:Script>
+	
+	<controls:BeveledImageButton id="iconImage"
+			 source="{Radii8LibraryToolAssets.Launch}"
+			 contentLoader="{Radiate.contentCache}"
+			 ioError="iconImage_ioErrorHandler(event)"
+			 click="previewButton_clickHandler(event)"
+			 width="16" height="16"/>
+			 
+	
+</s:Group>

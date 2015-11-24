@@ -3,7 +3,7 @@
 				xmlns:s="library://ns.adobe.com/flex/spark" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
 				xmlns:controls="com.flexcapacitor.controls.*"
-				width="100%" height="18" 
+				width="100%" minHeight="18" 
 				autoDrawBackground="false"
 				typographicCase="capsToSmallCaps"
 				useHandCursor="true"
@@ -23,7 +23,7 @@
 					historyItem = value as HistoryEvent;
 					
 					//rowGroup.enabled = !historyItem.reversed;
-					//Radiate.log.info("updating row "  + itemIndex + " :" + label + " . Enabled " + rowGroup.enabled);
+					//Radiate.info("updating row "  + itemIndex + " :" + label + " . Enabled " + rowGroup.enabled);
 				}
 				else {
 					if (horizontalLine) {

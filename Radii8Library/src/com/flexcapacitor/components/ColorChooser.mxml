@@ -16,10 +16,15 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.core.IFlexModule;
 			import mx.events.ColorPickerEvent;
+			import mx.events.DropdownEvent;
 			
 			public static const HEXIDECIMAL_HASH_TYPE:String = "hexidecimalHash";
 			public static const HEXIDECIMAL_TYPE:String = "hexidecimal";
@@ -143,6 +148,76 @@
 				}
 			}
 			
+			protected function colorPicker_openHandler(event:DropdownEvent):void
+			{
+				var radiate:Radiate = Radiate.getInstance();
+				var toolDescription:ComponentDescription = radiate.getToolByName("com.flexcapacitor.tools.EyeDropper");
+				radiate.setTool(toolDescription.instance as ITool);
+				radiate.addEventListener(RadiateEvent.COLOR_SELECTED, colorSelectedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.COLOR_PREVIEW, colorPreviewHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler, false, 0, true);
+			}
+			
+			protected function colorPicker_closeHandler(event:DropdownEvent):void
+			{
+				var radiate:Radiate = Radiate.getInstance();
+				setTimeout(radiate.restoreTool, 250);
+			}
+			
+			/**
+			 * When user previews a location (mouse movement) show in preview components
+			 * */
+			protected function colorPreviewHandler(event:RadiateEvent):void {
+				
+				updateDisplay(event.color, event.invalid, true);
+			}
+			
+			/**
+			 * When user clicks on a location apply the values
+			 * */
+			protected function colorSelectedHandler(event:RadiateEvent):void
+			{
+				updateDisplay(event.color, event.invalid, false);
+			}
+			
+			/**
+			 * Updates UI
+			 * */
+			public function updateDisplay(color:uint, invalid:Boolean, preview:Boolean):void {
+				
+				if (preview) {
+					if (invalid) {
+						//colorPickerPreview.selectedColor = 0;
+					}
+					else {
+						colorPicker.selectedColor = color;
+						colorTextInput.text = DisplayObjectUtils.getColorInHex(color, true);
+					}
+					
+				}
+				else {
+					if (invalid) {
+						//colorPicker.selectedColor = 0;
+					}
+					else {
+						selectedColor = color;
+						
+						dispatchEvent(new Event(Event.CHANGE, false, true));
+						//colorTextInput.text = DisplayObjectUtils.getColorInHex(color, true);
+					}
+				}
+			}
+			
+			protected function toolChangeHandler(event:RadiateEvent):void
+			{
+				var radiate:Radiate = Radiate.getInstance();
+				// clean up after ourselves
+				radiate.removeEventListener(RadiateEvent.COLOR_SELECTED, colorSelectedHandler);
+				radiate.removeEventListener(RadiateEvent.COLOR_PREVIEW, colorPreviewHandler);
+				radiate.removeEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler);
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -174,11 +249,14 @@
 		<s:HorizontalLayout paddingLeft="0" />
 	</s:layout>
 	
-	<mx:ColorPicker id="colorPicker" 
+	<controls:ColorPicker id="colorPicker" 
 					height="100%" 
 					visible="{includeColorPicker}"
 					includeInLayout="{includeColorPicker}"
 					change="colorPicker_changeHandler(event)"
+					open="colorPicker_openHandler(event)"
+					close="colorPicker_closeHandler(event)"
+					focusAlpha="0"
 					/>
 	
 	<s:TextInput id="colorTextInput" 
@@ -188,10 +266,11 @@
 				 includeInLayout="{includeTextInput}"
 				 keyUp="colorTextInput_keyUpHandler(event)"
 				 focusOut="colorTextInput_focusOutHandler(event)"
+				 focusAlpha="0"
 				 />
 	
 	
-	<controls:ImageButton id="copyIcon" 
+	<controls:BeveledImageButton id="copyIcon" 
 						   height="100%"
 						   visible="{includeCopyIcon}"
 						   includeInLayout="{includeCopyIcon}"

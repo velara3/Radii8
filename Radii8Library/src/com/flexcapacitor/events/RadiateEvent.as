@@ -1,10 +1,10 @@
 
 package com.flexcapacitor.events {
+	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.tools.ITool;
 	
 	import flash.events.Event;
 	
-	import mx.states.AddItems;
 	
 	/**
 	 * Handles Radiate events. 
@@ -103,9 +103,29 @@ package com.flexcapacitor.events {
 		public static const PROJECTS_LIST_RECEIVED:String = "projectsListReceived";
 		
 		/**
+		 * Dispatched when a list of blog posts are received
+		 * */
+		public static const BLOG_POSTS_RECEIVED:String = "blogPostsReceived";
+		
+		/**
+		 * Dispatched when a list of example projects are received
+		 * */
+		public static const EXAMPLE_PROJECTS_LIST_RECEIVED:String = "exampleProjectsListReceived";
+		
+		/**
 		 * Dispatched when the project name is changed
 		 * */
 		public static const PROJECT_RENAME:String = "projectRename";
+		
+		/**
+		 * Dispatched set project home page
+		 * */
+		public static const PROJECT_SET_HOME_PAGE:String = "projectSetHomePage";
+		
+		/**
+		 * Dispatched get project home page
+		 * */
+		public static const PROJECT_GET_HOME_PAGE:String = "projectGetHomePage";
 		
 		/**
 		 * Dispatched when the document name is changed
@@ -123,6 +143,11 @@ package com.flexcapacitor.events {
 		public static const DOCUMENT_DELETED:String = "documentDeleted";
 		
 		/**
+		 * Dispatched when the document is reverted
+		 * */
+		public static const DOCUMENT_REVERTED:String = "documentReverted";
+		
+		/**
 		 * Dispatched when the document is added
 		 * */
 		public static const DOCUMENT_ADDED:String = "documentAdded";
@@ -136,6 +161,11 @@ package com.flexcapacitor.events {
 		 * Dispatched when the document save is not complete
 		 * */
 		public static const DOCUMENT_SAVE_FAULT:String = "documentSaveFault";
+		
+		/**
+		 * Dispatched when an exception event occurs on an HTML document preview
+		 * */
+		public static const UNCAUGHT_EXCEPTION_EVENT:String = "uncaughtExceptionEvent";
 		
 		/**
 		 * Dispatched when the document save as is canceled
@@ -183,6 +213,11 @@ package com.flexcapacitor.events {
 		public static const LOGGED_IN_STATUS:String = "loggedInStatus";
 		
 		/**
+		 * Dispatched when feedback result is received
+		 * */
+		public static const FEEDBACK_RESULT:String = "feedbackResult";
+		
+		/**
 		 * Dispatched when the target is changed
 		 * */
 		public static const TARGET_CHANGE:String = "targetChange";
@@ -193,7 +228,7 @@ package com.flexcapacitor.events {
 		public static const REQUEST_PREVIEW:String = "requestPreview";
 		
 		/**
-		 * Dispatched when a property is selected
+		 * Dispatched when a property, event or style is selected
 		 * */
 		public static const PROPERTY_SELECTED:String = "propertySelected";
 		
@@ -299,6 +334,7 @@ package com.flexcapacitor.events {
 		public var moveItemsInstance:AddItems;
 		public var newIndex:int;
 		public var oldIndex:int;
+		public var historyEvent:HistoryEvent;
 		public var historyEventItem:HistoryEventItem;
 		public var targets:Array;
 		public var tool:ITool;
@@ -312,23 +348,15 @@ package com.flexcapacitor.events {
 		public var status:String;
 		public var successful:Boolean;
 		public var faultEvent:Event;
+		public var styles:Array;
 		
 		/**
-		 * Constructor. This is not up to date.
+		 * Constructor.
 		 * */
-		public function RadiateEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, 
-									 target:Object=null, changes:Array=null, properties:Array=null, 
-									 value:*=null, multipleSelection:Boolean = false, tool:ITool = null) {
+		public function RadiateEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, target:Object=null) {
 			super(type, bubbles, cancelable);
 			
 			this.selectedItem = target;
-			this.properties = properties;
-			this.changes = changes;
-			this.value = value;
-			this.multipleSelection = multipleSelection;
-			this.tool = tool;
-			
-			// not kept up
 		}
 		
 		/**
@@ -336,7 +364,7 @@ package com.flexcapacitor.events {
 		 * */
 		override public function clone():Event {
 			throw new Error("do this");
-			return new RadiateEvent(type, bubbles, cancelable, selectedItem, changes, properties, value, multipleSelection, tool);
+			return new RadiateEvent(type, bubbles, cancelable, selectedItem);
 		}
 		
 		

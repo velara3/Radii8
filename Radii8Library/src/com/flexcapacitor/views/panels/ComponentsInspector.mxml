@@ -6,7 +6,8 @@
 		 xmlns:collections="com.flexcapacitor.effects.collections.*"
 		 
 		 implements="com.flexcapacitor.views.IInspector" 
-		 width="400" height="300"
+		 width="400" 
+		 height="300"
 		 >
 	
 	<!-- 
@@ -27,20 +28,19 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.DragDropEvent;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.managers.layoutClasses.LayoutDebugHelper;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.DragManagerUtil;
 			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 			import com.flexcapacitor.views.IInspector;
 			
 			import mx.core.ClassFactory;
+			import mx.core.IVisualElement;
 			import mx.events.DragEvent;
-			import mx.managers.ISystemManager;
-			import mx.managers.SystemManagerGlobals;
 			
 			import spark.components.Application;
 			import spark.components.Group;
 			import spark.components.Label;
+			import spark.components.supportClasses.GroupBase;
 			
 			private var target:Object;
 			private var radiate:Radiate;
@@ -89,7 +89,7 @@
 				
 				
 				if (!dragManagerInstance) {
-					dragManagerInstance = new DragManagerUtil();
+					dragManagerInstance = DragManagerUtil.getInstance();
 				}
 				
 				rowGroup.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
@@ -155,19 +155,6 @@
 				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
 			}
 
-		    private static var _layoutDebugHelper:LayoutDebugHelper;
-		    
-		    public static function get debugHelper():LayoutDebugHelper
-		    {
-		        if (!_layoutDebugHelper)
-		        {
-		            _layoutDebugHelper = new LayoutDebugHelper();
-		            _layoutDebugHelper.mouseEnabled = false;
-		            var sm:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0]
-		            sm.addChild(_layoutDebugHelper);
-		        }
-		        return _layoutDebugHelper;
-		    }
 			
 			private function deferredInstanceFromFunction():Array {
 				var label:Label = new Label();
@@ -180,10 +167,12 @@
 			 * */
 			protected function handleDragDropComplete(event:DragDropEvent):void
 			{
-				var o:LayoutDebugHelper = debugHelper;
+				//var o:LayoutDebugHelper = debugHelper;
 				var component:Object = event.draggedItem;
 				
-				
+				if (component is GroupBase) {
+					dragManagerInstance.addGroupListeners(component as IVisualElement);
+				}
 				/*
 				// if text based or combo box we need to prevent 
 				// interaction with cursor
@@ -237,7 +226,7 @@
 			
 			protected function handleDragOver(event:Event):void {
 				
-				//Radiate.log.info("target: " + dragManagerInstance.lastTargetCandidate);
+				//Radiate.info("target: " + dragManagerInstance.lastTargetCandidate);
 				dropTargetLabel.text = "Drag over: " + dragManagerInstance.dropTargetName;
 			}
 			
@@ -262,10 +251,10 @@
 		
 		
 		<!-- FILTER BY NAME -->
-		<handlers:EventHandler eventName="creationComplete" 
+		<!--<handlers:EventHandler eventName="creationComplete" 
 							   target="{this}"
 							   >
-		</handlers:EventHandler>
+		</handlers:EventHandler>-->
 	</fx:Declarations>
 	
 	<!--
@@ -349,6 +338,6 @@
 		</s:itemRenderer>
 	</s:List>
 	
-	<s:Label id="dropTargetLabel" width="100%" paddingLeft="4" visible="false" includeInLayout="false"/>
-	<s:Spacer height="4"/>
+	<s:Label id="dropTargetLabel" width="100%" paddingLeft="4" paddingTop="4" visible="false" includeInLayout="false"/>
+	<!--<s:Spacer height="4"/>-->
 </s:Group>

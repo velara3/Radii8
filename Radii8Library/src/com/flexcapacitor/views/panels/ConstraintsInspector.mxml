@@ -8,16 +8,40 @@
 		 xmlns:handlers="com.flexcapacitor.handlers.*"
 		 xmlns:supportClasses="com.flexcapacitor.effects.supportClasses.*"
 		 
+		 implements="com.flexcapacitor.views.IInspector" 
 		 styleName="constraintStyles"
-		 creationComplete="creationCompleteHandler(event)"
 		 width="100%"
 		 height="100%"
 		 >
+	
+	<!-- TODO: 
+	
+	LOOK INTO USING THESE CLASSES
+	
+	LayoutElementHelper
+	LayoutElementUIComponentUtils
+	DisplayObjectUtils.getRectangleBounds
+	
+	I would like to refactor this class
+	
+	
+	var hCenter:Number          = LayoutElementHelper.parseConstraintValue(layoutElement.horizontalCenter);
+	var vCenter:Number          = LayoutElementHelper.parseConstraintValue(layoutElement.verticalCenter);
+	var baseline:Number         = LayoutElementHelper.parseConstraintValue(layoutElement.baseline);
+	var left:Number             = LayoutElementHelper.parseConstraintValue(layoutElement.left);
+	var right:Number            = LayoutElementHelper.parseConstraintValue(layoutElement.right);
+	var top:Number              = LayoutElementHelper.parseConstraintValue(layoutElement.top);
+	var bottom:Number           = LayoutElementHelper.parseConstraintValue(layoutElement.bottom);
+	var percentWidth:Number     = layoutElement.percentWidth;
+	var percentHeight:Number    = layoutElement.percentHeight;
+	-->
 
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ArrayUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
 			import mx.collections.ArrayList;
 			import mx.core.IVisualElement;
@@ -101,15 +125,31 @@
 			
 			public var radiate:Radiate = Radiate.instance;
 			
-			protected function creationCompleteHandler(event:FlexEvent):void {
-				target = null;
-				radiate = Radiate.getInstance();
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
-				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
+			public function activate():void {
+				addListeners();
 				
-				if (radiate.targets.length>0) {
+				if (radiate.target) {
 					target = radiate.target;
+				}
+			}
+			
+			public function deactivate():void {
+				removeListeners();
+			}
+			
+			protected function addListeners():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+			}
+			
+			protected function removeListeners():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
 				}
 			}
 			
@@ -235,7 +275,12 @@
 					_target = null;
 					clearForm();
 					clearTargetDimensions();
+					enabled = false;
 					return;
+				}
+				
+				if (enabled==false) {
+					enabled = true;
 				}
 				
 				clearForm();
@@ -339,6 +384,10 @@
 				var property:String;
 				var clearWidth:Boolean;
 				var clearHeight:Boolean;
+				var widthValue:Number;
+				var heightValue:Number;
+				var constrainedValueObject:Object;
+				var constrainedProportions:Boolean;
 				
 				if (!target) return;
 				
@@ -356,7 +405,7 @@
 						property = "width";
 						
 						if (widthAutoSizeCheckbox.selected) {
-							Radiate.setProperty(DisplayObject(target), property, undefined);
+							Radiate.clearProperty(DisplayObject(target), property);
 							widthText.enabled = false;
 						}
 						else {
@@ -370,7 +419,7 @@
 						
 						// clear out height values if auto size is selected otherwise restore size and set focus
 						if (heightAutoSizeCheckbox.selected) {
-							Radiate.setProperty(DisplayObject(target), property, undefined);
+							Radiate.clearProperty(DisplayObject(target), property);
 							heightText.enabled = false;
 						}
 						else {
@@ -379,28 +428,91 @@
 							heightText.setFocus();
 						}
 					}
+					else if (property=="contrainProportions") {
+						constrainedProportions = constrainProportionsCheckbox.selected;
+						
+						if (constrainedProportions) {
+							if (widthText.text!="") {
+								property = WIDTH;
+							}
+							else if (heightText.text!="") {
+								property = HEIGHT;
+							}
+							
+							if (property==WIDTH) {
+								constrainedValueObject = DisplayObjectUtils.getConstrainedSize(target, property, widthText.text);
+							}
+							else if (property==HEIGHT) {
+								constrainedValueObject = DisplayObjectUtils.getConstrainedSize(target, property, heightText.text);
+							}
+							
+							// only apply constraints on checkbox change if we have some values to apply
+							if (property==WIDTH || property==HEIGHT) {
+								settingProperties = true;
+								Radiate.setProperties(DisplayObject(target), [WIDTH, HEIGHT], constrainedValueObject, null, true);
+								settingProperties = false;
+							}
+						}
+					}
 					else {
-						Radiate.setProperty(DisplayObject(target), property, value);
+						settingProperties = true;
+						Radiate.setProperty(DisplayObject(target), property, value, null, true);
+						settingProperties = false;
 					}
 				}
 				else if (textInput) {
 					property = textInput.name.indexOf(":") ? textInput.name.split(":")[0]:textInput.name;
 					
 					// handle percents
-					if (property=="width" && textInput.text.indexOf("%")!=-1) {
-						property = "percentWidth";
+					if (property==WIDTH && textInput.text.indexOf("%")!=-1) {
+						property = PERCENT_WIDTH;
 						textInput.text = textInput.text.split("%")[0];
 					}
-					else if (property=="height" && textInput.text.indexOf("%")!=-1) {
-						property = "percentHeight";
+					else if (property==HEIGHT && textInput.text.indexOf("%")!=-1) {
+						property = PERCENT_HEIGHT;
 						textInput.text = textInput.text.split("%")[0];
 					}
 					
 					if (textInput.text=="") {
-						Radiate.setProperty(DisplayObject(target), property, undefined);
+						settingProperties = true;
+						if (isStyle(property)) {
+							settingProperties = true;
+							Radiate.clearStyle(DisplayObject(target), property);
+							settingProperties = false;
+						}
+						else {
+							settingProperties = true;
+							Radiate.clearProperty(DisplayObject(target), property);
+							settingProperties = false;
+						}
+						settingProperties = false;
 					}
 					else {
-						Radiate.setProperty(DisplayObject(target), property, textInput.text);
+						constrainedProportions = constrainProportionsCheckbox.selected;
+						
+						if (constrainedProportions && (property==WIDTH || property==HEIGHT)) {
+							
+							if (property==WIDTH) {
+								constrainedValueObject = DisplayObjectUtils.getConstrainedSize(target, property, widthText.text);
+							}
+							else if (property==HEIGHT) {
+								constrainedValueObject = DisplayObjectUtils.getConstrainedSize(target, property, heightText.text);
+							}
+							
+							settingProperties = true;
+							Radiate.setProperties(DisplayObject(target), [WIDTH, HEIGHT], constrainedValueObject, null, true);
+							settingProperties = false;
+						}
+						else {
+							settingProperties = true;
+							if (isStyle(property)) {
+								Radiate.setStyle(DisplayObject(target), property, textInput.text, null, true);
+							}
+							else {
+								Radiate.setProperty(DisplayObject(target), property, textInput.text, null, true);
+							}
+							settingProperties = false;
+						}
 					}
 					
 				}
@@ -439,6 +551,8 @@
 				var enabled:Boolean = false;
 				var constraint:String;
 				var value:Object;
+				var setY:Boolean;
+				var setX:Boolean;
 				
 				if (!target) return;
 
@@ -448,6 +562,7 @@
 					constraint = "right";
 					rightText.text = "";
 					focusComponent = xText;
+					setX = true;
 				}
 
 				// convert from Left to X
@@ -456,6 +571,7 @@
 					constraint = "left";
 					leftText.text = "";
 					focusComponent = xText;
+					setX = true;
 				}
 
 				// convert from Bottom to Y
@@ -464,27 +580,30 @@
 					constraint = "bottom";
 					bottomText.text = "";
 					focusComponent = yText;
+					setY = true;
 				}
 
 				// convert from Top to Y
-				if (constraint == TOP) {
+				else if (constraint == TOP) {
 					value = undefined;
 					constraint = "top";
 					topText.text = "";
 					focusComponent = yText;
+					setY = true;
 				}
 
 				// convert from Vertical Center to Y
-				if (constraint == VERTICAL_CENTER) {
+				else if (constraint == VERTICAL_CENTER) {
 					//element.verticalCenter = undefined;
 					value = undefined;
 					constraint = "verticalCenter";
 					verticalCenterText.text = "";
 					focusComponent = yText;
+					setY = true;
 				}
 
 				// convert from Horizontal Center to X
-				if (constraint == HORIZONTAL_CENTER) {
+				else if (constraint == HORIZONTAL_CENTER) {
 					//value = Object(element.horizontalCenter);
 					value = undefined;
 					constraint = "horizontalCenter";
@@ -492,19 +611,37 @@
 					//value = String(target.parent.width / 2 - target.width / 2 + Number(value));
 					//target.x = Number(value);
 					focusComponent = xText;
+					setX = true;
 				}
 
 				// convert from Baseline to Y
-				if (constraint == BASELINE) {
+				else if (constraint == BASELINE) {
 					//element.baseline = undefined;
 					value = undefined;
 					constraint = "baseline";
 					baselineText.text = "";
 					focusComponent = yText;
+					setY = true;
 				}
 
 
-				Radiate.setProperty(target, constraint, value);
+				//Radiate.setProperty(target, constraint, value);
+				//Radiate.setStyle(target, constraint, value);
+				settingProperties = true;
+				Radiate.clearStyle(target, constraint);
+				if (setX) {
+					if (target.left==null && target.right==null && target.horizontalCenter==null) {
+						Radiate.setProperty(target, "x", target.x);
+					}
+				}
+				else if (setY) {
+					if (target.top==null && target.bottom==null && target.verticalCenter==null) {
+						Radiate.setProperty(target, "y", target.y);
+					}
+				}
+				
+				settingProperties = false;
+				
 				updateTargetDimensionsLayout();
 				if (focusComponent) {
 					callLater(focusComponent.setFocus);
@@ -519,54 +656,74 @@
 				var value:String;
 				var enabled:Boolean = true;
 				var focusComponent:UIComponent;
+				var clearXValue:Boolean;
+				var clearYValue:Boolean;
 
 				if (!target) return;
 				
 				// convert from X to Right
 				if (constraint == RIGHT) {
 					value = String(Number(target.parent.width) - Number(target.width) - Number(target.x));
+					clearXValue = true;
 					focusComponent = rightText;
 				}
 
 				// convert from X to Left
 				else if (constraint == LEFT) {
 					value = String(target.x);
+					clearXValue = true;
 					focusComponent = leftText;
 				}
 
 				// convert from Y to Bottom
 				else if (constraint == BOTTOM) {
 					value = String(Number(target.parent.height) - Number(target.height) - Number(target.y));
+					clearYValue = true;
 					focusComponent = bottomText;
 				}
 
 				// convert from Y to Top
 				else if (constraint == TOP) {
 					value = String(target.y);
+					clearYValue = true;
 					focusComponent = topText;
 				}
 
 				// convert from Y to Vertical Center
 				else if (constraint == VERTICAL_CENTER) {
 					value = String(target.y - target.parent.height / 2 + target.height / 2);
+					clearYValue = true;
 					focusComponent = verticalCenterText;
 				}
 
 				// convert from X to Horizontal Center
 				else if (constraint == HORIZONTAL_CENTER) {
 					value = String(target.x - target.parent.width / 2 + target.width / 2);
+					clearXValue = true;
 					focusComponent = horizontalCenterText;
 				}
 
 				// convert from Y to Baseline
 				else if (constraint == BASELINE) {
 					value = String(target.y);
+					clearYValue = true;
 					focusComponent = baselineText;
 				}
-
-				// not sure of way to validate an IVisualElement
+				
+				
+				settingProperties = true;
 				//target[constraint] = value;
-				Radiate.setProperty(target, constraint, value);
+				//Radiate.setProperty(target, constraint, value);
+				Radiate.setStyle(target, constraint, value);
+				if (clearXValue) {
+					Radiate.clearProperty(target, "x");
+				}
+				else if (clearYValue) {
+					Radiate.clearProperty(target, "y");
+				}
+				//Radiate.setPropertiesStyles(); todo: this
+				settingProperties = false;
+				
 				updateTargetDimensionsLayout();
 				callLater(focusComponent.setFocus);
 
@@ -586,15 +743,18 @@
 				if (isPercentHeight) {
 					heightText.text = "";
 					heightText.prompt = String(element.percentHeight) + "%";
+					//clearHeightButton.enabled = true;
 				}
 				else {
 					
 					if ("explicitHeight" in target && target.height==target.explicitHeight) {
 						heightText.text = String(target.height);
+						//clearHeightButton.enabled = true;
 					}
 					else {
 						heightText.text = "";
 						heightText.prompt = String(target.height);
+						//clearHeightButton.enabled = false;
 					}
 				}
 			}
@@ -612,62 +772,18 @@
 				if (isPercentWidth) {
 					widthText.text = "";
 					widthText.prompt = String(element.percentWidth) + "%";
-					clearWidthButton.enabled = true;
+					//clearWidthButton.enabled = true;
 				}
 				else {
 					if ("explicitWidth" in target && target.width==target.explicitWidth) {
 						widthText.text = String(target.width);
-						clearWidthButton.enabled = true;
+						//clearWidthButton.enabled = true;
 					}
 					else {
 						widthText.text = "";
 						widthText.prompt = String(target.width);
-						clearWidthButton.enabled = false;
+						//clearWidthButton.enabled = false;
 					}
-				}
-			}
-
-			/**
-			 * Casts the value to the correct type
-			 * NOTE: May not work for colors
-			 * Also supports casting to specific class. use ClassDefinition as type
-			 * returns instance of flash.utils.getDefinitionByName(className)
-			 * */
-			protected function getCorrectType(value:String, type:String):* {
-				if (type == "Boolean" && value.toLowerCase() == "false") {
-					return false;
-				}
-				else if (type == "Boolean" && value.toLowerCase() == "true") {
-					return true;
-				}
-				else if (type == "Number") {
-					if (value == null || value == "") {
-						return undefined
-					};
-					return Number(value);
-				}
-				else if (type == "int") {
-					if (value == null || value == "") {
-						return undefined
-					};
-					return int(value);
-				}
-				else if (type == "String") {
-					return String(value);
-				}
-				// TODO: Return color type
-				else if (type == "Color") {
-					return String(value);
-				}
-				else if (type == "ClassDefinition") {
-					if (value) {
-						var ClassDefinition:Class = flash.utils.getDefinitionByName(value) as Class;
-						return new ClassDefinition();
-					}
-					return new Object();
-				}
-				else {
-					return value;
 				}
 			}
 
@@ -709,56 +825,6 @@
 					TextInput(event.currentTarget).selectAll();
 				}
 			}
-			
-			/**
-			 * Sets the top constraint
-			 * */
-			protected function setTopConstraint(value:Object):void {
-				element.top = value ? value : undefined;
-			}
-			
-			/**
-			 * Sets the left constraint
-			 * */
-			protected function setLeftConstraint(value:Object):void {
-				element.left = value ? value : undefined;
-			}
-
-			/**
-			 * Sets the right constraint
-			 * */
-			protected function setRightConstraint(value:Object):void {
-				element.right = value ? value : undefined;
-			}
-
-			/**
-			 * Sets the bottom constraint
-			 * */
-			protected function setBottomConstraint(value:Object):void {
-				element.bottom = value ? value : undefined;
-			}
-
-			/**
-			 * Sets the vertical center constraint
-			 * */
-			protected function setVerticalCenterConstraint(value:Object):void {
-				element.verticalCenter = value ? value : undefined;
-			}
-			
-			/**
-			 * Sets the horizontal center constraint
-			 * */
-			protected function setHorizontalCenterConstraint(value:Object):void {
-				element.horizontalCenter = value ? value : undefined;
-			}
-			
-			/**
-			 * Sets the baseline constraint
-			 * */
-			protected function setBaselineConstraint(value:Object):void {
-				element.baseline = value ? value : undefined;
-			}
-
 
 			/**
 			 * Updates the display with the value of the baseline position
@@ -851,6 +917,11 @@
 			protected function updateHorizontalCenterConstraint():void {
 				var value:String;
 				var horizontalCenterValue:Object;
+				//spark.layouts.supportClasses.LayoutElementHelper;
+				
+				//var hValue:Object = LayoutElementHelper.parseConstraintValue(element.horizontalCenter);
+				//LayoutElementUIComponentUtils;
+				//LayoutElementHelper;
 				
 				if (!isVisualElement) {
 					horizontalCenterText.text = "";
@@ -1165,16 +1236,26 @@
 			 * Updates the view when a property is changed externally
 			 * */
 			protected function propertyChangeHandler(event:RadiateEvent):void {
-				var properties:Array = event.properties;
-				var length:int = event.properties.length;
+				if (settingProperties) return;
+				
+				var properties:Array = ArrayUtils.join(event.properties, event.styles);
+				var numberOfChanges:int = properties.length;
+				
 				
 				if (target!=event.selectedItem) {
 					target = event.selectedItem;
 				}
 				
-				if (!target) return;
+				if (!target) {
+					enabled = false;
+					return;
+				}
 				
-				for (var i:int;i<length;i++) {
+				if (enabled==false) {
+					enabled = true;
+				}
+				
+				for (var i:int;i<numberOfChanges;i++) {
 					if (relevantProperties.indexOf(properties[i])!=-1) {
 						updateView();
 						break;
@@ -1183,13 +1264,21 @@
 			}
 			
 			protected function historyChangeHandler(event:RadiateEvent):void {
-				if (event.newIndex==-1 || !event.historyEventItem) return;
-				var properties:Array = event.historyEventItem.properties;
-				var length:int = properties ? properties.length : 0;
+				if (settingProperties) return;
+				if (event.newIndex==-1 || !event.historyEvent) return;
+				var properties:Array = event.historyEvent.styleAndProperties;
+				var numberOfProperties:int = properties ? properties.length : 0;
 				
-				if (!target) return;
+				if (!target) {
+					enabled = false;
+					return;
+				}
 				
-				for (var i:int;i<length;i++) {
+				if (enabled==false) {
+					enabled = true;
+				}
+				
+				for (var i:int;i<numberOfProperties;i++) {
 					if (relevantProperties.indexOf(properties[i])!=-1) {
 						updateView();
 						break;
@@ -1197,29 +1286,99 @@
 				}
 			}
 			
+			
+			public var settingProperties:Boolean;
+			private const relevantPropertyFacades:Array = [ "top", "left", "right", "bottom", "verticalCenter",
+													"horizontalCenter", "baseline"];
+			
 			private const relevantProperties:Array = [ "width", "height", "percentWidth", "percentHeight", "x",
 													"y", "top", "left", "right", "bottom", "verticalCenter",
 													"horizontalCenter", "baseline"];
+			private var WIDTH:String = "width";
+			private var HEIGHT:String = "height";
 			
 			public function clearWidth():void {
+				settingProperties = true;
 				Radiate.clearProperties(target, ["width", "percentWidth"]);
+				settingProperties = false;
 				updateView();
 			}
 			
 			public function clearHeight():void {
+				settingProperties = true;
 				Radiate.clearProperties(target, ["height", "percentHeight"]);
+				settingProperties = false;
 				updateView();
 			}
 			
 			public function clearX():void {
-				Radiate.clearProperties(target, ["x", "left", "right", "horizontalCenter"]);
+				settingProperties = true;
+				Radiate.clearProperties(target, ["x"]);
+				Radiate.clearStyles(target, ["left", "right", "horizontalCenter"]);
+				settingProperties = false;
 				updateView();
 			}
 			
 			public function clearY():void {
-				Radiate.clearProperties(target, ["y", "top", "bottom", "verticalCenter"]);
+				settingProperties = true;
+				Radiate.clearProperties(target, ["y"]);
+				Radiate.clearStyles(target, ["top", "bottom", "verticalCenter"]);
+				settingProperties = false;
 				updateView();
 			}
+			
+			protected function textInput_keyUpHandler(event:KeyboardEvent):void
+			{
+				var currentValue:Number;
+				var textInput:TextInput = event.currentTarget as TextInput;
+				var isPercent:Boolean = textInput.text.indexOf("%")!=-1;
+				var validNumber:Boolean;
+				var increment:int;
+				
+				if (event.keyCode==Keyboard.UP) {
+					increment = 1;
+				}
+				else 
+				if (event.keyCode==Keyboard.DOWN) {
+					increment = -1;
+				}
+				else {
+					return;
+				}
+				
+				currentValue = parseFloat(textInput.text);
+				
+				if (!isNaN(currentValue)) {
+					currentValue = currentValue + increment;
+					validNumber = true;
+				}
+				
+				if (validNumber) {
+					if (isPercent) {
+						if (currentValue>100) {
+							currentValue = 100;
+						}
+						if (currentValue<0) {
+							currentValue = 0;
+						}
+						
+						textInput.text = currentValue + "%";
+					}
+					else {
+						textInput.text = currentValue + "";
+					}
+					applyPropertiesToTargetHandler(event);
+				}
+			}
+			
+			private function isStyle(property:String):Boolean
+			{
+				if (relevantPropertyFacades.indexOf(property)!=-1) {
+					return true;
+				}
+				return false;
+			}
+			
 		]]>
 	</fx:Script>
 
@@ -1245,6 +1404,28 @@
 				]]>
 			</handlers:eventStart>
 		</handlers:EventHandler>-->
+		
+		<handlers:EventHandler eventName="{KeyboardEvent.KEY_DOWN}"
+							   targets="{[
+							   topText, 
+							   bottomText, 
+							   rightText, 
+							   leftText, 
+							   widthText, 
+							   heightText, 
+							   xText, 
+							   yText,
+							   verticalCenterText, 
+							   horizontalCenterText, 
+							   baselineText]}"
+							   keepEvent="true"
+							   id="inputKeyUpHandler">
+			<handlers:eventStart>
+				<![CDATA[
+				textInput_keyUpHandler(event.currentTarget.event);
+				]]>
+			</handlers:eventStart>
+		</handlers:EventHandler>
 		
 		<handlers:EventHandler eventName="{FlexEvent.ENTER}"
 							   targets="{[
@@ -1337,7 +1518,7 @@
 			
 		</handlers:EventHandler>
 		<handlers:EventHandler eventName="{Event.CHANGE}"
-							   targets="{[
+							   targets="{[constrainProportionsCheckbox,
 							   heightAutoSizeCheckbox,
 							   widthAutoSizeCheckbox]}"
 							   keepEvent="true"
@@ -1357,175 +1538,89 @@
 	
 	<!-- NAMING CONVENTION IS USED -->
 	
-	<!-- POSITIONING -->
-	<s:HGroup left="20" y="30" 
-			 styleName="constraintStyles"
-			 verticalAlign="middle">
-		
-		<s:Label text="Width:" minWidth="48"
-				 styleName="constraintStyles"
-				 x="2" y="7"/>
-		<s:CheckBox id="widthAutoSizeCheckbox" 
-					fontSize="12"
-					styleName="inputStyles"
-					x="104" y="0"
-					name="widthAutoSize:Boolean"
-					toolTip="Fit to content"
-					includeInLayout="false"
-					visible="false"/>
-		<s:TextInput id="widthText" 
-					 fontSize="12"
-					 styleName="inputStyles"
-					 width="50" x="44" y="0"
-					 restrict="-0-9%"
-					 name="width:Number"
-					 toolTip="Width in pixels or percent"/>
-		
-		<s:Button id="clearWidthButton" 
-				  skinClass="com.flexcapacitor.skins.ClearButton"
-				  click="clearWidth()"/>
-		
-		<s:Spacer width="20" />
-		
-		<s:Label text="X:" minWidth="15"
-				 styleName="constraintStyles"
-				 x="30" y="42"/>
-		<s:TextInput id="xText" 
-					 fontSize="12"
-					 styleName="inputStyles"
-					 width="50" x="44" y="35"
-					 restrict="-0-9"
-					 name="x:Number"/>
-		
-		<s:Button id="clearXButton" 
-				  skinClass="com.flexcapacitor.skins.ClearButton"
-				  click="clearX()"/>
-		
-	</s:HGroup>
-	
-	<s:HGroup left="20" y="60" 
-			  verticalAlign="middle"
-			  styleName="constraintStyles">
-		
-		
-		<s:Label text="Height:" minWidth="48"
-				 styleName="constraintStyles"
-				 x="126" y="7"/>
-		<s:CheckBox id="heightAutoSizeCheckbox" 
-					fontSize="12"
-					styleName="inputStyles"
-					x="184" y="0"
-					name="heightAutoSize:Boolean"
-					toolTip="Fit to content"
-					includeInLayout="false"
-					visible="false"/>
-		<s:TextInput id="heightText"
-					 fontSize="12"
-					 styleName="inputStyles" 
-					 width="50" x="174" y="0"
-					 restrict="-0-9%"
-					 name="height:Number"
-					 toolTip="Height in pixels or percent"
-					 />
-		
-		<s:Button id="clearHeightButton" 
-				  skinClass="com.flexcapacitor.skins.ClearButton"
-				  click="clearHeight()"/>
-		
-		<s:Spacer width="20" />
-		
-		<s:Label text="Y:" minWidth="15"
-				 styleName="constraintStyles"
-				 x="160" y="42"/>
-		<s:TextInput id="yText" 
-					 fontSize="12"
-					 styleName="inputStyles"
-					 width="50" x="174" y="35"
-					 restrict="-0-9-"
-					 name="y:Number"/>
-		
-		<s:Button id="clearYButton" 
-				  skinClass="com.flexcapacitor.skins.ClearButton"
-				  click="clearY()"/>
-	</s:HGroup>
-
 	
 	<!-- CONSTRAINTS PANEL -->
-	<s:BorderContainer id="constraintsContainer" 
+	<fc:BorderContainer id="constraintsContainer" 
 					   styleName="constraintStyles"
 					   horizontalCenter="0"
-					   y="119"
-					   borderVisible="false">
+					   y="66"
+					   borderVisible="false"
+					   backgroundAlpha="0">
+		
+		<s:CheckBox id="leftConstraint"
+					toolTip="Left"
+					x="64" y="0"/>
+		<s:CheckBox id="horizontalCenterConstraint"
+					toolTip="Horizontal Center"
+					x="98" y="0"/>
+		<s:CheckBox id="rightConstraint"
+					toolTip="Right"
+					x="132" y="0"/>
+		
+		<s:CheckBox id="topConstraint"
+					toolTip="Top"
+					x="23" y="40"/>
+		<s:CheckBox id="verticalCenterConstraint"
+					toolTip="Vertical Center"
+					x="23" y="74"/>
+		<s:CheckBox id="bottomConstraint"
+					toolTip="Bottom"
+					x="23" y="108"/>
+		
+		<s:CheckBox id="baselineConstraint" 
+					toolTip="Baseline"
+					visible="false"
+					x="23" y="125"/>
 
 		<!-- CONSTRAINTS -->
 		<s:TextInput id="topText"
 					 styleName="inputStyles"
-					 width="40" x="205" y="47"
+					 width="40" x="175" y="39"
 					 restrict="-0-9-"
 					 name="top:style"/>
 		<s:TextInput id="verticalCenterText"
 					 styleName="inputStyles"
-					 width="40" x="205" y="95"
+					 width="40" x="175" y="72"
 					 restrict="-0-9-"
 					 name="verticalCenter:style"/>
 		<s:TextInput id="bottomText"
 					 styleName="inputStyles"
-					 width="40" x="205" y="143"
+					 width="40" x="175" y="105"
 					 restrict="-0-9"
 					 name="bottom:style"/>
 		<s:TextInput id="baselineText"
 					 styleName="inputStyles"
-					 width="40" x="205" y="165"
+					 width="40" x="175" y="125"
 					 restrict="-0-9"
 					 visible="false"
 					 name="baseline:style"/>
 		
-		<s:TextInput id="rightText"
-					 styleName="inputStyles"
-					 width="40" x="147" y="189"
-					 restrict="-0-9"
-					 name="right:style"/>
-		<s:TextInput id="horizontalCenterText"
-					 styleName="inputStyles"
-					 width="40" x="99" y="189"
-					 restrict="-0-9"
-					 name="horizontalCenter:style"/>
 		<s:TextInput id="leftText"
 					 styleName="inputStyles"
-					 width="40" x="50" y="189"
+					 width="30" x="55" y="152"
 					 restrict="-0-9"
-					 name="left:style"/>
-		
-		<s:CheckBox id="leftConstraint"
-					toolTip="Left"
-					x="64" y="8"/>
-		<s:CheckBox id="horizontalCenterConstraint"
-					toolTip="Horizontal Center"
-					x="114" y="8"/>
-		<s:CheckBox id="bottomConstraint"
-					toolTip="Bottom"
-					x="23" y="145"/>
-		<s:CheckBox id="topConstraint"
-					toolTip="Top"
-					x="23" y="48"/>
-		<s:CheckBox id="verticalCenterConstraint"
-					toolTip="Vertical Center"
-					x="23" y="97"/>
-		<s:CheckBox id="rightConstraint"
-					toolTip="Right"
-					x="162" y="8"/>
-		<s:CheckBox id="baselineConstraint" 
-					toolTip="Baseline"
-					visible="false"
-					x="23" y="165"/>
+					 name="left:style"
+					 textAlign="center"/>
+		<s:TextInput id="horizontalCenterText"
+					 styleName="inputStyles"
+					 width="30" x="89" y="152"
+					 restrict="-0-9"
+					 name="horizontalCenter:style"
+					 textAlign="center"/>
+		<s:TextInput id="rightText"
+					 styleName="inputStyles"
+					 width="30" x="123" y="152	"
+					 restrict="-0-9"
+					 name="right:style"
+					 textAlign="center"/>
 
 		<!-- CONSTRAINTS PANEL BOX -->
-		<s:BorderContainer height="150" width="150" 
-						   x="44" y="31"
+		<s:BorderContainer height="120" width="120" 
+						   x="44" y="23"
 						   borderAlpha=".4">
 
 			<s:BorderContainer borderColor="#9E9E9E"
-							   height="98" width="98" 
+							   height="68" width="68" 
 							   x="25" y="25"
 							   borderVisible="true" 
 							   borderWeight="2">
@@ -1592,7 +1687,117 @@
 					  visible="false"/>
 		</s:BorderContainer>
 
-	</s:BorderContainer>
+	</fc:BorderContainer>
+	
+	<!-- POSITIONING -->
+	<s:HGroup left="20" y="5" 
+			 styleName="constraintStyles"
+			 verticalAlign="middle">
+		
+		<s:Label text="Width:" minWidth="48"
+				 styleName="constraintStyles"
+				 x="2" y="7"/>
+		<s:CheckBox id="widthAutoSizeCheckbox" 
+					fontSize="12"
+					styleName="inputStyles"
+					x="104" y="0"
+					name="widthAutoSize:Boolean"
+					toolTip="Fit to content"
+					includeInLayout="false"
+					visible="false"/>
+		<s:TextInput id="widthText" 
+					 fontSize="12"
+					 styleName="inputStyles"
+					 width="50" x="44" y="0"
+					 restrict="-0-9%"
+					 name="width:Number"
+					 toolTip="Width in pixels or percent"/>
+		
+		<fc:ClearButton id="clearWidthButton" 
+				  focusEnabled="false"
+				  click="clearWidth()"/>
+		
+		<s:Spacer width="20" />
+		
+		<s:Label text="X:" minWidth="15"
+				 styleName="constraintStyles"
+				 x="30" y="42"/>
+		<s:TextInput id="xText" 
+					 fontSize="12"
+					 styleName="inputStyles"
+					 width="50" x="44" y="35"
+					 restrict="-0-9"
+					 name="x:Number"/>
+		
+		<fc:ClearButton id="clearXButton" 
+				  focusEnabled="false"
+				  click="clearX()"/>
+		
+	</s:HGroup>
+	
+	<s:HGroup left="20" y="35" 
+			  verticalAlign="middle"
+			  styleName="constraintStyles">
+		
+		
+		<s:Label text="Height:" minWidth="48"
+				 styleName="constraintStyles"
+				 x="126" y="7"/>
+		<s:CheckBox id="heightAutoSizeCheckbox" 
+					fontSize="12"
+					styleName="inputStyles"
+					x="184" y="0"
+					name="heightAutoSize:Boolean"
+					toolTip="Fit to content"
+					includeInLayout="false"
+					visible="false"/>
+		<s:TextInput id="heightText"
+					 fontSize="12"
+					 styleName="inputStyles" 
+					 width="50" x="174" y="0"
+					 restrict="-0-9%"
+					 name="height:Number"
+					 toolTip="Height in pixels or percent"
+					 />
+		
+		<fc:ClearButton id="clearHeightButton" 
+				  focusEnabled="false"
+				  click="clearHeight()"/>
+		
+		<s:Spacer width="20" />
+		
+		<s:Label text="Y:" minWidth="15"
+				 styleName="constraintStyles"
+				 x="160" y="42"/>
+		<s:TextInput id="yText" 
+					 fontSize="12"
+					 styleName="inputStyles"
+					 width="50" x="174" y="35"
+					 restrict="-0-9-"
+					 name="y:Number"/>
+		
+		<fc:ClearButton id="clearYButton" 
+						focusEnabled="false"
+						click="clearY()"/>
+	</s:HGroup>
+	
+	<s:HGroup left="20" y="66" 
+			  verticalAlign="middle"
+			  styleName="constraintStyles">
+		
+		
+		<s:Label text="Locked:" minWidth="48" paddingTop="4"
+				 styleName="constraintStyles"/>
+		<s:CheckBox id="constrainProportionsCheckbox" 
+					fontSize="12"
+					styleName="inputStyles"
+					name="contrainProportions:Boolean"
+					toolTip="Constrain the width and height of images"
+					includeInLayout="true"
+					visible="true"
+					/>
+
+	</s:HGroup>
 <!--
 	<s:Line left="23.5" right="23.5"
 			y="106" alpha=".5">
@@ -1607,7 +1812,7 @@
 			<s:SolidColorStroke/>
 		</s:stroke>
 	</s:Line>-->
-	
+	<!--
 	<s:Label left="0"
 			 y="5"
 			 text="Size and Position" 
@@ -1622,7 +1827,7 @@
 			 color="#585858"
 			 width="100%" 
 			 styleName="formItem" 
-			 />
+			 />-->
 
 	<s:ComboBox id="layoutLayoutComboBox"
 				styleName="constraintStyles"

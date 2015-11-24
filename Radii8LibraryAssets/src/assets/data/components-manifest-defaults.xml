@@ -1,0 +1,224 @@
+<?xml version="1.0"?>
+
+<!--
+
+    Spark Components
+    
+    
+    NOTE: Also add a reference to the Radii8LibrarySparkAssets class
+-->
+<componentPackage>
+
+    <component id="Application" class="spark.components.Application" include="false"/>
+    
+    <component id="BitmapImage" class="spark.primitives.BitmapImage" include="false">
+    	<defaults source="assets/icons/components/BitmapImage.png" scaleMode="stretch"/>
+    </component>
+    
+    <component id="BorderContainer" class="spark.components.BorderContainer" include="true">
+    	<defaults width="240" height="160"/>
+    </component>
+    
+    <component id="Button" class="spark.components.Button">
+    	<defaults label="Button"/>
+    </component>
+    
+    <component id="ButtonBar" class="spark.components.ButtonBar" include="false" >
+    	<defaults width="240" height="22" dataProvider="Button 1, Button 2, Button 3"/>
+    </component>
+    
+    <component id="ButtonBarButton" class="spark.components.ButtonBarButton" include="false"/>
+    
+    <component id="CheckBox" class="spark.components.CheckBox">
+    	<defaults width="78" height="20" label="Checkbox"/>
+    </component>
+    
+    <component id="GridColumnHeaderGroup" class="spark.components.GridColumnHeaderGroup" include="false"/>
+    
+    <component id="ComboBox" class="spark.components.ComboBox" include="true">
+    	<defaults width="166" height="23" dataProvider="Item 1,Item 2,Item 3"/>
+    </component>
+    
+    <component id="ColorPicker" class="com.flexcapacitor.controls.ColorPicker" include="true">
+    	<defaults />
+    </component>
+	
+	<component id="DataGrid" class="spark.components.DataGrid" include="false">
+    	<defaults width="240" height="66" />
+    </component>
+    
+    <component id="DataGroup" class="spark.components.DataGroup" include="false">
+    	<defaults width="240" height="66"/>
+    </component>
+    
+    <component id="DataRenderer" class="spark.components.DataRenderer" include="false"/>
+    
+    <component id="DropDownList" class="spark.components.DropDownList" include="true">
+    	<defaults width="166" height="23" dataProvider="Item 1,Item 2,Item 3"/>
+    </component>
+    
+    <component id="Form" class="spark.components.Form" include="false">
+    	<defaults width="240" height="60"/>
+    </component>
+    
+    <component id="FormHeading" class="spark.components.FormHeading" include="false">
+    	<defaults percentWidth="100%" height="30"/>
+    </component>
+    
+    <component id="FormItem" class="spark.components.FormItem" include="false">
+    	<defaults percentWidth="100%" height="23"/>
+    </component>
+    
+    <component id="Grid" class="spark.components.Grid" include="false">
+    	<defaults width="240" height="160" />
+    </component>
+    
+    <component id="Grid" class="mx.containers.Grid" include="false">
+    	<defaults width="240" height="160" />
+    </component>
+    
+    <component id="Group" class="spark.components.Group">
+    	<defaults width="240" height="160"/>
+    </component>
+    
+    <component id="HGroup" class="spark.components.HGroup">
+    	<defaults minHeight="20" verticalAlign="middle" minWidth="20"/>
+    </component>
+    
+    <component id="HScrollBar" class="spark.components.HScrollBar" include="false"/>
+    
+    <component id="HSlider" class="spark.components.HSlider" include="true">
+    	<defaults width="166" />
+    </component>
+    
+    <component id="Hyperlink" class="com.flexcapacitor.controls.Hyperlink" include="true">
+    	<defaults text="Link"/>
+    </component>
+    
+    <component id="Image" class="spark.components.Image">
+    	<defaults source="assets/icons/components/Image.png" scaleMode="stretch" />
+    </component>
+     
+    <component id="Label" class="spark.components.Label">
+    	<defaults text="Label"/>
+    </component>
+    
+	<component id="LinkButton" class="mx.controls.LinkButton" include="true">
+    	<defaults label="Link"/>
+    </component>
+    
+	<component id="List" class="spark.components.List" include="true">
+    	<defaults width="160" height="160" dataProvider="Item 1,Item 2,Item 3"/>
+    </component>
+    
+    <component id="NavigatorContent" class="spark.components.NavigatorContent" include="false"/>
+    
+    <component id="NumericStepper" class="spark.components.NumericStepper" include="true">
+    	<defaults />
+    </component>
+    
+    <component id="Panel" class="spark.components.Panel" include="false">
+    	<defaults width="240" height="166"/>
+    </component>
+    
+	<component id="PopUpAnchor" class="spark.components.PopUpAnchor" include="false"/>
+ 	<component id="PopUpPosition" class="spark.components.PopUpPosition" include="false"/>
+    
+	<component id="RadioButton" class="spark.components.RadioButton">
+    	<defaults width="96" height="20" label="Radio Button"/>
+    </component>
+    
+    <component id="RadioButtonGroup" class="spark.components.RadioButtonGroup" include="false"/>
+    
+    <component id="RichEditableText" class="spark.components.RichEditableText" include="false">
+    	<defaults text="Rich Editable Text" editable="false" selectable="false"/>
+    </component>
+    
+    <component id="RichText" class="spark.components.RichText" include="true">
+    	<defaults text="Rich Text"/>
+    </component>
+    
+    <component id="Scroller" class="spark.components.Scroller" include="false">
+    	<defaults width="166" height="23"/>
+    </component>
+    
+    <component id="SkinnableContainer" class="spark.components.SkinnableContainer" include="false">
+    	<defaults width="240" height="166"/>
+    </component>
+    
+    <component id="SkinnableDataContainer" class="spark.components.SkinnableDataContainer" include="false">
+    	<defaults width="240" height="166"/>
+    </component>
+    
+    <component id="SkinnablePopUpContainer" class="spark.components.SkinnablePopUpContainer" include="false"/>
+    
+    <component id="Spacer" class="mx.controls.Spacer" lookupOnly="true" include="true">
+    	<defaults width="16" height="16"/>
+    </component>
+    
+    <component id="Spinner" class="spark.components.Spinner" include="false">
+    	<defaults width="86" height="20"/>
+    </component>
+    
+    <component id="TabBar" class="spark.components.TabBar" include="false">
+    	<defaults width="240" height="22" dataProvider="Item 1,Item 2,Item 3"/>
+    </component>
+    
+    <component id="TextArea" class="spark.components.TextArea" include="true">
+    	<defaults width="166" height="66"/>
+    </component>
+    
+    <component id="TextInput" class="spark.components.TextInput">
+    	<defaults width="120" height="22"/>
+    </component>
+    
+    <component id="TextSelectionHighlighting" class="spark.components.TextSelectionHighlighting" include="false"/>
+    
+    <component id="TileGroup" class="spark.components.TileGroup">
+    	<defaults width="240" height="166"/>
+    </component>
+    
+    <component id="TitleWindow" class="spark.components.TitleWindow" include="false">
+    	<defaults width="240" height="166"/>
+    </component>
+    
+    <component id="ToggleButton" class="spark.components.ToggleButton" include="true">
+    	<defaults width="76" height="20" label="Toggle"/>
+    </component>
+    
+    <component id="VGroup" class="spark.components.VGroup" include="true">
+    	<defaults minWidth="20" minHeight="20"/>
+    </component>
+    
+    <component id="VideoDisplay" class="spark.components.VideoDisplay" include="false">
+    	<defaults width="320" height="240"/>
+    </component>
+    
+    <component id="VideoPlayer" class="spark.components.VideoPlayer" include="true">
+    	<defaults width="320" height="240"/>
+    </component>
+    
+    <component id="VScrollBar" class="spark.components.VScrollBar" include="false"/>
+    
+    <component id="VSlider" class="spark.components.VSlider" include="true">
+    	<defaults width="10" height="166"/>
+    </component>
+    
+    <!--  GRAPHIC PRIMITIVES -->
+
+    <component id="Rect" name="Rectangle" class="spark.primitives.Rect" include="false">
+    	<defaults width="160" height="160" />
+    </component>
+    
+    <component id="LinearGradient" name="Linear Gradient Fill" class="mx.graphics.LinearGradient" include="false">
+    	<defaults />
+    </component>
+    
+    <component id="SolidColorStroke" name="Solid Color Stroke" class="mx.graphics.SolidColorStroke" include="false">
+    	<defaults />
+    </component>
+    
+    <component id="SolidColor" name="Solid Color Fill" class="mx.graphics.SolidColor" include="false">
+    	<defaults />
+    </component>
+</componentPackage>

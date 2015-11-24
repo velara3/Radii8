@@ -6,19 +6,24 @@
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:collections="com.flexcapacitor.effects.collections.*"
 		 xmlns:components="com.flexcapacitor.components.*" 
-		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:views="com.flexcapacitor.views.*" 
 		 
 		 minWidth="200" 
 		 minHeight="100"
+		 implements="com.flexcapacitor.views.IInspector" 
 		 >
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controls.IAceEditor;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.MetaData;
+			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.SyntaxHighlighter;
+			
+			import mx.core.UIComponent;
 			
 			/**
 			 * Reference to Radiate
@@ -31,6 +36,8 @@
 			
 			public var lastTarget:Object;
 			
+			public var aceEditor:IAceEditor;
+			
 			public function activate():void {
 				radiate = Radiate.getInstance();
 				
@@ -38,8 +45,26 @@
 				radiate.addEventListener(RadiateEvent.OBJECT_SELECTED, objectSelectedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				
-				if (radiate.target) {
-					//target = radiate.target;
+				if (Radiate.isDesktop) {
+					if (aceEditor==null) {
+						aceEditor = AceEditorUtils.createInstance();
+						UIComponent(aceEditor).percentWidth = 100;
+						UIComponent(aceEditor).percentHeight = 100;
+						aceEditor.top = 0;
+						aceEditor.left = 2;
+						aceEditor.mode = "ace/mode/xml";
+						aceEditor.isReadOnly = true;
+						aceEditor.showGutter = true;
+						aceEditor.showFoldWidgets = true;
+						aceEditor.useWordWrap = true;
+						aceEditor.margin = "18px 0";
+						aceEditor.scrollSpeed = .5;
+
+						groupContent.addElementAt(aceEditor, 1);
+						aceEditor.validateNow();
+						
+						findInput.aceEditor = aceEditor;
+					}
 				}
 				
 				if (radiate.target) {
@@ -53,21 +78,40 @@
 					radiate.removeEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
 					radiate.removeEventListener(RadiateEvent.OBJECT_SELECTED, objectSelectedHandler);
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-					
 				}
-				if (mxTextArea) {
+				
+				if (Radiate.isDesktop && aceEditor) {
+					aceEditor.text = "";
+				}
+				else if (mxTextArea) {
 					mxTextArea.text = "";
 				}
+				
+				lastTarget = null;
 			}
 			
 			
 			public function updateObject(object:Object):void {
 				//rawData = String(object);// ObjectUtil.toString(value);
 				
-				if (lastTarget==object || object==null) return;
+				if (lastTarget==object || object==null) {
+					if (Radiate.isDesktop && aceEditor.text=="") {					
+						return;
+					}
+				}
+				
+				descriptionBox.target = object;
+				
 				rawData = ClassUtils.getDescribeType(object);
-				mxTextArea.text = rawData;
-				mxTextAreaChangeHandler();
+				
+				if (Radiate.isDesktop) {
+					aceEditor.text = rawData;
+				}
+				else {
+					mxTextArea.text = rawData;
+					mxTextAreaChangeHandler();
+				}
+				
 				lastTarget = object;
 			}
 			
@@ -84,8 +128,14 @@
 				}
 				
 				rawData = newData;
-				mxTextArea.text = rawData;
-				mxTextAreaChangeHandler();
+				
+				if (Radiate.isDesktop) {
+					aceEditor.text = rawData;
+				}
+				else {
+					mxTextArea.text = rawData;
+					mxTextAreaChangeHandler();
+				}
 			}
 			
 			protected function objectSelectedHandler(event:RadiateEvent):void {
@@ -127,6 +177,17 @@
 		]]>
 	</fx:Script>
 	
+	<s:states>
+		<s:State name="none"/>
+		<s:State name="browser"/>
+		<s:State name="desktop"/>
+	</s:states>
+	
+	<mx:HDividedBox id="groupContent" width="100%" height="100%">
+		<s:Scroller >
+			<views:Description id="descriptionBox" showDescriptionLabel="false" left="10" top="10" width="350" minWidth="350"/>
+		</s:Scroller>
+	</mx:HDividedBox>
 	
 	<!--<s:TextArea id="metadataTextArea" 
 				top="8"
@@ -156,7 +217,19 @@
 				 width="100%" height="100%"
 				 editable="false"
 				 leading="0"
+				 includeIn="browser"
 				 />
+	
+	<s:Label id="noDataLabelDesktop" 
+				top="8"
+				left="2"
+				paddingTop="8"
+				color="#484848"
+				width="100%" height="100%" 
+				fontSize="13"
+				includeIn="desktop"
+				text="No metadata available. Select a property, style or event."
+				/>
 	
 	<s:Label id="noDataLabel" 
 				top="8"
@@ -166,8 +239,12 @@
 				width="100%" height="100%" 
 				fontSize="13"
 				visible="{mxTextArea.text==''}"
-				text="No metadata available. Select a property, style or event.">
+				includeIn="browser"
+				text="No metadata available. Select a property, style or event."
+				>
 	</s:Label>
 	
+	
+	<c:AceSearchTextInput id="findInput" top="0" right="20" />
 	
 </s:Group>

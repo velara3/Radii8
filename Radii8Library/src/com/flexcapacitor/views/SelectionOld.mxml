@@ -12,6 +12,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.Selection;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -195,11 +196,11 @@
 			}
 
 			private function clearSelection(target:Object, remove:Boolean = false):void {
-				ClassUtils.clearSelection(target, systemManager);
+				//Selection.clearSelectionLines(target, systemManager);
 			}
 
 			private function drawSelection(target:DisplayObject):void {
-				ClassUtils.drawSelection(target, systemManager);
+				//Selection.drawSelectionLines(target, systemManager);
 			}
 
 			private function getItemUnderMouseBubble(event:MouseEvent):void {

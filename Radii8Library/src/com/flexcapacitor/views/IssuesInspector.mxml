@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:views="com.flexcapacitor.views.*"
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 width="220" height="100%"
+		 implements="com.flexcapacitor.views.IInspector" 
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IDocument;
+			
+			import mx.collections.ArrayCollection;
+			
+			private var radiate:Radiate;
+			
+			public var errors:Object = {label:"Errors"};
+			public var warnings:Object = {label:"Warnings"};
+			public var rootObject:Object = {label:"Whatever"};
+			
+			[Bindable]
+			public var errorsCollection:ArrayCollection = new ArrayCollection();
+			public var warningsCollection:ArrayCollection = new ArrayCollection();
+			
+			private var _target:*;
+			
+			public function get target():* {
+				return _target;
+			}
+			
+			[Bindable]
+			public function set target(value:*):void {
+				_target = value;
+			}
+			
+			public function activate():void {
+				radiate = Radiate.instance;
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.CODE_UPDATED, codeUpdatedHandler, false, 0, true);
+				
+				if (radiate.target) {
+					updateIssuesTree(radiate.target);
+				}
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
+					radiate.removeEventListener(RadiateEvent.CODE_UPDATED, codeUpdatedHandler);
+					target = null;
+				}
+			}
+			
+			
+			private function labelFunction(data:Object):String {
+				return data.label;
+			}
+			
+			/**
+			 * When the target changes reselect it 
+			 * */
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				updateIssuesTree(event.selectedItem);
+			}
+			
+			/**
+			 * Update problems and warnings tree
+			 * */
+			public function updateIssuesTree(selectedItem:Object = null):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (iDocument) {
+					errorsCollection.source = iDocument.errors;
+					warningsCollection.source = iDocument.warnings;
+					
+					if (tree.dataProvider==null) {
+						errors.children = errorsCollection;
+						warnings.children = warningsCollection;
+						
+						rootObject.children = new ArrayCollection([errors, warnings]);
+						
+						tree.dataProvider = rootObject;
+					}
+				}
+			}
+			
+			/**
+			 * Open all items
+			 * */
+			public function openAllItems():void {
+				
+				
+			}
+			
+			/**
+			 * Close all items
+			 * */
+			public function closeAllItems():void {
+				
+				
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function documentChangeHandler(event:Event):void {
+				updateIssuesTree();
+				
+			}
+			
+			protected function codeUpdatedHandler(event:RadiateEvent):void
+			{
+				updateIssuesTree();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	
+	<s:Scroller id="scroller" width="100%" height="100%"
+				top="0"
+				bottom="0">
+		<s:Group width="100%" height="100%">
+			<mx:Tree id="tree" 
+					 width="100%"
+					 focusAlpha="0"
+					 minHeight="50"
+					 labelFunction="labelFunction"
+					 verticalScrollPolicy="off"
+					 horizontalScrollPolicy="auto"
+					 rollOverColor="#ffffff"
+					 selectionColor="#d8d8d8"
+					 useRollOver="false"
+					 borderVisible="false"
+					 indentation="16"
+					 showRoot="false"
+					 itemRenderer="com.flexcapacitor.views.renderers.IssuesRenderer"
+					 >
+
+				
+			</mx:Tree>
+		</s:Group>
+	</s:Scroller>
+	
+</s:Group>

@@ -6,10 +6,11 @@
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:collections="com.flexcapacitor.effects.collections.*"
 		 xmlns:components="com.flexcapacitor.components.*" 
+		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*" 
 		 
 		 minWidth="100" 
 		 minHeight="100"
-		 creationComplete="creationCompleteHandler(event)" 
+		 implements="com.flexcapacitor.views.IInspector" 
 		 >
 	
 	
@@ -82,6 +83,7 @@
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.InspectorUtils;
 			import com.flexcapacitor.utils.StringUtils;
+			import com.flexcapacitor.views.IInspector;
 			import com.flexcapacitor.views.renderers.BooleanRenderer;
 			import com.flexcapacitor.views.renderers.ColorPickerRenderer;
 			import com.flexcapacitor.views.renderers.ComboBoxRenderer;
@@ -117,7 +119,6 @@
 			public var UINT_STATE:String = "uint";
 			
 			// LETS GET RID OF SOME OF THESE!
-			private var fontInfoCollection:XMLListCollection = new XMLListCollection();
 			private var allItems:XMLListCollection = new XMLListCollection();
 			private var inheritingStylesList:XMLListCollection = new XMLListCollection();
 			private var nonInheritingStylesList:XMLListCollection = new XMLListCollection();
@@ -172,8 +173,7 @@
 				}
 			}
 			
-			
-			protected function creationCompleteHandler(event:FlexEvent):void {
+			public function activate():void {
 				radiate = Radiate.getInstance();
 				
 				if (!showHeader) {
@@ -187,8 +187,19 @@
 				if (radiate.target) {
 					target = radiate.target;
 				}
+				else {
+					target = null;
+				}
 				
 			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+					radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				}
+			}
+			
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
 				target = event.selectedItem;
@@ -255,11 +266,11 @@
 				if (target != null) {
 					//describedType = describeType(target);
 					var time:int = getTimer();
-					/*Radiate.log.info("Get properties on target " + getName(target));
+					/*Radiate.info("Get properties on target " + getName(target));
 					describedType = ClassUtils.getDescribeType(target);
-					Radiate.log.info("2 Get properties on target : " + String(getTimer()-time));*/
+					Radiate.info("2 Get properties on target : " + String(getTimer()-time));*/
 					describedType = ClassUtils.getDescribeType(target);
-					//Radiate.log.info("3 Get properties on target : " + String(getTimer()-time));
+					//Radiate.info("3 Get properties on target : " + String(getTimer()-time));
 					
 					// make copy because collection.removeAll() is removing properties from cached XML?
 					var list:XMLList = new XMLList((describedType.accessor as XMLList).toXMLString());
@@ -295,7 +306,7 @@
 					blah = styleManager.typeSelectorCache;
 					blah = styleManager.hasAdvancedSelectors(); */
 					
-					if (filterInput && clearFilterInputOnChange) filterInput.text = "";
+					if (search.filterInput && clearFilterInputOnChange) search.filterInput.text = "";
 					
 					// we check for the text flow property so we can see if fonts are embedded
 					if (target.hasOwnProperty("textFlow")) {
@@ -314,7 +325,7 @@
 					//allItems.addAll(propertiesList);
 					
 					
-					var styles:XMLList = ClassUtils.concatenateMetaDataXMLItems(target, "Style", new XMLList());
+					var styles:XMLList = ClassUtils.getMetaData(target, "Style", new XMLList());
 					
 					//describedTypeXML = describeType(target);
 					stylesList = new XMLListCollection(styles);
@@ -636,7 +647,7 @@
 			 * This is no longer necessary since values are updated on property change events. 
 			 * */
 			protected function searchPropertyInput_enterHandler(event:FlexEvent):void {
-				var searchText:String = filterInput.text;
+				var searchText:String = search.filterInput.text;
 				var item:XML;
 				
 				return; // DISABLE FOR NOW
@@ -658,23 +669,23 @@
 				// on application getting this error: 
 				//RangeError: Index '-1' specified is out of bounds.???
 				/*allItems.enableAutoUpdate();
-				Radiate.log.info("1Length:"+allItems.length);
+				Radiate.info("1Length:"+allItems.length);
 				allItems.refresh();
-				Radiate.log.info("2Length:"+allItems.length);
+				Radiate.info("2Length:"+allItems.length);
 				allItems.sort = null;
-				Radiate.log.info("3Length:"+allItems.length);*/
+				Radiate.info("3Length:"+allItems.length);*/
 				
 				// remove all will remove items in cached XML in describe type so make a copy 
 				// when creating an XMLList of items
 				allItems.removeAll();
 				allItems.refresh();
 				
-				inheritingStylesList.removeAll();
-				nonInheritingStylesList.removeAll();
+				//inheritingStylesList.removeAll();
+				//nonInheritingStylesList.removeAll();
 				objectPropertiesList.removeAll();
 				
 				if (clearFilterInputOnChange) {
-					filterInput.text = "";
+					search.filterInput.text = "";
 				}
 				targetValueText.text = "";
 				dataProviderProperties = new XMLListCollection();
@@ -710,8 +721,7 @@
 				}
 			}*/
 			
-			protected function propertyChangeHandler(event:RadiateEvent):void
-			{
+			protected function propertyChangeHandler(event:RadiateEvent):void {
 				// radiate property change event
 				updateDataGridPropertyValue(event.changes);
 				//updateSubComponentsValue();
@@ -787,12 +797,16 @@
 										// we probably cleared a style
 										if (changeObject[property]===undefined) {
 											setValueOnNode(node);
+											filteredPropertiesCollection.itemUpdated(node, "@value");
+											filteredPropertiesCollection.refresh();
+											return;
 										}
 										else {
 											setValueOnNode(node);
 											//node.@value = Object(changeObject[property]).toString();
 											filteredPropertiesCollection.itemUpdated(node, "@value");
 											filteredPropertiesCollection.refresh();
+											return;
 										}
 									}
 								}
@@ -1267,19 +1281,6 @@
 								 fields="{['@name']}" />
 		</handlers:EventHandler>
 		
-		<!-- FILTER BY NAME -->
-		<handlers:EventHandler eventName="change" 
-							   targets="{[filterInput,showAllItemsOnEmpty,caseSensitive,searchAtStart]}"
-							   >
-			<collections:FilterCollection target="{filteredPropertiesCollection}" 
-								   source="{filterInput}" 
-								   sourcePropertyName="text"
-								   fieldName="@name"
-								   showAllItemsOnEmpty="{showAllItemsOnEmpty.selected}"
-								   caseSensitive="{caseSensitive.selected}"
-								   searchAtStart="{searchAtStart.selected}"
-								   />
-		</handlers:EventHandler>
 		
 		<s:RadioButtonGroup id="booleanGroup" change="booleanGroup_changeHandler(event)"/>
 	</fx:Declarations>
@@ -1312,23 +1313,14 @@
 				 width="100%" 
 				 excludeFrom="properties"
 				 >
-					
-			<c:SearchTextInput id="filterInput" 
-							   left="0" right="0" top="0" 
-							   width="100%"
-							   minWidth="60" 
-							   prompt="Search"
-							   styleName="inputStyles"
-							   enter="searchPropertyInput_enterHandler(event)"
-							   keyUp="filterInput_keyUpHandler(event)"
-							   />
-			<s:HGroup width="100%" top="32" left="4" verticalAlign="baseline">
-				<s:CheckBox id="showAllItemsOnEmpty" label="All" selected="true"/>
-				<s:CheckBox id="caseSensitive" label="Case" selected="false"/>
-				<s:CheckBox id="searchAtStart" label="At start" selected="false"/>
-				<s:Spacer width="100%"/>
-				<s:Label text="Results: {filteredPropertiesCollection.length}"/>
-			</s:HGroup>
+			
+			<inspectors:SearchCollection id="search" 
+										 dataProvider="{filteredPropertiesCollection}"
+										 fieldName="@name"
+										 target="{target}">
+				
+			</inspectors:SearchCollection>
+
 		</s:Group>
 		
 		<!-- PROPERTIES GRID -->
@@ -1365,7 +1357,7 @@
 						<s:itemRenderer>
 							<fx:Component>
 								<s:GridItemRenderer minHeight="14" >
-									<s:BitmapImage top="8" left="3" source="{Radii8LibraryAssets.propertyIcon}"/>
+									<s:BitmapImage top="8" left="3" source="{Radii8LibraryAssets.property}"/>
 								</s:GridItemRenderer>
 							</fx:Component>
 						</s:itemRenderer>
@@ -1448,7 +1440,7 @@
 				<s:ArrayCollection>
 					
 					<s:GridColumn dataField="@name" 
-								  minWidth="50"
+								  minWidth="100"
 								  editable="false" 
 								  resizable="true"
 								  headerText="PROPERTY">
@@ -1527,17 +1519,17 @@
 							width="100%" 
 							height="100%"
 							borderAlpha="0.2" 
+							focusAlpha="0"
 							skinClass="spark.skins.spark.TextAreaSkin"
 							keyUp="targetValueText_keyUpHandler(event)"
 							changing="targetValueText_changingHandler(event)"
 							>
 				</s:TextArea>
 				
-				<s:Button id="booleanTextStyleButton" 
-						  skinClass="com.flexcapacitor.skins.ClearButton"
-						  click="clearStyleButton_clickHandler(event)"
-						  right="0" 
-						  verticalCenter="0"/>
+				<c:ClearButton id="booleanTextStyleButton" 
+							  click="clearStyleButton_clickHandler(event)"
+							  right="0" 
+							  verticalCenter="0"/>
 			</s:Group>
 			
 			
@@ -1550,8 +1542,7 @@
 				<components:ColorChooser id="colorChooser" returnType="hexidecimalHash" 
 										 change="colorChooser_changeHandler(event)"/>
 				
-				<s:Button id="clearColorButton" 
-						  skinClass="com.flexcapacitor.skins.ClearButton"
+				<c:ClearButton id="clearColorButton" 
 						  click="clearStyleButton_clickHandler(event)"
 						  right="0" 
 						  verticalCenter="0"/>
@@ -1568,9 +1559,8 @@
 								width="100%"
 								change="formatCombobox_changeHandler(event)"
 								dataProvider="{formatsCollection}"/>
-				<s:Button id="clearFormatButton" 
+				<c:ClearButton id="clearFormatButton" 
 						  skinClass="com.flexcapacitor.skins.ClearButton"
-						  click="clearStyleButton_clickHandler(event)"
 						  right="0" 
 						  verticalCenter="0"/>
 			</s:HGroup>
@@ -1585,9 +1575,9 @@
 				<s:NumericStepper id="numericStepper" 
 								  width="100%"
 								  valueFormatFunction="formatNumericStepper"
-								  change="numericStepper_changeHandler(event)"/>
-				<s:Button id="booleanNumberStyleButton" 
-						  skinClass="com.flexcapacitor.skins.ClearButton"
+								  change="numericStepper_changeHandler(event)"
+								  focusAlpha="0"/>
+				<c:ClearButton id="booleanNumberStyleButton" 
 						  click="clearStyleButton_clickHandler(event)"
 						  right="0" 
 						  verticalCenter="0"
@@ -1615,8 +1605,7 @@
 				
 				<s:Spacer width="100%"/>
 				
-				<s:Button id="booleanClearStyleButton" 
-						  skinClass="com.flexcapacitor.skins.ClearButton"
+				<c:ClearButton id="booleanClearStyleButton" 
 						  click="clearStyleButton_clickHandler(event)"
 						  />
 			</s:HGroup>
