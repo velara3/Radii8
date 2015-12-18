@@ -18,6 +18,7 @@ package com.flexcapacitor.utils {
 		
 		public function AndroidDocumentExporter() {
 			supportsExport = true;
+			language = "Android";
 		}
 		
 		/**

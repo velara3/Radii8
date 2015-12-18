@@ -18,6 +18,7 @@ package com.flexcapacitor.utils {
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.styles.IStyleClient;
+	import mx.utils.NameUtil;
 	
 	import spark.components.BorderContainer;
 	import spark.components.HGroup;
@@ -30,6 +31,8 @@ package com.flexcapacitor.utils {
 	import spark.layouts.HorizontalLayout;
 	import spark.layouts.TileLayout;
 	import spark.layouts.VerticalLayout;
+	import spark.primitives.Line;
+	import spark.primitives.supportClasses.GraphicElement;
 	
 	import flashx.textLayout.conversion.ConversionType;
 	import flashx.textLayout.conversion.TextConverter;
@@ -46,12 +49,8 @@ package com.flexcapacitor.utils {
 		
 		public function HTMLDocumentExporter() {
 			supportsExport = true;
+			language = "HTML";
 		}
-		
-		/**
-		 * Version
-		 * */
-		public var version:String = "1.0.0";
 		
 		/**
 		 * Sets explicit size regardless if size is explicit
@@ -62,6 +61,11 @@ package com.flexcapacitor.utils {
 		 * Sets styles inline
 		 * */
 		public var useInlineStyles:Boolean;
+		
+		/**
+		 * For label components uses a span element instead of label element
+		 * */
+		public var useSpanTagForLabel:Boolean = true;
 		
 		/**
 		 * Styles added by users 
@@ -199,6 +203,11 @@ package com.flexcapacitor.utils {
 		public var document:IDocument;
 		
 		/**
+		 * Array of scripts. Could be string
+		 * */
+		public var scripts:String = "";
+		
+		/**
 		 * @inheritDoc
 		 * */
 		override public function export(iDocument:IDocument, targetDescription:ComponentDescription = null, localOptions:ExportOptions = null):SourceData {
@@ -209,6 +218,8 @@ package com.flexcapacitor.utils {
 			var warningData:IssueData;
 			var tabDepth:String = "";
 			var bodyContent:String;
+			var headerContent:String;
+			var stylesheetLinks:String;
 			
 			document = iDocument;
 			
@@ -247,7 +258,7 @@ package com.flexcapacitor.utils {
 				getAppliedPropertiesFromHistory(iDocument, targetDescription);
 				
 				if (!disableTabs) {
-					tabDepth = getContentTabDepth(template);
+					//tabDepth = getContentTabDepth(template);
 				}
 				
 				// if useCustomMarkup is true then markup and styles is
@@ -313,41 +324,41 @@ package com.flexcapacitor.utils {
 				if (userStyles) {
 					styles += "\n" + userStyles;
 				}
-				
-				// wrap CSS with style tags
-				// when not inline and not external
-				if (!useExternalStylesheet && styles!="") {
-					bodyContent = markup + "\n" + wrapInStyleTags(styles);
-				}
 				else {
-					bodyContent = markup;
+					userStyles = "";
 				}
 				
-				if (template==null) {
+				if (template==null || template=="") {
+					template = document.template;
+				}
+				
+				if (template==null || template=="") {
 					template = "";
 					warningData = IssueData.getIssue("Missing template content", "The template was empty.");
 					warnings.push(warningData);
 				}
 				
+				// replace generator
+				pageOutput = replaceGeneratorToken(template, generator);
 				
-				// replace content
-				pageOutput = replaceContentToken(template, bodyContent);
-					
 				// replace title
 				pageOutput = replacePageTitleToken(pageOutput, document.name);
 				
 				// replace scripts
-				pageOutput = pageOutput.replace(scriptsToken, "");
+				pageOutput = replaceScriptsToken(pageOutput, scripts);
 				
-				// styles
+				
+				// replace styles
 				if (useExternalStylesheet) {
+					
 					file = new FileInfo();
 					file.contents = styles;
 					file.fileName = document.name;
 					file.fileExtension = "css";
-					files.push(file);
 					
-					var stylesheetLinks:String;
+					if (createFiles) {
+						files.push(file);
+					}
 					
 					// create link to stylesheet
 					stylesheetLinks = getExternalStylesheetLink(file.getFullFileURI());
@@ -355,6 +366,17 @@ package com.flexcapacitor.utils {
 					pageOutput = replaceStylesheetsToken(pageOutput, stylesheetLinks);
 					
 				}
+				else {
+					
+					if (styles!="") {
+						pageOutput = replaceStylesToken(pageOutput, wrapInStyleTags(styles));
+					}
+				}
+				
+				
+				// replace content
+				pageOutput = replaceContentToken(pageOutput, markup);
+				
 				
 				if (createFiles) {
 					file = new FileInfo();
@@ -382,6 +404,7 @@ package com.flexcapacitor.utils {
 				
 				var checkValidXML:Boolean = false;
 				
+				// skipping this check for now
 				if (checkValidXML) {
 					try {
 						// don't use XML for HTML output because it converts this:
@@ -422,9 +445,11 @@ package com.flexcapacitor.utils {
 			
 			var sourceData:SourceData = new SourceData();
 			
+			sourceData.source = pageOutput;
 			sourceData.markup = markup;
 			sourceData.styles = styles;
-			sourceData.source = pageOutput;
+			sourceData.template = template;
+			sourceData.userStyles = userStyles;
 			sourceData.files = files;
 			sourceData.errors = errors;
 			sourceData.warnings = warnings;
@@ -478,6 +503,7 @@ package com.flexcapacitor.utils {
 			var componentChild:ComponentDescription;
 			var instanceName:String = componentInstance && "name" in componentInstance ? componentInstance.name : "";
 			var instanceID:String = componentInstance && "id" in componentInstance ? componentInstance.id : "";
+			var identity:String = ClassUtils.getIdentifier(componentInstance);
 			var contentToken:String = "[child_content]";
 			var styleValue:String = "position:absolute;";
 			var stylesModel:Styles = new Styles();
@@ -491,6 +517,7 @@ package com.flexcapacitor.utils {
 			var wrapperTag:String = "";
 			var centeredHorizontally:Boolean;
 			var wrapperTagStyles:String = "";
+			var wrapperSVGStyles:String = "";
 			var properties:String = "";
 			var outlineStyle:String;
 			var layoutOutput:String = "";
@@ -503,7 +530,6 @@ package com.flexcapacitor.utils {
 			var initialTabs:String = tabs;
 			var parentVerticalAlign:String;
 			var errorData:ErrorData;
-			var identity:String = ClassUtils.getIdentifier(componentInstance);
 			
 			
 			// we are setting the styles in a string now
@@ -1124,7 +1150,12 @@ package com.flexcapacitor.utils {
 					
 					if (localName=="label") {
 						// we may want to use "p" but rendering and layout is slightly different
-						htmlName = "label";
+						if (useSpanTagForLabel) {
+							htmlName = "span";
+						}
+						else {
+							htmlName = "label";
+						}
 					}
 					else if (localName=="textarea") {
 						htmlName = "textarea";
@@ -1161,7 +1192,9 @@ package com.flexcapacitor.utils {
 					styleValue = getFontColor(componentInstance, styleValue);
 					
 					var marginTop:int = getMarginTopAdjustment(componentInstance, isVerticalCenterSet);
-					styleValue += "margin-top:" + marginTop + "px;";
+					if (marginTop!=0) {
+						styleValue += "margin-top:" + marginTop + "px;";
+					}
 					
 					if (componentInstance.getStyle("typographicCase")!="default") {
 						styleValue += "text-transform:" + componentInstance.getStyle("typographicCase") + ";";
@@ -1210,10 +1243,10 @@ package com.flexcapacitor.utils {
 						layoutOutput += getWrapperTag(wrapperTag, true);
 					}
 				}
-				else if (localName=="hyperlink") {
+				else if (localName=="xxxxxxxxx") {
 					htmlName = "a";
 					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
-					layoutOutput += "<a "  + properties;
+					layoutOutput += "<" + htmlName + " " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					//styleValue += "width:" + componentInstance.width+ "px;";
@@ -1269,6 +1302,7 @@ package com.flexcapacitor.utils {
 					layoutOutput += "<div "  + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
+					
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
 					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					
@@ -1281,6 +1315,65 @@ package com.flexcapacitor.utils {
 					if (useWrapperDivs) {
 						layoutOutput += getWrapperTag(wrapperTag, true);
 					}
+				}
+				else if (localName=="horizontalline" || localName=="verticalline") {
+					//move to 
+					htmlName = "line";
+					wrapperTag = "svg";
+					/*<svg height="210" width="500">
+					<line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" />
+				  </svg>*/ 
+					//if (useWrapperDivs) {
+					wrapperSVGStyles = getLineWrapperSize(componentInstance);
+					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperSVGStyles);
+					//}
+					//else {
+					//	layoutOutput = tabs;
+					//}
+						
+					if (componentInstance is GraphicElement && componentInstance.id ==null) {
+						// graphic element has no name property
+						componentInstance.id = NameUtil.createUniqueName(componentInstance);
+					}
+					layoutOutput += "<line "  + properties;
+					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
+					
+					if (localName=="horizontalline") {
+						layoutOutput = getLinePosition(componentInstance, HORIZONTAL_LINE, layoutOutput);
+					}
+					else if (localName=="verticalline") {
+						layoutOutput = getLinePosition(componentInstance, VERTICAL_LINE, layoutOutput);
+					}
+					else {
+						layoutOutput = getLinePosition(componentInstance, LINE, layoutOutput);
+					}
+					
+					
+					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
+
+					styleValue = "stroke:" + DisplayObjectUtils.getColorInRGB(componentInstance.strokeColor, componentInstance.alpha) + ";";
+					styleValue += "stroke-width:" + componentInstance.stroke.weight + ";";
+					
+					if (true) {
+						styleValue += "shape-rendering:crispEdges;";
+					}
+					else {
+						
+					}
+					//styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
+					//styleValue += isInVerticalLayout ? getDisplayBlock() : "";
+					
+					layoutOutput += properties ? " " : "";
+					//output += setStyles(componentInstance, wrapperTagStyles+styleValue);
+					stylesOut = wrapperTagStyles + styleValue;
+					
+					layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
+					//output += "&#160;"
+					layoutOutput += "</line>";
+					
+					//if (useWrapperDivs) {
+						layoutOutput += getWrapperTag(wrapperTag, true);
+					//}
 				}
 				else {
 					errorData = new ErrorData();
@@ -1297,6 +1390,11 @@ package com.flexcapacitor.utils {
 						layoutOutput = tabs;
 					}
 					layoutOutput += "<label "  + properties;
+					
+					if (componentInstance is GraphicElement && componentInstance.id ==null) {
+						// graphic element has no name property
+						componentInstance.id = NameUtil.createUniqueName(componentInstance);
+					}
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					//styleValue += "width:" + componentInstance.width+ "px;";
@@ -1304,7 +1402,7 @@ package com.flexcapacitor.utils {
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
 					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					//styleValue += wrapperTagStyles;
-					styleValue += "color:" + DisplayObjectUtils.getColorInHex(componentInstance.getStyle("color"), true) + ";";
+					styleValue = getFontColor(componentInstance, styleValue);
 					
 					styleValue = getFontFamily(componentInstance, styleValue);
 					styleValue = getFontWeight(componentInstance, styleValue);
@@ -1379,10 +1477,24 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (identity && identity.toLowerCase()=="theloop") {
-				layoutOutput = "\n" + initialTabs + "<!--the loop-->" + layoutOutput + "\n" + initialTabs + "<!--the loop-->";
+				layoutOutput = "\n" + initialTabs + "<!--the loop-->"  + "\n" + layoutOutput + "\n" + initialTabs + "<!--the loop-->";
 			}
 			
 			return layoutOutput;
+		}
+		
+		/**
+		 * Gets the font color if defined inline
+		 * */
+		public function getFontColor(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "color")) {
+				styleValue += "color:" + DisplayObjectUtils.getColorInHex(styleClient.getStyle("color"), true) + ";"
+			}
+			
+			return styleValue;
 		}
 		
 		/**
@@ -1390,8 +1502,9 @@ package com.flexcapacitor.utils {
 		 * */
 		public function getFontFamily(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
 			
-			if (getInherited || (styleClient.styleDeclaration && "fontFamily" in styleClient.styleDeclaration.overrides)) {
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "fontFamily")) {
 				styleValue += "font-family:" + FontUtils.getSanitizedFontName(componentInstance) + ";"
 			}
 			
@@ -1403,22 +1516,10 @@ package com.flexcapacitor.utils {
 		 * */
 		public function getFontWeight(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
 			
-			if (getInherited || (styleClient.styleDeclaration && "fontWeight" in styleClient.styleDeclaration.overrides)) {
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "fontWeight")) {
 				styleValue += "font-weight:" + styleClient.getStyle("fontWeight") + ";"
-			}
-			
-			return styleValue;
-		}
-		
-		/**
-		 * Gets the font color if defined inline
-		 * */
-		public function getFontColor(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
-			var styleClient:IStyleClient = componentInstance as IStyleClient;
-			
-			if (getInherited || (styleClient.styleDeclaration && "color" in styleClient.styleDeclaration.overrides)) {
-				styleValue += "color:" + DisplayObjectUtils.getColorInHex(componentInstance.getStyle("color"), true) + ";"
 			}
 			
 			return styleValue;
@@ -1429,8 +1530,9 @@ package com.flexcapacitor.utils {
 		 * */
 		public function getFontSize(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
 			
-			if (getInherited || (styleClient.styleDeclaration && "fontSize" in styleClient.styleDeclaration.overrides)) {
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "fontSize")) {
 				styleValue += "font-size:" + styleClient.getStyle("fontSize") + "px;"
 			}
 			
@@ -1442,8 +1544,9 @@ package com.flexcapacitor.utils {
 		 * */
 		public function getLineHeight(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
 			
-			if (getInherited || (styleClient.styleDeclaration && "lineHeight" in styleClient.styleDeclaration.overrides)) {
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "lineHeight")) {
 				styleValue += "line-height:" + parseInt(styleClient.getStyle("lineHeight"))/100+ ";"
 			}
 			
@@ -1476,7 +1579,7 @@ package com.flexcapacitor.utils {
 		 * */
 		private function getMarginTopAdjustment(componentInstance:Object, isVerticalCenterSet:Boolean):int {
 			var fontSize:Number = componentInstance.getStyle("fontSize");
-			var marginTop:int = fontSize > 18 ? fontSize * paddingFromBrowserTextEngine * -1 : 0;
+			var marginTop:int = fontSize > 14 ? fontSize * paddingFromBrowserTextEngine * -1 : 0;
 			
 			if (isVerticalCenterSet) {
 				return 0;
@@ -1487,6 +1590,13 @@ package com.flexcapacitor.utils {
 		
 		/**
 		 * Get a tag with less than or greater than wrapped around it. 
+		 * 
+<pre>
+getWrapperTag(""); // returns ""
+getWrapperTag("div"); // returns <div>
+getWrapperTag("div", true); // returns </div>
+getWrapperTag("div", false, "color:blue"); // returns <div styles="color:blue;">
+</pre>
 		 * */
 		private function getWrapperTag(wrapperTag:String = "", end:Boolean = false, styles:String = ""):String {
 			var output:String = "";
@@ -1781,7 +1891,7 @@ package com.flexcapacitor.utils {
 				
 			}
 			
-			if (element.styleDeclaration && "color" in element.styleDeclaration.overrides) {
+			if (StyleUtils.isStyleDeclaredInline(element, "color")) {
 				value += "color:" + DisplayObjectUtils.getColorInHex(element.getStyle("color"), true) + ";";
 			}
 			
@@ -1851,6 +1961,7 @@ package com.flexcapacitor.utils {
 		 * Wrap in style tags
 		 * */
 		public function wrapInStyleTags(value:String):String {
+			if (value==null || value=="") return "";
 			var out:String = "<style type=\"text/css\">\n" + value + "\n</style>";
 			return out;
 		}
@@ -1878,11 +1989,101 @@ package com.flexcapacitor.utils {
 		 * Get style name or class attribute
 		 * */
 		public function getStyleNameAttribute(instance:Object, value:String = "", appendID:String = ""):String {
-			var styleName:String = instance.styleName;
+			var styleName:String = styleName in instance ? instance.styleName : null;
 			
 			if (styleName!=null && styleName!="") {
 				value += value.charAt(value.length)!=" " ? " " : "";
 				value += "class=\"" + styleName + "\"";
+			}
+			
+			return value;
+		}
+		
+		public static const VERTICAL_LINE:String = "verticalLine";
+		public static const HORIZONTAL_LINE:String = "horizontalLine";
+		public static const LINE:String = "line";
+		
+		/**
+		 * Get line position details
+		 * For horizontal and vertical lines the start positions are ignored
+		 * because we create a wrapper div positioning the SVG contents. 
+		 * This could be incorrect but we have a low bar for this option.
+		 * */
+		public function getLinePosition(instance:Object, type:String, value:String = ""):String {
+			var line:Line = instance as Line;
+			
+			if (line==null) {
+				return value;
+			}
+			
+			if (type==HORIZONTAL_LINE) {
+				
+				// start at 0
+				value += " x1=\"" + instance.x + "\"";
+				
+				// stretch to width 
+				if (!isNaN(line.percentWidth)) {
+					value += " x2=\"" + line.percentWidth + "%\"";
+				}
+				else {
+					value += " x2=\"" + line.width + "\"";
+				}
+				
+				value += " y1=\""+ instance.y + "\" y2=\"" + instance.y +  "\"";
+			}
+			else if (type==VERTICAL_LINE) {
+				// start at 0
+				value += " y1=\"" + instance.y +  "\"";
+				
+				// stretch to height 
+				if (!isNaN(line.percentWidth)) {
+					value += " y2=\"" + line.percentWidth + "%\"";
+				}
+				else {
+					value += " y2=\"" + line.width + "\"";
+				}
+				
+				value += " x1=\"" + instance.x + "\" x2=\"" + instance.y + "\"";
+				
+			}
+			else {
+				value += " x1=\"" + line.xFrom + "\" x2=\""+ line.xTo  + "\"";
+				value += " y1=\"" + line.yFrom  + "\" y2=\"" + line.yTo + "\"";
+			}
+			
+			return value;
+		}
+		
+		/**
+		 * Get line wrapper position details
+		 * This could be incorrect. 
+		 * */
+		public function getLineWrapperSize(instance:Object):String {
+			var line:Line = instance as Line;
+			var value:String = "";
+			
+			if (line==null) {
+				return "";
+			}
+			
+			
+			if (!isNaN(instance.percentWidth)) {
+				value += "width:" + instance.percentWidth + "%;";
+			}
+			else if ("explicitWidth" in instance) {
+				if (Object(instance).explicitWidth!=null && !isNaN(Object(instance).explicitWidth)) {
+					value += "width:" + instance.width + "px;";
+				}
+			}
+			
+			if (!isNaN(instance.percentHeight)) {
+				value += "height:" + instance.percentHeight + "%;";
+			}
+			else if ("explicitHeight" in instance) {
+				if (Object(instance).explicitHeight!=null && 
+					!isNaN(Object(instance).explicitHeight)) {
+					value += "height:" + instance.height + "px;";
+				}
 			}
 			
 			return value;
@@ -1956,19 +2157,29 @@ package com.flexcapacitor.utils {
 		public var useExternalStylesheet:Boolean;
 		
 		/**
+		 * Styles set inline are placed before markup
+		 * */
+		public var inlineStylesBeforeMarkup:Boolean = true;
+		
+		/**
 		 * Default file extension. Default is html. 
 		 * This can be changed by setting the export options.
 		 * */
 		public var fileExtension:String = "html";
+		
+		/**
+		 * Adds a container around the markup
+		 * */
 		private var addContainerDiv:Boolean;
 		
 		/**
 		 * @inheritDoc
 		 * */
 		override public function getExportOptions():ExportOptions {
-			exportOptions = new HTMLExportOptions();
+			if (exportOptions==null) {
+				exportOptions = new HTMLExportOptions();
+			}
 			return exportOptions;
 		}
-		
 	}
 }

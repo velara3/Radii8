@@ -391,6 +391,11 @@ package com.flexcapacitor.model {
 			var saveLocally:Boolean = locations.indexOf(LOCAL_LOCATION)!=-1;
 			var form:URLVariables;
 			
+			// if importing document but save doesn't happen while online
+			if (uid=="null" || uid==null) {
+				uid = createUID();
+			}
+			
 			if (saveRemote) {
 			//Radiate.info("Save");
 				// we need to create service
@@ -408,7 +413,7 @@ package com.flexcapacitor.model {
 				form = toSaveFormObject();
 				
 				// check that it's valid XML before saving
-				if (id!=null && !XMLUtils.isValidXML(form['custom[source]'])) {
+				if (id!=null && !originalSource && !XMLUtils.isValidXML(form['custom[source]'])) {
 					var error:Object = XMLUtils.validationError;
 					error = XMLUtils.validationErrorMessage;
 					Radiate.error("XML is invalid. Not saving. " + XMLUtils.validationErrorMessage + " Please report error with XML code below: \n"+form['custom[source]']);

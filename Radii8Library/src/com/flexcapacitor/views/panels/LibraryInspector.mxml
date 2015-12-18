@@ -10,6 +10,7 @@
 		 xmlns:file="com.flexcapacitor.effects.file.*"
 		 xmlns:fc="com.flexcapacitor.effects.popup.*"
 		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*"
+		 xmlns:supportClasses="com.flexcapacitor.effects.collections.supportClasses.*" 
 		 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 width="400" 
@@ -17,6 +18,10 @@
 		 paddingLeft="8" 
 		 paddingRight="8" 
 		 paddingBottom="8" 
+		 
+		 dragEnter="library_dragEnterHandler(event)"
+		 dragDrop="library_dragDropHandler(event)"
+		 dragOver="library_dragOverHandler(event)"
 		 >
 	
 	<!-- 
@@ -50,11 +55,12 @@
 			import com.flexcapacitor.views.ImageView;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			
-			import mx.containers.VDividedBox;
 			import mx.core.ClassFactory;
 			import mx.core.DragSource;
+			import mx.core.IUIComponent;
 			import mx.core.UIComponent;
 			import mx.events.DragEvent;
+			import mx.events.SandboxMouseEvent;
 			import mx.managers.DragManager;
 			
 			import spark.components.Application;
@@ -72,9 +78,18 @@
 			
 			public var selectedItem:Object;
 			
+			public var SMALL:String = "small";
+			public var MEDIUM:String = "medium";
+			public var FULL:String = "full";
+			public var THUMBNAIL:String = "thumbnail";
+			
+			public var service:WPAttachmentService;
+			
+			public var currentTargetRow:Group;
 			public var fileReference:FileReference;
+			public var fileReferenceList:FileReferenceList;
 			
-			
+			public var uploadAutomatically:Boolean;
 			
 			public function activate():void {
 				radiate = Radiate.getInstance();
@@ -83,6 +98,7 @@
 				radiate.addEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ASSET_ADDED, assetAdded, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChanged, false, 0, true);
 				
 				updateAssets();
 			}
@@ -93,6 +109,7 @@
 					radiate.removeEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived);
 					radiate.removeEventListener(RadiateEvent.ASSET_ADDED, assetAdded);
 					radiate.removeEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChanged);
 				}
 			}
 			
@@ -120,6 +137,10 @@
 				
 				rowGroup = event.currentTarget as Group;
 				
+				if (currentTargetRow) {
+					removeMouseTargetListeners(currentTargetRow);
+				}
+				
 				//event.stopImmediatePropagation();
 				//list.dragEnabled = false;
 				
@@ -127,56 +148,86 @@
 				
 				if (!application) return;
 				
-				if (selectedItem is ImageData) {
-					// if we do this it doesn't show up in event history
-/*					if (ImageData(selectedItem).bitmapData) {
-						item.defaultProperties.source = selectedItem.bitmapData;
-					}
-					else if (ImageData(selectedItem).url) {
-						item.defaultProperties.source = selectedItem.url;
-					}*/
-				}
-				
-				component = Radiate.createComponentForAdd(iDocument, item);
+				//trace("listening for drag behavior");
+				component = Radiate.createComponentToAdd(iDocument, item, false);
 				
 				
 				if (!dragManagerInstance) {
 					dragManagerInstance = DragManagerUtil.getInstance();
 				}
 				
-				rowGroup.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
-				rowGroup.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+				addMouseTargetListeners(rowGroup);
 				
-				//dragManagerInstance.listenForDragBehavior(rowGroup, application, event, component);
 				dragManagerInstance.listenForDragBehavior(rowGroup, iDocument, event, component);
 				
-				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
-				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
-				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
-				
-				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
-				dragManagerInstance.addEventListener(DragEvent.DRAG_OVER, handleDragOver);
-				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				removeDragManagerListeners(dragManagerInstance);
+				addDragManagerListeners(dragManagerInstance);
 				
 				// DRAG DROP 
 				// is continued in 
 				// DragManagerUtil.dragDropHandler()
-				
 				// and then in handleDragDrop() here
+			}
+			
+			/**
+			 * Add listeners to drag manager
+			 * */
+			public function addDragManagerListeners(dragManager:IEventDispatcher):void {
+				
+				dragManager.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dragManager.addEventListener(DragEvent.DRAG_OVER, handleDragOver);
+				dragManager.addEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				dragManager.addEventListener(DragDropEvent.DRAG_DROP_INCOMPLETE, handleDragDropIncomplete);
+			}
+			
+			/**
+			 * Remove listeners from drag manager
+			 * */
+			public function removeDragManagerListeners(dragManager:IEventDispatcher):void {
+				
+				dragManager.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
+				dragManager.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
+				dragManager.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				dragManager.removeEventListener(DragDropEvent.DRAG_DROP_INCOMPLETE, handleDragDropIncomplete);
+				
+			}
+			
+			/**
+			 * Listen for mouse events
+			 * */
+			public function addMouseTargetListeners(rowGroup:IEventDispatcher):void {
+				rowGroup.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+				rowGroup.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpHandler, false, 0, true);
+				
+				stage.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+				stage.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpHandler, false, 0, true);
+			}
+			
+			
+			/**
+			 * Listen for mouse events
+			 * */
+			public function removeMouseTargetListeners(eventDispatcher:IEventDispatcher):void {
+				if (eventDispatcher) {
+					eventDispatcher.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+					eventDispatcher.removeEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpHandler);
+				}
+				
+				stage.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				stage.removeEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpHandler);
 			}
 			
 			/**
 			 * Remove mouse handlers from row
 			 * */
-			protected function mouseUpHandler(event:MouseEvent):void {
-				// we need a custom FlexSprite class to do this
-				/*if (event.currentTarget.eventListeners) {
-					event.currentTarget.removeAllEventListeners();
-				}*/
+			protected function mouseUpHandler(event:Event):void {
+				removeMouseTargetListeners(currentTargetRow);
+				removeMouseTargetListeners(event.currentTarget as IEventDispatcher);
+				removeMouseTargetListeners(event.target as IEventDispatcher);
 				
-				//list.dragEnabled = true;
-				event.currentTarget.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				//trace(ClassUtils.getClassName(event.currentTarget) + ":" + event.type);
 				
+				removeDragManagerListeners(dragManagerInstance);
 			}
 			
 			/**
@@ -184,32 +235,14 @@
 			 * We can prevent automatic adding by calling event.preventDefault().
 			 * If we do not call preventDefault dragDropComplete is the next event to be called. 
 			 * */
-			protected function handleDragDrop(event:DragDropEvent):void
-			{
+			protected function handleDragDrop(event:DragDropEvent):void {
 				var component:Object = event.draggedItem;
-				
-				// if text based or combo box we need to prevent 
-				// interaction with cursor
-				
-				// UPDATE THIS IN HANDLE DRAG DROP COMPLETE
-				/*
-				if (component is TextBase || component is SkinnableTextBase) {
-					component.mouseChildren = false;
-					
-					if ("textDisplay" in component && component.textDisplay) {
-						component.textDisplay.enabled = false;
-					}
-				}*/
+				//trace(event.type);
 				
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
 				//dropTargetLabel.text = "Drag drop to:" + dragManagerInstance.dropTargetName;
 				
 				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
-			}
-			
-			private function deferredInstanceFromFunction():Array {
-				var label:Label = new Label();
-				return [label];
 			}
 			
 			/**
@@ -222,6 +255,9 @@
 				var attachmentData:AttachmentData = selectedItem as AttachmentData;
 				var imageData:ImageData = attachmentData as ImageData;
 				var path:String;
+				
+				//trace(event.type);
+				Radiate.updateComponentAfterAdd(radiate.selectedDocument, image, true);
 				
 				if (image) {
 					//image.source = event.draggedItem;
@@ -244,55 +280,8 @@
 					}
 					
 				}
-				/*
-				// if text based or combo box we need to prevent 
-				// interaction with cursor
-				if (component is TextBase || component is SkinnableTextBase) {
-					component.mouseChildren = false;
-					
-					if ("textDisplay" in component && component.textDisplay) {
-						component.textDisplay.enabled = false;
-					}
-				}
 				
-				if (component is ComboBox) {
-					if ("textInput" in component && component.textInput.textDisplay) {
-						component.textInput.textDisplay.enabled = false;
-					}
-				}
-				
-				// we can't add elements if skinnablecontainer._deferredContentCreated is false
-				if (component is BorderContainer) {
-					var factory:DeferredInstanceFromFunction = new DeferredInstanceFromFunction(deferredInstanceFromFunction);
-					BorderContainer(component).mxmlContentFactory = factory;
-					//BorderContainer(component).initialize();
-					BorderContainer(component).createDeferredContent();
-					BorderContainer(component).removeAllElements();
-					
-					// we could probably also do this: 
-					//BorderContainer(component).addElement(new Button());
-					
-				}
-				
-				// we need a custom FlexSprite class to do this
-				// do this after drop
-				if ("eventListeners" in component && !(component is GroupBase)) {
-					component.removeAllEventListeners();
-				}*/
-				
-				//o.addElement(component as ILayoutElement);
-				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
-				//dropTargetLabel.text = "Drag Complete to:" + dragManagerInstance.dropTargetName;
-				
-				
-				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
-			}
-			
-			protected function addItemHandler(event:RadiateEvent):void {
-				//trace("item addedd");
-				
-				//radiate.target = event.eventTarget;
-				
+				removeDragManagerListeners(dragManagerInstance);
 			}
 			
 			protected function handleDragOver(event:Event):void {
@@ -301,23 +290,12 @@
 				//dropTargetLabel.text = "Drag over: " + dragManagerInstance.dropTargetName;
 			}
 			
-			protected function list_dragStartHandler(event:DragEvent):void {
-				
-			}
-			
 			protected function attachmentsReceived(event:RadiateEvent):void {
 				var attachments:Array = event.targets as Array;
-				
-				libraryCollection.source = attachments;
+				radiate.addAssetsToDocument(attachments, radiate.selectedDocument as DocumentData);
+				//libraryCollection.source = attachments;
 			}
 			
-
-			public var SMALL:String = "small";
-			public var MEDIUM:String = "medium";
-			public var FULL:String = "full";
-			public var THUMBNAIL:String = "thumbnail";
-
-			public var service:WPAttachmentService;
 			
 			protected function smallImage_clickHandler(event:MouseEvent):void {
 				var selectedItem:AttachmentData = list.selectedItem as AttachmentData;
@@ -335,10 +313,7 @@
 			protected function fullImage_clickHandler(event:MouseEvent):void {
 				setTextInputImageURL(FULL);
 			}
-			
-			// "People are like the things they use the most"
-			// stereotype = women are better communicators. what??? women or men are better at what they use the most
-			
+
 			protected function mediumImage_clickHandler(event:MouseEvent):void {
 				
 				setTextInputImageURL(MEDIUM);
@@ -384,7 +359,7 @@
 				}
 				
 				
-				if (imageData && openPopUp.popUp) {
+				if (imageData && openPopUp.isOpen) {
 					if (imageData.bitmapData) {
 						ImageView(openPopUp.popUp).data = imageData.bitmapData;
 					}
@@ -430,19 +405,20 @@
 			 * File load complete
 			 * */
 			protected function loadFile_completeHandler(event:Event):void {
+				var imageData:ImageData = new ImageData();
+				imageData.bitmapData = loadFile.bitmapData;
+				imageData.byteArray = loadFile.data;
+				imageData.name = loadFile.currentFileReference.name;
+				imageData.contentType = loadFile.loaderContentType;
+				imageData.file = loadFile.currentFileReference;
 				
-				var data:ImageData = new ImageData();
-				data.bitmapData = loadFile.bitmapData;
-				data.byteArray = loadFile.data;
-				data.name = loadFile.currentFileReference.name;
-				data.contentType = loadFile.loaderContentType;
-				data.file = loadFile.currentFileReference;
+				radiate.addAssetToDocument(imageData, radiate.selectedDocument);
 				
-				radiate.addAsset(data);
+				list.selectedItem = imageData;
 				
-				list.selectedItem = data;
-				
-				//uploadAttachment(loadFile.fileReference);
+				if (uploadAutomatically) {
+					uploadAttachment(loadFile.fileReference);
+				}
 			}
 			
 			/**
@@ -508,18 +484,7 @@
 				var iDocument:IDocument = radiate.selectedDocument;
 				
 				if (event.successful) {
-					/*for (var i:int;i<length;i++) {
-						attachment = attachments[i];
-						containsName = currentUpload.name.indexOf(attachment.name)==0;
-						
-						if (attachment.name == currentUpload.name || containsName) {
-							currentUpload.unmarshall(attachment);
-							break;
-						}
-					}
 					
-					// might need to loop through all documents in project
-					DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData);*/
 				}
 				else {
 					Radiate.warn("Upload not successful for some reason");
@@ -531,25 +496,27 @@
 			
 			protected function uploadAttachmentFault(event:RadiateEvent):void {
 				//var message:String = event.message;
+				Radiate.error("Upload error: "+event.toString());
 			}
 			
 			protected function refreshIcon_clickHandler(event:MouseEvent):void {
-				var postID:String = radiate.selectedProject ? radiate.selectedProject.id : null;
-				var id:int;
+				//var projectOrDocumentID:String = radiate.selectedProject ? radiate.selectedProject.id : null;
+				var projectOrDocumentID:String = radiate.selectedDocument ? radiate.selectedDocument.id : null;
+				var searchID:int;
 				
 				// if not project id then get document id
-				if (postID==null) {
-					postID = radiate.selectedDocument ? radiate.selectedDocument.id : null;
+				if (projectOrDocumentID==null) {
+					projectOrDocumentID = radiate.selectedProject ? radiate.selectedProject.id : null;
 				}
 				
-				if (postID==null) {
-					id = 0;
+				if (projectOrDocumentID==null) {
+					searchID = 0;
 				}
 				else {
-					id = int(postID);
+					searchID = int(projectOrDocumentID);
 				}
 				
-				radiate.getAttachments(id);
+				radiate.getAttachments(searchID);
 			}
 			
 			protected function assetAdded(event:Event):void {
@@ -561,6 +528,7 @@
 			}
 			
 			private function updateAssets():void {
+				// to do filter assets by document
 				
 				// not sure why it's not deleting the last item
 				if (radiate.assets.length==0) {
@@ -573,105 +541,81 @@
 					libraryCollection.removeAll();
 				}
 				else {
-					libraryCollection.source = radiate.assets.source;
+					if (libraryCollection.source != radiate.assets.source) {
+						libraryCollection.source = radiate.assets.source;
+						libraryCollection.refresh();
+					}
+					else {
+						libraryCollection.refresh();
+					}
 				}
 			}
 			
-			/**
-			 * Returns true if it's a type of content we can accept to be dragged and dropped
-			 * */
-			public function acceptableFileFormat(dragSource:DragSource):Boolean {
-				if (dragSource==null) return false;
-				
-				if (dragSource.hasFormat("UIComponent") || 
-					dragSource.hasFormat("air:file list") || 
-					dragSource.hasFormat("air:url")) {
-					return true;
-				}
-				
-				return false;
-			}
-			protected function list_dragEnterHandler(event:DragEvent):void
-			{
+			protected function library_dragEnterHandler(event:DragEvent):void {
 				var dragSource:DragSource = event.dragSource;
 				
-				if (acceptableFileFormat(dragSource)) {
-					DragManager.acceptDragDrop(VDividedBox(event.currentTarget));
+				if (Radiate.isAcceptableDragAndDropFormat(dragSource, true)) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 				}
 			}
 			
-			protected function list_dragOverHandler(event:DragEvent):void
-			{
-				if (acceptableFileFormat(event.dragSource)) {
-					DragManager.acceptDragDrop(VDividedBox(event.currentTarget));
+			protected function library_dragOverHandler(event:DragEvent):void {
+				
+				if (Radiate.isAcceptableDragAndDropFormat(event.dragSource, true)) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 				}
 			}
 			
-			public function list_dragDropHandler(event:DragEvent):void {
+			public function library_dragDropHandler(event:DragEvent):void {
 				var initiator:UIComponent;
 				var snapshotTest:Boolean;
 				var snapshot:Object;
-				var data:ImageData;
+				var imageData:ImageData;
 				var format:String;
 				var dragSource:DragSource;
 				var hasURLFormat:Boolean;
 				var hasFileListFormat:Boolean;
 				var hasFilePromiseListFormat:Boolean;
+				var isSelf:Boolean;
 				
-				var isSelf:Boolean = event.dragInitiator ? verticalContainer.contains(event.dragInitiator as DisplayObject) : false;
-				if (isSelf) return;
+				if (event.dragInitiator) {
+					isSelf = verticalContainer.contains(event.dragInitiator as DisplayObject);
+					if (isSelf) {
+						return;
+					}
+				}
 				
 				dragSource = event.dragSource;
-				hasURLFormat = dragSource.hasFormat(ClipboardFormats.URL_FORMAT);
-				hasFileListFormat = dragSource.hasFormat(ClipboardFormats.FILE_LIST_FORMAT);
-				hasFilePromiseListFormat = dragSource.hasFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT);
 				
-				
-				if (acceptableFileFormat(dragSource)) {
-					data = new ImageData();
+				if (dragSource.hasFormat("UIComponent")) {
+					imageData = new ImageData();
 					initiator = event.dragInitiator as UIComponent;
 					
-					var droppedFiles:Object = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT);
-					var urlFormatData:Object = dragSource.dataForFormat(ClipboardFormats.URL_FORMAT);
-					var path_txt:String;
-					var extension:String;
-					var fileSafeList:Array = [];
-					
-					for each (var file:FileReference in droppedFiles) {
-						extension = file.extension.toLowerCase();
-						
-						if (extension=="png" || extension=="jpg" || extension=="jpeg") {
-							fileSafeList.push(file);
-						}
-						else {
-							path_txt = "Not a recognised file format";  
-						}
-					}
-					
-					if (fileSafeList.length>0) {
-						loadFile.filesArray = fileSafeList;
-						loadFile.play();
-					}
-					
+					// initiator will always be UIComponent with current drag manager
 					if (initiator) {
 						
 						if (snapshotTest) {
 							snapshot = DisplayObjectUtils.getSnapshotWithQuality(initiator);
 						}
 						else {
-							snapshot = DisplayObjectUtils.rasterizeComponentWithQuality(initiator);
+							//if (initiator is IUIComponent) {
+								snapshot = DisplayObjectUtils.getUIComponentBitmapData(initiator);
+							//}
+							//else if (initiator is GraphicElement) {
+							//	snapshot = DisplayObjectUtils.getGraphicElementBitmapData(initiator as IGraphicElement);
+							//}
 						}
 						
 						if (snapshot is BitmapData) {
-							data.bitmapData = snapshot as BitmapData;
-							data.byteArray = DisplayObjectUtils.getBitmapByteArray(snapshot as BitmapData);
-							data.name = ClassUtils.getIdentifierNameOrClass(initiator) + ".png";
-							data.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
-							data.file = null;
+							imageData.bitmapData = snapshot as BitmapData;
+							imageData.byteArray = DisplayObjectUtils.getBitmapByteArray(snapshot as BitmapData);
+							imageData.name = ClassUtils.getIdentifierNameOrClass(initiator) + ".png";
+							imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
+							imageData.file = null;
 							
-							radiate.addAsset(data);
+							radiate.addAssetToDocument(imageData, radiate.selectedDocument);
 							
-							list.selectedItem = data;
+							list.selectedItem = imageData;
 						}
 						else {
 							Radiate.error("Could not create a snapshot of the selected item. " + snapshot); 
@@ -688,15 +632,18 @@
 					
 					if (imageData) {
 						if (imageData.bitmapData) {
-							openPopUp.data = ImageData(list.selectedItem).bitmapData;
+							openPopUp.data = imageData.bitmapData;
 						}
 						else if (imageData.url) {
 							openPopUp.data = imageData.url;
 						}
 					}
 					
-					if (openPopUp.popUp==null || openPopUp.popUp.stage==null) {
+					if (!openPopUp.isOpen) {
 						openPopUp.play();
+					}
+					else {
+						openPopUp.close();
 					}
 					
 				}
@@ -717,6 +664,83 @@
 				}
 			}
 			
+			/**
+			 * DRAG TO DESKTOP CODE
+			 * http://help.adobe.com/en_US/flex/using/WS2db454920e96a9e51e63e3d11c0bf64595-7fee.html
+			 
+			private function onMouseDown(event:MouseEvent):void { 
+				var fileURL:String = "app:/image.jpg"; 
+				var display:Bitmap ; 
+				var bitmapFile:File = new File(fileURL); 
+				var transferObject:Clipboard = createClipboard(display, bitmapFile); 
+				NativeDragManager.doDrag(this,transferObject, display.bitmapData, new Point(-mouseX,-mouseY)); 
+			} 
+			
+			public function createClipboard(image:Bitmap, sourceFile:File):Clipboard { 
+				var transfer:Clipboard = new Clipboard(); 
+				transfer.setData("bitmap",  
+					image,  
+					true);  
+				// ActionScript 3 Bitmap object by value and by reference 
+				transfer.setData(ClipboardFormats.BITMAP_FORMAT,  
+					image.bitmapData,  
+					false);  
+				// Standard BitmapData format 
+				transfer.setData(ClipboardFormats.FILE_LIST_FORMAT,  
+					new Array(sourceFile),  
+					false);  
+				// Standard file list format 
+				return transfer;  
+			} 
+			*/
+			
+			public function libraryFilterFunction(item:Object):Boolean {
+				var imageData:ImageData = item as ImageData;
+				var imageName:String = imageData ? imageData.name : "";
+				var imageParentId:int = imageData ? int(imageData.parentId) : -1;
+				var searchText:String;
+				
+				if (imageParentId!=documentID && imageParentId!=projectID) {
+					return false;
+				}
+				
+				searchText = searchCollection.text.toLowerCase();
+				
+				if (imageName.indexOf(searchText)==-1) {
+					return false;
+				}
+				
+				return true;
+			}
+			
+			protected function documentChanged(event:RadiateEvent):void {
+				var documentData:DocumentData = event.selectedItem as DocumentData;
+				
+				documentID = documentData && documentData.id!=null ? int(documentData.id) : 0;
+				projectID = documentData && documentData.parentId!=null ? int(documentData.parentId) : 0;
+				
+			}
+			
+			private var documentID:int;
+			private var projectID:int;
+			
+			protected function openPopUp_closeHandler(event:Event):void
+			{
+				if (openPopUp.popUp) {
+					var imageView:ImageView = openPopUp.popUp as ImageView;
+					if (imageView) {
+						imageView.data = null;
+					}
+					openPopUp.popUp = null;
+				}
+					
+			}
+			
+			protected function handleDragDropIncomplete(event:DragDropEvent):void
+			{
+				 //trace("Drag drop incomplete");
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -735,11 +759,13 @@
 						 showDropShadow="true"
 						 popUpType="{ImageView}"
 						 autoCenter="true"
+						 fitMaxSizeToApplication="true"
 						 percentWidth="80"
 						 percentHeight="80"
 						 closePreviousInstanceIfOpen="true"
 						 closeOnMouseDownOutside="true"
-						 closeOnMouseDownInside="true"/>
+						 closeOnMouseDownInside="true"
+						 close="openPopUp_closeHandler(event)"/>
 		
 		<!-- COPY TO THE CLIPBOARD -->
 		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
@@ -798,13 +824,15 @@
 					left="8" 
 					right="8" 
 					bottom="4"
-					dragEnter="list_dragEnterHandler(event)"
-					dragDrop="list_dragDropHandler(event)"
-					dragOver="list_dragOverHandler(event)"
 					>
-		<inspectors:SearchCollection dataProvider="{libraryCollection}" 
+		
+		<inspectors:SearchCollection id="searchCollection" 
 									 minHeight="24"
-									 maxHeight="60"/>
+									 maxHeight="60"
+									 dataProvider="{libraryCollection}" 
+									 filterFunction="libraryFilterFunction"
+									 >
+		</inspectors:SearchCollection>
 		
 		
 		
@@ -817,7 +845,6 @@
 				interactionMode="mouse"
 				requireSelection="true"
 				dataProvider="{libraryCollection}"
-				dragStart="list_dragStartHandler(event)"
 				change="list_changeHandler(event)"
 				itemRenderer="com.flexcapacitor.views.renderers.LibraryInspectorRenderer"
 				keyUp="list_keyUpHandler(event)"
@@ -845,7 +872,7 @@
 					   text="Click here to add an image to the library or drag and drop images onto the app"
 					   color="#888888"
 					   paddingTop="50"
-					   paddingBottom="50"
+					   paddingBottom="20"
 					   paddingLeft="10"
 					   paddingRight="10"
 					   horizontalCenter="0" verticalCenter="0"

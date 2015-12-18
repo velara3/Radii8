@@ -116,14 +116,14 @@ package com.flexcapacitor.utils {
 		/**
 		 * Create child from node
 		 * */
-		private function createChildFromNode(node:XML, parent:Object, document:IDocument, depth:int = 0):IVisualElement {
+		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0):IVisualElement {
 			var elementName:String = node.localName();
 			var domain:ApplicationDomain = ApplicationDomain.currentDomain;
 			var componentDefinition:ComponentDefinition = Radiate.getDynamicComponentType(elementName);
 			var includeChildren:Boolean = true;
 			var className:String;
 			var classType:Class;
-			var instance:Object;
+			var componentInstance:Object;
 			
 			if (componentDefinition==null) {
 				
@@ -166,24 +166,29 @@ package com.flexcapacitor.utils {
 				// the user may have even removed the defaults
 				
 				//instance = Radiate.createComponentForAdd(document, componentDefinition, true);
-				instance = Radiate.createComponentForAdd(document, componentDefinition, false);
+				componentInstance = Radiate.createComponentToAdd(iDocument, componentDefinition, false);
 				//Radiate.info("MXML Importer adding: " + elementName);
 				
 				// calling add before setting properties because some 
 				// properties such as borderVisible and trackingLeft/trackingRight need to be set after 
 				// the component is added (maybe)
-				var valuesObject:ValuesObject = Radiate.getPropertiesStylesFromNode(instance, node, componentDefinition);
+				var valuesObject:ValuesObject = Radiate.getPropertiesStylesFromNode(componentInstance, node, componentDefinition);
 				var attributes:Array = valuesObject.attributes;
+				//var typedValueObject:Object = Radiate.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
 				
-				Radiate.addElement(instance, parent, valuesObject.properties, valuesObject.styles, valuesObject.values);
+				Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.values);
 				
-				Radiate.removeExplictSizeOnComponent(instance, node, componentDefinition, false);
+				Radiate.removeExplictSizeOnComponent(componentInstance, node, componentDefinition, false);
+				
+				Radiate.updateComponentAfterAdd(iDocument, componentInstance);
+				
 				var lockedName:String = "library://ns.flexcapacitor.com/flex/::locked";
 				
 				if (attributes.indexOf(lockedName)!=-1) {
-					var item:ComponentDescription = document.getItemDescription(instance);
+					var item:ComponentDescription = iDocument.getItemDescription(componentInstance);
 					item.locked = valuesObject.values[lockedName];
 				}
+				
 				// might want to get a properties object from the attributes 
 				// and then use that in the add element call above 
 				//Radiate.setAttributesOnComponent(instance, node, componentDefinition, false);
@@ -194,11 +199,11 @@ package com.flexcapacitor.utils {
 			if (includeChildren) {
 				
 				for each (var childNode:XML in node.children()) {
-					createChildFromNode(childNode, instance, document, depth+1);
+					createChildFromNode(childNode, componentInstance, iDocument, depth+1);
 				}
 			}
 			
-			return instance as IVisualElement;
+			return componentInstance as IVisualElement;
 		}
 	}
 }

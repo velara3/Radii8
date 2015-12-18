@@ -308,6 +308,7 @@ package com.flexcapacitor.managers
 		
 		/**
 		 * Get project home page
+		 * @see #setProjectHomePage()
 		 * */
 		public function getProjectHomePage():void {
 			var service:WPService;
@@ -348,7 +349,26 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
-		 * Set project home page
+		 * Clears the project home page. 
+		 * This is a wrapper function.
+		 * You can also call setProjectHomePage(0);
+		 * Listen to the same events as setProjectHomePage.
+		 * 
+		 * @see #getProjectHomePage()
+		 * @see #setProjectHomePage()
+		 * */
+		public function clearProjectHomePage():void {
+			setProjectHomePage(0);
+		}
+		
+		
+		/**
+		 * Set project home page. You can unset project home page
+		 * by setting the id to 0
+		 * 
+		 * @param id id of post to set it to
+		 * @see #getProjectHomePage()
+		 * @see #clearProjectHomePage()
 		 * */
 		public function setProjectHomePage(id:int):void {
 			var service:WPService;
@@ -390,7 +410,7 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
-		 * Get projects
+		 * Get logged in status
 		 * */
 		public function getLoggedInStatus():void {
 			// get selected document
@@ -470,7 +490,7 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
-		 * Get blog posts 
+		 * Get blog posts by category
 		 * */
 		public function getBlogPostsByCategory(category:String, status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;

@@ -78,7 +78,7 @@
     </component>
     
     <component id="Group" class="spark.components.Group">
-    	<defaults width="240" height="160"/>
+    	<defaults minWidth="10" minHeight="10"/>
     </component>
     
     <component id="HGroup" class="spark.components.HGroup">
@@ -89,6 +89,10 @@
     
     <component id="HSlider" class="spark.components.HSlider" include="true">
     	<defaults width="166" />
+    </component>
+    
+    <component id="HorizontalLine" class="com.flexcapacitor.controls.HorizontalLine" include="true">
+    	<defaults width="100" />
     </component>
     
     <component id="Hyperlink" class="com.flexcapacitor.controls.Hyperlink" include="true">
@@ -135,7 +139,7 @@
     </component>
     
     <component id="RichText" class="spark.components.RichText" include="true">
-    	<defaults text="Rich Text"/>
+    	<defaults text="Paragraph"/>
     </component>
     
     <component id="Scroller" class="spark.components.Scroller" include="false">
@@ -184,6 +188,10 @@
     
     <component id="ToggleButton" class="spark.components.ToggleButton" include="true">
     	<defaults width="76" height="20" label="Toggle"/>
+    </component>
+    
+    <component id="VerticalLine" class="com.flexcapacitor.controls.VerticalLine" include="true">
+    	<defaults height="100" />
     </component>
     
     <component id="VGroup" class="spark.components.VGroup" include="true">

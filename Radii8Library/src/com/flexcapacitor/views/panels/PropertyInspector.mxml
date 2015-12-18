@@ -1420,7 +1420,7 @@
 		
 		
 		
-		<!-- FORM -->
+		<!-- OLD FORM ENTRY METHOD. try using a tile layout or a datagroup -->
 		<!-- PROPERTIES LIST -->
 		<c:DataGrid id="propertiesList"
 					borderAlpha="0"
@@ -1472,7 +1472,6 @@
 								  itemRendererFunction="propertiesGridItemRendererFunction"
 								  itemRenderer="com.flexcapacitor.views.renderers.ColorPickerRenderer"
 								  >
-<!--								  labelFunction="labelFunction"-->
 						
 					</s:GridColumn>
 					<s:GridColumn minWidth="10"

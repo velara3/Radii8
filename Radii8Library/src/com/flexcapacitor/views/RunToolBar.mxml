@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 creationComplete="creationCompleteHandler(event)"
+		 implements="com.flexcapacitor.tools.IToolInspector"
+		 >
+	
+	
+	<!-- 
+	TODO: PUT THESE RUN COMMANDS IN A SEPARATE CLASS 
+	- OK I did
+	
+	NOTE THIS Class has a habit of hanging the whole application 
+	when the Images used below do not have width or height. 
+	Clicking pause in Flash Builder does not pause the app
+	and nothing but explicitly setting the width and height
+	seems to help. 
+	
+	Currently it is Group > HGroup > BeveledImageButton
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.CreationManager;
+			import com.flexcapacitor.managers.RunManager;
+			import com.flexcapacitor.model.DocumentData;
+			import com.flexcapacitor.model.IDocument;
+			
+			import mx.events.FlexEvent;
+			
+			private var radiate:Radiate;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				// preview image inline, preview image in browser preview
+				// preview document inline, preview document in browser,
+				// preview homepage
+				
+				CreationManager.createdToolInspector(this);
+			}
+			
+			protected function openHomePageInBrowserButton_clickHandler():void {
+				
+				if (Radiate.instance.projectHomePageID<1) {
+					Radiate.warn("A home page has not been set. Showing the default theme home page");
+					Radiate.callAfter(2500, Radiate.openUsersWebsite);
+				}
+				else {
+					Radiate.openUsersWebsite();
+				}
+			}
+			
+			protected function openImagePopUpButton_clickHandler(event:MouseEvent):void {
+				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				
+				if (iDocument) {
+					RunManager.openDocumentAsImageInPopUp(iDocument as DocumentData);
+				}
+			}
+			
+			protected function openDocumentInBrowserButton_clickHandler(event:MouseEvent):void {
+				RunManager.openDocumentInBrowserButton();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup gap="15"
+			  paddingTop="4" 
+			  verticalAlign="bottom" 
+			  visible="true"
+			  height="17"
+			  width="100%">
+		
+		<c:BeveledImageButton id="openImagePopUpIcon" 
+							  source="{Radii8LibraryAssets.imagePlayIcon}" 
+							  toolTip="View image"
+							  smoothingQuality="high"
+							  smooth="true"
+							  verticalAlign="bottom"
+							  width="22"
+							  height="10"
+							  click="openImagePopUpButton_clickHandler(event)"
+							  />
+		
+		<c:BeveledImageButton id="openDocumentInBrowserIcon" 
+							  source="{Radii8LibraryAssets.documentPlayIcon}" 
+							  toolTip="View published document in browser (if document is not published you must login in the site via the browser)"
+							  smoothingQuality="high"
+							  smooth="true"
+							  width="18"
+							  height="10"
+							  click="openDocumentInBrowserButton_clickHandler(event)"
+							  />
+		
+		<c:BeveledImageButton id="openHomePageInBrowserIcon" 
+							  source="{Radii8LibraryAssets.homePlayIcon}" 
+							  toolTip="View home page in browser"
+							  smoothingQuality="high"
+							  smooth="true"
+							  width="20"
+							  height="10"
+							  click="openHomePageInBrowserButton_clickHandler()"
+							  />
+	</s:HGroup>
+</s:Group>

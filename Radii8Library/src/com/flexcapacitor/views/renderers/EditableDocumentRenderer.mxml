@@ -52,7 +52,7 @@
 			
 			// 1176: Comparison between a value with static type int and a possibly unrelated type String.
 			// compiler error - cast to int
-			if (iDocument && Radiate.instance.projectHomePageID==int(iDocument.id)) {
+			if (iDocument && Radiate.instance.projectHomePageID==int(iDocument.id) && iDocument.id!=null) {
 				homePageIcon.visible = true;
 			}
 			else {

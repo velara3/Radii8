@@ -3,6 +3,10 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 
+		 paddingTop="8"
+		 paddingBottom="8"
+		 paddingLeft="8"
+		 paddingRight="8"
 		 width="100%" 
 		 height="100%"
 		 implements="com.flexcapacitor.views.IInspector" 
@@ -53,7 +57,7 @@
 					componentDescription = iDocument.getItemDescription(target);
 				}
 				
-				if (componentDescriptor) {
+				if (componentDescription) {
 					componentCSS.text = componentDescription.userStyles;
 					
 					embedSnapshopIntoBackground.selected = componentDescription.createBackgroundSnapshot;
@@ -66,7 +70,7 @@
 			protected function componentCSS_changeHandler(event:TextOperationEvent):void
 			{
 				if (componentDescription) {
-					componentDescription..userStyles = componentCSS.text;
+					componentDescription.userStyles = componentCSS.text;
 				}
 			}
 			
@@ -81,8 +85,8 @@
 	
 	<s:CheckBox id="embedSnapshopIntoBackground" label="Embed snapshot into element background" />
 	<s:CheckBox id="convertElementToImage" label="Convert element into image" />
+	<s:Spacer />
 	<s:Label text="Enter your own CSS here" />
-	
 	
 	<s:TextArea id="componentCSS" width="100%" height="100%" change="componentCSS_changeHandler(event)">
 		

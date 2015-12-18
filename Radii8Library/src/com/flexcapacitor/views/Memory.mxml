@@ -137,6 +137,8 @@
 				timer = new Timer(5000);
 				timer.addEventListener(TimerEvent.TIMER, enterFrameHandler, false, 0, true);
 				timer.start();
+				System.freeMemory + System.totalMemoryNumber;
+				System.processCPUUsage;
 			}
 			
 		]]>

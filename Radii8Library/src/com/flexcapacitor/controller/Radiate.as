@@ -21,7 +21,9 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.controls.Hyperlink;
 	import com.flexcapacitor.effects.core.CallMethod;
 	import com.flexcapacitor.effects.core.PlayerType;
+	import com.flexcapacitor.effects.file.LoadFile;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.formatters.HTMLFormatterTLF;
 	import com.flexcapacitor.logging.RadiateLogTarget;
 	import com.flexcapacitor.managers.CodeManager;
 	import com.flexcapacitor.managers.HistoryEffect;
@@ -32,9 +34,11 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.model.Document;
 	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.DocumentDescription;
+	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.EventMetaData;
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.FileInfo;
+	import com.flexcapacitor.model.HTMLExportOptions;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.IDocumentData;
 	import com.flexcapacitor.model.IDocumentMetaData;
@@ -55,6 +59,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.model.StyleMetaData;
 	import com.flexcapacitor.model.TranscoderDescription;
 	import com.flexcapacitor.model.ValuesObject;
+	import com.flexcapacitor.model.WarningData;
 	import com.flexcapacitor.performance.PerformanceMeter;
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.services.WPAttachmentService;
@@ -79,6 +84,7 @@ package com.flexcapacitor.controller {
 	import com.google.code.flexiframe.IFrame;
 	
 	import flash.desktop.Clipboard;
+	import flash.desktop.ClipboardFormats;
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
@@ -118,6 +124,7 @@ package com.flexcapacitor.controller {
 	import mx.controls.LinkButton;
 	import mx.core.ClassFactory;
 	import mx.core.DeferredInstanceFromFunction;
+	import mx.core.DragSource;
 	import mx.core.IInvalidating;
 	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
@@ -161,12 +168,17 @@ package com.flexcapacitor.controller {
 	import spark.components.supportClasses.SkinnableTextBase;
 	import spark.components.supportClasses.TextBase;
 	import spark.core.ContentCache;
+	import spark.core.IGraphicElement;
 	import spark.core.IViewport;
 	import spark.formatters.DateTimeFormatter;
 	import spark.layouts.BasicLayout;
 	import spark.primitives.BitmapImage;
 	import spark.primitives.Rect;
+	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.DefaultGridItemRenderer;
+	
+	import flashx.textLayout.conversion.TextConverter;
+	import flashx.textLayout.elements.TextFlow;
 	
 	import org.as3commons.lang.ArrayUtils;
 	import org.as3commons.lang.DictionaryUtils;
@@ -669,6 +681,11 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public var lastSaveDateDifference:String;
+		
+		/**
+		 * Last clipboard action. Either cut or copy;
+		 * */
+		public var lastClipboardAction:String;
 		
 		/**
 		 * Cut data
@@ -2479,7 +2496,7 @@ package com.flexcapacitor.controller {
 		private var _assets:ArrayCollection = new ArrayCollection();
 
 		/**
-		 * Assets
+		 * Assets of the current document
 		 * */
 		[Bindable]
 		public function get assets():ArrayCollection {
@@ -3426,15 +3443,15 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add an asset
 		 * */
-		public function addAssets(data:Array, dispatchEvents:Boolean = true):void {
-			var length:int;
+		public function addAssetsToDocument(assetsToAdd:Array, documentData:DocumentData, dispatchEvents:Boolean = true):void {
+			var numberOfAssets:int;
 			var added:Boolean;
 			
-			if (data) {
-				length = data.length;
+			if (assetsToAdd) {
+				numberOfAssets = assetsToAdd.length;
 				
-				for (var i:int;i<length;i++) {
-					addAsset(data[i], dispatchEvents);
+				for (var i:int;i<numberOfAssets;i++) {
+					addAssetToDocument(assetsToAdd[i], documentData, dispatchEvents);
 				}
 				
 			}
@@ -3444,12 +3461,13 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add an asset to the document assets collection
 		 * */
-		public function addAsset(data:DocumentData, dispatchEvent:Boolean = true):void {
-			var length:int = assets.length;
+		public function addAssetToDocument(data:DocumentData, documentData:IDocumentData, dispatchEvent:Boolean = true):void {
+			var numberOfAssets:int = assets.length;
 			var found:Boolean;
 			var item:DocumentData;
+			var reparented:Boolean;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfAssets;i++) {
 				item = assets.getItemAt(i) as DocumentData;
 				
 				if (item.id==data.id && item.id!=null) {
@@ -3457,12 +3475,18 @@ package com.flexcapacitor.controller {
 					break;
 				}
 			}
+
+			
+			if (data.parentId != documentData.id) {
+				data.parentId = documentData.id;
+				reparented = true;
+			}
 			
 			if (!found) {
 				assets.addItem(data);
 			}
 			
-			if (!found && dispatchEvent) {
+			if ((!found || reparented) && dispatchEvent) {
 				dispatchAssetAddedEvent(data);
 			}
 		}
@@ -3470,10 +3494,10 @@ package com.flexcapacitor.controller {
 		/**
 		 * Remove an asset from the documents assets collection
 		 * */
-		public function removeAsset(iDocumentData:IDocumentData, locations:String = null, dispatchEvents:Boolean = true):Boolean {
+		public function removeAssetFromDocument(assetData:IDocumentData, documentData:DocumentData, locations:String = null, dispatchEvents:Boolean = true):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
 			var remote:Boolean = getIsRemoteLocation(locations);
-			var index:int = assets.getItemIndex(iDocumentData);
+			var index:int = assets.getItemIndex(assetData);
 			var removedInternally:Boolean;
 			
 			if (index!=-1) {
@@ -3481,7 +3505,7 @@ package com.flexcapacitor.controller {
 				removedInternally = true;
 			}
 			
-			if (remote && iDocumentData && iDocumentData.id) { 
+			if (remote && assetData && assetData.id) { 
 				// we need to create service
 				if (deleteAttachmentService==null) {
 					deleteAttachmentService = new WPService();
@@ -3493,7 +3517,7 @@ package com.flexcapacitor.controller {
 				
 				deleteDocumentInProgress = true;
 				
-				deleteAttachmentService.deleteAttachment(int(iDocumentData.id), true);
+				deleteAttachmentService.deleteAttachment(int(assetData.id), true);
 			}
 			/*else if (remote) { // document not saved yet because no ID
 				
@@ -3511,7 +3535,7 @@ package com.flexcapacitor.controller {
 
 			}*/
 			
-			dispatchAssetRemovedEvent(iDocumentData, removedInternally);
+			dispatchAssetRemovedEvent(assetData, removedInternally);
 			
 			return removedInternally;
 		}
@@ -3519,13 +3543,14 @@ package com.flexcapacitor.controller {
 		/**
 		 * Adds an asset to the document
 		 * */
-		public function addAssetToDocument(assetData:ImageData, iDocument:IDocument):void {
+		public function addImageDataToDocument(assetData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true):void {
 			var item:ComponentDefinition;
 			var application:Application;
 			var componentInstance:Object;
 			var path:String;
+			var bitmapData:BitmapData;
 			
-			item = Radiate.getComponentType("Image");
+			item = getComponentType("Image");
 			
 			
 			application = iDocument && iDocument.instance ? iDocument.instance as Application : null;
@@ -3533,24 +3558,58 @@ package com.flexcapacitor.controller {
 			if (!application) return;
 			
 			
-			componentInstance = Radiate.createComponentForAdd(iDocument, item);
+			componentInstance = createComponentToAdd(iDocument, item, false);
+			bitmapData = assetData.bitmapData;
 			
+			var properties:Array = [];
+			var propertiesObject:Object = {};
+			var aspectRatio:Number = 1;
+			var constraintNeeded:Boolean;
+			const WIDTH:String = "width";
+			const HEIGHT:String = "height";
 			
-			addElement(componentInstance, iDocument.instance);
+			if (constrainImageToDocument && bitmapData && bitmapData.width>0 && bitmapData.height>0) {
+				aspectRatio = iDocument.instance.width/iDocument.instance.height;
+				
+				if (bitmapData.width>iDocument.instance.width) {
+					//aspectRatio = bitmapData.width / iDocument.instance.width;
+					propertiesObject = DisplayObjectUtils.getConstrainedSize(bitmapData, "width", iDocument.instance.width);
+					properties = [WIDTH, HEIGHT];
+					constraintNeeded = true;
+				}
+				
+				if (constraintNeeded && propertiesObject.height>iDocument.instance.height) {
+					propertiesObject = DisplayObjectUtils.getConstrainedSize(bitmapData, "height", iDocument.instance.height);
+				}
+				
+				// check height is not larger than document width
+				// and document height is not larger than width
+				else if (!constraintNeeded && bitmapData.height>iDocument.instance.height) {
+					//aspectRatio = bitmapData.height / iDocument.instance.height;
+					propertiesObject = DisplayObjectUtils.getConstrainedSize(bitmapData, "height", iDocument.instance.height);
+					properties = [WIDTH, HEIGHT];
+				}
+				
+			}
 			
 			if (assetData is ImageData) {
 				path = assetData.url;
 				
 				if (path) {
-					componentInstance.width = undefined;
-					componentInstance.height = undefined;
-					//image.source = null;//force it to show up in change history
-					Radiate.setProperty(componentInstance, "source", path);
+					propertiesObject.width = undefined;
+					propertiesObject.height = undefined;
+					propertiesObject.source = path;
+					properties.push(WIDTH);
+					properties.push(HEIGHT);
 				}
 				else if (assetData.bitmapData) {
-					Radiate.setProperty(componentInstance, "source", assetData.bitmapData);
+					propertiesObject.source = assetData.bitmapData;
 				}
+				
+				properties.push("source");
 			}
+			
+			addElement(componentInstance, iDocument.instance, properties, null, propertiesObject);
 		}
 		
 		/**
@@ -3869,12 +3928,16 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Cut item
+		 * @see copiedData
+		 * @see lastClipboardAction
+		 * @see pasteItem
 		 * */
 		public function cutItem(item:Object):void {
 			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
 			cutData = item;
 			copiedData = null;
 			copiedDataDocument = selectedDocument;
+			lastClipboardAction = "cut";
 			
 			// convert to string and then import to selected target or document
 			var options:ExportOptions = new ExportOptions();
@@ -3893,12 +3956,17 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Copy item
+		 * @see cutData
+		 * @see lastClipboardAction
+		 * @see pasteItem
 		 * */
 		public function copyItem(item:Object, format:String = null, handler:Function = null):void {
 			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
 			cutData = null;
 			copiedData = item;
 			copiedDataDocument = selectedDocument;
+			lastClipboardAction = "copy";
+			
 			
 			var clipboard:Clipboard = Clipboard.generalClipboard;
 			var serializable:Boolean = true;
@@ -3939,26 +4007,49 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Get destination for image files when dropped from an external source
+		 * */
+		public function getDestinationForExternalFileDrop():Object {
+			var destination:Object = target;
+			var addToDocumentForNow:Boolean = true;
+			
+			// get destination of clipboard contents
+			if (destination && !(destination is IVisualElementContainer)) {
+				if (addToDocumentForNow) {
+					destination = null;
+				}
+				else {
+					destination = destination.owner;
+				}
+			}
+			
+			if (!destination && selectedDocument) {
+				destination = selectedDocument.instance;
+			}
+			
+			return destination;
+		}
+		
+		/**
 		 * Paste item
+		 * @see cutData
+		 * @see copiedData
+		 * @see lastClipboardAction
+		 * @see pasteItem
 		 * */
 		public function pasteItem(destination:Object):void {
-			var component:Object = Clipboard.generalClipboard.getData("Object");
-			var descriptor:ComponentDescription = component as ComponentDescription;
+			var clipboard:Clipboard = Clipboard.generalClipboard;
+			var formats:Array = clipboard.formats;
+			var component:Object;
+			var descriptor:ComponentDescription;
 			var newComponent:Object;
 			var exportOptions:ExportOptions;
 			var itemData:SourceData;
 			var useCopyObjectsTechnique:Boolean = false;
+			var bitmapData:BitmapData;
+			var data:Object;
 			
-			
-			if (component is Application) {
-				error("Cannot copy and paste the application.");
-				return;
-			}
-			
-			if (component==null) {
-				return;
-			}
-			
+			// get destination of clipboard contents
 			if (destination && !(destination is IVisualElementContainer)) {
 				destination = destination.owner;
 			}
@@ -3968,20 +4059,79 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (descriptor==null) {
-				descriptor = selectedDocument.descriptionsDictionary[component];
+				descriptor = selectedDocument.getItemDescription(component);
+			}
+			
+			var numberOfFormats:int = formats.length;
+			var format:String;
+			var componentFound:Boolean;
+			
+			// check for bitmap data, image files, air:rtf, air:text, etc 
+			// when multiple formats exist add first forrmat we suport
+			for (var i:int;i<numberOfFormats;i++) {
+				format = formats[i];
+				
+				
+				if (format=="UIComponent" || format=="Object") {
+					component = clipboard.getData(format);
+					
+					descriptor = component as ComponentDescription;
+					
+					if (component is Application) {
+						error("Cannot copy and paste the application.");
+						return;
+					}
+					
+					if (component==null) {
+						return;
+					}
+					
+					componentFound = true;
+					
+					// code is outside of for loop - refactor
+					break;
+					
+				}
+				else if (format==ClipboardFormats.FILE_LIST_FORMAT || 
+						format==ClipboardFormats.FILE_PROMISE_LIST_FORMAT) {
+					data = clipboard.getData(format);
+					
+					addFileListDataToDocument(selectedDocument, data as Array, destination);
+					return;
+				}
+				else if (format==ClipboardFormats.BITMAP_FORMAT) {
+					data = clipboard.getData(ClipboardFormats.BITMAP_FORMAT);
+					bitmapData = data as BitmapData;
+					
+					addBitmapDataToDocument(selectedDocument, bitmapData, destination);
+					return;
+				}
+				else if (format==ClipboardFormats.TEXT_FORMAT) {
+					data = clipboard.getData(ClipboardFormats.TEXT_FORMAT);
+					
+					addTextDataToDocument(selectedDocument, data as String, destination);
+					return;
+				}
+				else if (format==ClipboardFormats.HTML_FORMAT) {
+					data = clipboard.getData(ClipboardFormats.HTML_FORMAT);
+					
+					addHTMLDataToDocument(selectedDocument, data as String, destination);
+					return;
+				}
 			}
 			
 			if (useCopyObjectsTechnique) {
 				var item:ComponentDefinition = Radiate.getComponentType(component.className);
-				newComponent = Radiate.createComponentForAdd(selectedDocument, item, true);
+				newComponent = createComponentToAdd(selectedDocument, item, true);
 				addElement(newComponent, destination, descriptor.propertyNames, descriptor.styleNames, ObjectUtils.merge(descriptor.properties, descriptor.styles));
+				updateComponentAfterAdd(selectedDocument, newComponent);
 				//setProperties(newComponent, descriptor.propertyNames, descriptor.properties);
 				HistoryManager.doNotAddEventsToHistory = true;
 				//setStyles(newComponent, descriptor.styleNames, descriptor.styles);
 				HistoryManager.doNotAddEventsToHistory = false;
 				setTarget(newComponent);
 			}
-			else {
+			else if (component) {
 				exportOptions = new ExportOptions();
 				exportOptions.useInlineStyles = true;
 				var description:ComponentDescription = selectedDocument.getItemDescription(component);
@@ -3999,6 +4149,225 @@ package com.flexcapacitor.controller {
 				
 				setTarget(destination);
 			}
+		}
+		
+		/**
+		 * Add file list data to a document from paste operation
+		 * */
+		public function addFileListDataToDocument(iDocument:IDocument, fileList:Array, destination:Object = null):void {
+			if (fileList==null) {
+				error("Not a valid file list");
+				return;
+			}
+			if (fileList && fileList.length==0) {
+				error("No files in the file list");
+				return;
+			}
+			if (iDocument==null) {
+				error("Not a valid document");
+				return;
+			}
+			
+			var urlFormatData:Object;
+			var path_txt:String;
+			var extension:String;
+			var fileSafeList:Array = [];
+			
+			// only accepting image files at this time
+			for each (var file:FileReference in fileList) {
+				extension = file.extension.toLowerCase();
+				
+				if (extension=="png" || extension=="jpg" || extension=="jpeg") {
+					fileSafeList.push(file);
+				}
+				else {
+					path_txt = "Not a recognised file format";  
+				}
+			}
+			
+			if (fileLoader==null) {
+				fileLoader = new LoadFile();
+				fileLoader.loadIntoLoader = true;
+				fileLoader.addEventListener(LoadFile.LOADER_COMPLETE, pasteFileCompleteHandler, false, 0, true);
+			}
+			else {
+				fileLoader.removeReferences(true);
+			}
+			
+			if (fileSafeList.length>0) {
+				fileLoader.filesArray = fileSafeList;
+				fileLoader.play();
+				documentThatPasteOfFilesToBeLoadedOccured = iDocument;
+			}
+			else {
+				info("No files of the acceptable type were found. Acceptable files are PNG and JPEG");
+			}
+		}
+		
+		public var fileLoader:LoadFile;
+		public var documentThatPasteOfFilesToBeLoadedOccured:IDocument;
+		
+		/**
+		 * Occurs after file pasted into document is fully loaded as a bitmap
+		 * */
+		protected function pasteFileCompleteHandler(event:Event):void {
+			
+			if (!documentThatPasteOfFilesToBeLoadedOccured) {
+				error("No document was found to paste a file into");
+				return;
+			}
+			
+			var imageData:ImageData = new ImageData();
+			imageData.bitmapData = fileLoader.bitmapData;
+			imageData.byteArray = fileLoader.data;
+			imageData.name = fileLoader.currentFileReference.name;
+			imageData.contentType = fileLoader.loaderContentType;
+			imageData.file = fileLoader.currentFileReference;
+			
+			addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+			addImageDataToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+			//list.selectedItem = data;
+			
+			//uploadAttachment(fileLoader.fileReference);
+		}
+		
+		/**
+		 * Add bitmap data to a document
+		 * */
+		public function addBitmapDataToDocument(iDocument:IDocument, bitmapData:BitmapData, destination:Object = null):void {
+			if (bitmapData==null) {
+				error("Not valid bitmap data");
+			}
+			if (iDocument==null) {
+				error("Not a valid document");
+			}
+			
+			if (bitmapData==null || iDocument==null) {
+				return;
+			}
+			
+			var imageData:ImageData = new ImageData();
+			var name:String;
+			
+			imageData.bitmapData = bitmapData;
+			imageData.byteArray = DisplayObjectUtils.getBitmapByteArray(bitmapData);
+			
+			if (destination) {
+				name = ClassUtils.getIdentifierNameOrClass(destination) + ".png";
+			}
+			else {
+				name = ClassUtils.getIdentifierNameOrClass(bitmapData) + ".png";
+			}
+			
+			imageData.name = name;
+			imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
+			imageData.file = null;
+			
+			addAssetToDocument(imageData, iDocument);
+			
+			info("An image from the clipboard was added to the library");
+		}
+		
+		/**
+		 * Add text data to a document
+		 * */
+		public function addTextDataToDocument(iDocument:IDocument, text:String, destination:Object = null):void {
+			if (text==null || text=="") {
+				error("Not valid text data");
+			}
+			if (iDocument==null) {
+				error("Not a valid document");
+			}
+			
+			if (text==null || iDocument==null) {
+				return;
+			}
+			
+			var definition:ComponentDefinition =  getDynamicComponentType("spark.components.Label", true);
+			var component:Label = createComponentToAdd(iDocument, definition, false) as Label;
+			
+			// not sure why we're adding it
+			addElement(component, destination, ["text"], null, {text:text});
+			
+			updateComponentAfterAdd(iDocument, component);
+			
+			//info("Text from the clipboard was added to the document");
+		}
+		
+		/**
+		 * Add html data to a document. The importer is awful 
+		 * */
+		public function addHTMLDataToDocument(iDocument:IDocument, text:String, destination:Object = null):void {
+			if (text==null || text=="") {
+				error("Not valid text data");
+			}
+			if (iDocument==null) {
+				error("Not a valid document");
+			}
+			
+			if (text==null || iDocument==null) {
+				return;
+			}
+			
+			var definition:ComponentDefinition =  getDynamicComponentType("spark.components.RichText", true);
+			
+			if (!definition) {
+				return;
+			}
+			
+			var componentInstance:RichText = createComponentToAdd(iDocument, definition, false) as RichText;
+			var formatter:HTMLFormatterTLF = HTMLFormatterTLF.staticInstance;
+			var translatedHTMLText:String;
+			var textFlow:TextFlow;
+			
+			formatter.replaceLinebreaks = true;
+			formatter.replaceMultipleBreaks = true;
+			formatter.replaceEmptyBlockQoutes = true;
+			translatedHTMLText = formatter.format(text);
+			textFlow = TextConverter.importToFlow(translatedHTMLText, TextConverter.TEXT_FIELD_HTML_FORMAT);
+			
+			componentInstance.textFlow = textFlow;
+			
+			addElement(componentInstance, destination, ["textFlow"], null, {textFlow:textFlow});
+			
+			updateComponentAfterAdd(iDocument, componentInstance);
+			
+			//info("HTML from the clipboard was added to the library");
+		}
+		
+		public static var acceptablePasteFormats:Array = ["Object", "UIComponent", 
+										"air:file list", "air:url", "air:bitmap", "air:text"];
+		public static var acceptableDropFormats:Array = ["UIComponent", "air:file list", "air:url", "air:bitmap"];
+		
+		/**
+		 * Returns true if it's a type of content we can accept to be pasted in
+		 * */
+		public static function isAcceptablePasteFormat(formats:Array):Boolean {
+			if (formats==null || formats.length==0) return false;
+			
+			if (ArrayUtils.containsAny(formats, acceptablePasteFormats)) {
+				return true;
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Returns true if it's a type of content we can accept to be dragged and dropped.
+		 * If we are dragging a UIComponent we don't want to accept it by default because
+		 * it could be us dragging a component around the design view
+		 * */
+		public static function isAcceptableDragAndDropFormat(dragSource:DragSource, includeUIComponents:Boolean = false):Boolean {
+			if (dragSource==null) return false;
+			
+			if ((dragSource.hasFormat("UIComponent") && includeUIComponents) || 
+				dragSource.hasFormat("air:file list") || 
+				dragSource.hasFormat("air:url") || 
+				dragSource.hasFormat("air:bitmap")) {
+				return true;
+			}
+			
+			return false;
 		}
 		
 		/**
@@ -4033,7 +4402,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Set attributes on a component object
+		 * Set attributes on a component object from XML node
 		 * */
 		public static function getPropertiesStylesFromNode(elementInstance:Object, node:XML, item:ComponentDefinition = null):ValuesObject {
 			var elementName:String = node.localName();
@@ -4047,35 +4416,32 @@ package com.flexcapacitor.controller {
 			var childNodeValueObject:Object;
 			var values:Object;
 			var valuesObject:ValuesObject;
+			var failedToImportStyles:Object = {};
+			var failedToImportProperties:Object = {};
 			
 			attributes 				= XMLUtils.getAttributeNames(node);
 			childNodeNames 			= XMLUtils.getChildNodeNames(node);
 			propertiesOrStyles 		= attributes.concat(childNodeNames);
 			properties 				= ClassUtils.getPropertiesFromArray(elementInstance, propertiesOrStyles);
 			styles 					= ClassUtils.getStylesFromArray(elementInstance, propertiesOrStyles);
+			
 			attributesValueObject 	= XMLUtils.getAttributesValueObject(node);
+			attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as IStyleClient, attributesValueObject, styles, failedToImportStyles);
+			attributesValueObject	= ClassUtils.getTypedPropertyValueObject(elementInstance, attributesValueObject, properties, failedToImportProperties);
+			
 			childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node);
 			values 					= ObjectUtils.merge(attributesValueObject, childNodeValueObject);
 			
-			// todo get typed values
-			// temporary fix to get typed boolean values			
-			for (var i:int = 0; i < propertiesOrStyles.length; i++) 
-			{
-				var property:String = propertiesOrStyles[i];
-				var value:String = values[property];
-				if (value=="true" || value=="false") {
-					values[property] = value=="true" ? true : false;
-				}
-			}
 			
-			
-			valuesObject 					= new ValuesObject();
-			valuesObject.properties 		= properties;
-			valuesObject.styles 			= styles;
-			valuesObject.values 			= values;
-			valuesObject.attributes 		= attributes;
-			valuesObject.childNodeNames 	= childNodeNames;
-			valuesObject.childNodeValues 	= childNodeValueObject;
+			valuesObject 						= new ValuesObject();
+			valuesObject.values 				= values;
+			valuesObject.styles 				= styles;
+			valuesObject.attributes 			= attributes;
+			valuesObject.properties 			= properties;
+			valuesObject.childNodeNames 		= childNodeNames;
+			valuesObject.childNodeValues 		= childNodeValueObject;
+			valuesObject.stylesErrorsObject 	= failedToImportStyles;
+			valuesObject.propertiesErrorsObject = failedToImportProperties;
 			
 			var a:Object = node.namespace().prefix     //returns prefix i.e. rdf
 			var b:Object = node.namespace().uri        //returns uri of prefix i.e. http://www.w3.org/1999/02/22-rdf-syntax-ns#
@@ -4744,6 +5110,39 @@ package com.flexcapacitor.controller {
 		public static function getTypedValue(value:*, valueType:*):* {
 			
 			return TypeUtils.getTypedValue(value, valueType);
+		}
+		
+		
+		/**
+		 * Gets the value translated into a type from the styles object. 
+		 * */
+		public static function getTypedValueFromProperty(target:Object, propertiesObject:Object, properties:Array):Object {
+			var typedValuesObject:Object;
+			var propertyType:Object;
+			
+			for (var property:String in properties) {
+				propertyType = ClassUtils.getTypeOfProperty(target, property);
+				typedValuesObject[property] = getTypedValue(propertiesObject[property], propertyType);
+			}
+			
+			return typedValuesObject;
+		}
+		
+		/**
+		 * Gets the value translated into a type from the styles object.
+		 * Might be duplicate of 
+attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as IStyleClient, attributesValueObject, styles); 
+		 * */
+		public static function getTypedValueFromStyles(target:Object, values:Object, styles:Array):Object {
+			var typedValuesObject:Object = {};
+			var styleType:Object;
+			
+			for each (var style:String in styles) {
+				styleType = ClassUtils.getTypeOfStyle(target, style);
+				typedValuesObject[style] = getTypedValue(values[style], styleType);
+			}
+			
+			return typedValuesObject;
 		}
 		
 		
@@ -5478,14 +5877,65 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Sets the default properties. We may need to use setActualSize type of methods here or when added. 
+		 * 
+		 * For instructions on setting default properties or adding new component types
+		 * look in Radii8Desktop/howto/HowTo.txt
+		 * */
+		public static function setDefaultProperties(item:ComponentDescription):void {
+			var properties:Array = [];
+			
+			for (var property:String in item.defaultProperties) {
+				//setProperty(component, property, [item.defaultProperties[property]]);
+				properties.push(property);
+			}
+			
+			// maybe do not add to history
+			setProperties(item.instance, properties, item.defaultProperties);
+			
+		}
+		
+		/**
+		 * Updates the component with any additional settings for it to work 
+		 * after it's been added to the document.
+		 * 
+		 * For instructions on setting default properties or adding new component types
+		 * look in Radii8Desktop/howto/HowTo.txt
+		 * 
+		 * @see #createComponentToAdd()
+		 * */
+		public static function updateComponentAfterAdd(iDocument:IDocument, target:Object, setDefaults:Boolean = false):void {
+			var componentDescription:ComponentDescription = iDocument.getItemDescription(target);
+			var componentInstance:Object = componentDescription ? componentDescription.instance : null;
+			
+			// graphic elements need to have their display object listen to mouse events
+			if (componentDescription && componentDescription.isGraphicElement) {
+				//GraphicElement(componentInstance).addEventListener(MouseEvent.CLICK, graphicElementClicked, false, 0, true);
+				GraphicElement(componentInstance).alwaysCreateDisplayObject = true;
+				
+				if (GraphicElement(componentInstance).displayObject) {
+					//GraphicElement(componentInstance).displayObject.addEventListener(MouseEvent.CLICK, graphicElementClicked, false, 0, true);
+					Sprite(GraphicElement(componentInstance).displayObject).mouseEnabled = true;
+					Sprite(GraphicElement(componentInstance).displayObject).buttonMode = true;
+				}
+			}
+			
+			if (componentDescription && setDefaults) {
+				setDefaultProperties(componentDescription);
+			}
+		}
+		
+		/**
 		 * Creates an instance of the component in the descriptor and sets the 
 		 * default properties. We may need to use setActualSize type of methods here or when added. 
 		 * 
 		 * For instructions on setting default properties or adding new component types
 		 * look in Radii8Desktop/howto/HowTo.txt
+		 * 
+		 * @see #updateComponentAfterAdd()
 		 * */
-		public static function createComponentForAdd(iDocument:IDocument, item:ComponentDefinition, setDefaults:Boolean = true):Object {
-			var newComponentDescription:ComponentDescription = new ComponentDescription();
+		public static function createComponentToAdd(iDocument:IDocument, item:ComponentDefinition, setDefaults:Boolean = true):Object {
+			var componentDescription:ComponentDescription = new ComponentDescription();
 			var classFactory:ClassFactory;
 			var componentInstance:Object;
 			
@@ -5494,11 +5944,14 @@ package com.flexcapacitor.controller {
 			
 			if (setDefaults) {
 				//classFactory.properties = item.defaultProperties;
-				newComponentDescription.properties = item.defaultProperties;
-				newComponentDescription.defaultProperties = item.defaultProperties;
+				componentDescription.properties = item.defaultProperties;
+				componentDescription.defaultProperties = item.defaultProperties;
 			}
 			
 			componentInstance = classFactory.newInstance();
+			
+			componentDescription.instance = componentInstance;
+			componentDescription.name = item.name;
 			
 			if (setDefaults) {
 				var properties:Array = [];
@@ -5509,13 +5962,12 @@ package com.flexcapacitor.controller {
 				}
 				
 				// maybe do not add to history
-				setProperties(componentInstance, properties, item.defaultProperties);
+				//setProperties(componentInstance, properties, item.defaultProperties);
+				setDefaultProperties(componentDescription);
 			}
 			
-			newComponentDescription.instance = componentInstance;
-			newComponentDescription.name = item.name;
-			
-			iDocument.descriptionsDictionary[componentInstance] = newComponentDescription;
+			iDocument.setItemDescription(componentInstance, componentDescription);
+			//iDocument.descriptionsDictionary[componentInstance] = componentDescription;
 			
 			if (componentInstance is Label) {
 				
@@ -5712,7 +6164,7 @@ package com.flexcapacitor.controller {
 			var iProject:IProject = event.currentTarget as IProject;
 			
 			// add assets
-			addAssets(iProject.assets);
+			addAssetsToDocument(iProject.assets, iProject as DocumentData);
 			
 			if (iProject is EventDispatcher) {
 				EventDispatcher(iProject).removeEventListener(Project.PROJECT_OPENED, projectOpenResultHandler);
@@ -7028,7 +7480,7 @@ package com.flexcapacitor.controller {
 			for (var i:int;i<length;i++) {
 				iProject = IProject(projects[i]);
 				
-				if (uid==iProject.uid) {
+				if (iProject.uid==uid) {
 					return true;
 				}
 			}
@@ -7830,11 +8282,53 @@ package com.flexcapacitor.controller {
 		/**
 		 * Save example projects usually called after login
 		 * */
+		public function saveExampleProject(projectData:IProject, locations:String = null):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var saveLocally:Boolean = getIsLocalLocation(locations);
+			var saveRemote:Boolean = getIsRemoteLocation(locations);
+			
+			var numberOfDocuments:int;
+			var documentData:IDocumentData;
+			var url:String = getWPURL();
+			var documents:Array;
+	
+			projectData.host = url;
+			
+			if (projectData.uid=="null" || projectData.uid==null) {
+				projectData.uid = projectData.createUID();
+				projectData.name += " Copy";
+			}
+			
+			documents = IProjectData(projectData).documents;
+			numberOfDocuments = documents ? documents.length : 0;
+			j=0;
+			
+			for (var j:int; j < numberOfDocuments; j++) {
+				documentData = IDocumentData(documents[j]);
+				
+				if (documentData) {
+					documentData.host = url;
+					
+					if (documentData.uid=="null" || documentData.uid==null) {
+						documentData.uid = documentData.createUID();
+						documentData.name += " Copy";
+					}
+				}
+			}
+			
+			projectData.save();
+			
+			return true;
+		}
+		
+		/**
+		 * Save example projects usually called after login
+		 * */
 		public function saveExampleProjects(locations:String = null):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
 			var saveLocally:Boolean = getIsLocalLocation(locations);
 			var saveRemote:Boolean = getIsRemoteLocation(locations);
-
+			
 			var numberOfProjects:int = projects ? projects.length : 0;
 			var numberOfDocuments:int;
 			var documentData:IDocumentData;
@@ -7850,6 +8344,7 @@ package com.flexcapacitor.controller {
 					
 					if (projectData.uid=="null" || projectData.uid==null) {
 						projectData.uid = projectData.createUID();
+						projectData.name += " Copy";
 					}
 					
 					documents = IProjectData(projectData).documents;
@@ -7864,6 +8359,7 @@ package com.flexcapacitor.controller {
 							
 							if (documentData.uid=="null" || documentData.uid==null) {
 								documentData.uid = documentData.createUID();
+								documentData.name += " Copy";
 							}
 						}
 					}
@@ -7895,13 +8391,58 @@ package com.flexcapacitor.controller {
 				EventDispatcher(iDocument).addEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler, false, 0, true);
 			}
 			
+			iDocument.saveFunction = saveDocumentHook;
+			
 			saveLocallySuccessful = iDocument.save(locations, options);
+			
 			// TODO add support to save after response from server 
 			// because ID's may have been added from new documents
 			//saveData();
 			//document.saveCompleteCallback = saveData;
 			//saveDocumentLocally(document);
 			return saveLocallySuccessful;
+		}
+		
+		/**
+		 * This gets called on save. It allows you to modify what is saved. 
+		 * */
+		public function saveDocumentHook(iDocument:IDocument, data:Object):Object {
+			var htmlOptions:HTMLExportOptions;
+			var language:String = CodeManager.HTML;
+			var output:String = "";
+			var sourceData:SourceData;
+			
+			if (language == CodeManager.HTML) {
+				htmlOptions = CodeManager.getExportOptions(language) as HTMLExportOptions;
+				
+				htmlOptions.template = iDocument.template;
+				//htmlOptions.bordersCSS = bordersCSS;
+				//htmlOptions.showBorders = showBorders;
+				//htmlOptions.useBorderBox = useBoderBox;
+				//htmlOptions.useInlineStyles = setStylesInline.selected;
+				//htmlOptions.template = iDocument.template;
+				//htmlOptions.disableTabs = true;
+				//htmlOptions.useExternalStylesheet = false;
+				
+				//if (updateCodeLive.selected && isCodeModifiedByUser) {
+					//htmlOptions.useCustomMarkup = true;
+					//htmlOptions.markup = aceEditor.text;
+					//htmlOptions.styles = aceCSSEditor.text;
+				//}
+				
+				sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, language, htmlOptions);
+				
+				data["custom[html]"] = sourceData.source;
+				data["custom[styles]"] = sourceData.styles;
+				data["custom[userStyles]"] = sourceData.userStyles;
+				data["custom[template]"] = sourceData.template;
+				data["custom[markup]"] = sourceData.markup;
+				iDocument.errors = sourceData.errors;
+				iDocument.warnings = sourceData.warnings;
+				
+			}
+			
+			return data;
 		}
 		
 		/**
@@ -7970,46 +8511,68 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Save all projects
+		 * */
+		public function saveAllProjects(locations:String = null, saveEvenIfClean:Boolean = true):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
+			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			var numberOfProjects:int = projects ? projects.length : 0;
+			var project:IProject;
+			var anyProjectSaved:Boolean;
+			
+			if (numberOfProjects==0) {
+				warn("No projects to save");
+				return false;
+			}
+			
+			for (var i:int;i<numberOfProjects;i++) {
+				project = projects[i];
+				
+				if (project.isChanged || saveEvenIfClean) {
+					project.save(locations);
+				}
+				else {
+					project.save(locations);
+				}
+				
+				anyProjectSaved = true;
+			}
+			
+			return anyProjectSaved;
+		}
+		
+		/**
 		 * Save all documents
 		 * */
-		public function saveAllDocuments(saveLocations:String = ""):Boolean {
+		public function saveAllDocuments(locations:String = null, saveEvenIfClean:Boolean = true):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
+			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			var numberOfDocuments:int = documents.length;
 			var document:IDocument;
-			var project:IProject;
-			var documentsLength:int = documents.length;
+			var anyDocumentSaved:Boolean;
 			
-			if (documentsLength==0) {
+			if (numberOfDocuments==0) {
 				warn("No douments to save");
 				return false;
 			}
 			
-			for (var i:int;i<documentsLength;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				document = documents[i];
 				
-				if (document.isChanged) {
-					document.save(saveLocations);
+				if (document.isChanged || saveEvenIfClean) {
+					document.save(locations);
 					// TODO add support to save after response from server 
 					// because ID's may have been added from new documents
 					//saveData();
 					//document.saveCompleteCallback = saveData;
 					saveDocumentLocally(document);
+					anyDocumentSaved = true;
 				}
 			}
 			
-			var projectsLength:int = projects.length;
-			for (i = 0;i<projectsLength;i++) {
-				project = projects[i];
-				
-				if (project.isChanged) {
-					project.save();
-					// TODO add support to save after response from server 
-					// because ID's may have been added from new documents
-					//saveData();
-					//document.saveCompleteCallback = saveData;
-					saveProjectLocally(project);
-				}
-			}
-			
-			return true;
+			return anyDocumentSaved;
 		}
 
 		/**
@@ -8080,7 +8643,7 @@ package com.flexcapacitor.controller {
 			// FOR SAVING A FILE (save as) WE MAY NOT NEED ALL THE LISTENERS WE ARE ADDING
 			// add listeners
 			var fileReference:FileReference = new FileReference();
-			addFileListeners(fileReference);
+			addFileSaveAsListeners(fileReference);
 			
 			fileReference.save(data, fileName);
 			
@@ -8090,7 +8653,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Adds file save as listeners. Rename or refactor
 		 * */
-		public function addFileListeners(dispatcher:IEventDispatcher):void {
+		public function addFileSaveAsListeners(dispatcher:IEventDispatcher):void {
 			dispatcher.addEventListener(Event.CANCEL, cancelFileSaveAsHandler, false, 0, true);
 			dispatcher.addEventListener(Event.COMPLETE, completeFileSaveAsHandler, false, 0, true);
 		}
@@ -8997,15 +9560,16 @@ package com.flexcapacitor.controller {
 		public function clearExampleProjectData(exampleProject:IProject):Boolean {
 			if (!exampleProject) return false;
 			var documents:Array;
-			var documentsLength:int;
+			var numberOfDocuments:int;
 			
 			exampleProject.id = null;
 			exampleProject.uid = null;
 			documents = exampleProject.documents;
-			documentsLength = documents ? documents.length :0;
+			numberOfDocuments = documents ? documents.length :0;
 			
-			for (var i:int;i<documentsLength;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				var document:IDocument = documents[i] as IDocument;
+				
 				if (document) {
 					document.id = null;
 					document.uid = UIDUtil.createUID();
@@ -9057,10 +9621,15 @@ package com.flexcapacitor.controller {
 		 * Open document in browser. Right now you must be 
 		 * logged in or the document must be published
 		 * */
-		public static function openInBrowser(documentData:IDocumentData):void {
+		public static function openInBrowser(documentData:IDocumentData, windowName:String = null):void {
 			var request:URLRequest;
 			var url:String;
+			
 			request = new URLRequest();
+			
+			if (windowName==null) {
+				windowName = "previewInBrowser";
+			}
 			
 			if (documentData is ImageData) {
 				url = ImageData(documentData).url;
@@ -9071,7 +9640,7 @@ package com.flexcapacitor.controller {
 			
 			if (url) {
 				request.url = url;
-				navigateToURL(request, "previewInBrowser");
+				navigateToURL(request, windowName);
 			}
 			else {
 				error("The URL was not set. You may need to save the document first.");
@@ -9097,12 +9666,27 @@ package com.flexcapacitor.controller {
 		/**
 		 * Traces an fatal message
 		 * */
-		public static function fatal(message:String, ...Arguments):void {
-			log.error(message, Arguments);
+		public static function fatal(message:String, event:* = null, ...Arguments):void {
+			var issueData:IssueData;
+			var type:String;
+			var errorID:String;
+			var errorData:ErrorData;
+			var name:String;
+			
+			
+			if (event && "error" in event) {
+				message = event.error.message;
+				type = event.error.type;
+				errorID = event.error.errorID;
+				name = event.error.name;
+			}
 			
 			if (enableDiagnosticLogs) {
-				addLogData(message, Arguments, LogEventLevel.FATAL);
+				errorData = addLogData(message, LogEventLevel.FATAL, Arguments) as ErrorData;
 			}
+			
+			log.error(message, Arguments);
+			
 			
 			playMessage(message, LogEventLevel.FATAL);
 		}
@@ -9110,12 +9694,41 @@ package com.flexcapacitor.controller {
 		/**
 		 * Traces an error message
 		 * */
-		public static function error(message:String, ...Arguments):void {
-			log.error(message, Arguments);
+		public static function error(message:String, event:* = null, ...Arguments):void {
+			var issueData:IssueData;
+			var type:String;
+			var errorID:String;
+			var errorData:ErrorData;
+			var name:String;
+			
+			if (message=="") {
+				
+			}
+			
+			if (event && "error" in event) {
+				message = event.error.message;
+				type = event.error.type;
+				errorID = event.error.errorID;
+				name = event.error.name;
+			}
+			
 			
 			if (enableDiagnosticLogs) {
-				addLogData(message, Arguments, LogEventLevel.ERROR);
+				issueData = addLogData(message, LogEventLevel.ERROR, Arguments);
+				errorData = addLogData(message, LogEventLevel.ERROR, Arguments) as ErrorData;
+				
+				if (errorData) {
+					if (message=="" || message==null) {
+						errorData.description = message;
+					}
+					errorData.type = type;
+					errorData.errorID = errorID;
+					errorData.message = message;
+					errorData.name = name;
+				}
 			}
+			
+			log.error(message, Arguments);
 			
 			playMessage(message, LogEventLevel.ERROR);
 		}
@@ -9127,7 +9740,7 @@ package com.flexcapacitor.controller {
 			log.warn(message, Arguments);
 			
 			if (enableDiagnosticLogs) {
-				addLogData(message, Arguments, LogEventLevel.WARN);
+				addLogData(message, LogEventLevel.WARN, Arguments);
 			}
 			
 			playMessage(message, LogEventLevel.WARN);
@@ -9140,7 +9753,7 @@ package com.flexcapacitor.controller {
 			log.info(message, Arguments);
 			
 			if (enableDiagnosticLogs) {
-				addLogData(message, Arguments, LogEventLevel.INFO);
+				addLogData(message, LogEventLevel.INFO, Arguments);
 			}
 			
 			playMessage(message, LogEventLevel.INFO);
@@ -9153,7 +9766,7 @@ package com.flexcapacitor.controller {
 			log.debug(message, Arguments);
 			
 			if (enableDiagnosticLogs) {
-				addLogData(message, Arguments, LogEventLevel.DEBUG);
+				addLogData(message, LogEventLevel.DEBUG, Arguments);
 			}
 			
 			playMessage(message, LogEventLevel.DEBUG);
@@ -9162,12 +9775,27 @@ package com.flexcapacitor.controller {
 		/**
 		 * Adds a new log item for diagnostics and to let user go back and read messages
 		 * */
-		public static function addLogData(message:String, arguments:Array, level:int = 0):void {
+		public static function addLogData(message:String, level:int, arguments:Array):IssueData {
+			var issue:IssueData;
 			
-			var issue:IssueData = new IssueData();
+			if (level == LogEventLevel.ERROR || level == LogEventLevel.FATAL) {
+				issue = new ErrorData();
+			}
+			else if (level == LogEventLevel.WARN) {
+				issue = new WarningData();
+			}
+			if (level == LogEventLevel.DEBUG || level==LogEventLevel.INFO || level==LogEventLevel.ALL) {
+				issue = new IssueData();
+			}
+			else {
+				issue = new IssueData();
+			}
+			
 			issue.description = message;
 			issue.level = level;
 			logsCollection.addItem(issue);
+			
+			return issue;
 		}
 		
 		/**
@@ -9286,7 +9914,7 @@ package com.flexcapacitor.controller {
 				}
 				else {
 					if (target is UIComponent) {
-						snapshot = DisplayObjectUtils.rasterizeComponentWithQuality(target as UIComponent);
+						snapshot = DisplayObjectUtils.getUIComponentWithQuality(target as UIComponent);
 					}
 					else if (target is DisplayObject) {
 						snapshot = DisplayObjectUtils.rasterize2(target as DisplayObject);
@@ -9301,7 +9929,7 @@ package com.flexcapacitor.controller {
 					data.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
 					data.file = null;
 					
-					instance.addAsset(data);
+					instance.addAssetToDocument(data, instance.selectedDocument);
 					
 					return data;
 				}
@@ -9459,12 +10087,51 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Reverts the document template
+		 * */
+		public static function revertDocumentTemplate(iDocument:IDocument):void {
+			iDocument.createTemplate();
+		}
+		
+		/**
 		 * Method to write straight to the console. Does not log events since
 		 * it is the logger helping to view previous logs. 
 		 * */
 		public static function logToConsole(message:String):void
 		{
 			log.info(message);
+		}
+		
+		/**
+		 * Gets a snapshot of document and returns bitmap data
+		 * */
+		public static function getDocumentSnapshot(iDocument:IDocument, scale:Number = 1):BitmapData {
+			var bitmapData:BitmapData;
+			
+			if (iDocument && iDocument.instance) {
+				bitmapData = DisplayObjectUtils.getUIComponentWithQuality(iDocument.instance as UIComponent) as BitmapData;
+			}
+			
+			return bitmapData;
+		}
+		
+		/**
+		 * Gets a snapshot of target and returns bitmap data
+		 * */
+		public static function getSnapshot(object:Object, scale:Number = 1):BitmapData {
+			var bitmapData:BitmapData;
+			
+			if (object is IUIComponent) {
+				bitmapData = DisplayObjectUtils.getUIComponentBitmapData(object as IUIComponent);
+			}
+			else if (object is IGraphicElement) {
+				bitmapData = DisplayObjectUtils.getGraphicElementBitmapData(object as IGraphicElement);
+			}
+			else if (object is IVisualElement) {
+				bitmapData = DisplayObjectUtils.getVisualElementBitmapData(object as IVisualElement);
+			}
+			
+			return bitmapData;
 		}
 	}
 }

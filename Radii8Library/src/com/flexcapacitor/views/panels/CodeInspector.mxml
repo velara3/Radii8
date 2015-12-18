@@ -770,9 +770,12 @@
 				var iDocument:IDocument = radiate.selectedDocument;
 				var showTemplate:Boolean = editTemplateButton.selected;
 				
-				if (templateEditor) {
-					templateEditor.text = basicTemplate;
-					iDocument.template = templateEditor.text;
+				if (iDocument) {
+					Radiate.revertDocumentTemplate(iDocument);
+				}
+					
+				if (templateEditor && iDocument) {
+					templateEditor.text = iDocument.template;
 				}
 			}
 			

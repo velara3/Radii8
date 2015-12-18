@@ -32,6 +32,11 @@
 			
 			if (project && labelDisplay) {
 				labelDisplay.text = project.name;
+				labelDisplay.toolTip = "ID: " + project.id;
+			}
+			else if (labelDisplay) {
+				labelDisplay.text = "";
+				labelDisplay.toolTip = ""
 			}
 			
 		}

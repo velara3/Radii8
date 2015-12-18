@@ -110,18 +110,34 @@ package com.flexcapacitor.model {
 		function set scale(value:Number):void;
 		
 		/**
+		 * Hook to update data as it's being served
+		 * */
+		function get saveFunction():Function;
+		function set saveFunction(value:Function):void;
+		
+		/**
 		 * Gets the component description for the item from the component dictionary
 		 * */
 		function getItemDescription(value:*):ComponentDescription;
 		
 		/**
-		 * Adds the element to the component description dictionary
+		 * Adds the instance and component description into the component dictionary
 		 * */
-		function addComponent(value:*):ComponentDescription;
+		function setItemDescription(value:*, itemDescription:ComponentDescription):void;
+		
+		/**
+		 * Adds the component description into the component dictionary
+		 * */
+		function addComponentDescription(value:*):ComponentDescription;
 		
 		/**
 		 * Resets the save status after loading a document
 		 * */
 		function resetSaveStatus():void;
+		
+		/**
+		 * Creates the web template
+		 * */
+		function createTemplate():void;
 	}
 }

@@ -52,6 +52,9 @@ package {
 		[Embed(source="assets/icons/general/document.png")]
 		public static const document:Class;
 		
+		[Embed(source="assets/icons/general/document_play.png")]
+		public static const documentPlayIcon:Class;
+		
 		[Embed(source="assets/icons/general/document_published.png")]
 		public static const documentPublished:Class;
 		
@@ -60,6 +63,9 @@ package {
 		
 		[Embed(source="assets/icons/general/effect.png")]
 		public static const effect:Class;
+		
+		[Embed(source="assets/icons/general/error.png")]
+		public static const error:Class;
 		
 		[Embed(source="assets/icons/general/event.png")]
 		public static const event:Class;
@@ -70,8 +76,17 @@ package {
 		[Embed(source="assets/icons/general/home.png")]
 		public static const home:Class;
 		
+		[Embed(source="assets/icons/general/home_play.png")]
+		public static const homePlayIcon:Class;
+		
 		[Embed(source="assets/icons/general/import.png")]
 		public static const importIcon:Class;
+		
+		[Embed(source="assets/icons/general/image_play.png")]
+		public static const imagePlayIcon:Class;
+		
+		[Embed(source="assets/icons/general/info.png")]
+		public static const info:Class;
 		
 		[Embed(source="assets/icons/general/item_renderer.png")]
 		public static const itemRenderer:Class;
@@ -150,6 +165,9 @@ package {
 		
 		[Embed(source="assets/icons/general/visible.png")]
 		public static const visible:Class;
+		
+		[Embed(source="assets/icons/general/warning.png")]
+		public static const warning:Class;
 		
 		[Embed(source="assets/icons/general/zoom_to_fit.png")]
 		public static const zoomToFit:Class;

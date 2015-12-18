@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:views="com.flexcapacitor.views.*"
@@ -14,16 +14,17 @@
 	
 	<!-- 
 	
+	UPDATE OCT 2015 
+	- might not be as buggy since refactoring the document.componentDescription getter 
+	- that function was recreating instances of the componentDescriptions. it no longer recreates them
+	
+	
 	THIS LAYERS TREE DRAGGING AND DROPPING IS REALLY BUGGY 
 	- the branch nodes don't accept items being dragged into them for the most part 
 	unless they are open already or have items already in them
 	- once an item is added it shows up double. only by switching tabs does the
 	layers get back to the right order and right count. UPDATE: Fixed by using call later
 	or timeout, don't remember, but still hacky
-	
-	UPDATE OCT 2015 - might not be as buggy since refactoring the document.componentDescription getter 
-	- that function was recreating instances of the componentDescriptions. it no longer recreates them
-	
 	Added a hgroup to a bordercontainer and this error: 
 	
 	Error: Unknown Property: '-1'.
@@ -693,16 +694,13 @@
 		<core:CallMethod id="doThingsLater" method="activate" startDelay="50"/>
 	</fx:Declarations>
 	
-	<s:layout>
-		<s:VerticalLayout gap="0"/>
-	</s:layout>
 	
 	<renderers:LayersRenderer id="documentItemRenderer" 
 							  click="documentItemRenderer_clickHandler(event)" 
 							  autoDrawBackground="true"
 							  height="20"/>
 	
-	<c:HorizontalLine />
+	<c:HorizontalLine  />
 	
 	<s:Scroller id="scroller" width="100%" height="100%"
 				top="0"
@@ -781,4 +779,4 @@
 							  />
 	</s:HGroup>
 	
-</s:Group>
+</s:VGroup>

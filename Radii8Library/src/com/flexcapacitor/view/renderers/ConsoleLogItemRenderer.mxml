@@ -2,12 +2,18 @@
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:s="library://ns.adobe.com/flex/spark" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:controls="com.flexcapacitor.controls.*"
 				
 				autoDrawBackground="true"
-				width="100%" xmlns:controls="com.flexcapacitor.controls.*">
+				width="100%"
+				
+				>
+	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.model.IssueData;
+			
+			import mx.logging.LogEventLevel;
 			
 			public var issue:IssueData;
 			
@@ -27,17 +33,36 @@
 					labelDisplay.text = "";
 				}
 				
+				if (icon && issue) {
+					if (issue.level == LogEventLevel.WARN) {
+						icon.source = Radii8LibraryAssets.warning;
+					}
+					else if (issue.level==LogEventLevel.ERROR || issue.level == LogEventLevel.FATAL) {
+						icon.source = Radii8LibraryAssets.error;
+					}
+					else if (issue.level==LogEventLevel.INFO || 
+						issue.level==LogEventLevel.DEBUG ||
+						issue.level==LogEventLevel.ALL) {
+						icon.source = Radii8LibraryAssets.info;
+					}
+				}
+				
 			}
 		]]>
 	</fx:Script>
+
+		
+	<s:BitmapImage id="icon" fillMode="clip" height="100%" verticalAlign="middle"
+				   width="14"/>
 	
 	<s:Label id="labelDisplay" 
 			 width="100%" 
+			 left="16"
 			 maxDisplayedLines="3" 
 			 paddingLeft="5" paddingRight="5"
 			 paddingTop="8"
 			 paddingBottom="8"/>
 	
-	<controls:HorizontalLine height="1"/>
+	<controls:HorizontalLine height="1" bottom="0" width="100%"/>
 	
 </s:ItemRenderer>

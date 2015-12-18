@@ -222,11 +222,12 @@
 				change="consoleTextAreaMX_changeHandler(event)"
 				valueCommit="consoleTextArea_valueCommitHandler(event)"
 				/>
-	<c:BeveledImageButton source="{Radii8LibraryAssets.clear}" 
+	<c:BeveledImageButton id="clearButton" 
+						  source="{Radii8LibraryAssets.clear}" 
 						  right="8"
 						  click="clearTextAreaHandler(event)"
-						  width="18"
-						  height="18"
+						  width="16"
+						  height="16"
 						  horizontalAlign="center"
 						  verticalAlign="middle"
 						  />

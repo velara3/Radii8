@@ -747,7 +747,7 @@
 			<s:Button id="validateLoginButton" label="Login" click="loginButton_clickHandler(event)"/>
 		</s:HGroup>
 		
-		<controls:HorizontalLine id="baselineLine" width="100%" alpha="1" angle="90" />
+		<controls:HorizontalLine id="baselineLine" width="100%" alpha="1" />
 		
 		
 		<s:HGroup id="transferGroup" width="100%" verticalAlign="top" gap="30">
@@ -828,7 +828,7 @@
 			</s:VGroup>
 		</s:HGroup>
 		
-		<controls:HorizontalLine id="progressLine" width="0" alpha="1" angle="90" 
+		<controls:HorizontalLine id="progressLine" width="0" alpha="1"  
 								 strokeColor="#0000ff"/>
 		
 		<s:Label id="spacerLabel" 

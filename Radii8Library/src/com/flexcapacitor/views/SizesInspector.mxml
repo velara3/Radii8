@@ -4,6 +4,7 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:filters="com.flexcapacitor.filters.*"
 		 xmlns:c="com.flexcapacitor.controls.*"
+		 
 		 creationComplete="group1_creationCompleteHandler(event)"
 		 >
 
@@ -304,7 +305,8 @@
 			   />
 	
 	<c:BeveledImageButton id="fitSizeButton" 
-			   toolTip="Fit"
+			   toolTip="Fit the document into the available visible space"
+			   verticalAlign="top"
 			   visible="{showFitSize}"
 			   includeInLayout="{showFitSize}"
 			   source="{Radii8LibraryAssets.zoomToFit}" 
@@ -313,7 +315,8 @@
 			   />
 	
 	<c:BeveledImageButton id="actualSizeButton" 
-			   toolTip="Actual"
+			   toolTip="Size the document to it's actual size (100%)"
+			   verticalAlign="top"
 			   visible="{showRestoreSize}"
 			   includeInLayout="{showRestoreSize}"
 			   source="{Radii8LibraryAssets.actualSize}" 

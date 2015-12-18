@@ -12,6 +12,7 @@
 		 styleName="constraintStyles"
 		 width="100%"
 		 height="100%"
+		 creationComplete="group1_creationCompleteHandler(event)"
 		 >
 	
 	<!-- TODO: 
@@ -40,6 +41,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.CreationManager;
 			import com.flexcapacitor.utils.ArrayUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
@@ -50,7 +52,9 @@
 			
 			import spark.components.Image;
 			import spark.components.supportClasses.GroupBase;
+			import spark.core.IGraphicElement;
 			import spark.primitives.BitmapImage;
+			import spark.primitives.supportClasses.GraphicElement;
 
 			public static const BASELINE:String = "baseline";
 			public static const BOTTOM:String = "bottom";
@@ -112,7 +116,7 @@
 			public var targetY:Number;
 
 
-			private var _target:DisplayObject;
+			private var _target:Object;
 			private var _visualElement:IVisualElement;
 			
 			[Bindable]
@@ -270,8 +274,14 @@
 
 			[Bindable]
 			public function set target(value:Object):void {
+				var displayObject:DisplayObject = value as DisplayObject;
+				var iVisualElement:IVisualElement = value as IVisualElement;
+				var iGraphicalElement:IGraphicElement = value as IGraphicElement;
 				
-				if (!(value is DisplayObject)) {
+				if (displayObject || iVisualElement || iGraphicalElement) {
+					enabled = true;
+				}
+				else {
 					_target = null;
 					clearForm();
 					clearTargetDimensions();
@@ -286,7 +296,7 @@
 				clearForm();
 				clearTargetDimensions();
 				
-				_target = value as DisplayObject;
+				_target = value;
 				
 				if (_target is IVisualElement) {
 					isVisualElement = true;
@@ -337,7 +347,10 @@
 				// not sure of way to validate an IVisualElement
 				// new values aren't always committed on the same frame 
 				if (target.parent is UIComponent) {
-					UIComponent(target.parent).validateNow();
+					
+					if (target is IVisualElement || target is IGraphicElement) {
+						UIComponent(target.parent).validateNow(); // this causes infinite loop when x or y is NaN...
+					}
 				}
 				else if (target is UIComponent) {
 					UIComponent(target).validateNow();
@@ -405,7 +418,7 @@
 						property = "width";
 						
 						if (widthAutoSizeCheckbox.selected) {
-							Radiate.clearProperty(DisplayObject(target), property);
+							Radiate.clearProperty(target, property);
 							widthText.enabled = false;
 						}
 						else {
@@ -419,7 +432,7 @@
 						
 						// clear out height values if auto size is selected otherwise restore size and set focus
 						if (heightAutoSizeCheckbox.selected) {
-							Radiate.clearProperty(DisplayObject(target), property);
+							Radiate.clearProperty(target, property);
 							heightText.enabled = false;
 						}
 						else {
@@ -449,14 +462,14 @@
 							// only apply constraints on checkbox change if we have some values to apply
 							if (property==WIDTH || property==HEIGHT) {
 								settingProperties = true;
-								Radiate.setProperties(DisplayObject(target), [WIDTH, HEIGHT], constrainedValueObject, null, true);
+								Radiate.setProperties(target, [WIDTH, HEIGHT], constrainedValueObject, null, true);
 								settingProperties = false;
 							}
 						}
 					}
 					else {
 						settingProperties = true;
-						Radiate.setProperty(DisplayObject(target), property, value, null, true);
+						Radiate.setProperty(target, property, value, null, true);
 						settingProperties = false;
 					}
 				}
@@ -477,12 +490,12 @@
 						settingProperties = true;
 						if (isStyle(property)) {
 							settingProperties = true;
-							Radiate.clearStyle(DisplayObject(target), property);
+							Radiate.clearStyle(target, property);
 							settingProperties = false;
 						}
 						else {
 							settingProperties = true;
-							Radiate.clearProperty(DisplayObject(target), property);
+							Radiate.clearProperty(target, property);
 							settingProperties = false;
 						}
 						settingProperties = false;
@@ -500,16 +513,16 @@
 							}
 							
 							settingProperties = true;
-							Radiate.setProperties(DisplayObject(target), [WIDTH, HEIGHT], constrainedValueObject, null, true);
+							Radiate.setProperties(target, [WIDTH, HEIGHT], constrainedValueObject, null, true);
 							settingProperties = false;
 						}
 						else {
 							settingProperties = true;
 							if (isStyle(property)) {
-								Radiate.setStyle(DisplayObject(target), property, textInput.text, null, true);
+								Radiate.setStyle(target, property, textInput.text, null, true);
 							}
 							else {
-								Radiate.setProperty(DisplayObject(target), property, textInput.text, null, true);
+								Radiate.setProperty(target, property, textInput.text, null, true);
 							}
 							settingProperties = false;
 						}
@@ -1166,7 +1179,20 @@
 					xText.text = "";
 				}
 				else {
-					xText.text = String(target.x);
+					// graphic element can have x as NaN or null
+					if (isNaN(target.x) || target.x==null) {
+						//xText.text = target.getLayoutBoundsX();
+						if (target is GraphicElement) { 
+							xText.prompt = String(GraphicElement(target).displayObject.x);
+							xText.text = "0";
+						}
+						else {
+							xText.text = "";
+						}
+					}
+					else {
+						xText.text = String(target.x);
+					}
 				}
 			}
 
@@ -1187,7 +1213,20 @@
 					yText.text = "";
 				}
 				else {
-					yText.text = String(target.y);
+					// graphic element can have x as NaN or null
+					if (isNaN(target.y) || target.y==null) {
+						//yText.text = target.getLayoutBoundsY();
+						if (target is GraphicElement) { 
+							yText.prompt = String(GraphicElement(target).displayObject.y);
+							yText.text = "0";
+						}
+						else {
+							yText.text = "";
+						}
+					}
+					else {
+						yText.text = String(target.y);
+					}
 				}
 
 			}
@@ -1315,6 +1354,9 @@
 				settingProperties = true;
 				Radiate.clearProperties(target, ["x"]);
 				Radiate.clearStyles(target, ["left", "right", "horizontalCenter"]);
+				if (target is GraphicElement) {
+					Radiate.setProperty(target, "x", 0);
+				}
 				settingProperties = false;
 				updateView();
 			}
@@ -1323,6 +1365,9 @@
 				settingProperties = true;
 				Radiate.clearProperties(target, ["y"]);
 				Radiate.clearStyles(target, ["top", "bottom", "verticalCenter"]);
+				if (target is GraphicElement) {
+					Radiate.setProperty(target, "y", 0);
+				}
 				settingProperties = false;
 				updateView();
 			}
@@ -1377,6 +1422,11 @@
 					return true;
 				}
 				return false;
+			}
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				CreationManager.createdPanelInspector(this);
 			}
 			
 		]]>

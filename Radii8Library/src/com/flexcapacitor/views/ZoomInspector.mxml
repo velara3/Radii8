@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+<s:HGroup xmlns:controls="com.flexcapacitor.graphics.*"
 		 xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:filters="com.flexcapacitor.filters.*"
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 
+		 paddingLeft="4"
 		 creationComplete="group1_creationCompleteHandler(event)"
 		 >
 	
@@ -15,7 +16,6 @@
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.tools.Zoom;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
-			
 			
 			import mx.events.FlexEvent;
 			
@@ -138,12 +138,19 @@
 				}
 			}
 			
+			protected function zoomOutButton_clickHandler(event:MouseEvent):void
+			{
+				Radiate.instance.decreaseScale();
+			}
+			
+			protected function zoomInButton_clickHandler(event:MouseEvent):void
+			{
+				Radiate.instance.increaseScale();
+			}
+			
 		]]>
 	</fx:Script>
 	
-	<s:layout>
-		<s:HorizontalLayout paddingLeft="4" />
-	</s:layout>
 	
 	
 	<!--<s:CheckBox label="Scrub Zoom" />-->
@@ -156,6 +163,18 @@
 						  height="100%"
 						  />
 	
+	<c:SolidFillButton id="zoomOutButton" 
+					   width="30"
+							 toolTip="Zoom out"
+							 click="zoomOutButton_clickHandler(event)"
+							 label="-"
+							 />
+	<c:SolidFillButton id="zoomInButton" 
+					   width="30"
+							 toolTip="Zoom in"
+							 click="zoomInButton_clickHandler(event)"
+							 label="+"
+							 />
 	<!--<s:Button id="fitSize" label="Fit Size"
 	visible="{showActualSize}"
 	includeInLayout="{showActualSize}"
@@ -206,4 +225,4 @@
 		</s:dataProvider>
 	</s:ComboBox>
 	
-</s:Group>
+</s:HGroup>

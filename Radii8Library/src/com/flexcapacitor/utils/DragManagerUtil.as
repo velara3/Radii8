@@ -54,27 +54,32 @@ package com.flexcapacitor.utils {
 	/**
 	 * Drag start 
 	 * */
-	[Event(name="dragStart", type="com.flexcapacitor.radiate.events.DragDropEvent")]
+	[Event(name="dragStart", type="com.flexcapacitor.events.DragDropEvent")]
 	
 	/**
 	 * Drag end
 	 * */
-	[Event(name="dragEnd", type="com.flexcapacitor.radiate.events.DragDropEvent")]
+	[Event(name="dragEnd", type="com.flexcapacitor.events.DragDropEvent")]
 
 	/**
 	 * Drag over 
 	 * */
-	[Event(name="dragOver", type="com.flexcapacitor.radiate.events.DragDropEvent")]
+	[Event(name="dragOver", type="com.flexcapacitor.events.DragDropEvent")]
 
 	/**
 	 * Drop event 
 	 * */
-	[Event(name="dragDrop", type="com.flexcapacitor.radiate.events.DragDropEvent")]
-
+	[Event(name="dragDrop", type="com.flexcapacitor.events.DragDropEvent")]
+	
 	/**
 	 * Drop complete event 
 	 * */
-	[Event(name="dragDropComplete", type="com.flexcapacitor.radiate.events.DragDropEvent")]
+	[Event(name="dragDropComplete", type="com.flexcapacitor.events.DragDropEvent")]
+	
+	/**
+	 * Drop incomplete event. The user dragged but did not drop to anywhere successful 
+	 * */
+	[Event(name="dragDropIncomplete", type="com.flexcapacitor.events.DragDropEvent")]
 	
 	/**
 	 * Enables drag and drop of UIComponent. 
@@ -268,7 +273,9 @@ package com.flexcapacitor.utils {
 			}
 			
 		}
+		
 		public static var testSomething:Boolean;
+		
 		/**
 		 * Start dragging
 		 * */
@@ -384,6 +391,7 @@ package com.flexcapacitor.utils {
 				//   - dragManagerStyleDeclaration is null 
 			}
 			
+			dragging = true;
 			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_START));
 		}
 		
@@ -957,158 +965,6 @@ package com.flexcapacitor.utils {
 			var point:Point;
 			var length:int;
 			
-			/*
-			target = getContainerUnderPoint(event, parentApplication, true, offset);
-			
-			// get point from upper left edge of drag proxy
-			if (adjustMouseOffset) {
-				topLeftEdgePoint = new Point(event.stageX-offset.x, event.stageY-offset.y);
-			}
-			else {
-				topLeftEdgePoint = new Point(event.stageX, event.stageY);
-			}
-			
-			// get items under point
-			targetsUnderPoint = topLevelApplication.getObjectsUnderPoint(topLeftEdgePoint);
-			
-			// start at the top
-			targetsUnderPoint = targetsUnderPoint.reverse();
-			
-			// update location
-			updateDropTargetLocation(event.stageX, event.stageY);
-			
-			// reset drop location
-			dropLocation = null;
-			
-			// get length of targets
-			length = targetsUnderPoint.length;
-			
-			// loop through objects under pointer from the highest to the lowest
-			outerloop: 
-			
-			////////////////////////////////////////////////////////////
-			// find first available group
-			////////////////////////////////////////////////////////////
-			for (var i:int;i<length;i++) {
-				isGroup = false;
-				
-				target = targetsUnderPoint[i];
-				//trace(i + " of " + length+ " target:"+NameUtil.getUnqualifiedClassName(target));
-				
-				if (parentApplication.contains(DisplayObject(target))) {
-					//trace(i + " parent application is " + parentApplication);
-					//trace(i + " parent application contains " + target);
-				}
-				else {
-					//trace(i + " parent application does not contain " + target);
-					continue;
-				}
-				
-				// check if target is self
-				if (target==draggedItem) {
-					continue;
-				}
-				
-				// check if target is child of self
-				if ("contains" in draggedItem && draggedItem.contains(target)) {
-					continue;
-				}
-				
-				
-				
-				// check if target is a group
-				if (target is GroupBase || target is SkinnableContainer) {
-					dropIndex = -1;
-					
-					// skip skins
-					if (target is ApplicationSkin) {
-						target = target.owner;
-					}
-					
-					// skip skins
-					if (target is Skin && !includeSkins) {
-						continue;
-					}
-					
-					// skip skins (for groups in checkbox skin for example)
-					if ("owner" in target && target.owner is Skin && !includeSkins) {
-						continue;
-					}
-					
-					isGroup = target is GroupBase ? true : false;
-					isSkinnableContainer = target is SkinnableContainer ? true : false;
-					targetGroup = target as GroupBase;
-					targetSkinnableContainer = target as SkinnableContainer;
-					
-					// we found a group
-					dropTarget = target;
-					
-					// check the type
-					if (target) { // may not need this check
-						targetGroupLayout = target.layout;
-						
-						// get drop indicator location
-						dropLocation = targetGroupLayout.calculateDropLocation(event);
-						
-						if (dropLocation) {
-							dropIndex = dropLocation.dropIndex;
-						}
-						
-						// reset group layout values
-						isTile = isVertical = isHorizontal = false;
-						
-						if (targetGroupLayout is HorizontalLayout) {
-							isHorizontal = true;
-						}
-						else if (targetGroupLayout is VerticalLayout) {
-							isVertical = true;
-						}
-						else if (targetGroupLayout is TileLayout) {
-							isTile = true;
-						}
-						else if (targetGroupLayout is BasicLayout) {
-							isBasicLayout = true;
-						}
-					}
-					
-					//trace("found target " + targetCandidate);
-					// found a target break
-					break;
-				}
-				
-			}// end loop to find target
-			*/
-			
-			
-			// check document, parentDocument, owner and parent
-			// GROUP in CHECKBOX
-			// document = spark.skins.spark.CheckBoxSkin
-			// isDocument = false;
-			// owner = spark.skins.spark.CheckBoxSkin
-			// parent = spark.skins.spark.CheckBoxSkin
-			// parentDocument = spark.skins.spark.CheckBoxSkin
-			// systemManager = _application_mx_managers_SystemManager (@118f03ba1)
-			
-			// GROUP on Application
-			// document = spark.skins.spark.ApplicationSkin;
-			// isDocument = false;
-			// owner = application
-			// parent = spark.components.Group
-			// parentDocument = spark.skins.spark.ApplicationSkin
-			// systemManager = _application_mx_managers_SystemManager (@118f03ba1)
-			
-			
-			/*if (dropTarget is CheckBox) {
-				//trace("is checkbox");
-			}
-			else {
-				//trace("is group");
-			}*/
-			
-			
-			/*if (!dropTarget) {
-				dropTarget = parentApplication;
-			}*/
 			
 			dragData = findDropTarget(event, false);
 			
@@ -1175,7 +1031,8 @@ package com.flexcapacitor.utils {
 			dispatchEvent(dragEvent);
 			
 			if (dragEvent.isDefaultPrevented()) {
-				
+				dragging = false;
+				dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_END));
 				return;
 			}
 
@@ -1393,6 +1250,7 @@ package com.flexcapacitor.utils {
 			removeMouseHandlers(IUIComponent(dragInitiator));
 			
 			dragInitiator.visible = hideDragInitiatorOnDrag ? true : false; // hide from view
+			dragging = false;
 			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_END));
 		}
 		
@@ -1435,8 +1293,13 @@ package com.flexcapacitor.utils {
 		 * Remove listeners from selected target
 		 * */
 		protected function mouseUpHandler(event:Event):void {
-			removeMouseHandlers(IUIComponent(event.currentTarget));
 			
+			if (dragging) {
+				dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_DROP_INCOMPLETE));
+				dragging = false;
+			}
+			
+			removeMouseHandlers(IUIComponent(event.currentTarget));
 		}
 		
 		/**
@@ -1563,16 +1426,6 @@ package com.flexcapacitor.utils {
 				}
 				
 				
-				// check if target is self
-				/*if (target==draggedItem) {
-					continue;
-				}
-				
-				// check if target is child of self
-				if ("contains" in draggedItem && draggedItem.contains(target)) {
-					continue;
-				}*/
-				
 				isGroup = false;
 				
 				// check if target is a group
@@ -1644,7 +1497,8 @@ package com.flexcapacitor.utils {
 		}
 
 		/**
-		 * Finds the first visual element under the point
+		 * Finds the first visual element under the point. 
+		 * Selection manager also has a method like this. 
 		 * */
 		public function findTargetUnderPoint(event:MouseEvent):IVisualElement {
 			var topLeftEdgePoint:Point;
@@ -1751,6 +1605,8 @@ package com.flexcapacitor.utils {
 
 		private var distanceFromTop:int;
 		private static var _instance:DragManagerUtil;
+		
+		public var dragging:Boolean;
 
 		
 		/**

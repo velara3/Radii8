@@ -9,7 +9,13 @@
 		 height="24"
 		 maxHeight="60"
 		 width="100%" 
+		 creationComplete="group1_creationCompleteHandler(event)"
 		 >
+	
+	<!-- 
+	Filters an IListCollection object. 
+	Runs when dataProvider changes or any of the components change state.
+	-->
 	
 	<fx:Script>
 		<![CDATA[
@@ -30,6 +36,64 @@
 					}
 				}
 			}
+			
+			private var _dataProvider:Object;
+
+			[Bindable]
+			public function get dataProvider():Object
+			{
+				return _dataProvider;
+			}
+
+			public function set dataProvider(value:Object):void
+			{
+				_dataProvider = value;
+				
+				if (value && filterEffect) {
+					filterEffect.play();
+				}
+			}
+			
+			private var _filterFunction:Function;
+
+			[Bindable]
+			public function get filterFunction():Function
+			{
+				return _filterFunction;
+			}
+
+			public function set filterFunction(value:Function):void
+			{
+				_filterFunction = value;
+				
+				if (filterEffect) {
+					filterEffect.filterFunction = value;
+				}
+			}
+
+			private var _text:String = "";
+
+			public function get text():String {
+				
+				if (filterInput && filterInput.text) {
+					return filterInput.text;
+				}
+				
+				return _text;
+			}
+
+			public function set text(value:String):void {
+				_text = value;
+			}
+
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				if (filterFunction!=null) {
+					if (filterEffect.filterFunction!=filterFunction) {
+						filterEffect.filterFunction = filterFunction;
+					}
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -39,20 +103,22 @@
 		<handlers:EventHandler eventName="change" 
 							   targets="{[filterInput,showAllItemsOnEmpty,caseSensitive,searchAtStart]}"
 							   >
-			<collections:FilterCollection target="{dataProvider}" 
+			<collections:FilterCollection id="filterEffect" 
+										  target="{dataProvider}" 
 										  source="{filterInput}" 
 										  sourcePropertyName="{sourcePropertyName}"
-										  fieldName="{fieldName}"
 										  showAllItemsOnEmpty="{showAllItemsOnEmpty.selected}"
 										  caseSensitive="{caseSensitive.selected}"
 										  searchAtStart="{searchAtStart.selected}"
+										  additionalFilters="{additionalFilters}"
+										  fieldName="{fieldName}"
 										  />
 		</handlers:EventHandler>
 		
-		<fx:Object id="dataProvider"/>
 		<fx:String id="fieldName">name</fx:String>
 		<fx:String id="sourcePropertyName">text</fx:String>
 		<fx:Object id="target"/>
+		<fx:Array id="additionalFilters"/>
 	</fx:Declarations>
 	
 	<controls:SearchTextInput id="filterInput" 

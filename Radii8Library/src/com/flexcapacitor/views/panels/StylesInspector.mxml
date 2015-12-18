@@ -52,7 +52,7 @@
 				if (!aceCSSEditorCreated) {
 					stylesUtility = new StyleUtils();
 					stylesUtility.minimumStyleNamePadding = 20;
-					stylesUtility.prespace = " ";
+					stylesUtility.prespace = "   ";
 					createEditors();
 				}
 				
@@ -64,6 +64,7 @@
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 				}
 				target = null;
+				selectedItem = null;
 			}
 			
 			protected function targetChangeHandler(event:RadiateEvent):void {

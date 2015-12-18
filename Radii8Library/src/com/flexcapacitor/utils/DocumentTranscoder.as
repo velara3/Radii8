@@ -30,7 +30,11 @@ package com.flexcapacitor.utils {
 			'xmlns:s="library://ns.adobe.com/flex/spark" ' +
 			'xmlns:mx="library://ns.adobe.com/flex/" ' +
 			'xmlns:fc="library://ns.flexcapacitor.com/flex/" ';
-			
+		
+		/**
+		 * Set this in the constructor in sub classes
+		 * */
+		public var language:String = "";
 		
 		/**
 		 * Instructs the transcoder to create file info data so you can save to file system
@@ -47,9 +51,28 @@ package com.flexcapacitor.utils {
 		public static var importOptions:ImportOptions;
 		public static var exportOptions:ExportOptions;
 		
-		public var previousPresets:HTMLExportOptions;
+		public var previousPresets:ExportOptions;
 		
 		public var target:Object;
+		
+		private var _version:String = "1.0.0";
+
+		/**
+		 * Version
+		 * */
+		public function get version():String
+		{
+			return _version;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set version(value:String):void
+		{
+			_version = value;
+		}
+
 		
 		public var contentTabStart:RegExp = /([\t| ]*)(<!--body_content-->)/i;
 		public var contentTabStart2:RegExp = /([\t| ]*)(<!--body_start-->)/i;
@@ -59,6 +82,15 @@ package com.flexcapacitor.utils {
 		 * Regex to find begin and end tags of token in the template that is replaced by the content
 		 * */
 		public var contentTokenMultiline:RegExp = /([\t| ]*)(<!--body_start-->)(.*)(^\s*)(<!--body_end-->)/ism;
+		
+		/**
+		 * Name of token in the template that is replaced by the styles
+		 * */
+		public var stylesTokenMultiline:RegExp = /([\t| ]*)(<!--styles_start-->)(.*)(^\s+)(<!--styles_end-->)/ism;
+		public var stylesTokenSingleline:RegExp = /([\t| ]*)(<!--styles_content-->)/i;
+		public var stylesTokenReplace:String = "$1$2$3[styles]\n$4$5";
+		public var stylesTokenStart:String = "<!--styles_start-->";
+		public var stylesTokenEnd:String = "<!--styles_end-->";
 		
 		/**
 		 * Name of token in the template that is replaced by the content
@@ -77,6 +109,7 @@ package com.flexcapacitor.utils {
 		public var stylesheetTokenStart:String = "<!--stylesheets_start-->";
 		public var stylesheetTokenEnd:String = "<!--stylesheets_end-->";
 		
+		public var generatorToken:String = "<!--generator-->";
 		public var pageTitleToken:String = "<!--page_title-->";
 		public var scriptsToken:String = "<!--scripts-->";
 		
@@ -210,47 +243,19 @@ package com.flexcapacitor.utils {
 			return true;
 		}
 		
-		
-		/**
-		 * Replace stylesheet token
-		 * */
-		public function replaceStylesheetsToken(value:String, stylesheetLinks:String, addToMarkup:Boolean = true):String {
-			var singleStylesheetTokenFound:Boolean;
-			var multiStylesheetTokenFound:Boolean;
-			var stylesheetReplacement:String;
-			var warningData:IssueData;
-			
-			// find single line token
-			singleStylesheetTokenFound = stylesheetTokenSingleline.test(value);
-			
-			// cascading style search
-			if (singleStylesheetTokenFound) {
-				value = value.replace(stylesheetTokenSingleline, "$1" + stylesheetLinks);
-			}
-			else {
-				multiStylesheetTokenFound = stylesheetTokenMultiline.test(value);
-				
-				if (multiStylesheetTokenFound) {
-					stylesheetReplacement = stylesheetTokenReplace.replace("[stylesheets]", stylesheetLinks);
-					value = value.replace(stylesheetTokenMultiline, stylesheetReplacement);
-				}
-				else {
-					warningData = IssueData.getIssue("Missing Token", "No stylesheet token(s) found in the template.");
-					warnings.push(warningData);
-					if (addToMarkup) {
-						value = stylesheetLinks + "\n" + value;
-					}
-				}
-			}
-			
-			return value;
-		}
-		
 		/**
 		 * Replaces the page title token with the page title 
 		 * */
 		public function replacePageTitleToken(value:String, name:String):String {
-			var pageOutput:String = value.replace(pageTitleToken, name);
+			var pageOutput:String = value!=null ? value.replace(pageTitleToken, name) : "";
+			return pageOutput;
+		}
+		
+		/**
+		 * Replaces the generator token with the generator information
+		 * */
+		public function replaceGeneratorToken(value:String, name:String):String {
+			var pageOutput:String = value!=null ? value.replace(generatorToken, name) : "";
 			return pageOutput;
 		}
 		
@@ -258,8 +263,49 @@ package com.flexcapacitor.utils {
 		 * Replaces the scripts token with scripts
 		 * */
 		public function replaceScriptsToken(value:String, replacement:String):String {
-			var pageOutput:String = value.replace(scriptsToken, replacement);
+			var pageOutput:String = value!=null ? value.replace(scriptsToken, replacement) : "";
 			return pageOutput;
+		}
+		
+		
+		/**
+		 * Replace stylesheet token
+		 * */
+		public function replaceStylesheetsToken(page:String, stylesheetLinks:String, addToMarkup:Boolean = true):String {
+			var stylesheetReplacement:String;
+			var warningData:IssueData;
+			var whiteSpace:String;
+			var match:Object;
+			
+			match = page.match(stylesheetTokenSingleline);
+			
+			if (match!=null) {
+				whiteSpace = match[1]!=null ? match[1] : "";
+				stylesheetLinks = StringUtils.indent(stylesheetLinks, whiteSpace);
+				page = page.replace(stylesheetTokenSingleline, stylesheetLinks);
+			}
+			else {
+				
+				match = page.match(stylesheetTokenMultiline);
+				
+				if (match!=null) {
+					whiteSpace = match[1]!=null ? match[1] : "";
+					stylesheetLinks = StringUtils.indent(stylesheetLinks, whiteSpace + StringUtils.TAB);
+					
+					stylesheetReplacement = stylesheetTokenReplace.replace("[stylesheets]", stylesheetLinks);
+					page = page.replace(stylesheetTokenMultiline, stylesheetReplacement);
+				}
+				else {
+					warningData = IssueData.getIssue("Missing Token", "No stylesheet token(s) found in the template.");
+					warnings.push(warningData);
+					
+					if (addToMarkup) {
+						page = stylesheetLinks + "\n" + page;
+					}
+				}
+			}
+			
+			return page;
 		}
 		
 		/**
@@ -268,34 +314,82 @@ package com.flexcapacitor.utils {
 		 * @see #contentTokenMultiline
 		 * @see #contentTokenReplace
 		 * */
-		public function replaceContentToken(value:String, content:String):String {
-			var singlelineTokenFound:Boolean;
-			var multilineTokenFound:Boolean;
+		public function replaceContentToken(page:String, content:String):String {
 			var contentReplacement:String;
-			var outputContent:String = "";
+			var pageMergedOutput:String = "";
 			var warningData:IssueData;
+			var whiteSpace:String;
+			var match:Object;
 			
 			// replace content
-			singlelineTokenFound = contentTokenSingleline.test(value);
+			match = page.match(contentTokenSingleline);
 			
-			if (singlelineTokenFound) {
-				outputContent = value.replace(contentTokenSingleline, content);
+			if (match!=null) {
+				whiteSpace = match[1]!=null ? match[1] : "";
+				content = StringUtils.indent(content, whiteSpace);
+				
+				pageMergedOutput = page.replace(contentTokenSingleline, content);
 			}
 			else {
-				multilineTokenFound = contentTokenMultiline.test(value);
+				match = page.match(contentTokenMultiline);
 				
-				if (multilineTokenFound) {
+				if (match!=null) {
+					whiteSpace = match[1]!=null ? match[1] : "";
+					content = StringUtils.indent(content, whiteSpace);
+					
 					contentReplacement = contentTokenReplace.replace("[content]", content);
-					outputContent = value.replace(contentTokenMultiline, contentReplacement);
+					pageMergedOutput = page.replace(contentTokenMultiline, contentReplacement);
 				}
 				else {
 					warningData = IssueData.getIssue("Missing Token", "No content token(s) found in the template.");
 					warnings.push(warningData);
-					outputContent = content;
+					pageMergedOutput = page;
 				}
 			}
 			
-			return outputContent;
+			return pageMergedOutput;
+		}
+		
+		/**
+		 * Replaces a styles token
+		 * @see #stylesTokenSingleline
+		 * @see #stylesTokenMultiline
+		 * @see #stylesTokenReplace
+		 * */
+		public function replaceStylesToken(page:String, styles:String):String {
+			var contentReplacement:String;
+			var pageMergedOutput:String = "";
+			var warningData:IssueData;
+			var whiteSpace:String;
+			var match:Object;
+			
+			// replace styles
+			match = page.match(stylesTokenSingleline);
+			
+			if (match!=null) {
+				whiteSpace = match[1]!=null ? match[1] : "";
+				styles = StringUtils.indent(styles, whiteSpace);
+				
+				pageMergedOutput = page.replace(stylesTokenSingleline, styles);
+			}
+			else {
+				match = page.match(stylesTokenMultiline);
+				
+				if (match!=null) {
+					whiteSpace = match[1]!=null ? match[1] : "";
+					styles = StringUtils.indent(styles, whiteSpace);
+					
+					contentReplacement = stylesTokenReplace.replace("[styles]", styles);
+					pageMergedOutput = page.replace(stylesTokenMultiline, contentReplacement);
+				}
+				else {
+					warningData = IssueData.getIssue("Missing Token", "No styles token(s) found in the template.");
+					warnings.push(warningData);
+					pageMergedOutput = page;
+				}
+			}
+			
+			return pageMergedOutput;
 		}
 		
 		/**
@@ -456,6 +550,35 @@ package com.flexcapacitor.utils {
 				importOptions = new ImportOptions();
 			}
 			return importOptions;
+		}
+		
+		/**
+		 * Default generator tag.
+
+		 * */
+		public var generatorTag:String = "<!-- Generator: [name] [version], [language] Exporter, http://www.velara3.com -->";
+		
+		/**
+		 * Get a generator tag. Any tokens are replaced by property values.
+		 * For example,
+<pre>
+<!-- Generator: VeraType 3.3.0, SVG Export Plug-In, http://www.velara3.com -->
+</pre>
+Default generator string is: 
+<pre>
+<!-- Generator: [name] [version], [language] Exporter, http://www.velara3.com -->
+</pre>
+		 * @see #generatorTag 
+		 * */
+		public function get generator():String {
+			var value:String = generatorTag.replace("[name]", "Radiate");
+			value = value.replace("[version]", version);
+			value = value.replace("[language]",  language);
+			return value;
+		}
+		
+		public function set generator(value:String):void {
+			generatorTag = value;
 		}
 	}
 }

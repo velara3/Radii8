@@ -34,14 +34,15 @@
 					}
 					else {
 						if (item.instance is Application) {
-							path = Radiate.componentsIconNotFoundPath;
+							//path = Radiate.componentsIconNotFoundPath;
+							iconImage.source = Radii8LibraryAssets.document;
 						}
 						else {
 							path = Radiate.componentsIconPath + item.name + ".png";
-						}
-						
-						if (path!=iconImage.source) {
-							iconImage.source = path;
+							
+							if (path!=iconImage.source) {
+								iconImage.source = path;
+							}
 						}
 					}
 					
@@ -50,7 +51,12 @@
 					}
 					else {
 						if (item.name) {
-							labelDisplay.text = item.name;
+							if (item.instance is Application) {
+								labelDisplay.text = "Document";
+							}
+							else {
+								labelDisplay.text = item.name;
+							}
 						}
 						else {
 							labelDisplay.text = item.className=="application" || item.instance is Application ? "Document" : item.className;
@@ -230,7 +236,7 @@
 					   source="{treeListData.icon}" 
 					   contentLoader="{Radiate.contentCache}"
 					   ioError="iconImage_ioErrorHandler(event)"
-					   width="16" height="16"/>
+					   width="16" height="16" scaleMode="letterbox"/>
 		<s:Label id="labelDisplay" 
 				 fontSize="10"
 				 paddingLeft="3"

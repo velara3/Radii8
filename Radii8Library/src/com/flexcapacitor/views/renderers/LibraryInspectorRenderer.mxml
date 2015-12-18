@@ -7,6 +7,8 @@
 				width="100%" 
 				height="100%" 
 				minHeight="36" 
+				mouseEnabledWhereTransparent="true"
+				mouseDown="groupMouseDownHandler(event)"
 				>
 	
 	<fx:Script>
@@ -54,6 +56,10 @@
 					uploadFileIcon.enabled = false;
 					uploadFileIcon.visible = false;
 				}
+				
+				if (labelDisplay) {
+					labelDisplay.toolTip = label + " - ID: " +  imageData.id + " - Parent ID: " + imageData.parentId;
+				}
 			}
 			
 			protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
@@ -98,18 +104,18 @@
 			  height="100%" 
 			  verticalAlign="middle"
 			  paddingLeft="5" 
-			  mouseEnabledWhereTransparent="true"
-			  gap="12"
-			  mouseDown="groupMouseDownHandler(event)">
+			  gap="12">
 		<s:Image id="iconImage"
 				 smooth="true"
+				 smoothingQuality="high"
 				 contentLoader="{Radiate.contentCache}"
 				 ioError="iconImage_ioErrorHandler(event)"
 				 securityError="iconImage_securityErrorHandler(event)"
 				 width="30" height="30"
-				 scaleMode="zoom"/>
+				 scaleMode="letterbox"/>
 		<s:Label id="labelDisplay" visible.dragging="false"
-				 fontSize="11"/>
+				 fontSize="11" width="100%" maxDisplayedLines="1"
+				 />
 		<s:Spacer width="100%"/>
 		<controls:BeveledImageButton id="uploadFileIcon" 
 							  source="{Radii8LibraryAssets.upload}" 

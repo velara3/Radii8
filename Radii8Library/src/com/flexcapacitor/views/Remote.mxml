@@ -331,6 +331,8 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 			<views:SelectedToolToolBar id="toolBarInspector"/>
 			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}"/>
 			<views:HistoryToolBar />
+			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}"/>
+			<views:RunToolBar />
 			<s:Spacer width="50"/>
 			<views:OperationsInspector id="operationsInspector" height="100%"/>
 			<s:Spacer width="100%"/>
@@ -420,7 +422,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 								<!-- FRAMERATE -->
 								<s:Label text="FRAMERATE" width="100%"
 										 styleName="formItem"/>
-								<views:FrameRate />
+								<views:FrameRateInspector />
 								
 								<!-- MEMORY -->
 								<s:Label text="MEMORY" width="100%" styleName="formItem"/>
@@ -460,14 +462,16 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 					<!-- PROPERTIES -->
 					<s:NavigatorContent label="PROPERTIES">
 						<!-- TODO Convert this into a composite component -->
-						<s:HGroup width="100%" verticalAlign="baseline" paddingRight="8" >
-							<s:Label id="targetNameLabel" width="100%" paddingLeft="6" color="#888888"/>
+						<s:HGroup width="100%" verticalAlign="baseline" paddingRight="8" paddingLeft="8">
 							<!--<mx:LinkBar dataProvider="{forthViewStack}" right="0"/>-->
 							
-							<s:ButtonBar id="buttonbar" 
+							<s:ButtonBar id="propertiesOptionsButtonBar" 
+										 fontSize="11"
 										 requireSelection="true"
 										 dataProvider="{forthViewStack}" 
 										 />
+							
+							<s:Label id="targetNameLabel" width="100%" paddingLeft="6" color="#888888" />
 						</s:HGroup>
 						
 						<mx:ViewStack id="forthViewStack" 

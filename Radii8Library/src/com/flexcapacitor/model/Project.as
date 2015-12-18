@@ -723,6 +723,11 @@ package com.flexcapacitor.model {
 				firstTimeSave = true;
 			}
 			
+			// if importing projects but save doesn't happen while online
+			if (uid=="null" || uid==null) {
+				uid = createUID();
+			}
+			
 			// save documents
 			for (var i:int;i<numOfDocuments;i++) {
 				documentData = IDocumentData(documents[i]);
@@ -738,7 +743,7 @@ package com.flexcapacitor.model {
 						needToWaitForDocumentsSaveResults = true;
 					}
 					
-					documentData.save(locations);
+					Radiate.instance.saveDocument(documentData as IDocument, locations);
 				//}
 			}
 			

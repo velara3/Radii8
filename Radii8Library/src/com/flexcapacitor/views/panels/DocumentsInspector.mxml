@@ -18,6 +18,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IDocument;
@@ -430,27 +431,8 @@
 				documentStatusList.selectedIndex = 0;
 			}
 			
-			public var documentNotPublishedWarning:Boolean;
-			
-			protected function openInBrowserButton_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = radiate.selectedDocument;
-				
-				if (iDocument) {
-					
-					if (iDocument.status!=WPService.STATUS_PUBLISH) {
-						if (documentNotPublishedWarning) {
-							Radiate.openInBrowser(iDocument);
-						}
-						else {
-							documentNotPublishedWarning = true;
-							Radiate.warn("The document is not published. You may need to login in your browser to see it. Otherwise set to publish and save.")
-							setTimeout(Radiate.openInBrowser, 2500, iDocument);
-						}
-					}
-					else {
-						Radiate.openInBrowser(iDocument);
-					}
-				}
+			protected function openDocumentInBrowserButton_clickHandler(event:MouseEvent):void {
+				RunManager.openDocumentInBrowserButton();
 			}
 			
 			protected function list_clickHandler(event:MouseEvent):void {
@@ -463,14 +445,22 @@
 			
 			protected function setHomePageDocumentIcon_clickHandler(event:MouseEvent):void {
 				var documentData:IDocument = list.selectedItem ? IDocument(list.selectedItem) : null;
+				var documentID:int = documentData.id==null ? 0 : int(documentData.id);
+				var homePageID:int = Radiate.instance.projectHomePageID;
 				
 				if (documentData) {
 					if (documentData.id==null) {
-						Radiate.warn("Save the document before setting as home page. No ID is set.");
+						Radiate.warn("Save the document before setting it as the home page. No ID is set.");
 					}
 					else {
-						documentBeingSaved = documentData;
-						services.setProjectHomePage(int(documentData.id));
+						
+						if (documentID==homePageID) {
+							services.clearProjectHomePage();
+						}
+						else {
+							documentBeingSaved = documentData;
+							services.setProjectHomePage(int(documentData.id));
+						}
 					}
 				}
 			}
@@ -485,10 +475,16 @@
 					if (documentBeingSaved && documentBeingSaved.id==data.newValue) {
 						documentBeingSaved.project.homePage = documentBeingSaved.id!=null ? int(documentBeingSaved.id) : 0;
 						documentBeingSaved.project.markDirty();
+						Radiate.info("The home page has been set to the document, \"" +  documentBeingSaved.name + "\". Save the project.");
+						Radiate.instance.projectHomePageID = data.newValue;
+					}
+					else {
+						Radiate.info("The home page is no longer specified. The default theme will be shown. Save the project.");
+						Radiate.instance.projectHomePageID = data.newValue;
 					}
 					
-					Radiate.instance.projectHomePageID = data.newValue;
 					documentsCollection.refresh();
+					
 				}
 			}
 			
@@ -513,13 +509,7 @@
 			
 			protected function openHomePageInBrowserButton_clickHandler():void {
 				
-				if (Radiate.instance.projectHomePageID<1) {
-					Radiate.warn("A home page has not been set. Showing the default theme home page");
-					Radiate.callAfter(2000, Radiate.openUsersWebsite);
-				}
-				else {
-					Radiate.openUsersWebsite();
-				}
+				RunManager.openHomePageInBrowserButton();
 			}
 			
 		]]>
@@ -718,10 +708,10 @@
 						dataProvider="{Radiate.documentStatuses}" 
 						change="documentStatusList_changeHandler(event)">
 		</s:DropDownList>
-		<c:BeveledImageButton id="openInBrowserButton" 
+		<c:BeveledImageButton id="openDocumentInBrowserButton" 
 							  source="{Radii8LibraryEffectsAssets.play}" 
-							  toolTip="View in browser"
-							  click="openInBrowserButton_clickHandler(event)"
+							  toolTip="View published document in browser (if document is not published you must login in the site via the browser)"
+							  click="openDocumentInBrowserButton_clickHandler(event)"
 							  />
 		<s:Spacer width="100%"/>
 		<c:BeveledImageButton id="editDocumentIcon" 

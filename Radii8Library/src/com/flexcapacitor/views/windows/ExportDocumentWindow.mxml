@@ -439,7 +439,7 @@
 			</s:ButtonBar>
 		</s:HGroup>
 		
-		<controls:HorizontalLine width="100%" alpha="1" angle="90"/>
+		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
 		
 		<s:HGroup width="100%" verticalAlign="baseline">
 			
@@ -469,7 +469,7 @@
 					 />
 		</s:HGroup>
 		
-		<controls:HorizontalLine width="100%" alpha="1" angle="90"/>
+		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
 		
 		<s:HGroup width="100%" verticalAlign="middle">
 			
@@ -496,7 +496,7 @@
 			
 		</s:HGroup>
 		
-		<controls:HorizontalLine width="100%" alpha="1" angle="90"/>
+		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
 		
 		<s:HGroup width="100%" verticalAlign="baseline">
 			
@@ -527,7 +527,7 @@
 			
 		</s:HGroup>-->
 		
-		<controls:HorizontalLine width="100%" alpha="1" angle="90"/>
+		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
 		
 		<s:Label id="warningLabel" 
 				 text="" 

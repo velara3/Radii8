@@ -101,7 +101,7 @@
 						}
 						
 						//radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, deleteResultsHandler, false, 0, true);
-						localRemoveSuccessful = radiate.removeAsset(IDocumentData(documentData));
+						localRemoveSuccessful = radiate.removeAssetFromDocument(IDocumentData(documentData), null);
 					}
 				}
 				

@@ -9,5 +9,9 @@ package com.flexcapacitor.model {
 			
 		}
 		
+		public var errorID:String;
+		public var message:String;
+		public var name:String;
+		
 	}
 }

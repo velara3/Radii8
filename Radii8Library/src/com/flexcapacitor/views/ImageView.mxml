@@ -3,7 +3,8 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
 		 
-		 autoDrawBackground="false">
+		 autoDrawBackground="false"
+		 removedFromStage="itemrenderer1_removedFromStageHandler(event)">
 	
 	<fx:Script>
 		<![CDATA[
@@ -15,11 +16,14 @@
 			override public function set data(value:Object):void {
 				super.data = value;
 				
-				if (value is BitmapData) {
-					//image.source = value;
+ 				if (value is BitmapData) {
+					image.source = value;
 				}
 				else if (value is String) {
-					//image.source = value;
+					image.source = value;
+				}
+				else if (value==null) {
+					image.source = null;
 				}
 
 				if (value) {
@@ -43,6 +47,14 @@
 					moveAdded = true;
 				}
 			}
+			
+			protected function itemrenderer1_removedFromStageHandler(event:Event):void
+			{
+				if (image && image.source) {
+					image.source = null;
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -59,16 +71,25 @@
 		<s:Resize id="resizeEffect" target="{image}"/>
 	</fx:Declarations>
 	
-	<s:Rect width="100%" height="100%">
+	
+	<s:Rect id="border" left="0" right="0" height="100%" visible="false">
 		<s:fill>
 			<s:SolidColor color="#ffffff"/>
 		</s:fill>
 	</s:Rect>
 	
 	<s:Image id="image" 
+			 scaleMode="letterbox" 
+			 fillMode="scale"
 			 contentLoader="{Radiate.contentCache}"
-			 source="{data}" clearOnLoad="false"
+			 clearOnLoad="false"
+			 smooth="true"
+			 smoothingQuality="high"
+			 width="100%" height="100%"
 			 top="5" right="5" left="5" bottom="5" 
-			 complete="image_completeHandler(event)"/>
+			 complete="image_completeHandler(event)"
+			 
+			 />
+		
 	
 </s:ItemRenderer>

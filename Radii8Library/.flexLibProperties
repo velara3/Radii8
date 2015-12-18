@@ -93,7 +93,7 @@
     <classEntry path="com.flexcapacitor.views.Example"/>
     <classEntry path="com.flexcapacitor.views.EyeDropperInspector"/>
     <classEntry path="com.flexcapacitor.views.Features"/>
-    <classEntry path="com.flexcapacitor.views.FrameRate"/>
+    <classEntry path="com.flexcapacitor.views.FrameRateInspector"/>
     <classEntry path="com.flexcapacitor.views.HistoryToolBar"/>
     <classEntry path="com.flexcapacitor.views.IInspector"/>
     <classEntry path="com.flexcapacitor.views.Inspector"/>
@@ -189,6 +189,8 @@
     <classEntry path="com.flexcapacitor.views.renderers.LibraryInspectorRenderer"/>
     <classEntry path="com.flexcapacitor.views.ImageView"/>
     <classEntry path="com.flexcapacitor.view.renderers.ConsoleLogItemRenderer"/>
+    <classEntry path="com.flexcapacitor.views.renderers.ComponentsRenderer"/>
+    <classEntry path="com.flexcapacitor.managers.CreationManager"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

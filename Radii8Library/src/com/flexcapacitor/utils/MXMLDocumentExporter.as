@@ -18,6 +18,7 @@ package com.flexcapacitor.utils {
 		
 		public function MXMLDocumentExporter() {
 			supportsExport = true;
+			language = "MXML";
 		}
 		
 		/**

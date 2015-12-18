@@ -1,6 +1,8 @@
 package {
 	import com.flexcapacitor.controls.ColorPicker;
+	import com.flexcapacitor.controls.HorizontalLine;
 	import com.flexcapacitor.controls.Hyperlink;
+	import com.flexcapacitor.controls.VerticalLine;
 	
 	import mx.controls.LinkButton;
 	import mx.graphics.LinearGradient;
@@ -204,8 +206,9 @@ package {
 		//[Embed(source="assets/icons/spark/controls/HorizontalList.png")]
 		//public static const HorizontalListIcon:Class;
 		
-		//[Embed(source="assets/icons/spark/controls/HRule.png")]
-		//public static const HRuleIcon:Class;
+		[Embed(source="assets/icons/spark/controls/HRule.png")]
+		public static const HRuleIcon:Class;
+		public static var horizontalLine:HorizontalLine;		
 		
 		[Embed(source="assets/icons/spark/controls/HScrollBar.png")]
 		public static const HScrollBarIcon:Class;
@@ -301,8 +304,9 @@ package {
 		[Embed(source="assets/icons/spark/controls/VideoDisplay.png")]
 		public static const VideoDisplayIcon:Class;
 		
-		//[Embed(source="assets/icons/spark/controls/VRule.png")]
-		//public static const VRuleIcon:Class;
+		[Embed(source="assets/icons/spark/controls/VRule.png")]
+		public static const VRuleIcon:Class;
+		public static var verticalLine:VerticalLine;
 		
 		[Embed(source="assets/icons/spark/controls/VScrollBar.png")]
 		public static const VScrollBarIcon:Class;

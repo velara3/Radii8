@@ -15,7 +15,9 @@ package com.flexcapacitor.model {
 	import mx.collections.ArrayCollection;
 	import mx.collections.ListCollectionView;
 	import mx.core.IVisualElement;
-	import mx.utils.UIDUtil;
+	
+	import spark.components.supportClasses.InvalidatingSprite;
+	import spark.primitives.supportClasses.GraphicElement;
 	
 	
 	
@@ -217,7 +219,7 @@ package com.flexcapacitor.model {
 		 * Need to refactor. Most of the work is done by accessing the property 
 		 * componentDescription. 
 		 * */
-		public function addComponent(instance:*):ComponentDescription {
+		public function addComponentDescription(instance:*):ComponentDescription {
 
 			if (descriptionsDictionary[instance]==null) {
 				//descriptionsDictionary[instance] = new ComponentDescription(instance);
@@ -319,6 +321,7 @@ package com.flexcapacitor.model {
 			_isPreviewOpen = value;
 		}
 
+		public var invalidatingSpritesDictionary:Dictionary = new Dictionary(true);
 		
 		private var _descriptionsDictionary:Dictionary = new Dictionary(true);
 
@@ -337,11 +340,44 @@ package com.flexcapacitor.model {
 		}
 		
 		/**
+		 * Adds the instance and component description to this document.
+		 * 
+		 * @see #addComponentDescription() 
+		 * */
+		public function setItemDescription(value:*, itemDescription:ComponentDescription):void {
+			var spriteFound:Boolean;
+			
+			if (value is InvalidatingSprite) {
+				for (var object:Object in invalidatingSpritesDictionary) {
+					if (object==value) {
+						spriteFound = true;
+						break;
+					}
+				}
+			}
+			
+			if (!spriteFound) {
+				invalidatingSpritesDictionary[value] = itemDescription;
+			}
+			
+			descriptionsDictionary[value] = itemDescription;
+			
+		}
+		
+		/**
 		 * Returns the component description for the give item. 
 		 * Some items may not be in the descriptions dictionary.
 		 * If they are not null is returned.
 		 * */
 		public function getItemDescription(value:*):ComponentDescription {
+			
+			if (value is InvalidatingSprite) {
+				for (var object:Object in descriptionsDictionary) {
+					if (object is GraphicElement && object.displayObject==value) {
+						return descriptionsDictionary[object];
+					}
+				}
+			}
 			
 			return descriptionsDictionary[value];
 			
@@ -394,18 +430,56 @@ package com.flexcapacitor.model {
 		}
 		
 		/**
-		 * Add HTML to output sound
+		 * Saves our data to the post before sending it to the server
 		 * */
 		override public function toSaveFormObject():URLVariables {
 			var object:URLVariables = super.toSaveFormObject();
 			
 			if (isOpen) {
-				object["custom[html]"] = getHTMLSource();
+				// we need to move away from this
+				// use Radiate.saveDocument() 
+				// and Radiate.saveDocumentHook() instead 
+				if (false) {
+					object["custom[html]"] = getHTMLSource();
+				}
 				object["custom[notes]"] = notes ? notes : "";
 				object["custom[template]"] = template;
 			}
 			
+			if (saveFunction!=null) {
+				saveFunction(this, object);
+			}
+			
 			return object;
+		}
+		
+		private var _saveFunction:Function;
+
+		/**
+		 * Hook to allow updating information saved to the page.
+		 * Usage: 
+<pre>
+myDocument.saveFunction = mySaveFunction;
+myDocument.save(); 
+
+public function mySaveFunction(document:IDocument, data:Object):Object {
+ 
+	data.content = "My post content";
+	data["custom[css]"] = "some css";
+	
+	return data;
+};
+</pre>
+		 * */
+		public function get saveFunction():Function {
+			return _saveFunction;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set saveFunction(value:Function):void {
+			_saveFunction = value;
 		}
 
 		/**

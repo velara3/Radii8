@@ -3,19 +3,14 @@
 		 xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:filters="com.flexcapacitor.filters.*"
+		 xmlns:controls1="com.flexcapacitor.controls.*"
 		 
 		 implements="com.flexcapacitor.tools.IToolInspector, com.flexcapacitor.views.IInspector" 
-		 creationComplete="creationCompleteHandler(event)" xmlns:controls1="com.flexcapacitor.controls.*"
+		 creationComplete="creationCompleteHandler(event)" 
 		 >
 
 	<fx:Script>
 		<![CDATA[
-			/**
-			 * 
-				Unknown	org.eclipse.core.internal.resources.Marker@fafa5a79 is not of a displayable type
-				Attribute "implements" was already specified for element "s:Group".	
-
-			 */
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.tools.ITool;
@@ -23,6 +18,8 @@
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.events.FlexEvent;
+			
+			import spark.primitives.supportClasses.GraphicElement;
 			
 			public var radiate:Radiate;
 			public var tool:ITool;
@@ -55,6 +52,8 @@
 			}
 			
 			public function activate():void {
+				radiate = Radiate.getInstance();
+				
 				addListeners();
 				
 				if (radiate.target) {
@@ -69,11 +68,11 @@
 			}
 			
 			protected function addListeners():void {
-				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChangeHandler, false, 0, true);
 			}
 			
 			protected function removeListeners():void {
@@ -81,6 +80,7 @@
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
 					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.SCALE_CHANGE, scaleChangeHandler);
 				}
 			}
 			
@@ -112,6 +112,7 @@
 					//enabled = false;
 					return;
 				}
+				
 				updateTarget();
 			}
 			
@@ -192,6 +193,70 @@
 				else {
 					dropLocation.text = "";
 				}
+				
+				var warningMessage:String = getWarningMessages(target);
+
+				if (warningMessage!=null) {
+					if (warnIcon.toolTip!=warningMessage) {
+						warnIcon.toolTip = warningMessage;
+					}
+					warnIcon.visible = true;
+					warnIcon.includeInLayout = true;
+					warnDragStrip.visible = true;
+					warnDragStrip.includeInLayout = true;
+				}
+				else {
+					warnIcon.toolTip = "";
+					warnIcon.visible = false;
+					warnIcon.includeInLayout = false;
+					warnDragStrip.visible = false;
+					warnDragStrip.includeInLayout = false;
+				}
+			}
+			
+			protected function warnIcon_clickHandler(event:MouseEvent):void
+			{
+				var warningMessage:String = getWarningMessages(target);
+				Radiate.warn(warningMessage);
+			}
+			
+			public function getWarningMessages(target:Object):String {
+				var warningMessage:String = "";
+				var warningNeeded:Boolean;
+				
+				if (target is GraphicElement) {
+					warningMessage += "At this time you must use keyboard arrows to move a graphic element ";
+					warningMessage += "or use the Layout Panel to enter size and position.";
+					warningMessage += "\n";
+					warningNeeded = true;
+				}
+				
+				if (radiate.selectedDocument.scale!=1) {
+					if (warningMessage!="") warningMessage += "\n";
+					warningMessage += "When the document is scaled drag and drop inside of a basic layout doesn't work. ";
+					warningMessage += "Use the arrow keys or use the Layout Panel to size and position.";
+					warningMessage += "\n";
+					warningNeeded = true;
+				}
+				
+				if (warningNeeded) {
+					warningMessage = warningMessage.replace(/\n$/, '');
+					//var trimMessage2:String = warningMessage.length && warningMessage.charAt(warningMessage.length-1) == "\n" ? warningMessage.slice(0, -1) : warningMessage;
+					//var trimMessage3:String = warningMessage.replace(/[\r\n|\r|\n]$/, '');
+					//var warningMessage2:String = warningMessage.substring(0, warningMessage.indexOf("\n"));
+					
+					//if (warningMessage.lastIndexOf("\n")==0) {
+					//	warningMessage = warningMessage.substring(0, warningMessage.length-1);
+					//}
+					return warningMessage;
+				}
+				
+				return null;
+			}
+			
+			protected function scaleChangeHandler(event:RadiateEvent):void
+			{
+				updateTarget();
 			}
 			
 		]]>
@@ -212,6 +277,20 @@
 					toolTip="Show a label above the selected component(s)"/>
 		<s:CheckBox id="selectGroup" label="Select Group" change="selectGroup_changeHandler(event)"
 					toolTip="Select only group elements or elements on the root"/>
+		
+		<s:BitmapImage id="warnDragStrip" 
+					   source="{Radii8LibraryToolAssets.DragStrip}" 
+					   verticalAlign="top" 
+					   includeInLayout="false" visible="false"
+					   />
+		<s:Image id="warnIcon" 
+				 buttonMode="true"
+				 source="{Radii8LibraryAssets.warning}" 
+				 click="warnIcon_clickHandler(event)"
+				 height="18"
+				 includeInLayout="false" visible="false"
+				 />
+		
 		<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}" verticalAlign="top"/>
 		<!--<s:Label text="Drop Location: " paddingLeft="4" visible="false" includeInLayout="false"/>-->
 		<s:Label id="dropLocation" minWidth="65"  paddingTop="5" textAlign="center"/>

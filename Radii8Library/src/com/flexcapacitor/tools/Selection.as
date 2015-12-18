@@ -4,12 +4,10 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.events.RadiateEvent;
-	import com.flexcapacitor.graphics.LayoutLines;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
-	import com.flexcapacitor.utils.LayoutDebugHelper;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
@@ -43,6 +41,7 @@ package com.flexcapacitor.tools {
 	import flash.geom.Rectangle;
 	import flash.ui.Keyboard;
 	
+	import mx.containers.TabNavigator;
 	import mx.core.EventPriority;
 	import mx.core.FlexGlobals;
 	import mx.core.FlexSprite;
@@ -67,9 +66,11 @@ package com.flexcapacitor.tools {
 	import spark.components.TextArea;
 	import spark.components.VideoPlayer;
 	import spark.components.supportClasses.GroupBase;
+	import spark.components.supportClasses.InvalidatingSprite;
 	import spark.components.supportClasses.ItemRenderer;
 	import spark.components.supportClasses.ListBase;
 	import spark.core.IGraphicElement;
+	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.ListDropIndicator;
 		
 	/**
@@ -118,13 +119,18 @@ package com.flexcapacitor.tools {
 	/**
 	 * Finds and selects the item or items under the pointer. 
 	 * 
+	 * Adds mouse down listener to the system manager. We check
+	 * the target and the display objects under the mouse point to find
+	 * the item that was clicked on. This happens in mouseDownHandler.  
+	 * 
+	 * 
 	 * To do:
-	 * - select item
-	 * - select group
-	 * - draw selection area
-	 * - show resize handles
-	 * - show property inspector
-	 * - show selection option
+	 * - select item (done)
+	 * - select group (done)
+	 * - draw selection area (done)
+	 * - show resize handles 
+	 * - show property inspector (done)
+	 * - show selection option 
 	 * 
 	 * THERE ARE SECTIONS IN THIS CLASS THAT NEED TO BE REFACTORED
 	 * 
@@ -186,11 +192,6 @@ package com.flexcapacitor.tools {
 		 * The background parent scroller
 		 * */
 		public var canvasScroller:Scroller;
-		
-		/**
-		 * Layout debug helper. Used to get the visible rectangle of the selected item
-		 * */
-		public var layoutDebugHelper:LayoutDebugHelper;
 		
 		/**
 		 * Highlights items that are locked
@@ -608,7 +609,12 @@ package com.flexcapacitor.tools {
 		public function addTargetListeners(target:Object):void {
 			
 			if (target) {
-				target.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+				if (target is GraphicElement && target.displayObject) {
+					GraphicElement(target).displayObject.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+				}
+				else {
+					target.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
+				}
 			}
 		}
 		
@@ -739,14 +745,16 @@ package com.flexcapacitor.tools {
 			
 		}
 		
+		public var currentComponentDescription:ComponentDescription;
+		
 		/**
-		 * Add listeners to target
+		 * Handle mouse down on application
 		 * */
-		protected function mouseDownHandler(event:MouseEvent):void {
+		public function mouseDownHandler(event:MouseEvent):void {
 			var point:Point = new Point(event.stageX, event.stageY);
 			var targetsUnderPoint:Array = FlexGlobals.topLevelApplication.getObjectsUnderPoint(point);
 			var componentTree:ComponentDescription;
-			var description:ComponentDescription;
+			var componentDescription:ComponentDescription;
 			var target:Object = event.target;
 			var originalTarget:Object = event.target;
 			var items:Array = [];
@@ -793,6 +801,7 @@ package com.flexcapacitor.tools {
 			componentTreeLoop:
 			for (var i:int;i<targetsLength;i++) {
 				target = targetsUnderPoint[i];
+				
 				// check for window application
 				if (!targetApplication.contains(DisplayObject(target))) {
 					continue;
@@ -802,20 +811,18 @@ package com.flexcapacitor.tools {
 				if (target is DocumentContainer) {
 					return;
 				}
-				
-				description = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
-				
-				if (description) {
-					if (description.locked==false) {
-						target = description.instance;
+				//spark.components.supportClasses.InvalidatingSprite - clicked on graphic element
+				componentDescription = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
+				if (componentDescription && componentDescription.isGraphicElement) {
+					
+				}
+				if (componentDescription) {
+					if (componentDescription.locked==false) {
+						target = componentDescription.instance;
 						break;
 					}
-					else if (description.locked==true) {
+					else if (componentDescription.locked==true) {
 						if (target is ILayoutElement) {
-							
-							if (!layoutDebugHelper) {
-								layoutDebugHelper = new LayoutDebugHelper();
-							}
 							
 							if (highlightLockedItems) {
 								//layoutDebugHelper.addElement(ILayoutElement(target));
@@ -835,17 +842,24 @@ package com.flexcapacitor.tools {
 			if (selectGroup) {
 				
 				// if parent is application let user select it
-				if (description.parent==componentTree) {
+				if (componentDescription.parent==componentTree) {
 					// it's on the root so we're good
 				}
-				else if (description.instance is IVisualElementContainer) {
+				else if (componentDescription.instance is IVisualElementContainer) {
 					// it's a group so we're good
 				}
 				else {
 					// select group container
-					description = description.parent;
-					target = description.instance;
+					componentDescription = componentDescription.parent;
+					target = componentDescription.instance;
 				}
+			}
+			
+			if (componentDescription) {
+				currentComponentDescription = componentDescription;
+			}
+			else {
+				currentComponentDescription = null;
 			}
 			
 			if (target && enableDrag) {
@@ -863,8 +877,14 @@ package com.flexcapacitor.tools {
 					}
 					
 					//target.visible = false;
-					dragManagerInstance.listenForDragBehavior(target as IUIComponent, document, event);
-					addDragManagerListeners();
+					//dragManagerInstance.listenForDragBehavior(target as IUIComponent, document, event);
+					// for now we can only drag UIComponents bc I don't think drag manager supports
+					// dragging graphic elements
+					if (target is IUIComponent) {
+						dragManagerInstance.listenForDragBehavior(target as IUIComponent, document, event);
+						addDragManagerListeners();
+					}
+					
 				}
 			}
 			else if (target && !enableDrag) {
@@ -879,7 +899,7 @@ package com.flexcapacitor.tools {
 				}
 			}
 			
-			if (description && description.parent) {
+			if (componentDescription && componentDescription.parent) {
 				objectHandles;
 			}
 			
@@ -1067,6 +1087,19 @@ package com.flexcapacitor.tools {
 				//Radiate.info("listener removed");
 			}
 			
+			var actualTarget:GraphicElement;
+			if (target is InvalidatingSprite) {
+				actualTarget = currentComponentDescription && currentComponentDescription.instance ? currentComponentDescription.instance as GraphicElement : null;
+				var graphicComponent:ComponentDescription = document.getItemDescription(target);
+				
+				if (graphicComponent!=null) {
+					target = graphicComponent.instance;
+				}
+				else if (actualTarget is GraphicElement && actualTarget.displayObject==target) {
+					target = actualTarget;
+				}
+			}
+			
 			//Radiate.info("End Selection Mouse Up");
 			
 			// select target
@@ -1250,7 +1283,8 @@ package com.flexcapacitor.tools {
 	    }
 		
 		/**
-		 * Handle keyboard position changes
+		 * Handles keyboard position changes. 
+		 * Up left right down, etc.
 		 * */
 		protected function keyUpHandler(event:KeyboardEvent):void {
 			var changes:Array = [];
@@ -1262,6 +1296,11 @@ package com.flexcapacitor.tools {
 			var focusedObject:Object = topApplication.focusManager.getFocus();
 			var isApplication:Boolean;
 			var actionOccured:Boolean;
+			var eventTarget:Object = event.target;
+			var eventCurrentTarget:Object = event.currentTarget;
+			var tabNav:TabNavigator = radiate.documentsTabNavigator;
+			var isGraphicElement:Boolean;
+			
 			// Z = 90
 			// C = 67
 			// left = 37
@@ -1271,22 +1310,33 @@ package com.flexcapacitor.tools {
 			// backspace = 8
 			// delete = 46
 			
-			if (focusedObject is Application || event.target is Stage) {
+			if (radiate==null) {
+				return;
+			}
+			
+			if (focusedObject is Application || eventTarget is Stage) {
 				isApplication = true;
 			}
 			
 			// check that the target is in the target application
 			if (isApplication || 
 				(targetApplication && 
-				(targetApplication.contains(event.currentTarget) || targetApplication.contains(event.target)))) {
+				(targetApplication.contains(eventCurrentTarget) || 
+					targetApplication.contains(eventTarget)))) {
 				applicable = true;
+			}
+			else if (eventTarget==tabNav && 
+				currentComponentDescription && 
+				currentComponentDescription.isGraphicElement) {
+				applicable = true;
+				isGraphicElement = true;
 			}
 			else {
 				return;
 			}
 			
-			//Radiate.info("Selection key up");
-			if (radiate && radiate.targets.length>0) {
+			// Radiate.info("Selection key up");
+			if (radiate.targets.length>0) {
 				applicable = true;
 			}
 			
@@ -1431,6 +1481,8 @@ package com.flexcapacitor.tools {
 		/**
 		 * Draws outline around target display object. 
 		 * Trying to add support to add different types of selection rectangles. 
+		 * sizeSelectionGroup() is used to get the size of target object
+		 * @see #sizeSelectionGroup()
 		 * */
 		public function drawSelection(target:Object, selection:Object = null):void {
 			var rectangle:Rectangle;
@@ -1476,6 +1528,8 @@ package com.flexcapacitor.tools {
 					IVisualElementContainer(selection).addElement(targetSelectionGroup);
 					targetSelectionGroup.validateNow();
 				}
+				
+				
 				
 				// get and set selection rectangle
 				sizeSelectionGroup(target, selection as DisplayObject);
@@ -1536,6 +1590,7 @@ package com.flexcapacitor.tools {
 			var showContentSize:Boolean = false;
 			var isEmbeddedCoordinateSpace:Boolean;
 			var isTargetInvalid:Boolean;
+			var pixelBounds:Rectangle;
 			
 			
 			// get content width and height
@@ -1688,24 +1743,72 @@ package com.flexcapacitor.tools {
 				}
 				//trace("target is uicomponent");
 			}
+			// get visual element bounds
+			else if (target is GraphicElement) {
+				targetRectangle = DisplayObjectUtils.getRectangleBounds(target, toolLayer);
+				
+				if (GraphicElement(target).transform && GraphicElement(target).transform.pixelBounds) {
+					pixelBounds = GraphicElement(target).transform.pixelBounds;
+				}
+				
+				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent; 
+				
+				
+				if (targetRectangle) {
+					
+					if (pixelBounds) {
+						targetSelectionGroup.width = pixelBounds.width;
+						targetSelectionGroup.height = pixelBounds.height;
+					}
+					else {
+						targetSelectionGroup.width = targetRectangle.width;
+						targetSelectionGroup.height = targetRectangle.height;
+					}
+					
+					//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
+					targetSelectionGroup.x = targetRectangle.x;
+					targetSelectionGroup.y = targetRectangle.y;
+				}
+				else {
+					// this does not take into account parent sizing
+					// size and position fill
+					targetSelectionGroup.width = IGraphicElement(target).getLayoutBoundsWidth();
+					targetSelectionGroup.height = IGraphicElement(target).getLayoutBoundsHeight();
+					//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
+					targetSelectionGroup.x = IGraphicElement(target).getLayoutBoundsX();
+					targetSelectionGroup.y = IGraphicElement(target).getLayoutBoundsY();
+				}
+			}
 			// get target bounds
-			else if (target is IGraphicElement) {
+			else if (target is IVisualElement) {
+				targetRectangle = DisplayObjectUtils.getRectangleBounds(target, toolLayer);
 				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent; 
 				
 				/*if (!localTargetSpace) {
-					rectangle = IGraphicElement(target).getLayoutBoundsHeight();
+				rectangle = IGraphicElement(target).getLayoutBoundsHeight();
 				}
 				else {
-					rectangle = IGraphicElement(target).getBounds(targetCoordinateSpace);
+				rectangle = IGraphicElement(target).getBounds(targetCoordinateSpace);
 				}*/
 				
-				// size and position fill
-				targetSelectionGroup.width = IGraphicElement(target).getLayoutBoundsWidth();
-				targetSelectionGroup.height = IGraphicElement(target).getLayoutBoundsHeight();
-				//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
-				targetSelectionGroup.x = IGraphicElement(target).getLayoutBoundsX();
-				targetSelectionGroup.y = IGraphicElement(target).getLayoutBoundsY();
-				//trace("target is uicomponent");
+				
+				if (targetRectangle) {
+					
+					targetSelectionGroup.width = targetRectangle.width;
+					targetSelectionGroup.height = targetRectangle.height;
+					//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
+					targetSelectionGroup.x = targetRectangle.x;
+					targetSelectionGroup.y = targetRectangle.y;
+				}
+				else {
+					// this does not take into account parent sizing
+					// size and position fill
+					targetSelectionGroup.width = IGraphicElement(target).getLayoutBoundsWidth();
+					targetSelectionGroup.height = IGraphicElement(target).getLayoutBoundsHeight();
+					//rectangle = UIComponent(target).getVisibleRect(target.parent); // get correct x and y
+					targetSelectionGroup.x = IGraphicElement(target).getLayoutBoundsX();
+					targetSelectionGroup.y = IGraphicElement(target).getLayoutBoundsY();
+				}
 			}
 			
 			else {
@@ -1734,7 +1837,8 @@ package com.flexcapacitor.tools {
 			}
 			
 			else if (!targetSelectionGroup.visible) {
-				targetSelectionGroup.visible = true;targetSelectionGroup.includeInLayout
+				targetSelectionGroup.visible = true;
+				targetSelectionGroup.includeInLayout
 			}
 		}
 		

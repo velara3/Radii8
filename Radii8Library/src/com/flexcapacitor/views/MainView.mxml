@@ -20,10 +20,10 @@
 		 xmlns:file="com.flexcapacitor.effects.file.*" 
 		 xmlns:local="*" 
 
-		 dragEnter="list_dragEnterHandler(event)"
-		 dragExit="group1_dragExitHandler(event)"
-		 dragDrop="list_dragDropHandler(event)"
-		 dragOver="list_dragOverHandler(event)"
+		 dragEnter="mainView_dragEnterHandler(event)"
+		 dragExit="mainView_dragExitHandler(event)"
+		 dragDrop="mainView_dragDropHandler(event)"
+		 dragOver="mainView_dragOverHandler(event)"
 		 
 		 creationComplete="creationCompleteHandler(event)"
 		 width="400" height="300"
@@ -639,8 +639,12 @@
 			protected function exampleProjectOpened(event:Event):void {
 				if (exampleProject) {
 					radiate.clearExampleProjectData(exampleProject);
-					radiate.saveExampleProjects()
-					//radiate.saveProject(exampleProject);
+					radiate.saveExampleProject(exampleProject);
+					updateCheckExamples(-1);
+					serviceManager.getExampleProjects();
+					updateCheckProjects(-1);
+					setTimeout(serviceManager.getProjectsByUser, 6000, radiate.userID);
+					setTimeout(serviceManager.getProjectsByUser, 12000, radiate.userID);
 					exampleProject = null;
 				}
 			}
@@ -976,70 +980,56 @@
 				
 				return false;
 			}
-			protected function list_dragEnterHandler(event:DragEvent):void
-			{
-				var dragSource:DragSource = event.dragSource;
+			
+			protected function mainView_dragEnterHandler(event:DragEvent):void {
 				
-				if (acceptableFileFormat(dragSource)) {
+				if (event.dragInitiator==null && Radiate.isAcceptableDragAndDropFormat(event.dragSource)) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 					dropImagesLocation.visible = true;
 				}
 			}
 			
-			protected function list_dragOverHandler(event:DragEvent):void
-			{
-				if (acceptableFileFormat(event.dragSource)) {
+			protected function mainView_dragOverHandler(event:DragEvent):void {
+				
+				if (event.dragInitiator==null && Radiate.isAcceptableDragAndDropFormat(event.dragSource)) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 					dropImagesLocation.visible = true;
 				}
 				
 			}
 			
-			public function list_dragDropHandler(event:DragEvent):void {
-				var initiator:UIComponent;
-				var snapshotTest:Boolean;
-				var snapshot:Object;
-				var data:ImageData;
-				var format:String;
+			public function mainView_dragDropHandler(event:DragEvent):void {
 				var dragSource:DragSource;
-				var hasURLFormat:Boolean;
 				var hasFileListFormat:Boolean;
 				var hasFilePromiseListFormat:Boolean;
+				var isSelf:Boolean;
+				
 				dropImagesLocation.visible = false;
 				
-				var isSelf:Boolean = event.dragInitiator ? this.contains(event.dragInitiator as DisplayObject) : false;
-				if (isSelf) return;
+				if (event.dragInitiator) {
+					isSelf = this.contains(event.dragInitiator as DisplayObject);
+					return;
+				}
 				
 				dragSource = event.dragSource;
-				hasURLFormat = dragSource.hasFormat(ClipboardFormats.URL_FORMAT);
 				hasFileListFormat = dragSource.hasFormat(ClipboardFormats.FILE_LIST_FORMAT);
 				hasFilePromiseListFormat = dragSource.hasFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT);
 				
+				var destination:Object;
+				var droppedFiles:Array;
 				
-				if (acceptableFileFormat(dragSource)) {
-					data = new ImageData();
-					initiator = event.dragInitiator as UIComponent;
+				if (Radiate.isAcceptableDragAndDropFormat(dragSource)) {
 					
-					var droppedFiles:Object = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT);
-					var urlFormatData:Object = dragSource.dataForFormat(ClipboardFormats.URL_FORMAT);
-					var path_txt:String;
-					var extension:String;
-					var fileSafeList:Array = [];
-					
-					for each (var file:FileReference in droppedFiles) {
-						extension = file.extension.toLowerCase();
-						
-						if (extension=="png" || extension=="jpg" || extension=="jpeg") {
-							fileSafeList.push(file);
-						}
-						else {
-							path_txt = "Not a recognised file format";  
-						}
+					if (hasFileListFormat) {
+						droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT) as Array;
+					}
+					else if (hasFilePromiseListFormat) {
+						droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT) as Array;
 					}
 					
-					if (fileSafeList.length>0) {
-						loadFile.filesArray = fileSafeList;
-						loadFile.play();
+					if (droppedFiles) {
+						destination = radiate.getDestinationForExternalFileDrop();
+						radiate.addFileListDataToDocument(radiate.selectedDocument, droppedFiles as Array, destination);
 					}
 					
 				}
@@ -1050,21 +1040,21 @@
 			 * */
 			protected function loadFile_completeHandler(event:Event):void {
 				
-				var data:ImageData = new ImageData();
-				data.bitmapData = loadFile.bitmapData;
-				data.byteArray = loadFile.data;
-				data.name = loadFile.currentFileReference.name;
-				data.contentType = loadFile.loaderContentType;
-				data.file = loadFile.currentFileReference;
+				var imageData:ImageData = new ImageData();
+				imageData.bitmapData = loadFile.bitmapData;
+				imageData.byteArray = loadFile.data;
+				imageData.name = loadFile.currentFileReference.name;
+				imageData.contentType = loadFile.loaderContentType;
+				imageData.file = loadFile.currentFileReference;
 				
-				radiate.addAsset(data);
-				radiate.addAssetToDocument(data, radiate.selectedDocument);
+				radiate.addAssetToDocument(imageData,  radiate.selectedDocument);
+				radiate.addImageDataToDocument(imageData, radiate.selectedDocument);
 				//list.selectedItem = data;
 				
 				//uploadAttachment(loadFile.fileReference);
 			}
 			
-			protected function group1_dragExitHandler(event:DragEvent):void
+			protected function mainView_dragExitHandler(event:DragEvent):void
 			{
 				dropImagesLocation.visible = false;
 				
@@ -1089,6 +1079,10 @@
 			{
 				if (event.relatedObject as DisplayObject) {
 					targetEffect = event.relatedObject;
+					if (ee) {
+						ripple.destroy();
+						ripple.target = targetEffect;
+					}
 				}
 			}
 			
@@ -1380,7 +1374,7 @@
 		</s:Parallel>
 		
 		<s:Sequence id="fadeOutRequest" effectEnd="requestAnimation.end();">
-			<mx:AnimateProperty  property="alpha" fromValue="1" toValue="0" target="{busyLogo}" duration="1050" />
+			<mx:AnimateProperty property="alpha" fromValue="1" toValue="0" target="{busyLogo}" duration="1050" />
 		</s:Sequence>
 		
 		<s:Fade id="fadeOutStatus" target="{statusLabel}" alphaFrom="1" alphaTo="0" 
@@ -1393,7 +1387,7 @@
 		
 		<s:Sequence id="notificationMessenger" target="{instantMessengerContainer}" >
 			<mx:AnimateProperty duration="250" fromValue="-2" toValue="28" property="top"/>
-			<mx:AnimateProperty startDelay="3000" duration="250" toValue="-2" fromValue="28" property="top"/>
+			<mx:AnimateProperty startDelay="4000" duration="250" toValue="-2" fromValue="28" property="top"/>
 		</s:Sequence>
 		
 		<!--
@@ -1456,9 +1450,9 @@
 					   source="{Radii8LibraryAssets.logo64}"/>
 		<s:Label x="130" y="44" text="Radiate" fontSize="45" fontWeight="bold">
 			<s:filters> 
-				<filters:BorderStrokeFilter color="#EEEEEE" weight="1"/>
+				<filters:BorderStrokeFilter color="#EEEEEE" weight=".4"/>
 				<filters:BorderStrokeFilter color="#DDDDDD" weight="1"/>
-				<filters:BorderStrokeFilter color="#CFCFCF" weight="2"/>
+				<filters:BorderStrokeFilter color="#585858" weight="2"/>
 			</s:filters>
 		</s:Label>
 		<s:Image id="busyLogo" 
@@ -1736,15 +1730,20 @@
 		
 		<s:Spacer width="-6"/>
 		
-		<c:LabelButton text="RADIATE" 
+		<c:LabelButton id="homeLabel" text="RADIATE" text.design="HOME" 
 				 fontSize="12" 
 				 fontWeight="bold"
 				 color="#ffffff"
 				 paddingTop="2"
 				 top="10"
 				 left="10"
-				 click="logo_clickHandler(event)"/>
-		<s:Label text="beta" 
+				 click="logo_clickHandler(event)">
+			<c:filters> 
+				<filters:BorderStrokeFilter color="#585858" weight=".5"/>
+				<filters:BorderStrokeFilter color="#EEEEEE" weight=".5"/>
+			</c:filters>
+		</c:LabelButton>
+		<s:Label text="beta" text.design=""
 				 fontSize="7" 
 				 fontWeight="bold"
 				 color="#ffffff"

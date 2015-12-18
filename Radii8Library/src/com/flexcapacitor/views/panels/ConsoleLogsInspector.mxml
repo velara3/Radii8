@@ -2,6 +2,7 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:controls="com.flexcapacitor.controls.*" 
 		 
 		 width="100%" 
 		 height="100%"
@@ -42,6 +43,12 @@
 				}
 			}
 			
+			protected function clearButton_clickHandler(event:MouseEvent):void
+			{
+				Radiate.logsCollection.removeAll();
+				Radiate.logsCollection.refresh();
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -62,6 +69,10 @@
 			minHeight="20"
 			height="100%"
 			width="100%" 
+			top="5"
+			left="5"
+			right="5"
+			bottom="25"
 			labelField="name" 
 			borderAlpha=".2"
 			rollOverColor="#ffffff"
@@ -73,5 +84,25 @@
 			click="list_clickHandler(event)"
 			>
 	</s:List>
+	<s:HGroup bottom="0"
+			  paddingRight="5"
+			  paddingLeft="5"
+			  paddingBottom="5"
+			  verticalAlign="bottom"
+			  includeInLayout="true"
+			  visible="true"
+			  width="100%">
+		
+		<controls:BeveledImageButton id="clearLogsButton" 
+							  source="{Radii8LibraryAssets.clear}" 
+							  right="8"
+							  click="clearButton_clickHandler(event)"
+							  width="16"
+							  height="16"
+							  horizontalAlign="center"
+							  verticalAlign="middle"
+							  toolTip="Clear log messages"
+							  />
+	</s:HGroup>
 
 </s:Group>

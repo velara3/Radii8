@@ -4,6 +4,7 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 
 		 show="group1_showHandler(event)"
 		 creationComplete="group1_showHandler(event)"
 		 styleName="inspectablePanel">
@@ -17,10 +18,7 @@
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.FontUtils;
 			
-			import mx.core.FlexGlobals;
-			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
-			import mx.managers.ISystemManager;
 			
 			import org.as3commons.lang.ArrayUtils;
 			

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:s="library://ns.adobe.com/flex/spark" 
+				
 				mouseChildren="false"
 				mouseEnabled="false"
 				buttonMode="false"
@@ -10,7 +11,6 @@
 				implements="com.flexcapacitor.utils.supportClasses.ISelectionGroup"
 				>
 	
-<!---->
 	
 	<fx:Script>
 		<![CDATA[
@@ -31,10 +31,17 @@
 				
 				// check if target is component and is not skin
 				// should not be a skin
-				labelDisplay.text = NameUtil.getUnqualifiedClassName(data);
+				var componentName:String = NameUtil.getUnqualifiedClassName(data);
+				if (componentName.toLowerCase()=="application") {
+					componentName = "Document";
+				}
+				
+				labelDisplay.text = componentName;
 				
 			}
 			
+			// PROBLEM WITH THIS IS THE PARENT GROUP HAS MOUSE CHILDREN AND MOUSE ENABLED
+			// SET TO FALSE. SO WE ARE NOT GETTING MOUSE EVENTS
 			protected function itemrenderer1_mouseMoveHandler(event:MouseEvent):void
 			{
 				trace("selection group is getting mouse events");
@@ -236,5 +243,5 @@
 			 mouseChildren="false"
 			 mouseEnabled="false"
 			 />
-	<!--<s:Button bottom="-5" label="clicable?" click="trace('clicked')"/>-->
+	<!--<s:Button bottom="-5" label="clickable?" click="trace('clicked')"/>-->
 </s:ItemRenderer>

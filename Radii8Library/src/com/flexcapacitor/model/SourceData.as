@@ -20,6 +20,11 @@ package com.flexcapacitor.model {
 		public var styles:String;
 		
 		/**
+		 * User styles from target
+		 * */
+		public var userStyles:String = "";
+		
+		/**
 		 * Template for document
 		 * */
 		public var template:String;

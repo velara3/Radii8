@@ -19,12 +19,12 @@
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/.gitattributes" sourcePath="assets/templates/html5-boilerplate_v5.2.0/.gitattributes"/>
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/img/.gitignore" sourcePath="assets/templates/html5-boilerplate_v5.2.0/img/.gitignore"/>
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/js/vendor/modernizr-2.8.3.min.js" sourcePath="assets/templates/html5-boilerplate_v5.2.0/js/vendor/modernizr-2.8.3.min.js"/>
-    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/js/main.js" sourcePath="assets/templates/html5-boilerplate_v5.2.0/js/main.js"/>
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/extend.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/extend.md"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/js/main.js" sourcePath="assets/templates/html5-boilerplate_v5.2.0/js/main.js"/>
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/robots.txt" sourcePath="assets/templates/html5-boilerplate_v5.2.0/robots.txt"/>
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/browserconfig.xml" sourcePath="assets/templates/html5-boilerplate_v5.2.0/browserconfig.xml"/>
-    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/humans.txt" sourcePath="assets/templates/html5-boilerplate_v5.2.0/humans.txt"/>
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/css/normalize.css" sourcePath="assets/templates/html5-boilerplate_v5.2.0/css/normalize.css"/>
+    <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/humans.txt" sourcePath="assets/templates/html5-boilerplate_v5.2.0/humans.txt"/>
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/doc/faq.md" sourcePath="assets/templates/html5-boilerplate_v5.2.0/doc/faq.md"/>
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/tile-wide.png" sourcePath="assets/templates/html5-boilerplate_v5.2.0/tile-wide.png"/>
     <resourceEntry destPath="assets/templates/html5-boilerplate_v5.2.0/.htaccess" sourcePath="assets/templates/html5-boilerplate_v5.2.0/.htaccess"/>
