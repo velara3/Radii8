@@ -471,7 +471,8 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 										 dataProvider="{forthViewStack}" 
 										 />
 							
-							<s:Label id="targetNameLabel" width="100%" paddingLeft="6" color="#888888" />
+							<s:Label id="targetNameLabel" width="100%" paddingLeft="6" color="#888888" 
+									 visible="false" includeInLayout="false"/>
 						</s:HGroup>
 						
 						<mx:ViewStack id="forthViewStack" 

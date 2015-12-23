@@ -1,6 +1,7 @@
 
 package com.flexcapacitor.model {
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.managers.ServicesManager;
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.services.IWPServiceEvent;
 	import com.flexcapacitor.utils.XMLUtils;
@@ -525,9 +526,9 @@ package com.flexcapacitor.model {
 			var documentData:IDocumentData;
 			var iDocument:IDocument;
 			var documentCreated:Boolean;
-			var isRemote:Boolean = Radiate.getInstance().getIsRemoteLocation(location);
-			var isLocal:Boolean = Radiate.getInstance().getIsLocalLocation(location);
-			var isInternal:Boolean = Radiate.getInstance().getIsInternalLocation(location);
+			var isRemote:Boolean = ServicesManager.getIsRemoteLocation(location);
+			var isLocal:Boolean = ServicesManager.getIsLocalLocation(location);
+			var isInternal:Boolean = ServicesManager.getIsInternalLocation(location);
 			
 			// do documents have remote ID? if so we have to open from the server
 			var needToWaitForDocumentsOpenResults:Boolean;

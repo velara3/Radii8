@@ -59,5 +59,10 @@ package com.flexcapacitor.model
 		 * on the target object and the error as it's value.
 		 * */
 		public var propertiesErrorsObject:Object;
+		
+		/**
+		 * Array of valid properties and styles
+		 * */
+		public var propertiesAndStyles:Array;
 	}
 }

@@ -1128,6 +1128,10 @@ package com.flexcapacitor.tools {
 			var systemManager:SystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
 			var topLevelApplication:Object = FlexGlobals.topLevelApplication;
 			var focusedObject:Object = topLevelApplication.focusManager.getFocus();
+			var eventTarget:Object = event.target;
+			var eventCurrentTarget:Object = event.currentTarget;
+			var tabNav:TabNavigator = radiate.documentsTabNavigator;
+			var isGraphicElement:Boolean;
 			
 			// still working on this
 			
@@ -1140,6 +1144,12 @@ package com.flexcapacitor.tools {
 			if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
 				//event.stopImmediatePropagation();
 				
+				return true;
+			}
+			
+			if (eventTarget==tabNav && 
+				currentComponentDescription && 
+				currentComponentDescription.isGraphicElement) {
 				return true;
 			}
 			
@@ -1161,6 +1171,70 @@ package com.flexcapacitor.tools {
 		public function dispatchEditEvent(event:Event, type:String):void {
 			editType = type;
 			dispatchEvent(new Event(EDIT_EVENT));
+		}
+		
+		/**
+		 * ?????? NOT USED ??????
+		 * Prevent system manager from taking our events
+		 * */
+		private function keyDownHandler(event:KeyboardEvent):void
+		{
+			
+			// ?????? NOT USED ??????
+			switch (event.keyCode)
+			{
+				case Keyboard.UP:
+				case Keyboard.DOWN:
+				case Keyboard.PAGE_UP:
+				case Keyboard.PAGE_DOWN:
+				case Keyboard.HOME:
+				case Keyboard.END:
+				case Keyboard.LEFT:
+				case Keyboard.RIGHT:
+				case Keyboard.ENTER:
+				case Keyboard.DELETE:
+				{
+					// ?????? NOT USED ??????
+					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
+						event.stopImmediatePropagation();
+					}
+					//event.stopImmediatePropagation();
+					//Radiate.info("Canceling key down");
+				}
+			}
+		}
+		
+		/**
+		 * ????? NOT USED ????
+		 * Prevent system manager from taking our events
+		 * */
+		private function keyDownHandlerCapture(event:KeyboardEvent):void
+		{
+			
+			// ?????? NOT USED ??????
+			switch (event.keyCode)
+			{
+				case Keyboard.UP:
+				case Keyboard.DOWN:
+				case Keyboard.PAGE_UP:
+				case Keyboard.PAGE_DOWN:
+				case Keyboard.HOME:
+				case Keyboard.END:
+				case Keyboard.LEFT:
+				case Keyboard.RIGHT:
+				case Keyboard.ENTER:
+				case Keyboard.DELETE:
+				{
+					
+					// ?????? NOT USED ?????? 
+					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
+						event.stopImmediatePropagation();
+					}
+					//event.stopImmediatePropagation();
+					//Radiate.info("Canceling key down");
+					break;
+				}
+			}
 		}
 		
 		/**
@@ -1196,6 +1270,17 @@ package com.flexcapacitor.tools {
 					//dispatchKeyEvent(event);
 					break;
                 }
+				case Keyboard.MINUS:
+				case Keyboard.EQUAL:
+				{
+					
+					if (event.keyCode==Keyboard.MINUS && (event.ctrlKey || event.commandKey)) {
+						Radiate.instance.decreaseScale()
+					}
+					else if (event.keyCode==Keyboard.EQUAL && (event.ctrlKey || event.commandKey)) {
+						Radiate.instance.increaseScale()
+					}
+				}
 				case Keyboard.Z:
 				{
 					//Radiate.info("UNDO REDO: Target = " + event.target);
@@ -1215,70 +1300,6 @@ package com.flexcapacitor.tools {
 						}
 					}
 				}
-            }
-	    }
-		
-		/**
-		 * ?????? NOT USED ??????
-		 * Prevent system manager from taking our events
-		 * */
-	    private function keyDownHandler(event:KeyboardEvent):void
-	    {
-			
-		 // ?????? NOT USED ??????
-            switch (event.keyCode)
-            {
-                case Keyboard.UP:
-                case Keyboard.DOWN:
-                case Keyboard.PAGE_UP:
-                case Keyboard.PAGE_DOWN:
-                case Keyboard.HOME:
-                case Keyboard.END:
-                case Keyboard.LEFT:
-                case Keyboard.RIGHT:
-                case Keyboard.ENTER:
-                case Keyboard.DELETE:
-                {
-		 // ?????? NOT USED ??????
-					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
-	                    event.stopImmediatePropagation();
-					}
-                    //event.stopImmediatePropagation();
-					//Radiate.info("Canceling key down");
-                }
-            }
-	    }
-		
-		/**
-		 * ????? NOT USED ????
-		 * Prevent system manager from taking our events
-		 * */
-	    private function keyDownHandlerCapture(event:KeyboardEvent):void
-	    {
-			
-		 // ?????? NOT USED ??????
-            switch (event.keyCode)
-            {
-                case Keyboard.UP:
-                case Keyboard.DOWN:
-                case Keyboard.PAGE_UP:
-                case Keyboard.PAGE_DOWN:
-                case Keyboard.HOME:
-                case Keyboard.END:
-                case Keyboard.LEFT:
-                case Keyboard.RIGHT:
-                case Keyboard.ENTER:
-                case Keyboard.DELETE:
-                {
-                   
-		 // ?????? NOT USED ?????? 
-					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
-	                    event.stopImmediatePropagation();
-					}
-					//event.stopImmediatePropagation();
-					//Radiate.info("Canceling key down");
-					break;
-                }
             }
 	    }
 		
@@ -1309,6 +1330,7 @@ package com.flexcapacitor.tools {
 			// down = 40 
 			// backspace = 8
 			// delete = 46
+			//Radiate.info("Key up: " + event.keyCode);
 			
 			if (radiate==null) {
 				return;
@@ -1386,6 +1408,14 @@ package com.flexcapacitor.tools {
 				HistoryManager.redo(radiate.selectedDocument, true);
 				actionOccured = true;
 			}
+			else if (event.keyCode==Keyboard.MINUS && (event.ctrlKey || event.commandKey)) {
+				Radiate.instance.decreaseScale()
+				actionOccured = true;
+			}
+			else if (event.keyCode==Keyboard.EQUAL && (event.ctrlKey || event.commandKey)) {
+				Radiate.instance.increaseScale()
+				actionOccured = true;
+			}
 			
 			if (applicable && actionOccured) {
 				event.stopImmediatePropagation();
@@ -1401,14 +1431,28 @@ package com.flexcapacitor.tools {
 		
 		public function copyHandler(event:Event):void {
 			var applicable:Boolean = isEventApplicable(event);
-			radiate.copyItem(radiate.target);
-			dispatchEditEvent(event, COPY);
+			
+			// this is a hack - if graphic element is selected then we say it's applicable
+			// because it does not have focus - need to refactor
+			if (applicable) {
+				radiate.copyItem(radiate.target);
+			}
+			else {
+				dispatchEditEvent(event, COPY);
+			}
 		}
 		
 		public function pasteHandler(event:Event):void {
 			var applicable:Boolean = isEventApplicable(event);
-			radiate.pasteItem(radiate.target);
-			dispatchEditEvent(event, PASTE);
+			
+			// this is a hack - if graphic element is selected then we say it's applicable
+			// because it will not register as having focus - need to refactor
+			if (applicable) {
+				radiate.pasteItem(radiate.target);
+			}
+			else {
+				dispatchEditEvent(event, PASTE);
+			}
 		}
 		
 		/**

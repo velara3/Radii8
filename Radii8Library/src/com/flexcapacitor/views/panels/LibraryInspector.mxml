@@ -770,16 +770,15 @@
 		<!-- COPY TO THE CLIPBOARD -->
 		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
 			
-			<clipboard:CopyToClipboard id="copyToClipboard" data="{imageURLInput.text}" targetAncestor="{this}" allowNullData="true">
-				<clipboard:successEffect>
-					<status:ShowStatusMessage message="URL copied to the clipboard"/>
-				</clipboard:successEffect>
-				<clipboard:noDataEffect>
-					<status:ShowStatusMessage message="Nothing to copy to the clipboard"/>
-				</clipboard:noDataEffect>
-				<clipboard:errorEffect>
-					<status:ShowStatusMessage message="An error occurred while attempting to copy to the clipboard"/>
-				</clipboard:errorEffect>
+			<clipboard:CopyToClipboard id="copyToClipboard" 
+									   data="{imageURLInput.text}" 
+									   targetAncestor="{this}" 
+									   allowNullData="true"
+									   success="Radiate.info('URL copied to the clipboard');"
+									   noData="Radiate.info('Nothing to copy to the clipboard');"
+									   error="Radiate.info('An error occurred while attempting to copy to the clipboard');"
+									   >
+				
 			</clipboard:CopyToClipboard>
 			
 		</handlers:EventHandler>

@@ -182,12 +182,10 @@ package com.flexcapacitor.utils {
 		public function exportJSON(document:IDocument, reference:Boolean = false):JSON {
 			return null;
 		}
-		
-		public var fcNamespace:String = "fc";
 	
 		/**
 		 * Gets the formatted MXML output from a component. 
-		 * TODO: This should be using namespaces. 
+		 * TODO: This should be using namespaces an XML object
 		 * */
 		public function getMXMLOutputString(iDocument:IDocument, component:ComponentDescription, addLineBreak:Boolean = false, tabs:String = ""):String {
 			//if (component.instance is Application) {
@@ -231,18 +229,26 @@ package com.flexcapacitor.utils {
 					continue;
 				}
 				output += " ";
+				// we could be using XML itself to set values. It should encode as necessary Refactor
 				output += styleName + "=\"" + XMLUtils.getAttributeSafeString(Object(styles[styleName]).toString()) + "\"";
 			}
 			
-			// adding flexcapacitor attributes
+			// adding extra attributes
+			// we should refactor this
+			
 			if (component.locked) {
 				output += " ";
 				output += fcNamespace + ":" + "locked=\"true\"";
 			}
 			
-			if (component.name) {
+			if (component.name!=component.className) {
 				output += " ";
 				output += fcNamespace + ":" + "name=\"" + component.name + "\"";
+			}
+			
+			if (component.userStyles) {
+				output += " ";
+				output += htmlNamespace + ":" + "style=\"" + XMLUtils.getAttributeSafeString(component.userStyles) + "\"";
 			}
 			
 			if (name) {
@@ -259,7 +265,7 @@ package com.flexcapacitor.utils {
 				}
 				
 				// we are not handling namespaces here - we could use component descriptor
-				output = tabs + "<s:" + name + " " + output;
+				output = tabs + "<" + sparkNamespace + ":" + name + " " + output;
 				
 				if (showChildren && component.children && component.children.length>0) {
 					output += ">\n";
@@ -272,7 +278,7 @@ package com.flexcapacitor.utils {
 						output += getMXMLOutputString(iDocument, componentChild, false, tabs + "\t");
 					}
 					
-					output += tabs + "</s:" + name + ">\n";
+					output += tabs + "</" + sparkNamespace + ":" + name + ">\n";
 				}
 				else {
 					 output += "/>\n";
@@ -292,12 +298,12 @@ package com.flexcapacitor.utils {
 			var out:String;
 			
 			if (namespaces==null) {
-				namespaces = "@namespace controls \"com.flexcapacitor.controls.*\";";
+				namespaces = "@namespace fc \"com.flexcapacitor.controls.*\";";
 				namespaces += "@namespace s \"library://ns.adobe.com/flex/spark\";"
 				namespaces += "@namespace mx \"library://ns.adobe.com/flex/mx\";"
 			}
 			
-			out = "<fx:Style>\n" + namespaces + "\n\n" + value + "\n</fx:Style>";
+			out = "<" + fxNamespace + ":Style>\n" + namespaces + "\n\n" + value + "\n</" + fxNamespace + ":Style>";
 			
 			return out;
 		}
@@ -309,7 +315,7 @@ package com.flexcapacitor.utils {
 		 * </pre>
 		 * */
 		public function getExternalStylesheetLink(filePath:String):String {
-			var xml:XML = new XML("<fx:Style/>");
+			var xml:XML = new XML("<" + fxNamespace + ":Style/>");
 			xml.@source = filePath;
 			
 			return xml.toXMLString();

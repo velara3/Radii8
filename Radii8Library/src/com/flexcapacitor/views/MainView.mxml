@@ -64,10 +64,10 @@
 			import com.flexcapacitor.views.windows.PrintWindow;
 			
 			import flash.net.navigateToURL;
+			import flash.utils.setTimeout;
 			
 			import mx.core.DragSource;
 			import mx.core.IUIComponent;
-			import mx.core.UIComponent;
 			import mx.events.DragEvent;
 			import mx.events.EffectEvent;
 			import mx.events.FlexEvent;
@@ -94,6 +94,7 @@
 		 * download the playerglobal again. OR its because the playerglobal is not there. add 11.2,11.3,11.5 etc
 		
 		 * Update 8/28/15 : had to add swf-version=16 and it now works. using sdk 4.6 and air 3.6
+		 * 12/18/15 - changed to swf-version=19 or AIR 19 and it works
 		 * 
 		i still get this warning: 
 		The swc '/Users/monkeypunch/Documents/ProjectsGithub/flexcapacitor/MainLibrary/bin/FCLibrary.swc' 
@@ -409,6 +410,13 @@
 			 * Handle login result
 			 * */
 			protected function loginPopUp_closeHandler(event:Event):void {
+				var loginWindow:LoginWindow = LoginWindow(openLoginPopUp.popUp);
+				var action:String = loginWindow ? loginWindow.action : null;
+				
+				if (action) {
+					setTimeout(Radiate.info, 1000, ["Logout successful"]);
+				}
+				
 				if (radiate.isUserLoggedIn) {
 					updateCheckProjects(-1);
 					checkForProjects();
@@ -417,6 +425,7 @@
 				}
 				else {
 					serviceManager.getLoggedInStatus();
+					updateCheckProjects(0);
 				}
 				
 				//radiate.addEventListener(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED, receivedExampleProjectsHandler, false, 0, true);

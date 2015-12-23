@@ -11,6 +11,8 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.model.TranscoderOptions;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
+	import flash.utils.Dictionary;
+	
 	import mx.collections.ListCollectionView;
 	
 	/**
@@ -25,12 +27,70 @@ package com.flexcapacitor.utils {
 			
 		}
 		
-		public var defaultNamespaceDeclarations:String = 
-			'xmlns:fx="http://ns.adobe.com/mxml/2009" ' +
-			'xmlns:s="library://ns.adobe.com/flex/spark" ' +
-			'xmlns:mx="library://ns.adobe.com/flex/" ' +
-			'xmlns:fc="library://ns.flexcapacitor.com/flex/" ';
+		public var fcNamespace:String 		= "fc";
+		public var fxNamespace:String 		= "fx";
+		public var htmlNamespace:String 	= "html";
+		public var mxNamespace:String 		= "mx";
+		public var sparkNamespace:String 	= "s";
+		public var svgNamespace:String 		= "svg";
+		public var xlinkNamespace:String 	= "xlink";
 		
+		public var fcNamespaceURI:String 	= "library://ns.flexcapacitor.com/flex";
+		public var fxNamespaceURI:String 	= "http://ns.adobe.com/mxml/2009";
+		public var htmlNamespaceURI:String 	= "http://www.w3.org/1999/xhtml";
+		public var mxNamespaceURI:String 	= "library://ns.adobe.com/flex";
+		public var sparkNamespaceURI:String = "library://ns.adobe.com/flex/spark";
+		public var svgNamespaceURI:String 	= "http://www.w3.org/2000/svg";
+		public var xlinkNamespaceURI:String = "http://www.w3.org/1999/xlink";
+		
+		private var _defaultNamespaceDeclarations:String;
+
+		/**
+		 * This value is cached after the first run and
+		 * then gets the _defaultNamespaceDeclarations value. 
+		 * it is set to null when namespaces object is set so it can 
+		 * regrab the new values. Not sure if you needed to know all that.
+		 * */
+		public function get defaultNamespaceDeclarations():String {
+			
+			if (_defaultNamespaceDeclarations==null) {
+				_defaultNamespaceDeclarations = "";
+				for (var namespaceName:String in namespaces) {
+					_defaultNamespaceDeclarations += "xmlns:" + namespaceName + "=\"" + namespaces[namespaceName] + "\" ";
+				}
+			}
+			
+			return _defaultNamespaceDeclarations;
+		}
+
+		public function set defaultNamespaceDeclarations(value:String):void {
+			_defaultNamespaceDeclarations = value;
+		}
+			
+		
+		private var _namespaces:Dictionary;
+
+		public function get namespaces():Dictionary {
+			
+			if (_namespaces==null) {
+				_namespaces = new Dictionary();
+				_namespaces[fcNamespace] 	= fcNamespaceURI;
+				_namespaces[fxNamespace] 	= fxNamespaceURI;
+				_namespaces[htmlNamespace] 	= htmlNamespaceURI;
+				_namespaces[mxNamespace] 	= mxNamespaceURI;
+				_namespaces[sparkNamespace] = sparkNamespaceURI;
+				_namespaces[svgNamespace] 	= svgNamespaceURI;
+				_namespaces[xlinkNamespace] = xlinkNamespaceURI;
+			}
+			
+			return _namespaces;
+		}
+
+		public function set namespaces(value:Dictionary):void {
+			_defaultNamespaceDeclarations = null;
+			_namespaces = value;
+		}
+
 		/**
 		 * Set this in the constructor in sub classes
 		 * */

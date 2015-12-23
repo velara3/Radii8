@@ -374,8 +374,8 @@
 				if (data && data is Object && data.loggedIn==false) {
 					closePopUp.startDelay = closePanelDelay;
 					closePopUp.play();
-					
-					setTimeout(Radiate.info, 1000, ["Logout successful"]);
+					action = LOGOUT;
+					return;
 				}
 				
 				logoutWarningsLabel.text = message;
@@ -457,7 +457,27 @@
 						message = "You have successfully registered your username.";
 					}
 					
-					loginAfterRegistrationLabel.text = message;
+					if (message.indexOf("Congratulations")!=-1) {
+						
+					}
+					
+					// old message
+					// Congratulations! Your account is almost ready. 
+					
+					// But, before you can start using it, you must activate it. Check your inbox at testuser@mail.com and click the link given. 
+					// If you do not activate your account within two days, you will have to sign up again.
+					
+					//	Still waiting for your email? If you haven't received your email yet, there are a number of things you can do: 
+					// Wait a little longer. Sometimes delivery of email can be delayed by processes outside of our control. 
+					// Check the junk or spam folder of your email client. 
+					// Sometime emails wind up there by mistake. Have you entered your email correctly? 
+					// You have entered testuser52@mailinator.com, if it's incorrect, 
+					// you will not receive your email.
+					
+					// copy the password and paste it into the login 
+					
+					registrationWarningsLabel.text = "Wait! You must activate your account through your email and then login here.";
+					loginAfterRegistrationLabel.text = "";
 					return;
 				}
 				
@@ -518,7 +538,7 @@
 				
 				if (data && data is Object && successful) {
 					dispatchEvent(new Event(LOGIN));
-					closePopUp.startDelay = 250;
+					closePopUp.startDelay = 0;
 					closePopUp.play();
 					
 					setTimeout(Radiate.info, 1000, ["Login successful. Save any new projects you have started."]);
@@ -765,9 +785,10 @@
 			 text="You can login using your browser. Click here to continue. When you have logged in switch back to this application." 
 			 
 			 top="30"
-			 right="20"
-			 width="45%"
-			 height="130"
+			 right="18"
+			 width="330"
+			 height="115"
+			 focusAlpha="0"
 			 includeIn="login"
 			 editable="false"
 			 click="loginAtWebsiteLabel_clickHandler(event)"
@@ -775,7 +796,7 @@
 			 visible="false"
 			 includeInLayout="false"/>
 	
-	<controls:VerticalLine height="60%" horizontalCenter="0" top="20" includeIn="loginAfterRegistration"/>
+	<controls:VerticalLine height="60%" right="360" top="30" includeIn="loginAfterRegistration"/>
 	
 	<!-- LOGIN -->
 	<s:VGroup left="15" 

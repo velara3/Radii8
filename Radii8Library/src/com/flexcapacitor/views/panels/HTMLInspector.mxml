@@ -33,10 +33,10 @@
 			public function activate():void {
 				
 				if (radiate.target) {
-					needToUpdate(null);
+					targetChangedHandler(null);
 				}
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, needToUpdate, false, 0, true);
-				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, needToUpdate, false, 0, true);
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChangedHandler, false, 0, true);
 			}
 			
 			public function deactivate():void {
@@ -48,8 +48,7 @@
 			}
 			
 			
-			protected function needToUpdate(event:RadiateEvent = null):void
-			{
+			protected function targetChangedHandler(event:RadiateEvent = null):void {
 				var iDocument:IDocument = radiate.selectedDocument;
 				
 				if (radiate.target!=target) {
@@ -67,10 +66,18 @@
 			
 			public var componentDescriptor:ComponentDescription;
 			
-			protected function componentCSS_changeHandler(event:TextOperationEvent):void
-			{
+			protected function componentCSS_changeHandler(event:Event):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (componentDescription==null && radiate.target) {
+					componentDescription = iDocument.getItemDescription(target);
+				}
+				
 				if (componentDescription) {
 					componentDescription.userStyles = componentCSS.text;
+					
+					componentDescription.createBackgroundSnapshot = embedSnapshopIntoBackground.selected;
+					componentDescription.convertElementToImage = convertElementToImage.selected;
 				}
 			}
 			
@@ -83,12 +90,18 @@
 		<s:State name="ANDROID"/>
 	</s:states>
 	
-	<s:CheckBox id="embedSnapshopIntoBackground" label="Embed snapshot into element background" />
-	<s:CheckBox id="convertElementToImage" label="Convert element into image" />
+	<s:CheckBox id="embedSnapshopIntoBackground" 
+				label="Embed snapshot into element background" 
+				change="componentCSS_changeHandler(event)"/>
+	<s:CheckBox id="convertElementToImage" 
+				label="Convert element into image" 
+				change="componentCSS_changeHandler(event)"/>
 	<s:Spacer />
 	<s:Label text="Enter your own CSS here" />
 	
-	<s:TextArea id="componentCSS" width="100%" height="100%" change="componentCSS_changeHandler(event)">
+	<s:TextArea id="componentCSS" width="100%" height="100%"
+				focusOut="componentCSS_changeHandler(event)"
+				change="componentCSS_changeHandler(event)">
 		
 	</s:TextArea>
 	

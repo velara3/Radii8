@@ -21,6 +21,7 @@ package com.flexcapacitor.utils {
 	
 	/**
 	 * Import MXML into a IDocument. Basic support of creating components and apply properties and styles. 
+	 * Should consider moving setProperties, setStyles methods from Radiate into this class
 	 * */
 	public class MXMLDocumentImporter extends DocumentTranscoder {
 
@@ -43,6 +44,7 @@ package com.flexcapacitor.utils {
 			var mxml:XML;
 			var updatedCode:String;
 			var isValid:Boolean;
+			var codeWasWrapped:Boolean;
 			
 			
 			// VALID XML BEFORE IMPORTING
@@ -63,6 +65,8 @@ package com.flexcapacitor.utils {
 					sourceData.errors = [IssueData.getIssue(XMLUtils.validationError.name, XMLUtils.validationErrorMessage)];
 					return sourceData;
 				}
+				
+				codeWasWrapped = true;
 			}
 			else {
 				updatedCode = source;
@@ -90,17 +94,28 @@ package com.flexcapacitor.utils {
 				// we should have already created the application by now
 				// we should handle this case before we get here (pass in the children of the application xml not application itself)
 				if (elName=="Application") {
-					componentDefinition = Radiate.getDynamicComponentType(elName);
-					Radiate.setAttributesOnComponent(document.instance, mxml, componentDefinition);
+					//componentDefinition = Radiate.getDynamicComponentType(elName);
+					//Radiate.setAttributesOnComponent(document.instance, mxml, componentDefinition);
+					createChildFromNode(mxml, container, document, 0, document.instance);
 				}
 				else {
-					createChildFromNode(mxml, container, document);
+					
+					if (codeWasWrapped) {
+						for each (var childNode:XML in mxml.children()) {
+							createChildFromNode(childNode, container, document, 0);
+						}
+					}
+					else {
+						createChildFromNode(mxml, container, document);
+					}
 				}
 				
 				// LOOP THROUGH EACH CHILD NODE
-				for each (var childNode:XML in mxml.children()) {
-					createChildFromNode(childNode, container, document, 1);
-				}
+				// i think this is done above - commenting out this section
+				
+				//for each (var childNode:XML in mxml.children()) {
+				//	createChildFromNode(childNode, container, document, 1);
+				//}
 			}
 			
 			Radiate.importingDocument = false;
@@ -116,14 +131,15 @@ package com.flexcapacitor.utils {
 		/**
 		 * Create child from node
 		 * */
-		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0):IVisualElement {
+		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0, componentInstance:Object = null):IVisualElement {
 			var elementName:String = node.localName();
 			var domain:ApplicationDomain = ApplicationDomain.currentDomain;
 			var componentDefinition:ComponentDefinition = Radiate.getDynamicComponentType(elementName);
 			var includeChildren:Boolean = true;
 			var className:String;
 			var classType:Class;
-			var componentInstance:Object;
+			var componentDescription:ComponentDescription;
+			var componentAlreadyAdded:Boolean;
 			
 			if (componentDefinition==null) {
 				
@@ -142,7 +158,7 @@ package com.flexcapacitor.utils {
 			
 			// classes to look into for decoding XML
 			// XMLDecoder, SchemaTypeRegistry, SchemaManager, SchemaProcesser
-			
+			// SimpleXMLDecoder
 			
 			// special case for radio button group
 			/*var object:* = SchemaTypeRegistry.getInstance().getClass(classType);
@@ -166,7 +182,13 @@ package com.flexcapacitor.utils {
 				// the user may have even removed the defaults
 				
 				//instance = Radiate.createComponentForAdd(document, componentDefinition, true);
-				componentInstance = Radiate.createComponentToAdd(iDocument, componentDefinition, false);
+				if (componentInstance==null) {
+					componentInstance = Radiate.createComponentToAdd(iDocument, componentDefinition, false);
+				}
+				else {
+					componentAlreadyAdded = true;
+				}
+				
 				//Radiate.info("MXML Importer adding: " + elementName);
 				
 				// calling add before setting properties because some 
@@ -176,17 +198,29 @@ package com.flexcapacitor.utils {
 				var attributes:Array = valuesObject.attributes;
 				//var typedValueObject:Object = Radiate.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
 				
-				Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.values);
+				if (!componentAlreadyAdded) {
+					Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.values);
+				}
+				else if (valuesObject.propertiesAndStyles && valuesObject.propertiesAndStyles.length) {
+					Radiate.setPropertiesStyles(componentInstance, valuesObject.propertiesAndStyles, valuesObject.values);
+				}
 				
 				Radiate.removeExplictSizeOnComponent(componentInstance, node, componentDefinition, false);
 				
 				Radiate.updateComponentAfterAdd(iDocument, componentInstance);
 				
-				var lockedName:String = "library://ns.flexcapacitor.com/flex/::locked";
+				var lockedName:String = fcNamespaceURI + "/::locked";
 				
 				if (attributes.indexOf(lockedName)!=-1) {
-					var item:ComponentDescription = iDocument.getItemDescription(componentInstance);
-					item.locked = valuesObject.values[lockedName];
+					componentDescription = iDocument.getItemDescription(componentInstance);
+					componentDescription.locked = valuesObject.values[lockedName];
+				}
+				
+				var userStylesName:String = htmlNamespaceURI + "/::style";
+				
+				if (attributes.indexOf(userStylesName)!=-1) {
+					componentDescription = iDocument.getItemDescription(componentInstance);
+					componentDescription.userStyles = valuesObject.values[userStylesName];
 				}
 				
 				// might want to get a properties object from the attributes 

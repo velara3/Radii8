@@ -293,7 +293,7 @@
 		
 		<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}" verticalAlign="top"/>
 		<!--<s:Label text="Drop Location: " paddingLeft="4" visible="false" includeInLayout="false"/>-->
-		<s:Label id="dropLocation" minWidth="65"  paddingTop="5" textAlign="center"/>
+		<s:Label id="dropLocation" minWidth="65"  paddingTop="5" textAlign="center" toolTip="The X and Y position of the selected element"/>
 		
 	</s:HGroup>
 	

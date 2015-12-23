@@ -311,16 +311,15 @@ package com.flexcapacitor.managers
 		 * @see #setProjectHomePage()
 		 * */
 		public function getProjectHomePage():void {
-			var service:WPService;
 			
 			// we need to create service
 			if (getProjectHomePageService==null) {
-				service = new WPService();
-				service.host = Radiate.getWPURL();
-				service.addEventListener(WPService.RESULT, getProjectHomePageResult, false, 0, true);
-				service.addEventListener(WPService.FAULT, getProjectHomePageFault, false, 0, true);
-				getProjectHomePageService = service;
+				getProjectHomePageService = new WPService();
+				getProjectHomePageService.addEventListener(WPService.RESULT, getProjectHomePageResult, false, 0, true);
+				getProjectHomePageService.addEventListener(WPService.FAULT, getProjectHomePageFault, false, 0, true);
 			}
+			
+			getProjectHomePageService.host = Radiate.getWPURL();
 			
 			getProjectHomePageInProgress = true;
 			
@@ -371,18 +370,17 @@ package com.flexcapacitor.managers
 		 * @see #clearProjectHomePage()
 		 * */
 		public function setProjectHomePage(id:int):void {
-			var service:WPService;
 			
 			// we need to create service
 			if (setProjectHomePageService==null) {
-				service = new WPService();
-				service.host = Radiate.getWPURL();
-				service.addEventListener(WPService.RESULT, setProjectHomePageResult, false, 0, true);
-				service.addEventListener(WPService.FAULT, setProjectHomePageFault, false, 0, true);
-				setProjectHomePageService = service;
+				setProjectHomePageService = new WPService();
+				setProjectHomePageService.addEventListener(WPService.RESULT, setProjectHomePageResult, false, 0, true);
+				setProjectHomePageService.addEventListener(WPService.FAULT, setProjectHomePageFault, false, 0, true);
 			}
 			
 			setProjectHomePageInProgress = true;
+			
+			setProjectHomePageService.host = Radiate.getWPURL();
 			
 			setProjectHomePageService.setProjectHomePage(id);
 		}
@@ -414,16 +412,15 @@ package com.flexcapacitor.managers
 		 * */
 		public function getLoggedInStatus():void {
 			// get selected document
-			var service:WPService;
 			
 			// we need to create service
 			if (getProjectsService==null) {
-				service = new WPService();
-				service.host = Radiate.getWPURL();
-				service.addEventListener(WPService.RESULT, getLoggedInStatusResult, false, 0, true);
-				service.addEventListener(WPService.FAULT, getLoggedInStatusFault, false, 0, true);
-				getLoggedInStatusService = service;
+				getLoggedInStatusService = new WPService();
+				getLoggedInStatusService.addEventListener(WPService.RESULT, getLoggedInStatusResult, false, 0, true);
+				getLoggedInStatusService.addEventListener(WPService.FAULT, getLoggedInStatusFault, false, 0, true);
 			}
+			
+			getLoggedInStatusService.host = Radiate.getWPURL();
 			
 			getLoggedInStatusInProgress = true;
 			
@@ -464,21 +461,21 @@ package com.flexcapacitor.managers
 		public function getExampleProjects(status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
 			if (status==null) status = WPService.STATUS_ANY;
-			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
-			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			var loadLocally:Boolean = getIsLocalLocation(locations);
+			var loadRemote:Boolean = getIsRemoteLocation(locations);
 			
 			
 			if (loadRemote) {
 				// we need to create service
 				if (getExampleProjectsService==null) {
-					var service:WPService = new WPService();
-					service.host = Radiate.getExamplesWPURL();
-					service.addEventListener(WPService.RESULT, getExampleProjectsResultsHandler, false, 0, true);
-					service.addEventListener(WPService.FAULT, getExampleProjectsFaultHandler, false, 0, true);
-					getExampleProjectsService = service;
+					getExampleProjectsService = new WPService();
+					getExampleProjectsService.addEventListener(WPService.RESULT, getExampleProjectsResultsHandler, false, 0, true);
+					getExampleProjectsService.addEventListener(WPService.FAULT, getExampleProjectsFaultHandler, false, 0, true);
 				}
 				
 				getExampleProjectsInProgress = true;
+				
+				getExampleProjectsService.host = Radiate.getExamplesWPURL();
 				
 				getExampleProjectsService.getProjects(WPService.STATUS_PUBLISH, count);
 				
@@ -494,22 +491,21 @@ package com.flexcapacitor.managers
 		 * */
 		public function getBlogPostsByCategory(category:String, status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
-			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			var loadLocally:Boolean = getIsLocalLocation(locations);
+			var loadRemote:Boolean = getIsRemoteLocation(locations);
 			
 			
 			if (loadRemote) {
 				// we need to create service
 				if (getBlogPostsService==null) {
-					var service:WPService = new WPService();
-					service = new WPService();
-					service.host = Radiate.getWPURL();
-					service.addEventListener(WPService.RESULT, getBlogPostsResultsHandler, false, 0, true);
-					service.addEventListener(WPService.FAULT, getBlogPostsFaultHandler, false, 0, true);
-					getBlogPostsService = service;
+					getBlogPostsService = new WPService();
+					getBlogPostsService.addEventListener(WPService.RESULT, getBlogPostsResultsHandler, false, 0, true);
+					getBlogPostsService.addEventListener(WPService.FAULT, getBlogPostsFaultHandler, false, 0, true);
 				}
 				
 				getBlogPostsInProgress = true;
+				
+				getBlogPostsService.host = Radiate.getWPURL();
 				
 				getBlogPostsService.getPostsByCategory(category, count);
 			}
@@ -524,22 +520,22 @@ package com.flexcapacitor.managers
 		 * */
 		public function getProjects(status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
-			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			var loadLocally:Boolean = getIsLocalLocation(locations);
+			var loadRemote:Boolean = getIsRemoteLocation(locations);
 			
 			
 			if (loadRemote) {
 				// we need to create service
 				if (getProjectsService==null) {
-					var service:WPService = new WPService();
-					service = new WPService();
-					service.host = Radiate.getWPURL();
-					service.addEventListener(WPService.RESULT, getProjectsResultsHandler, false, 0, true);
-					service.addEventListener(WPService.FAULT, getProjectsFaultHandler, false, 0, true);
-					getProjectsService = service;
+					getProjectsService = new WPService();
+					getProjectsService = new WPService();
+					getProjectsService.addEventListener(WPService.RESULT, getProjectsResultsHandler, false, 0, true);
+					getProjectsService.addEventListener(WPService.FAULT, getProjectsFaultHandler, false, 0, true);
 				}
 				
 				getProjectsInProgress = true;
+				
+				getProjectsService.host = Radiate.getWPURL();
 				
 				getProjectsService.getProjects(status, count);
 			}
@@ -555,21 +551,21 @@ package com.flexcapacitor.managers
 		public function getProjectsByUser(id:int, status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
 			if (status==null) status = WPService.STATUS_ANY;
-			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
-			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			var loadLocally:Boolean = getIsLocalLocation(locations);
+			var loadRemote:Boolean = getIsRemoteLocation(locations);
 			
 			
 			if (loadRemote) {
 				// we need to create service
 				if (getProjectsService==null) {
-					var service:WPService = new WPService();
-					service.host = Radiate.getWPURL();
-					service.addEventListener(WPService.RESULT, getProjectsResultsHandler, false, 0, true);
-					service.addEventListener(WPService.FAULT, getProjectsFaultHandler, false, 0, true);
-					getProjectsService = service;
+					getProjectsService = new WPService();
+					getProjectsService.addEventListener(WPService.RESULT, getProjectsResultsHandler, false, 0, true);
+					getProjectsService.addEventListener(WPService.FAULT, getProjectsFaultHandler, false, 0, true);
 				}
 				
 				getProjectsInProgress = true;
+				
+				getProjectsService.host = Radiate.getWPURL();
 				
 				getProjectsService.getProjectsByUser(id, status, count);
 				
@@ -617,9 +613,9 @@ package com.flexcapacitor.managers
 				loginService.addEventListener(WPService.FAULT, loginFaultHandler, false, 0, true);
 			}
 			
-			loginService.host = Radiate.getWPURL();
-				
 			loginInProgress = true;
+				
+			loginService.host = Radiate.getWPURL();
 			
 			loginService.loginUser(username, password);
 			
@@ -657,15 +653,15 @@ package com.flexcapacitor.managers
 			
 			loginThroughBrowserService.useNavigateToURL = true;
 			loginThroughBrowserService.windowName = window;
+			
 			//var rhArray:Array = new Array(new URLRequestHeader("Content-Type", "text/html"));
 			// request.requestHeaders
 			// request.contentType = "application/x-www-form-urlencoded";
-			loginThroughBrowserService.host = Radiate.getWPURL();
 			
+			loginThroughBrowserService.host = Radiate.getWPURL();
 			
 			loginThroughBrowserService.loginUser(username, password);
 			
-			/**/
 		}
 		
 		/**
@@ -680,9 +676,9 @@ package com.flexcapacitor.managers
 				logoutService.addEventListener(WPService.FAULT, logoutFaultHandler, false, 0, true);
 			}
 			
-			logoutService.host = Radiate.getWPURL();
-			
 			logoutInProgress = true;
+			
+			logoutService.host = Radiate.getWPURL();
 			
 			logoutService.logoutUser();
 			
@@ -700,9 +696,9 @@ package com.flexcapacitor.managers
 				registerService.addEventListener(WPService.FAULT, registerFaultHandler, false, 0, true);
 			}
 			
-			registerService.host = Radiate.getWPURL();
-			
 			registerInProgress = true;
+			
+			registerService.host = Radiate.getWPURL();
 			
 			registerService.registerUser(username, email);
 			
@@ -771,9 +767,9 @@ package com.flexcapacitor.managers
 				lostPasswordService.addEventListener(WPService.FAULT, lostPasswordFaultHandler, false, 0, true);
 			}
 			
-			lostPasswordService.host = Radiate.getWPURL();
-				
 			lostPasswordInProgress = true;
+				
+			lostPasswordService.host = Radiate.getWPURL();
 			
 			lostPasswordService.lostPassword(usernameOrEmail);
 			
@@ -791,9 +787,9 @@ package com.flexcapacitor.managers
 				changePasswordService.addEventListener(WPService.FAULT, changePasswordFaultHandler, false, 0, true);
 			}
 			
-			changePasswordService.host = Radiate.getWPURL();
-				
 			changePasswordInProgress = true;
+				
+			changePasswordService.host = Radiate.getWPURL();
 			
 			changePasswordService.resetPassword(key, username, password, password2);
 			
@@ -812,13 +808,13 @@ package com.flexcapacitor.managers
 				getAttachmentsService.addEventListener(WPService.FAULT, getAttachmentsFaultHandler, false, 0, true);
 			}
 			
-			getAttachmentsService.host = Radiate.getWPURL();
+			getAttachmentsInProgress = true;
 			
 			if (id!=0) {
 				getAttachmentsService.id = String(id);
 			}
 			
-			getAttachmentsInProgress = true;
+			getAttachmentsService.host = Radiate.getWPURL();
 			
 			
 			getAttachmentsService.getAttachments(id);
@@ -1040,7 +1036,7 @@ package com.flexcapacitor.managers
 		 * */
 		public function getExampleProjectsFaultHandler(event:IServiceEvent):void {
 			var data:Object = event.data;
-			Radiate.info("Could not get list of example projects");
+			//Radiate.info("Could not get list of example projects");
 			
 			getExampleProjectsInProgress = false;
 			
@@ -1052,7 +1048,7 @@ package com.flexcapacitor.managers
 		 * */
 		public function getProjectsFaultHandler(event:IServiceEvent):void {
 			var data:Object = event.data;
-			Radiate.info("Could not get list of projects");
+			//Radiate.info("Could not get list of projects");
 			
 			getProjectsInProgress = false;
 			
@@ -1064,7 +1060,7 @@ package com.flexcapacitor.managers
 		 * */
 		public function getBlogPostsFaultHandler(event:IServiceEvent):void {
 			var data:Object = event.data;
-			Radiate.info("Could not get list of blog posts. Check to make sure you are online. ");
+			//Radiate.info("Could not get list of blog posts. Check to make sure you are online. ");
 			
 			getBlogPostsInProgress = false;
 			
@@ -1112,8 +1108,7 @@ package com.flexcapacitor.managers
 		 * Result from attachments fault
 		 * */
 		public function getAttachmentsFaultHandler(event:IServiceEvent):void {
-			
-			Radiate.info("Could not get list of attachments. Check to make sure you are online.");
+			//Radiate.info("Could not get list of attachments. Check to make sure you are online.");
 			
 			getAttachmentsInProgress = false;
 			
@@ -1168,10 +1163,10 @@ package com.flexcapacitor.managers
 						if (containsName && asset.id==null) {
 							asset.unmarshall(attachment);
 							
-							var documentLength:int = radiate.documents.length;
+							var numberOfDocuments:int = radiate.documents.length;
 							k = 0;
 							
-							for (var k:int;k<documentLength;k++) {
+							for (var k:int;k<numberOfDocuments;k++) {
 								var iDocument:IDocument = radiate.documents[k] as IDocument;
 								
 								if (iDocument) {
@@ -1286,7 +1281,6 @@ package com.flexcapacitor.managers
 		 * Logout results handler
 		 * */
 		public function logoutResultsHandler(event:IServiceEvent):void {
-			Radiate.info("Logout results");
 			var data:Object = event.data;
 			var loggedOut:Boolean;
 			
@@ -1825,7 +1819,7 @@ package com.flexcapacitor.managers
 		 * Returns true if location includes a database
 		 * */
 		public static function getIsDataBaseLocation(value:String):Boolean {
-			return value ? value.indexOf(DocumentData.FILE_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
+			return value ? value.indexOf(DocumentData.DATABASE_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
 		}
 		
 		/**

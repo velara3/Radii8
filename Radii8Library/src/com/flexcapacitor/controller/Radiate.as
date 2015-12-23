@@ -3496,7 +3496,7 @@ package com.flexcapacitor.controller {
 		 * */
 		public function removeAssetFromDocument(assetData:IDocumentData, documentData:DocumentData, locations:String = null, dispatchEvents:Boolean = true):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var remote:Boolean = getIsRemoteLocation(locations);
+			var remote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			var index:int = assets.getItemIndex(assetData);
 			var removedInternally:Boolean;
 			
@@ -4442,6 +4442,7 @@ package com.flexcapacitor.controller {
 			valuesObject.childNodeValues 		= childNodeValueObject;
 			valuesObject.stylesErrorsObject 	= failedToImportStyles;
 			valuesObject.propertiesErrorsObject = failedToImportProperties;
+			valuesObject.propertiesAndStyles	= properties.concat(styles);
 			
 			var a:Object = node.namespace().prefix     //returns prefix i.e. rdf
 			var b:Object = node.namespace().uri        //returns uri of prefix i.e. http://www.w3.org/1999/02/22-rdf-syntax-ns#
@@ -6259,7 +6260,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			var projectIndex:int = projects.indexOf(iProject);
 			var removedProject:IProject;
-			var remote:Boolean = getIsRemoteLocation(locations);
+			var remote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			
 			if (projectIndex!=-1) {
 				var removedProjects:Array = projects.splice(projectIndex, 1);
@@ -6385,8 +6386,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				}
 			}
 			else {
-				getProjects();
-				getAttachments();
+				serviceManager.getProjects();
+				serviceManager.getAttachments();
 			}
 		}
 		
@@ -6511,7 +6512,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var parentProject:IProject = iDocument.project;
 			var documentsIndex:int = parentProject.documents.indexOf(iDocument);
 			var removedDocument:IDocument;
-			var remote:Boolean = getIsRemoteLocation(locations);
+			var remote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			
 			deleteDocumentProjectId = parentProject && parentProject.id!=null ? int(parentProject.id) : -1;
 			saveProjectAfterDelete = saveProjectAfter;
@@ -7305,11 +7306,16 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var isValid:Boolean;
 			var rootNodeName:String = "RootWrapperNode";
 			var updatedCode:String;
+			var mxmlDocumentImporter:MXMLDocumentImporter;
+			
+			// I don't like this here - should move or dispatch events to handle import
+			var transcoder:TranscoderDescription = CodeManager.getImporter(CodeManager.MXML);
+			var importer:DocumentTranscoder = transcoder.importer;
 			
 			isValid = XMLUtils.isValidXML(codeToParse);
 			
 			if (!isValid) {
-				root = '<'+rootNodeName+ mxmlDocumentImporter.defaultNamespaceDeclarations +'>';
+				root = '<'+rootNodeName + " " + importer.defaultNamespaceDeclarations +'>';
 				updatedCode = root + codeToParse + "</"+rootNodeName+">";
 				
 				isValid = XMLUtils.isValidXML(updatedCode);
@@ -7337,16 +7343,18 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				}*/
 				//Radiate.info("Importing document: " + name);
 				//var mxmlLoader:MXMLImporter = new MXMLImporter( "testWindow", new XML( inSource ), canvasHolder  );
-				var mxmlDocumentImporter:MXMLDocumentImporter;
+				
 				var container:IVisualElement = parent ? parent as IVisualElement : instance as IVisualElement;
 				
-				// I don't like this here - should move or dispatch events to handle import
-				var transcoder:TranscoderDescription = CodeManager.getImporter(CodeManager.MXML);
-				var importer:DocumentTranscoder = transcoder.importer;
+
 				importer.importare(codeToParse, document, document.componentDescription);
 				
 				if (container is Application && "activate" in container) {
 					Object(container).activate();
+				}
+				
+				if (document && document.instance is Application && "activate" in document.instance) {
+					Object(document.instance).activate();
 				}
 				//mxmlLoader = new MXMLDocumentImporter(this, "testWindow", xml, container);
 				
@@ -8101,8 +8109,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function save(locations:String = null, options:Object = null):void {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var local:Boolean = getIsLocalLocation(locations);
-			var remote:Boolean = getIsRemoteLocation(locations);
+			var local:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var remote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			var localResult:Boolean;
 			
 			if (local) {
@@ -8284,8 +8292,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function saveExampleProject(projectData:IProject, locations:String = null):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var saveLocally:Boolean = getIsLocalLocation(locations);
-			var saveRemote:Boolean = getIsRemoteLocation(locations);
+			var saveLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var saveRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			
 			var numberOfDocuments:int;
 			var documentData:IDocumentData;
@@ -8326,8 +8334,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function saveExampleProjects(locations:String = null):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var saveLocally:Boolean = getIsLocalLocation(locations);
-			var saveRemote:Boolean = getIsRemoteLocation(locations);
+			var saveLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var saveRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			
 			var numberOfProjects:int = projects ? projects.length : 0;
 			var numberOfDocuments:int;
@@ -8377,8 +8385,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function saveDocument(iDocument:IDocument, locations:String = null, options:Object = null):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var saveLocally:Boolean = getIsLocalLocation(locations);
-			var saveRemote:Boolean = getIsRemoteLocation(locations);
+			var saveLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var saveRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			var saveLocallySuccessful:Boolean;
 			
 			
@@ -8446,41 +8454,6 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		}
 		
 		/**
-		 * Returns true if location includes local shared object
-		 * */
-		public function getIsLocalLocation(value:String):Boolean {
-			return value ? value.indexOf(DocumentData.LOCAL_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
-		}
-		
-		/**
-		 * Returns true if location includes remote
-		 * */
-		public function getIsRemoteLocation(value:String):Boolean {
-			return value ? value.indexOf(DocumentData.REMOTE_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
-		}
-		
-		/**
-		 * Returns true if location includes file system
-		 * */
-		public function getIsFileLocation(value:String):Boolean {
-			return value ? value.indexOf(DocumentData.FILE_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
-		}
-		
-		/**
-		 * Returns true if location includes a database
-		 * */
-		public function getIsDataBaseLocation(value:String):Boolean {
-			return value ? value.indexOf(DocumentData.FILE_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
-		}
-		
-		/**
-		 * Returns true if location includes internal
-		 * */
-		public function getIsInternalLocation(value:String):Boolean {
-			return value ? value.indexOf(DocumentData.INTERNAL_LOCATION)!=-1 || value==DocumentData.ALL_LOCATIONS : false;
-		}
-		
-		/**
 		 * Handles uncaught errors from an HTML preview document
 		 * */
 		protected function uncaughtScriptExceptionHandler(event:*):void {
@@ -8515,8 +8488,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function saveAllProjects(locations:String = null, saveEvenIfClean:Boolean = true):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
-			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			var loadLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var loadRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			var numberOfProjects:int = projects ? projects.length : 0;
 			var project:IProject;
 			var anyProjectSaved:Boolean;
@@ -8547,8 +8520,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function saveAllDocuments(locations:String = null, saveEvenIfClean:Boolean = true):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
-			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
+			var loadLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var loadRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			var numberOfDocuments:int = documents.length;
 			var document:IDocument;
 			var anyDocumentSaved:Boolean;
@@ -8802,66 +8775,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			return savedData;
 		}
 		
-		/**
-		 * Get projects 
-		 * */
-		public function getProjects(status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
-			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
-			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
-			
-			
-			if (loadRemote) {
-				// we need to create service
-				if (getProjectsService==null) {
-					var service:WPService = new WPService();
-					service = new WPService();
-					service.host = getWPURL();
-					service.addEventListener(WPService.RESULT, getProjectsResultsHandler, false, 0, true);
-					service.addEventListener(WPService.FAULT, getProjectsFaultHandler, false, 0, true);
-					getProjectsService = service;
-				}
-				
-				getProjectsInProgress = true;
-				
-				getProjectsService.getProjects(status, count);
-			}
-			
-			if (loadLocally) {
-				
-			}
-		}
 		
-		/**
-		 * Get projects by user ID
-		 * */
-		public function getProjectsByUser(id:int, status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
-			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
-			if (status==null) status = WPService.STATUS_ANY;
-			var loadLocally:Boolean = locations.indexOf(DocumentData.LOCAL_LOCATION)!=-1;
-			var loadRemote:Boolean = locations.indexOf(DocumentData.REMOTE_LOCATION)!=-1;
-			
-			
-			if (loadRemote) {
-				// we need to create service
-				if (getProjectsService==null) {
-					var service:WPService = new WPService();
-					service.host = getWPURL();
-					service.addEventListener(WPService.RESULT, getProjectsResultsHandler, false, 0, true);
-					service.addEventListener(WPService.FAULT, getProjectsFaultHandler, false, 0, true);
-					getProjectsService = service;
-				}
-				
-				getProjectsInProgress = true;
-				
-				getProjectsService.getProjectsByUser(id, status, count);
-				
-			}
-			
-			if (loadLocally) {
-				
-			}
-		}
 		
 		/**
 		 * Get images from the server
@@ -8953,10 +8867,14 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				if (!isNaN(data.homePage)) {
 					projectHomePageID = data.homePage;
 				}
+				else {
+					projectHomePageID = -1;
+				}
+				
+				userSites = [];
 				
 				if ("blogs" in user) {
 					//userSites = user.blogs;
-					userSites = [];
 					for each (var blog:Object in user.blogs) {
 						userSites.push(blog);
 					}
@@ -9538,16 +9456,26 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			//to capture the error message
 			var errorMessage:String = new String();
+			var error:Object;
 			
-			if (event.error is Error) {
-				errorMessage = Error( event.error ).message;
+			if (event) {
+				error = "error" in event ? event.error : null;
+				
+				if (error is Error && "message" in event.error) {
+					errorMessage = Error(event.error).message;
+				}
+				else if (error is ErrorEvent && "text" in event.error) {
+					errorMessage = ErrorEvent(event.error).text;
+				}
+				else if (error) {
+					errorMessage = event.error.toString();
+				}
+				else {
+					errorMessage = event.toString();
+				}
+				
 			}
-			else if (event.error is ErrorEvent) {
-				errorMessage = ErrorEvent( event.error ).text;
-			}
-			else {
-				errorMessage = event.error.toString();
-			}
+			
 			
 			Radiate.error(errorMessage);
 			
