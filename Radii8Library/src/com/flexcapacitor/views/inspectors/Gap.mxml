@@ -2,9 +2,10 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
-		 implements="com.flexcapacitor.views.IInspector" 
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 
 		 styleName="inspectablePanel"
+		 implements="com.flexcapacitor.views.IInspector" 
 		 width="100%">
 	
 	<fx:Script>
@@ -32,7 +33,13 @@
 			}
 			
 			public function deactivate():void {
-				radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+				
+				target = null;
+				data = null;
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {

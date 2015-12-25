@@ -1428,6 +1428,14 @@
 	</s:states>
 	
 	
+	<s:Image id="backgroundLogoImage2" 
+			 y="0" x="0" 
+			 fillMode="repeat"
+			 width="100%" height="100%" 
+			 source="@Embed('wall.png')"
+			 alpha=".5"
+			 includeIn="home"/>
+	
 	<s:Image id="backgroundLogoImage" 
 			 y="0" x="-200" 
 			 width="80%" height="80%" 

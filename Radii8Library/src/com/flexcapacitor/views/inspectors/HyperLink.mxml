@@ -39,8 +39,10 @@
 			}
 			
 			public function deactivate():void {
-				radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
-				radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {

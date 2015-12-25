@@ -56,7 +56,7 @@ package com.flexcapacitor.managers {
 					}
 					else {
 						documentNotPublishedWarning = true;
-						Radiate.warn("The document is not published. You may need to login in your browser to see it. Otherwise set to publish and save.")
+						Radiate.warn("The document is not published. Publish and save first or login into your browser to see it.")
 						Radiate.callAfter(2500, Radiate.openInBrowser, iDocument, windowName);
 					}
 				}

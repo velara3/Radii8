@@ -95,6 +95,58 @@
 			[Bindable]
 			public var isHTML:Boolean;
 			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				addListeners();
+				
+				if (Radiate.isDesktop) {
+					currentState = "desktop";
+					
+					if (aceEditor==null) {
+						createEditors();
+						
+						updateEditorOptions();
+					}
+				}
+				
+				if (basicTemplate==null) {
+					basicTemplate = new Radii8LibraryTranscodersAssets.basicHTMLDocument();
+				}
+				
+				if (radiate.target) {
+					updateCodeEditors();
+				}
+			}
+			
+			public function deactivate():void {
+				removeListeners();
+			}
+			
+			public function addListeners():void {
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, handlePropertyChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.MOVE_ITEM, handlePropertyChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ADD_ITEM, handlePropertyChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, handlePropertyChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, handlePropertyChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, handleDocumentChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.UNCAUGHT_EXCEPTION_EVENT, uncaughtExceptionEvent, false, 0, true);
+			}
+			
+			public function removeListeners():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, handlePropertyChange);
+					radiate.removeEventListener(RadiateEvent.MOVE_ITEM, handlePropertyChange);
+					radiate.removeEventListener(RadiateEvent.ADD_ITEM, handlePropertyChange);
+					radiate.removeEventListener(RadiateEvent.REMOVE_ITEM, handlePropertyChange);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, handlePropertyChange);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, handleDocumentChange);
+					radiate.removeEventListener(RadiateEvent.UNCAUGHT_EXCEPTION_EVENT, uncaughtExceptionEvent);
+				}
+			}
+			
 			/**
 			 * Generate the code for the provided target component. 
 			 * */
@@ -177,56 +229,6 @@
 				}
 				
 				radiate.dispatchPreviewEvent(sourceData, language);
-			}
-
-			public function activate():void {
-				radiate = Radiate.getInstance();
-				
-				addListeners();
-				
-				if (Radiate.isDesktop) {
-					currentState = "desktop";
-					
-					if (aceEditor==null) {
-						createEditors();
-						
-						updateEditorOptions();
-					}
-				}
-				
-				if (basicTemplate==null) {
-					basicTemplate = new Radii8LibraryTranscodersAssets.basicHTMLDocument();
-				}
-				
-				if (radiate.target) {
-					updateCodeEditors();
-				}
-			}
-			
-			public function deactivate():void {
-				removeListeners();
-			}
-			
-			public function addListeners():void {
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
-				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, handlePropertyChange, false, 0, true);
-				radiate.addEventListener(RadiateEvent.MOVE_ITEM, handlePropertyChange, false, 0, true);
-				radiate.addEventListener(RadiateEvent.ADD_ITEM, handlePropertyChange, false, 0, true);
-				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, handlePropertyChange, false, 0, true);
-				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, handleDocumentChange, false, 0, true);
-				radiate.addEventListener(RadiateEvent.UNCAUGHT_EXCEPTION_EVENT, uncaughtExceptionEvent, false, 0, true);
-			}
-			
-			public function removeListeners():void {
-				if (radiate) {
-					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
-					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, handlePropertyChange);
-					radiate.removeEventListener(RadiateEvent.MOVE_ITEM, handlePropertyChange);
-					radiate.removeEventListener(RadiateEvent.ADD_ITEM, handlePropertyChange);
-					radiate.removeEventListener(RadiateEvent.REMOVE_ITEM, handlePropertyChange);
-					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, handleDocumentChange);
-					radiate.removeEventListener(RadiateEvent.UNCAUGHT_EXCEPTION_EVENT, uncaughtExceptionEvent);
-				}
 			}
 			
 			/**
@@ -853,8 +855,22 @@
 			{
 				lastFocusedEditor = event.currentTarget;
 				searchInput.aceEditor = lastFocusedEditor;
+				
+				if (wordwrapButton) {
+					//wordwrapButton.selected = !lastFocusedEditor.useWordWrap;
+				}
 			}
 			
+			
+			protected function wordwrapButton_clickHandler(event:MouseEvent):void
+			{
+				if (lastFocusedEditor) {
+					lastFocusedEditor.useWordWrap = !lastFocusedEditor.useWordWrap;
+				}
+				else if (aceEditor) {
+					aceEditor.useWordWrap = !aceEditor.useWordWrap;
+				}
+			}
 			
 		]]>
 	</fx:Script>
@@ -866,16 +882,11 @@
 			<core:GetDataFromTarget target="{sourceData}" targetPropertyName="source"/> 
 			<core:CopyPreviousToNext />
 			<clipboard:CopyToClipboard targetAncestor="{this}" 
-									   allowNullData="true">
-				<clipboard:successEffect>
-					<status:ShowStatusMessage message="Code copied to the clipboard"/>
-				</clipboard:successEffect>
-				<clipboard:noDataEffect>
-					<status:ShowStatusMessage message="Nothing to copy to the clipboard"/>
-				</clipboard:noDataEffect>
-				<clipboard:errorEffect>
-					<status:ShowStatusMessage message="An error occurred while attempting to copy to the clipboard"/>
-				</clipboard:errorEffect>
+									   allowNullData="true" 
+									   success="Radiate.info('Code copied to the clipboard')"
+									   noData="Radiate.info('Nothing to copy to the clipboard')"
+									   error="Radiate.info('An error occurred while attempting to copy to the clipboard')"
+									   >
 			</clipboard:CopyToClipboard>
 			
 		</handlers:EventHandler>
@@ -1041,6 +1052,13 @@ IFRAME_ID {
 							  includeInLayout="{isHTML}"
 							  click="previewButton_clickHandler(event)"
 							  />-->
+		<c:BeveledImageButton id="wordwrapButton"
+							  source="{Radii8LibraryAssets.wordWrap}"
+							  toolTip="Word wrap"
+							  click="wordwrapButton_clickHandler(event)"
+							  visible="{!isHTML}"
+							  includeInLayout="{!isHTML}"
+							  />
 		
 		<c:BeveledImageButton id="resyncButton"
 							  source="{Radii8LibraryAssets.refresh}"

@@ -12,7 +12,6 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.AccessorMetaData;
-			import com.flexcapacitor.model.StyleMetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			
 			public var radiate:Radiate;
@@ -33,8 +32,13 @@
 			}
 			
 			public function deactivate():void {
-				radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
-				radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+				
+				target = null;
+				data = null;
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {

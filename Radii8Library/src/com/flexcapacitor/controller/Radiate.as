@@ -68,6 +68,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.tools.ITool;
 	import com.flexcapacitor.tools.Selection;
+	import com.flexcapacitor.utils.ArrayUtils;
 	import com.flexcapacitor.utils.Base64;
 	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -1244,18 +1245,20 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch property change event
 		 * */
-		public function dispatchPropertyChangeEvent(target:*, changes:Array, properties:Array, styles:Array, events:Array = null):void {
+		public function dispatchPropertyChangeEvent(localTarget:*, changes:Array, properties:Array, styles:Array, events:Array = null):void {
 			if (importingDocument) return;
 			var propertyChangeEvent:RadiateEvent;
+			var propertiesAndStyles:Array = com.flexcapacitor.utils.ArrayUtils.join(properties, styles);
 			
 			if (hasEventListener(RadiateEvent.PROPERTY_CHANGED)) {
-				propertyChangeEvent = new RadiateEvent(RadiateEvent.PROPERTY_CHANGED, false, false, target);
-				propertyChangeEvent.property = properties ? properties[0] : null;
+				propertyChangeEvent = new RadiateEvent(RadiateEvent.PROPERTY_CHANGED, false, false, localTarget);
+				propertyChangeEvent.property = propertiesAndStyles && propertiesAndStyles.length ? propertiesAndStyles[0] : null;
 				propertyChangeEvent.properties = properties;
 				propertyChangeEvent.styles = styles;
+				propertyChangeEvent.propertiesAndStyles = propertiesAndStyles;
 				propertyChangeEvent.changes = changes;
-				propertyChangeEvent.selectedItem = target && target is Array ? target[0] : target;
-				propertyChangeEvent.targets = ArrayUtil.toArray(target);
+				propertyChangeEvent.selectedItem = localTarget && localTarget is Array ? localTarget[0] : localTarget;
+				propertyChangeEvent.targets = ArrayUtil.toArray(localTarget);
 				dispatchEvent(propertyChangeEvent);
 			}
 		}
@@ -4345,7 +4348,7 @@ package com.flexcapacitor.controller {
 		public static function isAcceptablePasteFormat(formats:Array):Boolean {
 			if (formats==null || formats.length==0) return false;
 			
-			if (ArrayUtils.containsAny(formats, acceptablePasteFormats)) {
+			if (org.as3commons.lang.ArrayUtils.containsAny(formats, acceptablePasteFormats)) {
 				return true;
 			}
 			
@@ -4767,7 +4770,7 @@ package com.flexcapacitor.controller {
 				}
 				
 				if (dispatchEvents) {
-					if (targets.indexOf(instance.selectedDocument.instance)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, [property])) {
+					if (targets.indexOf(instance.selectedDocument.instance)!=-1 && org.as3commons.lang.ArrayUtils.containsAny(notableApplicationProperties, [property])) {
 						instance.dispatchDocumentSizeChangeEvent(target);
 					}
 				}
@@ -4825,7 +4828,7 @@ package com.flexcapacitor.controller {
 					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, null);
 				}
 				
-				if (targets.indexOf(instance.selectedDocument)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, properties)) {
+				if (targets.indexOf(instance.selectedDocument)!=-1 && org.as3commons.lang.ArrayUtils.containsAny(notableApplicationProperties, properties)) {
 					instance.dispatchDocumentSizeChangeEvent(targets);
 				}
 				
@@ -4929,7 +4932,7 @@ package com.flexcapacitor.controller {
 					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, styles);
 				}
 				
-				if (targets.indexOf(instance.selectedDocument)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, propertiesStyles)) {
+				if (targets.indexOf(instance.selectedDocument)!=-1 && org.as3commons.lang.ArrayUtils.containsAny(notableApplicationProperties, propertiesStyles)) {
 					instance.dispatchDocumentSizeChangeEvent(targets);
 				}
 				
@@ -5056,18 +5059,18 @@ package com.flexcapacitor.controller {
 		/**
 		 * Updates the properties on a component description
 		 * */
-		public static function updateComponentProperties(targets:Array, propertyChanges:Array):void {
+		public static function updateComponentProperties(localTargets:Array, propertyChanges:Array):void {
 			var descriptor:ComponentDescription;
-			var targetLength:int = targets.length;
-			var changesLength:int = propertyChanges.length;
+			var numberOfTargets:int = localTargets.length;
+			var numberOfChanges:int = propertyChanges.length;
 			var propertyChange:Object;
-			var target:Object;
+			var localTarget:Object;
 			
-			for (var i:int;i<targetLength;i++) {
-				target = targets[i];
-				descriptor = instance.selectedDocument.descriptionsDictionary[target];
+			for (var i:int;i<numberOfTargets;i++) {
+				localTarget = localTargets[i];
+				descriptor = instance.selectedDocument.getItemDescription(localTarget);
 				
-				for (var j:int=0;j<changesLength;j++) {
+				for (var j:int=0;j<numberOfChanges;j++) {
 					propertyChange = propertyChanges[j];
 					
 					if (descriptor) {
@@ -9555,8 +9558,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			request = new URLRequest();
 			
-			if (windowName==null) {
-				windowName = "previewInBrowser";
+			if (windowName==null && documentData.name) {
+				windowName = documentData.name;
 			}
 			
 			if (documentData is ImageData) {

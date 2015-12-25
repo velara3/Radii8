@@ -251,6 +251,16 @@ package com.flexcapacitor.utils {
 				output += htmlNamespace + ":" + "style=\"" + XMLUtils.getAttributeSafeString(component.userStyles) + "\"";
 			}
 			
+			if (component.convertElementToImage) {
+				output += " ";
+				output += fcNamespace + ":" + "convertToImage=\"" +component.convertElementToImage + "\"";
+			}
+			
+			if (component.createBackgroundSnapshot) {
+				output += " ";
+				output += fcNamespace + ":" + "createBackgroundSnapshot=\"" +component.createBackgroundSnapshot + "\"";
+			}
+			
 			if (name) {
 				if (component.instance is Application) {
 					name = "Application";

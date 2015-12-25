@@ -169,6 +169,9 @@ package {
 		[Embed(source="assets/icons/general/warning.png")]
 		public static const warning:Class;
 		
+		[Embed(source="assets/icons/general/word_wrap.png")]
+		public static const wordWrap:Class;
+		
 		[Embed(source="assets/icons/general/zoom_to_fit.png")]
 		public static const zoomToFit:Class;
 		

@@ -58,10 +58,7 @@
 			protected function propertyChangeHandler(event:RadiateEvent):void {
 				var relevant:Boolean;
 				
-				if (event.multipleSelection) {
-					relevant = ArrayUtils.containsAny(relevantProperties, event.properties);
-				}
-				else if (relevantProperties.indexOf(event.property)!=-1) {
+				 if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
 					relevant = true;
 				}
 				

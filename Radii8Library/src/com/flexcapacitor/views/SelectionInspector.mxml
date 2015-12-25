@@ -97,7 +97,7 @@
 			 * */
 			protected function propertyChangeHandler(event:RadiateEvent):void {
 				var properties:Array = event.properties;
-				var styles:Array = event.properties;
+				var styles:Array = event.styles;//event.propertiesAndStyles
 				//var numberOfProperties:int = event.properties ? event.properties.length : 0;
 				//var numberOfStyles:int = event.styles ? event.styles.length : 0;
 				updateTarget();

@@ -41,6 +41,15 @@
 			
 			public var stylesUtility:StyleUtils;
 			
+			public var styleInformation:String;
+			
+			private var aceCSSEditorCreated:Boolean;
+			
+			[Bindable]
+			public var aceCSSEditor:Object;
+			
+			public var editorMargin:String = "4px 0 8px 0px";
+			
 			
 			public function activate():void {
 				if (!radiate) {
@@ -48,6 +57,7 @@
 				}
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
 				
 				if (!aceCSSEditorCreated) {
 					stylesUtility = new StyleUtils();
@@ -62,6 +72,7 @@
 			public function deactivate():void {
 				if (radiate) {
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
 				}
 				target = null;
 				selectedItem = null;
@@ -85,12 +96,6 @@
 				}
 			}
 			
-			public var styleInformation:String;
-			
-			[Bindable]
-			public var aceCSSEditor:Object;
-			
-			public var editorMargin:String = "4px 0 8px 0px";
 			
 			private function createEditors():void {
 				
@@ -111,7 +116,11 @@
 				
 			}
 			
-			private var aceCSSEditorCreated:Boolean;
+			protected function historyChangeHandler(event:RadiateEvent):void
+			{
+				updateStyles(target);
+				
+			}
 			
 		]]>
 	</fx:Script>

@@ -11,6 +11,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			
 			public var radiate:Radiate;
@@ -23,6 +24,7 @@
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
 					target = radiate.target;
@@ -32,7 +34,14 @@
 			}
 			
 			public function deactivate():void {
-				radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
+				}
+				
+				target = null;
+				data = null;
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
@@ -44,9 +53,11 @@
 			
 			public function update():void {
 				//var data:Object = ClassUtils.getMetaDataOfProperty(target, "source");
-				sourceRenderer.data = ClassUtils.getMetaDataOfProperty(target, "source");
+				var sourceData:MetaData = ClassUtils.getMetaDataOfProperty(target, "source");
+				sourceRenderer.data = sourceData;
 				alphaRenderer.data = ClassUtils.getMetaDataOfProperty(target, "alpha");
 				smoothRenderer.data = ClassUtils.getMetaDataOfProperty(target, "smooth");
+				smoothingQualityRenderer.data = ClassUtils.getMetaDataOfStyle(target, "smoothingQuality");
 				scaleModeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "scaleMode");
 				fillModeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "fillMode");
 				contentLoaderGroupRenderer.data = ClassUtils.getMetaDataOfProperty(target, "contentLoaderGrouping");
@@ -79,6 +90,10 @@
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Smooth" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
 		<renderers:BooleanRenderer id="smoothRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Smooth Quality" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:DropDownListRenderer id="smoothingQualityRenderer" height="24" showClearButton="true"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Scale Mode" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>

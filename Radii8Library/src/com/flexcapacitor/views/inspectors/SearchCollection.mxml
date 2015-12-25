@@ -40,13 +40,11 @@
 			private var _dataProvider:Object;
 
 			[Bindable]
-			public function get dataProvider():Object
-			{
+			public function get dataProvider():Object {
 				return _dataProvider;
 			}
 
-			public function set dataProvider(value:Object):void
-			{
+			public function set dataProvider(value:Object):void {
 				_dataProvider = value;
 				
 				if (value && filterEffect) {

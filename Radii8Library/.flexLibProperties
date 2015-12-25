@@ -127,7 +127,7 @@
     <classEntry path="com.flexcapacitor.views.inspectors.GroupLayoutInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.HyperLink"/>
     <classEntry path="com.flexcapacitor.views.inspectors.Identity"/>
-    <classEntry path="com.flexcapacitor.views.inspectors.Image"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.ImageProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.Layout"/>
     <classEntry path="com.flexcapacitor.views.inspectors.StyleNameInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.TextInspector"/>

@@ -611,8 +611,11 @@ package com.flexcapacitor.utils {
 					
 					
 					if (index<numElements-1 && numElements>1) {
-						//wrapperTagStyles += "padding-bottom:" + gap + "px;";
-						wrapperTagStyles += Styles.MARGIN_BOTTOM+":" + gap + "px;";
+						
+						if (gap!=0) {
+							//wrapperTagStyles += "padding-bottom:" + gap + "px;";
+							wrapperTagStyles += Styles.MARGIN_BOTTOM+":" + gap + "px;";
+						}
 						//wrapperStyles.paddingBottom =  gap + "px";
 						wrapperStylesModel.marginBottom =  gap + "px";
 					}
@@ -675,14 +678,46 @@ package com.flexcapacitor.utils {
 				
 			}
 			
+			var snapshotBackground:Boolean = componentDescription.createBackgroundSnapshot;
+			var convertElementToImage:Boolean = componentDescription.convertElementToImage;
+			var imageDataStyle:String;
+			//var imageDataFormat:String = "jpeg";
+			var imageDataFormat:String = "png";
+			
+			
+			
 			// export component
 			
 			if (localName) {
 				
-				// create code for element type
-				if (localName=="application") {
-					htmlName = "div";
+				// create code for element type or image
+				if (convertElementToImage) {
+					//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
+					//imageDataStyle = convertComponentToImage(componentInstance);
+					//styleValue += "" + imageDataStyle;
 					
+					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput += "<img " + properties;
+					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
+					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
+					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
+					styleValue += isInVerticalLayout ? getDisplayBlock(componentInstance) : "";
+					styleValue += getVisibleDisplay(componentInstance);
+					layoutOutput += properties ? " " : "";
+					
+					layoutOutput += " src=\"" + DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat) + "\"";
+					
+					styleValue += userInstanceStyles;
+					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
+					
+					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += getWrapperTag(wrapperTag, true);
+					
+					// if exporting an image then don't export the contents 
+					exportChildDescriptors = false;
+				}
+				else if (localName=="application") {
+					htmlName = "div";
 					
 					// container div
 					// DEPRECATED: the following code is - yoda probably
@@ -708,7 +743,18 @@ package com.flexcapacitor.utils {
 						styleValue += "left:8px;top:14px;";
 						styleValue += "overflow:auto;";
 						styleValue += "background-color:" + DisplayObjectUtils.getColorInHex(componentInstance.getStyle("backgroundColor"), true) + ";";
-						//output += properties ? " " : "";
+						
+						if (snapshotBackground) {
+							imageDataStyle = getBackgroundImageData(componentInstance);
+							//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
+							styleValue += "" + imageDataStyle;
+						}
+						
+						if (convertElementToImage) {
+							imageDataStyle = convertComponentToImage(componentInstance);
+							//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
+							styleValue += "" + imageDataStyle;
+						}
 						
 						styleValue += userInstanceStyles;
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -717,7 +763,6 @@ package com.flexcapacitor.utils {
 						
 						if (showScreenshotBackground) {
 							var backgroundImageID:String = "backgroundComparisonImage";
-							var imageDataFormat:String = "png";//"jpeg";
 							var imageData:String = DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat);
 							var backgroundSnapshot:String = "\n" + tabs + "\t" + "<img ";
 							backgroundSnapshot += "id=\"" + backgroundImageID +"\""; 
@@ -764,6 +809,12 @@ package com.flexcapacitor.utils {
 						styleValue = getFontSize(componentInstance, styleValue, true);
 						
 						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
+						
+						if (snapshotBackground) {
+							imageDataStyle = getBackgroundImageData(componentInstance);
+							//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
+							styleValue += "" + imageDataStyle;
+						}
 						
 						styleValue += userInstanceStyles;
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -816,6 +867,12 @@ package com.flexcapacitor.utils {
 						styleValue += "text-align:" + VGroup(componentInstance).horizontalAlign + ";";
 					}
 					
+					if (snapshotBackground) {
+						imageDataStyle = getBackgroundImageData(componentInstance);
+						//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
+						styleValue += "" + imageDataStyle;
+					}
+					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 					
@@ -843,6 +900,12 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					//styleValue += getColorString(componentInstance as BorderContainer);
 					//styles += componentInstance as BorderContainer);
+					
+					if (snapshotBackground) {
+						imageDataStyle = getBackgroundImageData(componentInstance);
+						//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
+						styleValue += "" + imageDataStyle;
+					}
 					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -902,7 +965,7 @@ package com.flexcapacitor.utils {
 						// UPDATE now use 0 width element to size to 100% of container height
 						// and other elements should center vertically - refactor
 						if (verticalAlign=="middle") {
-							styleValue += "line-height:" + (componentInstance.height-2) + "px;"; 
+							styleValue += "line-height:" + (componentInstance.height-4) + "px;"; 
 						}
 						
 						// trying table cell 
@@ -912,6 +975,12 @@ package com.flexcapacitor.utils {
 					}
 					
 					layoutOutput += properties ? " " : "";
+					
+					if (snapshotBackground) {
+						imageDataStyle = getBackgroundImageData(componentInstance);
+						//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
+						styleValue += "" + imageDataStyle;
+					}
 					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -1223,14 +1292,11 @@ package com.flexcapacitor.utils {
 					layoutOutput += "<" + htmlName + " "  + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
-					//styleValue += "width:" + componentInstance.width+ "px;";
-					//styleValue += "height:" + componentInstance.height+ "px;";
-					//styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
 					styleValue = getWidthString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
 					styleValue = getHeightString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
 					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
-					//styleValue += wrapperTagStyles;
-					//
+					
+					
 					styleValue = getFontFamily(componentInstance, styleValue);
 					styleValue = getFontWeight(componentInstance, styleValue);
 					styleValue = getFontSize(componentInstance, styleValue);
@@ -1509,6 +1575,23 @@ package com.flexcapacitor.utils {
 			return layoutOutput;
 		}
 		
+		public function getBackgroundImageData(componentInstance:Object, imageDataFormat:String = "png"):String {
+			var imageData:String = DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat, null, true);
+			var imageDataStyle:String = "";
+			//imageDataStyle = "background-repeat: no-repeat;";
+			//imageDataStyle += "background-image: url(" + imageData + ");";
+			imageDataStyle += "background: url(" + imageData + ");";
+			return imageDataStyle;
+		}
+		
+		public function convertComponentToImage(componentInstance:Object, imageDataFormat:String = "png"):String {
+			//var backgroundImageID:String = "backgroundComparisonImage";
+			var imageData:String = DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat);
+			var imageSnapshot:String = "<img ";
+			imageSnapshot += " src=\"" + imageData + "\" >";
+			return imageSnapshot;
+		}
+		
 		/**
 		 * A hook to modify the styles before it is output
 		 * */
@@ -1629,12 +1712,12 @@ package com.flexcapacitor.utils {
 		 * 
 <pre>
 getWrapperTag(""); // returns ""
-getWrapperTag("div"); // returns <div>
-getWrapperTag("div", true); // returns </div>
-getWrapperTag("div", false, "color:blue"); // returns <div styles="color:blue;">
+getWrapperTag("div"); // returns &lt;div>
+getWrapperTag("div", true); // returns &lt;/div>
+getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue;">
 </pre>
 		 * */
-		private function getWrapperTag(wrapperTag:String = "", end:Boolean = false, styles:String = ""):String {
+		public function getWrapperTag(wrapperTag:String = "", end:Boolean = false, styles:String = ""):String {
 			var output:String = "";
 			
 			if (wrapperTag=="") return "";

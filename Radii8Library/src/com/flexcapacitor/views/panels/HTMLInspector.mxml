@@ -33,18 +33,20 @@
 			public function activate():void {
 				
 				if (radiate.target) {
-					targetChangedHandler(null);
+					targetChangedHandler();
 				}
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChangedHandler, false, 0, true);
 			}
 			
 			public function deactivate():void {
-				
-				if (radiate.selectedDocument) {
-					target = null;
-					componentDescription = null;
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangedHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, targetChangedHandler);
 				}
+				
+				target = null;
+				componentDescription = null;
 			}
 			
 			
@@ -74,10 +76,13 @@
 				}
 				
 				if (componentDescription) {
-					componentDescription.userStyles = componentCSS.text;
+					Radiate.setProperty(componentDescription, "userStyles", componentCSS.text);
+					//componentDescription.userStyles = componentCSS.text;
 					
-					componentDescription.createBackgroundSnapshot = embedSnapshopIntoBackground.selected;
-					componentDescription.convertElementToImage = convertElementToImage.selected;
+					Radiate.setProperty(componentDescription, "createBackgroundSnapshot", embedSnapshopIntoBackground.selected);
+					Radiate.setProperty(componentDescription, "convertElementToImage", convertElementToImage.selected);
+					//componentDescription.createBackgroundSnapshot = embedSnapshopIntoBackground.selected;
+					//componentDescription.convertElementToImage = convertElementToImage.selected;
 				}
 			}
 			

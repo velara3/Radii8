@@ -32,7 +32,10 @@
 			}
 			
 			public function deactivate():void {
-				radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
@@ -48,7 +51,9 @@
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
-				callLater(update);
+				if (event.propertiesAndStyles.indexOf("label")!=-1) {
+					callLater(update);
+				}
 			}
 			
 		]]>

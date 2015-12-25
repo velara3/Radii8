@@ -67,7 +67,7 @@
     <item name="Image" className="spark.components.Image" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
-    		<inspector name="Image" className="com.flexcapacitor.views.inspectors.Image"/>
+    		<inspector name="Image" className="com.flexcapacitor.views.inspectors.ImageProperties"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>

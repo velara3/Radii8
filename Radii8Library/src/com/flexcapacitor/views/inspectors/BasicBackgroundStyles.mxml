@@ -32,8 +32,13 @@
 			}
 			
 			public function deactivate():void {
-				radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
-				radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+				
+				target = null;
+				data = null;
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
@@ -44,6 +49,7 @@
 			}
 			
 			public function update():void {
+				// todo add applicable properties
 				var backgroundColor:StyleMetaData = ClassUtils.getMetaDataOfStyle(target, "backgroundColor");
 				var backgroundAlpha:StyleMetaData = ClassUtils.getMetaDataOfStyle(target, "backgroundAlpha");
 				

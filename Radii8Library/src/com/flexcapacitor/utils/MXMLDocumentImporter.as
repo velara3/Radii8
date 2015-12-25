@@ -173,6 +173,20 @@ package com.flexcapacitor.utils {
 			//var object2:* = SchemaTypeRegistry.getInstance().registerClass(;
 			
 	
+			// more xml namespaces example code
+			/*
+			var a:Object = attribute.namespace().prefix     //returns prefix i.e. rdf
+			var b:Object = attribute.namespace().uri        //returns uri of prefix i.e. http://www.w3.org/1999/02/22-rdf-syntax-ns#
+			
+			var c:Object = attribute.inScopeNamespaces()   //returns all inscope namespace as an associative array like above
+			
+			//returns all nodes in an xml doc that use the namespace
+			var nsElement:Namespace = new Namespace(attribute.namespace().prefix, attribute.namespace().uri);
+			
+			var usageCount:XMLList = attribute..nsElement::*;
+			*/
+
+			
 			if (componentDefinition!=null) {
 				
 				// we should NOT be setting defaults on import!!!
@@ -209,18 +223,31 @@ package com.flexcapacitor.utils {
 				
 				Radiate.updateComponentAfterAdd(iDocument, componentInstance);
 				
-				var lockedName:String = fcNamespaceURI + "/::locked";
+				componentDescription = iDocument.getItemDescription(componentInstance);
+				
+				// setting namespace attributes - refactor
+				var lockedName:String = fcNamespaceURI + "::locked";
 				
 				if (attributes.indexOf(lockedName)!=-1) {
-					componentDescription = iDocument.getItemDescription(componentInstance);
 					componentDescription.locked = valuesObject.values[lockedName];
 				}
 				
-				var userStylesName:String = htmlNamespaceURI + "/::style";
+				var userStylesName:String = htmlNamespaceURI + "::style";
 				
 				if (attributes.indexOf(userStylesName)!=-1) {
-					componentDescription = iDocument.getItemDescription(componentInstance);
 					componentDescription.userStyles = valuesObject.values[userStylesName];
+				}
+				
+				var convertToImage:String = fcNamespaceURI + "::convertToImage";
+				
+				if (attributes.indexOf(convertToImage)!=-1) {
+					componentDescription.convertElementToImage = valuesObject.values[convertToImage];
+				}
+				
+				var createBackgroundSnapshot:String = fcNamespaceURI + "::createBackgroundSnapshot";
+				
+				if (attributes.indexOf(createBackgroundSnapshot)!=-1) {
+					componentDescription.createBackgroundSnapshot = valuesObject.values[createBackgroundSnapshot];
 				}
 				
 				// might want to get a properties object from the attributes 

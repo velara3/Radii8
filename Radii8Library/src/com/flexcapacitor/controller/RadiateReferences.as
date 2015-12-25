@@ -19,7 +19,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.GroupLayoutInspector;
 	import com.flexcapacitor.views.inspectors.HyperLink;
 	import com.flexcapacitor.views.inspectors.Identity;
-	import com.flexcapacitor.views.inspectors.Image;
+	import com.flexcapacitor.views.inspectors.ImageProperties;
 	import com.flexcapacitor.views.inspectors.Layout;
 	import com.flexcapacitor.views.inspectors.StyleNameInspector;
 	import com.flexcapacitor.views.inspectors.TextInspector;
@@ -71,7 +71,7 @@ package com.flexcapacitor.controller {
 		public static var fontStyles:com.flexcapacitor.views.inspectors.FontStyles;
 		public static var textInspector:com.flexcapacitor.views.inspectors.TextInspector;
 		public static var basicBackgroundInspector:com.flexcapacitor.views.inspectors.BasicBackgroundStyles;
-		public static var imageInspector:com.flexcapacitor.views.inspectors.Image;
+		public static var imageInspector:com.flexcapacitor.views.inspectors.ImageProperties;
 		public static var borderStylesInspector:com.flexcapacitor.views.inspectors.BorderStyles;
 		public static var buttonInspector:com.flexcapacitor.views.inspectors.Button;
 		public static var groupInspector:com.flexcapacitor.views.inspectors.GroupLayoutInspector;
