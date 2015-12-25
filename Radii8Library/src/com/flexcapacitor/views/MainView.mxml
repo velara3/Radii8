@@ -1433,7 +1433,7 @@
 			 fillMode="repeat"
 			 width="100%" height="100%" 
 			 source="@Embed('wall.png')"
-			 alpha=".5"
+			 alpha=".35"
 			 includeIn="home"/>
 	
 	<s:Image id="backgroundLogoImage" 

@@ -15,11 +15,9 @@
 	
 	<fx:Script>
 	<![CDATA[
-		import com.flexcapacitor.model.DocumentData;
 		import com.flexcapacitor.model.IProject;
 		
 		import spark.components.List;
-		import spark.components.supportClasses.ListBase;
 		
 		
 		public var showIcon:Boolean;
