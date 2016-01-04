@@ -80,6 +80,16 @@ package com.flexcapacitor.utils {
 		public var borderBoxCSS:String = "*, *:before, *:after {\n\t-moz-box-sizing:border-box;\n\t-webkit-box-sizing:border-box;\n\tbox-sizing:border-box;\n}";
 		
 		/**
+		 * Use better HTML
+		 * */
+		public var useBetterHTML:Boolean = true;
+		
+		/**
+		 * Some defaults that make the html look more accurate
+		 * */
+		public var betterHTML:String = "html, body {\n\theight:100%;\n\tmargin:0;\n\tpadding:0;\n\tline-height:.7\n}";
+		
+		/**
 		 * Show outline around each element
 		 * */
 		public var bordersCSS:String = "*,*:before,*:after {outline:1px dotted red;}";
@@ -305,6 +315,10 @@ package com.flexcapacitor.utils {
 					styles += "\n" + borderBoxCSS;
 				}
 				
+				if (useBetterHTML) {
+					styles += "\n" + betterHTML;
+				}
+				
 				if (showBorders) {
 					styles += "\n" + bordersCSS;
 				}
@@ -496,7 +510,7 @@ package com.flexcapacitor.utils {
 			if (componentInstance==null) return "";
 			var propertyList:Object = componentDescription.properties;
 			var propertiesStylesObject:Object = ObjectUtils.merge(componentDescription.properties, componentDescription.styles);
-			var componentName:String = componentDescription.name ? componentDescription.name.toLowerCase() : "";
+			var componentName:String = componentDescription.className ? componentDescription.className.toLowerCase() : "";
 			var localName:String = componentName ? componentName : "";
 			var componentChild:ComponentDescription;
 			var instanceName:String = componentInstance && "name" in componentInstance ? componentInstance.name : "";
@@ -531,6 +545,7 @@ package com.flexcapacitor.utils {
 			var numElements:int;
 			var htmlName:String;
 			var tracking:Number;
+			var borderColor:String;
 			var index:int;
 			var value:*;
 			var gap:int;
@@ -807,6 +822,7 @@ package com.flexcapacitor.utils {
 						styleValue = getFontFamily(componentInstance, styleValue, true);
 						styleValue = getFontWeight(componentInstance, styleValue, true);
 						styleValue = getFontSize(componentInstance, styleValue, true);
+						styleValue = getLineHeight(componentInstance, styleValue, true);
 						
 						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 						
@@ -1035,7 +1051,7 @@ package com.flexcapacitor.utils {
 					styleValue = getFontColor(componentInstance, styleValue);
 					//styleValue += "padding:2px;";
 					
-					var borderColor:String = componentInstance.getStyle("borderColor");
+					borderColor = componentInstance.getStyle("borderColor");
 					
 					if (borderColor!=null) {
 						styleValue += "border:1px solid " + DisplayObjectUtils.getColorInHex(uint(borderColor), true) + ";";
@@ -1047,7 +1063,7 @@ package com.flexcapacitor.utils {
 					layoutOutput += setStyles(componentInstance, styleValue);
 					
 					if (componentInstance.source) {
-						layoutOutput += "\n" + tabs + "<source>" + componentInstance.source + "</source>";
+						layoutOutput += "\n" + tabs + "\t<source src=\"" + componentInstance.source + "\">\n";
 					}
 					
 					layoutOutput += tabs + "</" + htmlName + ">";
@@ -1666,7 +1682,7 @@ package com.flexcapacitor.utils {
 			if (styleClient==null) return styleValue;
 			
 			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "lineHeight")) {
-				styleValue += "line-height:" + parseInt(styleClient.getStyle("lineHeight"))/100+ ";"
+				styleValue += "line-height:" + parseInt(styleClient.getStyle("lineHeight"))/100 + ";"
 			}
 			
 			return styleValue;

@@ -16,6 +16,8 @@
 */
 
 package com.flexcapacitor.controller {
+	import com.durej.PSDParser.PSDLayer;
+	import com.durej.PSDParser.PSDParser;
 	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.components.IDocumentContainer;
 	import com.flexcapacitor.controls.Hyperlink;
@@ -82,6 +84,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.views.IInspector;
+	import com.flexcapacitor.views.MainView;
 	import com.google.code.flexiframe.IFrame;
 	
 	import flash.desktop.Clipboard;
@@ -105,6 +108,7 @@ package com.flexcapacitor.controller {
 	import flash.geom.Rectangle;
 	import flash.globalization.DateTimeStyle;
 	import flash.net.FileReference;
+	import flash.net.FileReferenceList;
 	import flash.net.SharedObject;
 	import flash.net.URLRequest;
 	import flash.net.navigateToURL;
@@ -134,6 +138,7 @@ package com.flexcapacitor.controller {
 	import mx.core.mx_internal;
 	import mx.effects.Sequence;
 	import mx.effects.effectClasses.PropertyChanges;
+	import mx.events.DragEvent;
 	import mx.events.FlexEvent;
 	import mx.graphics.ImageSnapshot;
 	import mx.graphics.SolidColor;
@@ -501,6 +506,11 @@ package com.flexcapacitor.controller {
 		public var getProjectsService:WPService;
 		
 		/**
+		 * Service to delete attachments
+		 * */
+		public var deleteAttachmentsService:WPService;
+		
+		/**
 		 * Service to delete attachment
 		 * */
 		public var deleteAttachmentService:WPService;
@@ -559,6 +569,12 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public var deleteAttachmentInProgress:Boolean;
+		
+		/**
+		 * Set to true when deleting attachments
+		 * */
+		[Bindable]
+		public var deleteAttachmentsInProgress:Boolean;
 		
 		/**
 		 * Set to true when getting list of attachments
@@ -770,7 +786,8 @@ package com.flexcapacitor.controller {
 		 * Handle auto saving 
 		 * */
 		public function autoSaveHandler():void {
-			var length:int;
+			var numberOfAssets:int;
+			var numberOfProjects:int;
 			var iProject:IProject;
 			var iDocumentData:IDocumentData;
 			var iAttachmentData:AttachmentData;
@@ -787,8 +804,8 @@ package com.flexcapacitor.controller {
 			}*/
 			
 			// save projects
-			length = projects.length;
-			for (i=0;i<length;i++) {
+			numberOfProjects = projects.length;
+			for (i=0;i<numberOfProjects;i++) {
 				iDocumentData = projects[i] as IDocumentData;
 				//if (iDocumentData.isChanged && !iDocumentData.saveInProgress && iDocumentData.isOpen) {
 				if (!iDocumentData.saveInProgress && iDocumentData.isOpen) {
@@ -796,16 +813,30 @@ package com.flexcapacitor.controller {
 				}
 			}
 			
+			// do not autosave now
+			return;
+			
+			if (uploadAttachmentInProgress) {
+				return;
+			}
+			
 			// save attachments
-			length = assets.length;
-			for (i=0;i<length;i++) {
+			numberOfAssets = assets.length;
+			
+			for (i=0;i<numberOfAssets;i++) {
 				iAttachmentData = assets[i] as ImageData;
+				
 				if (iAttachmentData) {
 					imageData = iAttachmentData as ImageData;
 					
 					if (!imageData.saveInProgress && imageData.id==null) {
 						//imageData.save();
-						uploadAttachment(imageData.byteArray, selectedProject.id, imageData.name, null, imageData.contentType);
+						if (imageData.byteArray==null) {
+							uploadAttachment(imageData.bitmapData, selectedProject.id, imageData.name, null, imageData.contentType);
+						}
+						else {
+							uploadAttachment(imageData.byteArray, selectedProject.id, imageData.name, null, imageData.contentType);
+						}
 					}
 				}
 			}
@@ -840,6 +871,12 @@ package com.flexcapacitor.controller {
 		 */
 		[Bindable]
 		public static var application:Application;
+		
+		/**
+		 * Reference to the application main view
+		 */
+		[Bindable]
+		public static var mainView:MainView;
 		
 		//----------------------------------
 		//
@@ -919,7 +956,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch upload attachment received event
 		 * */
-		public function dispatchUploadAttachmentResultsEvent(successful:Boolean, attachments:Array, data:Object):void {
+		public function dispatchUploadAttachmentResultsEvent(successful:Boolean, attachments:Array, data:Object, error:Object = null):void {
 			var uploadAttachmentEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.ATTACHMENT_UPLOADED)) {
@@ -928,6 +965,7 @@ package com.flexcapacitor.controller {
 				uploadAttachmentEvent.status = successful ? "ok" : "fault";
 				uploadAttachmentEvent.data = attachments;
 				uploadAttachmentEvent.selectedItem = data;
+				uploadAttachmentEvent.error = error;
 				dispatchEvent(uploadAttachmentEvent);
 			}
 		}
@@ -1047,6 +1085,21 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Dispatch attachments deleted results event
+		 * */
+		public function dispatchAttachmentsDeletedEvent(successful:Boolean, data:Object):void {
+			var deleteDocumentResultsEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.ATTACHMENTS_DELETED)) {
+				deleteDocumentResultsEvent = new RadiateEvent(RadiateEvent.ATTACHMENTS_DELETED);
+				deleteDocumentResultsEvent.data = data;
+				deleteDocumentResultsEvent.successful = successful;
+				deleteDocumentResultsEvent.status = successful ? "ok" : "error";
+				dispatchEvent(deleteDocumentResultsEvent);
+			}
+		}
+		
+		/**
 		 * Dispatch asset added event
 		 * */
 		public function dispatchAssetAddedEvent(data:Object):void {
@@ -1068,6 +1121,19 @@ package com.flexcapacitor.controller {
 			if (hasEventListener(RadiateEvent.ASSET_REMOVED)) {
 				assetRemovedEvent = new RadiateEvent(RadiateEvent.ASSET_REMOVED);
 				assetRemovedEvent.data = data;
+				dispatchEvent(assetRemovedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch assets removed event
+		 * */
+		public function dispatchAssetsRemovedEvent(attachments:Array, successful:Boolean = true):void {
+			var assetRemovedEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.ASSETS_REMOVED)) {
+				assetRemovedEvent = new RadiateEvent(RadiateEvent.ASSETS_REMOVED);
+				assetRemovedEvent.data = attachments;
 				dispatchEvent(assetRemovedEvent);
 			}
 		}
@@ -3444,19 +3510,16 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Add an asset
+		 * Add multiple assets to a document or project
 		 * */
 		public function addAssetsToDocument(assetsToAdd:Array, documentData:DocumentData, dispatchEvents:Boolean = true):void {
 			var numberOfAssets:int;
 			var added:Boolean;
 			
-			if (assetsToAdd) {
-				numberOfAssets = assetsToAdd.length;
-				
-				for (var i:int;i<numberOfAssets;i++) {
-					addAssetToDocument(assetsToAdd[i], documentData, dispatchEvents);
-				}
-				
+			numberOfAssets = assetsToAdd ? assetsToAdd.length : 0;
+			
+			for (var i:int;i<numberOfAssets;i++) {
+				addAssetToDocument(assetsToAdd[i], documentData, dispatchEvents);
 			}
 			
 		}
@@ -3464,33 +3527,33 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add an asset to the document assets collection
 		 * */
-		public function addAssetToDocument(data:DocumentData, documentData:IDocumentData, dispatchEvent:Boolean = true):void {
-			var numberOfAssets:int = assets.length;
+		public function addAssetToDocument(attachmentData:DocumentData, documentData:IDocumentData, dispatchEvent:Boolean = true):void {
+			var numberOfAssets:int = assets ? assets.length : 0;
 			var found:Boolean;
-			var item:DocumentData;
+			var addedAttachmentData:DocumentData;
 			var reparented:Boolean;
 			
 			for (var i:int;i<numberOfAssets;i++) {
-				item = assets.getItemAt(i) as DocumentData;
+				addedAttachmentData = assets.getItemAt(i) as DocumentData;
 				
-				if (item.id==data.id && item.id!=null) {
+				if (attachmentData.id==addedAttachmentData.id && addedAttachmentData.id!=null) {
 					found = true;
 					break;
 				}
 			}
 
 			
-			if (data.parentId != documentData.id) {
-				data.parentId = documentData.id;
+			if (attachmentData.parentId != documentData.id) {
+				attachmentData.parentId = documentData.id;
 				reparented = true;
 			}
 			
 			if (!found) {
-				assets.addItem(data);
+				assets.addItem(attachmentData);
 			}
 			
 			if ((!found || reparented) && dispatchEvent) {
-				dispatchAssetAddedEvent(data);
+				dispatchAssetAddedEvent(attachmentData);
 			}
 		}
 		
@@ -3544,6 +3607,519 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Remove assets from the documents assets collection
+		 * */
+		public function removeAssetsFromDocument(attachments:Array, locations:String = null, dispatchEvents:Boolean = true):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var remote:Boolean = ServicesManager.getIsRemoteLocation(locations);
+			var removedInternally:Boolean;
+			var attachmentData:AttachmentData;
+			var attachmentIDs:Array = [];
+			var numberOfAttachments:int;
+			var index:int;
+			
+			numberOfAttachments = attachments ? attachments.length : 0;
+			
+			for (var i:int; i < numberOfAttachments; i++) {
+				attachmentData = attachments[i];
+				index = assets.getItemIndex(attachmentData);
+				
+				if (index>-1) {
+					assets.removeItemAt(index);
+					removedInternally = true;
+				}
+			}
+			
+			
+			if (remote && attachments && attachments.length) { 
+				// we need to create service
+				if (deleteAttachmentsService==null) {
+					deleteAttachmentsService = new WPService();
+					deleteAttachmentsService.addEventListener(WPService.RESULT, deleteAttachmentsResultsHandler, false, 0, true);
+					deleteAttachmentsService.addEventListener(WPService.FAULT, deleteAttachmentsFaultHandler, false, 0, true);
+				}
+				
+				deleteAttachmentsService.host = getWPURL();
+				
+				deleteAttachmentsInProgress = true;
+				
+				for (var j:int = 0; j < attachments.length; j++) {
+					attachmentData = attachments[j];
+					
+					if (attachmentData.id!=null) {
+						attachmentIDs.push(attachmentData.id);
+					}
+				}
+				
+				if (attachmentIDs.length) {
+					deleteAttachmentsService.deleteAttachments(attachmentIDs, true);
+				}
+				else {
+					dispatchAttachmentsDeletedEvent(true, {localDeleted:true});
+				}
+			}
+			
+			// dispatch assets removed 
+			// later dispatch attachment deleted event when result comes back from server 
+			dispatchAssetsRemovedEvent(attachments, removedInternally);
+			
+			return removedInternally;
+		}
+		
+		/**
+		 * Adds PSD to the document.
+		 * Adds assets to the library and document
+		 * */
+		public function addPSDToDocument(psdFileData:ByteArray, iDocument:IDocument, constrainImageToDocument:Boolean = true, addToAssets:Boolean = true):void {
+			var componentDefinition:ComponentDefinition;
+			var application:Object;
+			var componentInstance:Object;
+			var componentDescription:ComponentDescription;
+			var path:String;
+			var bitmapData:BitmapData;
+			var psdParser:PSDParser;
+			var numberOfLayers:int;
+			var properties:Array = [];
+			var propertiesObject:Object;
+			var psdLayer:PSDLayer;
+			var compositeBitmap:Bitmap;
+			var addCompositeImage:Boolean = true;
+			var imageData:ImageData;
+			var blendModeKey:String;
+			var blendMode:String;
+			var insideFolder:Boolean;
+			var isFolderVisible:Boolean;
+			var layerType:String;
+			var layerName:String;
+			var folderName:String;
+			var layerVisible:Boolean;
+			var layers:Array;
+			var layersAndFolders:Dictionary;
+			var parentInstance:Object;
+			var layerFilters:Array;
+			var layerID:int;
+			var parentLayerID:int;
+			var currentFolders:Array = [];
+			var foldersDictionary:Object = [];
+			var xOffset:int;
+			var yOffset:int;
+			var parentGroup:Object
+			
+			layersAndFolders = new Dictionary(true);
+			
+			application = iDocument && iDocument.instance ? iDocument.instance : null;
+			
+			if (documentThatPasteOfFilesToBeLoadedOccured==null) {
+				documentThatPasteOfFilesToBeLoadedOccured = iDocument;
+			}
+			
+			//setupPasteFileLoader();
+			
+			psdParser = PSDParser.getInstance();
+			
+			try {
+				psdParser.parse(psdFileData);
+			}
+			catch (errorObject:*) {
+				var errorMessage:String;
+				
+				if (errorObject) {
+					errorMessage = Object(errorObject).toString();
+				}
+				
+				error("Could not import the PSD. " + errorMessage);
+				
+				pasteFileLoader ? pasteFileLoader.removeReferences(true) : -1;
+				dropFileLoader ? dropFileLoader.removeReferences(true) : -1;
+				
+				return;
+			}
+			
+			//layersLevel = iDocument.instance;
+			//this.addChild(layersLevel);
+			
+			layers = psdParser.allLayers ? psdParser.allLayers : [];
+			numberOfLayers = layers ? layers.length : 0;
+			
+			
+			// add composite of the PSD
+			if (addCompositeImage || numberOfLayers==0) {
+				//compositeBitmap = new Bitmap(psdParser.composite_bmp);
+				bitmapData 					= psdParser.composite_bmp;
+				
+				componentDefinition 		= getComponentType("Image");
+				componentInstance 			= createComponentToAdd(iDocument, componentDefinition, false);
+				
+				propertiesObject 			= {};
+				propertiesObject.source 	= psdParser.composite_bmp;
+				
+				propertiesObject.visible 	= false;
+				
+				properties.push("source");
+				properties.push("visible");
+				
+				addElement(componentInstance, application, properties, null, propertiesObject);
+				
+				updateComponentAfterAdd(iDocument, componentInstance, true);
+				
+				componentDescription = iDocument.getItemDescription(componentInstance);
+				
+				if (numberOfLayers!=0) {
+					componentDescription.locked = true;
+					componentDescription.visible = false;
+					componentDescription.name = "Composite Layer";
+				}
+				
+				if (addToAssets) {
+					imageData = new ImageData();
+					imageData.bitmapData = bitmapData;
+					imageData.name = "Composite Layer";
+					imageData.layerInfo = psdLayer;
+					
+					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+				}
+			}
+			
+			if (numberOfLayers==0 && psdParser.composite_bmp==null) {
+				error("The PSD did not contain any readable layers.");
+				pasteFileLoader ? pasteFileLoader.removeReferences(true) : -1;
+				dropFileLoader ? dropFileLoader.removeReferences(true) : -1;
+				return;
+			}
+			
+			
+			
+			// Layer groups are being parsed and they are also PSDLayer class type.
+			
+			// There are 4 layer types :
+			// LayerType_FOLDER_OPEN, LayerType_FOLDER_CLOSED , 
+			// LayerType_HIDDEN and LayerType_NORMAL.
+			
+			// Layer folder hidden is marker for the end of the layer group. 
+			// So if you want to parse the folder structure, check where the layer type folder 
+			// starts and then every layer that follows is inside of that folder, 
+			// until you reach layer type hidden.
+			
+			// order from top to bottom from PSD
+			layers.reverse();
+			
+			// loop through layers and get the folders 
+			for (var a:int;a<numberOfLayers;a++)  {
+				psdLayer		= layers[a];
+				layerType 		= psdLayer.type;
+				layerID 		= psdLayer.layerID;layerName 		= psdLayer.name;
+				
+				layersAndFolders[layerID] = psdLayer;
+				
+				if (layerType==PSDLayer.LayerType_FOLDER_OPEN || 
+					layerType==PSDLayer.LayerType_FOLDER_CLOSED) {
+					insideFolder = true;
+					isFolderVisible = psdLayer.isVisible;
+					folderName = psdLayer.name;
+					parentLayerID = layerID;
+					
+					if (currentFolders.length) {
+						psdLayer.parentLayerID = currentFolders[0];
+					}
+					
+					
+					componentDefinition 		= getComponentType("Group");
+					
+					componentInstance 			= createComponentToAdd(iDocument, componentDefinition, false);
+					
+					propertiesObject 			= {};
+					propertiesObject.x 			= 0;
+					propertiesObject.y			= 0;
+					propertiesObject.lowestX 	= [];
+					propertiesObject.lowestY	= [];
+					
+					// properties to set
+					properties = [];
+					
+					// properties to set
+					properties.push("x");
+					properties.push("y");
+					
+					if (psdLayer.alpha!=1) {
+						propertiesObject.alpha 	= psdLayer.alpha;
+						properties.push("alpha");
+					}
+					
+					if (psdLayer.isVisible==false) {
+						propertiesObject.visible = false;
+						properties.push("visible");
+					}
+					
+					if (psdLayer.blendModeKey!="norm") {
+						blendMode = DisplayObjectUtils.getBlendModeByKey(psdLayer.blendModeKey);
+						
+						if (blendMode) {
+							propertiesObject.blendMode 	= blendMode;
+							properties.push("blendMode");
+						}
+					}
+					
+					parentGroup = {};
+					parentGroup.properties = properties;
+					parentGroup.propertiesObject = propertiesObject;
+					parentGroup.instance = componentInstance;
+					parentGroup.parentID = currentFolders && currentFolders.length ? currentFolders[0] : 0;
+
+					foldersDictionary[layerID] = parentGroup;
+					
+					// add group layer id ordered as depth
+					currentFolders.unshift(layerID);
+					
+				}
+				else if (layerType==PSDLayer.LayerType_HIDDEN) {
+					insideFolder = false;
+					isFolderVisible = false;
+					folderName = null;
+					layerID = currentFolders.shift();
+					
+					parentGroup = foldersDictionary[layerID];
+					
+					// set the group location to start where the contents start - later subtract the difference
+					parentGroup.propertiesObject.x = Math.min.apply(null, parentGroup.propertiesObject.lowestX);
+					parentGroup.propertiesObject.y = Math.min.apply(null, parentGroup.propertiesObject.lowestY);
+					
+				}
+				else if (layerType==PSDLayer.LayerType_NORMAL) {
+					
+					if (currentFolders.length) {
+						psdLayer.parentLayerID = currentFolders[0];
+						parentGroup = foldersDictionary[currentFolders[0]];
+						
+						while (parentGroup) {
+							parentGroup.propertiesObject.lowestX.push(psdLayer.position.x);
+							parentGroup.propertiesObject.lowestY.push(psdLayer.position.y);
+							parentGroup = foldersDictionary[parentGroup.parentID];
+						}
+					}
+					else {
+						psdLayer.parentLayerID = 0;
+					}
+				}
+				
+			}
+			
+			// order from bottom to top from PSD
+			layers.reverse();
+			
+			
+			// loop through layers
+			for (var i:int;i<numberOfLayers;i++)  {
+				psdLayer				= psdParser.allLayers[i];
+				bitmapData				= psdLayer.bmp;
+				
+				layerType 				= psdLayer.type;
+				layerVisible 			= psdLayer.isVisible;
+				layerName 				= psdLayer.name;
+				layerFilters			= psdLayer.filters_arr;
+				layerID					= psdLayer.layerID;
+				
+				parentLayerID 			= psdLayer.parentLayerID;
+				
+				parentGroup 			= foldersDictionary[parentLayerID];
+				
+				if (parentGroup) {
+					xOffset = 0;
+					yOffset = 0;
+					
+					while (parentGroup) {
+						xOffset += parentGroup.propertiesObject.x;
+						yOffset += parentGroup.propertiesObject.y;
+						parentGroup = foldersDictionary[parentGroup.parentID];
+					}
+				}
+				else {
+					xOffset = 0;
+					yOffset = 0;
+				}
+				
+				if (layerType==PSDLayer.LayerType_FOLDER_OPEN || 
+					layerType==PSDLayer.LayerType_FOLDER_CLOSED ||
+					layerType==PSDLayer.LayerType_HIDDEN) {
+					continue;
+				}
+				
+				var showInfo:Boolean = false;
+				if (showInfo) {
+					trace("\nType         :" + layerType);
+					trace("Inside folder  :" + insideFolder);
+					trace("Folder name    :" + folderName);
+					trace("Folder visible :" + isFolderVisible);
+					trace(" Layer visible :" + layerVisible);
+				}
+				
+				// need to keep track of errors during import
+				if (bitmapData==null) {
+					continue;
+				}
+				else if (bitmapData.width==0 || bitmapData.height==0) {
+					continue;
+				}
+				
+				componentDefinition 		= getComponentType("Image");
+				
+				componentInstance 			= createComponentToAdd(iDocument, componentDefinition, false);
+				
+				propertiesObject 			= {};
+				propertiesObject.source 	= bitmapData;
+				propertiesObject.x 			= psdLayer.position.x - xOffset;
+				propertiesObject.y 			= psdLayer.position.y - yOffset;
+				
+				// properties to set
+				properties = [];
+				
+				// properties to set
+				properties.push("x");
+				properties.push("y");
+				properties.push("source");
+				
+				if (psdLayer.alpha!=1) {
+					propertiesObject.alpha 	= psdLayer.alpha;
+					properties.push("alpha");
+				}
+				
+				if (psdLayer.isVisible==false) {
+					propertiesObject.visible = false;
+					properties.push("visible");
+				}
+				
+				if (psdLayer.blendModeKey!="norm") {
+					blendMode = DisplayObjectUtils.getBlendModeByKey(psdLayer.blendModeKey);
+					
+					if (blendMode) {
+						propertiesObject.blendMode 	= blendMode;
+						properties.push("blendMode");
+					}
+				}
+				
+				if (layerFilters && layerFilters.length) {
+					propertiesObject.filters = layerFilters;
+					properties.push("filters");
+				}
+				
+				if (psdLayer.parentLayerID!=0) {
+					parentGroup = foldersDictionary[psdLayer.parentLayerID];
+					parentInstance = parentGroup.instance;
+				}
+				else {
+					parentInstance = application;
+				}
+				
+				// if on level 0 - no parent - add it in next loop so we keep the
+				// layer order
+				//if (parentLayerID==0) {
+				
+				parentGroup 					= {};
+				parentGroup.properties 			= properties;
+				parentGroup.propertiesObject 	= propertiesObject;
+				parentGroup.instance 			= componentInstance;
+				parentGroup.parentInstance 		= parentInstance;
+				
+				foldersDictionary[layerID] 		= parentGroup;
+				continue;
+				//}
+				
+				
+				addElement(componentInstance, parentInstance, properties, null, propertiesObject);
+				
+				updateComponentAfterAdd(iDocument, componentInstance);
+				
+				componentDescription = iDocument.getItemDescription(componentInstance);
+				
+				if (componentDescription) {
+					componentDescription.locked = psdLayer.isLocked;
+					componentDescription.visible = psdLayer.isVisible;
+					componentDescription.name = psdLayer.name;
+					componentDescription.layerInfo = psdLayer;
+				}
+				
+				if (showInfo) {
+					trace(" Layer name " + componentDescription.name);
+				}
+				
+				if (addToAssets) {
+					imageData = new ImageData();
+					imageData.bitmapData = psdLayer.bmp;
+					imageData.name = psdLayer.name;
+					imageData.layerInfo = psdLayer;
+					
+					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+				}
+				
+				/*
+				var layerBitmap_bmp : BitmapData 		= psdLayer.bmp;
+				var layerBitmap 	: Bitmap 			= new Bitmap(layerBitmap_bmp);
+				layerBitmap.x 							= psdLayer.position.x;
+				layerBitmap.y 							= psdLayer.position.y;
+				layerBitmap.filters						= psdLayer.filters_arr;
+				layersLevel.addChild(layerBitmap);*/
+				
+			}
+			
+			// add folders to document
+			
+			var customParent:Object;
+			
+			// loop through layers and add folders and top level layers 
+			for (var b:int;b<numberOfLayers;b++)  {
+				psdLayer		= layers[b];
+				layerType 		= psdLayer.type;
+				layerID 		= psdLayer.layerID;
+				parentGroup 	= foldersDictionary[layerID];
+				
+				if (parentGroup==null) {
+					continue;
+				}
+				
+				//trace("adding " +  psdLayer.name + " ("+ layerID+")");
+				// get parent folder if one exists
+				customParent 	= foldersDictionary[psdLayer.parentLayerID];
+				
+				parentInstance = customParent ? customParent.instance : application;
+				
+				componentInstance = parentGroup.instance;
+				
+				addElement(componentInstance, parentInstance, parentGroup.properties, null, parentGroup.propertiesObject);
+				
+				updateComponentAfterAdd(iDocument, componentInstance, true);
+				
+				componentDescription = iDocument.getItemDescription(componentInstance);
+				
+				if (componentDescription) {
+					componentDescription.locked = psdLayer.isLocked;
+					componentDescription.visible = psdLayer.isVisible;
+					componentDescription.name = psdLayer.name;
+					componentDescription.layerInfo = psdLayer;
+				}
+				
+				if (addToAssets && layerType==PSDLayer.LayerType_NORMAL) {
+					imageData = new ImageData();
+					imageData.bitmapData = psdLayer.bmp;
+					imageData.name = psdLayer.name;
+					imageData.layerInfo = psdLayer;
+					
+					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+				}
+			}
+			
+			// remove file references
+			if (pasteFileLoader) {
+				pasteFileLoader.removeReferences(true);
+			}
+			
+			// remove file references
+			if (dropFileLoader) {
+				dropFileLoader.removeReferences(true);
+			}
+			
+			Radiate.info("PSD imported. Be sure to upload the images added to the Library.");
+		}
+		
+		/**
 		 * Adds an asset to the document
 		 * */
 		public function addImageDataToDocument(assetData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true):void {
@@ -3560,39 +4136,27 @@ package com.flexcapacitor.controller {
 			
 			if (!application) return;
 			
-			
-			componentInstance = createComponentToAdd(iDocument, item, false);
+			// set to true so if we undo it has defaults to start with
+			componentInstance = createComponentToAdd(iDocument, item, true);
 			bitmapData = assetData.bitmapData;
 			
-			var properties:Array = [];
-			var propertiesObject:Object = {};
-			var aspectRatio:Number = 1;
-			var constraintNeeded:Boolean;
+			
 			const WIDTH:String = "width";
 			const HEIGHT:String = "height";
 			
-			if (constrainImageToDocument && bitmapData && bitmapData.width>0 && bitmapData.height>0) {
-				aspectRatio = iDocument.instance.width/iDocument.instance.height;
-				
-				if (bitmapData.width>iDocument.instance.width) {
-					//aspectRatio = bitmapData.width / iDocument.instance.width;
-					propertiesObject = DisplayObjectUtils.getConstrainedSize(bitmapData, "width", iDocument.instance.width);
-					properties = [WIDTH, HEIGHT];
-					constraintNeeded = true;
-				}
-				
-				if (constraintNeeded && propertiesObject.height>iDocument.instance.height) {
-					propertiesObject = DisplayObjectUtils.getConstrainedSize(bitmapData, "height", iDocument.instance.height);
-				}
-				
-				// check height is not larger than document width
-				// and document height is not larger than width
-				else if (!constraintNeeded && bitmapData.height>iDocument.instance.height) {
-					//aspectRatio = bitmapData.height / iDocument.instance.height;
-					propertiesObject = DisplayObjectUtils.getConstrainedSize(bitmapData, "height", iDocument.instance.height);
-					properties = [WIDTH, HEIGHT];
-				}
-				
+			var properties:Array = [];
+			var propertiesObject:Object;
+			
+			if (constrainImageToDocument) {
+				propertiesObject = getConstrainedImageSizeObject(iDocument, bitmapData);
+			}
+			
+			if (propertiesObject==null) {
+				propertiesObject = {};
+			}
+			else {
+				properties.push(WIDTH);
+				properties.push(HEIGHT);
 			}
 			
 			if (assetData is ImageData) {
@@ -3613,6 +4177,51 @@ package com.flexcapacitor.controller {
 			}
 			
 			addElement(componentInstance, iDocument.instance, properties, null, propertiesObject);
+			
+			updateComponentAfterAdd(iDocument, componentInstance);
+		}
+		
+		public static function getConstrainedImageSizeObject(iDocument:IDocument, bitmapData:Object):Object {
+			var properties:Array = [];
+			var propertiesObject:Object = {};
+			var aspectRatio:Number = 1;
+			var constraintNeeded:Boolean;
+			var resized:Boolean;
+
+			const WIDTH:String = "width";
+			const HEIGHT:String = "height";
+			
+			if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
+				aspectRatio = iDocument.instance.width/iDocument.instance.height;
+				
+				if (bitmapData.width>iDocument.instance.width) {
+					//aspectRatio = bitmapData.width / iDocument.instance.width;
+					propertiesObject = DisplayObjectUtils.getConstrainedSize(bitmapData, "width", iDocument.instance.width);
+					properties = [WIDTH, HEIGHT];
+					constraintNeeded = true;
+					resized = true;
+				}
+				
+				if (constraintNeeded && propertiesObject.height>iDocument.instance.height) {
+					propertiesObject = DisplayObjectUtils.getConstrainedSize(bitmapData, "height", iDocument.instance.height);
+					resized = true;
+				}
+				else if (!constraintNeeded && bitmapData.height>iDocument.instance.height) {
+					// check height is not larger than document width
+					// and document height is not larger than width
+					//aspectRatio = bitmapData.height / iDocument.instance.height;
+					propertiesObject = DisplayObjectUtils.getConstrainedSize(bitmapData, "height", iDocument.instance.height);
+					properties = [WIDTH, HEIGHT];
+					resized = true;
+				}
+				
+			}
+			
+			if (!resized) {
+				return null; 
+			}
+			
+			return propertiesObject; 
 		}
 		
 		/**
@@ -4150,14 +4759,79 @@ package com.flexcapacitor.controller {
 					itemData = CodeManager.setSourceData(copiedDataSource, destination, selectedDocument, CodeManager.MXML, null);
 				}
 				
-				setTarget(destination);
+				if (itemData && itemData.targets && itemData.targets.length) { 
+					setTarget(itemData.targets[0]);
+				}
+				else {
+					setTarget(destination);
+				}
+				
+				itemData = null;
+			}
+		}
+		
+		public function dropItem(event:DragEvent):void {
+			var dragSource:DragSource;
+			var hasFileListFormat:Boolean;
+			var hasFilePromiseListFormat:Boolean;
+			var isSelf:Boolean;
+			
+			dragSource = event.dragSource;
+			hasFileListFormat = dragSource.hasFormat(ClipboardFormats.FILE_LIST_FORMAT);
+			hasFilePromiseListFormat = dragSource.hasFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT);
+			
+			var destination:Object;
+			var droppedFiles:Array;
+			
+			if (isAcceptableDragAndDropFormat(dragSource)) {
+				
+				if (hasFileListFormat) {
+					droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT) as Array;
+				}
+				else if (hasFilePromiseListFormat) {
+					droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT) as Array;
+				}
+				
+				if (droppedFiles) {
+					destination = getDestinationForExternalFileDrop();
+					addFileListDataToDocument(selectedDocument, droppedFiles as Array, destination);
+				}
+				
 			}
 		}
 		
 		/**
-		 * Add file list data to a document from paste operation
+		 * Used on select event when browsing for file
 		 * */
-		public function addFileListDataToDocument(iDocument:IDocument, fileList:Array, destination:Object = null):void {
+		public function selectItem(files:Object):void {
+			var destination:Object;
+			var filesToAdd:Array = [];
+			
+			if (files is FileReferenceList) {
+				filesToAdd = FileReferenceList(files).fileList;
+			}
+			else if (files is FileReference) {
+				filesToAdd = [files];
+			}
+			else if (files is Array) {
+				filesToAdd = (files as Array).slice();
+			}
+			
+			if (filesToAdd && filesToAdd.length) {
+				destination = getDestinationForExternalFileDrop();
+				documentThatPasteOfFilesToBeLoadedOccured = selectedDocument;
+				addFileListDataToDocument(selectedDocument, filesToAdd, destination);
+			}
+			else {
+				warn("No files were selected.");
+			}
+				
+		}
+		
+		/**
+		 * Add file list data to a document
+		 * */
+		public function addFileListDataToDocument(iDocument:IDocument, fileList:Array, destination:Object = null, operation:String = "drop"):void {
 			if (fileList==null) {
 				error("Not a valid file list");
 				return;
@@ -4175,57 +4849,164 @@ package com.flexcapacitor.controller {
 			var path_txt:String;
 			var extension:String;
 			var fileSafeList:Array = [];
+			var hasPSD:Boolean;
 			
 			// only accepting image files at this time
 			for each (var file:FileReference in fileList) {
 				extension = file.extension.toLowerCase();
 				
-				if (extension=="png" || extension=="jpg" || extension=="jpeg") {
+				if (extension=="png" || 
+					extension=="jpg" || 
+					extension=="jpeg" || 
+					extension=="gif") {
 					fileSafeList.push(file);
+				}
+				else if (extension=="psd") {
+					fileSafeList.push(file);
+					hasPSD = true;
 				}
 				else {
 					path_txt = "Not a recognised file format";  
 				}
 			}
 			
-			if (fileLoader==null) {
-				fileLoader = new LoadFile();
+			var fileLoader:LoadFile;
+			
+			const PASTE:String = "paste";
+			const DROP:String = "drop";
+			
+			if (operation==PASTE) {
+				setupPasteFileLoader();
+				fileLoader = pasteFileLoader;
+			}
+			else if (operation==DROP) {
+				setupDropFileLoader();
+				fileLoader = dropFileLoader;
+			}
+			
+			
+			fileLoader.removeReferences(true);
+			
+			
+			if (!hasPSD) {
 				fileLoader.loadIntoLoader = true;
-				fileLoader.addEventListener(LoadFile.LOADER_COMPLETE, pasteFileCompleteHandler, false, 0, true);
 			}
 			else {
-				fileLoader.removeReferences(true);
+				fileLoader.loadIntoLoader = false;
 			}
 			
 			if (fileSafeList.length>0) {
+				
+				if (fileSafeList.length>1 && hasPSD) {
+					warn("You cannot load a PSD and image files at the same time. Select one or the other");
+					return;
+				}
+				
+				if (hasPSD) {
+					loadingPSD = true;
+				}
+				else {
+					loadingPSD = false;
+				}
+				
+				documentThatPasteOfFilesToBeLoadedOccured = iDocument;
+				
 				fileLoader.filesArray = fileSafeList;
 				fileLoader.play();
-				documentThatPasteOfFilesToBeLoadedOccured = iDocument;
 			}
 			else {
-				info("No files of the acceptable type were found. Acceptable files are PNG and JPEG");
+				documentThatPasteOfFilesToBeLoadedOccured = null;
+				info("No files of the acceptable type were found. Acceptable files are PNG, JPEG, PSD");
 			}
 		}
 		
-		public var fileLoader:LoadFile;
+		public var pasteFileLoader:LoadFile;
+		public var dropFileLoader:LoadFile;
 		public var documentThatPasteOfFilesToBeLoadedOccured:IDocument;
+		public var loadingPSD:Boolean;
+		
+		protected function setupPasteFileLoader():void {
+			if (pasteFileLoader==null) {
+				pasteFileLoader = new LoadFile();
+				pasteFileLoader.addEventListener(LoadFile.LOADER_COMPLETE, pasteFileCompleteHandler, false, 0, true);
+				pasteFileLoader.addEventListener(LoadFile.COMPLETE, pasteFileCompleteHandler, false, 0, true);
+			}
+		}
+		
+		protected function setupDropFileLoader():void {
+			if (dropFileLoader==null) {
+				dropFileLoader = new LoadFile();
+				dropFileLoader.addEventListener(LoadFile.LOADER_COMPLETE, dropFileCompleteHandler, false, 0, true);
+				dropFileLoader.addEventListener(LoadFile.COMPLETE, dropFileCompleteHandler, false, 0, true);
+			}
+		}
 		
 		/**
-		 * Occurs after file pasted into document is fully loaded as a bitmap
+		 * Occurs after files pasted into the document are fully loaded 
 		 * */
 		protected function pasteFileCompleteHandler(event:Event):void {
+			
+			
+			if (event.type==LoadFile.LOADER_COMPLETE) {
+				
+			}
 			
 			if (!documentThatPasteOfFilesToBeLoadedOccured) {
 				error("No document was found to paste a file into");
 				return;
 			}
 			
+			if (loadingPSD) {
+				loadingPSD = false;
+				info("Importing PSD");
+				callAfter(250, addPSDToDocument, pasteFileLoader.data, documentThatPasteOfFilesToBeLoadedOccured);
+				//addPSDToDocument(pasteFileLoader.data, documentThatPasteOfFilesToBeLoadedOccured);
+				return;
+			}
+			
 			var imageData:ImageData = new ImageData();
-			imageData.bitmapData = fileLoader.bitmapData;
-			imageData.byteArray = fileLoader.data;
-			imageData.name = fileLoader.currentFileReference.name;
-			imageData.contentType = fileLoader.loaderContentType;
-			imageData.file = fileLoader.currentFileReference;
+			imageData.bitmapData = pasteFileLoader.bitmapData;
+			imageData.byteArray = pasteFileLoader.data;
+			imageData.name = pasteFileLoader.currentFileReference.name;
+			imageData.contentType = pasteFileLoader.loaderContentType;
+			imageData.file = pasteFileLoader.currentFileReference;
+			
+			addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+			addImageDataToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+			//list.selectedItem = data;
+			
+			//uploadAttachment(fileLoader.fileReference);
+		}
+		
+		/**
+		 * Occurs after files are dropped into the document are fully loaded 
+		 * */
+		protected function dropFileCompleteHandler(event:Event):void {
+			
+			// if we need to load the images ourselves then skip complete event
+			// and wait until loader complete event
+			if (dropFileLoader.loadIntoLoader && event.type!=LoadFile.LOADER_COMPLETE) {
+				return;
+			}
+			
+			if (!documentThatPasteOfFilesToBeLoadedOccured) {
+				error("No document was found to add a file into");
+				return;
+			}
+			
+			if (loadingPSD) {
+				loadingPSD = false;
+				info("Importing PSD");
+				callAfter(250, addPSDToDocument, dropFileLoader.data, documentThatPasteOfFilesToBeLoadedOccured);
+				return;
+			}
+			
+			var imageData:ImageData = new ImageData();
+			imageData.bitmapData = dropFileLoader.bitmapData;
+			imageData.byteArray = dropFileLoader.data;
+			imageData.name = dropFileLoader.currentFileReference.name;
+			imageData.contentType = dropFileLoader.loaderContentType;
+			imageData.file = dropFileLoader.currentFileReference;
 			
 			addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
 			addImageDataToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
@@ -4367,6 +5148,16 @@ package com.flexcapacitor.controller {
 				dragSource.hasFormat("air:file list") || 
 				dragSource.hasFormat("air:url") || 
 				dragSource.hasFormat("air:bitmap")) {
+				var url:String;
+				
+				// if internal html preview is visible we should return false sinc
+				// dragged images are triggering the drop panel
+				if (instance.isDocumentPreviewOpen(instance.selectedDocument) && 
+					dragSource.hasFormat("air:url")) {
+					// http://www.radii8.com/.../image.jpg
+					//url = dragSource.dataForFormat(ClipboardFormats.URL_FORMAT) as String;
+					return false;
+				}
 				return true;
 			}
 			
@@ -5422,7 +6213,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					instance.dispatchMoveEvent(items, changes, properties);
 				}
 				
-				setTargets(items, true);
+				//setTargets(items, true);
 				
 				if (properties) {
 					instance.dispatchPropertyChangeEvent(items, changes, properties, styles);
@@ -5689,7 +6480,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			}*/
 			
 			if (visualElement is Application) {
-				info("You can't remove the design view");
+				//info("You can't remove the document");
 				return REMOVE_ERROR;
 			}
 			
@@ -5938,29 +6729,30 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * 
 		 * @see #updateComponentAfterAdd()
 		 * */
-		public static function createComponentToAdd(iDocument:IDocument, item:ComponentDefinition, setDefaults:Boolean = true):Object {
+		public static function createComponentToAdd(iDocument:IDocument, componentDefinition:ComponentDefinition, setDefaults:Boolean = true):Object {
 			var componentDescription:ComponentDescription = new ComponentDescription();
 			var classFactory:ClassFactory;
 			var componentInstance:Object;
 			
 			// Create component to drag
-			classFactory = new ClassFactory(item.classType as Class);
+			classFactory = new ClassFactory(componentDefinition.classType as Class);
 			
 			if (setDefaults) {
 				//classFactory.properties = item.defaultProperties;
-				componentDescription.properties = item.defaultProperties;
-				componentDescription.defaultProperties = item.defaultProperties;
+				componentDescription.properties = componentDefinition.defaultProperties;
+				componentDescription.defaultProperties = componentDefinition.defaultProperties;
 			}
 			
 			componentInstance = classFactory.newInstance();
 			
 			componentDescription.instance = componentInstance;
-			componentDescription.name = item.name;
+			componentDescription.name = componentDefinition.name;
+			componentDescription.className = componentDefinition.name;
 			
 			if (setDefaults) {
 				var properties:Array = [];
 				
-				for (var property:String in item.defaultProperties) {
+				for (var property:String in componentDefinition.defaultProperties) {
 					//setProperty(component, property, [item.defaultProperties[property]]);
 					properties.push(property);
 				}
@@ -6878,9 +7670,9 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				html.id = iDocument.name ? iDocument.name : html.name; // should we be setting id like this?
 				html.percentWidth = 100;
 				html.percentHeight = 100;
-				html.top = 20;
-				html.left = 20;
-				html.setStyle("backgroundColor", "#666666");
+				html.top = -10;
+				html.left = 0;
+				//html.setStyle("backgroundColor", "#666666");
 				html.addEventListener("uncaughtScriptException", uncaughtScriptExceptionHandler, false, 0, true);//HTMLUncaughtScriptExceptionEvent.uncaughtScriptException
 				
 				navigatorContent.addElement(html);
@@ -6919,10 +7711,15 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * @see isDocumentSelected
 		 * */
 		public function isDocumentPreviewOpen(document:IDocument):Boolean {
-			var openTabs:Array = documentsTabNavigator.getChildren();
+			var openTabs:Array = documentsTabNavigator && documentsTabNavigator.getChildren() ? documentsTabNavigator.getChildren() : [];
 			var tabCount:int = openTabs.length;
 			var tab:NavigatorContent;
 			var tabContent:Object;
+			
+			if (tabCount==0) {
+				return false;
+			}
+			
 			var documentContainer:Object = documentsPreviewDictionary[document];
 			
 			for (var i:int;i<tabCount;i++) {
@@ -8550,6 +9347,156 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			return anyDocumentSaved;
 		}
+		
+		/**
+		 * Save all attachments. 
+		 * */
+		public function saveAllAttachments(iDocument:DocumentData, saveToProject:Boolean = false, locations:String = null, saveEvenIfClean:Boolean = true):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var loadLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var loadRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
+			var document:IDocument;
+			var anyDocumentSaved:Boolean;
+			var numberOfAttachments:int;
+			var numberOfAttachmentsToUpload:int;
+			var numberOfAssets:int;
+			var attachmentData:AttachmentData;
+			var imageData:ImageData;
+			var targetPostID:String;
+			var projectID:String;
+			var attachmentParentID:String;
+			var hasAttachments:Boolean;
+			var customData:Object;
+			var uploadingStillInProgress:Boolean;
+
+			// Continues in uploadAttachmentResultsHandler
+			
+			if (uploadAttachmentInProgress) {
+				callAfter(100, saveAllAttachments, iDocument, saveToProject, locations, saveEvenIfClean);
+				return true;
+			}
+			
+			if (saveToProject) {
+				projectID = iDocument.parentId;
+				targetPostID = projectID;
+			}
+			else {
+				targetPostID = iDocument.id;
+			}
+			
+			// save attachments
+			numberOfAssets = assets.length;
+			
+			if (numberOfAssets==0) {
+				info("No attachments to save");
+				return false;
+			}
+			
+			if (attachmentsToUpload==null) {
+				attachmentsToUpload = [];
+			}
+			else if (attachmentsToUpload.length) {
+				uploadingStillInProgress = true;
+			}
+			
+			// get attachments that still need uploading
+			
+			if (!uploadingStillInProgress) {
+				for (var i:int=0;i<numberOfAssets;i++) {
+					attachmentData = assets[i] as AttachmentData;
+					
+					if (attachmentData) {
+						attachmentParentID = attachmentData.parentId;
+						
+						if (attachmentParentID==null) {
+							attachmentData.parentId = iDocument.id;
+							attachmentParentID = iDocument.id;
+						}
+						
+						// only add if matches document or project
+						// you need to set the parent ID at 
+						if (attachmentParentID!=targetPostID && attachmentParentID!=projectID) {
+							continue;
+						}
+						
+						if (attachmentData.id==null) {
+							
+							if (attachmentsToUpload.indexOf(attachmentsToUpload)==-1) {
+								attachmentsToUpload.push(attachmentData);
+							}
+						}
+					}
+				}
+			}
+			
+			numberOfAttachmentsToUpload = attachmentsToUpload.length;
+			customData = {};
+			
+			for (var m:int = 0; m < numberOfAttachmentsToUpload; m++) {
+				attachmentData = attachmentsToUpload[m];
+				
+				if (attachmentData.uid) {
+					customData["custom[uid]"] = attachmentData.uid;
+					customData["caption"] = attachmentData.uid;
+					customData["post_excerpt"] = attachmentData.uid;
+					customData["post_title"] = attachmentData.name;
+				}
+				
+				imageData = attachmentData as ImageData;
+				
+				if (imageData) {
+					if (imageData.byteArray==null && imageData.bitmapData) {
+						imageData.byteArray = DisplayObjectUtils.getBitmapByteArray(imageData.bitmapData);
+						//imageData.name = ClassUtils.getIdentifierNameOrClass(initiator) + ".png";
+						imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
+						imageData.file = null;
+					}
+					
+					if (!imageData.saveInProgress && imageData.id==null) {
+						
+						//imageData.save();
+						hasAttachments = true;
+						imageData.saveInProgress = true;
+						currentAttachmentToUpload = imageData;
+						
+						//trace("Uploading attachment " + currentAttachmentToUpload.name + " to post " + targetPostID);
+						
+						uploadAttachment(imageData.byteArray, targetPostID, imageData.name, null, imageData.contentType, customData);
+						break;
+					}
+				}
+				else {
+					
+					hasAttachments = true;
+					attachmentData.saveInProgress = true;
+					currentAttachmentToUpload = attachmentData;
+					
+					//trace("Uploading attachment " + currentAttachmentToUpload.name + " to post " + targetPostID);
+					
+					uploadAttachment(attachmentData.byteArray, targetPostID, attachmentData.name, null, attachmentData.contentType, customData);
+					break;
+				}
+			}
+			
+			
+			//for (var i:int;i<numberOfAttachments;i++) {
+				//document = documents[i];
+				
+				//document.upload(locations);
+				// TODO add support to save after response from server 
+				// because ID's may have been added from new documents
+				//saveData();
+				//document.saveCompleteCallback = saveData;
+				//saveDocumentLocally(document);
+			//	anyDocumentSaved = true;
+			//}
+			
+			if (hasAttachments) {
+				callAfter(100, saveAllAttachments, iDocument, saveToProject, locations, saveEvenIfClean);
+			}
+			
+			return anyDocumentSaved;
+		}
 
 		/**
 		 * Save document as
@@ -8806,9 +9753,46 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		}
 		
 		/**
-		 * Upload image to the server
+		 * Upload attachment data to the server
 		 * */
-		public function uploadAttachment(data:Object, id:String, fileName:String = null, dataField:String = null, contentType:String = null):void {
+		public function uploadAttachmentData(attachmentData:AttachmentData, id:String):void {
+			if (attachmentData==null) {
+				warn("No attachment to upload");
+				return;
+			}
+			
+			var imageData:ImageData = attachmentData as ImageData;
+			var formattedName:String = attachmentData.name!=null ? attachmentData.name : null;
+			
+			if (formattedName) {
+				
+				if (formattedName.indexOf(" ")!=-1) {
+					formattedName = formattedName.replace(/ /g, "");
+				}
+			}
+			
+			if (imageData && imageData.bitmapData && imageData.byteArray==null) {
+				attachmentData.byteArray = DisplayObjectUtils.getBitmapByteArray(BitmapData(imageData.bitmapData));
+				
+				if (formattedName && formattedName.indexOf(".")==-1) {
+					formattedName = formattedName + ".png";
+				}
+				
+				imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
+			}
+			
+			
+			uploadAttachment(attachmentData.byteArray, id, formattedName, null, attachmentData.contentType, null, attachmentData);
+		}
+		
+		/**
+		 * Upload image to the server.
+		 * File name cannot have spaces and must have an extension.
+		 * If you pass bitmap data it is converted to a PNG
+		 * */
+		public function uploadAttachment(data:Object, id:String, fileName:String = null, 
+										 dataField:String = null, contentType:String = null, 
+										 customData:Object = null, attachmentData:AttachmentData = null):void {
 			// get selected document
 			
 			// we need to create service
@@ -8825,23 +9809,60 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				uploadAttachmentService.id = id;
 			}
 			
+			if (attachmentData) {
+				currentAttachmentToUpload = attachmentData;
+				currentAttachmentToUpload.saveInProgress = true;
+			}
+			
+			uploadAttachmentService.customData = customData;
+			
 			uploadAttachmentInProgress = true;
+			
+			var formattedName:String = fileName!=null ? fileName : null;
+			
+			if (formattedName) {
+				
+				if (formattedName.indexOf(" ")!=-1) {
+					formattedName = formattedName.replace(/ /g, "");
+				}
+				
+				if (formattedName.indexOf(".")==-1) {
+					
+					if (contentType==DisplayObjectUtils.PNG_MIME_TYPE) {
+						formattedName = formattedName + ".png";
+					}
+				}
+			}
+			
 			
 			if (data is FileReference) {
 				uploadAttachmentService.file = data as FileReference;
 				uploadAttachmentService.uploadAttachment();
 			}
 			else if (data) {
-				uploadAttachmentService.fileData = data as ByteArray;
 				
-				if (fileName) {
-					uploadAttachmentService.fileName = fileName;
+				if (data is ByteArray) {
+					uploadAttachmentService.fileData = data as ByteArray;
+				}
+				else if (data is BitmapData) {
+					uploadAttachmentService.fileData = DisplayObjectUtils.getBitmapByteArray(BitmapData(data));
+					
+					if (formattedName && formattedName.indexOf(".")==-1) {
+						formattedName = formattedName + ".png";
+					}
+					
+					contentType = DisplayObjectUtils.PNG_MIME_TYPE;
+				}
+				
+				if (formattedName) {
+					uploadAttachmentService.fileName = formattedName;
 				}
 				
 				if (dataField) {
 					uploadAttachmentService.dataField = dataField;
 				}
 				
+				// default content type in service is application/octet
 				if (contentType) {
 					uploadAttachmentService.contentType = contentType;
 				}
@@ -8849,6 +9870,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				uploadAttachmentService.uploadAttachment();
 			}
 			else {
+				attachmentData.saveInProgress = false;
+				uploadAttachmentInProgress = false;
 				warn("No data or file is available for upload. Please select the file to upload.");
 			}
 			
@@ -9016,68 +10039,114 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		public function uploadAttachmentResultsHandler(event:IServiceEvent):void {
 			//Radiate.info("Upload attachment");
 			var data:Object = event.data;
-			var potentialAttachments:Array = [];
+			//var potentialAttachments:Array = [];
 			var successful:Boolean = data && data.status && data.status=="ok" ? true : false;
-			var length:int;
-			var object:Object;
-			var attachment:AttachmentData;
-			var asset:AttachmentData;
+			var numberOfRemoteAttachments:int;
+			//var remoteAttachment:Object;
+			//var remoteAttachmentData:AttachmentData;
+			//var attachmentData:AttachmentData;
 			var remoteAttachments:Array = data && data.post && data.post.attachments ? data.post.attachments : []; 
 			var containsName:Boolean;
-			var assetsLength:int;
+			var numberOfAttachmentsToUpload:int;
+			var numberOfDocuments:int;
+			var foundAttachment:Boolean;
+			var lastAddedRemoteAttachment:Object;
+			//var currentAttachment:AttachmentData;
 			
-			if (remoteAttachments.length>0) {
-				length = remoteAttachments.length;
+			// current attachment being uploaded
+			//currentAttachmentToUpload
+			
+			// last attachment successfully uploaded
+			lastAddedRemoteAttachment = remoteAttachments && remoteAttachments.length ? remoteAttachments[remoteAttachments.length-1]: null;
+
+			var localIDExists:Boolean = com.flexcapacitor.utils.ArrayUtils.hasItem(assets, lastAddedRemoteAttachment.id, "id");
+			
+			if (currentAttachmentToUpload) {
+				currentAttachmentToUpload.saveInProgress = false;
+			}
+			
+			if (lastAddedRemoteAttachment && currentAttachmentToUpload) {
+				//trace("Last uploaded attachment is " + lastAddedRemoteAttachment.title + " with id of " + lastAddedRemoteAttachment.id);
+				containsName = lastAddedRemoteAttachment.slug.indexOf(currentAttachmentToUpload.slugSafeName)!=-1;
+			}
+			
+			if (!localIDExists) {
+				/*
+				if (String(remoteAttachment.mime_type).indexOf("image/")!=-1) {
+					remoteAttachmentData = new ImageData();
+					remoteAttachmentData.unmarshall(lastRemoteAttachment);
+				}
+				else {
+					remoteAttachmentData = new AttachmentData();
+					remoteAttachmentData.unmarshall(lastRemoteAttachment);
+				}*/
+				foundAttachment = true;
 				
-				for (var i:int;i<length;i++) {
-					object = remoteAttachments[i];
+				if (currentAttachmentToUpload) {
+					currentAttachmentToUpload.unmarshall(lastAddedRemoteAttachment);
+					currentAttachmentToUpload.uploadFailed = false;
+				}
+				
+				// loop through documents and replace bitmap data with url to source
+				numberOfDocuments = documents.length;
+				k = 0;
+				
+				for (var k:int;k<numberOfDocuments;k++) {
+					var iDocument:IDocument = documents[k] as IDocument;
 					
-					if (String(object.mime_type).indexOf("image/")!=-1) {
-						attachment = new ImageData();
-						attachment.unmarshall(object);
-					}
-					else {
-						attachment = new AttachmentData();
-						attachment.unmarshall(object);
-					}
-					
-					potentialAttachments.push(attachment);
-					
-					//attachments = potentialAttachments;
-					assetsLength = assets.length;
-					j = 0;
-					
-					for (var j:int;j<assetsLength;j++) {
-						asset = assets.getItemAt(j) as AttachmentData;
-						containsName = asset ? asset.name.indexOf(attachment.name)==0 : false;
-						
-						// this is not very robust but since uploading only supports one at a time 
-						// it should be fine. when supporting multiple uploading, keep
-						// track of items being uploaded
-						if (containsName && asset.id==null) {
-							asset.unmarshall(attachment);
-							
-							var documentLength:int = documents.length;
-							k = 0;
-							
-							for (var k:int;k<documentLength;k++) {
-								var iDocument:IDocument = documents[k] as IDocument;
-								
-								if (iDocument) {
-									DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData, [asset]);
-								}
-							}
-							
-							break;
-						}
+					if (iDocument) {
+						DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData, [currentAttachmentToUpload]);
 					}
 				}
 			}
+			else {
+				warn("Attachment " + currentAttachmentToUpload.name + " could not be uploaded");
+				currentAttachmentToUpload ? currentAttachmentToUpload.uploadFailed = true : -1;
+				successful = false;
+				foundAttachment = false;
+			}
 			
+			lastAttemptedUpload = attachmentsToUpload && attachmentsToUpload.length ? attachmentsToUpload.unshift() : null;
 			
 			uploadAttachmentInProgress = false;
 			
-			dispatchUploadAttachmentResultsEvent(successful, potentialAttachments, data.post);
+			if (!foundAttachment) {
+				successful = false;
+				dispatchUploadAttachmentResultsEvent(successful, [], data.post);
+			}
+			else {
+				dispatchUploadAttachmentResultsEvent(successful, [currentAttachmentToUpload], data.post);
+			}
+			
+			if (attachmentsToUpload && attachmentsToUpload.length) {
+				// we should do this sequencially
+			}
+			
+			currentAttachmentToUpload = null;
+		}
+		
+		/**
+		 * Result from upload attachment fault
+		 * */
+		public function uploadAttachmentFaultHandler(event:IServiceEvent):void {
+			Radiate.info("Upload attachment fault");
+			
+			lastAttemptedUpload = attachmentsToUpload && attachmentsToUpload.length ? attachmentsToUpload.unshift() : null;
+			
+			uploadAttachmentInProgress = false;
+			
+			if (currentAttachmentToUpload) {
+				currentAttachmentToUpload.saveInProgress = false;
+			}
+			
+			if (attachmentsToUpload.length) {
+				// we should do this sequencially
+			}
+			
+			//dispatchEvent(saveResultsEvent);
+			dispatchUploadAttachmentResultsEvent(false, [], event.data, event.faultEvent);
+			
+			currentAttachmentToUpload = null;
 		}
 		
 		/**
@@ -9092,23 +10161,13 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				instance = component.instance;
 				
 				if (instance is Image || instance is BitmapImage) {
-					if (instance.source == imageData.bitmapData) {
+					if (instance.source is BitmapData && 
+						instance.source == imageData.bitmapData && 
+						imageData.bitmapData!=null) {
 						Radiate.setProperty(instance, "source", imageData.url);
 					}
 				}
 			}
-		}
-		
-		/**
-		 * Result from upload attachment fault
-		 * */
-		public function uploadAttachmentFaultHandler(event:IServiceEvent):void {
-			Radiate.info("Upload attachment fault");
-			
-			uploadAttachmentInProgress = false;
-			
-			//dispatchEvent(saveResultsEvent);
-			dispatchUploadAttachmentResultsEvent(false, [], event.data);
 		}
 		
 		/**
@@ -9238,6 +10297,76 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			deleteDocumentInProgress = false;
 			
 			dispatchDocumentDeletedEvent(false, data);
+		}
+		
+		/**
+		 * Delete attachments. You should save the project after
+		 * document is deleted.
+		 * */
+		public function deleteAttachmentsResultsHandler(event:IServiceEvent):void {
+			//..Radiate.info("Delete document results");
+			var data:Object = event.data;
+			var deletedItems:Object = data ? data.deletedItems : [];
+			var successful:Boolean;
+			var error:String;
+			var message:String;
+			
+			
+			if (data && data is Object && "successful" in data) {
+				successful = data.successful != "false";
+			}
+			
+			deleteAttachmentsInProgress = false;
+			
+			//Include 'id' or 'slug' var in your request.
+			if (event.faultEvent is IOErrorEvent) {
+				message = "Are you connected to the internet? ";
+				
+				if (event.faultEvent is IOErrorEvent) {
+					message = IOErrorEvent(event.faultEvent).text;
+				}
+				else if (event.faultEvent is SecurityErrorEvent) {
+					
+					if (SecurityErrorEvent(event.faultEvent).errorID==2048) {
+						
+					}
+					
+					message += SecurityErrorEvent(event.faultEvent).text;
+				}
+			}
+			
+			//status = message;
+			
+			//dispatchDocumentRemovedEvent(null);
+			
+			dispatchAttachmentsDeletedEvent(successful, data);
+			
+			if (successful) {
+				
+				if (deleteDocumentProjectId!=-1 && saveProjectAfterDelete) {
+					var iProject:IProject = getProjectByID(deleteDocumentProjectId);
+					
+					if (iProject) {
+						iProject.save();
+					}
+				}
+				
+			}
+			
+			saveProjectAfterDelete = false;
+		}
+		
+		/**
+		 * Result from delete attachments fault
+		 * */
+		public function deleteAttachmentsFaultHandler(event:IServiceEvent):void {
+			var data:Object = event.data;
+			
+			Radiate.info("Could not connect to the server to delete the document. ");
+			
+			deleteAttachmentsInProgress = false;
+			
+			dispatchAttachmentsDeletedEvent(false, data);
 		}
 
 		
@@ -9597,23 +10726,38 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		/**
 		 * Traces an fatal message
 		 * */
-		public static function fatal(message:String, event:* = null, ...Arguments):void {
+		public static function fatal(message:String, event:* = null, sender:Object = null, ...Arguments):void {
 			var issueData:IssueData;
+			var errorObject:Object;
 			var type:String;
 			var errorID:String;
 			var errorData:ErrorData;
 			var name:String;
+			var className:String = sender ? ClassUtils.getClassName(sender) : "";
 			
 			
 			if (event && "error" in event) {
-				message = event.error.message;
-				type = event.error.type;
-				errorID = event.error.errorID;
-				name = event.error.name;
+				errorObject = event.error;
+				message = "message" in errorObject ? errorObject.message : "";
+				message = "text" in errorObject ? errorObject.text : message;
+				type = "type" in errorObject ? errorObject.type : "";
+				errorID = "errorID" in errorObject ? errorObject.errorID : "";
+				name = "name" in errorObject ? errorObject.name : "";
 			}
 			
+			
 			if (enableDiagnosticLogs) {
-				errorData = addLogData(message, LogEventLevel.FATAL, Arguments) as ErrorData;
+				errorData = addLogData(message, LogEventLevel.ERROR, className, Arguments) as ErrorData;
+				
+				if (errorData) {
+					if (message=="" || message==null) {
+						errorData.description = message;
+					}
+					errorData.type = type;
+					errorData.errorID = errorID;
+					errorData.message = message;
+					errorData.name = name;
+				}
 			}
 			
 			log.error(message, Arguments);
@@ -9625,32 +10769,43 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		/**
 		 * Traces an error message
 		 * */
-		public static function error(message:String, event:* = null, ...Arguments):void {
-			var issueData:IssueData;
-			var type:String;
-			var errorID:String;
+		public static function error(message:String, event:Object = null, sender:String = null, ...Arguments):void {
 			var errorData:ErrorData;
+			var issueData:IssueData;
+			var errorObject:Object;
+			var errorID:String;
+			var type:String;
 			var name:String;
+			var className:String = sender ? ClassUtils.getClassName(sender) : "";
 			
 			if (message=="") {
 				
 			}
 			
 			if (event && "error" in event) {
-				message = event.error.message;
-				type = event.error.type;
-				errorID = event.error.errorID;
-				name = event.error.name;
+				errorObject = event.error;
+			}
+			else if (event is Error) {
+				errorObject = event;
 			}
 			
+			if (errorObject) {
+				message = "message" in errorObject ? errorObject.message : "";
+				message = "text" in errorObject ? errorObject.text : message;
+				type = "type" in errorObject ? errorObject.type : "";
+				errorID = "errorID" in errorObject ? errorObject.errorID : "";
+				name = "name" in errorObject ? errorObject.name : "";
+			}
 			
 			if (enableDiagnosticLogs) {
-				issueData = addLogData(message, LogEventLevel.ERROR, Arguments);
-				errorData = addLogData(message, LogEventLevel.ERROR, Arguments) as ErrorData;
+				issueData = addLogData(message, LogEventLevel.ERROR, className, Arguments);
+				//errorData = addLogData(message, LogEventLevel.ERROR, className, Arguments);
 				
-				if (errorData) {
+				if (issueData is ErrorData) {
+					errorData = ErrorData(issueData);
+					
 					if (message=="" || message==null) {
-						errorData.description = message;
+						ErrorData(errorData).description = message;
 					}
 					errorData.type = type;
 					errorData.errorID = errorID;
@@ -9667,11 +10822,17 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		/**
 		 * Traces an warning message
 		 * */
-		public static function warn(message:String, ...Arguments):void {
+		public static function warn(message:String, sender:Object = null, ...Arguments):void {
+			var className:String = sender ? ClassUtils.getClassName(sender) : "";
+			
+			if (className=="") {
+				//var object:Object = warn.arguments.caller;
+			}
+			
 			log.warn(message, Arguments);
 			
 			if (enableDiagnosticLogs) {
-				addLogData(message, LogEventLevel.WARN, Arguments);
+				addLogData(message, LogEventLevel.WARN, className, Arguments);
 			}
 			
 			playMessage(message, LogEventLevel.WARN);
@@ -9680,11 +10841,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		/**
 		 * Traces an info message
 		 * */
-		public static function info(message:String, ...Arguments):void {
+		public static function info(message:String, sender:Object = null, ...Arguments):void {
+			var className:String = sender ? ClassUtils.getClassName(sender) : "";
 			log.info(message, Arguments);
 			
 			if (enableDiagnosticLogs) {
-				addLogData(message, LogEventLevel.INFO, Arguments);
+				addLogData(message, LogEventLevel.INFO, className, Arguments);
 			}
 			
 			playMessage(message, LogEventLevel.INFO);
@@ -9693,11 +10855,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		/**
 		 * Traces an debug message
 		 * */
-		public static function debug(message:String, ...Arguments):void {
+		public static function debug(message:String, sender:Object = null, ...Arguments):void {
+			var className:String = sender ? ClassUtils.getClassName(sender) : "";
 			log.debug(message, Arguments);
 			
 			if (enableDiagnosticLogs) {
-				addLogData(message, LogEventLevel.DEBUG, Arguments);
+				addLogData(message, LogEventLevel.DEBUG, className, Arguments);
 			}
 			
 			playMessage(message, LogEventLevel.DEBUG);
@@ -9706,7 +10869,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		/**
 		 * Adds a new log item for diagnostics and to let user go back and read messages
 		 * */
-		public static function addLogData(message:String, level:int, arguments:Array):IssueData {
+		public static function addLogData(message:String, level:int = 4, className:String = null, arguments:Array = null):IssueData {
 			var issue:IssueData;
 			
 			if (level == LogEventLevel.ERROR || level == LogEventLevel.FATAL) {
@@ -9715,7 +10878,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			else if (level == LogEventLevel.WARN) {
 				issue = new WarningData();
 			}
-			if (level == LogEventLevel.DEBUG || level==LogEventLevel.INFO || level==LogEventLevel.ALL) {
+			else if (level == LogEventLevel.DEBUG || level==LogEventLevel.INFO || level==LogEventLevel.ALL) {
 				issue = new IssueData();
 			}
 			else {
@@ -9724,7 +10887,9 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			issue.description = message;
 			issue.level = level;
+			issue.className = className;
 			logsCollection.addItem(issue);
+			
 			
 			return issue;
 		}
@@ -9776,6 +10941,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		
 		public static var showMessageAnimation:Sequence;
 		public static var showMessageLabel:Label;
+
+		public static var attachmentsToUpload:Array;
+		public static var currentAttachmentToUpload:AttachmentData;
+		public static var lastAttemptedUpload:Object;
 		
 		/**
 		 * Calls a function after a set amount of time. 
@@ -9784,10 +10953,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var sprite:Sprite = new Sprite();
 			var startTime:int = getTimer() + time;
 			
+			// todo: find out if this causes memory leaks
 			sprite.addEventListener(Event.ENTER_FRAME, function(e:Event):void {
 				if (getTimer()>startTime) {
 					sprite.removeEventListener(Event.ENTER_FRAME, arguments.callee);
 					method.apply(this, Arguments);
+					method = null;
 				}
 			});
 		}
@@ -10063,6 +11234,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			}
 			
 			return bitmapData;
+		}
+		
+		public static function goToHomeScreen():void {
+			if (mainView) {
+				mainView.currentState = MainView.HOME_STATE;
+			}
 		}
 	}
 }

@@ -14,6 +14,8 @@
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			
+			import org.as3commons.lang.ArrayUtils;
+			
 			public var radiate:Radiate;
 			public var target:Object;
 			public var data:Object;
@@ -66,9 +68,19 @@
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
+				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
+					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+						callLater(update);
+					}
+					else {
+						return;
+					}
+				}
 				callLater(update);
 			}
 			
+			public var relevantProperties:Array = ["source", "alpha", "smooth", "smoothingQuality", 
+				"scaleMode", "fillMode", "contentLoaderGrouping", "clearOnLoad"]
 		]]>
 	</fx:Script>
 	

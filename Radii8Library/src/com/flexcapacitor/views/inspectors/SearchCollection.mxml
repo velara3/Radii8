@@ -15,6 +15,7 @@
 	<!-- 
 	Filters an IListCollection object. 
 	Runs when dataProvider changes or any of the components change state.
+	TODO: Listen for change events on the dataprovider
 	-->
 	
 	<fx:Script>
@@ -89,6 +90,17 @@
 					if (filterEffect.filterFunction!=filterFunction) {
 						filterEffect.filterFunction = filterFunction;
 					}
+				}
+			}
+			
+			/**
+			 * Call refresh when the data provider is updated
+			 * TODO maybe listen for dataprovider change events
+			 * */
+			public function refresh():void {
+				
+				if (_dataProvider && filterEffect) {
+					filterEffect.play();
 				}
 			}
 			

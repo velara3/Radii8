@@ -17,6 +17,7 @@
       <libraryPathEntry kind="3" linkType="2" path="/FCLibrary/bin/FCLibrary.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="/FTPLibrary/bin/FTPLibrary.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="/ObjectHandles/bin/ObjectHandles.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="/PSDParser/bin/PSDParser.swc" useDefaultLinkType="false"/>
     </libraryPath>
     <sourceAttachmentPath/>
   </compiler>

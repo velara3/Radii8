@@ -74,8 +74,12 @@
 			protected function handleTargetChange(event:RadiateEvent):void {
 				var sameType:Boolean = radiate.isSameClassType(target, radiate.target);
 				
-				target = radiate.target;
-				
+				if (target!=radiate.target) {
+					target = radiate.target;
+				}
+				else {
+					return;
+				}
 				//if (!sameType) {
 					inspectors = radiate.getInspectors(target);
 					

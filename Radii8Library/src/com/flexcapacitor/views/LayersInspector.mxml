@@ -142,6 +142,11 @@
 				if (identity) {
 					return data.name + " (" + identity + ")";
 				}
+				
+				if (String(data.name).toLowerCase()=="application") {
+					return "Document";
+				}
+				
 				return data.name;
 			}
 			
@@ -648,9 +653,18 @@
 			}
 			
 			protected function removeItem_clickHandler(event:MouseEvent):void {
+				var selectedIndex:int = componentListTree.selectedIndex;
+				
 				if (componentListTree.selectedItem) {
 					var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
 					Radiate.removeElement(componentDescription.instance);
+					
+					if (selectedIndex>0 && componentListTree.dataProvider && componentListTree.dataProvider.length>0) {
+						componentListTree.selectedIndex = selectedIndex-1;
+					}
+					else if (selectedIndex==0 && componentListTree.dataProvider && componentListTree.dataProvider.length>0) {
+						componentListTree.selectedIndex = 0;
+					}
 				}
 			}
 			

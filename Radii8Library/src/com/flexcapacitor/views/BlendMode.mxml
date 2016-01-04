@@ -48,6 +48,9 @@
 
 			protected function applyPropertiesToTargetHandler(event:IndexChangeEvent = null):void {
 				
+				// added new blend mode methods in 
+				// DisplayObjectUtils
+				
 				if (target) {
 					var value:String = blendModeCombo.selectedItem.value;
 					if (value=="auto" && !(target is IVisualElementContainer)) {
@@ -55,6 +58,7 @@
 						// ArgumentError: Error #2008: Parameter blendMode must be one of the accepted values.
 						// group and graphic element allows "auto", display object does not
 					}
+					
 					Radiate.setProperty(target, BLEND_MODE, value);
 				}
 			}
@@ -179,30 +183,98 @@
 		* 
 		-->
 		
+		<!--
+		blendmodes not found: 
+		
+		diss: "dissolve",
+		lbrn: "linear burn",
+		lddg: "linear dodge",
+		vLit: "vivid light",
+		lLit: "linear light",
+		pLit: "pin light",
+		hMix: "hard mix"
+		
+		
+		norm: "normal",
+		dark: "darken",
+		lite: "lighten",
+		hue:  "hue",
+		sat:  "saturation",
+		colr: "color",
+		lum:  "luminosity",
+		mul:  "multiply",
+		scrn: "screen",
+		diss: "dissolve",
+		over: "overlay",
+		hLit: "hard light",
+		sLit: "soft light",
+		diff: "difference",
+		smud: "exclusion",
+		div:  "color dodge",
+		idiv: "color burn",
+		lbrn: "linear burn",
+		lddg: "linear dodge",
+		vLit: "vivid light",
+		lLit: "linear light",
+		pLit: "pin light",
+		hMix: "hard mix"
+		
+		blend mode key from
+		https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/
+		
+		'pass' = pass through, 
+		'norm' = normal, 
+		'diss' = dissolve, 
+		'dark' = darken, 
+		'mul ' = multiply, 
+		'idiv' = color burn, 
+		'lbrn' = linear burn, 
+		'dkCl' = darker color, 
+		'lite' = lighten, 
+		'scrn' = screen, 
+		'div ' = color dodge, 
+		'lddg' = linear dodge, 
+		'lgCl' = lighter color, 
+		'over' = overlay, 
+		'sLit' = soft light, 
+		'hLit' = hard light, 
+		'vLit' = vivid light, 
+		'lLit' = linear light, 
+		'pLit' = pin light, 
+		'hMix' = hard mix, 
+		'diff' = difference, 
+		'smud' = exclusion, 
+		'fsub' = subtract, 
+		'fdiv' = divide,
+		'hue ' = hue, 
+		'sat ' = saturation, 
+		'colr' = color, 
+		'lum ' = luminosity
+		-->
 		<fx:Array id="blendModes">
-			<fx:Object id="firstItem" label="Auto" value="auto"/>
-			<fx:Object label="Add" value="add"/>
-			<fx:Object label="Alpha" value="alpha"/>
-			<fx:Object label="Color" value="color"/>
-			<fx:Object label="Color Burn" value="colorburn"/>
-			<fx:Object label="Color Dodge" value="colordodge"/>
-			<fx:Object label="Darken" value="darken"/>
-			<fx:Object label="Difference" value="difference"/>
-			<fx:Object label="Erase" value="erase"/>
-			<fx:Object label="Exclusion" value="exclusion"/>
-			<fx:Object label="Hardlight" value="hardlight"/>
-			<fx:Object label="Hue" value="hue"/>
-			<fx:Object label="Invert" value="invert"/>
-			<fx:Object label="Layer" value="layer"/>
-			<fx:Object label="Lighten" value="lighten"/>
-			<fx:Object label="Luminosity" value="luminosity"/>
-			<fx:Object label="Multiply" value="multiply"/>
-			<fx:Object label="Normal" value="normal"/>
-			<fx:Object label="Overlay" value="overlay"/>
-			<fx:Object label="Saturation" value="saturation"/>
-			<fx:Object label="Screen" value="screen"/>
-			<fx:Object label="Softlight" value="softlight"/>
-			<fx:Object label="Subtract" value="subtract"/>
+			<fx:Object label="Auto" value="auto" id="firstItem" key=""/>
+			<fx:Object label="Add" value="add" 					key=""/>
+			<fx:Object label="Alpha" value="alpha" 				key=""/>
+			<fx:Object label="Color" value="color" 				key="colr"/>
+			<fx:Object label="Color Burn" value="colorburn" 	key="idiv"/>
+			<fx:Object label="Color Dodge" value="colordodge" 	key="div"/>
+			<fx:Object label="Darken" value="darken" 			key="dark"/>
+			<fx:Object label="Difference" value="difference" 	key="diff"/>
+			<fx:Object label="Erase" value="erase" 				key=""/>
+			<fx:Object label="Exclusion" value="exclusion" 		key="smud"/>
+			<fx:Object label="Hardlight" value="hardlight" 		key="hLit"/>
+			<fx:Object label="Hue" value="hue" 					key="hue"/>
+			<fx:Object label="Invert" value="invert" 			key=""/>
+			<fx:Object label="Layer" value="layer" 				key=""/>
+			<fx:Object label="Lighten" value="lighten" 			key="lite"/>
+			<fx:Object label="Luminosity" value="luminosity" 	key="lum"/>
+			<fx:Object label="Multiply" value="multiply" 		key="mul"/>
+			<fx:Object label="Normal" value="normal" 			key="" />
+			<fx:Object label="Overlay" value="overlay" 			key="over"/>
+			<fx:Object label="Saturation" value="saturation" 	key="sat"/>
+			<fx:Object label="Screen" value="screen" 			key="scrn"/>
+			<fx:Object label="Softlight" value="softlight" 		key="sLit"/>
+			<fx:Object label="Subtract" value="subtract" 		key="fsub"/>
 		</fx:Array>
 		
 		<s:ArrayCollection id="blendModesCollection" source="{blendModes}"/>

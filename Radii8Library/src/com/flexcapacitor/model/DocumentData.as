@@ -1,6 +1,7 @@
 
 package com.flexcapacitor.model {
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.managers.ServicesManager;
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.services.IWPService;
 	import com.flexcapacitor.services.IWPServiceEvent;
@@ -11,6 +12,7 @@ package com.flexcapacitor.model {
 	import com.flexcapacitor.utils.MXMLDocumentExporter;
 	import com.flexcapacitor.utils.XMLUtils;
 	
+	import flash.events.Event;
 	import flash.events.IEventDispatcher;
 	import flash.net.FileReference;
 	import flash.net.URLVariables;
@@ -387,8 +389,8 @@ package com.flexcapacitor.model {
 		 * @inheritDoc
 		 * */
 		public function save(locations:String = LOCAL_LOCATION, options:Object = null):Boolean {
-			var saveRemote:Boolean = locations.indexOf(REMOTE_LOCATION)!=-1;
-			var saveLocally:Boolean = locations.indexOf(LOCAL_LOCATION)!=-1;
+			var saveRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
+			var saveLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
 			var form:URLVariables;
 			
 			// if importing document but save doesn't happen while online
@@ -400,11 +402,10 @@ package com.flexcapacitor.model {
 			//Radiate.info("Save");
 				// we need to create service
 				if (saveService==null) {
-					var wpSaveService:WPService = new WPService();
-					wpSaveService.host = host;
-					wpSaveService.addEventListener(WPServiceBase.RESULT, saveResultsHandler, false, 0, true);
-					wpSaveService.addEventListener(WPServiceBase.FAULT, saveFaultHandler, false, 0, true);
-					saveService = wpSaveService;
+					saveService = new WPService();
+					saveService.host = host;
+					saveService.addEventListener(WPServiceBase.RESULT, saveResultsHandler, false, 0, true);
+					saveService.addEventListener(WPServiceBase.FAULT, saveFaultHandler, false, 0, true);
 				}
 				
 				saveSuccessful = false;
@@ -441,8 +442,8 @@ package com.flexcapacitor.model {
 		 * Open 
 		 * */
 		public function open(location:String = null):void {
-			var loadRemote:Boolean = location==REMOTE_LOCATION;
-			var loadLocally:Boolean = location==LOCAL_LOCATION;
+			var loadRemote:Boolean = ServicesManager.getIsRemoteLocation(location);
+			var loadLocally:Boolean = ServicesManager.getIsLocalLocation(location);
 			
 			if (location==REMOTE_LOCATION) {
 				//Radiate.info("Open Document Remote");
@@ -576,10 +577,28 @@ package com.flexcapacitor.model {
 		 * */
 		public function saveFaultHandler(event:IServiceEvent):void {
 			var saveResultsEvent:SaveResultsEvent = new SaveResultsEvent(SaveResultsEvent.SAVE_RESULTS);
+			var service:IWPService = saveService;
+			var errorEvent:Object = service && "errorEvent" in service ? WPService(service).errorEvent : null;
+			var errorID:int;
+			var errorText:String;
+			var errorType:String;
 			
-			Radiate.error("Error when trying to save document: "+ name + ".");
+			if (errorEvent) {
+				errorText = "text" in errorEvent ? errorEvent.text : "";
+				errorText = "message" in errorEvent ? errorEvent.message : errorText;
+				errorID = "errorID" in errorEvent ? errorEvent.errorID : 0;
+				errorType = "type" in errorEvent ? errorEvent.type : "";
+				
+				Radiate.error("Error when saving document: "+ name + ". You may be disconnect. Connect and try again", errorEvent);
+			}
+			else {
+				Radiate.error("Error when trying to save document: "+ name + ".", saveResultsEvent);
+			}
 			
 			saveInProgress = false;
+			
+			saveResultsEvent.faultEvent = event as Event;
+			saveResultsEvent.errorEvent = errorEvent;
 			
 			dispatchEvent(saveResultsEvent);
 		}
@@ -628,6 +647,9 @@ package com.flexcapacitor.model {
 				}
 				//Radiate.info("Document not opened: "+ name);
 			}
+			
+			// add assets
+			Radiate.instance.addAssetsToDocument(assets, this);
 			
 			openResultsEvent.data = data;
 			openResultsEvent.text = event.text;
@@ -704,27 +726,25 @@ package com.flexcapacitor.model {
 		 * Parses attachments
 		 * */
 		public function parseAttachments(attachments:Array):void {
-			var length:int;
+			var numberOfAttachments:int;
 			var object:Object;
-			var attachment:AttachmentData;
+			var attachmentData:AttachmentData;
+			numberOfAttachments = attachments ? attachments.length : 0;
 			
-			if (attachments && attachments.length>0) {
-				length = attachments.length;
 				
-				for (var i:int;i<length;i++) {
-					object = attachments[i];
-					
-					if (String(object.mime_type).indexOf("image/")!=-1) {
-						attachment = new ImageData();
-						attachment.unmarshall(object);
-					}
-					else {
-						attachment = new AttachmentData();
-						attachment.unmarshall(object);
-					}
-					
-					addAsset(attachment);
+			for (var i:int;i<numberOfAttachments;i++) {
+				object = attachments[i];
+				
+				if (String(object.mime_type).indexOf("image/")!=-1) {
+					attachmentData = new ImageData();
+					attachmentData.unmarshall(object);
 				}
+				else {
+					attachmentData = new AttachmentData();
+					attachmentData.unmarshall(object);
+				}
+				
+				addAsset(attachmentData);
 			}
 		}
 		
@@ -732,10 +752,10 @@ package com.flexcapacitor.model {
 		 * Add an asset
 		 * */
 		public function addAsset(asset:AttachmentData):Boolean {
-			var length:int = assets ? assets.length:0;
+			var numberOfAssets:int = assets ? assets.length:0;
 			var exists:Boolean;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfAssets;i++) {
 				if (assets[i].id==asset.id) {
 					exists = true;
 					break;
@@ -847,6 +867,7 @@ package com.flexcapacitor.model {
 		 * */
 		override public function unmarshall(data:Object):void {
 			super.unmarshall(data);
+			
 			// this should probably be overriden by sub classes
 			if (data is IDocumentData) {
 				source 	= data.source;

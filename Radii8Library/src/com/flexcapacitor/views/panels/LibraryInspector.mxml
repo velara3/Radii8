@@ -47,6 +47,7 @@
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.services.WPAttachmentService;
+			import com.flexcapacitor.utils.ArrayUtils;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.DragManagerUtil;
@@ -66,7 +67,6 @@
 			import spark.components.Application;
 			import spark.components.Group;
 			import spark.components.Image;
-			import spark.components.Label;
 			import spark.events.IndexChangeEvent;
 			
 			[Bindable]
@@ -91,6 +91,9 @@
 			
 			public var uploadAutomatically:Boolean;
 			
+			private var documentID:int;
+			private var projectID:int;
+			
 			public function activate():void {
 				radiate = Radiate.getInstance();
 				
@@ -98,8 +101,11 @@
 				radiate.addEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ASSET_ADDED, assetAdded, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ASSETS_REMOVED, assetRemoved, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ATTACHMENTS_DELETED, attachmentsDeleted, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChanged, false, 0, true);
 				
+				updateDocuments();
 				updateAssets();
 			}
 			
@@ -109,6 +115,8 @@
 					radiate.removeEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived);
 					radiate.removeEventListener(RadiateEvent.ASSET_ADDED, assetAdded);
 					radiate.removeEventListener(RadiateEvent.ASSET_REMOVED, assetRemoved);
+					radiate.removeEventListener(RadiateEvent.ASSETS_REMOVED, assetRemoved);
+					radiate.removeEventListener(RadiateEvent.ATTACHMENTS_DELETED, attachmentsDeleted);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChanged);
 				}
 			}
@@ -369,57 +377,6 @@
 				}
 			}
 			
-			protected function openIcon_clickHandler(event:MouseEvent):void {
-				selectFileToUpload();
-			}
-			
-			/**
-			 * Select a file for upload
-			 * */
-			public function selectFileToUpload():void {
-				fileReference = new FileReference();
-				fileReference.browse();
-				fileReference.addEventListener(Event.SELECT, fileSelected, false, 0, true);
-				fileReference.addEventListener(Event.COMPLETE, fileComplete, false, 0, true);
-			}
-			
-			/**
-			 * File selected
-			 * */
-			protected function fileSelected(event:Event):void {
-				var byteArray:ByteArray = fileReference.data;
-				
-				fileReference.load();
-			}
-			
-			/**
-			 * File load complete
-			 * */
-			protected function fileComplete(event:Event):void {
-				var data:ImageData = new ImageData();
-				data.bitmapData;
-				
-			}
-			
-			/**
-			 * File load complete
-			 * */
-			protected function loadFile_completeHandler(event:Event):void {
-				var imageData:ImageData = new ImageData();
-				imageData.bitmapData = loadFile.bitmapData;
-				imageData.byteArray = loadFile.data;
-				imageData.name = loadFile.currentFileReference.name;
-				imageData.contentType = loadFile.loaderContentType;
-				imageData.file = loadFile.currentFileReference;
-				
-				radiate.addAssetToDocument(imageData, radiate.selectedDocument);
-				
-				list.selectedItem = imageData;
-				
-				if (uploadAutomatically) {
-					uploadAttachment(loadFile.fileReference);
-				}
-			}
 			
 			/**
 			 * Upload file
@@ -449,29 +406,38 @@
 			 * */
 			public function uploadAttachment(data:Object):void {
 				var postID:String;
+				var attachmentData:AttachmentData = data as AttachmentData;
 				var imageData:ImageData = data as ImageData;
 				var fileReference:FileReference = data as FileReference;
 				
 				radiate.addEventListener(RadiateEvent.ATTACHMENT_UPLOADED, uploadAttachmentResult, false, 0, true);
-
-				// upload attachment to project
-				postID = radiate.selectedProject ? radiate.selectedProject.id : null;
 				
+				// try to upload to an account not document
+				// upload attachment to project
+				postID = radiate.selectedDocument ? radiate.selectedDocument.id : null;
+				
+				// this should be user choice
 				// if project is not available for some reason upload to document
+				// if document is not available for some reason upload to project
 				if (postID==null) {
-					postID = radiate.selectedDocument ? radiate.selectedDocument.id : null;
+					postID = radiate.selectedProject ? radiate.selectedProject.id : null;
 				}
 				
 				if (postID==null) {
 					Radiate.info("Please save the document or project first.");
+					return;
 				}
 				
 				if (fileReference) {
-					radiate.uploadAttachment(fileReference, postID);
+					
+					Radiate.info("Importing PSD");
+					Radiate.callAfter(250, radiate.uploadAttachment, fileReference, postID);
 				}
-				else if (imageData) {
-					currentUpload = imageData;
-					radiate.uploadAttachment(imageData.byteArray, postID, imageData.name, null, imageData.contentType); // try to upload to an account not document
+				else if (attachmentData) {
+					currentUpload = attachmentData;
+					
+					Radiate.info("Importing PSD");
+					Radiate.callAfter(250, radiate.uploadAttachmentData, attachmentData, postID);
 				}
 			}
 			
@@ -519,8 +485,15 @@
 				radiate.getAttachments(searchID);
 			}
 			
-			protected function assetAdded(event:Event):void {
+			protected function assetAdded(event:RadiateEvent):void {
 				updateAssets();
+				
+				var data:Object = event.data;
+				//list.selectedItem = event.data;
+				
+				if (uploadAutomatically) {
+					//uploadAttachment(loadFile.fileReference);
+				}
 			}
 			
 			protected function assetRemoved(event:Event):void {
@@ -529,6 +502,11 @@
 			
 			private function updateAssets():void {
 				// to do filter assets by document
+				var selectedIndex:int;
+				
+				if (list.selectedItem!=null) {
+					selectedIndex = list.selectedIndex;
+				}
 				
 				// not sure why it's not deleting the last item
 				if (radiate.assets.length==0) {
@@ -549,6 +527,17 @@
 						libraryCollection.refresh();
 					}
 				}
+				
+				if (searchCollection) {
+					searchCollection.refresh();
+				}
+				
+				if (selectedIndex>0) {
+					list.validateNow();
+					list.ensureIndexIsVisible(selectedIndex);
+				}
+				
+				
 			}
 			
 			protected function library_dragEnterHandler(event:DragEvent):void {
@@ -694,9 +683,9 @@
 			} 
 			*/
 			
-			public function libraryFilterFunction(item:Object):Boolean {
-				var imageData:ImageData = item as ImageData;
-				var imageName:String = imageData ? imageData.name : "";
+			public function libraryFilterFunction(attachmentData:Object):Boolean {
+				var imageData:ImageData = attachmentData as ImageData;
+				var imageName:String = imageData ? imageData.name.toLowerCase() : "";
 				var imageParentId:int = imageData ? int(imageData.parentId) : -1;
 				var searchText:String;
 				
@@ -714,15 +703,20 @@
 			}
 			
 			protected function documentChanged(event:RadiateEvent):void {
-				var documentData:DocumentData = event.selectedItem as DocumentData;
-				
-				documentID = documentData && documentData.id!=null ? int(documentData.id) : 0;
-				projectID = documentData && documentData.parentId!=null ? int(documentData.parentId) : 0;
-				
+				updateDocuments();
+				updateAssets();
 			}
 			
-			private var documentID:int;
-			private var projectID:int;
+			
+			public function updateDocuments():void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				documentID = iDocument && iDocument.id!=null ? int(iDocument.id) : 0;
+				
+				if (iDocument.project && iDocument.project.id) {
+					projectID = int(iDocument.project.id);
+				}
+			}
 			
 			protected function openPopUp_closeHandler(event:Event):void
 			{
@@ -741,6 +735,59 @@
 				 //trace("Drag drop incomplete");
 			}
 			
+			protected function multipleUploadIcon_clickHandler(event:MouseEvent):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				var attachmentData:AttachmentData;
+				
+				if (iDocument==null) {
+					Radiate.info("No items to upload.");
+				}
+				else {
+					Radiate.info("Uploading items from the library...");
+					Radiate.callAfter(250, radiate.saveAllAttachments, iDocument);
+				}
+			}
+			
+			protected function deleteAttachmentIcon_clickHandler(event:MouseEvent):void {
+				var selectedItems:Array = ArrayUtils.getArrayFromVector(list.selectedItems);
+				var options:Object;
+				
+				if (selectedItems.length) {
+					options = {};
+					options.currentState = DeleteDocumentWindow.RESOURCES;
+					options.attachments = selectedItems
+					openDeleteDocumentsPopUp.popUpOptions = options;
+					openDeleteDocumentsPopUp.play();
+				}
+				else {
+					Radiate.info("No items selected.");
+				}
+			}
+			
+			protected function layoutButton_clickHandler(event:MouseEvent):void
+			{
+				if (currentState=="list") {
+					currentState = "grid";
+				}
+				else {
+					currentState = "list";
+				}
+			}
+			
+			protected function attachmentsDeleted(event:Event):void
+			{
+				updateAssets();
+			}
+			
+			protected function browseForFile_selectHandler(event:Event):void {
+				var files:Array = browseForFile.fileList ? browseForFile.fileList : [];
+				
+				if (files.length) {
+					radiate.selectItem(files);
+				}
+			
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -751,7 +798,17 @@
 		<handlers:EventHandler eventName="creationComplete" >
 			<collections:SortCollection target="{libraryCollection}" fields="{['name']}" />
 		</handlers:EventHandler>
-
+		
+		
+		<!-- SHOW DELETE ATTACHMENTS POP UP -->
+		<fc:OpenPopUp id="openDeleteDocumentsPopUp" 
+					  popUpType="{DeleteDocumentWindow}" 
+					  modalDuration="100" 
+					  percentWidth="75"
+					  percentHeight="90"
+					  width="600"
+					  parent="{parentApplication}"
+					  />
 		
 		<!-- PREVIEW -->
 		<fc:OpenPopUp id="openPopUp" 
@@ -786,23 +843,15 @@
 		<!-- BROWSE FOR FILE --> 
 		<handlers:EventHandler eventName="click" targets="{[browseForFileIcon,addImageLabel]}">
 			<file:BrowseForFile id="browseForFile"
-								fileTypes="png,jpg,jpeg,gif"
+								fileTypes="png,jpg,jpeg,gif,psd"
 								targetAncestor="{this}"
-								allowMultipleSelection="false">
-				<file:selectionEffect>
-					<file:LoadFile id="loadFile" 
-								   loadIntoLoader="true"
-								   fileReference="{browseForFile.fileReference}"
-								   loaderComplete="loadFile_completeHandler(event)"
-								   >
-						
-					</file:LoadFile>
-				</file:selectionEffect>
+								allowMultipleSelection="true"
+								select="browseForFile_selectHandler(event)">
 			</file:BrowseForFile>
 		</handlers:EventHandler>
 	  
 		<!-- SHOW DELETE RESOURCE POP UP -->
-		<handlers:EventHandler targets="{deleteAttachmentIcon}" eventName="click" 
+		<!--<handlers:EventHandler targets="{deleteAttachmentIcon}" eventName="click" 
 							   enabled="{list.selectedItem!=null}">
 			<fc:OpenPopUp id="openDeleteDocumentPopUp" 
 						  popUpType="{DeleteDocumentWindow}" 
@@ -813,8 +862,13 @@
 						  parent="{parentApplication}"
 						  popUpOptions="{{currentState:DeleteDocumentWindow.RESOURCE, documentData:list.selectedItem}}"
 						  />
-		</handlers:EventHandler>
+		</handlers:EventHandler>-->
 	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="list"/>
+		<s:State name="grid"/>
+	</s:states>
 	
 	
 	<mx:VDividedBox id="verticalContainer" 
@@ -843,11 +897,35 @@
 				borderVisible="false"
 				interactionMode="mouse"
 				requireSelection="true"
+				allowMultipleSelection="true"
 				dataProvider="{libraryCollection}"
-				change="list_changeHandler(event)"
 				itemRenderer="com.flexcapacitor.views.renderers.LibraryInspectorRenderer"
+				change="list_changeHandler(event)"
 				keyUp="list_keyUpHandler(event)"
+				horizontalScrollPolicy="off"
 				>
+			
+			<s:layout.grid>
+				<s:TileLayout useVirtualLayout="true" 
+							  horizontalGap="10" 
+							  verticalGap="10" 
+							  paddingLeft="10" 
+							  paddingTop="10"
+							  columnWidth="50"/>
+			</s:layout.grid>
+			
+			<s:layout.list>
+				<s:VerticalLayout clipAndEnableScrolling="true"
+								  gap="0"
+								  horizontalAlign="contentJustify"
+								  paddingBottom="0"
+								  paddingTop="0"
+								  paddingLeft="0"
+								  paddingRight="0"
+								  variableRowHeight="true"
+								  verticalAlign="top"
+								  useVirtualLayout="true"/>
+			</s:layout.list>
 		</s:List>
 	
 		
@@ -858,20 +936,13 @@
 			<s:VerticalLayout />
 		</s:layout>
 		
-		<s:Label text="There are no items in the library"
-				 color="#888888"
-				 horizontalCenter="0" verticalCenter="0"
-				 visible="{libraryCollection.length==0}" 
-				 includeInLayout="{libraryCollection.length==0}"
-				 width="100%"
-				 textAlign="center"
-				 />
+
 		
 		<c:LabelButton id="addImageLabel" 
-					   text="Click here to add an image to the library or drag and drop images onto the app"
+					   text="Drag and drop to add items"
 					   color="#888888"
 					   paddingTop="50"
-					   paddingBottom="20"
+					   paddingBottom="120"
 					   paddingLeft="10"
 					   paddingRight="10"
 					   horizontalCenter="0" verticalCenter="0"
@@ -888,6 +959,14 @@
 				 minHeight="24"
 				 verticalAlign="middle"
 				 >
+			<c:BeveledImageButton id="layoutButton" 
+								  source.grid="{Radii8LibraryAssets.grid}" 
+								  source.list="{Radii8LibraryAssets.list}" 
+								  toolTip.grid="Change view to list"
+								  toolTip.list="Change view to grid"
+								  click="layoutButton_clickHandler(event)"
+								  visible="true"
+								  alpha=".6"/>
 			
 			<c:BeveledImageButton id="browseForFileIcon" 
 					 source="{Radii8LibraryAssets.newFile}" 
@@ -955,8 +1034,15 @@
 								   click="fullImage_clickHandler(event)"
 								   />
 				
-				
 			</s:HGroup>
+			
+			<c:BeveledImageButton id="multipleUploadIcon" 
+								  source="{Radii8LibraryAssets.multipleUpload}" 
+								  toolTip="Upload all images not uploaded"
+								  click="multipleUploadIcon_clickHandler(event)"
+								  visible="true"
+								  alpha=".8"/>
+			
 			<c:BeveledImageButton id="copyIcon" 
 					 source="{Radii8LibraryAssets.copy}" 
 					 toolTip="Copy the image URL to the Clipboard"/>
@@ -969,6 +1055,7 @@
 			<c:BeveledImageButton id="deleteAttachmentIcon" 
 						   source="{Radii8LibraryAssets.trashCan}" 
 						   toolTip="Remove Attachment"
+						   click="deleteAttachmentIcon_clickHandler(event)"
 						   />
 		</s:HGroup>
 	</s:BorderContainer>

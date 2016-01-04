@@ -151,6 +151,19 @@ package com.flexcapacitor.tools {
 		public static var COPY:String = "copy";
 		public static var PASTE:String = "paste";
 		
+		public static const BASELINE:String = "baseline";
+		public static const BOTTOM:String = "bottom";
+		public static const HORIZONTAL_CENTER:String = "horizontalCenter";
+		public static const LEFT:String = "left";
+		
+		public static const PERCENT_HEIGHT:String = "percentHeight";
+		public static const PERCENT_WIDTH:String = "percentWidth";
+		public static const RIGHT:String = "right";
+		public static const TOP:String = "top";
+		public static const VERTICAL_CENTER:String = "verticalCenter";
+		
+		public static const X:String = "x";
+		public static const Y:String = "y";
 		
 		private var _icon:Class = Radii8LibraryToolAssets.Selection;
 		
@@ -1321,6 +1334,7 @@ package com.flexcapacitor.tools {
 			var eventCurrentTarget:Object = event.currentTarget;
 			var tabNav:TabNavigator = radiate.documentsTabNavigator;
 			var isGraphicElement:Boolean;
+			var targets:Array;
 			
 			// Z = 90
 			// C = 67
@@ -1357,42 +1371,187 @@ package com.flexcapacitor.tools {
 				return;
 			}
 			
+			targets = radiate.targets;
+			
 			// Radiate.info("Selection key up");
-			if (radiate.targets.length>0) {
+			if (targets.length>0) {
 				applicable = true;
 			}
 			
+			var element:IVisualElement;
+			var leftValue:Object;
+			var rightValue:Object;
+			var topValue:Object;
+			var bottomValue:Object;
+			var horizontalCenter:Object;
+			var verticalCenter:Object;
+			var properties:Array = [];
+			var propertiesObject:Object = {};
+			var numberOfTargets:int = targets.length;
+			
 			if (event.keyCode==Keyboard.LEFT) {
 				
-				for (;index<radiate.targets.length;index++) {
-					changes.push(radiate.targets[index].x-constant);
+				for (;index<numberOfTargets;index++) {
+					element = targets[index];
+					
+					leftValue = element.left;
+					rightValue = element.right;
+					horizontalCenter = element.horizontalCenter;
+					
+					/**
+					 * If left is set then set x to nothing
+					 * If left and right are set then set width to nothing
+					 * If horizontalCenter is set than set left and right to nothing
+					 * Otherwise set left to nothing
+					 * */
+					if (leftValue!=null && rightValue!=null) {
+						propertiesObject.left = Number(element.left) - constant;
+						propertiesObject.right = Number(element.right) + constant;
+						changes.push(propertiesObject);
+						properties.push(LEFT, RIGHT);
+					}
+					else if (leftValue!=null) {
+						propertiesObject.left = Number(element.left) - constant;
+						changes.push(propertiesObject);
+						properties.push(LEFT);
+					}
+					else if (rightValue!=null) {
+						propertiesObject.right = Number(element.right) + constant;
+						changes.push(propertiesObject);
+						properties.push(RIGHT);
+					}
+					else if (horizontalCenter!=null) {
+						propertiesObject.horizontalCenter = Number(element.horizontalCenter) - constant;
+						changes.push(propertiesObject);
+						properties.push(HORIZONTAL_CENTER);
+					}
+					else {
+						propertiesObject.x = element.x - constant;
+						properties.push(X);
+					}
+					
 				}
 				
-				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["x"], null, changes);
+				
+				Radiate.moveElement(targets, element.parent, properties, null, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.RIGHT) {
-				for (;index<radiate.targets.length;index++) {
-					changes.push(radiate.targets[index].x+constant);
+				
+				for (;index<numberOfTargets;index++) {
+					element = targets[index];
+					
+					leftValue = element.left;
+					rightValue = element.right;
+					horizontalCenter = element.horizontalCenter;
+					
+					if (leftValue!=null && rightValue!=null) {
+						propertiesObject.left = Number(element.left) + constant;
+						propertiesObject.right = Number(element.right) - constant;
+						changes.push(propertiesObject);
+						properties.push(LEFT, RIGHT);
+					}
+					else if (leftValue!=null) {
+						propertiesObject.left = Number(element.left) + constant;
+						changes.push(propertiesObject);
+						properties.push(LEFT);
+					}
+					else if (rightValue!=null) {
+						propertiesObject.right = Number(element.right) - constant;
+						changes.push(propertiesObject);
+						properties.push(RIGHT);
+					}
+					else if (horizontalCenter!=null) {
+						propertiesObject.horizontalCenter = Number(element.horizontalCenter) + constant;
+						changes.push(propertiesObject);
+						properties.push(HORIZONTAL_CENTER);
+					}
+					else {
+						propertiesObject.x = element.x + constant;
+						properties.push(X);
+					}
 				}
 				
-				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["x"], null, changes);
+				Radiate.moveElement(targets, element.parent, properties, null, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.UP) {
-				for (;index<radiate.targets.length;index++) {
-					changes.push(radiate.targets[index].y-constant);
+				
+				for (;index<numberOfTargets;index++) {
+					element = targets[index];
+					
+					topValue = element.top;
+					bottomValue = element.bottom;
+					verticalCenter = element.verticalCenter;
+					
+					if (topValue!=null && bottomValue!=null) {
+						propertiesObject.top = Number(element.top) - constant;
+						propertiesObject.bottom = Number(element.bottom) + constant;
+						changes.push(propertiesObject);
+						properties.push(TOP, BOTTOM);
+					}
+					else if (topValue!=null) {
+						propertiesObject.top = Number(element.top) - constant;
+						changes.push(propertiesObject);
+						properties.push(TOP);
+					}
+					else if (bottomValue!=null) {
+						propertiesObject.bottom = Number(element.bottom) + constant;
+						changes.push(propertiesObject);
+						properties.push(BOTTOM);
+					}
+					else if (verticalCenter!=null) {
+						propertiesObject.verticalCenter = Number(element.verticalCenter) - constant;
+						changes.push(propertiesObject);
+						properties.push(VERTICAL_CENTER);
+					}
+					else {
+						propertiesObject.y = element.y - constant;
+						properties.push(Y);
+					}
 				}
 				
-				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["y"], null, changes);
+				//Radiate.moveElement(targets, element.parent, properties, null, propertiesObject);
+				Radiate.moveElement(targets, null, properties, null, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.DOWN) {
-				for (;index<radiate.targets.length;index++) {
-					changes.push(radiate.targets[index].y+constant);
+				
+				for (;index<numberOfTargets;index++) {
+					element = targets[index];
+					
+					topValue = element.top;
+					bottomValue = element.bottom;
+					verticalCenter = element.verticalCenter;
+					
+					if (topValue!=null && bottomValue!=null) {
+						propertiesObject.top = Number(element.top) + constant;
+						propertiesObject.bottom = Number(element.bottom) - constant;
+						changes.push(propertiesObject);
+						properties.push(TOP, BOTTOM);
+					}
+					else if (leftValue!=null) {
+						propertiesObject.top = Number(element.top) + constant;
+						changes.push(propertiesObject);
+						properties.push(TOP);
+					}
+					else if (bottomValue!=null) {
+						propertiesObject.bottom = Number(element.bottom) - constant;
+						changes.push(propertiesObject);
+						properties.push(BOTTOM);
+					}
+					else if (verticalCenter!=null) {
+						propertiesObject.verticalCenter = Number(element.verticalCenter) + constant;
+						changes.push(propertiesObject);
+						properties.push(VERTICAL_CENTER);
+					}
+					else {
+						propertiesObject.y = element.y + constant;
+						properties.push(Y);
+					}
 				}
 				
-				Radiate.moveElement(radiate.targets, radiate.targets[0].parent, ["y"], null, changes);
+				Radiate.moveElement(targets, element.parent, properties, null, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.BACKSPACE || event.keyCode==Keyboard.DELETE) {
@@ -1702,6 +1861,7 @@ package com.flexcapacitor.tools {
 				target.validateNow();
 				
 				rectangle = UIComponent(target).getBounds(targetCoordinateSpace);
+				wreck = DisplayObjectUtils.getRectangleBounds(target, targetCoordinateSpace);
 				
 				if (rectangle.width==0 || 
 					rectangle.height==0 || 
@@ -1723,7 +1883,21 @@ package com.flexcapacitor.tools {
 					//targetSelectionGroup.height = 0;//rectangle.height; // UIComponent(target).getLayoutBoundsHeight();
 					//targetSelectionGroup.x = 0;//rectangle.x;
 					//targetSelectionGroup.y = 0;//rectangle.y;
-					isTargetInvalid = true;
+					
+					
+					//isTargetInvalid = true;
+					
+					if (wreck.width==0 || wreck.height==0) {
+						targetSelectionGroup.width = wreck.width + 1;
+						targetSelectionGroup.height = wreck.height + 1;
+					}
+					else {
+						targetSelectionGroup.width = wreck.width - 1;
+						targetSelectionGroup.height = wreck.height - 1;
+					}
+					targetSelectionGroup.x = wreck.x;
+					targetSelectionGroup.y = wreck.y;
+					
 				}
 				else {
 					

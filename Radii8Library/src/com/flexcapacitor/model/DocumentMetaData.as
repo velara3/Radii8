@@ -200,6 +200,7 @@ package com.flexcapacitor.model {
 			_parentId = value;
 		}
 
+		public var slug:String;
 		
 		private var _status:String;
 

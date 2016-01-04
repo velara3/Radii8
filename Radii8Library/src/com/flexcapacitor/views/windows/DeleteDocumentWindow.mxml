@@ -10,6 +10,7 @@
 			   title.project="Delete Project"
 			   title.document="Delete Document"
 			   title.resource="Delete Resource"
+			   title.resources="Delete Items"
 			   
 			   creationComplete="panel1_creationCompleteHandler(event)" 
 			   >
@@ -27,6 +28,8 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.AttachmentData;
+			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IDocumentData;
 			import com.flexcapacitor.model.IProject;
@@ -40,11 +43,15 @@
 			public static const DOCUMENT:String = "document";
 			public static const PROJECT:String = "project";
 			public static const RESOURCE:String = "resource";
+			public static const RESOURCES:String = "resources";
 			
 			public var closeWindowDelay:int = 250;
 			
 			[Bindable]
 			public var documentData:IDocumentData;
+			
+			[Bindable]
+			public var attachments:Array;
 			
 			[Bindable]
 			public var documentName:String;
@@ -54,7 +61,10 @@
 			 * */
 			protected function deleteResource():void {
 				var localRemoveSuccessful:Boolean;
+				var attachmentData:AttachmentData;
+				var attachmentIDs:Array;
 				var isRemote:Boolean;
+				
 				deleteWarningsLabel.text = "";
 				radiate = Radiate.getInstance();
 				
@@ -104,7 +114,36 @@
 						localRemoveSuccessful = radiate.removeAssetFromDocument(IDocumentData(documentData), null);
 					}
 				}
-				
+				else if (currentState==RESOURCES) {
+					
+					if (attachments && attachments.length) {
+						radiate.addEventListener(RadiateEvent.ATTACHMENTS_DELETED, deleteResultsHandler, false, 0, true);
+						isRemote = true;
+						attachmentIDs = [];
+						
+						for (var j:int = 0; j < attachments.length; j++) {
+							attachmentData = attachments[j];
+							
+							if (attachmentData.id!=null) {
+								attachmentIDs.push(attachmentData.id);
+							}
+						}
+						
+						if (attachmentIDs.length) {
+							//radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, deleteResultsHandler, false, 0, true);
+							localRemoveSuccessful = radiate.removeAssetsFromDocument(attachments);
+						}
+						else {
+							isRemote = false;
+							localRemoveSuccessful = radiate.removeAssetsFromDocument(attachments, DocumentData.LOCAL_LOCATION);
+						}
+					}
+					else {
+						infoLabel.text = "No items to delete";
+						isRemote = false;
+						return;
+					}
+				}
 				
 				
 				if (isRemote) {
@@ -141,12 +180,13 @@
 			
 			protected function deleteResultsHandler(event:RadiateEvent):void {
 				var data:Object = event.data;
-				var error:String;
 				var status:String = event.status;
 				var successful:Boolean = event.successful;
+				var error:String;
 				var message:String = "";
-				var iDocument:IDocument = event.selectedItem as IDocument;
+				var iDocument:IDocument;
 			
+				iDocument = event.selectedItem as IDocument;
 				inProgress = false;
 				
 				if (event.type==RadiateEvent.PROJECT_DELETED) {
@@ -157,7 +197,39 @@
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_DELETED, deleteResultsHandler);
 				}
 				
+				if (event.type==RadiateEvent.ATTACHMENTS_DELETED) {
+					radiate.removeEventListener(RadiateEvent.ATTACHMENTS_DELETED, deleteResultsHandler);
+				}
 				
+				if (event.type==RadiateEvent.PROJECT_DELETED) {
+					var numberOfProjects:int = radiate.projects ? radiate.projects.length : 0;
+					
+					if (numberOfProjects==0) {
+						Radiate.goToHomeScreen();
+					}
+				}
+				
+				// there was no remote attachments to delete
+				if (data && data.localDeleted==true) {
+					
+					playDeleteSuccessfulMessage();
+					return;
+				}
+				
+				// TODO Loop through and replace with missing images
+				
+				// loop through documents and replace bitmap data with url to source
+				var numberOfDocuments:int = radiate.documents.length;
+				var ducuments:Array = radiate.documents;
+				k = 0;
+				
+				for (var k:int;k<numberOfDocuments;k++) {
+					//var iDocument:IDocument = documents[k] as IDocument;
+					
+					if (iDocument) {
+						//DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData, [currentAttachmentToUpload]);
+					}
+				}
 				
 				if (status=="error") {
 					
@@ -204,6 +276,8 @@
 			}
 			
 			protected function cancelButton_clickHandler(event:MouseEvent):void {
+				attachments = null;
+				documentData = null;
 				callLater(PopUpManager.removePopUp, [this]);
 			}
 			
@@ -225,10 +299,21 @@
 						//documentData = radiate.selectedProject;
 					}
 				}
+				else if (currentState==RESOURCES) {
+					if (documentData==null) {
+						//documentData = radiate.selectedProject;
+					}
+				}
 			
 				if (documentData) {
 					documentName = documentData.name;
 				}
+			}
+			
+			protected function attachmentsDeletedResultsHandler(event:Event):void
+			{
+				// TODO Auto-generated method stub
+				
 			}
 			
 		]]>
@@ -255,6 +340,7 @@
 		<s:State name="document"/>
 		<s:State name="project"/>
 		<s:State name="resource"/>
+		<s:State name="resources"/>
 	</c:states>
 	
 	<s:VGroup left="15" 
@@ -270,6 +356,8 @@
 				 includeIn="document" width="100%"/>
 		<s:Label text="Are you sure you want to delete the resource, '{documentName}'?" 
 				 includeIn="resource" width="100%"/>
+		<s:Label text="Are you sure you want to delete the selected items?" 
+				 includeIn="resources" width="100%"/>
 		
 		<s:Label id="deleteWarningsLabel" 
 				 x="15" y="15" 

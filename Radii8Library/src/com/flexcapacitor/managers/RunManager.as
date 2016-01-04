@@ -5,14 +5,20 @@ package com.flexcapacitor.managers {
 	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImageData;
+	import com.flexcapacitor.model.SourceData;
+	import com.flexcapacitor.model.TranscoderOptions;
 	import com.flexcapacitor.services.WPService;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
+	import com.flexcapacitor.utils.DocumentTranscoder;
+	import com.flexcapacitor.utils.HTMLDocumentExporter;
 	import com.flexcapacitor.views.ImageView;
+	import com.google.code.flexiframe.IFrame;
 	
 	import flash.display.BitmapData;
 	import flash.events.EventDispatcher;
 	
 	import mx.core.UIComponent;
+	import mx.validators.IValidator;
 
 	
 	/**
@@ -124,6 +130,60 @@ package com.flexcapacitor.managers {
 			}
 		}
 		
+		/**
+		 * Open HTML document inside the app
+		 * */
+		public static function openDocumentInInternalWeb(iDocument:IDocument):void {
+			var previewDocument:Object;
+			var radiate:Radiate = Radiate.getInstance();
+			var sourceData:SourceData;
+			
+			if (iDocument==null) {
+				Radiate.warn("Please open a document before trying to preview it");
+				return;
+			}
+			
+			// get source code
+			sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, CodeManager.HTML);
+			
+			iDocument.errors = sourceData.errors;
+			iDocument.warnings = sourceData.warnings;
+			
+			if (Radiate.isDesktop) {
+				if (!radiate.isPreviewDocumentVisible()) {
+					radiate.openDocumentPreview(iDocument, true);
+				}
+				
+				previewDocument = radiate.getDocumentPreview(iDocument);
+				
+				
+				if (previewDocument is UIComponent && sourceData) {
+					previewDocument.htmlText = sourceData.source;
+					
+					if (previewDocument is IValidator) {
+						previewDocument.validateNow(); // prevent editor change event
+					}
+				}
+				
+			}
+			else {
+				// allow to swap between preview and non preview
+				if (!radiate.isPreviewDocumentVisible()) {
+					radiate.openDocumentPreview(radiate.selectedDocument, true);
+					previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+					
+					if (previewDocument is IFrame) {
+						previewDocument.content = sourceData.source;
+					}
+					
+					//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+				}
+				else {
+					radiate.openDocument(radiate.selectedDocument);
+					//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+				}
+			}
+		}
 		
 		public static var openPopUp:OpenPopUp;
 	}

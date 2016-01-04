@@ -195,7 +195,7 @@ package com.flexcapacitor.utils {
 			var properties:Object = component.properties;
 			var styles:Object = component.styles;
 			var componentChild:ComponentDescription;
-			var name:String = component.name;
+			var className:String = component.className;
 			var output:String = "";
 			var outputValue:String = "";
 			var namespaces:String;
@@ -210,7 +210,11 @@ package com.flexcapacitor.utils {
 				
 				output += " ";
 				
-				// we should be converting objects into tags
+				// TODO REFACTOR
+				// add support to check for image source tags. if [object BitmapData] then we need 
+				// an error or warning or embed the data
+				
+				// TODO we should be converting objects into tags
 				if (value is Object) {
 					// get a class exporter / dictionary - for example register "dataProvider" exporter 
 					
@@ -261,9 +265,9 @@ package com.flexcapacitor.utils {
 				output += fcNamespace + ":" + "createBackgroundSnapshot=\"" +component.createBackgroundSnapshot + "\"";
 			}
 			
-			if (name) {
+			if (className) {
 				if (component.instance is Application) {
-					name = "Application";
+					className = "Application";
 					namespaces = defaultNamespaceDeclarations; 
 					/*
 					namespaces = " xmlns:fx=\"http://ns.adobe.com/mxml/2009\"";
@@ -275,7 +279,7 @@ package com.flexcapacitor.utils {
 				}
 				
 				// we are not handling namespaces here - we could use component descriptor
-				output = tabs + "<" + sparkNamespace + ":" + name + " " + output;
+				output = tabs + "<" + sparkNamespace + ":" + className + " " + output;
 				
 				if (showChildren && component.children && component.children.length>0) {
 					output += ">\n";
@@ -288,7 +292,7 @@ package com.flexcapacitor.utils {
 						output += getMXMLOutputString(iDocument, componentChild, false, tabs + "\t");
 					}
 					
-					output += tabs + "</" + sparkNamespace + ":" + name + ">\n";
+					output += tabs + "</" + sparkNamespace + ":" + className + ">\n";
 				}
 				else {
 					 output += "/>\n";

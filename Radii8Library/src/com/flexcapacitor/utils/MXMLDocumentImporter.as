@@ -15,7 +15,6 @@ package com.flexcapacitor.utils {
 	import flash.system.ApplicationDomain;
 	import flash.utils.getTimer;
 	
-	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 
 	
@@ -46,6 +45,7 @@ package com.flexcapacitor.utils {
 			var isValid:Boolean;
 			var codeWasWrapped:Boolean;
 			
+			newComponents = [];
 			
 			// VALID XML BEFORE IMPORTING
 			isValid = XMLUtils.isValidXML(source);
@@ -124,6 +124,13 @@ package com.flexcapacitor.utils {
 			//Radiate.info("Time to import: " + (getTimer()-timer));
 			
 			sourceData.source = source;
+			sourceData.targets = newComponents.slice();
+			
+			if (newComponents && newComponents.length) {
+				sourceData.componentDescription = document.getItemDescription(newComponents[0]);
+				newComponents = null;
+			}
+			
 			
 			return sourceData;
 		}
@@ -131,7 +138,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Create child from node
 		 * */
-		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0, componentInstance:Object = null):IVisualElement {
+		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0, componentInstance:Object = null):Object {
 			var elementName:String = node.localName();
 			var domain:ApplicationDomain = ApplicationDomain.currentDomain;
 			var componentDefinition:ComponentDefinition = Radiate.getDynamicComponentType(elementName);
@@ -186,7 +193,7 @@ package com.flexcapacitor.utils {
 			var usageCount:XMLList = attribute..nsElement::*;
 			*/
 
-			
+			// TODO during import check for [object BitmapData] and use missing image url
 			if (componentDefinition!=null) {
 				
 				// we should NOT be setting defaults on import!!!
@@ -250,6 +257,7 @@ package com.flexcapacitor.utils {
 					componentDescription.createBackgroundSnapshot = valuesObject.values[createBackgroundSnapshot];
 				}
 				
+				newComponents.push(componentInstance);
 				// might want to get a properties object from the attributes 
 				// and then use that in the add element call above 
 				//Radiate.setAttributesOnComponent(instance, node, componentDefinition, false);
@@ -257,14 +265,16 @@ package com.flexcapacitor.utils {
 			}
 			
 			
+			var instance:Object;
+			
 			if (includeChildren) {
 				
 				for each (var childNode:XML in node.children()) {
-					createChildFromNode(childNode, componentInstance, iDocument, depth+1);
+					instance = createChildFromNode(childNode, componentInstance, iDocument, depth+1);
 				}
 			}
 			
-			return componentInstance as IVisualElement;
+			return componentInstance;
 		}
 	}
 }

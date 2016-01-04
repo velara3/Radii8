@@ -20,6 +20,11 @@ package com.flexcapacitor.model {
 		public var description:String;
 		
 		/**
+		 * Class name. Class that message originated from
+		 * */
+		public var className:String;
+		
+		/**
 		 * Location
 		 * */
 		public var location:String;

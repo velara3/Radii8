@@ -209,7 +209,8 @@ package com.flexcapacitor.managers
 		 * Undo last change. Returns the current index in the changes array. 
 		 * The property change object sets the property "reversed" to 
 		 * true.
-		 * Going too fast causes some issues (call validateNow somewhere)?
+		 * UPDATE 2015 problem below was caused by AddItems class. created new add items
+		 * -Going too fast causes some issues (call validateNow somewhere)? 
 		 * I think the issue with RangeError: Index 2 is out of range.
 		 * is that the History List does not always do the first item in the 
 		 * List. So we need to add a first item that does nothing, like a
@@ -234,8 +235,8 @@ package com.flexcapacitor.managers
 			var dictionary:Dictionary;
 			var reverseItems:AddItems;
 			var eventTargets:Array;
-			var eventsLength:int;
-			var targetsLength:int;
+			var numberOfEvents:int;
+			var numberOfTargets:int;
 			var addItems:AddItems;
 			var added:Boolean;
 			var removed:Boolean;
@@ -263,11 +264,11 @@ package com.flexcapacitor.managers
 			// get current change to be redone
 			historyEvent = documentHistory.length ? documentHistory.getItemAt(changeIndex) as HistoryEvent : null;
 			historyEvents = historyEvent.historyEventItems;
-			eventsLength = historyEvents.length;
+			numberOfEvents = historyEvents.length;
 			
 			
-			// loop through changes
-			for (var i:int=eventsLength;i--;) {
+			// loop through changes starting with newest change then going to oldest
+			for (var i:int=numberOfEvents;i--;) {
 				//changesLength = changes ? changes.length: 0;
 				
 				historyEventItem = historyEvents[i];
@@ -278,10 +279,10 @@ package com.flexcapacitor.managers
 				// undo the add
 				if (action==RadiateEvent.ADD_ITEM) {
 					eventTargets = historyEventItem.targets;
-					targetsLength = eventTargets.length;
+					numberOfTargets = eventTargets.length;
 					dictionary = historyEventItem.reverseAddItemsDictionary;
 					
-					for (var j:int=0;j<targetsLength;j++) {
+					for (var j:int=0;j<numberOfTargets;j++) {
 						reverseItems = dictionary[eventTargets[j]];
 						addItems.remove(null);
 						
@@ -306,10 +307,10 @@ package com.flexcapacitor.managers
 				// undo the move - (most likely an add action with x and y changes)
 				if (action==RadiateEvent.MOVE_ITEM) {
 					eventTargets = historyEventItem.targets;
-					targetsLength = eventTargets.length;
+					numberOfTargets = eventTargets.length;
 					dictionary = historyEventItem.reverseAddItemsDictionary;
 					
-					for (j=0;j<targetsLength;j++) {
+					for (j=0;j<numberOfTargets;j++) {
 						reverseItems = dictionary[eventTargets[j]];
 						
 						// check if it's remove items or property changes
@@ -328,6 +329,7 @@ package com.flexcapacitor.managers
 							}
 							
 							/*
+							Below error fixed with new AddItems class
 							RangeError: Index 2 is out of range.
 										at spark.components::Group/checkForRangeError()[E:\dev\4.y\frameworks\projects\spark\src\spark\components\Group.as:1310]
 										at spark.components::Group/setElementIndex()[E:\dev\4.y\frameworks\projects\spark\src\spark\components\Group.as:1474]
@@ -434,7 +436,7 @@ package com.flexcapacitor.managers
 				*/
 			}
 			
-			if (eventsLength) {
+			if (numberOfEvents) {
 				setHistoryIndex(document, getHistoryPosition(document));
 				
 				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
@@ -515,7 +517,7 @@ package com.flexcapacitor.managers
 			var historyEvents:Array;
 			var addItems:AddItems;
 			var isInvalid:Boolean;
-			var eventsLength:int;
+			var numberOfEvents:int;
 			var remove:Boolean;
 			var action:String;
 			
@@ -543,10 +545,11 @@ package com.flexcapacitor.managers
 			historyItem = historyCollection.length ? historyCollection.getItemAt(changeIndex) as HistoryEvent : null;
 			
 			historyEvents = historyItem.historyEventItems;
-			eventsLength = historyEvents.length;
+			numberOfEvents = historyEvents.length;
 			//changes = historyEvents;
 			
-			for (var j:int;j<eventsLength;j++) {
+			//for (var j:int;j<numberOfEvents;j++) {
+			for (var j:int=numberOfEvents;j--;) {
 				historyEvent = HistoryEventItem(historyEvents[j]);
 				//changesLength = changes ? changes.length: 0;
 				
@@ -654,7 +657,7 @@ package com.flexcapacitor.managers
 				}
 			}
 			
-			if (eventsLength) {
+			if (numberOfEvents) {
 				setHistoryIndex(document, getHistoryPosition(document));
 				
 				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {

@@ -9,6 +9,7 @@
 				minHeight="36" 
 				mouseEnabledWhereTransparent="true"
 				mouseDown="groupMouseDownHandler(event)"
+				autoDrawBackground="false"
 				>
 	
 	<fx:Script>
@@ -23,6 +24,11 @@
 			public var attachmentData:AttachmentData;
 			public var checkeredFill:BitmapFill;
 			
+			// if you set the image to letterbox and the height or width is 
+			// resampled to zero height or width an error is thrown 
+			// in BitmapImage ctor()
+			// this is a flex sdk bug i think. so use zoom instead of letterbox
+			
 			override public function set data(value:Object):void {
 				super.data = value;
 				var path:String;
@@ -36,6 +42,18 @@
 							iconImage.source = imageData.thumbnailURL;
 						}
 						else if (imageData.bitmapData) {
+							
+							// if you set the image to letterbox and the height or width is 
+							// resampled to zero height or width an error is thrown 
+							// in BitmapImage ctor()
+							// this is a flex sdk bug i think. so use zoom instead of letterbox
+							if (imageData.bitmapData.width<2 || imageData.bitmapData.height<2) {
+								//iconImage.scaleMode = "zoom";
+							}
+							else {
+								//iconImage.scaleMode = "letterbox";
+							}
+							
 							iconImage.source = imageData.bitmapData;
 						}
 					}
@@ -57,8 +75,21 @@
 					uploadFileIcon.visible = false;
 				}
 				
+				// show the upload failed icon if not uploaded
+				if (attachmentData && attachmentData.uploadFailed) {
+					uploadFileErrorIcon.visible = true;
+					uploadFileErrorIcon.enabled = true;
+				}
+				else {
+					uploadFileErrorIcon.enabled = false;
+					uploadFileErrorIcon.visible = false;
+				}
+				
 				if (labelDisplay) {
-					labelDisplay.toolTip = label + " - ID: " +  imageData.id + " - Parent ID: " + imageData.parentId;
+					toolTip = label + " - ID: " +  imageData.id + " - Parent ID: " + imageData.parentId;
+				}
+				else {
+					toolTip = "";
 				}
 			}
 			
@@ -76,9 +107,12 @@
 			
 			protected function uploadFileIcon_clickHandler(event:MouseEvent):void {
 				
-				if (!Radiate.getInstance().uploadAttachmentInProgress) {
-					uploadFileIcon.enabled = false;
-					Object(owner).document.uploadFile(attachmentData);
+				if (Radiate.instance.selectedDocument && Radiate.instance.selectedDocument.id) {
+					Radiate.info("Uploading item");
+					Radiate.callAfter(250, Radiate.instance.uploadAttachmentData, attachmentData, Radiate.instance.selectedDocument.id);
+				}
+				else {
+					Radiate.warn("Save the document before uploading");
 				}
 			}
 			
@@ -99,11 +133,14 @@
 		
 	</s:Rect>
 	
+	
+	
 	<s:HGroup id="rowGroup" 
 			  width="100%" 
 			  height="100%" 
 			  verticalAlign="middle"
 			  paddingLeft="5" 
+			  paddingBottom="1" 
 			  gap="12">
 		<s:Image id="iconImage"
 				 smooth="true"
@@ -112,19 +149,60 @@
 				 ioError="iconImage_ioErrorHandler(event)"
 				 securityError="iconImage_securityErrorHandler(event)"
 				 width="30" height="30"
-				 scaleMode="letterbox"/>
+				 scaleMode="zoom"/>
 		<s:Label id="labelDisplay" visible.dragging="false"
 				 fontSize="11" width="100%" maxDisplayedLines="1"
 				 />
 		<s:Spacer width="100%"/>
+		<controls:BeveledImageButton id="uploadFileErrorIcon" 
+									 source="{Radii8LibraryAssets.error}" 
+									 toolTip="Upload failed. Try again"
+									 click="uploadFileIcon_clickHandler(event)"
+									 />
 		<controls:BeveledImageButton id="uploadFileIcon" 
 							  source="{Radii8LibraryAssets.upload}" 
 							  toolTip="Upload"
 							  click="uploadFileIcon_clickHandler(event)"
 							  visible="false"
 							  visible.dragging="false"
+							  alpha=".75"
 							  />
 		<s:Spacer width="1"/>
 	</s:HGroup>
 	
+	
+	<!--
+	<s:Rect id="selectedTopIcon" width="40" height="2" top="0" includeIn="selected,selectedAndShowsCaret">
+		<s:fill>
+			<s:SolidColor color="#989898"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Rect id="selectedBottomIcon" width="40" height="2" bottom="1" includeIn="selected,selectedAndShowsCaret">
+		<s:fill>
+			<s:SolidColor color="#989898"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Rect id="selectedLeftIcon" width="2" height="100%" bottom="1" left="1" includeIn="selected,selectedAndShowsCaret">
+		<s:fill>
+			<s:SolidColor color="#989898"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Rect id="selectedRightIcon" width="2" height="100%" bottom="1" right="40" includeIn="selected,selectedAndShowsCaret">
+		<s:fill>
+			<s:SolidColor color="#989898"/>
+		</s:fill>
+	</s:Rect>-->
+	
+	<s:Rect id="selectedBox" width="40" height="100%" bottom="1" 
+			includeIn="selected,selectedAndShowsCaret">
+		<s:fill>
+			<s:SolidColor color="#989898" alpha="0"/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="#989898" />
+		</s:stroke>
+	</s:Rect>
 </s:ItemRenderer>

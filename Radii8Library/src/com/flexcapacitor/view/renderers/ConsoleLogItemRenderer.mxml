@@ -27,7 +27,7 @@
 				
 				if (issue) {
 					labelDisplay.text = issue.description;
-					labelDisplay.toolTip = issue.description;
+					toolTip = issue.description + " (" + issue.className + ")";
 				}
 				else {
 					labelDisplay.text = "";

@@ -245,7 +245,9 @@
 				
 				if (currentState==HOME_STATE) {
 					if (ripple) ripple.destroy();
-					currentState = DESIGN_STATE;
+					if (radiate.projects.length!=0) {
+						currentState = DESIGN_STATE;
+					}
 				}
 				else {
 					currentState = HOME_STATE;
@@ -1020,35 +1022,15 @@
 					return;
 				}
 				
-				dragSource = event.dragSource;
-				hasFileListFormat = dragSource.hasFormat(ClipboardFormats.FILE_LIST_FORMAT);
-				hasFilePromiseListFormat = dragSource.hasFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT);
-				
-				var destination:Object;
-				var droppedFiles:Array;
-				
-				if (Radiate.isAcceptableDragAndDropFormat(dragSource)) {
-					
-					if (hasFileListFormat) {
-						droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT) as Array;
-					}
-					else if (hasFilePromiseListFormat) {
-						droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT) as Array;
-					}
-					
-					if (droppedFiles) {
-						destination = radiate.getDestinationForExternalFileDrop();
-						radiate.addFileListDataToDocument(radiate.selectedDocument, droppedFiles as Array, destination);
-					}
-					
-				}
+				radiate.dropItem(event);
 			}
 			
 			/**
 			 * File load complete
 			 * */
 			protected function loadFile_completeHandler(event:Event):void {
-				
+				// handling it in drag drop complete
+				return;
 				var imageData:ImageData = new ImageData();
 				imageData.bitmapData = loadFile.bitmapData;
 				imageData.byteArray = loadFile.data;
@@ -1098,6 +1080,21 @@
 			protected function documentChangeEventHandler(event:Event):void
 			{
 				radiate.updateWindowMenu(windowMenu);
+			}
+			
+			protected function importPSDMenuItem_itemClickHandler(event:MenuEvent):void
+			{
+				if (!radiate.selectedDocument) {
+					Radiate.info("Please open a document or project first");
+					return;
+				}
+				browseForPSD.play();
+			}
+			
+			protected function psdLoadedHandler(event:Event):void {
+				if (radiate.selectedDocument) {
+					radiate.addPSDToDocument(loadPSDFile.data, radiate.selectedDocument);
+				}
 			}
 			
 		]]>
@@ -1188,6 +1185,15 @@
 						  />
 		</handlers:EventHandler>
 		
+		<file:BrowseForFile id="browseForPSD" 
+							targetAncestor="{this}"
+							fileTypes="psd">
+			<file:selectionEffect>
+				<file:LoadFile id="loadPSDFile" fileReference="{browseForPSD.fileReference}"
+							   complete="psdLoadedHandler(event)"/>
+			</file:selectionEffect>
+		</file:BrowseForFile>
+		
 		<handlers:EventHandler eventName="itemClick" target="{revertDocumentMenuItem}">
 			<core:CallMethod method="revertDocument"/> 
 		</handlers:EventHandler>
@@ -1212,7 +1218,7 @@
 						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
-		<handlers:EventHandler eventName="itemClick" target="{importMenuItem}">
+		<handlers:EventHandler eventName="itemClick" target="{importMXMLMenuItem}">
 			<fc:OpenPopUp id="openImportPopUp" 
 						  popUpType="{ImportWindow}" 
 						  modalDuration="150" 
@@ -1298,14 +1304,15 @@
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="revertDocumentMenuItem" label="Revert..." />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="uploadMenuItem" label="Upload..." />
+				<model:MenuItem id="uploadMenuItem" label="Upload to server..." />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="removeDocument" label="Remove Document" />
 				<model:MenuItem id="removeProject" label="Remove Project" itemClick="removeProject_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="printItem" label="Print" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="importMenuItem" label="Import..." />
+				<model:MenuItem id="importMXMLMenuItem" label="Import MXML..." />
+				<model:MenuItem id="importPSDMenuItem" label="Import PSD..." itemClick="importPSDMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="quitApplication" label="Quit" />
 			</model:MenuItem>
@@ -1323,6 +1330,7 @@
 			</model:MenuItem>
 			<model:MenuItem label="Commands" >
 				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="clearProjectHomePage_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
 				<model:MenuItem id="copySelectionIntoLibrary" label="Merge selection into an image" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
@@ -1409,6 +1417,7 @@
 							 showAllStyleDeclarations="false"
 							 showColorUnderMouse="false"
 							 change="miniinspector1_changeHandler(event)"
+							 enabled="false"
 							 />
 		
 		<file:LoadFile id="loadFile" 
@@ -1432,7 +1441,7 @@
 			 y="0" x="0" 
 			 fillMode="repeat"
 			 width="100%" height="100%" 
-			 source="@Embed('wall.png')"
+			 source="{Radii8LibraryAssets.wall2}"
 			 alpha=".35"
 			 includeIn="home"/>
 	
@@ -1948,6 +1957,6 @@
 	
 	<s:BorderContainer id="dropImagesLocation" width="100%" height="100%" backgroundColor="#04527b" backgroundAlpha=".75" 
 					   visible="false" >
-		<s:Label text="Drop files into the library" verticalCenter="0" horizontalCenter="0" fontSize="58" color="#ffffff"/>
+		<s:Label text="Drop files here" verticalCenter="0" horizontalCenter="0" fontSize="58" color="#ffffff"/>
 	</s:BorderContainer>
 </s:Group>

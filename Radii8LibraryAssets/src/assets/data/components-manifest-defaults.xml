@@ -203,7 +203,7 @@
     </component>
     
     <component id="VideoPlayer" class="spark.components.VideoPlayer" include="true">
-    	<defaults width="320" height="240"/>
+    	<defaults width="320" height="240" autoplay="false" dropShadowVisible="false"/>
     </component>
     
     <component id="VScrollBar" class="spark.components.VScrollBar" include="false"/>

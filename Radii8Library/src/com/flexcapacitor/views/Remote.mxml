@@ -447,18 +447,6 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 						<panels:DocumentsInspector height="100%" width="100%"/>
 					</s:NavigatorContent>
 					
-					<!-- LIBRARY -->
-					<s:NavigatorContent label="LIBRARY">
-						<panels:LibraryInspector minHeight="180" height="100%" width="100%"/>
-					</s:NavigatorContent>
-					
-					<!-- LAYOUT CONSTRAINTS -->
-					<s:NavigatorContent label="LAYOUT">
-						<s:Scroller width="100%" height="100%">
-							<panels:ConstraintsInspector height="100%" width="100%" />
-						</s:Scroller>
-					</s:NavigatorContent>
-					
 					<!-- PROPERTIES -->
 					<s:NavigatorContent label="PROPERTIES">
 						<!-- TODO Convert this into a composite component -->
@@ -509,6 +497,18 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 										 height="100%"
 										 minHeight="24">
 						</mx:TabNavigator>-->
+					</s:NavigatorContent>
+					
+					<!-- LAYOUT CONSTRAINTS -->
+					<s:NavigatorContent label="LAYOUT">
+						<s:Scroller width="100%" height="100%">
+							<panels:ConstraintsInspector height="100%" width="100%" />
+						</s:Scroller>
+					</s:NavigatorContent>
+					
+					<!-- LIBRARY -->
+					<s:NavigatorContent label="LIBRARY">
+						<panels:LibraryInspector minHeight="180" height="100%" width="100%"/>
 					</s:NavigatorContent>
 					
 					<!-- EVENTS -->

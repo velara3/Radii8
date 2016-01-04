@@ -674,7 +674,7 @@
 					}
 					
 					previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
-						
+					
 						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 					/*else {
 						radiate.openDocument(radiate.selectedDocument);
@@ -1038,11 +1038,17 @@ IFRAME_ID {
 		</mx:LinkBar>-->
 		
 		
-		<c:SolidFillButton label="Preview" 
-				  visible="{isHTML}"
-				  toolTip="Preview in a browser"
-				  includeInLayout="{isHTML}"
-				  click="previewButton_clickHandler(event)"/>
+		<c:BeveledImageButton id="openDocumentInInternalWebIcon" 
+							  source="{Radii8LibraryAssets.documentPlayIcon}" 
+							  toolTip="View document inline with internal web browser (it's currently an old browser)"
+							  smoothingQuality="high"
+							  smooth="true"
+							  width="18"
+							  height="10"
+							  visible="{isHTML}"
+							  includeInLayout="{isHTML}"
+							  click="previewButton_clickHandler(event)" 
+							  />
 		
 		<!--<c:BeveledImageButton id="previewButton"
 							  source="{Radii8LibraryToolAssets.Launch}"
@@ -1056,8 +1062,6 @@ IFRAME_ID {
 							  source="{Radii8LibraryAssets.wordWrap}"
 							  toolTip="Word wrap"
 							  click="wordwrapButton_clickHandler(event)"
-							  visible="{!isHTML}"
-							  includeInLayout="{!isHTML}"
 							  />
 		
 		<c:BeveledImageButton id="resyncButton"

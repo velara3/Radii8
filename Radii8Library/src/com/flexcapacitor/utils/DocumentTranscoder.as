@@ -115,6 +115,11 @@ package com.flexcapacitor.utils {
 		
 		public var target:Object;
 		
+		/**
+		 * Components created during import
+		 * */
+		public static var newComponents:Array;
+		
 		private var _version:String = "1.0.0";
 
 		/**

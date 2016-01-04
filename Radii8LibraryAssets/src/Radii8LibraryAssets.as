@@ -52,6 +52,9 @@ package {
 		[Embed(source="assets/icons/general/document.png")]
 		public static const document:Class;
 		
+		[Embed(source="assets/icons/general/document_external_play.png")]
+		public static const documentExternalPlayIcon:Class;
+		
 		[Embed(source="assets/icons/general/document_play.png")]
 		public static const documentPlayIcon:Class;
 		
@@ -73,6 +76,9 @@ package {
 		[Embed(source="assets/icons/general/export.png")]
 		public static const export:Class;
 		
+		[Embed(source="assets/icons/general/grid.png")]
+		public static const grid:Class;
+		
 		[Embed(source="assets/icons/general/home.png")]
 		public static const home:Class;
 		
@@ -93,6 +99,9 @@ package {
 		
 		[Embed(source="assets/icons/general/Landscape_mode.png")]
 		public static const landscapeMode:Class;
+		
+		[Embed(source="assets/icons/general/list.png")]
+		public static const list:Class;
 		
 		[Embed(source="assets/icons/general/locked.png")]
 		public static const locked:Class;
@@ -139,6 +148,9 @@ package {
 		[Embed(source="assets/icons/general/multipleSave.png")]
 		public static const multipleSave:Class;
 		
+		[Embed(source="assets/icons/general/multiple_upload.png")]
+		public static const multipleUpload:Class;
+		
 		[Embed(source="assets/icons/general/selection.png")]
 		public static const selection:Class;
 		
@@ -169,6 +181,15 @@ package {
 		[Embed(source="assets/icons/general/warning.png")]
 		public static const warning:Class;
 		
+		[Embed(source="assets/backgrounds/wall.png")]
+		public static const wall:Class;
+		
+		[Embed(source="assets/backgrounds/wall2.png")]
+		public static const wall2:Class;
+		
+		[Embed(source="assets/backgrounds/wall3.png")]
+		public static const wall3:Class;
+		
 		[Embed(source="assets/icons/general/word_wrap.png")]
 		public static const wordWrap:Class;
 		
@@ -177,7 +198,6 @@ package {
 		
 		[Embed(source="assets/icons/general/unlocked.png")]
 		public static const unlocked:Class;
-		
 		
 	}
 }

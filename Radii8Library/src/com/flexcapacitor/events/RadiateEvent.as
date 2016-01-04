@@ -18,6 +18,11 @@ package com.flexcapacitor.events {
 		public static const ASSET_REMOVED:String = "assetRemoved";
 		
 		/**
+		 * Dispatched when assets are removed
+		 * */
+		public static const ASSETS_REMOVED:String = "assetsRemoved";
+		
+		/**
 		 * Dispatched when an asset is added
 		 * */
 		public static const ASSET_ADDED:String = "assetAdded";
@@ -208,6 +213,11 @@ package com.flexcapacitor.events {
 		public static const ATTACHMENT_UPLOADED:String = "attachmentUploaded";
 		
 		/**
+		 * Dispatched when attachments are deleted
+		 * */
+		public static const ATTACHMENTS_DELETED:String = "attachmentsDeleted";
+		
+		/**
 		 * Dispatched when logged in status is received
 		 * */
 		public static const LOGGED_IN_STATUS:String = "loggedInStatus";
@@ -350,6 +360,7 @@ package com.flexcapacitor.events {
 		public var successful:Boolean;
 		public var faultEvent:Event;
 		public var styles:Array;
+		public var error:Object;
 		
 		/**
 		 * Constructor.

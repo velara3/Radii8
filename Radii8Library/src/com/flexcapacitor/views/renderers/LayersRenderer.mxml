@@ -22,23 +22,23 @@
 			override public function set data(value:Object):void {
 				super.data = value;
 				
-				var item:ComponentDescription = value as ComponentDescription;
+				var componentDescription:ComponentDescription = value as ComponentDescription;
 				var path:String;
 				
-				if (item) {
-					if (item.icon) {
+				if (componentDescription) {
+					if (componentDescription.icon) {
 						
-						if (item.icon!=iconImage.source) {
-							iconImage.source = item.icon;
+						if (componentDescription.icon!=iconImage.source) {
+							iconImage.source = componentDescription.icon;
 						}
 					}
 					else {
-						if (item.instance is Application) {
+						if (componentDescription.instance is Application) {
 							//path = Radiate.componentsIconNotFoundPath;
 							iconImage.source = Radii8LibraryAssets.document;
 						}
 						else {
-							path = Radiate.componentsIconPath + item.name + ".png";
+							path = Radiate.componentsIconPath + componentDescription.className + ".png";
 							
 							if (path!=iconImage.source) {
 								iconImage.source = path;
@@ -50,21 +50,21 @@
 						labelDisplay.text = treeListData.label;
 					}
 					else {
-						if (item.name) {
-							if (item.instance is Application) {
+						if (componentDescription.name) {
+							if (componentDescription.instance is Application) {
 								labelDisplay.text = "Document";
 							}
 							else {
-								labelDisplay.text = item.name;
+								labelDisplay.text = componentDescription.name;
 							}
 						}
 						else {
-							labelDisplay.text = item.className=="application" || item.instance is Application ? "Document" : item.className;
+							labelDisplay.text = componentDescription.className=="application" || componentDescription.instance is Application ? "Document" : componentDescription.className;
 						}
 					}
 					
 					// show if visible
-					if (item.instance && item.instance.visible) {
+					if (componentDescription.instance && componentDescription.instance.visible) {
 						visibleGroup.visible = true;
 					}
 					else {
@@ -72,7 +72,7 @@
 					}
 					
 					// show if item is locked
-					if (item.locked) {
+					if (componentDescription.locked) {
 						lockedGroup.visible = true;
 					}
 					else {
@@ -87,7 +87,7 @@
 					disclosureGroup.visible = false;
 				}
 				
-				if (item && item.instance is Application) {
+				if (componentDescription && componentDescription.instance is Application) {
 					_visibleButtonGroup.visible = false;
 					hgroup.left = 2;
 				}

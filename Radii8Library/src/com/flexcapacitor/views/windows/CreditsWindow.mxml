@@ -18,8 +18,6 @@
 			import mx.events.FlexEvent;
 			
 			
-			
-			
 			protected function animatedpanelwindow1_creationCompleteHandler(event:FlexEvent):void {
 				var credits:String = new Radii8LibraryAssets.attributions();
 				mxTextArea.text = credits;
@@ -45,19 +43,17 @@
 			  bottom="20">
 		
 		
-		<mx:TextArea id="mxTextArea"  
+		<s:TextArea id="mxTextArea"  
 					 focusAlpha="0"
 					 fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
 					 borderVisible="true"
 					 fontSize="12"
-					 width="100%" height="300"
-					 editable="true"
-					 leading="0"
+					 width="100%" 
+					 height="300"
+					 borderColor="#989898"
+					 editable="false"
 					 >
-			<mx:text>
-			credits go here
-			</mx:text>
-		</mx:TextArea>
+		</s:TextArea>
 		
 		
 		<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">

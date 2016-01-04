@@ -21,6 +21,7 @@
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
 <!--     		<inspector name="Size" className="com.flexcapacitor.views.inspectors.Size"/> -->
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Border Styles" className="com.flexcapacitor.views.inspectors.BorderStyles"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
     		<inspector name="Layout" className="com.flexcapacitor.views.inspectors.Layout"/>

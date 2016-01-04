@@ -280,7 +280,7 @@ package com.flexcapacitor.managers {
 			}
 			
 			// pasting from other documents: 
-			Radiate.warn("Target not found in get source code. The item may have been deleted. Also, you cannot paste from another document at this time.");
+			Radiate.warn("Target not found in get source code. The item may have been deleted. Also, you cannot paste from another document at this time.", document);
 			return null;
 			//throw new Error("Target not found in get source code. The item may have been deleted. Also, you cannot paste from another document at this time.");
 		}

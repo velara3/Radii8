@@ -2,7 +2,6 @@
 
 package com.flexcapacitor.model {
 	import flash.display.BitmapData;
-	import flash.utils.ByteArray;
 	
 	
 	/**
@@ -44,16 +43,6 @@ package com.flexcapacitor.model {
 		public var thumbnailURL:String;
 		
 		/**
-		 * 
-		 * */
-		public var caption:String;
-		
-		/**
-		 * Full URL to image
-		 * */
-		public var url:String;
-		
-		/**
 		 * Width 
 		 * */
 		public var width:int;
@@ -69,25 +58,35 @@ package com.flexcapacitor.model {
 		public var bitmapData:BitmapData;
 		
 		/**
-		 * Byte Array
+		 * Layer info from import
 		 * */
-		public var byteArray:ByteArray;
+		public var layerInfo:Object;
 		
 		/**
 		 * 
 		 * */
 		override public function unmarshall(data:Object):void {
+			var imageData:ImageData;
+			var images:Object;
 			
 			if (data is ImageData) { // only added minimal support for image data atm
-				var image:ImageData = ImageData(data);
-				description = image.description;
-				id 			= image.id;
-				mimeType	= image.mimeType;
-				parentId	= image.parentId;
-				name 		= image.name;
-				url 		= image.url;
-				width 		= data.width;
-				height 		= data.height;
+				imageData 	= ImageData(data);
+				description = imageData.description;
+				id 			= imageData.id;
+				mimeType	= imageData.mimeType;
+				parentId	= imageData.parentId;
+				name 		= imageData.name;
+				//name 		= data.title; ?? 
+				url 		= imageData.url;
+				slug 		= imageData.slug;
+				width 		= imageData.width;
+				height 		= imageData.height;
+				
+				mediumURL	= imageData.mediumURL;
+				smallURL	= imageData.smallURL;
+				thumbnailURL= imageData.thumbnailURL;
+				width 		= imageData.width;
+				height 		= imageData.height;
 			}
 			else if (data is Object) {
 				
@@ -97,19 +96,33 @@ package com.flexcapacitor.model {
 				mimeType	= data.mime_type;
 				parentId	= data.parent;
 				name 		= data.title;
+				slug 		= data.slug;
 				url 		= data.url;
 				
-				if (data.images) {
-					mediumURL	= data.images.medium.url;
-					if (data.images["small-feature"]) {
-						smallURL	= data.images["small-feature"].url;
+				images = data.images;
+				
+				// an image can not have values if something goes wrong. gif was not returning images.
+				if (images) {
+					if (images.medium) {
+						mediumURL	= images.medium.url;
 					}
-					if (data.images["post-thumbnail"]) {
+					
+					if (images["small-feature"]) {
+						smallURL	= images["small-feature"].url;
+					}
+					
+					if (images["post-thumbnail"]) {
 						//postThumbnailURL	= data.images.["post-thumbnail"].url;
 					}
-					thumbnailURL	= data.images.thumbnail.url;
-					width 			= data.images.full.width;
-					height 			= data.images.full.height;
+					
+					if (images.thumbnail) {
+						thumbnailURL	= images.thumbnail.url;
+					}
+					
+					if (images.full) {
+						width 			= images.full.width;
+						height 			= images.full.height;
+					}
 				}
 			}
 		}

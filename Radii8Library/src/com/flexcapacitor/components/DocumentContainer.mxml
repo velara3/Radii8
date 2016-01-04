@@ -421,7 +421,7 @@
 						projectLoader.load();
 					}
 					catch (error:Error) {
-						Radiate.error(error.message);
+						Radiate.error(error.message, error);
 						hideBusyIndicators();
 					}
 				}
@@ -498,7 +498,7 @@
 			 * */
 			protected function project_ioErrorHandler(event:IOErrorEvent):void {
 				//trace("ioerror");
-				Radiate.error(event.text);
+				Radiate.error(event.text, event);
 				hideBusyIndicators();
 			}
 			
@@ -508,7 +508,7 @@
 			protected function project_securityErrorHandler(event:SecurityErrorEvent):void
 			{
 				//trace("security error");
-				Radiate.error(event.text);
+				Radiate.error(event.text, event);
 				hideBusyIndicators();
 			}
 			
