@@ -1,15 +1,21 @@
 
 package com.flexcapacitor.utils {
+	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.FileInfo;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.IDocumentExporter;
+	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.model.IssueData;
 	import com.flexcapacitor.model.SourceData;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
 	
+	import flash.display.BitmapData;
+	
 	import spark.components.Application;
+	import spark.components.Image;
+	import spark.primitives.BitmapImage;
 	
 	/**
 	 * Exports a document to MXML
@@ -43,8 +49,6 @@ package com.flexcapacitor.utils {
 		public var markup:String = "";
 		
 		public var styles:String = "";
-		
-		public var showChildren:Boolean = true;
 		
 		/**
 		 * Styles added by users 
@@ -166,6 +170,10 @@ package com.flexcapacitor.utils {
 			sourceData.errors = errors;
 			sourceData.warnings = warnings;
 			
+			if (parameterOptions) {
+				restorePreviousPresets();
+			}
+			
 			return sourceData;
 		}
 		
@@ -187,19 +195,36 @@ package com.flexcapacitor.utils {
 		 * Gets the formatted MXML output from a component. 
 		 * TODO: This should be using namespaces an XML object
 		 * */
-		public function getMXMLOutputString(iDocument:IDocument, component:ComponentDescription, addLineBreak:Boolean = false, tabs:String = ""):String {
-			//if (component.instance is Application) {
-				getAppliedPropertiesFromHistory(iDocument, component);
-			//}
+		public function getMXMLOutputString(iDocument:IDocument, componentDescription:ComponentDescription, addLineBreak:Boolean = false, tabs:String = ""):String {
 			var validationInfo:XMLValidationInfo;
-			var properties:Object = component.properties;
-			var styles:Object = component.styles;
+			var properties:Object;
+			var styles:Object;
+			var events:Object;
 			var componentChild:ComponentDescription;
-			var className:String = component.className;
+			var className:String;
 			var output:String = "";
 			var outputValue:String = "";
 			var namespaces:String;
+			var numberOfChildren:int;
 			var value:*;
+			var warningData:IssueData;
+			var errorData:IssueData;
+			
+			if (exportFromHistory) {
+				getAppliedPropertiesFromHistory(iDocument, componentDescription);
+			}
+			
+			
+			//exportChildDescriptors = componentDescription.exportChildDescriptors;
+			
+			if (!exportChildDescriptors) {
+				//contentToken = "";
+			}
+			
+			properties = componentDescription.properties ? componentDescription.properties : {};
+			styles = componentDescription.styles ? componentDescription.styles : {};
+			events = componentDescription.events ? componentDescription.events : {};
+			className = componentDescription.className;
 			
 			
 			for (var propertyName:String in properties) {
@@ -240,55 +265,70 @@ package com.flexcapacitor.utils {
 			// adding extra attributes
 			// we should refactor this
 			
-			if (component.locked) {
+			if (componentDescription.locked) {
 				output += " ";
 				output += fcNamespace + ":" + "locked=\"true\"";
 			}
 			
-			if (component.name!=component.className) {
+			if (componentDescription.name!=componentDescription.className) {
 				output += " ";
-				output += fcNamespace + ":" + "name=\"" + component.name + "\"";
+				output += fcNamespace + ":" + "name=\"" + componentDescription.name + "\"";
 			}
 			
-			if (component.userStyles) {
+			if (componentDescription.userStyles) {
 				output += " ";
-				output += htmlNamespace + ":" + "style=\"" + XMLUtils.getAttributeSafeString(component.userStyles) + "\"";
+				output += htmlNamespace + ":" + "style=\"" + XMLUtils.getAttributeSafeString(componentDescription.userStyles) + "\"";
 			}
 			
-			if (component.convertElementToImage) {
+			if (componentDescription.convertElementToImage) {
 				output += " ";
-				output += fcNamespace + ":" + "convertToImage=\"" +component.convertElementToImage + "\"";
+				output += fcNamespace + ":" + "convertToImage=\"" +componentDescription.convertElementToImage + "\"";
 			}
 			
-			if (component.createBackgroundSnapshot) {
+			if (componentDescription.createBackgroundSnapshot) {
 				output += " ";
-				output += fcNamespace + ":" + "createBackgroundSnapshot=\"" +component.createBackgroundSnapshot + "\"";
+				output += fcNamespace + ":" + "createBackgroundSnapshot=\"" +componentDescription.createBackgroundSnapshot + "\"";
+			}
+			
+			if (componentDescription.instance is Image || componentDescription.instance is BitmapImage) {
+				
+				if (componentDescription.instance.source is BitmapData) {
+					var imageData:ImageData = Radiate.getImageDataFromBitmapData(componentDescription.instance.source);
+					if (imageData && imageData.uid) {
+						output += " ";
+						output += fcNamespace + ":" + "bitmapDataId=\"" +imageData.uid + "\"";
+					}
+					
+					warningData = IssueData.getIssue("Image data was not uploaded", "If you don't upload the image it will not be visible online.");
+					warnings.push(warningData);
+				}
 			}
 			
 			if (className) {
-				if (component.instance is Application) {
+				if (componentDescription.instance is Application) {
 					className = "Application";
-					namespaces = defaultNamespaceDeclarations; 
-					/*
-					namespaces = " xmlns:fx=\"http://ns.adobe.com/mxml/2009\"";
-					namespaces += " xmlns:s=\"library://ns.adobe.com/flex/spark\"";
-					namespaces += " xmlns:mx=\"library://ns.adobe.com/flex/\"";
-					namespaces += " xmlns:"+ fcNamespace + "=\"library://ns.flexcapacitor.com/flex/\"";
-					*/
+					namespaces = defaultNamespaceDeclarations;
 					output = namespaces + output;
+				}
+				
+				if (output.indexOf(" ")==0) {
+					output = output.substr(1);
 				}
 				
 				// we are not handling namespaces here - we could use component descriptor
 				output = tabs + "<" + sparkNamespace + ":" + className + " " + output;
 				
-				if (showChildren && component.children && component.children.length>0) {
+				if (exportChildDescriptors && componentDescription.children && componentDescription.children.length>0) {
 					output += ">\n";
+					numberOfChildren = componentDescription.children.length;
 					
-					for (var i:int;i<component.children.length;i++) {
-						componentChild = component.children[i];
+					for (var i:int;i<numberOfChildren;i++) {
+						componentChild = componentDescription.children[i];
 						// we should get the properties and styles from the 
 						// the component description
-						getAppliedPropertiesFromHistory(iDocument, componentChild);
+						if (exportFromHistory) {
+							getAppliedPropertiesFromHistory(iDocument, componentChild);
+						}
 						output += getMXMLOutputString(iDocument, componentChild, false, tabs + "\t");
 					}
 					

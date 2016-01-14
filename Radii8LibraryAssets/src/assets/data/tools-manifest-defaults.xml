@@ -8,6 +8,9 @@
     Tools
     
     Be sure to include a reference to the classes in RadiateReferences
+    
+    IF you change the name or class it may break calls made to look for "Selection", etc
+    Be sure to search through the code or check radiate.getToolByName();
 -->
 <toolsPackage>
 

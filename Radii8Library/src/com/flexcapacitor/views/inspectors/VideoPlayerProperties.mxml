@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 
+		 styleName="inspectablePanel"
+		 width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.MetaData;
+			import com.flexcapacitor.utils.ClassUtils;
+			
+			import org.as3commons.lang.ArrayUtils;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
+				}
+				
+				target = null;
+				data = null;
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			public function update():void {
+				//var data:Object = ClassUtils.getMetaDataOfProperty(target, "source");
+				var sourceData:MetaData = ClassUtils.getMetaDataOfProperty(target, "source");
+				sourceRenderer.data = sourceData;
+				autoPlayRenderer.data = ClassUtils.getMetaDataOfProperty(target, "autoPlay");
+				autoRewindRenderer.data = ClassUtils.getMetaDataOfProperty(target, "autoRewind");
+				mutedRenderer.data = ClassUtils.getMetaDataOfProperty(target, "muted");
+				pauseWhenHiddenRenderer.data = ClassUtils.getMetaDataOfProperty(target, "pauseWhenHidden");
+				autoDisplayFirstFrameRenderer.data = ClassUtils.getMetaDataOfProperty(target, "autoDisplayFirstFrame");
+				scaleModeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "scaleMode");
+				volumeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "volume");
+				
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
+					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+						callLater(update);
+					}
+					else {
+						return;
+					}
+				}
+				callLater(update);
+			}
+			
+			public var relevantProperties:Array = ["source", "autoPlay", "autoRewind", "autoDisplayFirstFrame", 
+						"muted", "pauseWhenHidden", "scaleMode", "volume"];
+		]]>
+	</fx:Script>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Source" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:TextRenderer id="sourceRenderer" height="24" width="100%"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Scale Mode" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:DropDownListRenderer id="scaleModeRenderer" height="24"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Volume" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:NumberRenderer id="volumeRenderer" height="24"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Auto Play" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:BooleanRenderer id="autoPlayRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Auto Rewind" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:BooleanRenderer id="autoRewindRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Auto Play" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:BooleanRenderer id="autoDisplayFirstFrameRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Muted" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:BooleanRenderer id="mutedRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
+		<s:Label text="Paused when hidden" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:BooleanRenderer id="pauseWhenHiddenRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+</s:VGroup>

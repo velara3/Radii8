@@ -111,7 +111,11 @@
 				}
 				
 				if (basicTemplate==null) {
-					basicTemplate = new Radii8LibraryTranscodersAssets.basicHTMLDocument();
+					basicTemplate = new Radii8LibraryTranscodersAssets.basicHTMLDocumentReusable();
+				}
+				
+				if (showChildDescriptors) {
+					showChildDescriptors.selected = true;
 				}
 				
 				if (radiate.target) {
@@ -188,6 +192,7 @@
 					htmlOptions.template = iDocument.template;
 					htmlOptions.disableTabs = true;
 					htmlOptions.useExternalStylesheet = false;
+					htmlOptions.exportChildDescriptors = showChildDescriptors.selected;
 					
 					if (updateCodeLive.selected && isCodeModifiedByUser) {
 						htmlOptions.useCustomMarkup = true;
@@ -203,7 +208,9 @@
 					options = htmlOptions;
 				}
 				else if (language == CodeManager.MXML) {
-					options = null;
+					options = CodeManager.getExportOptions(language) as ExportOptions;
+					options.exportChildDescriptors = showChildDescriptors.selected;
+					//options = null;
 				}
 				else if (language == CodeManager.ANDROID) {
 					options = null;
@@ -872,6 +879,11 @@
 				}
 			}
 			
+			protected function showChildDescriptors_clickHandler(event:MouseEvent):void
+			{
+				updateCodeEditors(true);
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1058,11 +1070,19 @@ IFRAME_ID {
 							  includeInLayout="{isHTML}"
 							  click="previewButton_clickHandler(event)"
 							  />-->
+		
 		<c:BeveledImageButton id="wordwrapButton"
 							  source="{Radii8LibraryAssets.wordWrap}"
 							  toolTip="Word wrap"
 							  click="wordwrapButton_clickHandler(event)"
 							  />
+		
+		
+		<s:CheckBox id="showChildDescriptors"
+					label="Nested Elements"
+					toolTip="Show nested elements"
+					click="showChildDescriptors_clickHandler(event)"
+					/>
 		
 		<c:BeveledImageButton id="resyncButton"
 							  source="{Radii8LibraryAssets.refresh}"

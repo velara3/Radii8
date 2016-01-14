@@ -56,6 +56,7 @@ package com.flexcapacitor.tools {
 			
 			defaultCursorID = radiate.getMouseCursorID(this);
 			
+			Mouse.cursor = defaultCursorID;
 		}
 	
 		/**

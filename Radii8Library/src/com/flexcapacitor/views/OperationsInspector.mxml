@@ -16,6 +16,7 @@
 			import com.flexcapacitor.tools.Selection;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
+			import mx.core.FlexGlobals;
 			import mx.events.FlexEvent;
 			
 			public var radiate:Radiate;
@@ -40,6 +41,9 @@
 				if (tool) {
 					IEventDispatcher(tool).addEventListener(Selection.KEY_EVENT, keyEventHandler, false, 0, true);
 					IEventDispatcher(tool).addEventListener(Selection.EDIT_EVENT, editEventHandler, false, 0, true);
+					FlexGlobals.topLevelApplication.addEventListener(Event.COPY, editEventHandler, false, 0, true);
+					FlexGlobals.topLevelApplication.addEventListener(Event.PASTE, editEventHandler, false, 0, true);
+					FlexGlobals.topLevelApplication.addEventListener(KeyboardEvent.KEY_UP, keyEventHandler, false, 0, true);
 				}
 			}
 			
@@ -66,9 +70,10 @@
 			protected function showSelection_changeHandler(event:Event):void {
 				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
 				var selectedTool:ITool = tool;
+				var selectionTool:Selection;
 				
 				if (toolDescription.instance) {
-					var selectionTool:Selection = Selection(toolDescription.instance);
+					selectionTool = Selection(toolDescription.instance);
 				}
 				
 			}
@@ -79,29 +84,31 @@
 			protected function showLabel_changeHandler(event:Event):void {
 				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
 				var selectedTool:ITool = tool;
+				var selectionTool:Selection;
 				
 				if (toolDescription.instance) {
-					var selectionTool:Selection = Selection(toolDescription.instance);
+					selectionTool = Selection(toolDescription.instance);
 				}
 			}
 			
 			protected function editEventHandler(event:Event):void {
 				var targetPath:Object;
 				var direction:String;
+				var eventType:String = event ? event.type : null;
 				
-				if (selectionTool.editType==Selection.COPY) {
+				if (selectionTool.editType==Selection.COPY || eventType==Selection.COPY) {
 					direction = Selection.COPY;
 					targetPath = copyLabel;
 				}
-				else if (selectionTool.editType==Selection.PASTE) {
+				else if (selectionTool.editType==Selection.PASTE || eventType==Selection.PASTE) {
 					direction = Selection.PASTE;
 					targetPath = pasteLabel;
 				}
-				else if (selectionTool.editType==Selection.UNDO) {
+				else if (selectionTool.editType==Selection.UNDO || eventType==Selection.UNDO) {
 					direction = Selection.UNDO;
 					targetPath = undoLabel;
 				}
-				else if (selectionTool.editType==Selection.REDO) {
+				else if (selectionTool.editType==Selection.REDO || eventType==Selection.REDO) {
 					direction = Selection.REDO;
 					targetPath = redoLabel;
 				}
@@ -124,20 +131,23 @@
 			protected function keyEventHandler(event:Event):void {
 				var targetPath:Object;
 				var direction:String;
+				var keyCode:int;
 				
-				if (selectionTool.keyCode==Keyboard.UP) {
+				keyCode = event is KeyboardEvent ? KeyboardEvent(event).keyCode : null;
+				
+				if (selectionTool.keyCode==Keyboard.UP || keyCode==Keyboard.UP) {
 					direction = "up";
 					targetPath = up;
 				}
-				else if (selectionTool.keyCode==Keyboard.DOWN) {
+				else if (selectionTool.keyCode==Keyboard.DOWN || keyCode==Keyboard.DOWN) {
 					direction = "down";
 					targetPath = down;
 				}
-				else if (selectionTool.keyCode==Keyboard.RIGHT) {
+				else if (selectionTool.keyCode==Keyboard.RIGHT || keyCode==Keyboard.RIGHT) {
 					direction = "right";
 					targetPath = right;
 				}
-				else if (selectionTool.keyCode==Keyboard.LEFT) {
+				else if (selectionTool.keyCode==Keyboard.LEFT || keyCode==Keyboard.LEFT) {
 					direction = "left";
 					targetPath = left;
 				}

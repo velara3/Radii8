@@ -868,7 +868,9 @@ package com.flexcapacitor.model {
 			
 			if (!currentDocumentData.openSuccessful) {
 				currentDocumentData.isOpen = false;
-				Radiate.info("The document '" + currentDocumentData.name + "' could not be loaded because of the following error: " + event.message);
+				var message:String = event.message ? event.message : event.text;
+				
+				Radiate.info("The document '" + currentDocumentData.name + "' could not be loaded because of the following error: " + message);
 				
 				if (event.faultEvent) {
 					Radiate.info(event.faultEvent + "");

@@ -3,7 +3,7 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:filters="com.flexcapacitor.filters.*" 
-		 xmlns:controls="com.flexcapacitor.controls.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*" 
 		 
 		 styleName="radiateInspector"
@@ -392,6 +392,12 @@
 				}
 			}
 			
+			private function clearHistory():void {
+				if (radiate.selectedDocument) {
+					HistoryManager.removeAllHistory(radiate.selectedDocument);
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -399,120 +405,85 @@
 		
 	</fx:Declarations>
 	
-	<s:Group width="100%" height="100%" left="5" right="5" bottom="5">
-		
-		<s:List id="list" 
-				top="26"
-				focusAlpha="0"
-				minHeight="20"
-				width="100%" height="100%"
-				dataProvider="{HistoryManager.history}" 
-				labelFunction="labelFunction"
-				borderVisible="false"
-				change="changeHandler(event)"
-				valueCommit="list_valueCommitHandler(event)"
-				caretChange="list_caretChangeHandler(event)"
-				click="list_clickHandler(event)"
-				itemRenderer="com.flexcapacitor.views.renderers.HistoryItemRenderer"
-				>
-			
-			<s:layout>
-				<s:VerticalLayout useVirtualLayout="true" gap="1"/>
-			</s:layout>
-			
-		</s:List>
-		
-		<renderers:HistoryItemRenderer id="openLabel" 
-									   label="Open" 
-									   width="100%"
-									   right="100"
-									   useHandCursor="true" 
-									   buttonMode="true"
-									   autoDrawBackground="true"
-									   click="revertHandler(event)" />
-									   
-		<controls:HorizontalLine top="22" 
-								 strokeColor="#000000" 
-								 alpha=".15"
-								 />
-		
-		<!--- triangle -->
-		<s:Group height="14" width="10" top="4" visible="{HistoryManager.historyIndex==-1}">
-			<s:Path data="M 0 0 L 0 16 L 16 8 z" width="100%" height="100%">
-				<s:fill>
-					<s:SolidColor color="#000000" alpha=".25"/>
-				</s:fill>
-				<s:stroke>
-					<s:SolidColorStroke weight="0" color="#ffffff" />
-				</s:stroke>
-			</s:Path>
-			<!--<s:Line width="40" x="13" y="5" >
-				<s:stroke>
-					<s:SolidColorStroke alpha=".15"/>
-				</s:stroke>
-			</s:Line>-->
-		</s:Group>
-		
-		
-		<!--- UNDO REDO BUTTONS -->
-		<s:HGroup width="100%" right="0" top="0" verticalAlign="top">
-			
-			<!--- revert to beginning -->
-			<!--<s:Group width="50%" height="8" >
-				<s:Rect width="100%" height="8" >
-					<s:fill>
-						<s:SolidColor alpha="0"/>
-					</s:fill>
-				</s:Rect>
-			</s:Group>-->
-			
-			<s:Spacer width="100%"/>
-			
-			
-			<controls:BeveledImageButton id="backButton" 
-								  source="{Radii8LibraryAssets.undo}" 
-								  height="15"
-								  alpha=".8"
-								  click="undo()" 
-								  toolTip="Undo"
-								  />
-			<controls:BeveledImageButton id="forwardButton" 
-								  source="{Radii8LibraryAssets.redo}"
-								  height="15"
-								  alpha=".8"
-								  click="redo()" 
-								  toolTip="Redo"
-								  />
-			
-			<!--- go back -->
-			<!--<s:Group id="backButton" 
-					 click="undo()" 
-					 width="20"
-					 height="15"
-					 useHandCursor="true"
-					 buttonMode="true"
-					 >
-				<s:Path data="M 8 0 L 8 16 L 0 8 Z" height="14" width="14">
-					<s:fill>
-						<s:SolidColor color="#000000" alpha=".5"/>
-					</s:fill>
-				</s:Path>
-			</s:Group>-->
-			
-			<!--- go forward -->
-			<!--<s:Group id="forwardButton" 
-					 width="20"
-					 height="15"
-					 click="redo()"
-						  useHandCursor="true"
-						  buttonMode="true">
-				<s:Path data="M 0 0 L 0 16 L 16 8 L 0 0 Z" height="14" width="14">
-					<s:fill>
-						<s:SolidColor color="#000000" alpha=".5"/>
-					</s:fill>
-				</s:Path>
-			</s:Group>-->
-		</s:HGroup>
-	</s:Group>
+	<renderers:HistoryItemRenderer id="openLabel" 
+								   label="Open" 
+								   width="100%"
+								   left="5"
+								   right="5"
+								   useHandCursor="true" 
+								   buttonMode="true"
+								   autoDrawBackground="true"
+								   click="revertHandler(event)" />
 	
+	<c:HorizontalLine top="22" left="5" right="5"
+					  strokeColor="#000000" 
+					  alpha=".15"
+					  />
+	
+	<c:ListNoKeyboardHandling id="list" 
+			top="26" bottom="28"
+			left="5"
+			right="5"
+			focusAlpha="0"
+			minHeight="20"
+			width="100%" height="100%"
+			dataProvider="{HistoryManager.history}" 
+			labelFunction="labelFunction"
+			borderVisible="false"
+			change="changeHandler(event)"
+			valueCommit="list_valueCommitHandler(event)"
+			caretChange="list_caretChangeHandler(event)"
+			click="list_clickHandler(event)"
+			itemRenderer="com.flexcapacitor.views.renderers.HistoryItemRenderer"
+			>
+		
+		<c:layout>
+			<s:VerticalLayout useVirtualLayout="true" gap="1"/>
+		</c:layout>
+		
+	</c:ListNoKeyboardHandling>
+	
+	<!--- triangle -->
+	<s:Group height="14" width="10" top="4" visible="{HistoryManager.historyIndex==-1}">
+		<s:Path data="M 0 0 L 0 16 L 16 8 z" width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="#000000" alpha=".25"/>
+			</s:fill>
+			<s:stroke>
+				<s:SolidColorStroke weight="0" color="#ffffff" />
+			</s:stroke>
+		</s:Path>
+	</s:Group>
+		
+	
+	
+	<!--- UNDO REDO BUTTONS -->
+	<s:HGroup width="100%" right="5" left="5" bottom="5" verticalAlign="top">
+		
+		<c:BeveledImageButton id="clearHistoryButton" 
+							  source="{Radii8LibraryAssets.clear}" 
+							  height="15"
+							  alpha=".8"
+							  click="clearHistory()" 
+							  toolTip="Clear history items"
+							  />
+		
+		<s:Spacer width="100%"/>
+		
+		
+		<c:BeveledImageButton id="backButton" 
+							  source="{Radii8LibraryAssets.undo}" 
+							  height="15"
+							  alpha=".8"
+							  click="undo()" 
+							  toolTip="Undo"
+							  />
+		<c:BeveledImageButton id="forwardButton" 
+							  source="{Radii8LibraryAssets.redo}"
+							  height="15"
+							  alpha=".8"
+							  click="redo()" 
+							  toolTip="Redo"
+							  />
+	</s:HGroup>
 </s:Group>

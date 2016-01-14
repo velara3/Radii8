@@ -107,18 +107,29 @@ package com.flexcapacitor.utils {
 		/**
 		 * Options for transcoder
 		 * */
-		public static var options:TranscoderOptions;
-		public static var importOptions:ImportOptions;
-		public static var exportOptions:ExportOptions;
+		public var options:TranscoderOptions;
+		public var importOptions:ImportOptions;
+		public var exportOptions:ExportOptions;
 		
 		public var previousPresets:ExportOptions;
 		
 		public var target:Object;
 		
 		/**
+		 * Export child descriptors
+		 * */
+		public var exportChildDescriptors:Boolean = true;
+		
+		/**
 		 * Components created during import
 		 * */
 		public static var newComponents:Array;
+		
+		/**
+		 * Export from history
+		 * */
+		public var exportFromHistory:Boolean;
+		
 		
 		private var _version:String = "1.0.0";
 
@@ -264,23 +275,30 @@ package com.flexcapacitor.utils {
 		/**
 		 * Apply presets
 		 * */
-		public function applyPresets(options:ExportOptions):void {
+		public function applyPresets(options:ExportOptions, enforceAllValues:Boolean = false):void {
 			var properties:Array = ClassUtils.getPropertyNames(options);
+			var value:*;
 			
 			for each (var property:String in properties) {
+				
 				if (property in this) {
-					this[property] = options[property];
+					value = options[property];
+					
+					if ((value!=null && value!=undefined) || enforceAllValues) {
+						this[property] = value;
+					}
 				}
 			}
 			
 		}
 		
 		/**
-		 * Save current presets
+		 * Save current presets. Sub classes should override this or set the options to their
+		 * own class options type
 		 * */
 		public function savePresets():void {
 			if (previousPresets==null) {
-				previousPresets = new HTMLExportOptions();
+				previousPresets = new ExportOptions();
 			}
 			
 			var properties:Array = ClassUtils.getPropertyNames(previousPresets);
@@ -538,12 +556,14 @@ package com.flexcapacitor.utils {
 			var eventsLength:int;
 			var propertiesObject:Object;
 			var stylesObject:Object;
+			var eventsObject:Object;
 			var properties:Array;
 			var styles:Array;
 			
 			history = document.history;
-			propertiesObject = {};
-			stylesObject = {};
+			propertiesObject = component.properties ? component.properties : {};
+			stylesObject = component.styles ? component.styles : {};
+			eventsObject = component.events ? component.events : {};
 			
 			if (history.length==0) return propertiesObject;
 			
@@ -598,9 +618,21 @@ package com.flexcapacitor.utils {
 		 * Returns options object for export. 
 		 * Classes should override this method and return their own export options
 		 * */
-		public function getExportOptions():ExportOptions {
+		public function getExportOptions(getCurrentValues:Boolean = true):ExportOptions {
+			var properties:Array;
+			
 			if (exportOptions==null) {
 				exportOptions = new ExportOptions();
+			}
+			
+			if (getCurrentValues) {
+				properties = ClassUtils.getPropertyNames(this);
+				
+				for each (var property:String in properties) {
+					if (property in exportOptions) {
+						exportOptions[property] = this[property];
+					}
+				}
 			}
 			
 			return exportOptions;

@@ -119,6 +119,8 @@ package com.flexcapacitor.tools {
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
 			
 			updateDocument(null);
+			
+			Mouse.cursor = MouseCursor.AUTO;
 		}
 		
 		/**

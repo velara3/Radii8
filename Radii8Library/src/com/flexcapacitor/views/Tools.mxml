@@ -51,16 +51,23 @@
 			/**
 			 * 
 			 * */
-			protected function toolChangeHandler(event:RadiateEvent):void
-			{
-				selectedTool = event.selectedItem as ITool;
+			protected function toolChangeHandler(event:RadiateEvent):void {
+				var componentDescription:ComponentDescription;
+				
+				selectedTool = event.tool as ITool;
+				componentDescription = radiate.getToolDescription(selectedTool);
+				
+				if (tools.selectedItem==null || tools.selectedItem != componentDescription) {
+					tools.selectedItem = componentDescription;
+				}
+				
+				updateTool();
 			}
 			
 			/**
 			 * 
 			 * */
-			protected function toolsUpdatedHandler(event:RadiateEvent):void
-			{
+			protected function toolsUpdatedHandler(event:RadiateEvent):void {
 				tools.dataProvider = Radiate.toolsDescriptions;
 			}
 			
@@ -82,14 +89,12 @@
 			 * Update the tool
 			 * */
 			public function updateTool():void {
-				var item:ComponentDescription;
+				var componentDescription:ComponentDescription;
 				
-				radiate = Radiate.getInstance();
+				componentDescription = tools.selectedItem as ComponentDescription;
 				
-				item = tools.selectedItem as ComponentDescription;
-				
-				if (item) {
-					radiate.setTool(item.instance as ITool);
+				if (componentDescription && componentDescription.instance != radiate.selectedTool) {
+					radiate.setTool(componentDescription.instance as ITool);
 				}
 			}
 			

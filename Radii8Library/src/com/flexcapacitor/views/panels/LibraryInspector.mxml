@@ -738,9 +738,13 @@
 			protected function multipleUploadIcon_clickHandler(event:MouseEvent):void {
 				var iDocument:IDocument = radiate.selectedDocument;
 				var attachmentData:AttachmentData;
+				var attachmentsToUpload:Array = radiate.getAssetsAvailableToUpload();
 				
 				if (iDocument==null) {
-					Radiate.info("No items to upload.");
+					Radiate.info("No document available to upload to.");
+				}
+				else if (attachmentsToUpload.length==0) {
+					Radiate.info("There are no items that have not been uploaded already.");
 				}
 				else {
 					Radiate.info("Uploading items from the library...");
@@ -939,7 +943,7 @@
 
 		
 		<c:LabelButton id="addImageLabel" 
-					   text="Drag and drop to add items"
+					   text="Drag and drop or click here to add items"
 					   color="#888888"
 					   paddingTop="50"
 					   paddingBottom="120"

@@ -2,6 +2,7 @@
 package com.flexcapacitor.model {
 	
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.managers.CodeManager;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.HTMLDocumentExporter;
@@ -557,6 +558,7 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 			var sourceData:SourceData;
 			var value:String;
 			
+			
 			if (isOpen) {
 				if (this.historyIndex==-1) {
 					//Radiate.info("Document history is empty!");
@@ -565,7 +567,9 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 				// value was not saving so ignoring is changed property
 				//if (isChanged || source==null || source=="") {
 				if (true) {
-					sourceData = internalExporter.export(this);
+					var options:ExportOptions = CodeManager.getExportOptions(CodeManager.MXML);
+					options.exportChildDescriptors = true;
+					sourceData = CodeManager.getSourceData(instance, this, CodeManager.MXML, options);
 					value = sourceData.source;
 				}
 				else if (source) {
@@ -623,8 +627,12 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 				// value was not saving so ignoring is changed property
 				//if (isChanged || source==null || source=="") {
 				if (true) {
-					sourceData = htmlExporter.export(this, componentDescription);
+					var options:ExportOptions = CodeManager.getExportOptions(CodeManager.HTML);
+					options.exportChildDescriptors = true;
+					sourceData = CodeManager.getSourceData(instance, this, CodeManager.HTML, options);
 					value = sourceData.source;
+					//sourceData = htmlExporter.export(this, componentDescription);
+					//value = sourceData.source;
 				}
 				else if (source) {
 					value = source;

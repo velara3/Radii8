@@ -3,6 +3,8 @@ package com.flexcapacitor.model
 	
 	/**
 	 * Base class for options for DocumentExporter class
+	 * Using strings because we need to support the conditions
+	 * true, false, unchanged which would be null
 	 * */
 	public class ExportOptions extends TranscoderOptions {
 		
@@ -19,6 +21,11 @@ package com.flexcapacitor.model
 		 * Set styles inline
 		 * */
 		public var useInlineStyles:Boolean;
+		
+		/**
+		 * Show child descriptors
+		 * */
+		public var exportChildDescriptors:Boolean;
 		
 		/**
 		 * Create an external style sheet

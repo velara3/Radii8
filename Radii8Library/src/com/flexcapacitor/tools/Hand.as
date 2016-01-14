@@ -97,25 +97,24 @@ package com.flexcapacitor.tools {
 		/**
 		 * Enable this tool. 
 		 * */
-		public function enable():void
-		{
+		public function enable():void {
 			
 			//radiate.document.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
 			
 			if (radiate.selectedDocument) {
 				updateDocument(radiate.selectedDocument);
 			}
+			
 			// we made cursors when we imported the tool - these were defined in our tool.xml node we get their reference here. these are the paths to the classes which are embedded icons. we could add these on import at startup??  
 			handOverCursorID = radiate.getMouseCursorID(this, "HandOverCursor");
 			handGrabCursorID = radiate.getMouseCursorID(this, "HandGrabCursor");
-			
 			
 			
 			if (canvasScroller) {
 				canvasScroller.setStyle("interactionMode", InteractionMode.TOUCH);
 			}
 			
-			
+			updateMouseCursor();
 		}
 		
 		/**
@@ -140,6 +139,8 @@ package com.flexcapacitor.tools {
 			updateDocument(null);
 			
 			previousInteractionMode = null;
+			
+			Mouse.cursor = MouseCursor.AUTO;
 		}
 		
 		/**
@@ -194,6 +195,7 @@ package com.flexcapacitor.tools {
 		 * Click mouse move
 		 * */
 		protected function handleMouseMove(event:MouseEvent):void {
+			isDown = event.buttonDown;
 			
 			if (isOverDocument) {
 				//event.stopImmediatePropagation();
@@ -307,9 +309,14 @@ package com.flexcapacitor.tools {
 		
 		
 		/**
-		 * Update mouse cursor
+		 * Update mouse cursor. Enforce mouse cursor for when already over document. 
 		 * */
-		public function updateMouseCursor():void {
+		public function updateMouseCursor(showCursor:Boolean = false):void {
+			
+			if (showCursor) {
+				isOverDocument = true;
+				Mouse.cursor = handOverCursorID;
+			}
 			
 			if (isOverDocument) {
 				if (isDown) {

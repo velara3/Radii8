@@ -23,6 +23,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.Layout;
 	import com.flexcapacitor.views.inspectors.StyleNameInspector;
 	import com.flexcapacitor.views.inspectors.TextInspector;
+	import com.flexcapacitor.views.inspectors.VideoPlayerProperties;
 	
 	import flash.display.JPEGEncoderOptions;
 	import flash.display.PNGEncoderOptions;
@@ -72,6 +73,7 @@ package com.flexcapacitor.controller {
 		public static var textInspector:com.flexcapacitor.views.inspectors.TextInspector;
 		public static var basicBackgroundInspector:com.flexcapacitor.views.inspectors.BasicBackgroundStyles;
 		public static var imageInspector:com.flexcapacitor.views.inspectors.ImageProperties;
+		public static var videoPlayerInspector:com.flexcapacitor.views.inspectors.VideoPlayerProperties;
 		public static var borderStylesInspector:com.flexcapacitor.views.inspectors.BorderStyles;
 		public static var buttonInspector:com.flexcapacitor.views.inspectors.Button;
 		public static var groupInspector:com.flexcapacitor.views.inspectors.GroupLayoutInspector;

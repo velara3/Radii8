@@ -1281,7 +1281,10 @@ package com.flexcapacitor.managers
 		 * */
 		public static function selectTargetsAtIndex(document:IDocument, index:int, dispatchEvent:Boolean = true):void {
 			var historyEvent:HistoryEvent = getHistoryEventAtIndex(document, index);
-			Radiate.setTargets(historyEvent.targets, dispatchEvent);
+			if (historyEvent) {
+				Radiate.setTargets(historyEvent.targets, dispatchEvent);
+			}
+			
 		}
 		
 		/**
@@ -1289,7 +1292,9 @@ package com.flexcapacitor.managers
 		 * */
 		public static function selectCurrentEventTargets(document:IDocument, dispatchEvent:Boolean = true):void {
 			var historyEvent:HistoryEvent = getCurrentHistoryEvent(document);
-			Radiate.setTargets(historyEvent.targets, dispatchEvent);
+			if (historyEvent) {
+				Radiate.setTargets(historyEvent.targets, dispatchEvent);
+			}
 		}
 	}
 }

@@ -1,4 +1,5 @@
 
+
 package com.flexcapacitor.utils {
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.IDocument;
@@ -53,7 +54,9 @@ package com.flexcapacitor.utils {
 			if (componentDescription) {
 				
 				// see the top of this document on how to generate source code
-				getAppliedPropertiesFromHistory(iDocument, componentDescription);
+				if (exportFromHistory) {
+					getAppliedPropertiesFromHistory(iDocument, componentDescription);
+				}
 			
 				//output = getAndroidOutputString(document.componentDescription);
 				

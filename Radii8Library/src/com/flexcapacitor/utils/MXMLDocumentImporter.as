@@ -12,6 +12,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
+	import flash.display.BitmapData;
 	import flash.system.ApplicationDomain;
 	import flash.utils.getTimer;
 	
@@ -100,7 +101,7 @@ package com.flexcapacitor.utils {
 				}
 				else {
 					
-					if (codeWasWrapped) {
+					if (elName==rootNodeName || codeWasWrapped) {
 						for each (var childNode:XML in mxml.children()) {
 							createChildFromNode(childNode, container, document, 0);
 						}
@@ -218,6 +219,17 @@ package com.flexcapacitor.utils {
 				var valuesObject:ValuesObject = Radiate.getPropertiesStylesFromNode(componentInstance, node, componentDefinition);
 				var attributes:Array = valuesObject.attributes;
 				//var typedValueObject:Object = Radiate.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
+				
+				var bitmapDataID:String = fcNamespaceURI + "::bitmapDataId";
+				
+				if (attributes.indexOf(bitmapDataID)!=-1) {
+					var bitmapDataId:String = valuesObject.values[bitmapDataID];
+					var bitmapData:BitmapData = Radiate.getBitmapDataFromImageDataID(bitmapDataId);
+					
+					if (bitmapData) {
+						valuesObject.values["source"] = bitmapData;
+					}
+				}
 				
 				if (!componentAlreadyAdded) {
 					Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.values);

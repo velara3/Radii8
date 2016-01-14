@@ -40,6 +40,8 @@ package com.flexcapacitor.tools {
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.ui.Keyboard;
+	import flash.ui.Mouse;
+	import flash.ui.MouseCursor;
 	
 	import mx.containers.TabNavigator;
 	import mx.core.EventPriority;
@@ -109,6 +111,12 @@ package com.flexcapacitor.tools {
 
 	Stage.addEventListener( KeyboardEvent.KEY_DOWN, handleKeyDn, false );
 	* */
+	
+	/**
+	 * Dispatched when the selection class handles a key event. 
+	 * For example, moving the selected object. 
+	 * */
+	[Event(name="keyEvent", type="flash.events.Event")]
 	
 	/**
 	 * Dispatched when the selection class handles a key event. 
@@ -337,6 +345,7 @@ package com.flexcapacitor.tools {
 			
 			addRadiateListeners();
 			
+			Mouse.cursor = MouseCursor.AUTO;
 		}
 		
 		public function setupObjectHandles():void {
@@ -1929,7 +1938,7 @@ package com.flexcapacitor.tools {
 			}
 			// get target bounds
 			else if (target is UIComponent) {
-				var targetRectangle:Rectangle = DisplayObjectUtils.getRectangleBounds(target, toolLayer);
+				var targetRectangle:Rectangle;
 				// systemManager = SystemManagerGlobals.topLevelSystemManagers[0];
 				
 				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent; 
@@ -1939,6 +1948,8 @@ package com.flexcapacitor.tools {
 				}
 				else {
 					// if target is IMAGE it can be sized to 6711034.2 width or height at times!!! 6710932.2
+					//targetRectangle = DisplayObjectUtils.getRectangleBounds(target, toolLayer);
+					targetRectangle = DisplayObjectUtils.getRectangleBounds(target, targetCoordinateSpace);
 					rectangle = UIComponent(target).getBounds(targetCoordinateSpace);
 				}
 				

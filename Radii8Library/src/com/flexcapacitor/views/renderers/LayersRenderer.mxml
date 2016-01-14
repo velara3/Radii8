@@ -181,7 +181,9 @@
 		<s:Spacer width="0"/>
 		
 		<!--- visible -->
-		<s:Group id="_visibleButtonGroup" >
+		<s:Group id="_visibleButtonGroup"
+				 useHandCursor="true"
+				 buttonMode="true">
 			<!--- visible image -->
 			<s:BitmapImage id="visibleGroup" 
 						   contentLoader="{Radiate.contentCache}"

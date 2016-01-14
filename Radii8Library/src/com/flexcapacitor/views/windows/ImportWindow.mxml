@@ -6,20 +6,23 @@
 			   xmlns:handlers="com.flexcapacitor.handlers.*"
 			   xmlns:fc="com.flexcapacitor.effects.popup.*"
 			   xmlns:windows="com.flexcapacitor.views.windows.*"
-			   
+
 			   title="Import"
 			   hide="animatedpanelwindow1_hideHandler(event)" 
+			   creationComplete="animatedpanelwindow1_creationCompleteHandler(event)"
 			   >
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.SyntaxHighlighter;
 			import com.flexcapacitor.utils.XMLUtils;
 			
 			import mx.controls.Alert;
 			import mx.core.IVisualElement;
+			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			
 			public static const NEW_DOCUMENT:String = "newDocument";
@@ -30,19 +33,68 @@
 			private var _code:String;
 
 			public function get code():String {
+				var text:String;
 				
-				var text:String = mxTextArea.text;
+				if (aceEditor) {
+					text = aceEditor.text;
+				}
+				else {
+					return _code;
+				}
 				return text;
 			}
 
 			public function set code(value:String):void {
 				_code = value;
+				if (aceEditor) {
+					aceEditor.text = value;
+				}
 			}
 
 			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
 			
-			protected function changeHandler(event:Event):void {
+			
+			public var aceEditor:*;
+			public var aceCSSEditor:*;
+			public var templateEditor:*;
+			
+			public var editorMargin:String = "4px 0 8px 0px";
+			public var aceEditorCreated:Boolean;
+			
+			private function createEditors():void {
+				// 1067: Implicit coercion of a value of type com.flexcapacitor.controls:AceEditor to an unrelated type Object
 				
+				aceEditor = AceEditorUtils.createInstance();
+				UIComponent(aceEditor).percentWidth = 100;
+				UIComponent(aceEditor).percentHeight = 100;
+				aceEditor.top = 0;
+				aceEditor.left = 0;
+				editorGroup.addElementAt(aceEditor, 1);
+				aceEditor.mode = "ace/mode/xml";
+				aceEditor.showFoldWidgets = false;
+				aceEditor.margin = editorMargin;
+				aceEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
+				aceEditor.addEventListener(Event.CHANGE, changeHandler, false, 0, true);
+				aceEditorCreated = true;
+				aceEditor.scrollSpeed = .5;
+				
+			}
+			
+			private var lastFocusedEditor:Object;
+			
+			private function editorFocusInHandler(event:FocusEvent):void
+			{
+				lastFocusedEditor = event.currentTarget;
+				//searchInput.aceEditor = lastFocusedEditor;
+				
+				//if (wordwrapButton) {
+					//wordwrapButton.selected = !lastFocusedEditor.useWordWrap;
+				//}
+			}
+			
+			protected function changeHandler(event:Event = null):void {
+				
+				/*
 				if (!syntaxHighlighter) {
 					syntaxHighlighter = new SyntaxHighlighter(mxTextArea);
 					syntaxHighlighter.timerInterval = 20;
@@ -50,6 +102,7 @@
 				}
 				
 				syntaxHighlighter.highlightCode();
+				*/
 				
 				var isValid:Boolean = XMLUtils.isValidXML(code);
 				
@@ -103,6 +156,23 @@
 				if (syntaxHighlighter) {
 					syntaxHighlighter.mxTextArea = null;
 				}
+				//code = null
+			}
+			
+			protected function animatedpanelwindow1_creationCompleteHandler(event:FlexEvent):void {
+				Radiate.callAfter(200, createEditors);
+				
+			}
+			
+			public function afterCompleteTasks():void {
+				createEditors();
+				
+				if (_code && aceEditor) {
+					if (aceEditor.text!=_code) {
+						aceEditor.text = _code;
+						changeHandler();
+					}
+				}
 			}
 			
 		]]>
@@ -128,14 +198,14 @@
 	</fx:Declarations>
 	
 	
-	<s:VGroup left="15" 
+	<s:VGroup id="editorGroup" left="15" 
 				 top="20" 
 				 right="20"
 				 bottom="20">
 		
-		<s:Label x="15" y="65" text="Paste in the MXML code below:" fontWeight="bold"/>
+		<s:Label x="15" y="65" text="MXML code:" fontWeight="bold"/>
 		
-		<mx:TextArea id="mxTextArea"  
+		<!--<mx:TextArea id="mxTextArea"  
 					 focusAlpha="0"
 					 fontFamily="Monaco,Menlo,Ubuntu Mono,Consolas,source-code-pro,monospace"
 					 borderVisible="true"
@@ -144,7 +214,7 @@
 					 editable="true"
 					 leading="0"
 					 change="changeHandler(event)"
-					 />
+					 />-->
 		
 		<s:HGroup x="14" y="31" width="100%" horizontalAlign="right">
 			<s:Label x="15" y="15" text="Import to:" fontWeight="bold"/>

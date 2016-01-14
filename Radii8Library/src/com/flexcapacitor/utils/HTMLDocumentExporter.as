@@ -87,7 +87,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Some defaults that make the html look more accurate
 		 * */
-		public var betterHTML:String = "html, body {\n\theight:100%;\n\tmargin:0;\n\tpadding:0;\n\tline-height:.7\n}";
+		public var betterHTML:String = "html, body {\n\theight:100%;\n\tmargin:0;\n\tpadding:0;\n\tline-height:.8;\n}";
 		
 		/**
 		 * Show outline around each element
@@ -265,7 +265,10 @@ package com.flexcapacitor.utils {
 				var zoomInID:String = wrapInPreview ? document.name : applicationContainerID;
 				
 				// see the top of this document on how to generate source code
-				getAppliedPropertiesFromHistory(iDocument, targetDescription);
+				
+				if (exportFromHistory) {
+					getAppliedPropertiesFromHistory(iDocument, targetDescription);
+				}
 				
 				if (!disableTabs) {
 					//tabDepth = getContentTabDepth(template);
@@ -312,15 +315,15 @@ package com.flexcapacitor.utils {
 				}
 				
 				if (useBorderBox) {
-					styles += "\n" + borderBoxCSS;
+					styles = borderBoxCSS + "\n\n" + styles;
 				}
 				
 				if (useBetterHTML) {
-					styles += "\n" + betterHTML;
+					styles = betterHTML + "\n\n" + styles;
 				}
 				
 				if (showBorders) {
-					styles += "\n" + bordersCSS;
+					styles = bordersCSS + "\n\n" + styles;
 				}
 				
 				if (useSVGButtonClass) {
@@ -467,8 +470,10 @@ package com.flexcapacitor.utils {
 			sourceData.files = files;
 			sourceData.errors = errors;
 			sourceData.warnings = warnings;
-			
-			restorePreviousPresets();
+
+			if (localOptions) {
+				restorePreviousPresets();
+			}
 			
 			return sourceData;
 		}
@@ -536,7 +541,6 @@ package com.flexcapacitor.utils {
 			var initialTabs:String = tabs;
 			var parentVerticalAlign:String;
 			var userInstanceStyles:String;
-			var exportChildDescriptors:Boolean;
 			var errorData:ErrorData;
 			var layoutOutput:String = "";
 			var numberOfChildren:int;
@@ -657,7 +661,7 @@ package com.flexcapacitor.utils {
 				}
 			}
 			
-			exportChildDescriptors = componentDescription.exportChildDescriptors;
+			//exportChildDescriptors = componentDescription.exportChildDescriptors;
 			
 			if (!exportChildDescriptors) {
 				contentToken = "";
@@ -822,7 +826,7 @@ package com.flexcapacitor.utils {
 						styleValue = getFontFamily(componentInstance, styleValue, true);
 						styleValue = getFontWeight(componentInstance, styleValue, true);
 						styleValue = getFontSize(componentInstance, styleValue, true);
-						styleValue = getLineHeight(componentInstance, styleValue, true);
+						styleValue = getLineHeight(componentInstance, styleValue, false);
 						
 						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 						
@@ -1552,10 +1556,15 @@ package com.flexcapacitor.utils {
 					
 					for (var i:int;i<numberOfChildren;i++) {
 						componentChild = componentDescription.children[i];
-						getAppliedPropertiesFromHistory(iDocument, componentChild);
+						
+						if (exportFromHistory) {
+							getAppliedPropertiesFromHistory(iDocument, componentChild);
+						}
+						
 						if (i>0) {
 							childContent += "\n";
 						}
+						
 						childContent += getHTMLOutputString(iDocument, componentChild, false, tabs);
 					}
 					
@@ -2323,10 +2332,13 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		/**
 		 * @inheritDoc
 		 * */
-		override public function getExportOptions():ExportOptions {
+		override public function getExportOptions(getCurrentValues:Boolean = true):ExportOptions {
 			if (exportOptions==null) {
 				exportOptions = new HTMLExportOptions();
 			}
+			
+			super.getExportOptions(getCurrentValues);
+			
 			return exportOptions;
 		}
 	}

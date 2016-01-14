@@ -76,8 +76,9 @@
     <item name="Button" className="spark.components.Button" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
-    		<inspector name="Button" className="com.flexcapacitor.views.inspectors.Button"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="Button" className="com.flexcapacitor.views.inspectors.Button"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     </item>
     
     <item name="Group" className="spark.components.Group" 
@@ -104,6 +105,13 @@
     		<inspector name="Group Align" className="com.flexcapacitor.views.inspectors.GroupAlign"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    </item>
+    
+    <item name="Video Player" className="spark.components.VideoPlayer" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="Video" className="com.flexcapacitor.views.inspectors.VideoPlayerProperties"/>
     </item>
     
 

@@ -47,7 +47,7 @@ package com.flexcapacitor.model {
 		 * Default class that exports the document 
 		 * */
 		[Transient]
-		public static var internalExporter:IDocumentExporter = new MXMLDocumentExporter();
+		public static var internalExporter:IDocumentExporter;
 		
 		private var _exporter:IDocumentExporter = internalExporter;
 
@@ -589,7 +589,7 @@ package com.flexcapacitor.model {
 				errorID = "errorID" in errorEvent ? errorEvent.errorID : 0;
 				errorType = "type" in errorEvent ? errorEvent.type : "";
 				
-				Radiate.error("Error when saving document: "+ name + ". You may be disconnect. Connect and try again", errorEvent);
+				Radiate.error("Error when saving document: "+ name + ". You may be disconnected. Check your connection and try again", errorEvent);
 			}
 			else {
 				Radiate.error("Error when trying to save document: "+ name + ".", saveResultsEvent);
@@ -610,6 +610,8 @@ package com.flexcapacitor.model {
 			var openResultsEvent:LoadResultsEvent = new LoadResultsEvent(LoadResultsEvent.LOAD_RESULTS);
 			var data:Object = event.data;
 			var post:Object;
+			var error:String;
+			var hasError:Boolean;
 			
 			//Radiate.log..info("Open result handler on document " + name);
 			// when the post id was null then we ended up receiving the latest post 
@@ -618,7 +620,8 @@ package com.flexcapacitor.model {
 				
 				if (data.error) {
 					if (data.status=="error" || data.error=="Not found.") {
-						
+						error = data.error;
+						hasError = true;
 					}
 				}
 				// we switched to pages so we assign data.post 
@@ -651,8 +654,10 @@ package com.flexcapacitor.model {
 			// add assets
 			Radiate.instance.addAssetsToDocument(assets, this);
 			
+			openResultsEvent.hasError = hasError;
 			openResultsEvent.data = data;
 			openResultsEvent.text = event.text;
+			openResultsEvent.message = WPServiceEvent(event).message ? WPServiceEvent(event).message : null;
 			openInProgress = false;
 			
 			isOpen = true;

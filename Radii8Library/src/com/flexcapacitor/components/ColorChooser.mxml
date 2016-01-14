@@ -152,6 +152,7 @@
 			{
 				var radiate:Radiate = Radiate.getInstance();
 				var toolDescription:ComponentDescription = radiate.getToolByName("com.flexcapacitor.tools.EyeDropper");
+				radiate.saveCurrentTool();
 				radiate.setTool(toolDescription.instance as ITool);
 				radiate.addEventListener(RadiateEvent.COLOR_SELECTED, colorSelectedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.COLOR_PREVIEW, colorPreviewHandler, false, 0, true);

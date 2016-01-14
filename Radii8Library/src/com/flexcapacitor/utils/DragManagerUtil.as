@@ -289,7 +289,7 @@ package com.flexcapacitor.utils {
 			
 			// set the object that will listen for drag events
 			dragListener = DisplayObjectContainer(application);
-			
+			// TODO Get relative position when scaled in.
 			distanceFromLeft = dragInitiator.localToGlobal(new Point).x;
 			distanceFromTop = dragInitiator.localToGlobal(new Point).y;
 			
@@ -349,6 +349,10 @@ package com.flexcapacitor.utils {
 				}
 				
 				if (testSomething) {
+					if (scale!=1) {
+						offset.x = 0;
+						offset.y = 0;
+					}
 					snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject, true, scale, scale);
 				}
 				else {

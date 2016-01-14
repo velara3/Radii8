@@ -81,6 +81,7 @@
 			itemRenderer="com.flexcapacitor.view.renderers.ConsoleLogItemRenderer"
 			dataProvider="{logsCollection}"
 			verticalScrollPolicy="auto"
+			horizontalScrollPolicy="off"
 			click="list_clickHandler(event)"
 			>
 	</s:List>

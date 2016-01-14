@@ -24,6 +24,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.effects.core.CallMethod;
 	import com.flexcapacitor.effects.core.PlayerType;
 	import com.flexcapacitor.effects.file.LoadFile;
+	import com.flexcapacitor.effects.popup.OpenPopUp;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.formatters.HTMLFormatterTLF;
 	import com.flexcapacitor.logging.RadiateLogTarget;
@@ -85,6 +86,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.views.IInspector;
 	import com.flexcapacitor.views.MainView;
+	import com.flexcapacitor.views.windows.ImportWindow;
 	import com.google.code.flexiframe.IFrame;
 	
 	import flash.desktop.Clipboard;
@@ -126,6 +128,7 @@ package com.flexcapacitor.controller {
 	import mx.containers.GridItem;
 	import mx.containers.GridRow;
 	import mx.containers.TabNavigator;
+	import mx.controls.Alert;
 	import mx.controls.LinkButton;
 	import mx.core.ClassFactory;
 	import mx.core.DeferredInstanceFromFunction;
@@ -877,6 +880,12 @@ package com.flexcapacitor.controller {
 		 */
 		[Bindable]
 		public static var mainView:MainView;
+		
+		/**
+		 * Reference to the application main view importPopUp
+		 */
+		[Bindable]
+		public static var openImportPopUp:OpenPopUp;
 		
 		//----------------------------------
 		//
@@ -2730,12 +2739,14 @@ package com.flexcapacitor.controller {
 		 * 
 		 * Not sure if we should create an instance here or earlier or later. 
 		 * */
-		public static function addToolType(name:String, className:String, classType:Object, instance:ITool, inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null, cursors:Dictionary = null):ComponentDescription {
+		public static function addToolType(name:String, className:String, classType:Object, instance:ITool, 
+										   inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, 
+										   defaultStyles:Object=null, cursors:Dictionary = null):ComponentDescription {
 			var definition:ComponentDescription;
-			var length:uint = toolsDescriptions.length;
+			var numberOfTools:uint = toolsDescriptions.length;
 			var item:ComponentDescription;
 			
-			for (var i:uint;i<length;i++) {
+			for (var i:uint;i<numberOfTools;i++) {
 				item = toolsDescriptions.getItemAt(i) as ComponentDescription;
 				
 				// check if it exists already
@@ -2762,7 +2773,25 @@ package com.flexcapacitor.controller {
 			return definition;
 		}
 		
-		public var previousSelectedTool:ITool;
+		private var _previousSelectedTool:ITool;
+
+		public function get previousSelectedTool():ITool
+		{
+			return _previousSelectedTool;
+		}
+
+		public function set previousSelectedTool(value:ITool):void
+		{
+			_previousSelectedTool = value;
+		}
+
+		
+		/**
+		 * Save current tool
+		 * */
+		public function saveCurrentTool():void {
+			previousSelectedTool = selectedTool;
+		}
 		
 		/**
 		 * Sets the selected tool to the tool passed in
@@ -2771,7 +2800,6 @@ package com.flexcapacitor.controller {
 			
 			if (selectedTool) {
 				selectedTool.disable();
-				previousSelectedTool = selectedTool;
 			}
 			
 			_selectedTool = value;
@@ -2787,7 +2815,9 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Restores the previously selected tool
+		 * Restores the previously selected tool.
+		 * 
+		 * This restores the previous selected tool.
 		 * */
 		public function restoreTool(dispatchEvent:Boolean = true, cause:String = ""):void {
 			if (previousSelectedTool && previousSelectedTool!=selectedTool) {
@@ -2798,6 +2828,7 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Enables the selected tool
+		 * @see disableTool()
 		 * */
 		public function enableTool(dispatchEvent:Boolean = true, cause:String = ""):void {
 			
@@ -2813,6 +2844,7 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Disables the selected tool
+		 * @see enableTool()
 		 * */
 		public function disableTool(dispatchEvent:Boolean = true, cause:String = ""):void {
 			
@@ -2828,12 +2860,14 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Get tool description.
+		 * @see getToolByType()
+		 * @see getToolByName()
 		 * */
 		public function getToolDescription(instance:ITool):ComponentDescription {
-			var length:int = toolsDescriptions.length;
+			var numberOfTools:int = toolsDescriptions.length;
 			var componentDescription:ComponentDescription;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfTools;i++) {
 				componentDescription = ComponentDescription(toolsDescriptions.getItemAt(i));
 				
 				if (componentDescription.instance==instance) {
@@ -2845,18 +2879,22 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Get tool by name. Pass in the class name. 
+		 * Get tool by name. Pass in the class name or tool name. Match is case insensitive. 
 		 * List of class names are in tools-manifest-defaults.xml or radiate.toolsDescription
 		 * @see getToolByType()
 		 * */
 		public function getToolByName(name:String):ComponentDescription {
-			var length:int = toolsDescriptions.length;
+			var numberOfTools:int = toolsDescriptions.length;
 			var componentDescription:ComponentDescription;
+			var nameLowerCase:String = name? name.toLowerCase() : null;
 			
-			for (var i:int;i<length;i++) {
+			if (name==null || name=="") return null;
+			
+			for (var i:int;i<numberOfTools;i++) {
 				componentDescription = ComponentDescription(toolsDescriptions.getItemAt(i));
 				
-				if (componentDescription.className==name) {
+				if (componentDescription.className.toLowerCase()==nameLowerCase ||
+					componentDescription.name.toLowerCase()==nameLowerCase) {
 					return componentDescription;
 				}
 			}
@@ -3104,7 +3142,7 @@ package com.flexcapacitor.controller {
 				selectedDocument.scale = Math.min(value, maxScale);
 				
 				if (dispatchEvent) {
-					dispatchScaleChangeEvent(selectedDocument, value, value);
+					dispatchScaleChangeEvent(selectedDocument.instance, value, value);
 				}
 			}
 		}
@@ -3670,7 +3708,7 @@ package com.flexcapacitor.controller {
 		 * Adds PSD to the document.
 		 * Adds assets to the library and document
 		 * */
-		public function addPSDToDocument(psdFileData:ByteArray, iDocument:IDocument, constrainImageToDocument:Boolean = true, addToAssets:Boolean = true):void {
+		public function addPSDToDocument(psdFileData:ByteArray, iDocument:IDocument, matchDocumentSizeToPSD:Boolean = true, addToAssets:Boolean = true):void {
 			var componentDefinition:ComponentDefinition;
 			var application:Object;
 			var componentInstance:Object;
@@ -3703,7 +3741,11 @@ package com.flexcapacitor.controller {
 			var foldersDictionary:Object = [];
 			var xOffset:int;
 			var yOffset:int;
-			var parentGroup:Object
+			var parentGroup:Object;
+			var hasShapes:Boolean;
+			var showInfo:Boolean = false;
+			var testForErrors:Boolean = false;
+			var time:int;
 			
 			layersAndFolders = new Dictionary(true);
 			
@@ -3717,17 +3759,29 @@ package com.flexcapacitor.controller {
 			
 			psdParser = PSDParser.getInstance();
 			
-			try {
+			time = getTimer();
+			
+			if (testForErrors) {
 				psdParser.parse(psdFileData);
+			}
+			
+			try {
+				if (!testForErrors) {
+					psdParser.parse(psdFileData);
+				}
 			}
 			catch (errorObject:*) {
 				var errorMessage:String;
+				var stack:String;
+				if ("getStackTrace" in errorObject) {
+					stack = errorObject.getStackTrace();
+				}
 				
 				if (errorObject) {
 					errorMessage = Object(errorObject).toString();
 				}
 				
-				error("Could not import the PSD. " + errorMessage);
+				error("Could not import the PSD. " + errorMessage, errorObject);
 				
 				pasteFileLoader ? pasteFileLoader.removeReferences(true) : -1;
 				dropFileLoader ? dropFileLoader.removeReferences(true) : -1;
@@ -3735,12 +3789,15 @@ package com.flexcapacitor.controller {
 				return;
 			}
 			
+			time = getTimer() - time;
+			
 			//layersLevel = iDocument.instance;
 			//this.addChild(layersLevel);
 			
 			layers = psdParser.allLayers ? psdParser.allLayers : [];
 			numberOfLayers = layers ? layers.length : 0;
 			
+			info("Time to import: " + int(time/1000) + " seconds. Number of layers: " + numberOfLayers);
 			
 			// add composite of the PSD
 			if (addCompositeImage || numberOfLayers==0) {
@@ -3753,7 +3810,7 @@ package com.flexcapacitor.controller {
 				propertiesObject 			= {};
 				propertiesObject.source 	= psdParser.composite_bmp;
 				
-				propertiesObject.visible 	= false;
+				propertiesObject.visible 	= numberOfLayers==0 ? true : false;
 				
 				properties.push("source");
 				properties.push("visible");
@@ -3766,7 +3823,7 @@ package com.flexcapacitor.controller {
 				
 				if (numberOfLayers!=0) {
 					componentDescription.locked = true;
-					componentDescription.visible = false;
+					componentDescription.visible = propertiesObject.visible;
 					componentDescription.name = "Composite Layer";
 				}
 				
@@ -3776,14 +3833,19 @@ package com.flexcapacitor.controller {
 					imageData.name = "Composite Layer";
 					imageData.layerInfo = psdLayer;
 					
-					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured, false);
 				}
 			}
 			
 			if (numberOfLayers==0 && psdParser.composite_bmp==null) {
-				error("The PSD did not contain any readable layers.");
+				warn("The PSD did not contain any readable layers.");
 				pasteFileLoader ? pasteFileLoader.removeReferences(true) : -1;
 				dropFileLoader ? dropFileLoader.removeReferences(true) : -1;
+				
+				if (addToAssets && imageData) {
+					dispatchAssetAddedEvent(imageData);
+				}
+				
 				return;
 			}
 			
@@ -3807,10 +3869,11 @@ package com.flexcapacitor.controller {
 			for (var a:int;a<numberOfLayers;a++)  {
 				psdLayer		= layers[a];
 				layerType 		= psdLayer.type;
-				layerID 		= psdLayer.layerID;layerName 		= psdLayer.name;
-				
+				layerID 		= psdLayer.layerID;
+				layerName 		= psdLayer.name;
 				layersAndFolders[layerID] = psdLayer;
 				
+				// create groups 
 				if (layerType==PSDLayer.LayerType_FOLDER_OPEN || 
 					layerType==PSDLayer.LayerType_FOLDER_CLOSED) {
 					insideFolder = true;
@@ -3818,6 +3881,7 @@ package com.flexcapacitor.controller {
 					folderName = psdLayer.name;
 					parentLayerID = layerID;
 					
+					// get last added folder id
 					if (currentFolders.length) {
 						psdLayer.parentLayerID = currentFolders[0];
 					}
@@ -3867,6 +3931,10 @@ package com.flexcapacitor.controller {
 
 					foldersDictionary[layerID] = parentGroup;
 					
+					if (showInfo) {
+						trace("Creating folder properties for " + layerID + " " + layerName);
+					}
+					
 					// add group layer id ordered as depth
 					currentFolders.unshift(layerID);
 					
@@ -3907,7 +3975,7 @@ package com.flexcapacitor.controller {
 			layers.reverse();
 			
 			
-			// loop through layers
+			// loop through layers and create properties object with layer destination
 			for (var i:int;i<numberOfLayers;i++)  {
 				psdLayer				= psdParser.allLayers[i];
 				bitmapData				= psdLayer.bmp;
@@ -3926,6 +3994,7 @@ package com.flexcapacitor.controller {
 					xOffset = 0;
 					yOffset = 0;
 					
+					// get different in location when layers are added to groups
 					while (parentGroup) {
 						xOffset += parentGroup.propertiesObject.x;
 						yOffset += parentGroup.propertiesObject.y;
@@ -3940,16 +4009,21 @@ package com.flexcapacitor.controller {
 				if (layerType==PSDLayer.LayerType_FOLDER_OPEN || 
 					layerType==PSDLayer.LayerType_FOLDER_CLOSED ||
 					layerType==PSDLayer.LayerType_HIDDEN) {
+					
+					if (showInfo) {
+						trace("Looping through layers excluding folder " + layerID + " " + layerName);
+					}
+					
 					continue;
 				}
 				
-				var showInfo:Boolean = false;
 				if (showInfo) {
-					trace("\nType         :" + layerType);
-					trace("Inside folder  :" + insideFolder);
-					trace("Folder name    :" + folderName);
-					trace("Folder visible :" + isFolderVisible);
-					trace(" Layer visible :" + layerVisible);
+					trace("Looping through layers adding " + layerID + " " + layerName);
+				}
+				
+				if (layerID==0 && showInfo) {
+					trace("  - shape");
+					hasShapes = true;
 				}
 				
 				// need to keep track of errors during import
@@ -4001,8 +4075,8 @@ package com.flexcapacitor.controller {
 					properties.push("filters");
 				}
 				
-				if (psdLayer.parentLayerID!=0) {
-					parentGroup = foldersDictionary[psdLayer.parentLayerID];
+				if (parentLayerID!=0) {
+					parentGroup = foldersDictionary[parentLayerID];
 					parentInstance = parentGroup.instance;
 				}
 				else {
@@ -4020,43 +4094,6 @@ package com.flexcapacitor.controller {
 				parentGroup.parentInstance 		= parentInstance;
 				
 				foldersDictionary[layerID] 		= parentGroup;
-				continue;
-				//}
-				
-				
-				addElement(componentInstance, parentInstance, properties, null, propertiesObject);
-				
-				updateComponentAfterAdd(iDocument, componentInstance);
-				
-				componentDescription = iDocument.getItemDescription(componentInstance);
-				
-				if (componentDescription) {
-					componentDescription.locked = psdLayer.isLocked;
-					componentDescription.visible = psdLayer.isVisible;
-					componentDescription.name = psdLayer.name;
-					componentDescription.layerInfo = psdLayer;
-				}
-				
-				if (showInfo) {
-					trace(" Layer name " + componentDescription.name);
-				}
-				
-				if (addToAssets) {
-					imageData = new ImageData();
-					imageData.bitmapData = psdLayer.bmp;
-					imageData.name = psdLayer.name;
-					imageData.layerInfo = psdLayer;
-					
-					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
-				}
-				
-				/*
-				var layerBitmap_bmp : BitmapData 		= psdLayer.bmp;
-				var layerBitmap 	: Bitmap 			= new Bitmap(layerBitmap_bmp);
-				layerBitmap.x 							= psdLayer.position.x;
-				layerBitmap.y 							= psdLayer.position.y;
-				layerBitmap.filters						= psdLayer.filters_arr;
-				layersLevel.addChild(layerBitmap);*/
 				
 			}
 			
@@ -4068,7 +4105,9 @@ package com.flexcapacitor.controller {
 			for (var b:int;b<numberOfLayers;b++)  {
 				psdLayer		= layers[b];
 				layerType 		= psdLayer.type;
+				layerName 		= psdLayer.name;
 				layerID 		= psdLayer.layerID;
+				parentLayerID	= psdLayer.parentLayerID;
 				parentGroup 	= foldersDictionary[layerID];
 				
 				if (parentGroup==null) {
@@ -4077,11 +4116,15 @@ package com.flexcapacitor.controller {
 				
 				//trace("adding " +  psdLayer.name + " ("+ layerID+")");
 				// get parent folder if one exists
-				customParent 	= foldersDictionary[psdLayer.parentLayerID];
+				customParent = parentLayerID!=0 ? foldersDictionary[parentLayerID] : null;
 				
 				parentInstance = customParent ? customParent.instance : application;
 				
 				componentInstance = parentGroup.instance;
+				
+				if (showInfo) {
+					trace("Adding layer " + layerName + " to group " + parentLayerID);
+				}
 				
 				addElement(componentInstance, parentInstance, parentGroup.properties, null, parentGroup.propertiesObject);
 				
@@ -4102,7 +4145,7 @@ package com.flexcapacitor.controller {
 					imageData.name = psdLayer.name;
 					imageData.layerInfo = psdLayer;
 					
-					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured, false);
 				}
 			}
 			
@@ -4116,7 +4159,17 @@ package com.flexcapacitor.controller {
 				dropFileLoader.removeReferences(true);
 			}
 			
-			Radiate.info("PSD imported. Be sure to upload the images added to the Library.");
+			// dispatch event 
+			if (addToAssets && imageData) {
+				dispatchAssetAddedEvent(imageData);
+			}
+			
+			if (hasShapes) {
+				info("PSD imported with warnings. It does not fully support shapes. Be sure to upload the images added to the Library.");
+			}
+			else {
+				info("PSD imported. Be sure to upload the images added to the Library.");
+			}
 		}
 		
 		/**
@@ -4179,6 +4232,41 @@ package com.flexcapacitor.controller {
 			addElement(componentInstance, iDocument.instance, properties, null, propertiesObject);
 			
 			updateComponentAfterAdd(iDocument, componentInstance);
+		}
+		
+		public static function getImageDataFromBitmapData(bitmapData:BitmapData):ImageData {
+			var assets:ArrayCollection = instance.assets;
+			var numberOfAssets:int = assets.length;
+			var imageData:ImageData;
+			
+			for (var i:int = 0; i < numberOfAssets; i++) {
+				imageData = assets.getItemAt(i) as ImageData;
+				
+				if (imageData && imageData.bitmapData===bitmapData) {
+					return imageData;
+				}
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Get bitmap data matching ImageData.uid.
+		 * */
+		public static function getBitmapDataFromImageDataID(uid:String):BitmapData {
+			var assets:ArrayCollection = instance.assets;
+			var numberOfAssets:int = assets.length;
+			var imageData:ImageData;
+			
+			for (var i:int = 0; i < numberOfAssets; i++) {
+				imageData = assets.getItemAt(i) as ImageData;
+				
+				if (imageData && imageData.uid===uid) {
+					return imageData.bitmapData;
+				}
+			}
+			
+			return null;
 		}
 		
 		public static function getConstrainedImageSizeObject(iDocument:IDocument, bitmapData:Object):Object {
@@ -4595,7 +4683,7 @@ package com.flexcapacitor.controller {
 				var options:ExportOptions = new ExportOptions();
 				var sourceItemData:SourceData;
 				options.useInlineStyles = true;
-				
+				options.exportChildDescriptors = true;
 				if (selectedDocument.getItemDescription(item)) {
 					sourceItemData = CodeManager.getSourceData(target, selectedDocument, CodeManager.MXML, options);
 					
@@ -4666,6 +4754,13 @@ package com.flexcapacitor.controller {
 				destination = destination.owner;
 			}
 			
+			// prevent containers from being pasted into themselves
+			if (cutData==destination || copiedData==destination) {
+				if (selectedDocument.instance.contains(destination.owner)) {
+					destination = destination.owner;
+				}
+			}
+			
 			if (!destination) {
 				destination = selectedDocument.instance;
 			}
@@ -4690,7 +4785,7 @@ package com.flexcapacitor.controller {
 					descriptor = component as ComponentDescription;
 					
 					if (component is Application) {
-						error("Cannot copy and paste the application.");
+						error("Cannot copy and paste the document.");
 						return;
 					}
 					
@@ -4744,14 +4839,18 @@ package com.flexcapacitor.controller {
 				setTarget(newComponent);
 			}
 			else if (component) {
+				var useInlineStyles:Boolean = false;
 				exportOptions = new ExportOptions();
 				exportOptions.useInlineStyles = true;
+				exportOptions.exportChildDescriptors = true;
 				var description:ComponentDescription = selectedDocument.getItemDescription(component);
 				
+				// copy selection
 				if (description) {
 					itemData = CodeManager.getSourceData(component, selectedDocument, CodeManager.MXML, exportOptions);
 				}
 				
+				// paste selection
 				if (itemData && description) {
 					itemData = CodeManager.setSourceData(itemData.source, destination, selectedDocument, CodeManager.MXML, null);
 				}
@@ -4759,6 +4858,7 @@ package com.flexcapacitor.controller {
 					itemData = CodeManager.setSourceData(copiedDataSource, destination, selectedDocument, CodeManager.MXML, null);
 				}
 				
+				// select first target
 				if (itemData && itemData.targets && itemData.targets.length) { 
 					setTarget(itemData.targets[0]);
 				}
@@ -5196,7 +5296,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Set attributes on a component object from XML node
+		 * Get values object from attributes and child tags on a component from XML node
 		 * */
 		public static function getPropertiesStylesFromNode(elementInstance:Object, node:XML, item:ComponentDefinition = null):ValuesObject {
 			var elementName:String = node.localName();
@@ -5238,15 +5338,47 @@ package com.flexcapacitor.controller {
 			valuesObject.propertiesErrorsObject = failedToImportProperties;
 			valuesObject.propertiesAndStyles	= properties.concat(styles);
 			
-			var a:Object = node.namespace().prefix     //returns prefix i.e. rdf
-			var b:Object = node.namespace().uri        //returns uri of prefix i.e. http://www.w3.org/1999/02/22-rdf-syntax-ns#
+			var a:Object = node.namespace().prefix;     //returns prefix i.e. rdf
+			var b:Object = node.namespace().uri;        //returns uri of prefix i.e. http://www.w3.org/1999/02/22-rdf-syntax-ns#
 			
-			var c:Object = node.inScopeNamespaces()   //returns all inscope namespace as an associative array like above
+			var c:Object = node.inScopeNamespaces();   //returns all inscope namespace as an associative array like above
 			
 			//returns all nodes in an xml doc that use the namespace
 			var nsElement:Namespace = new Namespace(node.namespace().prefix, node.namespace().uri);
 			
 			var usageCount:XMLList = node..nsElement::*;
+			
+			return valuesObject;
+		}
+		
+		/**
+		 * Get value object on a component from a properties object
+		 * */
+		public static function getPropertiesStylesFromObject(elementInstance:Object, dataObject:Object, item:ComponentDefinition = null):ValuesObject {
+			var properties:Array;
+			var styles:Array;
+			var aValueObject:Object;
+			var childNodeValueObject:Object;
+			var valuesObject:ValuesObject;
+			var values:Object = {};
+			var failedToImportStyles:Object = {};
+			var failedToImportProperties:Object = {};
+			
+			properties 				= ClassUtils.getPropertiesFromObject(elementInstance, dataObject);
+			styles 					= ClassUtils.getStylesFromObject(elementInstance, dataObject);
+			
+			values					= ClassUtils.getTypedPropertyValueObject(elementInstance, dataObject, properties, failedToImportProperties);
+			values					= ClassUtils.getTypedStyleValueObject(elementInstance as IStyleClient, dataObject, styles, failedToImportStyles);
+			
+			
+			valuesObject 						= new ValuesObject();
+			valuesObject.values 				= values;
+			valuesObject.styles 				= styles;
+			valuesObject.properties 			= properties;
+			valuesObject.stylesErrorsObject 	= failedToImportStyles;
+			valuesObject.propertiesErrorsObject = failedToImportProperties;
+			valuesObject.propertiesAndStyles	= properties.concat(styles);
+			
 			
 			return valuesObject;
 		}
@@ -5412,7 +5544,7 @@ package com.flexcapacitor.controller {
 				
 				historyEvents = HistoryManager.createHistoryEventItems(targets, styleChanges, null, style, value);
 				
-				updateComponentStyles(targets, styleChanges);
+				updateComponentStyles(targets, styleChanges, [style]);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
@@ -5554,7 +5686,7 @@ package com.flexcapacitor.controller {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEventItems, description);
 				}
 				
-				updateComponentProperties(targets, propertyChanges);
+				updateComponentProperties(targets, propertyChanges, [property]);
 				
 				if (dispatchEvents) {
 					instance.dispatchPropertyChangeEvent(target, propertyChanges, ArrayUtil.toArray(property), null);
@@ -5613,7 +5745,7 @@ package com.flexcapacitor.controller {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
 				}
 				
-				updateComponentProperties(targets, propertyChanges);
+				updateComponentProperties(targets, propertyChanges, properties);
 				
 				if (dispatchEvents) {
 					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, null);
@@ -5663,7 +5795,7 @@ package com.flexcapacitor.controller {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
 				}
 				
-				updateComponentStyles(targets, stylesChanges);
+				updateComponentStyles(targets, stylesChanges, styles);
 				
 				if (dispatchEvents) {
 					instance.dispatchPropertyChangeEvent(targets, stylesChanges, null, styles);
@@ -5717,7 +5849,8 @@ package com.flexcapacitor.controller {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
 				}
 				
-				updateComponentProperties(targets, propertyChanges);
+				updateComponentProperties(targets, propertyChanges, properties);
+				updateComponentStyles(targets, propertyChanges, styles);
 				
 				if (dispatchEvents) {
 					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, styles);
@@ -5850,24 +5983,47 @@ package com.flexcapacitor.controller {
 		/**
 		 * Updates the properties on a component description
 		 * */
-		public static function updateComponentProperties(localTargets:Array, propertyChanges:Array):void {
-			var descriptor:ComponentDescription;
+		public static function updateComponentProperties(localTargets:Array, propertyChanges:Array, properties:Array):void {
+			var componentDescription:ComponentDescription;
 			var numberOfTargets:int = localTargets.length;
 			var numberOfChanges:int = propertyChanges.length;
 			var propertyChange:Object;
 			var localTarget:Object;
+			var property:String;
+			var value:*;
+			var numberOfProperties:int = properties ? properties.length : 0;
+			
+			
+			if (numberOfProperties==0) return;
 			
 			for (var i:int;i<numberOfTargets;i++) {
 				localTarget = localTargets[i];
-				descriptor = instance.selectedDocument.getItemDescription(localTarget);
+				componentDescription = instance.selectedDocument.getItemDescription(localTarget);
 				
-				for (var j:int=0;j<numberOfChanges;j++) {
-					propertyChange = propertyChanges[j];
+				if (componentDescription) {
 					
-					if (descriptor) {
-						descriptor.properties = ObjectUtils.merge(propertyChange.end, descriptor.properties);
+					for (var j:int=0;j<numberOfChanges;j++) {
+						propertyChange = propertyChanges[j];
+						
+						for (var k:int = 0; k < numberOfProperties; k++) {
+							property = properties[k];
+							value = propertyChange.end[property];
+							
+							if (value==null || 
+								value==undefined) {
+								//isNaN(value)) {
+								delete componentDescription.properties[property];
+							}
+							else {
+								componentDescription.properties[property] = value;
+							}
+						}
+						
+						//componentDescriptor.properties = ObjectUtils.merge(propertyChange.end, componentDescriptor.properties);
 					}
 				}
+				
+				// remove nulls and undefined values
 				
 			}
 		}
@@ -5875,22 +6031,43 @@ package com.flexcapacitor.controller {
 		/**
 		 * Updates the styles on a component description
 		 * */
-		public static function updateComponentStyles(targets:Array, propertyChanges:Array):void {
-			var descriptor:ComponentDescription;
-			var targetLength:int = targets.length;
-			var changesLength:int = propertyChanges.length;
+		public static function updateComponentStyles(localTargets:Array, propertyChanges:Array, styles:Array):void {
+			var componentDescription:ComponentDescription;
+			var numberOfTargets:int = localTargets.length;
+			var numberOfChanges:int = propertyChanges.length;
+			var document:IDocument = instance.selectedDocument;
 			var propertyChange:Object;
-			var target:Object;
+			var localTarget:Object;
+			var numberOfStyles:int = styles ? styles.length : 0;
+			var style:String;
+			var value:*;
 			
-			for (var i:int;i<targetLength;i++) {
-				target = targets[i];
-				descriptor = instance.selectedDocument.descriptionsDictionary[target];
+			if (numberOfStyles==0) return;
+			
+			for (var i:int;i<numberOfTargets;i++) {
+				localTarget = localTargets[i];
+				componentDescription = document.descriptionsDictionary[localTarget];
 				
-				for (var j:int=0;j<changesLength;j++) {
-					propertyChange = propertyChanges[j];
+				if (componentDescription) {
 					
-					if (descriptor) {
-						descriptor.styles = ObjectUtils.merge(propertyChange.end, descriptor.styles);
+					for (var j:int=0;j<numberOfChanges;j++) {
+						propertyChange = propertyChanges[j];
+						
+						for (var k:int = 0; k < numberOfStyles; k++) {
+							style = styles[k];
+							value = propertyChange.end[style];
+							
+							if (value==null || 
+								value==undefined) {
+								// || isNaN(value)
+								delete componentDescription.styles[style];
+							}
+							else {
+								componentDescription.styles[style] = value;
+							}
+						}
+						
+						//componentDescription.styles = ObjectUtils.merge(propertyChange.end, componentDescription.styles);
 					}
 				}
 				
@@ -6198,8 +6375,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					applyChanges(items, [propertyChangeChange], properties, styles);
 					LayoutManager.getInstance().validateNow();
 					
-					updateComponentProperties(items, [propertyChangeChange]);
-					updateComponentStyles(items, [propertyChangeChange]);
+					properties && properties.length ? updateComponentProperties(items, [propertyChangeChange], properties) :-1;
+					styles && styles.length ? updateComponentStyles(items, [propertyChangeChange], styles) :-(1);
 				}
 				
 				
@@ -6626,7 +6803,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		public static var editableRichTextField:RichEditableText = new RichEditableText();
 		
 		/**
-		 * Set the value of the user typed in
+		 * Set the value that the user typed in
 		 * */
 		public static function commitTextEditorValues(event:Event):void {
 			var newValue:String = editableRichTextField.text;
@@ -6677,16 +6854,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * For instructions on setting default properties or adding new component types
 		 * look in Radii8Desktop/howto/HowTo.txt
 		 * */
-		public static function setDefaultProperties(item:ComponentDescription):void {
-			var properties:Array = [];
+		public static function setDefaultProperties(componentDescription:ComponentDescription):void {
 			
-			for (var property:String in item.defaultProperties) {
-				//setProperty(component, property, [item.defaultProperties[property]]);
-				properties.push(property);
-			}
+			var valuesObject:ValuesObject = getPropertiesStylesFromObject(componentDescription.instance, componentDescription.defaultProperties);
 			
 			// maybe do not add to history
-			setProperties(item.instance, properties, item.defaultProperties);
+			setPropertiesStyles(componentDescription.instance, valuesObject.propertiesAndStyles, valuesObject.values);
 			
 		}
 		
@@ -6739,7 +6912,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			if (setDefaults) {
 				//classFactory.properties = item.defaultProperties;
-				componentDescription.properties = componentDefinition.defaultProperties;
+				//componentDescription.properties = componentDefinition.defaultProperties;
 				componentDescription.defaultProperties = componentDefinition.defaultProperties;
 			}
 			
@@ -8129,7 +8302,11 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				xml = new XML(codeToParse);
 			}
 			catch (error:Error) {
-				Radiate.error("Could not parse code for document " + document.name + ". \n" + error.message + " \nCode: \n" + codeToParse);
+				var message:String = "Could not parse code for document, \"" + document.name + "\". Fix the code before you import.";
+				Radiate.error("Could not parse code for document, \"" + document.name + "\". \n" + error.message + " \nCode: \n" + codeToParse);
+				
+				openImportPopUp.popUpOptions = {title:message, code:codeToParse};
+				openImportPopUp.play();
 			}
 			
 			
@@ -8168,6 +8345,60 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			new QName(mx_internal, "topMostIndex"),
 			new QName(mx_internal, "toolTipIndex"));*/
 			//return true;
+		}
+		
+		/**
+		 * Open import MXML window
+		 * */
+		public function openImportMXMLWindow(title:String, code:String = ""):void {
+			
+			if (openImportPopUp==null) {
+				openImportPopUp = new OpenPopUp();
+				openImportPopUp.popUpType = ImportWindow; 
+				openImportPopUp.modalDuration = 150;
+				openImportPopUp.percentWidth = 80;
+				openImportPopUp.percentHeight = 76;
+				openImportPopUp.useHardPercent = true;
+				openImportPopUp.parent = application;
+				openImportPopUp.closeOnMouseDownOutside = false;
+				openImportPopUp.closeOnMouseDownInside = false;
+				openImportPopUp.closeOnEscapeKey = false;
+				openImportPopUp.addEventListener(OpenPopUp.CLOSE, closeImportWindowHandler);
+			}
+			
+			if (!openImportPopUp.isOpen) {
+				openImportPopUp.popUpOptions = {title:title, code:code};
+				openImportPopUp.play();
+			}
+		}
+		
+		protected function closeImportWindowHandler(event:Event):void {
+			var selectedDocument:IDocument = selectedDocument;
+			var popUp:ImportWindow = ImportWindow(openImportPopUp.popUp);
+			var type:String = popUp.importLocation.selectedValue as String;
+			var action:String = popUp.action;
+			var code:String = popUp.code;
+			
+			if (action==ImportWindow.IMPORT) {
+				if (type==ImportWindow.NEW_DOCUMENT) {
+					importMXMLDocument(selectedProject, null, null, code);
+				}
+				else if (type==ImportWindow.CURRENT_DOCUMENT && selectedDocument) {
+					importMXMLDocument(selectedProject, selectedDocument, null, code);
+				}
+				else if (type==ImportWindow.CURRENT_SELECTION && target is IVisualElement) {
+					if (target is IVisualElement) {
+						importMXMLDocument(selectedProject, selectedDocument, IVisualElement(target), code);
+					}
+					Alert.show("Please select a visual element");
+				}
+				else {
+					Alert.show("Please select a document");
+				}
+			}
+			
+			popUp.action = null;
+			popUp.code = null;
 		}
 		
 		/**
@@ -8491,7 +8722,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		/**
 		 * Get saved data
 		 * */
-		public function getSavedData():Boolean {
+		public function getSavedData():Object {
 			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
 			var so:SharedObject;
 			
@@ -8504,7 +8735,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					if (SAVED_DATA_NAME in so.data) {
 						data = SavedData(so.data[SAVED_DATA_NAME]);
 						
-						openLocalProjects(data);
+						//openLocalProjects(data);
 					}
 				}
 			}
@@ -9197,6 +9428,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			if (saveRemote && iDocument && iDocument is EventDispatcher) {
 				EventDispatcher(iDocument).addEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler, false, 0, true);
+				saveDocumentInProgress = true;
 			}
 			
 			iDocument.saveFunction = saveDocumentHook;
@@ -9268,6 +9500,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		protected function documentSaveResultsHandler(event:SaveResultsEvent):void {
 			var document:IDocument = IDocument(event.currentTarget);
+			saveDocumentInProgress = false;
 			
 			if (document is Document) {
 				Document(document).removeEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler);
@@ -9349,6 +9582,33 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		}
 		
 		/**
+		 * Get assets available to upload
+		 * */
+		public function getAssetsAvailableToUpload():Array {
+			var numberOfAssets:int;
+			var attachmentData:AttachmentData;
+			var assetsToUpload:Array = [];
+			
+			numberOfAssets = assets.length;
+			
+			for (var i:int=0;i<numberOfAssets;i++) {
+				attachmentData = assets[i] as AttachmentData;
+				
+				if (attachmentData) {
+					
+					if (attachmentData.id==null) {
+						
+						if (assetsToUpload.indexOf(attachmentData)==-1) {
+							assetsToUpload.push(attachmentData);
+						}
+					}
+				}
+			}
+			
+			return assetsToUpload;
+		}
+		
+		/**
 		 * Save all attachments. 
 		 * */
 		public function saveAllAttachments(iDocument:DocumentData, saveToProject:Boolean = false, locations:String = null, saveEvenIfClean:Boolean = true):Boolean {
@@ -9421,7 +9681,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 						
 						if (attachmentData.id==null) {
 							
-							if (attachmentsToUpload.indexOf(attachmentsToUpload)==-1) {
+							if (attachmentsToUpload.indexOf(attachmentData)==-1) {
 								attachmentsToUpload.push(attachmentData);
 							}
 						}
@@ -9435,6 +9695,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			for (var m:int = 0; m < numberOfAttachmentsToUpload; m++) {
 				attachmentData = attachmentsToUpload[m];
 				
+				// trying to add a custom field with the uid - doesn't works
 				if (attachmentData.uid) {
 					customData["custom[uid]"] = attachmentData.uid;
 					customData["caption"] = attachmentData.uid;

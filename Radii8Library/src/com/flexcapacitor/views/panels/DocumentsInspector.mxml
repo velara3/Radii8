@@ -27,12 +27,7 @@
 			import com.flexcapacitor.services.WPService;
 			import com.flexcapacitor.views.IInspector;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
-			import com.flexcapacitor.views.windows.ImportWindow;
 			
-			import mx.core.IVisualElement;
-			import mx.events.FlexEvent;
-			
-			import spark.components.RadioButtonGroup;
 			import spark.events.IndexChangeEvent;
 			
 			private var rootDisplayObject:DisplayObject;
@@ -294,36 +289,10 @@
 				var selectedDocument:IDocument = list.selectedItem as IDocument;
 				
 				if (selectedDocument) {
-					//radiate.importMXMLDocument(radiate.selectedProject, selectedDocument, code);
+					radiate.openImportMXMLWindow("Import MXML");
 				}
 				else {
 					Radiate.info("Please select a document");
-				}
-			}
-			
-			protected function openpopup1_closeHandler(event:Event):void {
-				var selectedDocument:IDocument = list.selectedItem as IDocument;
-				var importWindow:ImportWindow = ImportWindow(openPopUp.popUp);
-				var code:String = importWindow.code;
-				var action:String = importWindow.action;
-				var type:String = RadioButtonGroup(importWindow.importLocation).selectedValue as String;
-				
-				if (action==ImportWindow.IMPORT) {
-					if (type==ImportWindow.NEW_DOCUMENT) {
-						radiate.importMXMLDocument(radiate.selectedProject, null, null, code);
-					}
-					else if (type==ImportWindow.CURRENT_DOCUMENT && selectedDocument) {
-						radiate.importMXMLDocument(radiate.selectedProject, selectedDocument, null, code);
-					}
-					else if (type==ImportWindow.CURRENT_SELECTION && radiate.target is IVisualElement) {
-						if (radiate.target is IVisualElement) {
-							radiate.importMXMLDocument(radiate.selectedProject, selectedDocument, IVisualElement(radiate.target), code);
-						}
-						Radiate.info("Please select a visual element");
-					}
-					else {
-						Radiate.info("Please select a document");
-					}
 				}
 			}
 
@@ -530,18 +499,6 @@
 								 fields="{['name']}" />
 		</handlers:EventHandler>
 		
-		<!--- show import document popup -->		
-		<handlers:EventHandler eventName="click" target="{importDocumentIcon}">
-			<fc:OpenPopUp id="openPopUp" 
-						  popUpType="{ImportWindow}" 
-						  modalDuration="250" 
-						  percentWidth="75"
-						  percentHeight="90"
-						  width="600"
-						  parent="{parentApplication}"
-						  close="openpopup1_closeHandler(event)"/>
-		</handlers:EventHandler>
-		
 		<!--- show delete document popup -->
 		<handlers:EventHandler targets="{deleteDocumentIcon}" eventName="click" 
 							   enabled="{list.selectedItem!=null}">
@@ -671,6 +628,7 @@
 		<c:BeveledImageButton id="importDocumentIcon" 
 					   source="{Radii8LibraryAssets.importIcon}" 
 					   toolTip="Import Document"
+					   click="importDocumentIcon_clickHandler(event)"
 					   />
 		<s:Spacer width="-1"/>
 		<s:Group top="1">
