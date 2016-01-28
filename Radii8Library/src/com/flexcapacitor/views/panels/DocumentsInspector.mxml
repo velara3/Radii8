@@ -18,12 +18,15 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.model.DocumentData;
+			import com.flexcapacitor.model.DocumentRevision;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IDocumentData;
 			import com.flexcapacitor.model.IProject;
+			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.services.WPService;
 			import com.flexcapacitor.views.IInspector;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
@@ -85,6 +88,8 @@
 				if (radiate.selectedDocument) {
 					selectDocument(radiate.selectedDocument);
 				}
+				
+				updateRevisionsToolTip();
 			}
 			
 			/**
@@ -473,7 +478,8 @@
 			protected function editDocumentIcon_clickHandler(event:MouseEvent):void
 			{
 				if (radiate.selectedDocument) {
-					Radiate.editDocumentInBrowser(radiate.selectedDocument);
+					Radiate.info("We are opening a browser window to edit only the document content. When you are done editing close the edit window."); 
+					Radiate.callAfter(5000, Radiate.editDocumentInBrowser, radiate.selectedDocument);
 				}
 			}
 			
@@ -485,6 +491,45 @@
 			protected function documentSavedHandler(event:Event):void
 			{
 				updateCollection();
+			}
+			
+			protected function saveRevisionIcon_clickHandler(event:MouseEvent):void
+			{
+				var iDocument:IDocument = radiate.selectedDocument;
+				var sourceData:SourceData;
+				var revision:DocumentRevision;
+				
+				if (iDocument) {
+					sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, CodeManager.MXML);
+					
+					revision = new DocumentRevision();
+					revision.code = sourceData.source;
+					revision.date = String(new Date().time);
+					revision.name = new Date().toUTCString();
+					iDocument.addRevision(revision);
+					Radiate.info("Revision saved.");
+					iDocument.markDirty();
+					updateRevisionsToolTip();
+					Radiate.instance.saveDocument(iDocument);
+				}
+			}
+			
+			private function updateRevisionsToolTip():void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (iDocument) {
+					saveRevisionIcon.toolTip = "Save a revision (" + iDocument.revisions.length + ")"; 
+				}
+			}
+			
+			protected function shareIcon_clickHandler(event:MouseEvent):void
+			{
+				if (radiate.selectedDocument) {
+					RunManager.copyURLToDocument(radiate.selectedDocument as DocumentData);
+				}
+				else {
+					Radiate.warn("No document is open");
+				}
 			}
 			
 		]]>
@@ -631,6 +676,7 @@
 					   click="importDocumentIcon_clickHandler(event)"
 					   />
 		<s:Spacer width="-1"/>
+		
 		<s:Group top="1">
 			<c:BeveledImageButton id="setHomePageDocumentIcon" 
 								  source="{Radii8LibraryAssets.document}" 
@@ -644,7 +690,24 @@
 					 >
 			</s:BitmapImage>
 		</s:Group>
-		<s:Group click="openHomePageInBrowserButton_clickHandler()">
+		
+		<c:BeveledImageButton id="editDocumentIcon" 
+							  source="{Radii8LibraryAssets.edit}" 
+							  toolTip="Edit Document (opens a browser window)"
+							  click="editDocumentIcon_clickHandler(event)"
+							  includeInLayout="false"
+							  visible="false"
+							  />
+		
+		<c:BeveledImageButton id="shareIcon" 
+							  source="{Radii8LibraryAssets.share}" 
+							  toolTip="Share"
+							  click="shareIcon_clickHandler(event)"
+							  width="16"
+							  height="22"
+							  />
+		
+		<s:Group click="openHomePageInBrowserButton_clickHandler()" visible="false" includeInLayout="false">
 			<!--<s:BitmapImage source="{Radii8LibraryAssets.home}" visible="true"
 						   />-->
 			<c:BeveledImageButton id="openHomePageInBrowserButton" 
@@ -674,14 +737,22 @@
 		</s:DropDownList>
 		<c:BeveledImageButton id="openDocumentInBrowserButton" 
 							  source="{Radii8LibraryEffectsAssets.play}" 
-							  toolTip="View published document in browser (if document is not published you must login in the site via the browser)"
+							  toolTip="View a published document in the browser (if document is not published you must login to the site via in your browser before you can see it)"
 							  click="openDocumentInBrowserButton_clickHandler(event)"
 							  />
 		<s:Spacer width="100%"/>
-		<c:BeveledImageButton id="editDocumentIcon" 
-							  source="{Radii8LibraryAssets.edit}" 
-							  toolTip="Edit Document (opens a browser window)"
-							  click="editDocumentIcon_clickHandler(event)"
+		<c:BeveledImageButton id="saveDocumentIcon" 
+							  source="{Radii8LibraryAssets.save}" 
+							  toolTip="Save Document"
+							  click="saveDocumentIcon_clickHandler(event)"
+							  height="15"
+							  />
+		<c:BeveledImageButton id="saveRevisionIcon" 
+							  source="{Radii8LibraryAssets.revision}" 
+							  toolTip="Save Revision"
+							  click="saveRevisionIcon_clickHandler(event)"
+							  height="17"
+							  width="17"
 							  />
 		<c:BeveledImageButton id="closeDocumentIcon" 
 					   source="{Radii8LibraryAssets.closedFolder}" 
@@ -689,6 +760,8 @@
 					   click="closeDocumentIcon_clickHandler(event)"
 					   visible="{list.selectedItem.isOpen}"
 					   includeInLayout="{list.selectedItem.isOpen}"
+					   width="16"
+					   height="14"
 					   />
 		<c:BeveledImageButton id="openDocumentIcon" 
 					   source="{Radii8LibraryAssets.openFolder}" 
@@ -696,12 +769,6 @@
 					   click="openDocumentIcon_clickHandler(event)"
 					   visible="{!list.selectedItem.isOpen}"
 					   includeInLayout="{!list.selectedItem.isOpen}"
-					   />
-		<c:BeveledImageButton id="saveDocumentIcon" 
-					   source="{Radii8LibraryAssets.save}" 
-					   toolTip="Save Document"
-					   click="saveDocumentIcon_clickHandler(event)"
-					   height="15"
 					   />
 		<c:BeveledImageButton id="newDocumentIcon" 
 					   source="{Radii8LibraryAssets.newFile}" 

@@ -32,5 +32,6 @@ package com.flexcapacitor.model
 		public var markup:String;
 		public var styles:String;
 		public var disableTabs:Boolean;
+		public var reverseInitialCSS:Boolean;
 	}
 }

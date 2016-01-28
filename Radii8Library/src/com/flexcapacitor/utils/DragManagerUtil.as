@@ -9,6 +9,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.utils.supportClasses.DragData;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	
+	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Sprite;
@@ -40,14 +41,18 @@ package com.flexcapacitor.utils {
 	import spark.components.Image;
 	import spark.components.SkinnableContainer;
 	import spark.components.supportClasses.GroupBase;
+	import spark.components.supportClasses.InvalidatingSprite;
 	import spark.components.supportClasses.ItemRenderer;
 	import spark.components.supportClasses.Skin;
+	import spark.core.IGraphicElement;
 	import spark.layouts.BasicLayout;
 	import spark.layouts.HorizontalLayout;
 	import spark.layouts.TileLayout;
 	import spark.layouts.VerticalLayout;
 	import spark.layouts.supportClasses.DropLocation;
 	import spark.layouts.supportClasses.LayoutBase;
+	import spark.primitives.BitmapImage;
+	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.ApplicationSkin;
 	import spark.skins.spark.ListDropIndicator;
 
@@ -152,7 +157,8 @@ package com.flexcapacitor.utils {
 		 * */
 		public var dragStartTolerance:int = 5;
 		
-		public var dragInitiator:IUIComponent;
+		public var dragInitiator:IVisualElement;
+		public var dragInitiatorProxy:Image;
 		private var dropLocation:DropLocation;
 		public var dragData:DragData;
 		
@@ -177,7 +183,7 @@ package com.flexcapacitor.utils {
 		 * @param event Mouse event from the mouse down event
 		 * @param draggedItem The item or data to be dragged. If null then this is the dragInitiator.
 		 * */
-		public function listenForDragBehavior(dragInitiator:IUIComponent, document:IDocument, event:MouseEvent, draggedItem:Object = null):void {
+		public function listenForDragBehavior(dragInitiator:IVisualElement, document:IDocument, event:MouseEvent, itemToDrag:Object = null):void {
 			startingPoint = new Point();
 			this.dragInitiator = dragInitiator;
 			this.targetApplication = Application(document.instance);
@@ -189,7 +195,7 @@ package com.flexcapacitor.utils {
 			
 			// either the component to add or the component to move
 			if (arguments[3]) {
-				this.draggedItem = draggedItem;
+				this.draggedItem = itemToDrag;
 			}
 			else {
 				this.draggedItem = dragInitiator;
@@ -217,7 +223,13 @@ package com.flexcapacitor.utils {
 			
 			updateDropTargetLocation(targetApplication, event);
 			
-			dragInitiator.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			if (dragInitiator is IUIComponent) {
+				dragInitiator.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			}
+			else if (dragInitiator is IGraphicElement) {
+				GraphicElement(dragInitiator).displayObject.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			}
+			
 			swfRoot.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
 		}
 		
@@ -269,7 +281,15 @@ package com.flexcapacitor.utils {
 			if (dragToleranceMet) {
 				dragInitiator.visible = hideDragInitiatorOnDrag ? false : true; // hide from view
 				removeMouseHandlers(dragInitiator);
-				startDrag(dragInitiator, targetApplication, event);
+				
+				if (dragInitiator is IGraphicElement) {
+					dragInitiatorProxy = DisplayObjectUtils.duplicateIntoImage(dragInitiator as GraphicElement);
+					startDrag(dragInitiatorProxy as IUIComponent, targetApplication, event);
+				}
+				else {
+					dragInitiatorProxy = null;
+					startDrag(dragInitiator as IUIComponent, targetApplication, event);
+				}
 			}
 			
 		}
@@ -283,7 +303,7 @@ package com.flexcapacitor.utils {
 			var dragSource:DragSource = new DragSource();
 			var snapshot:BitmapAsset;
 
-			this.dragInitiator = dragInitiator;
+			this.dragInitiator = dragInitiator as IVisualElement;
 			this.targetApplication = application;
 			this.systemManager = application.systemManager;
 			
@@ -311,7 +331,13 @@ package com.flexcapacitor.utils {
 			updateDropTargetLocation(targetApplication, event);
 			
 			addGroupListeners(application);
-			addDragListeners(dragInitiator, dragListener);
+			
+			if (dragInitiatorProxy) {
+				addDragListeners(dragInitiatorProxy, dragListener);
+			}
+			else {
+				addDragListeners(dragInitiator, dragListener);
+			}
 			
 			// creates an instance of the bounding box that will be shown around the drop target
 			if (!selectionGroup) {
@@ -353,11 +379,25 @@ package com.flexcapacitor.utils {
 						offset.x = 0;
 						offset.y = 0;
 					}
-					snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject, true, scale, scale);
+					
+					if (dragInitiatorProxy) {
+						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiatorProxy as DisplayObject, true, scale, scale);
+					}
+					else {
+						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject, true, scale, scale);
+					}
 				}
 				else {
-					snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject);
+					if (dragInitiatorProxy) {
+						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiatorProxy as DisplayObject);
+					}
+					else {
+						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject);
+					}
 				}
+				
+				//removeDragInitiatorProxy();
+				
 				//snapshot = DisplayObjectUtils.getSpriteSnapshot(dragInitiator as DisplayObject);
 				//DisplayObjectUtils.scaleDisplayObject(targetApplication as DisplayObject, snapshot, "stretch");
 				
@@ -395,8 +435,22 @@ package com.flexcapacitor.utils {
 				//   - dragManagerStyleDeclaration is null 
 			}
 			
+			removeDragInitiatorProxy();
+			
 			dragging = true;
 			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_START));
+		}
+		
+		public function removeDragInitiatorProxy():void {
+			
+			if (dragInitiatorProxy) {
+				if (dragInitiatorProxy.owner is IVisualElementContainer) {
+					IVisualElementContainer(dragInitiatorProxy.owner).removeElement(dragInitiatorProxy);
+				}
+				else if (dragInitiatorProxy.owner is DisplayObjectContainer) {
+					DisplayObjectContainer(dragInitiatorProxy.owner).removeChild(dragInitiatorProxy);
+				}
+			}
 		}
 		
 		private function dragEnterHandler(event:DragEvent):void {
@@ -1251,7 +1305,7 @@ package com.flexcapacitor.utils {
 			removeDragListeners(dragListener);
 			removeDragDisplayObjects();
 			//removeGroupListeners(targetApplication);
-			removeMouseHandlers(IUIComponent(dragInitiator));
+			removeMouseHandlers(dragInitiator as IVisualElement);
 			
 			dragInitiator.visible = hideDragInitiatorOnDrag ? true : false; // hide from view
 			dragging = false;
@@ -1303,13 +1357,18 @@ package com.flexcapacitor.utils {
 				dragging = false;
 			}
 			
-			removeMouseHandlers(IUIComponent(event.currentTarget));
+			if (event.currentTarget is InvalidatingSprite) {
+				removeMouseHandlers((dragInitiator as IGraphicElement).displayObject);
+			}
+			else {
+				removeMouseHandlers(IVisualElement(event.currentTarget));
+			}
 		}
 		
 		/**
 		 * Remove listeners from selected target and swfroot. 
 		 * */
-		protected function removeMouseHandlers(target:IUIComponent):void {
+		protected function removeMouseHandlers(target:Object):void {
 			
 			target.removeEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);
 			target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);

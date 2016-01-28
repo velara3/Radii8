@@ -225,6 +225,10 @@ package {
 		//Embed(source="assets/icons/spark/controls/LinkBar.png")]
 		//public static const LinkBarIcon:Class;
 		
+		[Embed(source="assets/icons/spark/controls/Hyperlink.png")]
+		public static const HyperlinkIcon:Class;
+		public static var hyperlink:Hyperlink;
+		
 		[Embed(source="assets/icons/mx/controls/LinkButton.png")]
 		public static const LinkButtonIcon:Class;
 		public static var linkButton:LinkButton;

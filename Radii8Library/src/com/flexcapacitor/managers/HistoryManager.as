@@ -359,6 +359,10 @@ package com.flexcapacitor.managers
 								setStartValues);
 							historyEventItem.reversed = true;
 							
+							Radiate.updateComponentProperties(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties);
+							Radiate.updateComponentStyles(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.styles);
+							Radiate.updateComponentEvents(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.events);
+							
 							if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
 								radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
 							}
@@ -388,6 +392,10 @@ package com.flexcapacitor.managers
 					Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles,
 						setStartValues);
 					historyEventItem.reversed = true;
+					
+					Radiate.updateComponentProperties(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, true);
+					Radiate.updateComponentStyles(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.styles, true);
+					Radiate.updateComponentEvents(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.events, true);
 					
 					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
 						radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
@@ -448,6 +456,182 @@ package com.flexcapacitor.managers
 			return historyLength;
 		}
 		
+		/**
+		 * Redo last change. See notes in undo method. 
+		 * @see undo
+		 * */
+		public static function redo(document:IDocument, dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true, dispatchSetTargets:Boolean = true):int {
+			//var currentDocument:IDocument = instance.selectedDocument;
+			var historyCollection:ListCollectionView = document.history;
+			var currentTargetDocument:Application = document.instance as Application; // should be typed
+			var historyLength:int = historyCollection.length;
+			var changeIndex:int = getNextHistoryIndex(document);
+			var currentIndex:int = getHistoryPosition(document);
+			var historyEventItem:HistoryEventItem;
+			var historyEvent:HistoryEvent;
+			var affectsDocument:Boolean;
+			var setStartValues:Boolean;
+			var historyEvents:Array;
+			var addItems:AddItems;
+			var isInvalid:Boolean;
+			var numberOfEvents:int;
+			var remove:Boolean;
+			var action:String;
+			
+			
+			// need to make sure everything is validated first
+			// think about doing the following:
+			// layoutManager.usePhasedInstantiation = false;
+			// layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid. Needs a fix.") : 0;
+			// also use in undo()
+			
+			// no changes made
+			if (!historyLength) {
+				return -1;
+			}
+			
+			// cannot redo any more changes
+			if (changeIndex==-1 || changeIndex>=historyLength) {
+				if (instance.hasEventListener(RadiateEvent.END_OF_UNDO_HISTORY)) {
+					instance.dispatchEvent(new RadiateEvent(RadiateEvent.END_OF_UNDO_HISTORY));
+				}
+				return historyLength-1;
+			}
+			
+			// get current change to be redone
+			historyEvent = historyCollection.length ? historyCollection.getItemAt(changeIndex) as HistoryEvent : null;
+			
+			historyEvents = historyEvent.historyEventItems;
+			numberOfEvents = historyEvents.length;
+			//changes = historyEvents;
+			
+			//for (var j:int;j<numberOfEvents;j++) {
+			for (var j:int=numberOfEvents;j--;) {
+				historyEventItem = HistoryEventItem(historyEvents[j]);
+				//changesLength = changes ? changes.length: 0;
+				
+				addItems = historyEventItem.addItemsInstance;
+				action = historyEventItem.action;
+				affectsDocument = dispatchForApplication && historyEventItem.targets.indexOf(currentTargetDocument)!=-1;
+				
+				
+				if (action==RadiateEvent.ADD_ITEM) {
+					isInvalid = layoutManager.isInvalid();
+					if (isInvalid) {
+						layoutManager.validateNow();
+						layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 4.") : 0;
+					}
+					// redo the add
+					addItems.apply(addItems.destination as UIComponent);
+					historyEventItem.reversed = false;
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						radiate.dispatchAddEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties);
+					}
+					
+				}
+				else if (action==RadiateEvent.MOVE_ITEM) {
+					// redo the move
+					if (addItems) {
+						
+						// RangeError: Index 2 is out of range. 
+						// we must validate
+						isInvalid = layoutManager.isInvalid();
+						if (isInvalid) {
+							layoutManager.validateNow();
+							layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 5") : 0;
+						}
+						
+						// RangeError: Index 2 is out of range. 
+						// should we use a try catch? delay it somehow?
+						try {
+							addItems.apply(addItems.destination as UIComponent);
+						}
+						catch (e:*) {
+							// if RangeError: Index 2 is out of range.
+							historyEventItem.reversed = false;
+							undo(document, false, false, false);
+							
+							Radiate.error("There was an error moving one of the components. You may need to restart.");
+							return -1;
+							//return redo(document, dispatchEvents, dispatchForApplication, dispatchSetTargets);;
+						}
+							historyEventItem.reversed = false;
+						
+						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+							radiate.dispatchMoveEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties);
+						}
+					}
+					else {
+						
+						Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles,
+							setStartValues);
+						historyEventItem.reversed = false;
+						
+						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+							radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
+						}
+					}
+					
+				}
+				else if (action==RadiateEvent.REMOVE_ITEM) {
+					
+					isInvalid = layoutManager.isInvalid();
+					if (isInvalid) {
+						layoutManager.validateNow();
+						layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 6") : 0;
+					}
+					
+					// redo the remove
+					addItems.remove(addItems.destination as UIComponent);
+					historyEventItem.reversed = false;
+					remove = true;
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						radiate.dispatchRemoveItemsEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties);
+					}
+				}
+				else if (action==RadiateEvent.PROPERTY_CHANGED) {
+					Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles,
+						setStartValues);
+					historyEventItem.reversed = false;
+					
+					Radiate.updateComponentProperties(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties);
+					Radiate.updateComponentStyles(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.styles);
+					Radiate.updateComponentEvents(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.events);
+					
+					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+						radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
+					}
+				}
+			}
+			
+			
+			historyEvent.reversed = false;
+			
+			// select target
+			if (selectTargetOnHistoryChange) {
+				if (remove) {
+					radiate.setTargets(currentTargetDocument, dispatchSetTargets);
+				}
+				else {
+					radiate.setTargets(historyEventItem.targets, dispatchSetTargets);
+				}
+			}
+			
+			if (numberOfEvents) {
+				setHistoryIndex(document, getHistoryPosition(document));
+				
+				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
+					radiate.dispatchHistoryChangeEvent(document, historyIndex, currentIndex);
+				}
+				
+				return changeIndex;
+			}
+			
+			return historyLength;
+		}
+		
 		
 		/**
 		 *  @private 
@@ -497,177 +681,6 @@ package com.flexcapacitor.managers
 			}	
 			
 			return null;
-		}
-		
-		/**
-		 * Redo last change. See notes in undo method. 
-		 * @see undo
-		 * */
-		public static function redo(document:IDocument, dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true, dispatchSetTargets:Boolean = true):int {
-			//var currentDocument:IDocument = instance.selectedDocument;
-			var historyCollection:ListCollectionView = document.history;
-			var currentTargetDocument:Application = document.instance as Application; // should be typed
-			var historyLength:int = historyCollection.length;
-			var changeIndex:int = getNextHistoryIndex(document);
-			var currentIndex:int = getHistoryPosition(document);
-			var historyEvent:HistoryEventItem;
-			var historyItem:HistoryEvent;
-			var affectsDocument:Boolean;
-			var setStartValues:Boolean;
-			var historyEvents:Array;
-			var addItems:AddItems;
-			var isInvalid:Boolean;
-			var numberOfEvents:int;
-			var remove:Boolean;
-			var action:String;
-			
-			
-			// need to make sure everything is validated first
-			// think about doing the following:
-			// layoutManager.usePhasedInstantiation = false;
-			// layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid. Needs a fix.") : 0;
-			// also use in undo()
-			
-			// no changes made
-			if (!historyLength) {
-				return -1;
-			}
-			
-			// cannot redo any more changes
-			if (changeIndex==-1 || changeIndex>=historyLength) {
-				if (instance.hasEventListener(RadiateEvent.END_OF_UNDO_HISTORY)) {
-					instance.dispatchEvent(new RadiateEvent(RadiateEvent.END_OF_UNDO_HISTORY));
-				}
-				return historyLength-1;
-			}
-			
-			// get current change to be redone
-			historyItem = historyCollection.length ? historyCollection.getItemAt(changeIndex) as HistoryEvent : null;
-			
-			historyEvents = historyItem.historyEventItems;
-			numberOfEvents = historyEvents.length;
-			//changes = historyEvents;
-			
-			//for (var j:int;j<numberOfEvents;j++) {
-			for (var j:int=numberOfEvents;j--;) {
-				historyEvent = HistoryEventItem(historyEvents[j]);
-				//changesLength = changes ? changes.length: 0;
-				
-				addItems = historyEvent.addItemsInstance;
-				action = historyEvent.action;
-				affectsDocument = dispatchForApplication && historyEvent.targets.indexOf(currentTargetDocument)!=-1;
-				
-				
-				if (action==RadiateEvent.ADD_ITEM) {
-					isInvalid = layoutManager.isInvalid();
-					if (isInvalid) {
-						layoutManager.validateNow();
-						layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 4.") : 0;
-					}
-					// redo the add
-					addItems.apply(addItems.destination as UIComponent);
-					historyEvent.reversed = false;
-					
-					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						radiate.dispatchAddEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-					}
-					
-				}
-				else if (action==RadiateEvent.MOVE_ITEM) {
-					// redo the move
-					if (addItems) {
-						
-						// RangeError: Index 2 is out of range. 
-						// we must validate
-						isInvalid = layoutManager.isInvalid();
-						if (isInvalid) {
-							layoutManager.validateNow();
-							layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 5") : 0;
-						}
-						
-						// RangeError: Index 2 is out of range. 
-						// should we use a try catch? delay it somehow?
-						try {
-							addItems.apply(addItems.destination as UIComponent);
-						}
-						catch (e:*) {
-							// if RangeError: Index 2 is out of range.
-							historyEvent.reversed = false;
-							undo(document, false, false, false);
-							
-							Radiate.error("There was an error moving one of the components. You may need to restart.");
-							return -1;
-							//return redo(document, dispatchEvents, dispatchForApplication, dispatchSetTargets);;
-						}
-							historyEvent.reversed = false;
-						
-						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-							radiate.dispatchMoveEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-						}
-					}
-					else {
-						
-						Radiate.applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
-							setStartValues);
-						historyEvent.reversed = false;
-						
-						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-							radiate.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles);
-						}
-					}
-					
-				}
-				else if (action==RadiateEvent.REMOVE_ITEM) {
-					
-					isInvalid = layoutManager.isInvalid();
-					if (isInvalid) {
-						layoutManager.validateNow();
-						layoutManager.isInvalid() ? Radiate.log.debug("Layout Manager is still invalid at note 6") : 0;
-					}
-					
-					// redo the remove
-					addItems.remove(addItems.destination as UIComponent);
-					historyEvent.reversed = false;
-					remove = true;
-					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						radiate.dispatchRemoveItemsEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties);
-					}
-				}
-				else if (action==RadiateEvent.PROPERTY_CHANGED) {
-					Radiate.applyChanges(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles,
-						setStartValues);
-					historyEvent.reversed = false;
-					
-					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						radiate.dispatchPropertyChangeEvent(historyEvent.targets, [historyEvent.propertyChanges], historyEvent.properties, historyEvent.styles);
-					}
-				}
-			}
-			
-			
-			historyItem.reversed = false;
-			
-			// select target
-			if (selectTargetOnHistoryChange) {
-				if (remove) {
-					radiate.setTargets(currentTargetDocument, dispatchSetTargets);
-				}
-				else {
-					radiate.setTargets(historyEvent.targets, dispatchSetTargets);
-				}
-			}
-			
-			if (numberOfEvents) {
-				setHistoryIndex(document, getHistoryPosition(document));
-				
-				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-					radiate.dispatchHistoryChangeEvent(document, historyIndex, currentIndex);
-				}
-				
-				return changeIndex;
-			}
-			
-			return historyLength;
 		}
 		
 		//private static var _historyIndex:int = -1;

@@ -61,6 +61,9 @@ package {
 		[Embed(source="assets/icons/general/document_published.png")]
 		public static const documentPublished:Class;
 		
+		[Embed(source="assets/icons/general/copy.png")]
+		public static const duplicate:Class;
+		
 		[Embed(source="assets/icons/general/edit.png")]
 		public static const edit:Class;
 		
@@ -142,6 +145,9 @@ package {
 		[Embed(source="assets/icons/general/refresh.png")]
 		public static const refresh:Class;
 		
+		[Embed(source="assets/icons/general/revision.png")]
+		public static const revision:Class;
+		
 		[Embed(source="assets/icons/general/save.png")]
 		public static const save:Class;
 		
@@ -153,6 +159,9 @@ package {
 		
 		[Embed(source="assets/icons/general/selection.png")]
 		public static const selection:Class;
+		
+		[Embed(source="assets/icons/general/share.png")]
+		public static const share:Class;
 		
 		[Embed(source="assets/icons/general/skin.png")]
 		public static const skin:Class;

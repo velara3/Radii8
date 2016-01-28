@@ -38,6 +38,11 @@ package com.flexcapacitor.events {
 		public var styles:Array;
 		
 		/**
+		 * Names of affected events
+		 * */
+		public var events:Array;
+		
+		/**
 		 * Contains the original property changes object
 		 * */
 		public var propertyChanges:PropertyChanges;

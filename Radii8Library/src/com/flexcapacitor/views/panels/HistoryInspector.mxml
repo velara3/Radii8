@@ -416,7 +416,7 @@
 								   click="revertHandler(event)" />
 	
 	<c:HorizontalLine top="22" left="5" right="5"
-					  strokeColor="#000000" 
+					  color="#000000" 
 					  alpha=".15"
 					  />
 	

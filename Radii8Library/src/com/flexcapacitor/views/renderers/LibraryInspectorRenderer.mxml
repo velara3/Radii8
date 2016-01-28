@@ -202,7 +202,7 @@
 			<s:SolidColor color="#989898" alpha="0"/>
 		</s:fill>
 		<s:stroke>
-			<s:SolidColorStroke color="#989898" />
+			<s:SolidColorStroke color="#989898" weight="2"/>
 		</s:stroke>
 	</s:Rect>
 </s:ItemRenderer>

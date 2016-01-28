@@ -8,8 +8,6 @@ package com.flexcapacitor.model {
 	import com.flexcapacitor.services.WPService;
 	import com.flexcapacitor.services.WPServiceBase;
 	import com.flexcapacitor.services.WPServiceEvent;
-	import com.flexcapacitor.utils.HTMLDocumentExporter;
-	import com.flexcapacitor.utils.MXMLDocumentExporter;
 	import com.flexcapacitor.utils.XMLUtils;
 	
 	import flash.events.Event;
@@ -43,8 +41,11 @@ package com.flexcapacitor.model {
 			super();
 		}
 		
+		public static const REVISIONS:String = "revisions";
+		
 		/**
 		 * Default class that exports the document 
+		 * Deprecated. Use Code Manager
 		 * */
 		[Transient]
 		public static var internalExporter:IDocumentExporter;
@@ -53,6 +54,7 @@ package com.flexcapacitor.model {
 
 		/**
 		 * Exports the document to string
+		 * Deprecated. Use Code Manager
 		 * */
 		[Transient]
 		public function get exporter():IDocumentExporter {
@@ -68,13 +70,15 @@ package com.flexcapacitor.model {
 		
 		/**
 		 * List of exporters
+		 * Deprecated. Use Code Manager
 		 * */
 		public var exporters:Array = [];
 		
-		private var _htmlExporter:IDocumentExporter = new HTMLDocumentExporter();
+		private var _htmlExporter:IDocumentExporter;
 
 		/**
 		 * Default class that exports the document to HTML 
+		 * Deprecated. Use Code Manager
 		 * */
 		[Transient]
 		public function get htmlExporter():IDocumentExporter {
@@ -512,6 +516,10 @@ package com.flexcapacitor.model {
 			//object["custom[sandpaper]"] = 1;
 			object["custom[source]"] = value;
 			
+			if (revisions) {
+				object["custom[revisions]"] = JSON.stringify(revisions);
+			}
+			
 			return object;
 		}
 		
@@ -711,6 +719,19 @@ package com.flexcapacitor.model {
 			
 			if (post.attachments && post.attachments.length>0) {
 				parseAttachments(post.attachments);
+			}
+			
+			if (REVISIONS in post.custom_fields) {
+				var revisionsObject:Object = JSON.parse(post.custom_fields[REVISIONS]);
+				var object:Object;
+				var revision:DocumentRevision;
+				revisions = [];
+				
+				for each (object in revisionsObject) {
+					revision = DocumentRevision.unmarshall(object);
+					revisions.push(revision);
+				}
+				
 			}
 		}
 		
@@ -954,6 +975,24 @@ package com.flexcapacitor.model {
 			
 			return true;*/
 			return result;
+		}
+		
+		private var _revisions:Array = []
+		public function get revisions():Array
+		{
+			return _revisions;
+		}
+
+		public function set revisions(value:Array):void
+		{
+			_revisions = value;
+		}
+
+;
+		public function addRevision(revision:DocumentRevision):void {
+			if (revisions) {
+				revisions.push(revision);
+			}
 		}
 	}
 }

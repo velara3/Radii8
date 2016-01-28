@@ -829,7 +829,7 @@
 		</s:HGroup>
 		
 		<controls:HorizontalLine id="progressLine" width="0" alpha="1"  
-								 strokeColor="#0000ff"/>
+								 color="#0000ff"/>
 		
 		<s:Label id="spacerLabel" 
 				 text=" " />

@@ -26,6 +26,7 @@
 			import com.flexcapacitor.model.HTMLExportOptions;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
+			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -193,6 +194,7 @@
 					htmlOptions.disableTabs = true;
 					htmlOptions.useExternalStylesheet = false;
 					htmlOptions.exportChildDescriptors = showChildDescriptors.selected;
+					htmlOptions.reverseInitialCSS = true;
 					
 					if (updateCodeLive.selected && isCodeModifiedByUser) {
 						htmlOptions.useCustomMarkup = true;
@@ -812,6 +814,9 @@
 			}
 			
 			private function createEditors():void {
+				var settings:Settings = Radiate.settings;
+				var enableWordWrap:Boolean = settings.enableWordWrap;
+				
 				// 1067: Implicit coercion of a value of type com.flexcapacitor.controls:AceEditor to an unrelated type Object
 				
 				aceEditor = AceEditorUtils.createInstance();
@@ -826,6 +831,7 @@
 				aceEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
 				aceEditorCreated = true;
 				aceEditor.scrollSpeed = .5;
+				aceEditor.useWordWrap = enableWordWrap;
 				
 				aceCSSEditor = AceEditorUtils.createInstance();
 				UIComponent(aceCSSEditor).percentWidth = 100;
@@ -839,6 +845,7 @@
 				aceCSSEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
 				aceCSSEditorCreated = true;
 				aceCSSEditor.scrollSpeed = .5;
+				aceCSSEditor.useWordWrap = enableWordWrap;
 				
 				templateEditor = AceEditorUtils.createInstance();
 				UIComponent(templateEditor).percentWidth = 100;
@@ -854,6 +861,9 @@
 				templateEditor.visible = false;
 				templateEditor.includeInLayout = false;
 				templateEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
+				templateEditor.useWordWrap = enableWordWrap;
+				
+				
 			}
 			
 			private var lastFocusedEditor:Object;
@@ -863,7 +873,7 @@
 				lastFocusedEditor = event.currentTarget;
 				searchInput.aceEditor = lastFocusedEditor;
 				
-				if (wordwrapButton) {
+				if (enableWordWrap) {
 					//wordwrapButton.selected = !lastFocusedEditor.useWordWrap;
 				}
 			}
@@ -1071,7 +1081,7 @@ IFRAME_ID {
 							  click="previewButton_clickHandler(event)"
 							  />-->
 		
-		<c:BeveledImageButton id="wordwrapButton"
+		<c:BeveledImageButton id="enableWordWrap"
 							  source="{Radii8LibraryAssets.wordWrap}"
 							  toolTip="Word wrap"
 							  click="wordwrapButton_clickHandler(event)"

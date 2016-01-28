@@ -96,6 +96,7 @@
 					actualValue = StyleManager.getStyleManager(moduleFactory).getColorName(value);
 					
 					if (actualValue===StyleManager.NOT_A_COLOR) {
+						// should we be casting as uint(value) instead of int()?
 						actualValue = StyleManager.getStyleManager(moduleFactory).getColorName(int(value));
 					}
 				}

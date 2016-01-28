@@ -125,7 +125,7 @@
 			
 			[Bindable]
 			public var snapInterval:Number = 0;
-
+			
 			/**
 			 * Set data
 			 * */
@@ -231,17 +231,17 @@
 				// let SetAction convert 0xFF, #ff and red, ReD
 				else if (format=="Color") {
 					actualValue = colorChooser.selectedColor;
-				}
+					}
 				else if (type=="Number" || (type=="int" && targetValueText==null) || numericStepper) {
-					actualValue = numericStepper.value;
-					
-					if (property.indexOf("lpha")!=-1) {//round down to two places
-						actualValue = int(actualValue*100)/100;
+						actualValue = numericStepper.value;
+						
+						if (property.indexOf("lpha")!=-1) {//round down to two places
+							actualValue = int(actualValue*100)/100;
+						}
+						else if (isPercent && numericStepper) {
+							actualValue = numericStepper.value + "%";
+						}
 					}
-					else if (isPercent && numericStepper) {
-						actualValue = numericStepper.value + "%";
-					}
-				}
 				else if (type=="String" && (formatDropDownList || formatCombobox)) {
 					var arrayItems:Array;
 					
@@ -516,55 +516,55 @@
 					else if (type=="Number" || (type=="int" && targetValueText==null) ||
 							(type=="Object" && numericStepper)) { // trackingRight 
 						
-						numericStepper.value = propertyObject.value;
-						
-						if (!isNaN(propertyObject.minValue)) {
-							numericStepper.minimum = propertyObject.minValue;
-						}
-						else {
-							numericStepper.minimum = Number(int.MIN_VALUE);
-						}
-						if (!isNaN(propertyObject.maxValue)) {
-							numericStepper.maximum = propertyObject.maxValue;
-						}
-						else {
-							numericStepper.maximum = Number(int.MAX_VALUE);
-						}
-						
-						if (property.indexOf("lpha")!=-1) {
-							if (isNaN(stepSize)) {
-								numericStepper.stepSize = .01;
+							numericStepper.value = propertyObject.value;
+							
+							if (!isNaN(propertyObject.minValue)) {
+								numericStepper.minimum = propertyObject.minValue;
 							}
 							else {
-								numericStepper.stepSize = stepSize;
+								numericStepper.minimum = Number(int.MIN_VALUE);
+							}
+							if (!isNaN(propertyObject.maxValue)) {
+								numericStepper.maximum = propertyObject.maxValue;
+							}
+							else {
+								numericStepper.maximum = Number(int.MAX_VALUE);
 							}
 							
-							if (isNaN(propertyObject.minValue)) {
-								numericStepper.minimum = 0;
-							}
-							if (isNaN(propertyObject.maxValue)) {
-								numericStepper.maximum = 1;
-							}
-						}
-						else {
-							if (isNaN(stepSize)) {
-								numericStepper.stepSize = 1;
+							if (property.indexOf("lpha")!=-1) {
+								if (isNaN(stepSize)) {
+									numericStepper.stepSize = .01;
+								}
+								else {
+									numericStepper.stepSize = stepSize;
+								}
+								
+								if (isNaN(propertyObject.minValue)) {
+									numericStepper.minimum = 0;
+								}
+								if (isNaN(propertyObject.maxValue)) {
+									numericStepper.maximum = 1;
+								}
 							}
 							else {
-								numericStepper.stepSize = stepSize;
+								if (isNaN(stepSize)) {
+									numericStepper.stepSize = 1;
+								}
+								else {
+									numericStepper.stepSize = stepSize;
+								}
+							}
+							
+							if (snapInterval) {
+								numericStepper.snapInterval = snapInterval;
+							}
+							
+							if (isPercent) {
+								if (value is String && value.indexOf("%")!=-1) {
+									numericStepper.value = parseInt(value);
+								}
 							}
 						}
-						
-						if (snapInterval) {
-							numericStepper.snapInterval = snapInterval;
-						}
-						
-						if (isPercent) {
-							if (value is String && value.indexOf("%")!=-1) {
-								numericStepper.value = parseInt(value);
-							}
-						}
-					}
 					else {
 						actualValue = Radiate.getTypedValue(targetValueText.text, type);
 						targetValueText.text = propertyObject.value;

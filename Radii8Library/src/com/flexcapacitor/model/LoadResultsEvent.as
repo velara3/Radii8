@@ -48,11 +48,6 @@ package com.flexcapacitor.model {
 			this.successful = successful;
 		}
 		
-		/**
-		 * Indicates if retrieve was successful
-		 * */
-		public var successful:Boolean;
-		
 		override public function clone():Event {
 			return new LoadResultsEvent(type, bubbles, cancelable, successful);
 		}

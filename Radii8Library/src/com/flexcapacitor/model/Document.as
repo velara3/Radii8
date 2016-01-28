@@ -608,7 +608,7 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 		 * Default class that exports the document to HTML
 		 * */
 		[Transient]
-		public static var htmlExporter:IDocumentExporter = new HTMLDocumentExporter();
+		public static var htmlExporter:IDocumentExporter;
 		
 		/**
 		 * Get HTML source code for document. 

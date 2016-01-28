@@ -14,12 +14,14 @@ package com.flexcapacitor.model {
 		
 		/**
 		 * Exporter that exports the document
+		 * Deprecated use code manager
 		 * */
 		function set exporter(value:IDocumentExporter):void;
 		function get exporter():IDocumentExporter;
 		
 		/**
 		 * Exporter that exports the document to HTML
+		 * Deprecated use code manager
 		 * */
 		function set htmlExporter(value:IDocumentExporter):void;
 		function get htmlExporter():IDocumentExporter;
@@ -113,6 +115,17 @@ package com.flexcapacitor.model {
 		 * */
 		function set file(value:FileReference):void;
 		function get file():FileReference;
+		
+		/**
+		 * Array of revisions
+		 * */
+		function get revisions():Array;
+		function set revisions(value:Array):void;
+		
+		/**
+		 * Adds a revision of a document
+		 * */
+		function addRevision(revision:DocumentRevision):void;
 		
 		/**
 		 * Parse assets

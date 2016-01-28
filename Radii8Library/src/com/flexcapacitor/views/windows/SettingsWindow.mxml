@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:c="com.flexcapacitor.views.*"
+			   xmlns:handlers="com.flexcapacitor.handlers.*"
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:windows="com.flexcapacitor.views.windows.*"
+			   xmlns:renderers="com.flexcapacitor.views.renderers.*"
+			   xmlns:controls="com.flexcapacitor.controls.*"
+
+			   title="Settings" 
+			   creationComplete="window1_creationCompleteHandler(event)" 
+			   >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.model.Settings;
+			import com.flexcapacitor.utils.PersistentStorage;
+			
+			import mx.events.FlexEvent;
+			
+			private var host:String;
+			private var path:String;
+			
+			protected function window1_creationCompleteHandler(event:FlexEvent):void {
+				hostInput.text = Radiate.WP_HOST;
+				pathInput.text = Radiate.WP_PATH;
+				
+				host = Radiate.WP_HOST;
+				path = Radiate.WP_PATH;
+				
+				var settings:Settings = Radiate.settings;
+				
+				autoSaveCheckbox.selected = settings.enableAutoSave;
+				wordWrapCheckbox.selected = settings.enableWordWrap;
+				
+				var loginSaved:Boolean;
+				var object:Object = PersistentStorage.read(Radiate.USER_STORE);
+				
+				// login saved
+				if (object!=null) {
+					saveLoginCheckbox.selected = true;
+				}
+				else {
+					saveLoginCheckbox.selected = false;
+				}
+			}
+			
+			protected function applyButton_clickHandler(event:MouseEvent):void {
+				var changed:Boolean;
+				
+				if (hostInput.text || pathInput.text) {
+					
+					if (host != hostInput.text || path != pathInput.text) {
+						changed = true;
+					}
+					
+					if (changed) {
+						PersistentStorage.write(Radiate.WP_HOST_NAME, hostInput.text);
+						PersistentStorage.write(Radiate.WP_PATH_NAME, pathInput.text);
+						ServicesManager.instance.logout();
+					}
+					
+					Radiate.WP_HOST = hostInput.text;
+					Radiate.WP_PATH = pathInput.text;
+					
+					closePopUp.play();
+				}
+				
+				var settings:Settings = Radiate.settings;
+				
+				// set autosave
+				Radiate.instance.enableAutoSave = autoSaveCheckbox.selected;
+				settings.enableAutoSave = autoSaveCheckbox.selected;
+				settings.enableWordWrap = wordWrapCheckbox.selected;
+				
+				//var object:Object = PersistentStorage.read(Radiate.USER_STORE);
+				
+				// set autosave
+				if (!saveLoginCheckbox.selected) {
+					PersistentStorage.remove(Radiate.USER_STORE);
+				}
+				
+				Radiate.instance.saveSettings();
+			}
+			
+			protected function clearPathButton_clickHandler(event:MouseEvent):void {
+				pathInput.text = Radiate.defaultPath;
+			}
+			
+			protected function clearHostButton_clickHandler(event:MouseEvent):void {
+				hostInput.text = Radiate.defaultHost;
+			}
+			
+			protected function verifyButton_clickHandler(event:MouseEvent):void {
+				currentState = NONE;
+				
+				Radiate.WP_HOST = hostInput.text;
+				Radiate.WP_PATH = pathInput.text;
+				ServicesManager.instance.addEventListener(RadiateEvent.LOGGED_IN_STATUS, loggedInStatusHandler, false, 0, true);
+				ServicesManager.instance.getLoggedInStatus();
+				busyIndicator.visible = true;
+				busyIndicator.includeInLayout = true;
+			}
+			
+			/**
+			 * Handle when getting result of call that checks if user is logged in
+			 * */
+			protected function loggedInStatusHandler(event:RadiateEvent):void {
+				
+				if (Radiate.instance.isUserConnected) {
+					currentState = CONNECTED;
+				}
+				else {
+					currentState = DISCONNECTED;
+				}
+				
+				
+				busyIndicator.visible = false;
+				busyIndicator.includeInLayout = false;
+			}
+			
+			public var NONE:String = "none";
+			public var CONNECTED:String = "connected";
+			public var DISCONNECTED:String = "disconnected";
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="click" setTriggerEvent="true">
+			<s:SetAction property="action" target="{this}" value="cancel"/>
+			<fc:ClosePopUp popUp="{this}"  />
+		</handlers:EventHandler>
+		
+		<!--- close popup -->
+		<fc:ClosePopUp id="closePopUp" popUp="{this}"  />
+		
+		<fx:String id="action"></fx:String>
+		
+	</fx:Declarations>
+	
+	<windows:states>
+		<s:State name="none"/>
+		<s:State name="connected"/>
+		<s:State name="disconnected"/>
+	</windows:states>
+	
+	<s:VGroup id="editorGroup" left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20">
+		
+		<s:TileGroup id="tileGroup" 
+					 top="0" left="0" right="0" bottom="0"
+					 width="100%" height="100%" 
+					 horizontalGap="10" verticalGap="10" 
+					 paddingLeft="10" paddingTop="10"
+					 requestedColumnCount="2" columnWidth="200"
+					 verticalAlign="middle">
+			
+			<s:Label text="Host" />
+			<s:HGroup width="100%">
+				<s:TextInput id="hostInput" width="100%" focusAlpha="0" styleName="textInputStyles"/>
+				<controls:ClearButton click="clearHostButton_clickHandler(event)"/>
+			</s:HGroup>
+			
+			<s:Label text="Path" />
+			<s:HGroup width="100%">
+				<s:TextInput id="pathInput" width="100%" focusAlpha="0" styleName="textInputStyles"/>
+				<controls:ClearButton click="clearPathButton_clickHandler(event)"/>
+			</s:HGroup>
+			
+			<s:Label text="" />
+			<s:HGroup width="100%">
+				<s:Button label="Verify Connection" click="verifyButton_clickHandler(event)"/>
+				<s:BusyIndicator id="busyIndicator" includeInLayout="false" visible="false"/>
+			</s:HGroup>
+			
+			<s:Label text="Word wrap in editor" />
+			<s:CheckBox id="wordWrapCheckbox" />
+			<s:Label text="Automatically upload media" />
+			<s:CheckBox id="uploadLibraryItemsCheckbox" />
+			<s:Label text="Save login" />
+			<s:CheckBox id="saveLoginCheckbox" />
+			<s:Label text="Auto-Save" />
+			<s:CheckBox id="autoSaveCheckbox" toolTip="If you enable auto save do NOT edit the document in the browser and RADIATE at the same time" />
+		</s:TileGroup>
+		
+		<s:HGroup width="100%" right="10" bottom="10" minHeight="32" paddingLeft="10" verticalAlign="bottom">
+			<s:Label id="warningLabel_Ha" 
+					 x="15" y="15" 
+					 text="" 
+					 text.connected="Connected" 
+					 text.disconnected="Service not found. Is the service plugin turned on?" 
+					 fontWeight="bold" 
+					 color="red"
+					 color.connected="green"
+					 color.disconnected="red"
+					 includeInLayout="false"
+					 visible="false"
+					 includeInLayout.connected="true"
+					 visible.connected="true"
+					 includeInLayout.disconnected="true"
+					 visible.disconnected="true"
+					 width="100%"/>
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Cancel" />
+			<s:Button id="applyButton" label="OK" click="applyButton_clickHandler(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+</windows:AnimatedPanelWindow>

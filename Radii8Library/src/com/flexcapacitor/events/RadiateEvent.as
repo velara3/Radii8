@@ -1,5 +1,6 @@
 
 package com.flexcapacitor.events {
+	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.tools.ITool;
 	
@@ -359,6 +360,7 @@ package com.flexcapacitor.events {
 		public var status:String;
 		public var successful:Boolean;
 		public var faultEvent:Event;
+		public var serviceEvent:IServiceEvent;
 		public var styles:Array;
 		public var error:Object;
 		

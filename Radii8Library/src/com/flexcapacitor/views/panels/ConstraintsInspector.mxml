@@ -349,7 +349,16 @@
 				if (target.parent is UIComponent) {
 					
 					if (target is IVisualElement || target is IGraphicElement) {
-						UIComponent(target.parent).validateNow(); // this causes infinite loop when x or y is NaN...
+						
+						if (isNaN(target.x) || isNaN(target.y)) {
+							target.x = 0;
+							target.y = 0;
+							//UIComponent(target.parent).validateNow(); // this causes infinite loop when x or y is NaN...
+						}
+						else {
+							UIComponent(target.parent).validateNow(); // this causes infinite loop when x or y is NaN...
+							
+						}
 					}
 				}
 				else if (target is UIComponent) {

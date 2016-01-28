@@ -30,8 +30,6 @@ package com.flexcapacitor.managers
 	import flash.net.navigateToURL;
 	import flash.utils.ByteArray;
 	
-	import mx.utils.ArrayUtil;
-	
 	import spark.collections.Sort;
 	import spark.collections.SortField;
 	import spark.components.Image;
@@ -333,7 +331,7 @@ package com.flexcapacitor.managers
 			
 			getProjectHomePageInProgress = false;
 			
-			dispatchGetHomePageEvent(event.data);
+			dispatchGetHomePageEvent(event.data, event);
 		}
 		
 		/**
@@ -344,7 +342,7 @@ package com.flexcapacitor.managers
 			
 			getProjectHomePageInProgress = false;
 			
-			dispatchGetHomePageEvent(data);
+			dispatchGetHomePageEvent(data, event);
 		}
 		
 		/**
@@ -393,7 +391,7 @@ package com.flexcapacitor.managers
 			
 			setProjectHomePageInProgress = false;
 			
-			dispatchSetHomePageEvent(data);
+			dispatchSetHomePageEvent(data, event);
 		}
 		
 		/**
@@ -404,7 +402,7 @@ package com.flexcapacitor.managers
 			
 			setProjectHomePageInProgress = false;
 			
-			dispatchSetHomePageEvent(data);
+			dispatchSetHomePageEvent(data, event);
 		}
 		
 		/**
@@ -414,7 +412,7 @@ package com.flexcapacitor.managers
 			// get selected document
 			
 			// we need to create service
-			if (getProjectsService==null) {
+			if (getLoggedInStatusService==null) {
 				getLoggedInStatusService = new WPService();
 				getLoggedInStatusService.addEventListener(WPService.RESULT, getLoggedInStatusResult, false, 0, true);
 				getLoggedInStatusService.addEventListener(WPService.FAULT, getLoggedInStatusFault, false, 0, true);
@@ -431,15 +429,20 @@ package com.flexcapacitor.managers
 		 * Handles result to check if user is logged in 
 		 * */
 		protected function getLoggedInStatusResult(event:WPServiceEvent):void {
-			radiate.isUserConnected = true;
-			
 			var data:Object = event.data;
+			
+			if (event.hasError) {
+				radiate.isUserConnected = false;
+			}
+			else {
+				radiate.isUserConnected = true;
+			}
 			
 			radiate.updateUserInfo(data);
 			
 			getLoggedInStatusInProgress = false;
 			
-			dispatchLoginStatusEvent(radiate.isUserLoggedIn, data);
+			dispatchLoginStatusEvent(radiate.isUserLoggedIn, data, event);
 		}
 		
 		/**
@@ -452,7 +455,7 @@ package com.flexcapacitor.managers
 			
 			getLoggedInStatusInProgress = false;
 			
-			dispatchLoginStatusEvent(radiate.isUserLoggedIn, data);
+			dispatchLoginStatusEvent(radiate.isUserLoggedIn, data, event);
 		}
 		
 		/**
@@ -479,6 +482,35 @@ package com.flexcapacitor.managers
 				
 				getExampleProjectsService.getProjects(WPService.STATUS_PUBLISH, count);
 				
+			}
+			
+			if (loadLocally) {
+				
+			}
+		}
+		
+		/**
+		 * Get news projects
+		 * */
+		public function getNewsPosts(category:String = "Tutorial", status:String = WPService.STATUS_ANY, locations:String = null, count:int = 100):void {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var loadLocally:Boolean = getIsLocalLocation(locations);
+			var loadRemote:Boolean = getIsRemoteLocation(locations);
+			
+			
+			if (loadRemote) {
+				// we need to create service
+				if (getBlogPostsService==null) {
+					getBlogPostsService = new WPService();
+					getBlogPostsService.addEventListener(WPService.RESULT, getBlogPostsResultsHandler, false, 0, true);
+					getBlogPostsService.addEventListener(WPService.FAULT, getBlogPostsFaultHandler, false, 0, true);
+				}
+				
+				getBlogPostsInProgress = true;
+				
+				getBlogPostsService.host = Radiate.getNewsWPURL();
+				
+				getBlogPostsService.getPostsByCategory(category, count);
 			}
 			
 			if (loadLocally) {
@@ -1000,7 +1032,7 @@ package com.flexcapacitor.managers
 			
 			getProjectsInProgress = false;
 			
-			dispatchGetProjectsListResultsEvent(data);
+			dispatchGetProjectsListResultsEvent(data, event);
 		}
 		
 		/**
@@ -1012,9 +1044,13 @@ package com.flexcapacitor.managers
 			
 			var data:Object = event.data;
 			
+			if (event.hasError) {
+				
+			}
+			
 			getBlogPostsInProgress = false;
 			
-			dispatchGetBlogPostsResultsEvent(data);
+			dispatchGetBlogPostsResultsEvent(data, event);
 		}
 		
 		/**
@@ -1028,7 +1064,7 @@ package com.flexcapacitor.managers
 			
 			getExampleProjectsInProgress = false;
 			
-			dispatchGetExampleProjectsListResultsEvent(data);
+			dispatchGetExampleProjectsListResultsEvent(data, event);
 		}
 		
 		/**
@@ -1040,7 +1076,7 @@ package com.flexcapacitor.managers
 			
 			getExampleProjectsInProgress = false;
 			
-			dispatchGetExampleProjectsListResultsEvent(data);
+			dispatchGetExampleProjectsListResultsEvent(data, event);
 		}
 		
 		/**
@@ -1052,7 +1088,7 @@ package com.flexcapacitor.managers
 			
 			getProjectsInProgress = false;
 			
-			dispatchGetProjectsListResultsEvent(data);
+			dispatchGetProjectsListResultsEvent(data, event);
 		}
 		
 		/**
@@ -1064,7 +1100,7 @@ package com.flexcapacitor.managers
 			
 			getBlogPostsInProgress = false;
 			
-			dispatchGetBlogPostsResultsEvent(data);
+			dispatchGetBlogPostsResultsEvent(data, event);
 		}
 		
 		/**
@@ -1101,7 +1137,7 @@ package com.flexcapacitor.managers
 			
 			radiate.attachments = potentialAttachments;
 			
-			dispatchAttachmentsResultsEvent(true, radiate.attachments);
+			dispatchAttachmentsResultsEvent(true, radiate.attachments, event);
 		}
 		
 		/**
@@ -1113,7 +1149,7 @@ package com.flexcapacitor.managers
 			getAttachmentsInProgress = false;
 			
 			//dispatchEvent(saveResultsEvent);
-			dispatchAttachmentsResultsEvent(false, []);
+			dispatchAttachmentsResultsEvent(false, null, event);
 		}
 		
 		/**
@@ -1183,7 +1219,7 @@ package com.flexcapacitor.managers
 			
 			uploadAttachmentInProgress = false;
 			
-			dispatchUploadAttachmentResultsEvent(successful, potentialAttachments, data.post);
+			dispatchUploadAttachmentResultsEvent(successful, potentialAttachments, data.post, event);
 		}
 		
 		/**
@@ -1214,7 +1250,7 @@ package com.flexcapacitor.managers
 			uploadAttachmentInProgress = false;
 			
 			//dispatchEvent(saveResultsEvent);
-			dispatchUploadAttachmentResultsEvent(false, [], event.data);
+			dispatchUploadAttachmentResultsEvent(false, null, event.data, event);
 		}
 		
 		/**
@@ -1240,7 +1276,7 @@ package com.flexcapacitor.managers
 			sendFeedbackInProgress = false;
 			
 			
-			dispatchFeedbackResultsEvent(successful, data);
+			dispatchFeedbackResultsEvent(successful, data, event);
 		}
 		
 		/**
@@ -1261,7 +1297,7 @@ package com.flexcapacitor.managers
 			loginInProgress = false;
 			
 			
-			dispatchLoginResultsEvent(loggedIn, data);
+			dispatchLoginResultsEvent(loggedIn, data, event);
 		}
 		
 		/**
@@ -1274,7 +1310,7 @@ package com.flexcapacitor.managers
 			
 			loginInProgress = false;
 			
-			dispatchLoginResultsEvent(false, data);
+			dispatchLoginResultsEvent(false, data, event);
 		}
 		
 		/**
@@ -1294,7 +1330,7 @@ package com.flexcapacitor.managers
 			logoutInProgress = false;
 			
 			
-			dispatchLogoutResultsEvent(loggedOut, data);
+			dispatchLogoutResultsEvent(loggedOut, data, event);
 		}
 		
 		/**
@@ -1307,7 +1343,7 @@ package com.flexcapacitor.managers
 			
 			logoutInProgress = false;
 			
-			dispatchLogoutResultsEvent(false, data);
+			dispatchLogoutResultsEvent(false, data, event);
 		}
 		
 		/**
@@ -1327,7 +1363,7 @@ package com.flexcapacitor.managers
 			registerInProgress = false;
 			
 			
-			dispatchRegisterResultsEvent(successful, data);
+			dispatchRegisterResultsEvent(successful, data, event);
 		}
 		
 		/**
@@ -1340,7 +1376,7 @@ package com.flexcapacitor.managers
 			
 			registerInProgress = false;
 			
-			dispatchRegisterResultsEvent(false, data);
+			dispatchRegisterResultsEvent(false, data, event);
 		}
 		
 		/**
@@ -1360,7 +1396,7 @@ package com.flexcapacitor.managers
 			changePasswordInProgress = false;
 			
 			
-			dispatchChangePasswordResultsEvent(successful, data);
+			dispatchChangePasswordResultsEvent(successful, data, event);
 		}
 		
 		/**
@@ -1373,7 +1409,7 @@ package com.flexcapacitor.managers
 			
 			changePasswordInProgress = false;
 			
-			dispatchChangePasswordResultsEvent(false, data);
+			dispatchChangePasswordResultsEvent(false, data, event);
 		}
 		
 		/**
@@ -1391,7 +1427,7 @@ package com.flexcapacitor.managers
 			lostPasswordInProgress = false;
 			
 			
-			dispatchLostPasswordResultsEvent(successful, data);
+			dispatchLostPasswordResultsEvent(successful, data, event);
 		}
 		
 		/**
@@ -1404,7 +1440,7 @@ package com.flexcapacitor.managers
 			
 			lostPasswordInProgress = false;
 			
-			dispatchLostPasswordResultsEvent(false, data);
+			dispatchLostPasswordResultsEvent(false, data, event);
 		}
 		
 		/**
@@ -1449,7 +1485,7 @@ package com.flexcapacitor.managers
 			
 			//dispatchProjectRemovedEvent(null);
 			
-			dispatchProjectDeletedEvent(successful, data);
+			dispatchProjectDeletedEvent(successful, data, event);
 		}
 		
 		/**
@@ -1462,7 +1498,7 @@ package com.flexcapacitor.managers
 			
 			deleteProjectInProgress = false;
 			
-			dispatchProjectDeletedEvent(false, data);
+			dispatchProjectDeletedEvent(false, data, event);
 		}
 		
 		/**
@@ -1505,7 +1541,7 @@ package com.flexcapacitor.managers
 			
 			//dispatchDocumentRemovedEvent(null);
 			
-			dispatchDocumentDeletedEvent(successful, data);
+			dispatchDocumentDeletedEvent(successful, data, event);
 		}
 		
 		/**
@@ -1518,7 +1554,7 @@ package com.flexcapacitor.managers
 			
 			deleteDocumentInProgress = false;
 			
-			dispatchDocumentDeletedEvent(false, data);
+			dispatchDocumentDeletedEvent(false, data, event);
 		}
 
 		
@@ -1532,11 +1568,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch example projects list received results event
 		 * */
-		public function dispatchGetExampleProjectsListResultsEvent(data:Object):void {
+		public function dispatchGetExampleProjectsListResultsEvent(data:Object, event:IServiceEvent):void {
 			var projectsListResultEvent:RadiateEvent = new RadiateEvent(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED);
 			
 			if (hasEventListener(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED)) {
 				projectsListResultEvent.data = data;
+				projectsListResultEvent.successful = event.successful;
+				projectsListResultEvent.serviceEvent = event;
 				dispatchEvent(projectsListResultEvent);
 			}
 		}
@@ -1544,11 +1582,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch projects list received results event
 		 * */
-		public function dispatchGetProjectsListResultsEvent(data:Object):void {
+		public function dispatchGetProjectsListResultsEvent(data:Object, event:IServiceEvent):void {
 			var projectsListResultEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECTS_LIST_RECEIVED);
 			
 			if (hasEventListener(RadiateEvent.PROJECTS_LIST_RECEIVED)) {
 				projectsListResultEvent.data = data;
+				projectsListResultEvent.successful = event.successful;
+				projectsListResultEvent.serviceEvent = event;
 				dispatchEvent(projectsListResultEvent);
 			}
 		}
@@ -1556,11 +1596,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch blog posts received results event
 		 * */
-		public function dispatchGetBlogPostsResultsEvent(data:Object):void {
+		public function dispatchGetBlogPostsResultsEvent(data:Object, event:IServiceEvent):void {
 			var blogPostsResultEvent:RadiateEvent = new RadiateEvent(RadiateEvent.BLOG_POSTS_RECEIVED);
 			
 			if (hasEventListener(RadiateEvent.BLOG_POSTS_RECEIVED)) {
 				blogPostsResultEvent.data = data;
+				blogPostsResultEvent.successful = event.successful;
+				blogPostsResultEvent.serviceEvent = event;
 				dispatchEvent(blogPostsResultEvent);
 			}
 		}
@@ -1570,16 +1612,16 @@ package com.flexcapacitor.managers
 		 * Should be in a ServicesManager class?
 		 * */
 		public function parsePostsData(data:Object):Array {
-			var dataLength:int;
+			var numberOfPosts:int;
 			var post:Object;
 			var xml:XML;
 			var isValid:Boolean;
 			var source:String;
 			var posts:Array = [];
 			
-			dataLength = data && data is Object ? data.count : 0;
+			numberOfPosts = data && data is Object && !(data is String) ? data.count : 0;
 			
-			for (var i:int;i<dataLength;i++) {
+			for (var i:int;i<numberOfPosts;i++) {
 				post = data.posts[i];
 				posts.push(post);
 			}
@@ -1594,12 +1636,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch attachments received event
 		 * */
-		public function dispatchLoginStatusEvent(loggedIn:Boolean, data:Object):void {
+		public function dispatchLoginStatusEvent(loggedIn:Boolean, data:Object, event:IServiceEvent):void {
 			var loggedInStatusEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOGGED_IN_STATUS);
 			
 			if (hasEventListener(RadiateEvent.LOGGED_IN_STATUS)) {
 				loggedInStatusEvent.status = loggedIn ? LOGGED_IN : LOGGED_OUT;
 				loggedInStatusEvent.data = data;
+				loggedInStatusEvent.serviceEvent = event;
 				dispatchEvent(loggedInStatusEvent);
 			}
 		}
@@ -1607,11 +1650,12 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch get home page received event
 		 * */
-		public function dispatchGetHomePageEvent(data:Object):void {
+		public function dispatchGetHomePageEvent(data:Object, event:IServiceEvent):void {
 			var getHomePageEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_GET_HOME_PAGE);
 			
 			if (hasEventListener(RadiateEvent.PROJECT_GET_HOME_PAGE)) {
 				getHomePageEvent.data = data;
+				getHomePageEvent.serviceEvent = event;
 				dispatchEvent(getHomePageEvent);
 			}
 		}
@@ -1619,11 +1663,12 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch set home page received event
 		 * */
-		public function dispatchSetHomePageEvent(data:Object):void {
+		public function dispatchSetHomePageEvent(data:Object, event:IServiceEvent):void {
 			var setHomePageEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_SET_HOME_PAGE);
 			
 			if (hasEventListener(RadiateEvent.PROJECT_SET_HOME_PAGE)) {
 				setHomePageEvent.data = data;
+				setHomePageEvent.serviceEvent = event;
 				dispatchEvent(setHomePageEvent);
 			}
 		}
@@ -1631,13 +1676,14 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch attachments received event
 		 * */
-		public function dispatchAttachmentsResultsEvent(successful:Boolean, attachments:Array):void {
+		public function dispatchAttachmentsResultsEvent(successful:Boolean, attachments:Array, event:IServiceEvent):void {
 			var attachmentsReceivedEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ATTACHMENTS_RECEIVED, false, false, attachments);
 			
 			if (hasEventListener(RadiateEvent.ATTACHMENTS_RECEIVED)) {
 				attachmentsReceivedEvent.successful = successful;
 				attachmentsReceivedEvent.status = successful ? "ok" : "fault";
-				attachmentsReceivedEvent.targets = ArrayUtil.toArray(attachments);
+				attachmentsReceivedEvent.targets = attachments ? attachments : [];
+				attachmentsReceivedEvent.serviceEvent = event;
 				dispatchEvent(attachmentsReceivedEvent);
 			}
 		}
@@ -1645,14 +1691,15 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch upload attachment received event
 		 * */
-		public function dispatchUploadAttachmentResultsEvent(successful:Boolean, attachments:Array, data:Object):void {
+		public function dispatchUploadAttachmentResultsEvent(successful:Boolean, attachments:Array, data:Object, event:IServiceEvent):void {
 			var uploadAttachmentEvent:RadiateEvent = new RadiateEvent(RadiateEvent.ATTACHMENT_UPLOADED, false, false);
 			
 			if (hasEventListener(RadiateEvent.ATTACHMENT_UPLOADED)) {
 				uploadAttachmentEvent.successful = successful;
 				uploadAttachmentEvent.status = successful ? "ok" : "fault";
-				uploadAttachmentEvent.data = attachments;
+				uploadAttachmentEvent.data = attachments ? attachments : [];
 				uploadAttachmentEvent.selectedItem = data;
+				uploadAttachmentEvent.serviceEvent = event;
 				dispatchEvent(uploadAttachmentEvent);
 			}
 		}
@@ -1660,12 +1707,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch feedback results event
 		 * */
-		public function dispatchFeedbackResultsEvent(successful:Boolean, data:Object):void {
+		public function dispatchFeedbackResultsEvent(successful:Boolean, data:Object, event:Object):void {
 			var feedbackResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.FEEDBACK_RESULT);
 			
 			if (hasEventListener(RadiateEvent.FEEDBACK_RESULT)) {
 				feedbackResultsEvent.data = data;
 				feedbackResultsEvent.successful = successful;
+				feedbackResultsEvent.serviceEvent = event as IServiceEvent;
 				dispatchEvent(feedbackResultsEvent);
 			}
 		}
@@ -1673,12 +1721,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch login results event
 		 * */
-		public function dispatchLoginResultsEvent(successful:Boolean, data:Object):void {
+		public function dispatchLoginResultsEvent(successful:Boolean, data:Object, event:IServiceEvent):void {
 			var loginResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOGIN_RESULTS);
 			
 			if (hasEventListener(RadiateEvent.LOGIN_RESULTS)) {
 				loginResultsEvent.data = data;
 				loginResultsEvent.successful = successful;
+				loginResultsEvent.serviceEvent = event;
 				dispatchEvent(loginResultsEvent);
 			}
 		}
@@ -1686,12 +1735,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch logout results event
 		 * */
-		public function dispatchLogoutResultsEvent(successful:Boolean, data:Object):void {
+		public function dispatchLogoutResultsEvent(successful:Boolean, data:Object, event:IServiceEvent):void {
 			var logoutResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOGOUT_RESULTS);
 			
 			if (hasEventListener(RadiateEvent.LOGOUT_RESULTS)) {
 				logoutResultsEvent.data = data;
 				logoutResultsEvent.successful = successful;
+				logoutResultsEvent.serviceEvent = event;
 				dispatchEvent(logoutResultsEvent);
 			}
 		}
@@ -1699,12 +1749,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch register results event
 		 * */
-		public function dispatchRegisterResultsEvent(successful:Boolean, data:Object):void {
+		public function dispatchRegisterResultsEvent(successful:Boolean, data:Object, event:IServiceEvent):void {
 			var registerResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.REGISTER_RESULTS);
 			
 			if (hasEventListener(RadiateEvent.REGISTER_RESULTS)) {
 				registerResultsEvent.data = data;
 				registerResultsEvent.successful = successful;
+				registerResultsEvent.serviceEvent = event;
 				dispatchEvent(registerResultsEvent);
 			}
 		}
@@ -1712,12 +1763,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch change password results event
 		 * */
-		public function dispatchChangePasswordResultsEvent(successful:Boolean, data:Object):void {
+		public function dispatchChangePasswordResultsEvent(successful:Boolean, data:Object, event:IServiceEvent):void {
 			var changePasswordResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.CHANGE_PASSWORD_RESULTS);
 			
 			if (hasEventListener(RadiateEvent.CHANGE_PASSWORD_RESULTS)) {
 				changePasswordResultsEvent.data = data;
 				changePasswordResultsEvent.successful = successful;
+				changePasswordResultsEvent.serviceEvent = event;
 				dispatchEvent(changePasswordResultsEvent);
 			}
 		}
@@ -1725,12 +1777,13 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch lost password results event
 		 * */
-		public function dispatchLostPasswordResultsEvent(successful:Boolean, data:Object):void {
+		public function dispatchLostPasswordResultsEvent(successful:Boolean, data:Object, event:IServiceEvent):void {
 			var lostPasswordResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.LOST_PASSWORD_RESULTS);
 			
 			if (hasEventListener(RadiateEvent.LOST_PASSWORD_RESULTS)) {
 				lostPasswordResultsEvent.data = data;
 				lostPasswordResultsEvent.successful = successful;
+				lostPasswordResultsEvent.serviceEvent = event;
 				dispatchEvent(lostPasswordResultsEvent);
 			}
 		}
@@ -1738,13 +1791,14 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch project deleted results event
 		 * */
-		public function dispatchProjectDeletedEvent(successful:Boolean, data:Object):void {
+		public function dispatchProjectDeletedEvent(successful:Boolean, data:Object, event:IServiceEvent):void {
 			var deleteProjectResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.PROJECT_DELETED);
 			
 			if (hasEventListener(RadiateEvent.PROJECT_DELETED)) {
 				deleteProjectResultsEvent.data = data;
 				deleteProjectResultsEvent.successful = successful;
 				deleteProjectResultsEvent.status = successful ? "ok" : "error";
+				deleteProjectResultsEvent.serviceEvent = event;
 				dispatchEvent(deleteProjectResultsEvent);
 			}
 		}
@@ -1752,13 +1806,14 @@ package com.flexcapacitor.managers
 		/**
 		 * Dispatch document deleted results event
 		 * */
-		public function dispatchDocumentDeletedEvent(successful:Boolean, data:Object):void {
+		public function dispatchDocumentDeletedEvent(successful:Boolean, data:Object, event:IServiceEvent):void {
 			var deleteDocumentResultsEvent:RadiateEvent = new RadiateEvent(RadiateEvent.DOCUMENT_DELETED);
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_DELETED)) {
 				deleteDocumentResultsEvent.data = data;
 				deleteDocumentResultsEvent.successful = successful;
 				deleteDocumentResultsEvent.status = successful ? "ok" : "error";
+				deleteDocumentResultsEvent.serviceEvent = event;
 				dispatchEvent(deleteDocumentResultsEvent);
 			}
 		}

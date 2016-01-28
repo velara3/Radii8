@@ -2,34 +2,30 @@
 <s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
-		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
-		 xmlns:local="*"
-		 
 		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
 		 styleName="inspectablePanel"
-		 >
-	<!--
+		 width="100%">
 	
-		ArgumentError: Error #2004: One of the parameters is invalid.
-		be sure to add the style styleName="inspectablePanel"
-	
-	-->
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.model.StyleMetaData;
 			import com.flexcapacitor.utils.ClassUtils;
-
+			
+			import org.as3commons.lang.ArrayUtils;
+			
 			public var radiate:Radiate;
 			public var target:Object;
 			public var data:Object;
+			
 			
 			public function activate():void {
 				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
 					target = radiate.target;
@@ -42,7 +38,11 @@
 				if (radiate) {
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
 					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
 				}
+				
+				target = null;
+				data = null;
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
@@ -53,46 +53,40 @@
 			}
 			
 			public function update():void {
-				var cornerRadius:StyleMetaData = ClassUtils.getMetaDataOfStyle(target, "cornerRadius");
-				borderWeightRenderer.data = ClassUtils.getMetaDataOfStyle(target, "borderWeight");
-				borderColorRenderer.data = ClassUtils.getMetaDataOfStyle(target, "borderColor");
-				borderAlphaRenderer.data = ClassUtils.getMetaDataOfStyle(target, "borderAlpha");
-				
-					
-				if (cornerRadius) {
-					cornerRadiusRenderer.data = cornerRadius;
-				}
+				alphaRenderer.data = ClassUtils.getMetaDataOfProperty(target, "alpha");
+				colorRenderer.data = ClassUtils.getMetaDataOfProperty(target, "color");
+				strokeWeightRenderer.data = ClassUtils.getMetaDataOfProperty(target, "strokeWeight");
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
+				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
+					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+						callLater(update);
+					}
+					else {
+						return;
+					}
+				}
 				callLater(update);
 			}
+			
+			public var relevantProperties:Array = ["color", "alpha", "strokeWeight"]
 		]]>
 	</fx:Script>
-	
-	<fx:Declarations>
-
-	</fx:Declarations>
 
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Corner Radius" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:NumberRenderer id="cornerRadiusRenderer" height="24" stepSize="1" snapInterval="0"/>
+		<s:Label text="Alpha" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:NumberRenderer id="alphaRenderer" height="24" />
 	</s:HGroup>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Border Weight" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:NumberRenderer id="borderWeightRenderer" height="24" stepSize="1"/>
+		<s:Label text="Color" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:ColorPickerRenderer id="colorRenderer" height="24" includeCopyIcon="false"/>
 	</s:HGroup>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Border Alpha" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:NumberRenderer id="borderAlphaRenderer" height="24" />
+		<s:Label text="Stroke Weight" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+		<renderers:NumberRenderer id="strokeWeightRenderer" height="24" stepSize="1"/>
 	</s:HGroup>
-	
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Border Color" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:ColorPickerRenderer id="borderColorRenderer" height="24" includeCopyIcon="false"/>
-	</s:HGroup>
-	
 </s:VGroup>

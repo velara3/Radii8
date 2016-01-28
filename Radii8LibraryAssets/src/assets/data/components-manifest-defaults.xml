@@ -203,7 +203,7 @@
     </component>
     
     <component id="VideoPlayer" class="spark.components.VideoPlayer" include="true">
-    	<defaults width="320" height="240" autoplay="false" dropShadowVisible="false"/>
+    	<defaults width="320" height="240" autoPlay="false" dropShadowVisible="false"/>
     </component>
     
     <component id="VScrollBar" class="spark.components.VScrollBar" include="false"/>
@@ -215,6 +215,14 @@
     <!--  GRAPHIC PRIMITIVES -->
 
     <component id="Rect" name="Rectangle" class="spark.primitives.Rect" include="false">
+    	<defaults width="160" height="160" />
+    </component>
+
+    <component id="Path" name="Path" class="spark.primitives.Path" include="false">
+    	<defaults width="160" height="160" />
+    </component>
+
+    <component id="Ellipse" name="Ellipse" class="spark.primitives.Ellipse" include="false">
     	<defaults width="160" height="160" />
     </component>
     

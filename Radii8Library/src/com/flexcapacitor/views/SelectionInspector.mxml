@@ -224,7 +224,8 @@
 				var warningMessage:String = "";
 				var warningNeeded:Boolean;
 				
-				if (target is GraphicElement) {
+				// we can now drag around graphic elements
+				if (false && target is GraphicElement) {
 					warningMessage += "At this time you must use keyboard arrows to move a graphic element ";
 					warningMessage += "or use the Layout Panel to enter size and position.";
 					warningMessage += "\n";

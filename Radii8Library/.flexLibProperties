@@ -191,6 +191,7 @@
     <classEntry path="com.flexcapacitor.view.renderers.ConsoleLogItemRenderer"/>
     <classEntry path="com.flexcapacitor.views.renderers.ComponentsRenderer"/>
     <classEntry path="com.flexcapacitor.managers.CreationManager"/>
+    <classEntry path="com.flexcapacitor.model.DocumentRevision"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

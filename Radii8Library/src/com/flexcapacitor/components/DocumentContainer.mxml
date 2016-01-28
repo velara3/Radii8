@@ -69,9 +69,27 @@
 			 * When this is added to the display list then we
 			 * load in a blank application.
 			 * 
+			 * After the SWF and then the application is loaded the
+			 * application complete event is dispatched.
+			 * There we parse the MXML code 
+			 * 
 			 * We do this so that at some point we can sandbox 
 			 * the application.
 			 * We also do this so we can load in remote applications.
+			 * 
+			 * NOTE: Some of this is obsolete. Well not obsolete but
+			 * it was added to allow loading of external SWFs
+			 * I took that functionality out and I'm now just loading
+			 * a blank application swf. Might add it back in at 
+			 * some point. 
+			 * 
+			 * The reason to load an external application 
+			 * is to embed additional assets, components, fonts etc
+			 * that the MXML markup can use.  
+			 * 
+			 * Note: We caould also embed the blank application
+			 * 
+			 * 
 			 * */
 			private function creationComplete():void {
 				radiate = Radiate.getInstance();
@@ -217,7 +235,7 @@
 				
 				applicationReady = true;
 				
-				radiate.centerApplication(true);
+				radiate.centerApplication(true, true, true);
 				
 				//Radiate.info("Application Complete");
 				

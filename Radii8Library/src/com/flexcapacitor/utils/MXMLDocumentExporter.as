@@ -221,9 +221,9 @@ package com.flexcapacitor.utils {
 				//contentToken = "";
 			}
 			
-			properties = componentDescription.properties ? componentDescription.properties : {};
-			styles = componentDescription.styles ? componentDescription.styles : {};
-			events = componentDescription.events ? componentDescription.events : {};
+			properties = componentDescription.properties;// ? componentDescription.properties : {};
+			styles = componentDescription.styles;// ? componentDescription.styles : {};
+			events = componentDescription.events;// ? componentDescription.events : {};
 			className = componentDescription.className;
 			
 			
@@ -308,7 +308,9 @@ package com.flexcapacitor.utils {
 				if (componentDescription.instance is Application) {
 					className = "Application";
 					namespaces = defaultNamespaceDeclarations;
+					output = output + " " + fcNamespace + ":version=\"" + version + "\"";
 					output = namespaces + output;
+					
 				}
 				
 				if (output.indexOf(" ")==0) {

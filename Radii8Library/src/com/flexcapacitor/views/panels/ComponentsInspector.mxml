@@ -122,6 +122,7 @@
 				// DragManagerUtil.dragDropHandler()
 				
 				// and then in handleDragDrop() here
+				// and then in handleDragDropComplete here
 			}
 			
 			/**

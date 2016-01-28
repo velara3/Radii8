@@ -43,11 +43,6 @@ package com.flexcapacitor.model {
 			this.successful = successful;
 		}
 		
-		/**
-		 * Indicates if open was successful
-		 * */
-		public var successful:Boolean;
-		
 		override public function clone():Event {
 			return new OpenResultsEvent(type, bubbles, cancelable, successful);
 		}

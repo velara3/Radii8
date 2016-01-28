@@ -344,40 +344,40 @@ package com.flexcapacitor.controller {
 	[Event(name="objectSelected", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
-	 * Main class and API that handles the interactions between the view and the models. 
+	 * Main class and API that handles the interactions between the view and the models. <br/><br/>
 	 * 
-	 * Dispatches events and exposes methods to manipulate the documents.
+	 * Dispatches events and exposes methods to manipulate the documents.<br/><br/>
 	 *  
 	 * It contains a list of components, tools, devices, inspectors (panels), assets and 
 	 * in the future we should add skins, effects and so on. 
 	 * These items are created from an XML file at startup so we can configure what is available
 	 * to our user or project. We do this so we can also load in a remote SWF to add 
-	 * additional components, sounds, images, skins, inspectors, fonts, etc
+	 * additional components, sounds, images, skins, inspectors, fonts, etc<br/><br/>
 	 * 
 	 * Currently we are saving and loading to a remote location or to a local shared object. 
-	 * To save to a local file system we will need to modify these functions. 
+	 * To save to a local file system we will need to modify these functions. <br/><br/>
 	 * 
 	 * This class supports an Undo / Redo history. The architecture is loosely based on 
 	 * the structure found in the Effects classes. We may want to be a proxy to the documents
 	 * and call undo and redo on them since we would like to support more than one 
-	 * type of document. 
+	 * type of document. <br/><br/>
 	 * 
 	 * This class can be broken up into multiple classes since it is also handling 
-	 * saving and loading and services. 
+	 * saving and loading and services. <br/><br/>
 	 * 
-	 * To set a property or style call setProperty or setStyle. 
-	 * To add a component call addElement. 
-	 * To log a message to the console call Radiate.info() or error().
+	 * To set a property or style call setProperty or setStyle. <br/>
+	 * To add a component call addElement. <br/>
+	 * To log a message to the console call Radiate.info() or error().<br/><br/>
 	 * 
-	 * To undo call undo
-	 * To redo call redo
+	 * To undo call undo<br/>
+	 * To redo call redo<br/><br/>
 	 * 
-	 * To get the history index access history index
-	 * To check if history exists call the has history
-	 * To check if undo can be performed access has undo
-	 * To check if redo can be performed access has redo 
+	 * To get the history index access history index<br/>
+	 * To check if history exists call the has history<br/>
+	 * To check if undo can be performed access has undo<br/>
+	 * To check if redo can be performed access has redo <br/><br/>
 	 * 
-	 * Editing through cut, copy and paste is only partially implemented. 
+	 * 
 	 * */
 	public class Radiate extends EventDispatcher {
 		
@@ -1356,7 +1356,7 @@ package com.flexcapacitor.controller {
 		public function dispatchAddEvent(target:*, changes:Array, properties:Array, multipleSelection:Boolean = false):void {
 			if (importingDocument) return;
 			var event:RadiateEvent;
-			var length:int = changes ? changes.length : 0;
+			var numberOfChanges:int = changes ? changes.length : 0;
 			
 			if (hasEventListener(RadiateEvent.ADD_ITEM)) {
 				event = new RadiateEvent(RadiateEvent.ADD_ITEM, false, false, target);
@@ -1366,7 +1366,7 @@ package com.flexcapacitor.controller {
 				event.selectedItem = target && target is Array ? target[0] : target;
 				event.targets = ArrayUtil.toArray(target);
 				
-				for (var i:int;i<length;i++) {
+				for (var i:int;i<numberOfChanges;i++) {
 					if (changes[i] is AddItems) {
 						event.addItemsInstance = changes[i];
 						event.moveItemsInstance = changes[i];
@@ -1798,10 +1798,32 @@ package com.flexcapacitor.controller {
 				ExternalInterface.call("Radiate.instance.setFlashInstance", ExternalInterface.objectID);
 			}
 			
-			WP_HOST = "https://www.radii8.com";
-			WP_PATH = "/r8m/";
+			var host:String;
+			var path:String;
+			
+			if (!firstRun) {
+				host = PersistentStorage.read(Radiate.WP_HOST_NAME);
+				path = PersistentStorage.read(Radiate.WP_PATH_NAME);
+			}
+			
+			if (host) {
+				Radiate.WP_HOST = host;
+			}
+			else {
+				WP_HOST = defaultHost;
+			}
+			
+			if (path && !firstRun) {
+				Radiate.WP_PATH = path;
+			}
+			else {
+				WP_PATH = defaultPath;
+			}
+			
+			CodeManager.setTranscodersVersion(instance.versionNumber);
 			
 			DisplayObjectUtils.Base64Encoder2 = Base64;
+			
 			XMLUtils.initialize();
 			
 			
@@ -1823,15 +1845,15 @@ package com.flexcapacitor.controller {
 			var hasDefinition:Boolean;
 			var items:XMLList;
 			var item:XML;
-			var length:uint;
+			var numberOfItems:uint;
 			var classType:Object;
 			 
 			// get list of transcoder classes 
 			items = XML(xml).transcoder;
 			
-			length = items.length();
+			numberOfItems = items.length();
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfItems;i++) {
 				item = items[i];
 				
 				var documentDescription:DocumentDescription = new DocumentDescription();
@@ -1862,15 +1884,15 @@ package com.flexcapacitor.controller {
 			var hasDefinition:Boolean;
 			var items:XMLList;
 			var item:XML;
-			var length:uint;
+			var numberOfItems:uint;
 			var classType:Object;
 			 
 			// get list of transcoder classes 
 			items = XML(xml).transcoder;
 			
-			length = items.length();
+			numberOfItems = items.length();
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfItems;i++) {
 				item = items[i];
 				
 				var transcoder:TranscoderDescription = new TranscoderDescription();
@@ -1896,7 +1918,7 @@ package com.flexcapacitor.controller {
 		 * Creates the list of components.
 		 * */
 		public static function createComponentList(xml:XML):void {
-			var length:uint;
+			var numberOfItems:uint;
 			var items:XMLList;
 			var item:XML;
 			var className:String;
@@ -1914,9 +1936,9 @@ package com.flexcapacitor.controller {
 			// get list of component classes 
 			items = XML(xml).component;
 			
-			length = items.length();
+			numberOfItems = items.length();
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfItems;i++) {
 				item = items[i];
 				
 				var name:String = String(item.id);
@@ -1982,7 +2004,7 @@ package com.flexcapacitor.controller {
 					// delete support classes
 					// may need to refactor why we are including them in the first place
 					delete items[i];
-					length--;
+					numberOfItems--;
 				}
 			}
 			
@@ -1993,7 +2015,7 @@ package com.flexcapacitor.controller {
 		 * Creates the list of inspectors.
 		 * */
 		public static function createInspectorsList(xml:XML):void {
-			var length:uint;
+			var numberOfItems:uint;
 			var inspectorsLength:uint;
 			var items:XMLList;
 			var className:String;
@@ -2016,10 +2038,10 @@ package com.flexcapacitor.controller {
 			// get list of inspector classes 
 			items = XML(xml).item;
 			
-			length = items.length();
+			numberOfItems = items.length();
 			
 			// add inspectable classes to the dictionary
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfItems;i++) {
 				inspectableClass = new InspectableClass(items[i]);
 				className = inspectableClass.className;
 				
@@ -2035,10 +2057,10 @@ package com.flexcapacitor.controller {
 			// check that definitions exist in domain
 			for each (inspectableClass in inspectableClassesDictionary) {
 			
-				length = inspectableClass.inspectors.length;
+				numberOfItems = inspectableClass.inspectors.length;
 				j = 0;
 				
-				for (var j:int;j<length;j++) {
+				for (var j:int;j<numberOfItems;j++) {
 					inspectorData = inspectableClass.inspectors[j];
 					className = inspectorData.className;
 					
@@ -2081,7 +2103,7 @@ package com.flexcapacitor.controller {
 			var className:String;
 			var includeItem:Boolean;
 			var attributes:XMLList;
-			var length:uint;
+			var numberOfItems:uint;
 			var attributesLength:int;
 			var defaults:Object;
 			var propertyName:String;
@@ -2105,9 +2127,9 @@ package com.flexcapacitor.controller {
 			// get list of tool classes 
 			items = XML(xml).tool;
 			
-			length = items.length();
+			numberOfItems = items.length();
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfItems;i++) {
 				item = items[i];
 				
 				name = String(item.id);
@@ -2245,7 +2267,7 @@ package com.flexcapacitor.controller {
 		public static function createDevicesList(xml:XML):void {
 			var includeItem:Boolean;
 			var items:XMLList;
-			var length:uint;
+			var numberOfItems:uint;
 			var name:String;
 			var item:XML;
 			var device:Device;
@@ -2262,9 +2284,9 @@ package com.flexcapacitor.controller {
 			// get list of device classes 
 			items = XML(xml).size;
 			
-			length = items.length();
+			numberOfItems = items.length();
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfItems;i++) {
 				item = items[i];
 				
 				name = item.attribute("name");
@@ -2621,19 +2643,25 @@ package com.flexcapacitor.controller {
 		public static var componentsIconNotFoundPath:String = componentsIconPath + "/BorderContainer.png";
 		
 		public static var SETTINGS_DATA_NAME:String = "settingsData";
+		public static var WP_HOST_NAME:String = "wpHostName";
+		public static var WP_PATH_NAME:String = "wpPathName";
 		public static var SAVED_DATA_NAME:String 	= "savedData";
 		public static var CONTACT_FORM_URL:String = "http://www.radii8.com/support.php";
 		public static var WP_HOST:String = "https://www.radii8.com";
 		public static var WP_PATH:String = "/r8m/";
 		public static var WP_USER_PATH:String = "";
 		public static var WP_EXAMPLES_PATH:String = "/r8m/";
-		public static var WP_NEWS_PATH:String = "";
+		public static var WP_NEWS_PATH:String = "/r8m/";
 		public static var WP_LOGIN_PATH:String = "/wp-admin/";
 		public static var WP_PROFILE_PATH:String = "/wp-admin/profile.php";
 		public static var WP_EDIT_POST_PATH:String = "/wp-admin/post.php";
 		public static var DEFAULT_DOCUMENT_WIDTH:int = 800;
 		public static var DEFAULT_DOCUMENT_HEIGHT:int = 792;
 		public static var DEFAULT_NAVIGATION_WINDOW:String = "userNavigation";
+		
+		public static var defaultHost:String = "https://www.radii8.com";
+		public static var defaultPath:String = "/r8m/";
+		public static var firstRun:Boolean;
 		
 		/**
 		 * Gets the URL to the examples site
@@ -2906,10 +2934,10 @@ package com.flexcapacitor.controller {
 		 * Get tool by type.
 		 * */
 		public function getToolByType(type:Class):ComponentDescription {
-			var length:int = toolsDescriptions.length;
+			var numberOfTools:int = toolsDescriptions.length;
 			var componentDescription:ComponentDescription;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfTools;i++) {
 				componentDescription = ComponentDescription(toolsDescriptions.getItemAt(i));
 				
 				if (componentDescription.classType==type) {
@@ -3018,7 +3046,6 @@ package com.flexcapacitor.controller {
 			var inspectors:Array;
 			var inspectorDataArray:Array;
 			var inspectableClass:InspectableClass;
-			var length:int;
 			
 			if (target==null) return [];
 			
@@ -3160,7 +3187,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Center the application
+		 * Set the scroll position of the document
 		 * */
 		public function setScrollPosition(x:int, y:int):void {
 			if (!canvasScroller) return;
@@ -3177,7 +3204,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Center the application on the point
+		 * Center the application on a point
 		 * */
 		public function centerOnPoint(point:Point):void {
 			if (!canvasScroller) return;
@@ -3216,9 +3243,14 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Center the application
+		 * Center the application. 
+		 * 
+		 * @param vertically center vertically so top and bottom may be cut off
+		 * @param verticallyTop if document is taller than avialable space keep it at the top
+		 * @param horizontalLeft if document is wider than avialable space keep it to the left
+		 * @param totalDocumentPadding adjustment for space at the top of the document. not sure really
 		 * */
-		public function centerApplication(vertically:Boolean = true, verticallyTop:Boolean = true, totalDocumentPadding:int = 0):void {
+		public function centerApplication(vertically:Boolean = true, verticallyTop:Boolean = true, horizontalLeft:Boolean=true, totalDocumentPadding:int = 0):void {
 			if (!canvasScroller) return;
 			var viewport:IViewport = canvasScroller.viewport;
 			var documentVisualElement:IVisualElement = IVisualElement(selectedDocument.instance);
@@ -3263,8 +3295,15 @@ package com.flexcapacitor.controller {
 			
 			// if width of content is wider than canvasScroller width then center
 			if (canvasScroller.width < contentWidth) {
-				newHorizontalPosition = (contentWidth - availableWidth) / 2;
-				viewport.horizontalScrollPosition = Math.max(0, newHorizontalPosition);
+				
+				if (horizontalLeft) {
+					newHorizontalPosition = 0;
+					viewport.horizontalScrollPosition = newHorizontalPosition;
+				}
+				else {
+					newHorizontalPosition = (contentWidth - availableWidth) / 2;
+					viewport.horizontalScrollPosition = Math.max(0, newHorizontalPosition);
+				}
 			}
 			else {
 				//newHorizontalPosition = (contentWidth - canvasScroller.width) / 2;
@@ -3422,11 +3461,11 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function addComponentType(name:String, className:String, classType:Object, inspectors:Array = null, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null, enabled:Boolean = true):Boolean {
 			var definition:ComponentDefinition;
-			var length:uint = componentDefinitions.length;
+			var numberOfDefinitions:uint = componentDefinitions.length;
 			var item:ComponentDefinition;
 			
 			
-			for (var i:uint;i<length;i++) {
+			for (var i:uint;i<numberOfDefinitions;i++) {
 				item = ComponentDefinition(componentDefinitions.getItemAt(i));
 				
 				// check if it exists already
@@ -3457,10 +3496,10 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function removeComponentType(className:String):Boolean {
 			var definition:ComponentDefinition;
-			var length:uint = componentDefinitions.length;
+			var numberOfDefinitions:uint = componentDefinitions.length;
 			var item:ComponentDefinition;
 			
-			for (var i:uint;i<length;i++) {
+			for (var i:uint;i<numberOfDefinitions;i++) {
 				item = ComponentDefinition(componentDefinitions.getItemAt(i));
 				
 				if (item && item.classType==className) {
@@ -3476,10 +3515,10 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function getComponentType(className:String, fullyQualified:Boolean = false):ComponentDefinition {
 			var definition:ComponentDefinition;
-			var length:uint = componentDefinitions.length;
+			var numberOfDefinitions:uint = componentDefinitions.length;
 			var item:ComponentDefinition;
 			
-			for (var i:uint;i<length;i++) {
+			for (var i:uint;i<numberOfDefinitions;i++) {
 				item = ComponentDefinition(componentDefinitions.getItemAt(i));
 				
 				if (fullyQualified) {
@@ -3502,10 +3541,10 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function getDynamicComponentType(className:String, fullyQualified:Boolean = false):ComponentDefinition {
 			var definition:ComponentDefinition;
-			var length:uint = componentDefinitions.length;
+			var numberOfDefinitions:uint = componentDefinitions.length;
 			var item:ComponentDefinition;
 			
-			for (var i:uint;i<length;i++) {
+			for (var i:uint;i<numberOfDefinitions;i++) {
 				item = ComponentDefinition(componentDefinitions.getItemAt(i));
 				
 				if (fullyQualified) {
@@ -3537,9 +3576,9 @@ package com.flexcapacitor.controller {
 		 * Removes all components. If components were removed then returns true. 
 		 * */
 		public static function removeAllComponents():Boolean {
-			var length:uint = componentDefinitions.length;
+			var numberOfDefinitions:uint = componentDefinitions.length;
 			
-			if (length) {
+			if (numberOfDefinitions) {
 				componentDefinitions.removeAll();
 				return true;
 			}
@@ -4682,8 +4721,10 @@ package com.flexcapacitor.controller {
 				// convert to string and then import to selected target or document
 				var options:ExportOptions = new ExportOptions();
 				var sourceItemData:SourceData;
+				
 				options.useInlineStyles = true;
 				options.exportChildDescriptors = true;
+				
 				if (selectedDocument.getItemDescription(item)) {
 					sourceItemData = CodeManager.getSourceData(target, selectedDocument, CodeManager.MXML, options);
 					
@@ -4898,6 +4939,77 @@ package com.flexcapacitor.controller {
 				}
 				
 			}
+		}
+		
+		public function duplicateItem(component:Object, destination:Object = null):Object {
+			var exportOptions:ExportOptions;
+			var sourceData:SourceData;
+			var componentDescription:ComponentDescription;
+			
+			exportOptions = new ExportOptions();
+			exportOptions.useInlineStyles = true;
+			exportOptions.exportChildDescriptors = true;
+			
+			if (selectedDocument) {
+				if (component is ComponentDescription) {
+					componentDescription = component as ComponentDescription;
+				}
+				else {
+					componentDescription = selectedDocument.getItemDescription(component);
+				}
+			}
+			else {
+				warn("Please open a document before attempting to duplicate");
+				return null;
+			}
+			
+			// copy selection
+			if (componentDescription) {
+				sourceData = CodeManager.getSourceData(componentDescription, selectedDocument, CodeManager.MXML, exportOptions);
+			}
+			else {
+				warn("Could not find item to duplicate in the selected document");
+				return null;
+			}
+			
+			// get destination
+			if (destination && !(destination is IVisualElementContainer)) {
+				destination = destination.owner;
+			}
+			
+			// prevent containers from being duplicated into themselves
+			if (componentDescription.instance==destination) {
+				if (selectedDocument.instance.contains(destination.owner)) {
+					destination = destination.owner;
+				}
+			}
+			
+			if (!destination) {
+				if (componentDescription.parent) {
+					destination = componentDescription.parent.instance;
+				}
+				
+				if (!destination) {
+					destination = selectedDocument.instance;
+				}
+			}
+			
+			// add duplicate
+			sourceData = CodeManager.setSourceData(sourceData.source, destination, selectedDocument, CodeManager.MXML, null);
+			
+			// select first target
+			if (sourceData && sourceData.targets && sourceData.targets.length) { 
+				setTarget(sourceData.targets[0]);
+			}
+			else {
+				setTarget(destination);
+			}
+			
+			var newTargets:Array = sourceData.targets.slice();
+			
+			sourceData = null;
+			
+			return newTargets;
 		}
 		
 		/**
@@ -5219,8 +5331,8 @@ package com.flexcapacitor.controller {
 			//info("HTML from the clipboard was added to the library");
 		}
 		
-		public static var acceptablePasteFormats:Array = ["Object", "UIComponent", 
-										"air:file list", "air:url", "air:bitmap", "air:text"];
+		public static var acceptablePasteFormats:Array = ["Object", "UIComponent", "air:file list", 
+														"air:url", "air:bitmap", "air:text"];
 		public static var acceptableDropFormats:Array = ["UIComponent", "air:file list", "air:url", "air:bitmap"];
 		
 		/**
@@ -5250,7 +5362,7 @@ package com.flexcapacitor.controller {
 				dragSource.hasFormat("air:bitmap")) {
 				var url:String;
 				
-				// if internal html preview is visible we should return false sinc
+				// if internal html preview is visible we should return false since
 				// dragged images are triggering the drop panel
 				if (instance.isDocumentPreviewOpen(instance.selectedDocument) && 
 					dragSource.hasFormat("air:url")) {
@@ -5306,6 +5418,7 @@ package com.flexcapacitor.controller {
 			var propertiesOrStyles:Array;
 			var properties:Array;
 			var styles:Array;
+			var events:Array;
 			var attributesValueObject:Object;
 			var childNodeValueObject:Object;
 			var values:Object;
@@ -5318,6 +5431,7 @@ package com.flexcapacitor.controller {
 			propertiesOrStyles 		= attributes.concat(childNodeNames);
 			properties 				= ClassUtils.getPropertiesFromArray(elementInstance, propertiesOrStyles);
 			styles 					= ClassUtils.getStylesFromArray(elementInstance, propertiesOrStyles);
+			events 					= ClassUtils.getEventsFromArray(elementInstance, propertiesOrStyles);
 			
 			attributesValueObject 	= XMLUtils.getAttributesValueObject(node);
 			attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as IStyleClient, attributesValueObject, styles, failedToImportStyles);
@@ -5487,9 +5601,12 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function clearStyles(target:Object, styles:Array, description:String = null, dispatchEvents:Boolean = true):Boolean {
 			var object:Object = {};
-			for (var i:int;i<styles.length;i++) {
+			var numberOfStyles:uint = styles.length;
+			
+			for (var i:int;i<numberOfStyles;i++) {
 				object[styles[i]] = undefined;
 			}
+			
 			return setStyles(target, styles, object, description, true, dispatchEvents);
 		}
 		
@@ -5512,9 +5629,12 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function clearProperties(target:Object, properties:Array, description:String = null, dispatchEvents:Boolean = true):Boolean {
 			var object:Object = {};
-			for (var i:int;i<properties.length;i++) {
+			var numberOfProperties:uint = properties.length;
+			
+			for (var i:int;i<numberOfProperties;i++) {
 				object[properties[i]] = undefined;
 			}
+			
 			return setProperties(target, properties, object, description, true, dispatchEvents);
 		}
 		
@@ -5563,12 +5683,12 @@ package com.flexcapacitor.controller {
 		 * Checks if changes are available. 
 		 * */
 		public static function changesAvailable(changes:Array):Boolean {
-			var length:int = changes.length;
+			var numberOfChanges:int = changes.length;
 			var changesAvailable:Boolean;
 			var item:PropertyChanges;
 			var name:String;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfChanges;i++) {
 				if (!(changes[i] is PropertyChanges)) continue;
 				
 				item = changes[i];
@@ -5600,13 +5720,13 @@ package com.flexcapacitor.controller {
 		 * names of the styles to set or null if setting properties
 		 * */
 		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, setStartValues:Boolean=false):Boolean {
-			var length:int = changes ? changes.length : 0;
+			var numberOfChanges:int = changes ? changes.length : 0;
 			var effect:HistoryEffect = new HistoryEffect();
 			var onlyPropertyChanges:Array = [];
 			var directApply:Boolean = true;
 			var isStyle:Boolean = style && style.length>0;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfChanges;i++) {
 				if (changes[i] is PropertyChanges) { 
 					onlyPropertyChanges.push(changes[i]);
 				}
@@ -5983,13 +6103,14 @@ package com.flexcapacitor.controller {
 		/**
 		 * Updates the properties on a component description
 		 * */
-		public static function updateComponentProperties(localTargets:Array, propertyChanges:Array, properties:Array):void {
+		public static function updateComponentProperties(localTargets:Array, propertyChanges:Array, properties:Array, undo:Boolean = false):void {
 			var componentDescription:ComponentDescription;
 			var numberOfTargets:int = localTargets.length;
 			var numberOfChanges:int = propertyChanges.length;
 			var propertyChange:Object;
 			var localTarget:Object;
 			var property:String;
+			var selectedDocument:IDocument = instance.selectedDocument;
 			var value:*;
 			var numberOfProperties:int = properties ? properties.length : 0;
 			
@@ -5998,7 +6119,7 @@ package com.flexcapacitor.controller {
 			
 			for (var i:int;i<numberOfTargets;i++) {
 				localTarget = localTargets[i];
-				componentDescription = instance.selectedDocument.getItemDescription(localTarget);
+				componentDescription = selectedDocument.getItemDescription(localTarget);
 				
 				if (componentDescription) {
 					
@@ -6007,10 +6128,17 @@ package com.flexcapacitor.controller {
 						
 						for (var k:int = 0; k < numberOfProperties; k++) {
 							property = properties[k];
-							value = propertyChange.end[property];
+							
+							if (undo) {
+								value = propertyChange.start[property];
+							}
+							else {
+								value = propertyChange.end[property];
+							}
 							
 							if (value==null || 
-								value==undefined) {
+								value==undefined || 
+								value=="") {
 								//isNaN(value)) {
 								delete componentDescription.properties[property];
 							}
@@ -6031,11 +6159,11 @@ package com.flexcapacitor.controller {
 		/**
 		 * Updates the styles on a component description
 		 * */
-		public static function updateComponentStyles(localTargets:Array, propertyChanges:Array, styles:Array):void {
+		public static function updateComponentStyles(localTargets:Array, propertyChanges:Array, styles:Array, undo:Boolean = false):void {
 			var componentDescription:ComponentDescription;
 			var numberOfTargets:int = localTargets.length;
 			var numberOfChanges:int = propertyChanges.length;
-			var document:IDocument = instance.selectedDocument;
+			var selectedDocument:IDocument = instance.selectedDocument;
 			var propertyChange:Object;
 			var localTarget:Object;
 			var numberOfStyles:int = styles ? styles.length : 0;
@@ -6046,7 +6174,7 @@ package com.flexcapacitor.controller {
 			
 			for (var i:int;i<numberOfTargets;i++) {
 				localTarget = localTargets[i];
-				componentDescription = document.descriptionsDictionary[localTarget];
+				componentDescription = selectedDocument.descriptionsDictionary[localTarget];
 				
 				if (componentDescription) {
 					
@@ -6055,15 +6183,77 @@ package com.flexcapacitor.controller {
 						
 						for (var k:int = 0; k < numberOfStyles; k++) {
 							style = styles[k];
-							value = propertyChange.end[style];
+							
+							if (undo) {
+								value = propertyChange.start[style];
+							}
+							else {
+								value = propertyChange.end[style];
+							}
 							
 							if (value==null || 
-								value==undefined) {
+								value==undefined || 
+								value=="") {
 								// || isNaN(value)
 								delete componentDescription.styles[style];
 							}
 							else {
 								componentDescription.styles[style] = value;
+							}
+						}
+						
+						//componentDescription.styles = ObjectUtils.merge(propertyChange.end, componentDescription.styles);
+					}
+				}
+				
+				// remove nulls and undefined values
+				
+			}
+		}
+		
+		/**
+		 * Updates the events on a component description
+		 * */
+		public static function updateComponentEvents(localTargets:Array, propertyChanges:Array, events:Array, undo:Boolean = false):void {
+			var componentDescription:ComponentDescription;
+			var numberOfTargets:int = localTargets.length;
+			var numberOfChanges:int = propertyChanges.length;
+			var selectedDocument:IDocument = instance.selectedDocument;
+			var propertyChange:Object;
+			var localTarget:Object;
+			var numberOfEvents:int = events ? events.length : 0;
+			var eventName:String;
+			var value:*;
+			
+			if (numberOfEvents==0) return;
+			
+			for (var i:int;i<numberOfTargets;i++) {
+				localTarget = localTargets[i];
+				componentDescription = selectedDocument.descriptionsDictionary[localTarget];
+				
+				if (componentDescription) {
+					
+					for (var j:int=0;j<numberOfChanges;j++) {
+						propertyChange = propertyChanges[j];
+						
+						for (var k:int = 0; k < numberOfEvents; k++) {
+							eventName = events[k];
+							
+							if (undo) {
+								value = propertyChange.start[eventName];
+							}
+							else {
+								value = propertyChange.end[eventName];
+							}
+							
+							if (value==null || 
+								value==undefined || 
+								value=="") {
+								// || isNaN(value)
+								delete componentDescription.events[eventName];
+							}
+							else {
+								componentDescription.events[eventName] = value;
 							}
 						}
 						
@@ -6377,6 +6567,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					
 					properties && properties.length ? updateComponentProperties(items, [propertyChangeChange], properties) :-1;
 					styles && styles.length ? updateComponentStyles(items, [propertyChangeChange], styles) :-(1);
+					// events && events.length ? updateComponentEvents(items, [propertyChangeChange], events) :-1;
 				}
 				
 				
@@ -6810,8 +7001,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var oldValue:String = currentEditableComponent.text;
 			var doSomething:Boolean;
 			
-			if (event is FlexEvent) {
-				doSomething = true;
+			
+			if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
+				doSomething = false;
+			}
+			else if (event is FlexEvent && event.type=="valueCommit") {
+				doSomething = false;
 			}
 			else {
 				doSomething = true;
@@ -6827,17 +7022,19 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
 				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
 				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
+				
 				if (editableRichTextField.parent) {
 					HistoryManager.doNotAddEventsToHistory = true;
 					removeElement(editableRichTextField);
 					HistoryManager.doNotAddEventsToHistory = false;
 				}
+				
+				instance.enableTool();
 			}
-			
-			instance.enableTool();
 			
 			event.preventDefault();
 			event.stopImmediatePropagation();
+			
 		}
 		
 		/**
@@ -7229,16 +7426,18 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var projectIndex:int = projects.indexOf(iProject);
 			var removedProject:IProject;
 			var remote:Boolean = ServicesManager.getIsRemoteLocation(locations);
+			var numberOfDocuments:int;
+			var removedProjects:Array;
 			
 			if (projectIndex!=-1) {
-				var removedProjects:Array = projects.splice(projectIndex, 1);
+				removedProjects = projects.splice(projectIndex, 1);
 				
 				if (removedProjects[0]==iProject) {
 					info("Project removed successfully");
 					
-					var length:int = iProject.documents.length;
+					numberOfDocuments = iProject.documents.length;
 					
-					for (var i:int=length;i--;) {
+					for (var i:int=numberOfDocuments;i--;) {
 						removeDocument(IDocument(iProject.documents[i]), locations, dispatchEvents);
 					}
 				}
@@ -7248,13 +7447,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			if (remote && iProject && iProject.id) { 
 				// we need to create service
 				if (deleteProjectService==null) {
-					var service:WPService = new WPService();
-					service = new WPService();
-					service.host = getWPURL();
-					service.addEventListener(WPService.RESULT, deleteProjectResultsHandler, false, 0, true);
-					service.addEventListener(WPService.FAULT, deleteProjectFaultHandler, false, 0, true);
-					deleteProjectService = service;
+					deleteProjectService = new WPService();
+					deleteProjectService.addEventListener(WPService.RESULT, deleteProjectResultsHandler, false, 0, true);
+					deleteProjectService.addEventListener(WPService.FAULT, deleteProjectFaultHandler, false, 0, true);
 				}
+				
+				deleteProjectService.host = getWPURL();
 				
 				deleteProjectInProgress = true;
 				
@@ -7418,7 +7616,6 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function addDocument(iDocument:IDocument, project:IProject = null, overwrite:Boolean = false, dispatchEvents:Boolean = true):IDocument {
 			var documentAlreadyExists:Boolean;
-			var length:int;
 			var documentAdded:Boolean;
 			
 			documentAlreadyExists = doesDocumentExist(iDocument.uid);
@@ -8350,7 +8547,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		/**
 		 * Open import MXML window
 		 * */
-		public function openImportMXMLWindow(title:String, code:String = ""):void {
+		public function openImportMXMLWindow(title:String, code:String = "", showRevisions:Boolean = false):void {
 			
 			if (openImportPopUp==null) {
 				openImportPopUp = new OpenPopUp();
@@ -8367,7 +8564,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			}
 			
 			if (!openImportPopUp.isOpen) {
-				openImportPopUp.popUpOptions = {title:title, code:code};
+				openImportPopUp.popUpOptions = {title:title, code:code, showRevisions:showRevisions};
 				openImportPopUp.play();
 			}
 		}
@@ -8477,10 +8674,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * Get document by UID
 		 * */
 		public function getDocumentByUID(id:String):IDocument {
-			var length:int = documents.length;
+			var numberOfDocuments:int = documents.length;
 			var iDocument:IDocument;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				iDocument = IDocument(documents[i]);
 				
 				if (id==iDocument.uid) {
@@ -8495,10 +8692,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * Check if document exists in documents array
 		 * */
 		public function doesDocumentExist(id:String):Boolean {
-			var length:int = documents.length;
+			var numberOfDocuments:int = documents.length;
 			var iDocument:IDocument;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				iDocument = IDocument(documents[i]);
 				
 				if (id==iDocument.uid) {
@@ -8513,10 +8710,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * Check if project exists in projects array. Pass in the UID not ID.
 		 * */
 		public function doesProjectExist(uid:String):Boolean {
-			var length:int = projects.length;
+			var numberOfProjects:int = projects.length;
 			var iProject:IProject;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfProjects;i++) {
 				iProject = IProject(projects[i]);
 				
 				if (iProject.uid==uid) {
@@ -8531,10 +8728,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * Get project by UID
 		 * */
 		public function getProjectByUID(id:String):IProject {
-			var length:int = projects.length;
+			var numberOfProjects:int = projects.length;
 			var iProject:IProject;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfProjects;i++) {
 				iProject = IProject(projects[i]);
 				
 				if (id==iProject.uid) {
@@ -8549,10 +8746,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * Get project by ID
 		 * */
 		public function getProjectByID(id:int):IProject {
-			var length:int = projects.length;
+			var numberOfProjects:int = projects.length;
 			var iProject:IProject;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfProjects;i++) {
 				iProject = IProject(projects[i]);
 				
 				if (iProject.id!=null && id==int(iProject.id)) {
@@ -8581,7 +8778,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * Get a list of projects that own this document
 		 * */
 		public function getDocumentProjects(iDocument:IDocument):Array {
-			var documentsLength:int;
+			var numberOfDocuments:int;
 			var projectDocument:IDocument;
 			var projectLength:int = projects.length;
 			var iProject:IProject;
@@ -8591,8 +8788,9 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			for (var A:int;A<length;A++) {
 				iProject = IProject(projects[A]);
 				projectDocuments = iProject.documents;
+				numberOfDocuments = projectDocuments ? projectDocuments.length : 0;
 				
-				for (var B:int;B<documentsLength;B++) {
+				for (var B:int;B<numberOfDocuments;B++) {
 					projectDocument = IDocument(projectDocuments[B]);
 					
 					if (projectDocuments.uid==iDocument.uid) {
@@ -8751,7 +8949,6 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function createNewDocument(name:String = null, type:Object = null, project:IProject = null):void {
 			var newDocument:IDocument;
-			var length:int;
 			
 			newDocument = createDocument(name, type);
 			addDocument(newDocument, selectedProject, true, true);
@@ -8807,16 +9004,16 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var iDocumentMetaData:IDocumentMetaData;
 			var iDocumentData:IDocumentData;
 			var iDocument:IDocument;
-			var length:int;
+			var numberOfDocuments:int;
 				
 			// get documents and add them to the documents array
 			
 			// TRYING TO NOT create documents until they are needed
 			// but then we have issues when we want to save
 			if (documentsData && documentsData.length>0) {
-				length = documentsData.length;
+				numberOfDocuments = documentsData.length;
 				
-				for (var i:int;i<length;i++) {
+				for (var i:int;i<numberOfDocuments;i++) {
 					// TypeError: Error #1034: Type Coercion failed: cannot convert com.flexcapacitor.model::DocumentMetaData
 					// to com.flexcapacitor.model.IDocumentData. check export and marshall options
 					// saved as wrong data type
@@ -8846,14 +9043,14 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		public function createAndAddProjectsData(projectsData:Array, add:Boolean = true):Array {
 			var iProjectData:IProjectData;
 			var potentialProjects:Array = [];
-			var length:int;
+			var numberOfProjects:int;
 			var iProject:IProject;
 			
 			// get projects and add them to the projects array
 			if (projectsData && projectsData.length>0) {
-				length = projectsData.length;
+				numberOfProjects = projectsData.length;
 				
-				for (var i:int;i<length;i++) {
+				for (var i:int;i<numberOfProjects;i++) {
 					iProjectData = IProjectData(projectsData[i]);
 					
 					// project doesn't exist - add it
@@ -8890,7 +9087,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var potentialProjects:Array  = [];
 			var potentialDocuments:Array = [];
 			var savedDocumentsDataArray:Array;
-			var potentialProjectsLength:int;
+			var numberOfPotentialProjects:int;
 			var iProject:IProject;
 			
 			/*
@@ -8920,7 +9117,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 
 				// go through projects and add documents to them
 				if (potentialProjects.length>0) {
-					potentialProjectsLength = potentialProjects.length;
+					numberOfPotentialProjects = potentialProjects.length;
 					
 					// loop through potentialProjectsLength objects
 					for (var i:int;i<length;i++) {
@@ -9023,10 +9220,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var openProjects:Array = settings.openProjects;
 			var iProject:IProject;
 			var iProjectData:IProjectData;
-			var openItemlength:int = openProjects.length;
+			var numberOfOpenItems:int = openProjects.length;
 			
 			// open previously opened projects
-			for (var i:int;i<openItemlength;i++) {
+			for (var i:int;i<numberOfOpenItems;i++) {
 				iProjectData = IProjectData(openProjects[i]);
 				iProject = getProjectByUID(iProjectData.uid);
 				
@@ -9879,12 +10076,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				so = SharedObject(result);
 				//var data:Object = savedData;
 				var documentsArray:Array = so.data.savedData.documents;
-				var length:int = documentsArray.length;
+				var numberOfDocuments:int = documentsArray.length;
 				var documentData:IDocumentData;
 				var found:Boolean;
 				var foundIndex:int = -1;
 				
-				for (var i:int;i<length;i++) {
+				for (var i:int;i<numberOfDocuments;i++) {
 					documentData = IDocumentData(documentsArray[i]);
 					
 					if (documentData.uid == iDocumentData.uid) {
@@ -10143,7 +10340,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function updateUserInfo(data:Object):void {
 			
-			if (data && data is Object) {
+			if (data && data is Object && "loggedIn" in data) {
 				isUserLoggedIn = data.loggedIn;
 				userAvatar = data.avatar;
 				userDisplayName = data.displayName ? data.displayName : "guest";
@@ -10177,6 +10374,18 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					}
 				}
 			}
+			else {
+				isUserLoggedIn = false;
+				userAvatar = "";
+				userDisplayName = "guest";
+				userID = 0;
+				userEmail = "";
+				user = null;
+				projectHomePageID = -1;
+				userSites = [];
+				userSitePath = "";
+				WP_USER_PATH = "";
+			}
 		}
 		
 		/**
@@ -10198,7 +10407,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * See getAttachmentsResultsHandler() 
 		 * */
 		public function openProjectsFromData(projectsData:Array):void {
-			var length:int;
+			var numberOfProjects:int;
 			var post:Object;
 			var project:IProject
 			var xml:XML;
@@ -10206,9 +10415,9 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var firstProject:IProject;
 			var potentialProjects:Array;
 			
-			length = projectsData.count;
+			numberOfProjects = projectsData.count;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfProjects;i++) {
 				post = potentialProjects.posts[i];
 				isValid = XMLUtils.isValidXML(post.content);
 				
@@ -10251,14 +10460,14 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			Radiate.info("Retrieved list of attachments");
 			var data:Object = event.data;
 			var potentialAttachments:Array = [];
-			var length:int;
+			var numberOfAttachments:int;
 			var object:Object;
 			var attachment:AttachmentData;
 			
 			if (data && data.count>0) {
-				length = data.count;
+				numberOfAttachments = data.count;
 				
-				for (var i:int;i<length;i++) {
+				for (var i:int;i<numberOfAttachments;i++) {
 					object = data.attachments[i];
 					
 					if (String(object.mime_type).indexOf("image/")!=-1) {
@@ -10646,12 +10855,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function updateSaveDataForDocument(iDocumentData:IDocumentData, metaData:Boolean = false):SavedData {
 			var documentsArray:Array = savedData.documents;
-			var length:int = documentsArray.length;
+			var numberOfDocuments:int = documentsArray.length;
 			var documentMetaData:IDocumentMetaData;
 			var found:Boolean;
 			var foundIndex:int = -1;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				documentMetaData = IDocumentMetaData(documentsArray[i]);
 				//Radiate.info("Exporting document " + iDocument.name);
 				
@@ -10688,12 +10897,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function updateSaveDataForProject(iProject:IProject, metaData:Boolean = false):SavedData {
 			var projectsArray:Array = savedData.projects;
-			var length:int = projectsArray.length;
+			var numberOfProjects:int = projectsArray.length;
 			var documentMetaData:IDocumentMetaData;
 			var found:Boolean;
 			var foundIndex:int = -1;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfProjects;i++) {
 				documentMetaData = IDocumentData(projectsArray[i]);
 				//Radiate.info("Exporting document " + iDocument.name);
 				
@@ -10747,11 +10956,11 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * true then only returns open documents.
 		 * */
 		public function getSaveDataForAllDocuments(open:Boolean = false, metaData:Boolean = false):Array {
-			var length:int = projects.length;
+			var numberOfProjects:int = projects.length;
 			var documentsArray:Array = [];
 			var iProject:IProject;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfProjects;i++) {
 				iProject = projects[i];
 				documentsArray = documentsArray.concat(iProject.getSavableDocumentsData(open, metaData));
 			}
@@ -10777,10 +10986,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function getSaveDataForAllProjects(open:Boolean = false, metaData:Boolean = false):Array {
 			var projectsArray:Array = [];
-			var length:int = projects.length;
+			var numberOfProjects:int = projects.length;
 			var iProject:IProject;
 			
-			for (var i:int; i < length; i++) {
+			for (var i:int; i < numberOfProjects; i++) {
 				iProject = IProject(projects[i]);
 				
 				if (open) {
@@ -10814,10 +11023,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function saveProjectsRemotely(open:Boolean = false):Array {
 			var projectsArray:Array = [];
-			var length:int = projects.length;
+			var numberOfProjects:int = projects.length;
 			var iProject:IProject;
 			
-			for (var i:int; i < length; i++) {
+			for (var i:int; i < numberOfProjects; i++) {
 				iProject = IProject(projects[i]);
 				
 				if (open) {
@@ -10907,7 +11116,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * Update imported code so you can import it
 		 * */
 		public static function editImportingCode(message:String, ...Arguments):void {
-			log.info("TODO: Open dialog so user can edit code that isn't importing");
+			log.info("The document did not contain valid source code. Open the import window and edit the code or choose an earlier revision.");
 		}
 		
 		/**
@@ -10934,7 +11143,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				navigateToURL(request, "editInBrowser");
 			}
 			else {
-				error("URL to document was not set. You may need to save the document first.");
+				error("URL to the document was not set. You may need to save the document first.");
 			}
 		}
 		
@@ -11028,7 +11237,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		}
 		
 		/**
-		 * Traces an error message
+		 * Traces an error message.
+		 * 
+		 * Getting three error messages. 
+		 * One from Radii8Desktop, one from here Radiate.as, and one from DocumentContainer
 		 * */
 		public static function error(message:String, event:Object = null, sender:String = null, ...Arguments):void {
 			var errorData:ErrorData;

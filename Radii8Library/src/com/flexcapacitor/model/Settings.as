@@ -52,7 +52,8 @@ package com.flexcapacitor.model {
 		
 		public var saveCount:int;
 		
-		public var enableAutoSave:Boolean = true;
+		public var enableAutoSave:Boolean = false;
+		public var enableWordWrap:Boolean = false;
 		
 		public function unmarshall(data:Object):void {
 			

@@ -902,8 +902,8 @@ package com.flexcapacitor.tools {
 					//dragManagerInstance.listenForDragBehavior(target as IUIComponent, document, event);
 					// for now we can only drag UIComponents bc I don't think drag manager supports
 					// dragging graphic elements
-					if (target is IUIComponent) {
-						dragManagerInstance.listenForDragBehavior(target as IUIComponent, document, event);
+					if (target is IVisualElement) {
+						dragManagerInstance.listenForDragBehavior(target as IVisualElement, document, event);
 						addDragManagerListeners();
 					}
 					

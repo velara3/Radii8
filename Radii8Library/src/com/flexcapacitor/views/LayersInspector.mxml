@@ -46,13 +46,17 @@
 			import com.flexcapacitor.views.supportClasses.LayersDataDescriptor;
 			
 			import mx.collections.ArrayCollection;
+			import mx.core.DragSource;
+			import mx.core.IUIComponent;
 			import mx.core.mx_internal;
 			import mx.events.DragEvent;
 			import mx.events.ListEvent;
 			import mx.events.TreeEvent;
+			import mx.managers.DragManager;
 			import mx.states.AddItems;
 			
 			import spark.components.Application;
+			import spark.components.supportClasses.ItemRenderer;
 			
 			private var rootDisplayObject:DisplayObject;
 			private var displayList:Array = [];
@@ -405,7 +409,6 @@
 				updateComponentDisplayList();
 			}
 			
-			
 			/**
 			 * Move item handler
 			 * */
@@ -701,6 +704,78 @@
 				radiate.setTarget(radiate.selectedDocument.instance);
 			}
 			
+			protected function removeItem_dragEnterHandler(event:DragEvent):void{
+				
+				if (event.dragInitiator!=null && event.dragInitiator==componentListTree) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+				}
+			}
+			
+			protected function removeItem_dragOverHandler(event:DragEvent):void{
+				
+				if (event.dragInitiator!=null && event.dragInitiator==componentListTree) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+				}
+			}
+			
+			public function removeItem_dragDropHandler(event:DragEvent):void {
+				var dragSource:DragSource = event.dragSource;
+				var draggedItem:Object = event.draggedItem;
+				var dragInitiator:IUIComponent = event.dragInitiator;
+				var selectedIndex:int = componentListTree.selectedIndex;
+				
+				if (componentListTree.selectedItem) {
+					var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+					Radiate.removeElement(componentDescription.instance);
+					
+					if (selectedIndex>0 && componentListTree.dataProvider && componentListTree.dataProvider.length>0) {
+						componentListTree.selectedIndex = selectedIndex-1;
+					}
+					else if (selectedIndex==0 && componentListTree.dataProvider && componentListTree.dataProvider.length>0) {
+						componentListTree.selectedIndex = 0;
+					}
+				}
+				//radiate.dropItem(event);
+			}
+			
+			protected function duplicateItem_clickHandler(event:MouseEvent):void {
+				var selectedTarget:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+				
+				if (selectedTarget) {
+					radiate.duplicateItem(selectedTarget);
+				}
+				else {
+					Radiate.info("No layer selected");
+				}
+			}
+			
+			protected function duplicateItem_dragEnterHandler(event:DragEvent):void {
+				if (event.dragInitiator!=null && event.dragInitiator==componentListTree) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+				}
+			}
+			
+			protected function duplicateItem_dragOverHandler(event:DragEvent):void {
+				if (event.dragInitiator!=null && event.dragInitiator==componentListTree) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+				}
+			}
+			
+			protected function duplicateItem_dragDropHandler(event:DragEvent):void {
+				var selectedTarget:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+				
+				if (selectedTarget) {
+					radiate.duplicateItem(selectedTarget);
+				}
+				else {
+					Radiate.info("No layer selected");
+				}
+			}
+			
+			protected function refreshTree_clickHandler(event:MouseEvent):void {
+				updateComponentDisplayList();
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -776,6 +851,11 @@
 		<!--							  source="{Radii8LibraryAssets.locked}" -->
 		<views:BlendMode id="blendModeGroup" minWidth="100" toolTip="Blend mode"/>
 		<s:Spacer width="100%"/>
+		<c:BeveledImageButton id="refreshTree" 
+					   source="{Radii8LibraryAssets.refresh}" 
+					   toolTip="Refresh Tree"
+					   click="refreshTree_clickHandler(event)"
+					   />
 		<c:BeveledImageButton id="closeAllNodes" 
 					   source="{Radii8LibraryAssets.treeViewClosed}" 
 					   toolTip="Close All Layers"
@@ -786,10 +866,21 @@
 					   toolTip="Expand All Layers"
 					   click="expandAllNodes_clickHandler(event)"
 					   />
+		<c:BeveledImageButton id="duplicateItem" 
+							  source="{Radii8LibraryAssets.duplicate}" 
+							  toolTip="Duplicate"
+							  click="duplicateItem_clickHandler(event)"
+							  dragEnter="duplicateItem_dragEnterHandler(event)"
+							  dragOver="duplicateItem_dragOverHandler(event)"
+							  dragDrop="duplicateItem_dragDropHandler(event)"
+							  />
 		<c:BeveledImageButton id="removeItem" 
 							  source="{Radii8LibraryAssets.trashCan}" 
 							  toolTip="Remove"
 							  click="removeItem_clickHandler(event)"
+							  dragEnter="removeItem_dragEnterHandler(event)"
+							  dragOver="removeItem_dragOverHandler(event)"
+							  dragDrop="removeItem_dragDropHandler(event)"
 							  />
 	</s:HGroup>
 	

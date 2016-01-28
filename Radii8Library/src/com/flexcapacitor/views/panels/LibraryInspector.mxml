@@ -614,9 +614,15 @@
 			}
 			
 			public function list_keyUpHandler(event:KeyboardEvent):void {
-				if (event.keyCode==Keyboard.SPACE) {
-					// show full view of image
-					//trace("space button pressed");
+				var popUpOpen:Boolean;
+				
+				if (event.keyCode==Keyboard.ESCAPE && openPopUp.isOpen) {
+					openPopUp.close();
+					return;
+				}
+				
+				// show selected image from library
+				//if (openPopUp.isOpen || popUpOpen)  {
 					var imageData:ImageData = list.selectedItem as ImageData;
 					
 					if (imageData) {
@@ -627,18 +633,24 @@
 							openPopUp.data = imageData.url;
 						}
 					}
+				//}
+				
+				// if space bar is press open or close pop up
+				if (event.keyCode==Keyboard.SPACE) {
 					
 					if (!openPopUp.isOpen) {
 						openPopUp.play();
+						popUpOpen = true;
 					}
 					else {
 						openPopUp.close();
 					}
 					
 				}
-				if (event.keyCode==Keyboard.ESCAPE) {
-					openPopUp.close();
+				else {
+					//popUpOpen = true;
 				}
+				
 			}
 			
 			protected function openInBrowserButton_clickHandler(event:MouseEvent):void
@@ -713,7 +725,7 @@
 				
 				documentID = iDocument && iDocument.id!=null ? int(iDocument.id) : 0;
 				
-				if (iDocument.project && iDocument.project.id) {
+				if (iDocument && iDocument.project && iDocument.project.id) {
 					projectID = int(iDocument.project.id);
 				}
 			}
@@ -727,7 +739,7 @@
 					}
 					openPopUp.popUp = null;
 				}
-					
+				
 			}
 			
 			protected function handleDragDropIncomplete(event:DragDropEvent):void

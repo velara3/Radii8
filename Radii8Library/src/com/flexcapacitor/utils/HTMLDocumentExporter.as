@@ -146,6 +146,12 @@ package com.flexcapacitor.utils {
 		public var useBorderBox:Boolean = true;
 		
 		/**
+		 * Places common CSS after element CSS when true.
+		 * This is so in the editor you see the element css at the top
+		 * */
+		public var reverseInitialCSS:Boolean = true;
+		
+		/**
 		 * Padding from browser text engine. 
 		 * In browsers (some or all) the text is not absolutely placed 
 		 * where you set it to be the larger the font is the farther down
@@ -315,19 +321,39 @@ package com.flexcapacitor.utils {
 				}
 				
 				if (useBorderBox) {
-					styles = borderBoxCSS + "\n\n" + styles;
+					if (reverseInitialCSS) {
+						styles = styles + "\n\n" + borderBoxCSS;
+					}
+					else {
+						styles = borderBoxCSS + "\n\n" + styles;
+					}
 				}
 				
 				if (useBetterHTML) {
-					styles = betterHTML + "\n\n" + styles;
+					if (reverseInitialCSS) {
+						styles = styles + "\n\n" + betterHTML;
+					}
+					else {
+						styles = betterHTML + "\n\n" + styles;
+					}
 				}
 				
 				if (showBorders) {
-					styles = bordersCSS + "\n\n" + styles;
+					if (reverseInitialCSS) {
+						styles = styles + "\n\n" + bordersCSS;
+					}
+					else {
+						styles = bordersCSS + "\n\n" + styles;
+					}
 				}
 				
 				if (useSVGButtonClass) {
-					styles += "\n" + buttonCSS2;
+					if (reverseInitialCSS) {
+						styles = styles + "\n" + buttonCSS2;
+					}
+					else {
+						styles += "\n" + buttonCSS2;
+					}
 				}
 				
 				if (addZoom) {
@@ -1369,7 +1395,7 @@ package com.flexcapacitor.utils {
 						}
 					}
 					else {
-						layoutOutput += componentInstance.text;
+						layoutOutput += componentInstance.text.replace(/\n/g, "<br/>");
 					}
 					
 					layoutOutput += "</" + htmlName + ">";
@@ -1466,8 +1492,8 @@ package com.flexcapacitor.utils {
 					
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 
-					styleValue = "stroke:" + DisplayObjectUtils.getColorInRGB(componentInstance.strokeColor, componentInstance.alpha) + ";";
-					styleValue += "stroke-width:" + componentInstance.stroke.weight + ";";
+					styleValue = "stroke:" + DisplayObjectUtils.getColorInRGB(componentInstance.color, componentInstance.alpha) + ";";
+					styleValue += "stroke-width:" + componentInstance.strokeWeight + ";";
 					
 					if (true) {
 						styleValue += "shape-rendering:crispEdges;";

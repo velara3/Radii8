@@ -51,11 +51,6 @@ package com.flexcapacitor.model {
 			this.successful = successful;
 		}
 		
-		/**
-		 * Indicates if save was successful
-		 * */
-		public var successful:Boolean;
-		
 		override public function clone():Event {
 			return new SaveResultsEvent(type, bubbles, cancelable, successful);
 		}

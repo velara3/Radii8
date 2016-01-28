@@ -25,18 +25,11 @@
 		 dragDrop="mainView_dragDropHandler(event)"
 		 dragOver="mainView_dragOverHandler(event)"
 		 
-		 creationComplete="creationCompleteHandler(event)"
 		 width="400" height="300"
 		 >
-<!--		 -->
+
 			
-		<!-- Was getting multiple errors with JPEGENCODER classes
-		they require 11.5 or greater. Nothing was working. 
-		Finally, I think I found the cause. The playerglobal.swc may be incorrect or not existant. 
-		/11.5/playerglobal.swc may be 11.2 playerglobal.swc or IDE was looking for 11.2 and not finding it. 
-		Not sure using swf-19
-		Also, I made FCLibrary as external libraries to get rid of defaults.css warning.
-		-->
+
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
@@ -60,21 +53,18 @@
 			import com.flexcapacitor.views.windows.ExportDocumentWindow;
 			import com.flexcapacitor.views.windows.FileTransferWindow;
 			import com.flexcapacitor.views.windows.HelpWindow;
-			import com.flexcapacitor.views.windows.ImportWindow;
 			import com.flexcapacitor.views.windows.LoginWindow;
 			import com.flexcapacitor.views.windows.NewDocumentWindow;
 			import com.flexcapacitor.views.windows.PrintWindow;
+			import com.flexcapacitor.views.windows.SettingsWindow;
 			
 			import flash.net.navigateToURL;
 			import flash.utils.setTimeout;
 			
-			import mx.controls.Alert;
 			import mx.core.DragSource;
 			import mx.core.IUIComponent;
-			import mx.core.IVisualElement;
 			import mx.events.DragEvent;
 			import mx.events.EffectEvent;
-			import mx.events.FlexEvent;
 			import mx.events.MenuEvent;
 			import mx.managers.DragManager;
 			
@@ -135,7 +125,7 @@
 			[Bindable]
 			public var serviceManager:ServicesManager;
 			
-			protected function creationCompleteHandler(event:FlexEvent):void {
+			public function startup():void {
 				radiate = Radiate.getInstance();
 				serviceManager = ServicesManager.getInstance();
 				
@@ -150,7 +140,7 @@
 				updateCheckLoginStatus();
 				
 				serviceManager.getLoggedInStatus();
-				serviceManager.getBlogPostsByCategory("Tutorial");
+				serviceManager.getNewsPosts();
 				serviceManager.getExampleProjects();
 				
 				if (radiate.userID!=-1) {
@@ -193,7 +183,7 @@
 			protected function news_clickHandler(event:MouseEvent):void {
 				updateCheckNews(-1);
 				
-				serviceManager.getBlogPostsByCategory("Tutorial");
+				serviceManager.getNewsPosts();
 			}
 			
 			/**
@@ -323,10 +313,8 @@
 			 * Handle when getting result of call that checks if user is logged in
 			 * */
 			protected function loggedInStatusHandler(event:RadiateEvent):void {
-				//checkOnlineEffect.play();
 				
 				if (radiate.isUserLoggedIn) {
-					//radiate.enableAutoSave = true;
 					updateCheckLoginStatus(1);
 					updateCheckProjects(-1);
 					serviceManager.getProjectsByUser(radiate.userID);
@@ -334,6 +322,8 @@
 				else {
 					updateCheckLoginStatus(0);
 				}
+				
+				isConnectedCheckbox.selected = radiate.isUserConnected;
 			}
 			
 			/**
@@ -570,9 +560,9 @@
 			 * Check if connected to remote WP server and update checkbox
 			 * */
 			protected function isConnectedCheckbox_clickHandler(event:MouseEvent):void {
-				if (radiate.isUserConnected) {
-					isConnectedCheckbox.selected = radiate.isUserConnected;
-				}
+				
+				isConnectedCheckbox.selected = radiate.isUserConnected;
+				
 				
 				checkOnline();
 			}
@@ -998,6 +988,8 @@
 			
 			protected function mainView_dragEnterHandler(event:DragEvent):void {
 				
+				// if drag initiator is null it means it was 
+				// dragged in from outside of the application
 				if (event.dragInitiator==null && Radiate.isAcceptableDragAndDropFormat(event.dragSource)) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 					dropImagesLocation.visible = true;
@@ -1112,7 +1104,15 @@
 			
 			protected function getRevisions_itemClickHandler(event:MenuEvent):void
 			{
-				var data:Object = radiate.getSavedData();				
+				//var data:Object = radiate.getSavedData();
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				
+				if (selectedDocument) {
+					radiate.openImportMXMLWindow("Import MXML", selectedDocument.getSource(), true);
+				}
+				else {
+					Radiate.info("You need to open a document before you can show revisions");
+				}
 			}
 			
 			protected function importMXMLMenuItem_itemClickHandler(event:MenuEvent):void
@@ -1212,7 +1212,8 @@
 							targetAncestor="{this}"
 							fileTypes="psd">
 			<file:selectionEffect>
-				<file:LoadFile id="loadPSDFile" fileReference="{browseForPSD.fileReference}"
+				<file:LoadFile id="loadPSDFile" 
+							   fileReference="{browseForPSD.fileReference}"
 							   complete="psdLoadedHandler(event)"/>
 			</file:selectionEffect>
 		</file:BrowseForFile>
@@ -1252,6 +1253,18 @@
 						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
+		<handlers:EventHandler eventName="click" target="{lostPasswordLabel2}">
+			<fc:OpenPopUp id="openLostPasswordPopUp" 
+						  popUpType="{LoginWindow}" 
+						  modalDuration="150" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="600"
+						  parent="{parentApplication}"
+						  popUpOptions="{{currentState:LoginWindow.LOST_PASSWORD,openingState:LoginWindow.LOST_PASSWORD}}"
+						  close="loginPopUp_closeHandler(event)"/>
+		</handlers:EventHandler>
+		
 		<handlers:EventHandler eventName="click" targets="{[loginLabel,loginLabel2]}">
 			<fc:OpenPopUp id="openLoginPopUp" 
 						  popUpType="{LoginWindow}" 
@@ -1286,6 +1299,15 @@
 		
 		<handlers:EventHandler eventName="itemClick" target="{helpMenuItem}">
 			<fc:OpenPopUp popUpType="{HelpWindow}" 
+						  modalDuration="150" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="600"
+						  parent="{parentApplication}"/>
+		</handlers:EventHandler>
+		
+		<handlers:EventHandler eventName="itemClick" target="{settingsMenuItem}">
+			<fc:OpenPopUp popUpType="{SettingsWindow}" 
 						  modalDuration="150" 
 						  percentWidth="75"
 						  percentHeight="90"
@@ -1376,6 +1398,7 @@
 			<model:MenuItem id="helpMenu" label="Help">
 				<model:MenuItem id="helpMenuItem" label="Online Documentation" />
 				<model:MenuItem id="creditsMenuItem" label="Notices and Credits"/>
+				<model:MenuItem id="settingsMenuItem" label="Settings" />
 			</model:MenuItem>
 		</model:MenuItem>
 		
@@ -1394,13 +1417,13 @@
 						target="{mainLogo}" />
 			<s:Fade alphaFrom="0" alphaTo="1" target="{mainLogo}" duration="250" />
 		</s:Parallel>
-		
+		<!--
 		<s:Rotate3D id="rotateTargetEffect" angleZFrom="0" 
 					angleZTo="90" 
 					autoCenterProjection="true" 
 					autoCenterTransform="true" 
 					duration="250"
-					target="{savingLogo}"/>
+					target="{savingLogo}"/>-->
 		
 		<s:Parallel id="requestAnimation" >
 			<s:Fade alphaFrom="0" alphaTo="1" target="{busyLogo}" duration="500" />
@@ -1429,7 +1452,7 @@
 		
 		<s:Sequence id="notificationMessenger" target="{instantMessengerContainer}" >
 			<mx:AnimateProperty duration="250" fromValue="-2" toValue="28" property="top"/>
-			<mx:AnimateProperty startDelay="4000" duration="250" toValue="-2" fromValue="28" property="top"/>
+			<mx:AnimateProperty startDelay="5000" duration="250" toValue="-2" fromValue="28" property="top"/>
 		</s:Sequence>
 		
 		<!--
@@ -1520,7 +1543,7 @@
 				 >
 		</s:Image>
 		
-		<s:HGroup left="20" y="170" width="100%" right="20">
+		<s:HGroup left="20" y="160" width="100%" right="20">
 			
 			
 			<s:VGroup width="100%">
@@ -1633,6 +1656,18 @@
 			
 			<c:LabelButton id="loginLabel2" 
 					 text="Login" 
+					 verticalAlign="middle" 
+					 textAlign="center"
+					 styleName="loginLabel"
+					 visible="{!radiate.isUserLoggedIn}"
+					 includeInLayout="{!radiate.isUserLoggedIn}"
+					 />
+			
+			<c:VerticalLine visible="{!radiate.isUserLoggedIn}"
+							includeInLayout="{!radiate.isUserLoggedIn}"/>
+			
+			<c:LabelButton id="lostPasswordLabel2" 
+					 text="Lost Password" 
 					 verticalAlign="middle" 
 					 textAlign="center"
 					 styleName="loginLabel"
@@ -1939,16 +1974,13 @@
 	
 	<s:HGroup verticalAlign="middle"
 			  right="10" 
-			  bottom="6"
+			  bottom="5"
 			  left="10"
 			  color="#888888"
 			  >
-		<s:Image id="savingLogo" x="0" y="0" width="18" height="18" 
-				 source="{Radii8LibraryAssets.logo256}"
+		<s:BusyIndicator id="savingLogo" x="0" y="0" width="20" height="20" 
 				 visible="{radiate.saveDocumentInProgress}"
-				 includeInLayout="{radiate.saveDocumentInProgress}"
-				 addedToStage="{rotateTargetEffect.play()}" 
-				 removedFromStage="{rotateTargetEffect.end()}"/>
+				 includeInLayout="{radiate.saveDocumentInProgress}"/>
 		<s:Label text="Last saved:" 
 				 includeInLayout="{radiate.lastSaveDateFormatted!=null}" 
 				 visible="{radiate.lastSaveDateFormatted!=null}"/>

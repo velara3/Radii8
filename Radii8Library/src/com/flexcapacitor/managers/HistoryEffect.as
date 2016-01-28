@@ -6,6 +6,11 @@
 package com.flexcapacitor.managers
 {
 	
+	import com.flexcapacitor.model.MetaData;
+	import com.flexcapacitor.model.StyleMetaData;
+	import com.flexcapacitor.utils.ClassUtils;
+	import com.flexcapacitor.utils.DisplayObjectUtils;
+	
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	
@@ -1463,8 +1468,7 @@ package com.flexcapacitor.managers
 		{
 			// captureValues will create propertyChangesArray if it does not
 			// yet exist
-			propertyChangesArray =
-				captureValues(propertyChangesArray, false);
+			propertyChangesArray = captureValues(propertyChangesArray, false);
 			endValuesCaptured = true;
 		}
 		
@@ -1520,8 +1524,7 @@ package com.flexcapacitor.managers
 							// Don't clobber values already set
 							if (valueMap[effectProps[j]] === undefined)
 							{
-								valueMap[effectProps[j]] = 
-									getValueFromTarget(target,effectProps[j]);
+								valueMap[effectProps[j]] = getValueFromTarget(target, effectProps[j]);
 							}
 						}
 					}
@@ -1554,13 +1557,14 @@ package com.flexcapacitor.managers
 							// Don't clobber values set by relevantProperties
 							if (valueMap[styles[j]] === undefined)
 							{
-								var value:* = target.getStyle(styles[j]);
+								var value:* = getStyleValueFromTarget(target, styles[j]);
 								valueMap[styles[j]] = value;
 							}
 						}
 					}
 				}
 			}
+			
 			
 			return propChanges;
 		}
@@ -1585,12 +1589,52 @@ package com.flexcapacitor.managers
 		 *  @playerversion AIR 1.1
 		 *  @productversion Flex 3
 		 */
-		protected function getValueFromTarget(target:Object, property:String):*
-		{
-			if (property in target)
+		protected function getValueFromTarget(target:Object, property:String):* {
+			var metaData:MetaData;
+			
+			if (property in target) {
+				metaData = ClassUtils.getMetaDataOfProperty(target, property);
+				
+				if (metaData && metaData.isColor) {
+					return DisplayObjectUtils.getColorInHex(target[property], true);
+				}
+				
 				return target[property];
+			}
 			
 			return undefined;
+		}
+		
+		/**
+		 *  Called by the <code>captureStartValues()</code> method to get the value
+		 *  of a style from the target.
+		 *  This function should only be called internally
+		 *  by the effects framework.
+		 *  The default behavior is to simply return <code>target.getStyle(style)</code>.
+		 *  Effect developers can override this function
+		 *  if you need a different behavior. 
+		 *
+		 *  @param target The effect target.
+		 *
+		 *  @param property The target property.
+		 *
+		 *  @return The value of the target property. 
+		 *  
+		 *  @langversion 3.0
+		 *  @playerversion Flash 9
+		 *  @playerversion AIR 1.1
+		 *  @productversion Flex 3
+		 */
+		protected function getStyleValueFromTarget(target:Object, style:String):*
+		{
+			var metaData:StyleMetaData = ClassUtils.getMetaDataOfStyle(target, style);
+			
+			if (metaData && metaData.isColor) {
+				return DisplayObjectUtils.getColorInHex(target.getStyle(style), true);
+			}
+			
+			return target.getStyle(style);
+			
 		}
 		
 		/**

@@ -15,6 +15,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IProject;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
@@ -206,6 +207,18 @@
 					Radiate.openUsersWebsite();
 				}
 			}
+			
+			protected function shareIcon_clickHandler(event:MouseEvent):void
+			{
+				if (radiate.selectedDocument) {
+					RunManager.copyURLToHomePage(radiate.selectedDocument as DocumentData);
+				}
+				else {
+					Radiate.warn("No project is open");
+				}
+			}
+			
+			
 		]]>
 	</fx:Script>
 	
@@ -289,21 +302,31 @@
 					   visible="false"
 					   includeInLayout="false"
 					   />
-		<s:CheckBox id="autoSaveToggle" 
-					selected="{radiate.enableAutoSave}"
-					useHandCursor="true"
-					buttonMode="true"
-					enabled="true"
-					toolTip="Enables auto save"
-					label="Auto Save"
-					click="autoSaveToggle_clickHandler(event)"
-					/>
+		
+		<c:BeveledImageButton id="shareIcon" 
+							  source="{Radii8LibraryAssets.share}" 
+							  toolTip="Share"
+							  click="shareIcon_clickHandler(event)"
+							  width="16"
+							  height="22"
+							  />
 		
 		<c:BeveledImageButton id="openHomePageInBrowserButton" 
 							  source="{Radii8LibraryEffectsAssets.play}" 
 							  toolTip="View home page in browser"
 							  click="openHomePageInBrowserButton_clickHandler()"
 							  />
+		
+		<s:CheckBox id="autoSaveToggle" 
+					selected="{radiate.enableAutoSave}"
+					useHandCursor="true"
+					buttonMode="true"
+					enabled="true"
+					toolTip="Enables auto save on project and documents"
+					label="Auto Save"
+					click="autoSaveToggle_clickHandler(event)"
+					/>
+		
 		<s:Spacer width="100%"/>
 		<!--<c:ImageButton id="closeProjectIcon" 
 					   source="{Radii8LibraryAssets.closedFolder}" 

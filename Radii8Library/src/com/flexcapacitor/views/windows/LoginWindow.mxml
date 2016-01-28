@@ -22,14 +22,6 @@
 			   stateChangeComplete="stateChangeCompleteHandler(event)"
 			   >
 	
-	<fx:Style>
-		@namespace s "library://ns.adobe.com/flex/spark";
-		@namespace c "com.flexcapacitor.controls.*";
-		@namespace mx "library://ns.adobe.com/flex/mx";
-		@namespace handlers "com.flexcapacitor.handlers.*";
-		@namespace fc "com.flexcapacitor.effects.popup.*";
-		
-	</fx:Style>
 	
 	<fx:Script>
 		<![CDATA[
@@ -52,6 +44,7 @@
 			use namespace mx_internal;
 			
 			private var username:String;
+			public var openingState:String;
 			
 			public static const REGISTER:String = "register";
 			public static const LOGIN:String = "login";
@@ -183,7 +176,7 @@
 					value = savePassword.checkForPassword(usernameTextInput.text);
 				}
 				
-				if (value!="") {
+				if (value) {
 					passwordTextInput.text = value;
 					passwordTextInput.selectAll();
 				}
@@ -199,6 +192,7 @@
 			}
 			
 			private function logout():void {
+				PersistentStorage.remove(Radiate.USER_STORE);
 				logoutWarningsLabel.text = "";
 				serviceManager.addEventListener(RadiateEvent.LOGOUT_RESULTS, logoutResultsHandler, false, 0, true);
 				serviceManager.logout();
@@ -283,6 +277,11 @@
 				inProgress = true;
 				lostPasswordWarningsLabel.text = "";
 				username = usernameOrEmailTextInput.text;
+				
+				if (username=="") {
+					lostPasswordWarningsLabel.text = "Please enter your username or email address.";
+					return;
+				}
 				serviceManager.addEventListener(RadiateEvent.LOST_PASSWORD_RESULTS, onLostPasswordResults, false, 0, true);
 				serviceManager.lostPassword(usernameOrEmailTextInput.text);
 			}
@@ -646,8 +645,15 @@
 				serviceManager.getLoggedInStatus();
 			}
 			
-			protected function passwordTextInput_enterHandler(event:FlexEvent):void {
+			
+			protected function lostPasswordCancelButton_clickHandler(event:MouseEvent):void
+			{
+				if (openingState==LOST_PASSWORD) {
+					closePopUp.play();
+					return;
+				}
 				
+				currentState = LOGIN;
 			}
 			
 		]]>
@@ -809,14 +815,14 @@
 		
 		<s:Label text="Username" />
 		<s:TextInput id="usernameTextInput" 
-					 text="" 
+					 minWidth="200"
 					 focusOut="username_focusOutHandler(event)" 
 					 prompt="Username"
 					 styleName="textInputStyles"
 					 />
 		<s:Label text="Password"  />
-		<s:TextInput id="passwordTextInput" 
-					 text="" 
+		<s:TextInput id="passwordTextInput"
+					 minWidth="200"
 					 displayAsPassword="true" 
 					 prompt="Password"
 					 styleName="textInputStyles"
@@ -899,6 +905,7 @@
 					 visible="{inProgress}"
 					 />
 			<s:Spacer width="100%"/>
+			<s:Button id="lostPasswordCancelButton" label="Cancel" click="lostPasswordCancelButton_clickHandler(event)" />
 			<s:Button id="lostPasswordButton" label="Get New Password" click="getNewPasswordButton_clickHandler(event)" />
 		</s:HGroup>
 		

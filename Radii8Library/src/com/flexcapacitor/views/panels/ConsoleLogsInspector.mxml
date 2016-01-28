@@ -39,7 +39,7 @@
 				var issue:IssueData = list.selectedItem as IssueData;
 				
 				if (issue) {
-					Radiate.logToConsole(issue.description);
+					//Radiate.logToConsole(issue.description);
 				}
 			}
 			

@@ -68,7 +68,7 @@
 				 paddingTop="2" />
 	</s:HGroup>
 	
-	<controls:HorizontalLine id="horizontalLine" includeIn="hovered" strokeColor="#000000" bottom="0"
+	<controls:HorizontalLine id="horizontalLine" includeIn="hovered" color="#000000" bottom="0"
 							 alpha.hovered=".15"
 							 visible="false"/>
 	

@@ -242,6 +242,8 @@ package com.flexcapacitor.managers {
 		public static function getSourceData(target:Object, document:IDocument, language:* = null, options:ExportOptions = null):SourceData {
 			var targetDescription:ComponentDescription;
 			var transcoderDescription:TranscoderDescription;
+			var exporter:DocumentTranscoder;
+			var sourceData:SourceData;
 			
 			if (target==null && document) {
 				target = document.instance;
@@ -254,9 +256,14 @@ package com.flexcapacitor.managers {
 				transcoderDescription = TranscoderDescription(language);
 			}
 			
-			// find target in display list and get it's code
-			targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, document.componentDescription);
+			if (target is ComponentDescription) {
+				targetDescription = target as ComponentDescription;
+			}
 			
+			// find target in display list and get it's code
+			if (targetDescription==null) {
+				targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, document.componentDescription);
+			}
 			
 			if (targetDescription) {
 				
@@ -268,13 +275,13 @@ package com.flexcapacitor.managers {
 					transcoderDescription = getExporter(language);
 				}
 				
-				var exporter:DocumentTranscoder = transcoderDescription ? transcoderDescription.exporter : null;
+				exporter = transcoderDescription ? transcoderDescription.exporter : null;
 				
 				if (!transcoderDescription) {
 					throw new Error("There is no exporter for " + language + ".");
 				}
 				
-				var sourceData:SourceData = exporter.export(document, targetDescription, options);
+				sourceData = exporter.export(document, targetDescription, options);
 				
 				return sourceData;
 			}
@@ -350,6 +357,33 @@ package com.flexcapacitor.managers {
 			sourceData = importer.importare(source, document, targetDescription, importOptions);
 			
 			return sourceData;
+			
+		}
+		
+		/**
+		 * Sets the version number on all transcoders. 
+		 * This is a temporary way to make sure we are including the application
+		 * version number in the exported code.
+		 * */
+		public static function setTranscodersVersion(version:String):void {
+			var transcoderDescription:TranscoderDescription;
+			var numberOfTranscoders:int = transcoders.length;
+			var documentTranscoder:DocumentTranscoder;
+			
+			for (var i:int = 0; i < numberOfTranscoders; i++) {
+				transcoderDescription = transcoders.getItemAt(i) as TranscoderDescription;
+				documentTranscoder = transcoderDescription.importer;
+				
+				if (documentTranscoder) {
+					documentTranscoder.version = version;
+				}
+				
+				documentTranscoder = transcoderDescription.exporter;
+				
+				if (documentTranscoder) {
+					documentTranscoder.version = version;
+				}
+			}
 			
 		}
 	}

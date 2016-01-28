@@ -1,20 +1,20 @@
 package com.flexcapacitor.managers {
 	
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.effects.clipboard.CopyToClipboard;
 	import com.flexcapacitor.effects.popup.OpenPopUp;
 	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.model.SourceData;
-	import com.flexcapacitor.model.TranscoderOptions;
 	import com.flexcapacitor.services.WPService;
-	import com.flexcapacitor.utils.DisplayObjectUtils;
-	import com.flexcapacitor.utils.DocumentTranscoder;
-	import com.flexcapacitor.utils.HTMLDocumentExporter;
 	import com.flexcapacitor.views.ImageView;
 	import com.google.code.flexiframe.IFrame;
 	
+	import flash.desktop.Clipboard;
+	import flash.desktop.ClipboardFormats;
 	import flash.display.BitmapData;
+	import flash.events.ErrorEvent;
 	import flash.events.EventDispatcher;
 	
 	import mx.core.UIComponent;
@@ -30,6 +30,8 @@ package com.flexcapacitor.managers {
 		public function RunManager():void {
 			
 		}
+		
+		public static var openPopUp:OpenPopUp;
 		
 		public static var documentNotPublishedWarning:Boolean;
 		
@@ -185,6 +187,116 @@ package com.flexcapacitor.managers {
 			}
 		}
 		
-		public static var openPopUp:OpenPopUp;
+		/**
+		 * Copy URL to document to the clipboard
+		 * */
+		public static function copyURLToDocument(documentData:DocumentData):void {
+			var clipboard:Clipboard = Clipboard.generalClipboard;
+			var formatText:String = ClipboardFormats.TEXT_FORMAT;
+			var formatURL:String = ClipboardFormats.URL_FORMAT;
+			var serializable:Boolean;
+			var url:String;
+			
+			if (documentData==null) {
+				Radiate.warn("No document was selected.");
+				return;
+			}
+			
+			if (documentData.id==null) {
+				Radiate.warn("The document is not saved. It will not have a URL until has been saved.");
+				return;
+			}
+			
+			if (documentData) {
+				
+				if (documentData is ImageData) {
+					url = ImageData(documentData).url;
+				}
+				else {
+					url = documentData.uri;
+				}
+				
+				if (documentData.status!=WPService.STATUS_PUBLISH) {
+					Radiate.warn("The document is not published. Until it is published it will only be visible when logged in with edit priviledges.");
+					//return;
+				}
+			}
+			
+			// it's recommended to clear the clipboard before setting new content
+			clipboard.clear();
+			
+			try {
+				clipboard.setData(formatText, String(url), serializable);
+				
+				if (Radiate.isDesktop) {
+					clipboard.setData(formatURL, String(url), serializable);
+				}
+				Radiate.info("A link to the document was copied to the clipboard");
+			}
+			catch (error:ErrorEvent) {
+				Radiate.error("Couldn't copy link to the document");
+			}
+		}
+		
+		/**
+		 * Copies URL to home page. This is the users WordPress sub site url
+		 * If the user does not have a home page set then this goes to their blog
+		 * In the future we should try to setup a way to have more than one
+		 * home page. So one home page per project. Maybe if they visit
+		 * the project document (which stores the project data) it instead
+		 * shows their home page if set. 
+		 * */
+		public static function copyURLToHomePage(documentData:DocumentData):void {
+			var clipboard:Clipboard = Clipboard.generalClipboard;
+			var formatText:String = ClipboardFormats.TEXT_FORMAT;
+			var formatURL:String = ClipboardFormats.URL_FORMAT;
+			var serializable:Boolean;
+			var url:String;
+			/*
+			if (documentData==null) {
+				Radiate.warn("No document was selected.");
+				return;
+			}
+			
+			if (documentData.id==null) {
+				Radiate.warn("The document is not saved. It will not have a URL until has been saved.");
+				return;
+			}
+			*/
+			url = Radiate.getWPURL();
+			
+			if (documentData) {
+				
+				/*
+				if (documentData is ImageData) {
+					url = ImageData(documentData).url;
+				}
+				else {
+					url = documentData.uri;
+				}
+				
+				if (documentData.status!=WPService.STATUS_PUBLISH) {
+					Radiate.warn("The document is not published. Until it is published it will only be visible when logged in with edit priviledges.");
+					//return;
+				}*/
+			}
+			
+			// it's recommended to clear the clipboard before setting new content
+			clipboard.clear();
+			
+			try {
+				clipboard.setData(formatText, String(url), serializable);
+				
+				if (Radiate.isDesktop) {
+					clipboard.setData(formatURL, String(url), serializable);
+				}
+				
+				Radiate.info("A link to the home page was copied to the clipboard");
+			}
+			catch (error:ErrorEvent) {
+				Radiate.error("Couldn't copy link to the home page");
+			}
+			
+		}
 	}
 }

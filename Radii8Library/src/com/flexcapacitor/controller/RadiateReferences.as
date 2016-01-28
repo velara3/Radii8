@@ -21,6 +21,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.Identity;
 	import com.flexcapacitor.views.inspectors.ImageProperties;
 	import com.flexcapacitor.views.inspectors.Layout;
+	import com.flexcapacitor.views.inspectors.LineProperties;
 	import com.flexcapacitor.views.inspectors.StyleNameInspector;
 	import com.flexcapacitor.views.inspectors.TextInspector;
 	import com.flexcapacitor.views.inspectors.VideoPlayerProperties;
@@ -66,22 +67,22 @@ package com.flexcapacitor.controller {
 		// TOOLS CLASSES
 		///////////////////////////////////////////////////////
 		
-		public static var identity:com.flexcapacitor.views.inspectors.Identity;
-		public static var size:com.flexcapacitor.views.Size;
-		public static var borderStyles:com.flexcapacitor.views.inspectors.BorderStyles;
-		public static var fontStyles:com.flexcapacitor.views.inspectors.FontStyles;
-		public static var textInspector:com.flexcapacitor.views.inspectors.TextInspector;
 		public static var basicBackgroundInspector:com.flexcapacitor.views.inspectors.BasicBackgroundStyles;
-		public static var imageInspector:com.flexcapacitor.views.inspectors.ImageProperties;
-		public static var videoPlayerInspector:com.flexcapacitor.views.inspectors.VideoPlayerProperties;
-		public static var borderStylesInspector:com.flexcapacitor.views.inspectors.BorderStyles;
+		public static var borderStyles:com.flexcapacitor.views.inspectors.BorderStyles;
 		public static var buttonInspector:com.flexcapacitor.views.inspectors.Button;
-		public static var groupInspector:com.flexcapacitor.views.inspectors.GroupLayoutInspector;
+		public static var fontStyles:com.flexcapacitor.views.inspectors.FontStyles;
 		public static var gapInspector:com.flexcapacitor.views.inspectors.Gap;
-		public static var layoutInspector:com.flexcapacitor.views.inspectors.Layout;
-		public static var styleNameInspector:com.flexcapacitor.views.inspectors.StyleNameInspector;
-		public static var hyperLinkInspector:com.flexcapacitor.views.inspectors.HyperLink;
 		public static var groupAlignInspector:com.flexcapacitor.views.inspectors.GroupAlign;
+		public static var groupInspector:com.flexcapacitor.views.inspectors.GroupLayoutInspector;
+		public static var hyperLinkInspector:com.flexcapacitor.views.inspectors.HyperLink;
+		public static var identity:com.flexcapacitor.views.inspectors.Identity;
+		public static var imageInspector:com.flexcapacitor.views.inspectors.ImageProperties;
+		public static var layoutInspector:com.flexcapacitor.views.inspectors.Layout;
+		public static var lineProperties:com.flexcapacitor.views.inspectors.LineProperties;
+		public static var size:com.flexcapacitor.views.Size;
+		public static var styleNameInspector:com.flexcapacitor.views.inspectors.StyleNameInspector;
+		public static var textInspector:com.flexcapacitor.views.inspectors.TextInspector;
+		public static var videoPlayerInspector:com.flexcapacitor.views.inspectors.VideoPlayerProperties;
 		
 		///////////////////////////////////////////////////////
 		// TRANSCODER CLASSES
