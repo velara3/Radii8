@@ -17,9 +17,14 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
+			import mx.collections.ArrayCollection;
+			
+			import spark.events.IndexChangeEvent;
 			import spark.events.TextOperationEvent;
 			
 			
@@ -29,14 +34,24 @@
 			public var target:Object;
 			public var componentDescription:ComponentDescription;
 			
+			public var anchorTargetsCollection:ArrayCollection;
+			public var anchorTargets:Array = ["_blank", "new", "_parent", "_self", "_top"];
 			
 			public function activate():void {
+				
+				if (!anchorTargetsCollection) {
+					anchorTargetsCollection = new ArrayCollection(anchorTargets);
+					targetsComboBox.dataProvider = anchorTargetsCollection;
+				}
 				
 				if (radiate.target) {
 					targetChangedHandler();
 				}
+				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChangedHandler, false, 0, true);
+				
+				
 			}
 			
 			public function deactivate():void {
@@ -63,6 +78,10 @@
 					
 					embedSnapshopIntoBackground.selected = componentDescription.createBackgroundSnapshot;
 					convertElementToImage.selected = componentDescription.convertElementToImage;
+					
+					wrapWithAnchor.selected = componentDescription.wrapWithAnchor;
+					targetsComboBox.selectedItem = componentDescription.anchorTarget;
+					urlTextInput.text = componentDescription.anchorURL;
 				}
 			}
 			
@@ -77,12 +96,58 @@
 				
 				if (componentDescription) {
 					Radiate.setProperty(componentDescription, "userStyles", componentCSS.text);
-					//componentDescription.userStyles = componentCSS.text;
-					
+				}
+			}
+			
+			protected function wrapWithAnchor_changeHandler(event:Event):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (componentDescription==null && radiate.target) { 
+					componentDescription = iDocument.getItemDescription(target);
+				}
+				
+				if (componentDescription) {
+					Radiate.setProperty(componentDescription, "wrapWithAnchor", wrapWithAnchor.selected);
+				
+					if (wrapWithAnchor.selected) {
+						Radiate.setProperty(componentDescription, "anchorURL", urlTextInput.text);
+						if (event.type=="textInput") {
+							Radiate.setProperty(componentDescription, "anchorTarget", targetsComboBox.textInput.text);
+						}
+						else {
+							Radiate.setProperty(componentDescription, "anchorTarget", targetsComboBox.selectedItem);
+						}
+					}
+					else {
+						Radiate.clearProperty(componentDescription, "anchorURL");
+						Radiate.clearProperty(componentDescription, "anchorTarget");
+					}
+				}
+			}
+			
+			protected function embedSnapshopIntoBackground_changeHandler(event:Event):void {
+				var iDocument:IDocument;
+				
+				if (componentDescription==null && radiate.target) {
+					iDocument = radiate.selectedDocument;
+					componentDescription = iDocument.getItemDescription(target);
+				}
+				
+				if (componentDescription) {
 					Radiate.setProperty(componentDescription, "createBackgroundSnapshot", embedSnapshopIntoBackground.selected);
+				}				
+			}
+			
+			protected function convertElementToImage_changeHandler(event:Event):void {
+				var iDocument:IDocument;
+				
+				if (componentDescription==null && radiate.target) {
+					iDocument = radiate.selectedDocument;
+					componentDescription = iDocument.getItemDescription(target);
+				}
+				
+				if (componentDescription) {
 					Radiate.setProperty(componentDescription, "convertElementToImage", convertElementToImage.selected);
-					//componentDescription.createBackgroundSnapshot = embedSnapshopIntoBackground.selected;
-					//componentDescription.convertElementToImage = convertElementToImage.selected;
 				}
 			}
 			
@@ -97,10 +162,10 @@
 	
 	<s:CheckBox id="embedSnapshopIntoBackground" 
 				label="Embed snapshot into element background" 
-				change="componentCSS_changeHandler(event)"/>
+				change="embedSnapshopIntoBackground_changeHandler(event)"/>
 	<s:CheckBox id="convertElementToImage" 
 				label="Convert element into image" 
-				change="componentCSS_changeHandler(event)"/>
+				change="convertElementToImage_changeHandler(event)"/>
 	<s:Spacer />
 	<s:Label text="Enter your own CSS here" />
 	
@@ -110,4 +175,23 @@
 		
 	</s:TextArea>
 	
+	<s:HGroup width="100%" verticalAlign="baseline" gap="5">
+		<s:CheckBox id="wrapWithAnchor" 
+					label="Wrap in hyperlink" 
+					change="wrapWithAnchor_changeHandler(event)"/>
+		<s:ComboBox id="targetsComboBox" 
+					height="22" 
+					width="80" color="blue"
+					enabled="{wrapWithAnchor.selected}"
+					textInput="wrapWithAnchor_changeHandler(event)"
+					change="wrapWithAnchor_changeHandler(event)"/>
+		<s:TextInput id="urlTextInput" 
+					 height="22" 
+					 width="100%" 
+					 prompt="URL"
+					 enabled="{wrapWithAnchor.selected}"
+					 change="wrapWithAnchor_changeHandler(event)"
+					/>
+	</s:HGroup>
+
 </s:VGroup>

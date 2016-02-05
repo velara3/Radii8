@@ -79,7 +79,6 @@
     <classEntry path="com.flexcapacitor.utils.MXMLDocumentExporter"/>
     <classEntry path="com.flexcapacitor.utils.MXMLDocumentImporter"/>
     <classEntry path="com.flexcapacitor.utils.MXMLImporterEvent"/>
-    <classEntry path="com.flexcapacitor.utils.SyntaxHighlighter"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.DragData"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.ISelectionGroup"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.TargetSelectionGroup"/>
@@ -125,14 +124,13 @@
     <classEntry path="com.flexcapacitor.views.inspectors.Gap"/>
     <classEntry path="com.flexcapacitor.views.inspectors.GroupAlign"/>
     <classEntry path="com.flexcapacitor.views.inspectors.GroupLayoutInspector"/>
-    <classEntry path="com.flexcapacitor.views.inspectors.HyperLink"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.HyperlinkInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.Identity"/>
     <classEntry path="com.flexcapacitor.views.inspectors.ImageProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.Layout"/>
     <classEntry path="com.flexcapacitor.views.inspectors.StyleNameInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.TextInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.CodeInspector"/>
-    <classEntry path="com.flexcapacitor.views.panels.CodeInspectorOld"/>
     <classEntry path="com.flexcapacitor.views.panels.ComponentsInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.ConsoleInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.ConstraintsInspector"/>

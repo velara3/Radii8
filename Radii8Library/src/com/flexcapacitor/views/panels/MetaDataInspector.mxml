@@ -21,7 +21,7 @@
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.ClassUtils;
-			import com.flexcapacitor.utils.SyntaxHighlighter;
+			//import com.flexcapacitor.utils.SyntaxHighlighter;
 			
 			import mx.core.UIComponent;
 			
@@ -30,7 +30,8 @@
 			 * */
 			public var radiate:Radiate;
 			
-			public var syntaxHighlighter:SyntaxHighlighter;
+			//public var syntaxHighlighter:SyntaxHighlighter;
+			public var syntaxHighlighter:Object;
 			
 			public var rawData:String;
 			
@@ -159,10 +160,10 @@
 			private function mxTextAreaChangeHandler():void {
 				//trace("change handler:" + getTimer())
 				if (!syntaxHighlighter) {
-					syntaxHighlighter = new SyntaxHighlighter(mxTextArea);
+					/*syntaxHighlighter = new SyntaxHighlighter(mxTextArea);
 					syntaxHighlighter.timerInterval = 20;
 					syntaxHighlighter.cssString = SyntaxHighlighter.CRIMSON_EDITOR_CSS;
-					syntaxHighlighter.addEventListener(Event.COMPLETE, completeHandler, false, 0, true);
+					syntaxHighlighter.addEventListener(Event.COMPLETE, completeHandler, false, 0, true);*/
 				}
 				
 				// do not highlight - it's too slow and slows everything else down

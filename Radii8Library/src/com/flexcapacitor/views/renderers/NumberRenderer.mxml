@@ -64,9 +64,9 @@
 	</r:layout>
 	
 	<s:NumericStepper id="numericStepper" 
-					  minWidth="50"
+					  minWidth="40"
 					  width="100%"
-					  maxWidth="80"
+					  maxWidth="70"
 					  snapInterval="0"
 					  valueFormatFunction="formatNumericStepper"
 					  valueParseFunction="valueParseFunctionNew"

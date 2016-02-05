@@ -524,9 +524,13 @@ package com.flexcapacitor.utils {
 	
 		/**
 		 * Gets the formatted output from a component.
-		 * Yes, this is a mess. It needs refactoring.  
+		 * Yes, this is hacky. It needs rewritten.  
 		 * I wanted to see if I could quickly generate valid HTML 
-		 * from the component tree and haven't had the chance to do it right. 
+		 * from the component tree and didn't know the performance cost
+		 * of using XML objects (need to test). Would like to use OOP or XML E4X
+		 * but whatever it is it must support plugins, pre and post processors.
+		 * 
+		 * A problem using XML is that HTML is not XML. Some XML tags will not work. 
 		 * 
 		 * I did start though. There is partial work with CSS properties objects 
 		 * but those aren't used yet. 
@@ -562,6 +566,9 @@ package com.flexcapacitor.utils {
 			var centeredHorizontally:Boolean;
 			var wrapperTagStyles:String = "";
 			var wrapperSVGStyles:String = "";
+			var wrapWithAnchor:Boolean;
+			var anchorURL:String;
+			var anchorTarget:String;
 			var properties:String = "";
 			var outlineStyle:String;
 			var initialTabs:String = tabs;
@@ -579,7 +586,18 @@ package com.flexcapacitor.utils {
 			var index:int;
 			var value:*;
 			var gap:int;
+			var newLine:String = "\n";
+			var snapshotBackground:Boolean;
+			var convertElementToImage:Boolean;
+			var imageDataStyle:String;
+			var imageDataFormat:String = "png";
+			var isHorizontalCenterSet:Boolean;
+			var isVerticalCenterSet:Boolean;
+			var anchor:XML;
 			
+			wrapWithAnchor 	= componentDescription.wrapWithAnchor;
+			anchorURL 		= componentDescription.anchorURL;
+			anchorTarget	= componentDescription.anchorTarget;
 			
 			// we are setting the styles in a string now
 			// the next refactor should use the object so we can output to CSS
@@ -694,8 +712,6 @@ package com.flexcapacitor.utils {
 			}
 			
 			// constraints take higher authority
-			var isHorizontalCenterSet:Boolean;
-			var isVerticalCenterSet:Boolean;
 			
 			// loop through assigned properties and check for layout rules 
 			for (var propertyName:String in propertiesStylesObject) {
@@ -723,11 +739,9 @@ package com.flexcapacitor.utils {
 				
 			}
 			
-			var snapshotBackground:Boolean = componentDescription.createBackgroundSnapshot;
-			var convertElementToImage:Boolean = componentDescription.convertElementToImage;
-			var imageDataStyle:String;
+			snapshotBackground = componentDescription.createBackgroundSnapshot;
+			convertElementToImage = componentDescription.convertElementToImage;
 			//var imageDataFormat:String = "jpeg";
-			var imageDataFormat:String = "png";
 			
 			
 			
@@ -741,7 +755,7 @@ package com.flexcapacitor.utils {
 					//imageDataStyle = convertComponentToImage(componentInstance);
 					//styleValue += "" + imageDataStyle;
 					
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<img " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -901,7 +915,7 @@ package com.flexcapacitor.utils {
 				
 				else if (localName=="group" || localName=="vgroup") {
 					htmlName = "div";
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<div " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -931,7 +945,7 @@ package com.flexcapacitor.utils {
 				else if (localName=="bordercontainer") {
 					htmlName = "div";
 					
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<div " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -965,7 +979,7 @@ package com.flexcapacitor.utils {
 				
 				else if (localName=="hgroup" || localName=="tilegroup") {
 					htmlName = "div";
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<div " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -1038,7 +1052,7 @@ package com.flexcapacitor.utils {
 				}
 				else if (localName=="button" || localName=="togglebutton") {
 					htmlName = "button";
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<input " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -1065,7 +1079,7 @@ package com.flexcapacitor.utils {
 				else if (localName=="videoplayer") {
 					htmlName = "video";
 					
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					
 					layoutOutput += "<" +htmlName+ " ";
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
@@ -1103,7 +1117,7 @@ package com.flexcapacitor.utils {
 					htmlName = localName;
 					
 					if (componentInstance.label!="") {
-						layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						layoutOutput += "<label ";
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput, "_Label");
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -1126,7 +1140,7 @@ package com.flexcapacitor.utils {
 						layoutOutput += "/>" ;
 					}
 					else {
-						layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						layoutOutput += "<input " + properties;
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -1148,7 +1162,7 @@ package com.flexcapacitor.utils {
 				else if (localName=="radiobutton") {
 					htmlName = "radio";
 					if (componentInstance.label!="") {
-						layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						layoutOutput += "<label ";
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput, "_Label");
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -1169,7 +1183,7 @@ package com.flexcapacitor.utils {
 						layoutOutput += "/>" ;
 					}
 					else {
-						layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						layoutOutput += "<input type=\"" + htmlName.toLowerCase() + "\" " + properties;
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -1194,7 +1208,7 @@ package com.flexcapacitor.utils {
 						|| localName=="hslider" || localName=="vslider" ) {
 					
 					htmlName = "input";
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					
 					layoutOutput += "<" +htmlName+ " ";
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
@@ -1277,7 +1291,7 @@ package com.flexcapacitor.utils {
 				else if (localName=="dropdownlist" || localName=="list") {
 					htmlName = "select";
 					
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<select ";
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -1329,10 +1343,10 @@ package com.flexcapacitor.utils {
 					}
 					
 					if (useWrapperDivs) {
-						layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					}
 					else {
-						layoutOutput = tabs;
+						//layoutOutput = tabs;
 					}
 					
 					layoutOutput += "<" + htmlName + " "  + properties;
@@ -1405,7 +1419,7 @@ package com.flexcapacitor.utils {
 					}
 				}
 				else if (localName=="image") {
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<img " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
@@ -1433,10 +1447,10 @@ package com.flexcapacitor.utils {
 					htmlName = "div";
 					
 					if (useWrapperDivs) {
-						layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					}
 					else {
-						layoutOutput = tabs;
+						//layoutOutput = tabs;
 					}
 					
 					layoutOutput += "<div "  + properties;
@@ -1466,7 +1480,7 @@ package com.flexcapacitor.utils {
 					//if (useWrapperDivs) {
 					wrapperSVGStyles = styleValue;
 					wrapperSVGStyles += getLineWrapperSize(componentInstance);
-					layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperSVGStyles);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperSVGStyles);
 					//}
 					//else {
 					//	layoutOutput = tabs;
@@ -1525,10 +1539,10 @@ package com.flexcapacitor.utils {
 					// show placeholder NOT actual component
 					htmlName = "label";
 					if (useWrapperDivs) {
-						layoutOutput = tabs + getWrapperTag(wrapperTag, false, wrapperTagStyles);
+						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					}
 					else {
-						layoutOutput = tabs;
+						//layoutOutput = tabs;
 					}
 					layoutOutput += "<label "  + properties;
 					
@@ -1564,7 +1578,29 @@ package com.flexcapacitor.utils {
 					
 				}
 				
-				var newLine:String = "\n";
+				// add tabs
+				if (layoutOutput!="") {
+					layoutOutput = tabs + layoutOutput;
+				}
+				
+				// add anchor - rewrite this using pre or post processor
+				if (wrapWithAnchor) {
+					anchor = <a/>;
+					if (anchorURL) {
+						anchor.@href = anchorURL;
+					}
+					
+					if (anchorTarget) {
+						anchor.@target = anchorTarget;
+					}
+					
+					layoutOutput = initialTabs + XMLUtils.getOpeningTag(anchor)  + "\n\t" + layoutOutput + "\n" + initialTabs + "</a>";
+				}
+				
+				// add special wordpress loop code (rewrite later by saving markup to custom field - this will be gone) 
+				if (identity && identity.toLowerCase()=="theloop") {
+					layoutOutput = "\n" + initialTabs + "<!--the loop-->"  + "\n" + layoutOutput + "\n" + initialTabs + "<!--the loop-->";
+				}
 				
 				if (localName=="application" && !addContainerDiv) {
 					newLine = "";
@@ -1617,10 +1653,6 @@ package com.flexcapacitor.utils {
 			}
 			else {
 				layoutOutput = "";
-			}
-			
-			if (identity && identity.toLowerCase()=="theloop") {
-				layoutOutput = "\n" + initialTabs + "<!--the loop-->"  + "\n" + layoutOutput + "\n" + initialTabs + "<!--the loop-->";
 			}
 			
 			return layoutOutput;

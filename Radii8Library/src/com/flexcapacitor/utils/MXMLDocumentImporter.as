@@ -269,6 +269,24 @@ package com.flexcapacitor.utils {
 					componentDescription.createBackgroundSnapshot = valuesObject.values[createBackgroundSnapshot];
 				}
 				
+				var wrapWithAnchor:String = fcNamespaceURI + "::wrapWithAnchor";
+				
+				if (attributes.indexOf(wrapWithAnchor)!=-1) {
+					componentDescription.wrapWithAnchor = valuesObject.values[wrapWithAnchor];
+					
+					var anchorURL:String = fcNamespaceURI + "::anchorURL";
+					var anchorTarget:String = fcNamespaceURI + "::anchorTarget";
+					
+					if (attributes.indexOf(anchorURL)!=-1) {
+						componentDescription.anchorURL = valuesObject.values[anchorURL];
+					}
+					
+					if (attributes.indexOf(anchorTarget)!=-1) {
+						componentDescription.anchorTarget = valuesObject.values[anchorTarget];
+					}
+				}
+				
+				
 				newComponents.push(componentInstance);
 				// might want to get a properties object from the attributes 
 				// and then use that in the add element call above 

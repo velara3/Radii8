@@ -275,6 +275,7 @@ package com.flexcapacitor.utils {
 				output += fcNamespace + ":" + "name=\"" + componentDescription.name + "\"";
 			}
 			
+			// maybe change this to htmlUserStyles and use fcNamespace
 			if (componentDescription.userStyles) {
 				output += " ";
 				output += htmlNamespace + ":" + "style=\"" + XMLUtils.getAttributeSafeString(componentDescription.userStyles) + "\"";
@@ -288,6 +289,21 @@ package com.flexcapacitor.utils {
 			if (componentDescription.createBackgroundSnapshot) {
 				output += " ";
 				output += fcNamespace + ":" + "createBackgroundSnapshot=\"" +componentDescription.createBackgroundSnapshot + "\"";
+			}
+			
+			if (componentDescription.wrapWithAnchor) {
+				output += " ";
+				output += fcNamespace + ":" + "wrapWithAnchor=\"" +componentDescription.wrapWithAnchor + "\"";
+				
+				if (componentDescription.anchorURL) {
+					output += " ";
+					output += fcNamespace + ":" + "anchorURL=\"" +componentDescription.anchorURL + "\"";
+				}
+				
+				if (componentDescription.anchorTarget) {
+					output += " ";
+					output += fcNamespace + ":" + "anchorTarget=\"" +componentDescription.anchorTarget + "\"";
+				}
 			}
 			
 			if (componentDescription.instance is Image || componentDescription.instance is BitmapImage) {

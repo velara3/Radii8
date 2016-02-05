@@ -63,7 +63,7 @@
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Text" className="com.flexcapacitor.views.inspectors.TextInspector"/>
-    		<inspector name="Link" className="com.flexcapacitor.views.inspectors.HyperLink"/>
+    		<inspector name="Link" className="com.flexcapacitor.views.inspectors.HyperlinkInspector"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>

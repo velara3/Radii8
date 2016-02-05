@@ -838,7 +838,7 @@
 			 paddingTop="8"
 			 >
 		<renderers:NumberRenderer id="alphaRenderer" 
-								  width="54" 
+								  width="40" 
 								  showClearButton="false" 
 								  snapInterval="0"
 								  toolTip="Alpha"

@@ -17,7 +17,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.Gap;
 	import com.flexcapacitor.views.inspectors.GroupAlign;
 	import com.flexcapacitor.views.inspectors.GroupLayoutInspector;
-	import com.flexcapacitor.views.inspectors.HyperLink;
+	import com.flexcapacitor.views.inspectors.HyperlinkInspector;
 	import com.flexcapacitor.views.inspectors.Identity;
 	import com.flexcapacitor.views.inspectors.ImageProperties;
 	import com.flexcapacitor.views.inspectors.Layout;
@@ -74,7 +74,7 @@ package com.flexcapacitor.controller {
 		public static var gapInspector:com.flexcapacitor.views.inspectors.Gap;
 		public static var groupAlignInspector:com.flexcapacitor.views.inspectors.GroupAlign;
 		public static var groupInspector:com.flexcapacitor.views.inspectors.GroupLayoutInspector;
-		public static var hyperLinkInspector:com.flexcapacitor.views.inspectors.HyperLink;
+		public static var hyperLinkInspector:com.flexcapacitor.views.inspectors.HyperlinkInspector;
 		public static var identity:com.flexcapacitor.views.inspectors.Identity;
 		public static var imageInspector:com.flexcapacitor.views.inspectors.ImageProperties;
 		public static var layoutInspector:com.flexcapacitor.views.inspectors.Layout;
