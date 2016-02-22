@@ -1297,6 +1297,14 @@ package com.flexcapacitor.utils {
 						}
 					}
 					
+					else if (localName=="colorpicker") {
+						if ("selectedColor" in componentInstance) {
+							layoutOutput += " value=\"" + DisplayObjectUtils.getColorInHex(uint(Object(componentInstance).selectedColor), true) + "\"";
+						}
+						// add zero padding for now
+						styleValue += "padding:0px;";
+					}
+					
 					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
