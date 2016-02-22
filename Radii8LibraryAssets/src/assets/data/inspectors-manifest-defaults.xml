@@ -12,45 +12,86 @@
     <item name="Document" className="Application" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
-    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
     
     <item name="Border Container" className="spark.components.BorderContainer" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
 <!--     		<inspector name="Size" className="com.flexcapacitor.views.inspectors.Size"/> -->
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Border Styles" className="com.flexcapacitor.views.inspectors.BorderStyles"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
     		<inspector name="Layout" className="com.flexcapacitor.views.inspectors.Layout"/>
-    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
     
     <item name="Button" className="spark.components.Button" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
-    		<inspector name="Button" className="com.flexcapacitor.views.inspectors.Button"/>
+    		<inspector name="Button" className="com.flexcapacitor.views.inspectors.ButtonProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    </item>
+    
+    <item name="CheckBox" className="spark.components.CheckBox" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="CheckBox" className="com.flexcapacitor.views.inspectors.CheckBoxProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    </item>
+    
+    <item name="ColorPicker" className="spark.components.ColorPicker" 
+    		include="true">
+    		<alternative name="mxColorPicker" className="mx.controls.ColorPicker"/>
+    		<alternative name="FlexCapacitorColorPicker" className="com.flexcapacitor.controls.ColorPicker"/>
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="ColorPicker" className="com.flexcapacitor.views.inspectors.ColorPickerProperties"/>
+    </item>
+    
+    <item name="ComboBox" className="spark.components.ComboBox" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="DropDownList" className="com.flexcapacitor.views.inspectors.ComboBoxProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    </item>
+    
+    <item name="DropDownList" className="spark.components.DropDownList" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="DropDownList" className="com.flexcapacitor.views.inspectors.DropDownListProperties"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     </item>
     
     <item name="Group" className="spark.components.Group" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     		<inspector name="Layout" className="com.flexcapacitor.views.inspectors.Layout"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    </item>
+    
+    <item name="Horizontal Slider" className="spark.components.HSlider" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="Group Align" className="com.flexcapacitor.views.inspectors.SliderProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     </item>
     
     <item name="Horizontal Group" className="spark.components.HGroup" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     		<inspector name="Gap" className="com.flexcapacitor.views.inspectors.Gap"/>
     		<inspector name="Group Align" className="com.flexcapacitor.views.inspectors.GroupAlign"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
-    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
     
     <item name="Horizontal Line" className="com.flexcapacitor.controls.HorizontalLine" 
@@ -62,61 +103,111 @@
     <item name="Hyperlink" className="com.flexcapacitor.controls.Hyperlink" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     		<inspector name="Text" className="com.flexcapacitor.views.inspectors.TextInspector"/>
     		<inspector name="Link" className="com.flexcapacitor.views.inspectors.HyperlinkInspector"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
-    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
     
     <item name="Image" className="spark.components.Image" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     		<inspector name="Image" className="com.flexcapacitor.views.inspectors.ImageProperties"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
-    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
 
     <item name="Label" className="spark.components.Label" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     		<inspector name="Text" className="com.flexcapacitor.views.inspectors.TextInspector"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
+    </item>
+
+    <item name="List" className="spark.components.List" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="List" className="com.flexcapacitor.views.inspectors.ListProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
+    </item>
+
+    <item name="NummericStepper" className="spark.components.NumericStepper" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="Stepper" className="com.flexcapacitor.views.inspectors.StepperProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    </item>
+    
+    <item name="RadioButton" className="spark.components.RadioButton" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="RadioButton" className="com.flexcapacitor.views.inspectors.RadioButtonProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     </item>
     
     <item name="RichText" className="spark.components.RichText" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     		<inspector name="Text" className="com.flexcapacitor.views.inspectors.TextInspector"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
-    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
     
     <item name="TextInput" className="spark.components.TextInput" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     		<inspector name="Text" className="com.flexcapacitor.views.inspectors.TextInspector"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
+    </item>
+    
+    <item name="TextArea" className="spark.components.TextArea" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="Text" className="com.flexcapacitor.views.inspectors.TextAreaInspector"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
+    </item>
+    
+    <item name="Tile Group" className="spark.components.TileGroup" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="Tile Group" className="com.flexcapacitor.views.inspectors.TileGroupProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     </item>
     
     <item name="Vertical Group" className="spark.components.VGroup" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     		<inspector name="Gap" className="com.flexcapacitor.views.inspectors.Gap"/>
     		<inspector name="Group Align" className="com.flexcapacitor.views.inspectors.GroupAlign"/>
     		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
-    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
     </item>
     
     <item name="Vertical Line" className="com.flexcapacitor.controls.VerticalLine" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Line Properties" className="com.flexcapacitor.views.inspectors.LineProperties"/>
+    </item>
+    
+    <item name="Vertical Slider" className="spark.components.VSlider" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="Group Align" className="com.flexcapacitor.views.inspectors.SliderProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
     </item>
     
     <item name="Video Player" className="spark.components.VideoPlayer" 

@@ -3,7 +3,6 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.events.HistoryEvent;
 	import com.flexcapacitor.events.HistoryEventItem;
 	import com.flexcapacitor.model.ExportOptions;
-	import com.flexcapacitor.model.HTMLExportOptions;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImportOptions;
 	import com.flexcapacitor.model.IssueData;
@@ -42,6 +41,8 @@ package com.flexcapacitor.utils {
 		public var sparkNamespaceURI:String = "library://ns.adobe.com/flex/spark";
 		public var svgNamespaceURI:String 	= "http://www.w3.org/2000/svg";
 		public var xlinkNamespaceURI:String = "http://www.w3.org/1999/xlink";
+		
+		public var xmlDeclaration:String 	= '<?xml version="1.0" encoding="utf-8"?>';
 		
 		private var _defaultNamespaceDeclarations:String;
 
@@ -116,7 +117,20 @@ package com.flexcapacitor.utils {
 		public var target:Object;
 		
 		/**
-		 * Export child descriptors
+		 * If set to true, removes all elements when import is called
+		 * */
+		public var removeAllOnImport:Boolean;
+		
+		/**
+		 * If set to true, does not remove common user interactions.
+		 * If set to false then removes user interactions disruptive to a design view.
+		 * Default is false.
+		 * */
+		public var makeInteractive:Boolean;
+		
+		/**
+		 * Export child descriptors. Somewhat temporary global property you would set to false
+		 * for a single selected component.  
 		 * */
 		public var exportChildDescriptors:Boolean = true;
 		
@@ -676,6 +690,23 @@ Default generator string is:
 		
 		public function set generator(value:String):void {
 			generatorTag = value;
+		}
+		
+		public function getDefaultDocumentXML():XML {
+			var document:XML = new XML("<Application/>");
+			var qname:QName;
+			var namespaceObject:Namespace;
+			
+			for (var prefix:String in namespaces) {
+				//qname = new QName(namespaces[name], name);
+				namespaceObject= new Namespace(prefix, namespaces[prefix]);
+				document.addNamespace(namespaceObject);
+			}
+			
+			qname = new QName(namespaces[sparkNamespace], "Application");
+			document.setName(qname);
+			
+			return document;
 		}
 	}
 }

@@ -61,5 +61,11 @@ package com.flexcapacitor.model {
 		 * Gets document by UID.
 		 * */
 		function getDocumentByUID(uid:String):IDocumentData;
+
+		/**
+		 * Save only the project not the project documents
+		 * String of locations to save to separated by comma.
+		 * */
+		function saveOnlyProject(locations:String = null, options:Object = null):Boolean;
 	}
 }

@@ -5,11 +5,13 @@
 		xmlns:c="com.flexcapacitor.components.*"
 		xmlns:r="com.flexcapacitor.views.renderers.*"
 
+		width="100%"
+		minWidth="132"
 		clipAndEnableScrolling="true">
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.skins.ClearButton;
+			import com.flexcapacitor.skins.ClearButtonSkin;
 			
 			
 		]]>
@@ -31,11 +33,11 @@
 				   label="False"
 				   groupName="booleanGroup"
 				   />
-	
+	<!--
 	<s:Spacer width="100%"/>
-	
+	-->
 	<s:Button id="clearStyleButton" 
-			  skinClass="com.flexcapacitor.skins.ClearButton"
+			  skinClass="com.flexcapacitor.skins.ClearButtonSkin"
 			  click="setTargetValue(true)"
 			  />
 </r:PropertiesGridRendererBase>

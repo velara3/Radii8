@@ -132,7 +132,7 @@
 				Radiate.showMessageLabel = instantMessageLabel;
 				Radiate.showMessageAnimation = notificationMessenger;
 				
-				PerformanceManager.addItem(Radiate.SET_TARGET_TEST, performanceLabel, "text", 500);
+				//PerformanceManager.addItem(Radiate.SET_TARGET_TEST, performanceLabel, "text", 500);
 				
 				updateCheckExamples();
 				updateCheckProjects();
@@ -260,7 +260,7 @@
 			 * Open document
 			 * */
 			private function openDocument_itemClickHandler(event:Event):void {
-				radiate.openDocument(radiate.selectedDocument, DocumentData.INTERNAL_LOCATION, true);
+				browseForMXML.play();
 			}
 			
 			/**
@@ -405,12 +405,24 @@
 			/**
 			 * Handle login result
 			 * */
-			protected function loginPopUp_closeHandler(event:Event):void {
-				var loginWindow:LoginWindow = LoginWindow(openLoginPopUp.popUp);
-				var action:String = loginWindow ? loginWindow.action : null;
+			protected function loginPopUp_closeHandler(eventName:String):void {
+				var loginWindow:LoginWindow;
+				var action:String;
 				
-				if (action) {
-					setTimeout(Radiate.info, 1000, ["Logout successful"]);
+				if (LoginWindow.LOGIN==eventName) {
+					loginWindow = LoginWindow(openLoginPopUp.popUp);
+				}
+				else if (LoginWindow.LOST_PASSWORD==eventName) {
+					loginWindow = LoginWindow(openLostPasswordPopUp.popUp);
+				}
+				else if (LoginWindow.REGISTRATION_WITH_SITE==eventName) {
+					loginWindow = LoginWindow(registrationWithSitePopUp.popUp);
+				}
+				
+				action = loginWindow ? loginWindow.action : null;
+				
+				if (action==LoginWindow.CANCEL) {
+					return;
 				}
 				
 				if (radiate.isUserLoggedIn) {
@@ -432,6 +444,15 @@
 			 * Check online status after logout
 			 * */
 			protected function logoutPopUp_closeHandler(event:Event):void {
+				var loginWindow:LoginWindow = LoginWindow(openLogoutPopUp.popUp);
+				var action:String = loginWindow ? loginWindow.action : null;
+				
+				if (action==LoginWindow.CANCEL) {
+					return;
+				}
+				
+				setTimeout(Radiate.info, 1000, ["Logout successful"]);
+				
 				updateCheckProjects(0);
 				//checkForProjects();
 				projectsCollection.removeAll();
@@ -801,9 +822,9 @@
 			
 			/**
 			 * Updates the label checking for login status
-			 * -1 = checking
-			 * 0 = no news available
-			 * 1 = projects found
+			 * -1 = checking if logged in
+			 * 0 = not logged in
+			 * 1 = hidden
 			 * */
 			private function updateCheckLoginStatus(param0:int = -1):void {
 				
@@ -1093,6 +1114,12 @@
 				}
 			}
 			
+			protected function mxmlLoadedHandler(event:Event):void {
+				if (radiate.selectedDocument) {
+					radiate.openMXMLDocument(loadMXMLFile.fileName, loadMXMLFile.dataAsString);
+				}
+			}
+			
 			protected function selectSelectionTool_itemClickHandler(event:MenuEvent):void {
 				var componentDescription:ComponentDescription;
 				componentDescription = radiate.getToolByName("Selection");
@@ -1108,7 +1135,7 @@
 				var selectedDocument:IDocument = radiate.selectedDocument;
 				
 				if (selectedDocument) {
-					radiate.openImportMXMLWindow("Import MXML", selectedDocument.getSource(), true);
+					radiate.openImportMXMLWindow("Import MXML", selectedDocument.originalSource, true);
 				}
 				else {
 					Radiate.info("You need to open a document before you can show revisions");
@@ -1218,6 +1245,16 @@
 			</file:selectionEffect>
 		</file:BrowseForFile>
 		
+		<file:BrowseForFile id="browseForMXML" 
+							targetAncestor="{this}"
+							fileTypes="mxml">
+			<file:selectionEffect>
+				<file:LoadFile id="loadMXMLFile" 
+							   fileReference="{browseForMXML.fileReference}"
+							   complete="mxmlLoadedHandler(event)"/>
+			</file:selectionEffect>
+		</file:BrowseForFile>
+		
 		<handlers:EventHandler eventName="itemClick" target="{revertDocumentMenuItem}">
 			<core:CallMethod method="revertDocument"/> 
 		</handlers:EventHandler>
@@ -1262,7 +1299,7 @@
 						  width="600"
 						  parent="{parentApplication}"
 						  popUpOptions="{{currentState:LoginWindow.LOST_PASSWORD,openingState:LoginWindow.LOST_PASSWORD}}"
-						  close="loginPopUp_closeHandler(event)"/>
+						  close="loginPopUp_closeHandler(LoginWindow.LOST_PASSWORD)"/>
 		</handlers:EventHandler>
 		
 		<handlers:EventHandler eventName="click" targets="{[loginLabel,loginLabel2]}">
@@ -1274,18 +1311,18 @@
 						  width="600"
 						  parent="{parentApplication}"
 						  popUpOptions="{{currentState:LoginWindow.LOGIN}}"
-						  close="loginPopUp_closeHandler(event)"/>
+						  close="loginPopUp_closeHandler(LoginWindow.LOGIN)"/>
 		</handlers:EventHandler>
 		
 		<handlers:EventHandler eventName="click" targets="{[registerLabel,registerLabel2]}">
-			<fc:OpenPopUp popUpType="{LoginWindow}" 
+			<fc:OpenPopUp id="registrationWithSitePopUp" popUpType="{LoginWindow}" 
 						  modalDuration="150" 
 						  percentWidth="75"
 						  percentHeight="90"
 						  width="600"
 						  parent="{parentApplication}"
 						  popUpOptions="{{currentState:LoginWindow.REGISTRATION_WITH_SITE}}"
-						  close="loginPopUp_closeHandler(event)"/>
+						  close="loginPopUp_closeHandler(LoginWindow.REGISTRATION_WITH_SITE)"/>
 		</handlers:EventHandler>
 		
 		<handlers:EventHandler eventName="itemClick" target="{creditsMenuItem}">
@@ -1666,26 +1703,26 @@
 			<c:VerticalLine visible="{!radiate.isUserLoggedIn}"
 							includeInLayout="{!radiate.isUserLoggedIn}"/>
 			
-			<c:LabelButton id="lostPasswordLabel2" 
-					 text="Lost Password" 
-					 verticalAlign="middle" 
-					 textAlign="center"
-					 styleName="loginLabel"
-					 visible="{!radiate.isUserLoggedIn}"
-					 includeInLayout="{!radiate.isUserLoggedIn}"
-					 />
+			<c:LabelButton id="registerLabel2" 
+						   text="Register" 
+						   verticalAlign="middle" 
+						   textAlign="center"
+						   styleName="loginLabel"
+						   visible="{!radiate.isUserLoggedIn}"
+						   includeInLayout="{!radiate.isUserLoggedIn}"
+						   />
 			
 			<c:VerticalLine visible="{!radiate.isUserLoggedIn}"
 							includeInLayout="{!radiate.isUserLoggedIn}"/>
 			
-			<c:LabelButton id="registerLabel2" 
-					 text="Register" 
-					 verticalAlign="middle" 
-					 textAlign="center"
-					 styleName="loginLabel"
-					 visible="{!radiate.isUserLoggedIn}"
-					 includeInLayout="{!radiate.isUserLoggedIn}"
-					 />
+			<c:LabelButton id="lostPasswordLabel2" 
+						   text="Lost Password" 
+						   verticalAlign="middle" 
+						   textAlign="center"
+						   styleName="loginLabel"
+						   visible="{!radiate.isUserLoggedIn}"
+						   includeInLayout="{!radiate.isUserLoggedIn}"
+						   />
 			
 			<s:Spacer width="100%" />
 			

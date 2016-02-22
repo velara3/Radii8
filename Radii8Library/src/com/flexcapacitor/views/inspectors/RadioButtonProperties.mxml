@@ -4,13 +4,14 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
-		 styleName="inspectablePanel">
+		 
+		 styleName="inspectablePanel"
+		 width="100%">
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			
 			import org.as3commons.lang.ArrayUtils;
@@ -19,7 +20,6 @@
 			public var target:Object;
 			public var data:Object;
 			
-			public var fonts:Array;
 			
 			public function activate():void {
 				radiate = Radiate.getInstance();
@@ -64,20 +64,26 @@
 			}
 			
 			public function update():void {
-				var textAccessor:MetaData = ClassUtils.getMetaDataOf(target, "styleName");
-				
-				textRenderer.data = textAccessor;
+				valueRenderer.data = ClassUtils.getMetaDataOfProperty(target, "value");
+				groupNameRenderer.data = ClassUtils.getMetaDataOfProperty(target, "groupName");
+				iconPlacementRenderer.data = ClassUtils.getMetaDataOfStyle(target, "iconPlacement");
 			}
 			
-			public var relevantProperties:Array = ["styleName"];
+			public var relevantProperties:Array = ["value", "groupName", "iconPlacement"];
 		]]>
 	</fx:Script>
 	
 	
-	<s:TileGroup width="100%" columnAlign="left" columnWidth="120" verticalAlign="middle" requestedColumnCount="2">
+	<s:TileGroup width="100%" columnAlign="left" columnWidth="118" verticalAlign="middle" requestedColumnCount="2">
 		
-		<s:Label text="Style Name" styleName="inspectablePanelLabel" />
-		<renderers:TextRenderer id="textRenderer" />
+		<s:Label text="Value" styleName="inspectablePanelLabel"/>
+		<renderers:TextRenderer id="valueRenderer" />
+		
+		<s:Label text="Group Name" styleName="inspectablePanelLabel"/>
+		<renderers:TextRenderer id="groupNameRenderer" minWidth="180" />
+		
+		<s:Label text="Icon Placement" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="iconPlacementRenderer" />
 		
 	</s:TileGroup>
 </s:Group>

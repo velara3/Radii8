@@ -25,9 +25,10 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.filters.BorderStrokeFilter;
+			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.ClassUtils;
-			import com.flexcapacitor.views.IInspector;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.windows.SaveBeforeCloseWindow;
 			
 			import mx.core.INavigatorContent;
@@ -124,6 +125,9 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 				
 				radiate.documentsTabNavigator = documentsTagNavigator;
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChange, false, 0, true);
+				
+				updateSelectedTargetIcon();
 			}
 			
 			private var previewCreated:Boolean;
@@ -166,10 +170,10 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 					}
 				}
 				
-				var elentsLength:int = viewstack.numElements;
+				var numberOfElements:int = viewstack.numElements;
 				
 				// deactivate hidden inspectors
-				for (var i:int;i<elentsLength;i++) {
+				for (var i:int;i<numberOfElements;i++) {
 					navigatorItem = viewstack.getElementAt(i) as NavigatorContent;
 					
 					if (navigatorItem && navigatorItem.numElements>0) {
@@ -191,6 +195,8 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 					UIComponent(selectedNavigatorContent).validateNow();// make sure everythings created
 					selectedNavigatorContent.activate();
 				}
+				
+				updateSelectedTargetIcon();
 			}
 
 			/**
@@ -249,7 +255,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 					if (targetNameValue) {
 						
 						if (event.selectedItem is Application) {
-							targetNameLabel.text = "Application";
+							targetNameLabel.text = "Document";
 						}
 						else {
 							targetNameLabel.text = targetNameValue;
@@ -259,6 +265,62 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 						targetNameLabel.text = "";
 					}
 				}
+				
+				updateSelectedTargetIcon();
+			}
+			
+			public function updateSelectedTargetIcon():void {
+				var componentDescription:ComponentDescription;
+				var selectedTarget:Object;
+				var targetNameValue:String;
+				
+				if (!radiate) {
+					radiate = Radiate.instance;
+				}
+				selectedTarget = radiate.target;
+				
+				if (!selectedTargetIcon) {
+					return;
+				}
+				
+				if (selectedTargetIcon.contentLoader==null) {
+					selectedTargetIcon.contentLoader = Radiate.contentCache;
+				}
+				
+				if (radiate.selectedDocument) {
+					componentDescription = radiate.selectedDocument.getItemDescription(selectedTarget);
+					
+					if (componentDescription) {
+						if (selectedTarget is Application) {
+							selectedTargetIcon.source = Radii8LibraryAssets.document;
+						}
+						else {
+							selectedTargetIcon.source = Radiate.componentsIconPath + componentDescription.className + ".png";
+						}
+					}
+					else {
+						selectedTargetIcon.source = Radii8LibraryAssets.document;
+					}
+				}
+				else {
+					selectedTargetIcon.source = Radii8LibraryAssets.document;
+				}
+				
+				targetNameValue = ClassUtils.getIdentifierOrName(selectedTarget, true, true);
+				
+				if (selectedTarget is Application) {
+					targetNameValue = "Document";
+				}
+				
+				if (targetNameValue) {
+					selectedTargetIcon.toolTip = targetNameValue ? targetNameValue + ". " + clickToOpen : "Document" + ". " + clickToOpen;
+				}
+			}
+			
+			public var clickToOpen:String = "Click to open documentation in the browser";
+			
+			protected function selectedTargetIcon_clickHandler(event:MouseEvent):void {
+				RunManager.openDocumentationInBrowserButton(radiate.target);
 			}
 			
 		]]>
@@ -453,8 +515,9 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 					<s:NavigatorContent label="PROPERTIES">
 						<!-- TODO Convert this into a composite component -->
 						<s:HGroup width="100%" verticalAlign="baseline" paddingRight="8" paddingLeft="8">
-							<!--<mx:LinkBar dataProvider="{forthViewStack}" right="0"/>-->
-							
+							<c:BeveledImageButton id="selectedTargetIcon"
+												  minWidth="18"
+												  click="selectedTargetIcon_clickHandler(event)"/>
 							<s:ButtonBar id="propertiesOptionsButtonBar" 
 										 fontSize="11"
 										 requireSelection="true"
@@ -489,7 +552,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 							</s:NavigatorContent>
 							
 							<!-- HTML Adjustments-->
-							<s:NavigatorContent label="HTML OPTIONS">
+							<s:NavigatorContent label="HTML">
 								<panels:HTMLInspector height="100%" width="100%"/>
 							</s:NavigatorContent>
 						</mx:ViewStack>

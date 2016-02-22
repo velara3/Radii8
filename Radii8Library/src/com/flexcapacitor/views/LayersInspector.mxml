@@ -18,12 +18,13 @@
 	- might not be as buggy since refactoring the document.componentDescription getter 
 	- that function was recreating instances of the componentDescriptions. it no longer recreates them
 	
-	
-	THIS LAYERS TREE DRAGGING AND DROPPING IS REALLY BUGGY 
+	THIS LAYERS TREE DRAGGING AND DROPPING IS/WAS BUGGY 
 	- the branch nodes don't accept items being dragged into them for the most part 
 	unless they are open already or have items already in them
 	- once an item is added it shows up double. only by switching tabs does the
-	layers get back to the right order and right count. UPDATE: Fixed by using call later
+	layers get back to the right order and right count. 
+	
+	UPDATE: Fixed by using call later
 	or timeout, don't remember, but still hacky
 	Added a hgroup to a bordercontainer and this error: 
 	
@@ -32,6 +33,23 @@
 	at mx.controls.treeClasses::HierarchicalViewCursor/get current()[E:\dev\4.y\frameworks\projects\mx\src\mx\controls\treeClasses\HierarchicalViewCursor.as:212]
 	at mx.controls.treeClasses::HierarchicalViewCursor/collectionChangeHandler()[E:\dev\4.y\frameworks\projects\mx\src\mx\controls\treeClasses\HierarchicalViewCursor.as:869]
 	at flash.events::EventDispatcher/dispatchEventFunction()
+	
+	When dragging and dropping using Flex 4.15 getting error: 
+	
+	TypeError: Error #1010: A term is undefined and has no properties.
+	at mx.controls::Tree/updateDropData()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/mx/src/mx/controls/Tree.as:2785]
+	at mx.controls::Tree/calculateDropIndex()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/mx/src/mx/controls/Tree.as:1276]
+	at mx.controls::Tree/dragDropHandler()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/mx/src/mx/controls/Tree.as:3352]
+	at flash.events::EventDispatcher/dispatchEventFunction()
+	at flash.events::EventDispatcher/dispatchEvent()
+	at mx.core::UIComponent/dispatchEvent()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/framework/src/mx/core/UIComponent.as:13688]
+	at mx.managers::NativeDragManagerImpl/_dispatchDragEvent()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/airframework/src/mx/managers/NativeDragManagerImpl.as:766]
+	at mx.managers::NativeDragManagerImpl/nativeDragEventHandler()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/airframework/src/mx/managers/NativeDragManagerImpl.as:739]
+
+	drag and drop appears to work but error is thrown. 
+	created bug and patch at apache flex bug base
+	
+	
 	-->
 	
 	<fx:Script>
@@ -56,7 +74,6 @@
 			import mx.states.AddItems;
 			
 			import spark.components.Application;
-			import spark.components.supportClasses.ItemRenderer;
 			
 			private var rootDisplayObject:DisplayObject;
 			private var displayList:Array = [];
@@ -776,6 +793,44 @@
 				updateComponentDisplayList();
 			}
 			
+			protected function moveBelowButton_clickHandler(event:MouseEvent):void {
+				var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+				var currentIndex:int;
+				var dropIndex:int;
+				
+				if (componentDescription && componentDescription.parent) {
+					currentIndex = ComponentDescription(componentDescription.parent).children.getItemIndex(componentDescription);
+					
+					if (currentIndex>0) {
+						dropIndex = currentIndex - 1;
+						Radiate.moveElement(componentDescription.instance, componentDescription.parent.instance, [], [], 
+											null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
+						radiate.setTarget(componentDescription.instance);
+						componentListTree.selectedItem = componentDescription;
+					}
+					
+				}
+			}
+			
+			protected function moveAboveButton_clickHandler(event:MouseEvent):void {
+				var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+				var currentIndex:int;
+				var dropIndex:int;
+				
+				if (componentDescription && componentDescription.parent) {
+					currentIndex = ComponentDescription(componentDescription.parent).children.getItemIndex(componentDescription);
+					
+					if (currentIndex<ComponentDescription(componentDescription.parent).children.length-1) {
+						dropIndex = currentIndex + 2;
+						Radiate.moveElement(componentDescription.instance, componentDescription.parent.instance, [], [], 
+							null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
+						radiate.setTarget(componentDescription.instance);
+						componentListTree.selectedItem = componentDescription;
+					}
+					
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -833,28 +888,42 @@
 			 minHeight="28"
 			 verticalAlign="middle"
 			 paddingRight="8"
-			 paddingLeft="8"
+			 paddingLeft="2"
 			 paddingBottom="8"
 			 paddingTop="8"
 			 >
+		<views:BlendMode id="blendModeGroup" minWidth="100" toolTip="Blend mode"/>
 		<renderers:NumberRenderer id="alphaRenderer" 
-								  width="40" 
+								  width="54" 
 								  showClearButton="false" 
 								  snapInterval="0"
 								  toolTip="Alpha"
 								  focusAlpha="0"/>
-		<c:SolidFillToggleButton id="lockedItem" 
-								 toolTip="Lock position and prevent selection"
-								 click="lockItem_clickHandler(event)"
-								 label="Locked"
-								 />
-		<!--							  source="{Radii8LibraryAssets.locked}" -->
-		<views:BlendMode id="blendModeGroup" minWidth="100" toolTip="Blend mode"/>
+		
 		<s:Spacer width="100%"/>
+		<c:BeveledImageToggleButton id="lockedItem" 
+									source="{Radii8LibraryAssets.locked}"
+									toolTip="Lock position and prevent selection"
+									click="lockItem_clickHandler(event)"
+									label="Locked"
+									showBackgroundWhenSelected="true"
+									/>
+		<c:BeveledImageButton id="moveBelowButton" 
+					   source="{Radii8LibraryAssets.sendBackwards}" 
+					   toolTip="Send Backward"
+					   click="moveBelowButton_clickHandler(event)"
+					   />
+		<c:BeveledImageButton id="moveAboveButton" 
+					   source="{Radii8LibraryAssets.bringForwards}" 
+					   toolTip="Bring Forward"
+					   click="moveAboveButton_clickHandler(event)"
+					   />
 		<c:BeveledImageButton id="refreshTree" 
 					   source="{Radii8LibraryAssets.refresh}" 
 					   toolTip="Refresh Tree"
 					   click="refreshTree_clickHandler(event)"
+					   includeInLayout="false"
+					   visible="false"
 					   />
 		<c:BeveledImageButton id="closeAllNodes" 
 					   source="{Radii8LibraryAssets.treeViewClosed}" 

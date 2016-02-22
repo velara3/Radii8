@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 
+		 styleName="inspectablePanel"
+		 width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			
+			import org.as3commons.lang.ArrayUtils;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
+					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+						callLater(update);
+					}
+					else {
+						return;
+					}
+				}
+				
+				callLater(update);
+			}
+			
+			public function update():void {
+				valueRenderer.data = ClassUtils.getMetaDataOfProperty(target, "value");
+				minimumRenderer.data = ClassUtils.getMetaDataOfProperty(target, "minimum");
+				maximumRenderer.data = ClassUtils.getMetaDataOfProperty(target, "maximum");
+				stepSizeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "stepSize");
+				snapIntervalRenderer.data = ClassUtils.getMetaDataOfProperty(target, "snapInterval");
+				maxCharactersRenderer.data = ClassUtils.getMetaDataOfProperty(target, "maxChars");
+				allowValueWrapRenderer.data = ClassUtils.getMetaDataOfProperty(target, "allowValueWrap");
+				valueFormatFunctionRenderer.data = ClassUtils.getMetaDataOfProperty(target, "valueFormatFunction");
+				valueParseFunctionRenderer.data = ClassUtils.getMetaDataOfProperty(target, "valueParseFunction");
+				imeModeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "imeMode");
+			}
+			
+			public var relevantProperties:Array = ["value", "minimum", "maximum", "stepSize", 
+													"stepInterval", "imeMode", "allowValueWrap", 
+													"valueFormatFunction", "valueParseFunction"];
+		]]>
+	</fx:Script>
+	
+	
+	<s:TileGroup width="100%" columnAlign="left" columnWidth="118" verticalAlign="middle" requestedColumnCount="2">
+		
+		<s:Label text="Value" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="valueRenderer" stepSize="1"/>
+		
+		<s:Label text="Minimum" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="minimumRenderer" stepSize="1"/>
+		
+		<s:Label text="Maximum" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="maximumRenderer" stepSize="1"/>
+		
+		<s:Label text="Step Size" styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="stepSizeRenderer" stepSize="1"/>
+		
+		<s:Label text="Snap Interval" styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="snapIntervalRenderer" />
+		
+		<s:Label text="Max Characters" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="maxCharactersRenderer" stepSize="1" />
+		
+		<s:Label text="Allow Value Wrap" styleName="inspectablePanelLabel"/>
+		<renderers:BooleanRenderer id="allowValueWrapRenderer"/>
+		
+		<s:Label text="Value Format Function" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="valueFormatFunctionRenderer" width="100%" height="24"/>
+		
+		<s:Label text="Value Parse Function" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="valueParseFunctionRenderer" width="100%" height="24"/>
+		
+		<s:Label text="IME Mode" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="imeModeRenderer" height="24"/>
+		
+	</s:TileGroup>
+</s:Group>

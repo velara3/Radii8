@@ -4,13 +4,14 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
-		 styleName="inspectablePanel">
+		 
+		 styleName="inspectablePanel"
+		 width="100%">
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			
 			import org.as3commons.lang.ArrayUtils;
@@ -19,7 +20,6 @@
 			public var target:Object;
 			public var data:Object;
 			
-			public var fonts:Array;
 			
 			public function activate():void {
 				radiate = Radiate.getInstance();
@@ -59,25 +59,54 @@
 						return;
 					}
 				}
-				
 				callLater(update);
+				
 			}
 			
 			public function update():void {
-				var textAccessor:MetaData = ClassUtils.getMetaDataOf(target, "styleName");
+				/*
+				*    <strong>Properties</strong>
+				*    allowMultipleSelection="false"
+				*    dragEnabled="false"
+				*    dragMoveEnabled="false"
+				*    dropEnabled="false"
+				*    selectedIndices="null"
+				*    selectedItems="null"
+				*    useVirtualLayout="true"
+				* 
+				*    <strong>Styles</strong>
+				*    alternatingItemColors="undefined"
+				*    borderAlpha="1.0"
+				*    borderColor="0#CCCCCC"
+				*    borderVisible="true"
+				*    contentBackgroundColor="0xFFFFFF"
+				*    downColor="0xA8C6EE"
+				*    dragIndicator="ListItemDragProxy"
+				*    dropIndicatorSkin="ListDropIndicator"
+				*    rollOverColor="0xCEDBEF"
+				*    selectionColor="0xA8C6EE"
+				*    symbolColor="0x000000"
+				*/
 				
-				textRenderer.data = textAccessor;
+				//promptRenderer.data = ClassUtils.getMetaDataOfStyle(target, "prompt");
+				cornerRadiusRenderer.data = ClassUtils.getMetaDataOfStyle(target, "cornerRadius");
+				dropShadowVisibleRenderer.data = ClassUtils.getMetaDataOfStyle(target, "dropShadowVisible");
+				
 			}
 			
-			public var relevantProperties:Array = ["styleName"];
+			public var relevantProperties:Array = ["prompt", "cornerRadius", "dropShadowVisible"];
 		]]>
 	</fx:Script>
 	
 	
 	<s:TileGroup width="100%" columnAlign="left" columnWidth="120" verticalAlign="middle" requestedColumnCount="2">
+		<!--<s:Label text="Prompt" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="promptRenderer" height="24" width="100%"/>-->
 		
-		<s:Label text="Style Name" styleName="inspectablePanelLabel" />
-		<renderers:TextRenderer id="textRenderer" />
+		<s:Label text="Corner Radius" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="cornerRadiusRenderer" height="24" stepSize="1" />
 		
+		<s:Label text="Drop Shadow Visible" styleName="inspectablePanelLabel"/>
+		<renderers:BooleanRenderer id="dropShadowVisibleRenderer" height="24" minWidth="132"/>
 	</s:TileGroup>
 </s:Group>

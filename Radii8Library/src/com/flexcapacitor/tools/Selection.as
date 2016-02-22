@@ -1403,6 +1403,10 @@ package com.flexcapacitor.tools {
 				for (;index<numberOfTargets;index++) {
 					element = targets[index];
 					
+					if (element == targetApplication) {
+						continue;
+					}
+					
 					leftValue = element.left;
 					rightValue = element.right;
 					horizontalCenter = element.horizontalCenter;
@@ -1450,6 +1454,10 @@ package com.flexcapacitor.tools {
 				for (;index<numberOfTargets;index++) {
 					element = targets[index];
 					
+					if (element == targetApplication) {
+						continue;
+					}
+					
 					leftValue = element.left;
 					rightValue = element.right;
 					horizontalCenter = element.horizontalCenter;
@@ -1488,6 +1496,10 @@ package com.flexcapacitor.tools {
 				
 				for (;index<numberOfTargets;index++) {
 					element = targets[index];
+					
+					if (element == targetApplication) {
+						continue;
+					}
 					
 					topValue = element.top;
 					bottomValue = element.bottom;
@@ -1528,6 +1540,10 @@ package com.flexcapacitor.tools {
 				
 				for (;index<numberOfTargets;index++) {
 					element = targets[index];
+					
+					if (element == targetApplication) {
+						continue;
+					}
 					
 					topValue = element.top;
 					bottomValue = element.bottom;

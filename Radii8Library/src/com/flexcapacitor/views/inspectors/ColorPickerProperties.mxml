@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 styleName="inspectablePanel"
+		 width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			
+			import org.as3commons.lang.ArrayUtils;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
+				}
+				
+				target = null;
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
+					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+						callLater(update);
+					}
+					else {
+						return;
+					}
+				}
+				callLater(update);
+				
+			}
+			
+			
+			public function update():void {
+				colorFieldRenderer.data 		= ClassUtils.getMetaDataOf(target, "colorField");
+				labelFieldRenderer.data 		= ClassUtils.getMetaDataOf(target, "labelField");
+				selectedColorRenderer.data 		= ClassUtils.getMetaDataOf(target, "selectedColor");
+				selectedIndexRenderer.data 		= ClassUtils.getMetaDataOf(target, "selectedIndex");
+				editableRenderer.data 			= ClassUtils.getMetaDataOf(target, "editable");
+				showTextFieldRenderer.data 		= ClassUtils.getMetaDataOf(target, "showTextField");
+				swatchBorderColorRenderer.data 	= ClassUtils.getMetaDataOf(target, "swatchBorderColor");
+				swatchBorderSizeRenderer.data 	= ClassUtils.getMetaDataOf(target, "swatchBorderSize");
+				swatchPanelStyleNameRenderer.data = ClassUtils.getMetaDataOf(target, "swatchPanelStyleName");
+			}
+			
+			public var relevantProperties:Array = ["colorField", "labelField", "selectedColor", "selectedIndex",
+					"editable", "showTextField", "swatchBorderColor", "swatchBorderSize", "swatchPanelStyleName"];
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	
+	<s:TileGroup width="100%" columnAlign="left" columnWidth="118" verticalAlign="middle" requestedColumnCount="2">
+		<s:Label text="Color Field" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="colorFieldRenderer"/>
+		
+		<s:Label text="Label Field" styleName="inspectablePanelLabel"/>
+		<renderers:TextRenderer id="labelFieldRenderer" />
+		
+		<s:Label text="Swatch Panel Style Name" styleName="inspectablePanelLabel"/>
+		<renderers:TextRenderer id="swatchPanelStyleNameRenderer" />
+		
+		<s:Label text="Selected Color" styleName="inspectablePanelLabel"/>
+		<renderers:ColorPickerRenderer id="selectedColorRenderer" convertColorToUInt="true"/>
+		
+		<s:Label text="Selected Index" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="selectedIndexRenderer" stepSize="1" minimum="-1"/>
+		
+		<s:Label text="Editable" styleName="inspectablePanelLabel"/>
+		<renderers:BooleanRenderer id="editableRenderer" />
+		
+		<s:Label text="Show Text Field" styleName="inspectablePanelLabel"/>
+		<renderers:BooleanRenderer id="showTextFieldRenderer" />
+		
+		<s:Label text="Swatch Border Color" styleName="inspectablePanelLabel"/>
+		<renderers:ColorPickerRenderer id="swatchBorderColorRenderer"/>
+		
+		<s:Label text="Swatch Border Size" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="swatchBorderSizeRenderer" stepSize="1" />
+	</s:TileGroup>
+</s:Group>

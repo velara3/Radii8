@@ -56,6 +56,36 @@
 			public function set focusAlpha(value:Number):void {
 				numericStepper.setStyle("focusAlpha", value);
 			}
+			
+			private var _minimum:Number;
+
+			public function get minimum():Number
+			{
+				return _minimum;
+			}
+
+			public function set minimum(value:Number):void
+			{
+				_minimum = value;
+				if (numericStepper && !isNaN(value)) {
+					numericStepper.minimum = value;
+				}
+				
+			}
+			
+			private var _maximum:Number;
+
+			public function get maximum():Number {
+				return _maximum;
+			}
+
+			public function set maximum(value:Number):void {
+				_maximum = value;
+				if (numericStepper && !isNaN(value)) {
+					numericStepper.maximum = value;
+				}
+			}
+
 		]]>
 	</fx:Script>
 	
@@ -72,7 +102,7 @@
 					  valueParseFunction="valueParseFunctionNew"
 					  change="setTargetValue()"/>
 	<s:Button id="clearStyleButton" 
-			  skinClass="com.flexcapacitor.skins.ClearButton"
+			  skinClass="com.flexcapacitor.skins.ClearButtonSkin"
 			  click="setTargetValue(true)"
 			  right="0" 
 			  verticalCenter="0"

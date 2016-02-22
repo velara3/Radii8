@@ -9,7 +9,7 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.skins.ClearButton;
+			import com.flexcapacitor.skins.ClearButtonSkin;
 			
 		]]>
 	</fx:Script>
@@ -23,7 +23,7 @@
 					change="setTargetValue()"
 					dataProvider="{formatsCollection}"/>
 	<s:Button id="clearStyleButton" 
-			  skinClass="com.flexcapacitor.skins.ClearButton"
+			  skinClass="com.flexcapacitor.skins.ClearButtonSkin"
 			  click="setTargetValue(true);"
 			  right="0" 
 			  verticalCenter="0"/>

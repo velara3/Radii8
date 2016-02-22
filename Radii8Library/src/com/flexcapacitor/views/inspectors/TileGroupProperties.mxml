@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 
+		 styleName="inspectablePanel"
+		 width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			
+			import org.as3commons.lang.ArrayUtils;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
+				}
+				
+				target = null;
+				data = null;
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			public var relevantProperties:Array = ["columnAlign", "columnWidth", "horizontalAlign", 
+													"horizontalGap", "orientation", "paddingLeft", "paddingTop",
+													"paddingBottom", "paddingRight", "padding", "requestedColumnCount",
+													"requestedRowCount", "rowAlign", "rowCount", "rowHeight",
+													"verticalAlign", "verticalGap"];
+				
+			public function update():void {
+				columnAlignRenderer.data = ClassUtils.getMetaDataOfProperty(target, "columnAlign");
+				columnWidthRenderer.data = ClassUtils.getMetaDataOfProperty(target, "columnWidth");
+				requestedColumnCountRenderer.data = ClassUtils.getMetaDataOfProperty(target, "requestedColumnCount");
+				
+				horizontalAlignRenderer.data = ClassUtils.getMetaDataOfProperty(target, "horizontalAlign");
+				horizontalGapRenderer.data = ClassUtils.getMetaDataOfProperty(target, "horizontalGap");
+				
+				orientationRenderer.data = ClassUtils.getMetaDataOfProperty(target, "orientation");
+				
+				paddingRenderer.data = ClassUtils.getMetaDataOfProperty(target, "padding");
+				paddingLeftRenderer.data = ClassUtils.getMetaDataOfProperty(target, "paddingLeft");
+				paddingTopRenderer.data = ClassUtils.getMetaDataOfProperty(target, "paddingTop");
+				paddingBottomRenderer.data = ClassUtils.getMetaDataOfProperty(target, "paddingBottom");
+				paddingRightRenderer.data = ClassUtils.getMetaDataOfProperty(target, "paddingRight");
+				
+				rowAlignRenderer.data = ClassUtils.getMetaDataOfProperty(target, "rowAlign");
+				rowCountRenderer.data = ClassUtils.getMetaDataOfProperty(target, "rowCount");
+				rowHeightRenderer.data = ClassUtils.getMetaDataOfProperty(target, "rowHeight");
+				requestedRowCountRenderer.data = ClassUtils.getMetaDataOfProperty(target, "requestedRowCount");
+				
+				verticalAlignRenderer.data = ClassUtils.getMetaDataOfProperty(target, "verticalAlign");
+				verticalGapRenderer.data = ClassUtils.getMetaDataOfProperty(target, "verticalGap");
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
+					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+						callLater(update);
+					}
+					else {
+						return;
+					}
+				}
+				callLater(update);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:TileGroup width="100%" columnAlign="left" columnWidth="120" verticalAlign="middle" requestedColumnCount="2">
+		
+		<s:Label text="Column Align" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="columnAlignRenderer" height="24" minWidth="140"/>
+		
+		<s:Label text="Column Width" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="columnWidthRenderer" height="24" stepSize="1" minimum="0" />
+		
+		<s:Label text="Requested Column Count" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="requestedColumnCountRenderer" height="24" stepSize="1" minimum="-1"/>
+		
+		<s:Label text="Horizontal Align" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="horizontalAlignRenderer" height="24" minWidth="160"/>
+		
+		<s:Label text="Horizontal Gap" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="horizontalGapRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Orientation" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="orientationRenderer" height="24"/>
+		
+		<s:Label text="Row Align" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="rowAlignRenderer" height="24" minWidth="160"/>
+		
+		<s:Label text="Row Count" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="rowCountRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Row Height" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="rowHeightRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Requested Row Count" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="requestedRowCountRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Vertical Align" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="verticalAlignRenderer" height="24"/>
+		
+		<s:Label text="Vertical Gap" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="verticalGapRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Padding" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="paddingRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Padding Left" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="paddingLeftRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Padding Right" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="paddingRightRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Padding Top" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="paddingTopRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Padding Bottom" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="paddingBottomRenderer" height="24" stepSize="1" />
+	</s:TileGroup>
+	
+</s:Group>

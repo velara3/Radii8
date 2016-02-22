@@ -613,6 +613,106 @@ package com.flexcapacitor.model {
 		
 		}
 		
+		public var openDocumentOnResults:Boolean;
+		/**
+		 * @inheritDoc
+		 * */
+		public function openAllDocuments(location:String = REMOTE_LOCATION):void {
+			var numberOfDocuments:int = documents.length; //fromMetaData ? documentsMetaData.length : documents.length;
+			var documentsArray:Array = documents; //fromMetaData ? documentsMetaData : documents;
+			var documentMetaData:IDocumentMetaData;
+			var documentData:IDocumentData;
+			var iDocument:IDocument;
+			var documentCreated:Boolean;
+			var isRemote:Boolean = ServicesManager.getIsRemoteLocation(location);
+			var isLocal:Boolean = ServicesManager.getIsLocalLocation(location);
+			var isInternal:Boolean = ServicesManager.getIsInternalLocation(location);
+			
+			// do documents have remote ID? if so we have to open from the server
+			var needToWaitForDocumentsOpenResults:Boolean;
+			
+			// should set isOpen to true
+			isOpen = true;
+			
+			//Radiate.instance.openPreviouslyOpenDocuments();
+			
+			
+			// open documents
+			//if (!fromMetaData) {
+			
+			openDocumentOnResults = true;
+			var isLoadingDocuments:Boolean;
+			
+			for (var i:int;i<numberOfDocuments;i++) {
+				iDocument = IDocument(documentsArray[i]);
+				
+				
+				if (isRemote) {
+					//documentCreated = getDocumentExists(iDocument);
+					
+					//if (!documentCreated) {
+					
+					if (iDocument && !iDocument.isOpen && iDocument.id!=null) {
+						
+						if (iDocument) {
+							DocumentData(iDocument).addEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler, false, 0, true);
+ 						}
+						
+						//Radiate.info("calling retrieve on document " + iDocument.name);
+						iDocument.retrieve();
+						isLoadingDocuments = true;
+					}
+					
+				}
+				else if (isLocal) {
+					iDocument.open(DocumentData.LOCAL_LOCATION);
+					Radiate.instance.openDocumentByData(iDocument, true);
+				}
+				else if (isInternal) {
+					iDocument.open();
+					Radiate.instance.openDocument(iDocument, location, true);
+				}
+			}
+			
+			if (!isLoadingDocuments) {
+				openDocumentOnResults = false;
+			}
+			/*	
+			}
+			else {
+				
+				for (var j:int;j<length;j++) {
+					documentMetaData = IDocumentMetaData(documentsArray[j]);
+					
+					documentCreated = getDocumentExists(documentMetaData);
+					
+					if (!documentCreated) {
+						if (documentData is DocumentData) {
+							DocumentData(documentData).addEventListener(DocumentData.RETRIEVED_RESULTS, documentRetrievedResultsHandler, false, 0, true);
+						}
+						
+						Radiate.info("calling retrieve on document " + documentData.name);
+						documentData.retrieve();
+					}
+					else {
+						iDocument = getDocumentByID(documentMetaData.uid);
+						iDocument.open();
+						Radiate.instance.openDocumentByData(iDocument, true);
+					}
+				}
+			}*/
+			
+			/*
+			if (!needToWaitForDocumentsOpenResults) {
+				//super.open(local);
+			}
+			else {
+				// we need to open the project with the remote ID
+				deferOpen = true;
+			}*/
+		
+		}
+		
 		/**
 		 * @inheritDoc
 		 * */
@@ -760,6 +860,27 @@ package com.flexcapacitor.model {
 			return savedLocally;
 		}
 		
+		/**
+		 * @inheritDoc
+		 * */
+		public function saveOnlyProject(locations:String = REMOTE_LOCATION, options:Object = null):Boolean {
+			var saveRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
+			var saveLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var savedLocally:Boolean;
+			
+			if (id==null) {
+				firstTimeSave = true;
+			}
+			
+			// if importing projects but save doesn't happen while online
+			if (uid=="null" || uid==null) {
+				uid = createUID();
+			}
+			
+			savedLocally = super.save(locations);
+			
+			return savedLocally;
+		}
 		
 		/**
 		 * Creates an object to send to the server
@@ -823,7 +944,9 @@ package com.flexcapacitor.model {
 		}
 		
 		/**
-		 * Project opened
+		 * Project opened. Not sure if this is accurate
+		 * Documents may still need to parse their source code
+		 * Maybe add event listeners to each document complete event. 
 		 * */
 		public function dispatchProjectOpened():void {
 			//Radiate.info("Project open complete");
@@ -891,7 +1014,10 @@ package com.flexcapacitor.model {
 				// but should we unmarshall it? 
 				Radiate.instance.addDocument(iDocument, this, true);
 				currentDocumentData.isOpen = false;
-				//Radiate.instance.openDocument(iDocument);
+				
+				if (openDocumentOnResults) {
+					Radiate.instance.openDocument(iDocument);
+				}
 			}
 			
 			
@@ -911,6 +1037,8 @@ package com.flexcapacitor.model {
 				
 				
 				dispatchProjectOpened();
+				
+				openDocumentOnResults = false;
 			}
 			
 			/*if (deferOpen) {

@@ -311,11 +311,11 @@
 							  height="22"
 							  />
 		
-		<c:BeveledImageButton id="openHomePageInBrowserButton" 
-							  source="{Radii8LibraryEffectsAssets.play}" 
+		<!--<c:BeveledImageButton id="openHomePageInBrowserButton" 
+							  source="{Radii8LibraryAssets.homePlayIcon}" 
 							  toolTip="View home page in browser"
 							  click="openHomePageInBrowserButton_clickHandler()"
-							  />
+							  />-->
 		
 		<s:CheckBox id="autoSaveToggle" 
 					selected="{radiate.enableAutoSave}"

@@ -21,6 +21,8 @@
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.utils.PersistentStorage;
 			
+			import flash.utils.setTimeout;
+			
 			import mx.events.FlexEvent;
 			
 			private var host:String;
@@ -127,6 +129,31 @@
 			public var NONE:String = "none";
 			public var CONNECTED:String = "connected";
 			public var DISCONNECTED:String = "disconnected";
+			
+			public var clickedOnce:Boolean;
+			protected function clearAllLoginsButton_clickHandler(event:MouseEvent):void
+			{
+				if (!clickedOnce) {
+					warning.text = "This will erase all logins. Click to continue";
+					clickedOnce = true;
+				}
+				else {
+					PersistentStorage.removeAllFromStorage(Radiate.USER_STORE);
+					warning.text = "All logins erased.";
+					var removedNote:Function;
+					setTimeout(removedNotes, 3000);
+				}
+			}
+			
+			protected function removedNotes():void {
+				if (warning) {
+					warning.text = "";
+				}
+				if (warningLabel_Ha) {
+					warningLabel_Ha.text = "";
+				}
+				currentState = NONE;
+			}
 		]]>
 	</fx:Script>
 	
@@ -186,13 +213,20 @@
 			<s:CheckBox id="wordWrapCheckbox" />
 			<s:Label text="Automatically upload media" />
 			<s:CheckBox id="uploadLibraryItemsCheckbox" />
-			<s:Label text="Save login" />
-			<s:CheckBox id="saveLoginCheckbox" />
 			<s:Label text="Auto-Save" />
 			<s:CheckBox id="autoSaveCheckbox" toolTip="If you enable auto save do NOT edit the document in the browser and RADIATE at the same time" />
+			<s:Label text="Save login" />
+			<s:CheckBox id="saveLoginCheckbox" />
+			<s:Label text="Remove all logins" />
+			<s:HGroup width="100%" verticalAlign="middle">
+				<controls:ClearButton click="clearAllLoginsButton_clickHandler(event)" 
+									  toolTip="Clicking this will remove all logins across all domains. Click twice to continue."/>
+				<s:Label id="warning" paddingLeft="10" text="" color="red" fontWeight="bold" />
+			</s:HGroup>
 		</s:TileGroup>
 		
 		<s:HGroup width="100%" right="10" bottom="10" minHeight="32" paddingLeft="10" verticalAlign="bottom">
+			
 			<s:Label id="warningLabel_Ha" 
 					 x="15" y="15" 
 					 text="" 

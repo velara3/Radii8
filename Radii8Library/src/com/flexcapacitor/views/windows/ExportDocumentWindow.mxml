@@ -27,6 +27,7 @@
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.model.TranscoderDescription;
+			import com.flexcapacitor.utils.ArrayUtils;
 			
 			import flash.net.navigateToURL;
 			
@@ -72,6 +73,8 @@
 				var templateName:String = templatesDropDownList.selectedItem;
 				var filesCreated:Boolean;
 				var template:String;
+				var exportProject:Boolean;
+				var sources:Array;
 				
 				
 				if (iDocument==null) {
@@ -86,6 +89,7 @@
 				// templates
 				template = getSelectedTemplate(language);
 				
+				exportProject = allDocumentsButton.selected ? true : false;
 				
 				// options
 				if (language == CodeManager.HTML) {
@@ -108,6 +112,7 @@
 							extension = "html";
 						}
 					}
+					
 					htmlOptions.fileExtension = extension;
 					htmlOptions.template = template;
 					options = htmlOptions;
@@ -115,25 +120,43 @@
 				else if (language == CodeManager.MXML) {
 					options = CodeManager.getExportOptions(language);
 					options.useInlineStyles = setStylesInline.selected;
+					
 					if (extension=="auto") {
 						extension = transcoderDescription.extension;
 					}
+					
 					options.template = template;
 					options.fileExtension = extension;
 					options.createFiles = true;
 				}
 				else if (language == CodeManager.ANDROID) {
 					options = CodeManager.getExportOptions(language);
+					
 					if (extension=="auto") {
 						extension = transcoderDescription.extension;
 					}
+					
 					options.useInlineStyles = setStylesInline.selected;
 					options.template = template;
 					options.fileExtension = extension;
 					options.createFiles = true;
 				}
 				
-				sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, language, options); 
+				
+				if (exportProject) {
+					sources = CodeManager.getProjectData(iDocument.project, language, options);
+					var files:Array = [];
+					for (var i:int = 0; i < sources.length; i++) {
+						sourceData = sources[i];
+						files = ArrayUtils.add(files, sourceData.files);
+					}
+					
+					sourceData = new SourceData();
+					sourceData.files = files;
+				}
+				else {
+					sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, language, options); 
+				}
 				
 				if (sourceData.files && sourceData.files.length<=1) {
 					
@@ -300,6 +323,9 @@
 					if (iDocument.template==null && templateName!="custom" && language==CodeManager.HTML) {
 						output = new Radii8LibraryTranscodersAssets.basicHTMLDocument();
 					}
+					else if (language==CodeManager.MXML) {
+						output = "";
+					}
 					else {
 						output = iDocument.template;
 					}
@@ -329,7 +355,6 @@
 					output = new Radii8LibraryTranscodersAssets.boilerplateHTMLDocument_v5_2_0();
 				}
 				else if (templateName=="none") {
-					
 					output = "";
 				}
 				
@@ -514,6 +539,27 @@
 					 color="black"
 					 width="100%"
 					 maxDisplayedLines="1"/>
+		</s:HGroup>
+		
+		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
+		
+		<s:HGroup width="100%" verticalAlign="baseline">
+			
+			<s:Label text="Export:" 
+					 color="black"
+					 fontWeight="bold"
+					 minWidth="120"/>
+			
+			<s:RadioButton id="allDocumentsButton" 
+					 label="All documents in project" 
+					 minWidth="120"
+					 selected="true"
+					 groupName="amountOfDocuments"/>
+			
+			<s:RadioButton id="selectedDocumentButton" 
+					 label="Selected Document" 
+					 color="black"
+					 groupName="amountOfDocuments"/>
 		</s:HGroup>
 		
 		<!--controls:HorizontalLine width="100%" alpha="1" angle="90"/>

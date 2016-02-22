@@ -3,6 +3,7 @@ package com.flexcapacitor.managers {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.IProject;
 	import com.flexcapacitor.model.ImportOptions;
 	import com.flexcapacitor.model.SourceData;
 	import com.flexcapacitor.model.TranscoderDescription;
@@ -288,6 +289,57 @@ package com.flexcapacitor.managers {
 			
 			// pasting from other documents: 
 			Radiate.warn("Target not found in get source code. The item may have been deleted. Also, you cannot paste from another document at this time.", document);
+			return null;
+			//throw new Error("Target not found in get source code. The item may have been deleted. Also, you cannot paste from another document at this time.");
+		}
+		
+		/**
+		 * Generate the code for the provided project. Not implemented
+		 * */
+		public static function getProjectData(project:IProject, language:* = null, options:ExportOptions = null):Array {
+			var targetDescription:ComponentDescription;
+			var transcoderDescription:TranscoderDescription;
+			var exporter:DocumentTranscoder;
+			var sourceData:SourceData;
+			var documents:Array;
+			var sources:Array = [];
+			var numberOfDocuments:int;
+			var document:IDocument;
+			
+			if (language is String || language==null) {
+				language = language==null ? MXML : language;
+			}
+			else if (language is TranscoderDescription) {
+				transcoderDescription = TranscoderDescription(language);
+			}
+			
+			// get exporter
+			// pass options
+			// return source code
+			
+			if (!transcoderDescription) {
+				transcoderDescription = getExporter(language);
+			}
+			
+			exporter = transcoderDescription ? transcoderDescription.exporter : null;
+			
+			if (!transcoderDescription) {
+				throw new Error("There is no exporter for " + language + ".");
+			}
+			
+			documents = project.documents ? project.documents : [];
+			numberOfDocuments = documents ? documents.length : 0;
+			
+			for (var i:int; i < numberOfDocuments; i++) {
+				document = documents[i];
+				sourceData = exporter.export(document, null, options);
+				sources.push(sourceData);
+			}
+			
+			return sources;
+			
+			// pasting from other documents: 
+			Radiate.warn("Target not found in get source code. The item may have been deleted. Also, you cannot paste from another document at this time.", project);
 			return null;
 			//throw new Error("Target not found in get source code. The item may have been deleted. Also, you cannot paste from another document at this time.");
 		}

@@ -4,6 +4,7 @@
 package com.flexcapacitor.utils {
 	
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImportOptions;
 	import com.flexcapacitor.model.IssueData;
@@ -17,6 +18,8 @@ package com.flexcapacitor.utils {
 	import flash.utils.getTimer;
 	
 	import mx.core.IVisualElementContainer;
+	
+	import spark.components.Application;
 
 	
 	/**
@@ -46,7 +49,12 @@ package com.flexcapacitor.utils {
 			var isValid:Boolean;
 			var codeWasWrapped:Boolean;
 			
+			errors = [];
+			warnings = [];
+			
 			newComponents = [];
+			
+			source = StringUtils.trim(source);
 			
 			// VALID XML BEFORE IMPORTING
 			isValid = XMLUtils.isValidXML(source);
@@ -62,7 +70,7 @@ package com.flexcapacitor.utils {
 				if (!isValid) {
 					//codeToParse = updatedCode;
 					Radiate.error("Could not parse code source code. " + XMLUtils.validationErrorMessage);
-					Radiate.editImportingCode(updatedCode);
+					Radiate.editImportingCode(updatedCode); // dispatch event instead or return 
 					sourceData.errors = [IssueData.getIssue(XMLUtils.validationError.name, XMLUtils.validationErrorMessage)];
 					return sourceData;
 				}
@@ -82,6 +90,10 @@ package com.flexcapacitor.utils {
 				Radiate.error("Could not parse code " + document.name + ". " + error.message);
 			}
 			
+			if (componentDescription==null) {
+				componentDescription = document.componentDescription;
+			}
+			
 			// IF VALID XML OBJECT BEGIN IMPORT 
 			if (mxml) {
 				elName = mxml.localName();
@@ -89,7 +101,20 @@ package com.flexcapacitor.utils {
 				container = componentDescription.instance as IVisualElementContainer;
 				
 				// set import to true to prevent millions of events from dispatching all over the place
+				// might want to check on this - events are still getting dispatched 
+				// try - doNotAddEventsToHistory
 				Radiate.importingDocument = true;
+				//HistoryManager.doNotAddEventsToHistory = false;
+				// also check moveElement
+				
+				if (removeAllOnImport) {
+					
+					// TypeError: Error #1034: Type Coercion failed: cannot convert application@3487f91a80a1 to spark.components.Application.
+					// loading an application from different sdk causes cannot convert error
+					if ("removeAllElements" in document.instance) {
+						Object(document.instance).removeAllElements();
+					}
+				}
 				
 				// TODO this is a special case we check for since 
 				// we should have already created the application by now
@@ -111,6 +136,7 @@ package com.flexcapacitor.utils {
 					}
 				}
 				
+				
 				// LOOP THROUGH EACH CHILD NODE
 				// i think this is done above - commenting out this section
 				
@@ -120,12 +146,15 @@ package com.flexcapacitor.utils {
 			}
 			
 			Radiate.importingDocument = false;
+			//HistoryManager.doNotAddEventsToHistory = true;
 			
 			// using importing document flag it goes down from 5 seconds to 1 second
 			//Radiate.info("Time to import: " + (getTimer()-timer));
 			
 			sourceData.source = source;
 			sourceData.targets = newComponents.slice();
+			sourceData.errors = errors;
+			sourceData.warnings = warnings;
 			
 			if (newComponents && newComponents.length) {
 				sourceData.componentDescription = document.getItemDescription(newComponents[0]);
@@ -141,16 +170,29 @@ package com.flexcapacitor.utils {
 		 * */
 		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0, componentInstance:Object = null):Object {
 			var elementName:String = node.localName();
+			var qualifiedName:QName = node.name();
+			var kind:String = node.nodeKind();
 			var domain:ApplicationDomain = ApplicationDomain.currentDomain;
-			var componentDefinition:ComponentDefinition = Radiate.getDynamicComponentType(elementName);
+			var componentDefinition:ComponentDefinition;
 			var includeChildren:Boolean = true;
 			var className:String;
 			var classType:Class;
 			var componentDescription:ComponentDescription;
 			var componentAlreadyAdded:Boolean;
+			var message:String;
+			var errorData:ErrorData;
+			var issueData:IssueData;
+			
+			
+			if (elementName==null || kind=="text") {
+				
+			}
+			else {
+				componentDefinition = Radiate.getDynamicComponentType(elementName);
+			}
 			
 			if (componentDefinition==null) {
-				
+				message = "Could not find definition for " + elementName + ". The document will be missing elements.";
 			}
 			
 			className = componentDefinition ? componentDefinition.className :null;
@@ -159,7 +201,6 @@ package com.flexcapacitor.utils {
 			
 			if (componentDefinition==null && elementName!="RootWrapperNode") {
 				//message += " Add this class to Radii8LibrarySparkAssets.sparkManifestDefaults or add the library to the project that contains it.";
-				var message:String = "Could not find definition for " + elementName + ". The document will be missing elements.";
 				Radiate.error(message);
 				return null;
 			}
@@ -216,7 +257,7 @@ package com.flexcapacitor.utils {
 				// calling add before setting properties because some 
 				// properties such as borderVisible and trackingLeft/trackingRight need to be set after 
 				// the component is added (maybe)
-				var valuesObject:ValuesObject = Radiate.getPropertiesStylesFromNode(componentInstance, node, componentDefinition);
+				var valuesObject:ValuesObject = Radiate.getPropertiesStylesEventsFromNode(componentInstance, node, componentDefinition);
 				var attributes:Array = valuesObject.attributes;
 				//var typedValueObject:Object = Radiate.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
 				
@@ -234,13 +275,20 @@ package com.flexcapacitor.utils {
 				if (!componentAlreadyAdded) {
 					Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.values);
 				}
-				else if (valuesObject.propertiesAndStyles && valuesObject.propertiesAndStyles.length) {
-					Radiate.setPropertiesStyles(componentInstance, valuesObject.propertiesAndStyles, valuesObject.values);
+				else if (valuesObject.propertiesStylesEvents && valuesObject.propertiesStylesEvents.length) {
+					Radiate.setPropertiesStyles(componentInstance, valuesObject.propertiesStylesEvents, valuesObject.values);
 				}
 				
 				Radiate.removeExplictSizeOnComponent(componentInstance, node, componentDefinition, false);
 				
 				Radiate.updateComponentAfterAdd(iDocument, componentInstance);
+				
+				Radiate.makeInteractive(componentInstance, makeInteractive);
+				
+				// in case width or height or relevant was changed
+				if (componentInstance is Application) {
+					Radiate.instance.dispatchDocumentSizeChangeEvent(componentInstance);
+				}
 				
 				componentDescription = iDocument.getItemDescription(componentInstance);
 				
@@ -286,6 +334,26 @@ package com.flexcapacitor.utils {
 					}
 				}
 				
+				for (var prop:String in valuesObject.propertiesErrorsObject) {
+					errorData = ErrorData.getIssue("Invalid value", "Value for property '" + prop + "' was not applied");
+					errorData.errorID = valuesObject.propertiesErrorsObject[prop].errorID;
+					errorData.message = valuesObject.propertiesErrorsObject[prop].message;
+					errorData.name = valuesObject.propertiesErrorsObject[prop].name;
+					errors.push(errorData);
+				}
+				
+				for (var style:String in valuesObject.stylesErrorsObject) {
+					errorData = ErrorData.getIssue("Invalid value", "Value for style '" + style + "' was not applied");
+					errorData.errorID = valuesObject.stylesErrorsObject[style].errorID;
+					errorData.message = valuesObject.stylesErrorsObject[style].message;
+					errorData.name = valuesObject.stylesErrorsObject[style].name;
+					errors.push(errorData);
+				}
+				
+				for each (var attributeNotFound:String in valuesObject.attributesNotFound) {
+					errorData = ErrorData.getIssue("Invalid attribute", "Attribute '" + attributeNotFound + "' was not processed");
+					errors.push(errorData);
+				}
 				
 				newComponents.push(componentInstance);
 				// might want to get a properties object from the attributes 

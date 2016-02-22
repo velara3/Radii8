@@ -12,8 +12,10 @@
 			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.model.StyleMetaData;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
 			import mx.collections.ArrayCollection;
+			import mx.core.IFlexModuleFactory;
 			import mx.utils.ArrayUtil;
 			
 			import spark.components.Button;
@@ -49,6 +51,18 @@
 			 * Color chooser component
 			 * */
 			public var colorChooser:ColorChooser;
+			public var colorChooser2:ColorChooser;
+			
+			/**
+			 * Include second color picker
+			 * */
+			[Bindable]
+			public var includeSecondColor:Boolean;
+			
+			/**
+			 * In some cases we need the value to be a uint
+			 * */
+			public var convertColorToUInt:Boolean;
 			
 			/**
 			 * Numeric stepper value 
@@ -141,6 +155,9 @@
 				else if (data is XML) {
 					updateSubComponentsValueXML();
 				}
+				else if (data==null) {
+					throw Error("Invalid property data");
+				}
 			}
 			
 			
@@ -149,7 +166,7 @@
 			 * */
 			public function setTargetValue(clearStyle:Boolean = false):void {
 				var item:XML = data as XML;
-				var target:Object = Radiate.getInstance().target; // does not support multiple targets yet
+				var target:Object = Radiate.instance.target; // does not support multiple targets yet
 				var actualValue:*;
 				var isStyle:int;
 				var styleIsColor:Boolean;
@@ -164,6 +181,7 @@
 				var nodename:String;
 				var access:String;
 				var textValue:String;
+				var moduleFactory:IFlexModuleFactory;
 				
 				if (item) {
 					nodename = item.name();
@@ -230,8 +248,21 @@
 				}
 				// let SetAction convert 0xFF, #ff and red, ReD
 				else if (format=="Color") {
-					actualValue = colorChooser.selectedColor;
+					var secondValue:Array;
+					
+					if (includeSecondColor) {
+						actualValue = [colorChooser.selectedColor, colorChooser2.selectedColor];
 					}
+					else {
+						actualValue = colorChooser.selectedColor;
+					}
+					
+					if (convertColorToUInt) {
+						// todo: get module factory for target application
+						moduleFactory = Radiate.getModuleFactory(target);
+						actualValue = DisplayObjectUtils.getColorAsUInt(actualValue, moduleFactory);
+					}
+				}
 				else if (type=="Number" || (type=="int" && targetValueText==null) || numericStepper) {
 						actualValue = numericStepper.value;
 						
@@ -374,8 +405,16 @@
 						}
 					}
 					else if (format=="Color") {
-						colorChooser.selectedColor = value;
+						var secondValue:Array;
 						
+						if (includeSecondColor) {
+							secondValue = value ? value.split(",") : [value];
+							colorChooser.selectedColor = secondValue[0];
+							colorChooser2.selectedColor = secondValue.length>1 ? secondValue[1] : secondValue[0];
+						}
+						else {
+							colorChooser.selectedColor = value;
+						}
 					}
 					else if (enumeration && enumeration.length>0) {
 						if (!formatsCollection) formatsCollection = new ArrayCollection();
@@ -482,7 +521,16 @@
 						
 					}
 					else if (format=="Color") {
-						colorChooser.selectedColor = value;
+						var secondValue:Array;
+						
+						if (includeSecondColor) {
+							secondValue = value ? value.split(",") : [value];
+							colorChooser.selectedColor = secondValue[0];
+							colorChooser2.selectedColor = secondValue.length>1 ? secondValue[1] : secondValue[0];
+						}
+						else {
+							colorChooser.selectedColor = value;
+						}
 					}
 					else if ((enumeration && enumeration.length>0) || formatCombobox || formatDropDownList) {
 						

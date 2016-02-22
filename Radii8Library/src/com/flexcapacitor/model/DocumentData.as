@@ -483,10 +483,11 @@ package com.flexcapacitor.model {
 			// we need to create service
 			if (openService==null) {
 				openService = new WPService();
-				openService.host = host;
 				openService.addEventListener(WPServiceBase.RESULT, openResultsHandler, false, 0, true);
 				openService.addEventListener(WPServiceBase.FAULT, openFaultHandler, false, 0, true);
 			}
+			
+			openService.host = host;
 			
 			openSuccessful = false;
 			openInProgress = true;
@@ -632,7 +633,7 @@ package com.flexcapacitor.model {
 						hasError = true;
 					}
 				}
-				// we switched to pages so we assign data.post 
+				// if we switched to pages we assign data.post 
 				// so we assign page to data.post so we can continue to use the same code 
 				if (data.page) {
 					data.post = data.page;

@@ -89,12 +89,23 @@
 			public var settingEditorText:Boolean;
 			public var editingTemplate:Boolean;
 			
-			private var htmlOptions:HTMLExportOptions;
 			
 			private var options:ExportOptions;
 			
 			[Bindable]
 			public var isHTML:Boolean;
+			
+			/**
+			 * Last source data
+			 * */
+			[Bindable]
+			public var sourceData:SourceData;
+			
+			public var lastTextAreaValue:String;
+			
+			public var aceEditorCreated:Boolean;
+			public var aceCSSEditorCreated:Boolean;
+			public var aceTemplateEditorCreated:Boolean;
 			
 			public function activate():void {
 				radiate = Radiate.getInstance();
@@ -182,6 +193,7 @@
 				
 				if (language == CodeManager.HTML) {
 					//if (!htmlOptions) {
+					var htmlOptions:HTMLExportOptions;
 					htmlOptions = CodeManager.getExportOptions(language) as HTMLExportOptions;
 					//}
 					
@@ -211,11 +223,14 @@
 				}
 				else if (language == CodeManager.MXML) {
 					options = CodeManager.getExportOptions(language) as ExportOptions;
+					options.template = "";
 					options.exportChildDescriptors = showChildDescriptors.selected;
 					//options = null;
 				}
 				else if (language == CodeManager.ANDROID) {
-					options = null;
+					options = CodeManager.getExportOptions(language) as ExportOptions;
+					options.template = "";
+					//options = null;
 				}
 				
 				sourceData = CodeManager.getSourceData(target, iDocument, language, options);
@@ -474,18 +489,6 @@
 					radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML);
 				}
 			}
-			
-			/**
-			 * Last source data
-			 * */
-			[Bindable]
-			public var sourceData:SourceData;
-			
-			public var lastTextAreaValue:String;
-			
-			public var aceEditorCreated:Boolean;
-			public var aceCSSEditorCreated:Boolean;
-			public var aceTemplateEditorCreated:Boolean;
 			
 			public function getTextAreaCode():String {
 				
@@ -816,6 +819,7 @@
 			private function createEditors():void {
 				var settings:Settings = Radiate.settings;
 				var enableWordWrap:Boolean = settings.enableWordWrap;
+				enableWordWrapButton.selected = enableWordWrap;
 				
 				// 1067: Implicit coercion of a value of type com.flexcapacitor.controls:AceEditor to an unrelated type Object
 				
@@ -873,8 +877,8 @@
 				lastFocusedEditor = event.currentTarget;
 				searchInput.aceEditor = lastFocusedEditor;
 				
-				if (enableWordWrap) {
-					//wordwrapButton.selected = !lastFocusedEditor.useWordWrap;
+				if (enableWordWrapButton) {
+					enableWordWrapButton.selected = lastFocusedEditor.useWordWrap;
 				}
 			}
 			
@@ -882,10 +886,10 @@
 			protected function wordwrapButton_clickHandler(event:MouseEvent):void
 			{
 				if (lastFocusedEditor) {
-					lastFocusedEditor.useWordWrap = !lastFocusedEditor.useWordWrap;
+					lastFocusedEditor.useWordWrap = enableWordWrapButton.selected;
 				}
 				else if (aceEditor) {
-					aceEditor.useWordWrap = !aceEditor.useWordWrap;
+					aceEditor.useWordWrap = enableWordWrapButton.selected;
 				}
 			}
 			
@@ -1019,7 +1023,7 @@ IFRAME_ID {
 			  clipAndEnableScrolling="true" 
 			  paddingLeft="6" 
 			  paddingRight="10"
-			  verticalAlign="baseline"
+			  verticalAlign="middle"
 			  >
 		
 		<c:SolidFillToggleButton id="editTemplateButton" 
@@ -1081,10 +1085,14 @@ IFRAME_ID {
 							  click="previewButton_clickHandler(event)"
 							  />-->
 		
-		<c:BeveledImageButton id="enableWordWrap"
+		<c:BeveledImageToggleButton id="enableWordWrapButton"
 							  source="{Radii8LibraryAssets.wordWrap}"
 							  toolTip="Word wrap"
+							  width="20"
+							  height="16"
+							  scaleMode="letterbox"
 							  click="wordwrapButton_clickHandler(event)"
+							  showBackgroundWhenSelected="true"
 							  />
 		
 		

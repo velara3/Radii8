@@ -4,13 +4,14 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
-		 styleName="inspectablePanel">
+		 
+		 styleName="inspectablePanel"
+		 width="100%">
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			
 			import org.as3commons.lang.ArrayUtils;
@@ -50,6 +51,7 @@
 				}
 			}
 			
+			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
 				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
 					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
@@ -64,20 +66,38 @@
 			}
 			
 			public function update():void {
-				var textAccessor:MetaData = ClassUtils.getMetaDataOf(target, "styleName");
-				
-				textRenderer.data = textAccessor;
+				textRenderer.data = ClassUtils.getMetaDataOfProperty(target, "text");
+				promptRenderer.data = ClassUtils.getMetaDataOfProperty(target, "prompt");
+				heightInLinesRenderer.data = ClassUtils.getMetaDataOfProperty(target, "heightInLines");
+				widthInCharsRenderer.data = ClassUtils.getMetaDataOfProperty(target, "widthInChars");
+				horizontalScrollPolicyRenderer.data = ClassUtils.getMetaDataOfStyle(target, "horizontalScrollPolicy");
+				verticalScrollPolicyRenderer.data = ClassUtils.getMetaDataOfStyle(target, "verticalScrollPolicy");
 			}
 			
-			public var relevantProperties:Array = ["styleName"];
+			public var relevantProperties:Array = ["text", "prompt", "heightInLines", "widthInChars", 
+													"horizontalScrollPolicy", "verticalScrollPolicy"];
+			
 		]]>
 	</fx:Script>
 	
-	
 	<s:TileGroup width="100%" columnAlign="left" columnWidth="120" verticalAlign="middle" requestedColumnCount="2">
 		
-		<s:Label text="Style Name" styleName="inspectablePanelLabel" />
-		<renderers:TextRenderer id="textRenderer" />
+		<s:Label text="Text" styleName="inspectablePanelLabel"/>
+		<renderers:TextRenderer id="textRenderer"  height="24"/>
 		
+		<s:Label text="Prompt" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="promptRenderer" height="24" />
+	
+		<s:Label text="Height in lines" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="heightInLinesRenderer" stepSize="1"/>
+	
+		<s:Label text="Width in characters" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="widthInCharsRenderer" stepSize="1"/>
+	
+		<s:Label text="Horizontal Scroll Policy" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="horizontalScrollPolicyRenderer" />
+	
+		<s:Label text="Vertical Scroll Policy" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="verticalScrollPolicyRenderer" />
 	</s:TileGroup>
 </s:Group>

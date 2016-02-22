@@ -25,6 +25,18 @@ package {
 		public static const transcodersManifestDefaults:Class;
 		
 		/**
+		 * var xml:XML = new XML(new Radii8LibraryTranscoderAssets.sparkManifest());
+		 * */
+		[Embed(source="/assets/data/spark-manifest.xml", mimeType="application/octet-stream")]
+		public static const sparkManifest:Class;
+		
+		/**
+		 * var xml:XML = new XML(new Radii8LibraryTranscoderAssets.sparkManifest());
+		 * */
+		[Embed(source="/assets/data/mxml-manifest.xml", mimeType="application/octet-stream")]
+		public static const mxmlManifest:Class;
+		
+		/**
 		 * Basic HTML document
 		 * */
 		[Embed(source="/assets/templates/html/template.html", mimeType="application/octet-stream")]

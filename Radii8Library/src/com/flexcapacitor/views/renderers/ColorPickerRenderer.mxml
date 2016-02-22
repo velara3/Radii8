@@ -9,8 +9,7 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.skins.ClearButton;
-			
+			import com.flexcapacitor.skins.ClearButtonSkin;
 			
 		]]>
 	</fx:Script>
@@ -20,19 +19,25 @@
 		<fx:Boolean id="includeTextInput"/>
 	</fx:Declarations>
 	
-	<r:layout>
-		<s:HorizontalLayout />
-	</r:layout>
-	
-	<c:ColorChooser id="colorChooser" left="0" top="0" right="0" bottom="0"
-					returnType="hexidecimalHash" 
-					change="setTargetValue()"
-					includeTextInput="{includeTextInput}"
-					includeCopyIcon="{includeCopyIcon}"/>
-	<s:Button id="clearStyleButton" 
-			  skinClass="com.flexcapacitor.skins.ClearButton"
-			  click="setTargetValue(true)"
-			  right="0" 
-			  verticalCenter="0"/>
+	<s:HGroup width="100%" verticalAlign="middle">
+		<c:ColorChooser id="colorChooser" left="0" top="0" right="0" bottom="0"
+						returnType="hexidecimalHash" 
+						change="setTargetValue()"
+						includeTextInput="{includeTextInput}"
+						includeCopyIcon="{includeCopyIcon}"/>
+		<c:ColorChooser id="colorChooser2" left="0" top="0" right="0" bottom="0"
+						returnType="hexidecimalHash" 
+						change="setTargetValue()"
+						includeInLayout="{includeSecondColor}"
+						visible="{includeSecondColor}"
+						includeTextInput="{includeTextInput}"
+						includeCopyIcon="{includeCopyIcon}"/>
+		<s:Button id="clearStyleButton" 
+				  skinClass="com.flexcapacitor.skins.ClearButtonSkin"
+				  click="setTargetValue(true)"
+				  right="0" 
+				  verticalCenter="0"/>
+		
+	</s:HGroup>
 	
 </r:PropertiesGridRendererBase>

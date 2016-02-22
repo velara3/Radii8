@@ -28,11 +28,13 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.PersistentStorage;
 			import com.flexcapacitor.utils.StoreLogin;
 			
 			import flash.net.navigateToURL;
 			
+			import mx.collections.ArrayCollection;
 			import mx.core.Singleton;
 			import mx.core.mx_internal;
 			import mx.events.FlexEvent;
@@ -41,12 +43,15 @@
 			import mx.managers.PopUpManager;
 			import mx.managers.PopUpManagerImpl;
 			
+			import spark.events.IndexChangeEvent;
+			
 			use namespace mx_internal;
 			
 			private var username:String;
 			public var openingState:String;
 			
 			public static const REGISTER:String = "register";
+			public static const CANCEL:String = "cancel";
 			public static const LOGIN:String = "login";
 			public static const LOGOUT:String = "logout";
 			public static const LOST_PASSWORD:String = "lostPassword";
@@ -60,17 +65,17 @@
 			// If there are multiple users it will fill it with the last user
 			// Or if it's blank it will autofill the password when a username is entered into the form
 			// 
-			// What we do is this:
+			// What we do when running in the browser is this:
 			// 
 			// 1. add scripts to the page when the application loads
 			// 2. check for existing form values set by the browser
 			// 3. fill in our Flash form with those values
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				var savePassword:StoreLogin = new StoreLogin();
+				var savePassword:StoreLogin;
 				var savePasswordCreated:Boolean;
 				
-				
 				if (!Radiate.isDesktop) {
+					savePassword = new StoreLogin();
 					savePasswordCreated = savePassword.initialize(); // places our javascript onto the page
 				}
 				
@@ -88,30 +93,30 @@
 			}
 			
 			/**
-			 * Gets form values from page
+			 * Gets form values 
 			 * */
 			protected function checkForLoginValues():void {
 				var savePassword:StoreLogin = new StoreLogin();
 				var loginItems:Array = [];
+				var value:Object;
+				var host:String;
 				
-				if (!Radiate.isDesktop) {
+				if (!Radiate.isDesktop && currentState=="login") {
 					loginItems = savePassword.getFormValues(); // gets existing form values
 					
 					if (loginItems.length>0) {
-						if (currentState=="login") {
-							usernameTextInput.text = loginItems[0];
-							passwordTextInput.text = loginItems[1];
-						}
+						usernameTextInput.text = loginItems[0];
+						passwordTextInput.text = loginItems[1];
 					}
 				}
 				else {
 					if (currentState=="login") {
 						if (usernameTextInput) {
-							var value:Object = PersistentStorage.read(Radiate.USER_STORE);
+							host = Radiate.getWPHostURL();
+							value = PersistentStorage.readFromDomain(Radiate.USER_STORE, host);
 							
 							if (value!=null) {
-								usernameTextInput.text = value.u;
-								passwordTextInput.text = value.p;
+								updateUserLogins(value);
 							}
 						}
 					}
@@ -131,7 +136,21 @@
 				var savePassword:StoreLogin = new StoreLogin();
 				var setValues:Boolean;
 				var results:Boolean;
+				var host:String;
+				var username:String;
 				
+				
+				if (usernameTextInput.visible) {
+					username = usernameTextInput.text;
+				}
+				else if (usernameComboBox.visible) {
+					if (usernameComboBox.selectedIndex==-1) {
+						username = usernameComboBox.textInput.text;
+					}
+					else {
+						username = usernameComboBox.selectedItem;
+					}
+				}
 				
 				if (!Radiate.isDesktop) {
 					setValues = savePassword.setFormValues(usernameTextInput.text, passwordTextInput.text);
@@ -142,17 +161,18 @@
 					
 				}
 				else {
-					if (PersistentStorage.isSupported) {
-						var user:Object = {};
-						user.u = usernameTextInput.text;
-						user.p = passwordTextInput.text;
+					if (rememberLoginCheckbox.selected && PersistentStorage.isSupported) {
+						//var user:Object = {};
+						//user.u = usernameTextInput.text;
+						//user.p = passwordTextInput.text;
+						host = Radiate.getWPHostURL();
 						
-						PersistentStorage.write(Radiate.USER_STORE, user);
+						PersistentStorage.writeToDomain(Radiate.USER_STORE, username, passwordTextInput.text, host);
 					}
 				}
 				
 				loginWarningsLabel.text = "";
-				serviceManager.login(usernameTextInput.text, passwordTextInput.text);
+				serviceManager.login(username, passwordTextInput.text);
 				serviceManager.addEventListener(RadiateEvent.LOGIN_RESULTS, loginResultsHandler, false, 0, true);
 				inProgress = true;
 			}
@@ -166,18 +186,46 @@
 			// Let the user type in a name / username and then when they tab to password
 			// 7. check if the browser has filled in the password after username is entered
 			// 8. fill in our password field with the password
-			protected function username_focusOutHandler(event:FocusEvent = null):void {
+			protected function username_focusOutHandler(event:KeyboardEvent = null):void {
 				var savePassword:StoreLogin = new StoreLogin();
 				var results:Object;
-				var value:String;
+				var password:String;
+				var value:Object;
+				var host:String;
+				var username:String;
+				
+				if (event) {
+					if (event.keyCode!=Keyboard.TAB && 
+						event.keyCode!=Keyboard.ENTER) {
+						return;
+					}
+				}
+				
+				if (usernameTextInput.visible) {
+					username = usernameTextInput.text;
+				}
+				else if (usernameComboBox.visible) {
+					if (usernameComboBox.selectedIndex==-1) {
+						username = usernameComboBox.textInput.text;
+					}
+					else {
+						username = usernameComboBox.selectedItem;
+					}
+				}
 				
 				if (!Radiate.isDesktop) {
 					// if username or password is blank check for password after supplying username
-					value = savePassword.checkForPassword(usernameTextInput.text);
+					password = savePassword.checkForPassword(username);
+				}
+				else {
+					if (PersistentStorage.isSupported) {
+						host = Radiate.getWPHostURL();
+						password = PersistentStorage.readFromDomain(Radiate.USER_STORE, host, username) as String;
+					}
 				}
 				
-				if (value) {
-					passwordTextInput.text = value;
+				if (password) {
+					passwordTextInput.text = password;
 					passwordTextInput.selectAll();
 				}
 				
@@ -192,7 +240,11 @@
 			}
 			
 			private function logout():void {
-				PersistentStorage.remove(Radiate.USER_STORE);
+				if (rememberLoginCheckbox && !rememberLoginCheckbox.selected) {
+					if (radiate.username!=null) {
+						PersistentStorage.removeFromDomain(Radiate.USER_STORE, radiate.username, Radiate.getWPHostURL());
+					}
+				}
 				logoutWarningsLabel.text = "";
 				serviceManager.addEventListener(RadiateEvent.LOGOUT_RESULTS, logoutResultsHandler, false, 0, true);
 				serviceManager.logout();
@@ -274,14 +326,14 @@
 			
 			
 			protected function getNewPasswordButton_clickHandler(event:MouseEvent = null):void {
-				inProgress = true;
 				lostPasswordWarningsLabel.text = "";
 				username = usernameOrEmailTextInput.text;
 				
 				if (username=="") {
-					lostPasswordWarningsLabel.text = "Please enter your username or email address.";
+					lostPasswordWarningsLabel.text = "Please enter your username or email.";
 					return;
 				}
+				inProgress = true;
 				serviceManager.addEventListener(RadiateEvent.LOST_PASSWORD_RESULTS, onLostPasswordResults, false, 0, true);
 				serviceManager.lostPassword(usernameOrEmailTextInput.text);
 			}
@@ -294,7 +346,7 @@
 			}
 			
 			protected function generatePasswordButton_clickHandler(event:MouseEvent):void {
-				var password:String = createRandomPassword(14, true, true, true, false);
+				var password:String = createRandomPassword(18, true, true, true, false);
 				newPasswordTextInput.text = password;
 				newPasswordTextInput2.text = password;
 			}
@@ -322,7 +374,9 @@
 			}
 			
 			protected function cancelButton_clickHandler(event:MouseEvent=null):void {
-				callLater(PopUpManager.removePopUp, [this]);
+				action = CANCEL;
+				closePopUp.startDelay = closePanelDelay;
+				closePopUp.play();
 			}
 			
 			
@@ -536,6 +590,7 @@
 				
 				
 				if (data && data is Object && successful) {
+					action = LOGIN;
 					dispatchEvent(new Event(LOGIN));
 					closePopUp.startDelay = 0;
 					closePopUp.play();
@@ -631,7 +686,7 @@
 				addMoveEffect();
 				PopUpManager.centerPopUp(this);
 				
-				checkForLoginValues()
+				checkForLoginValues();
 			}
 			
 			protected function loginAtWebsiteLabel_clickHandler(event:MouseEvent):void {
@@ -649,11 +704,77 @@
 			protected function lostPasswordCancelButton_clickHandler(event:MouseEvent):void
 			{
 				if (openingState==LOST_PASSWORD) {
+					action = CANCEL;
 					closePopUp.play();
 					return;
 				}
 				
 				currentState = LOGIN;
+			}
+			
+			private function updateUserLogins(value:Object):void
+			{
+				var usernames:Array = ClassUtils.getPropertyNames(value);
+				
+				if (usernames.length == 1) {
+					usernameTextInput.text = usernames[0];
+					passwordTextInput.text = value[usernames[0]];
+					
+					usernameTextInput.visible = true;
+					usernameTextInput.includeInLayout = true;
+					usernameComboBox.visible = false;
+					usernameComboBox.includeInLayout = false;
+				}
+				else if (usernames.length) {
+					usernameComboBox.dataProvider = new ArrayCollection(usernames);
+					
+					usernameTextInput.visible = false;
+					usernameTextInput.includeInLayout = false;
+					
+					usernameComboBox.visible = true;
+					usernameComboBox.includeInLayout = true;
+				}
+				else {
+					usernameComboBox.visible = false;
+					usernameComboBox.includeInLayout = false;
+				}
+			}
+			
+			protected function usernameComboBox_changeHandler(event:IndexChangeEvent):void
+			{
+				callLater(username_focusOutHandler);
+			}
+			
+			protected function clearbutton1_clickHandler(event:MouseEvent):void {
+				var username:String;
+				
+				if (usernameTextInput.visible) {
+					username = usernameTextInput.text;
+				}
+				else if (usernameComboBox.visible) {
+					if (usernameComboBox.selectedIndex==-1) {
+						username = usernameComboBox.textInput.text;
+					}
+					else {
+						username = usernameComboBox.selectedItem;
+					}
+				}
+				
+				if (username!=null && username!="") {
+					var removed:Boolean = PersistentStorage.removeFromDomain(Radiate.USER_STORE, username, Radiate.getWPHostURL());
+					
+					if (usernameTextInput.visible) {
+						usernameTextInput.text = "";
+					}
+					else if (usernameComboBox.visible) {
+						usernameComboBox.textInput.text = null;
+						usernameComboBox.selectedIndex = -1;
+					}
+					
+					passwordTextInput.text = "";
+					
+					checkForLoginValues();
+				}
 			}
 			
 		]]>
@@ -814,12 +935,24 @@
 				 >
 		
 		<s:Label text="Username" />
-		<s:TextInput id="usernameTextInput" 
-					 minWidth="200"
-					 focusOut="username_focusOutHandler(event)" 
-					 prompt="Username"
-					 styleName="textInputStyles"
-					 />
+		<s:HGroup width="100%">
+			<s:TextInput id="usernameTextInput" 
+						 minWidth="200"
+						 keyUp="username_focusOutHandler(event)" 
+						 prompt="Username"
+						 styleName="textInputStyles"
+						 />
+			<s:ComboBox id="usernameComboBox" 
+						minWidth="200"
+						change="usernameComboBox_changeHandler(event)"
+						prompt="Username"
+						includeInLayout="false"
+						visible="false"
+						/>
+			<controls:ClearButton tabFocusEnabled="false" 
+								  visible="{usernameTextInput.text!='' || usernameComboBox.selectedItem!=null}"
+								  click="clearbutton1_clickHandler(event)"/>
+		</s:HGroup>
 		<s:Label text="Password"  />
 		<s:TextInput id="passwordTextInput"
 					 minWidth="200"
@@ -836,7 +969,7 @@
 				 color="red"
 				 width="100%"/>
 		
-		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="middle">
 			<s:Label text="Register" 
 					 styleName="stateLabel" 
 					 click="goToRegistrationWithSiteState()"
@@ -906,7 +1039,7 @@
 					 />
 			<s:Spacer width="100%"/>
 			<s:Button id="lostPasswordCancelButton" label="Cancel" click="lostPasswordCancelButton_clickHandler(event)" />
-			<s:Button id="lostPasswordButton" label="Get New Password" click="getNewPasswordButton_clickHandler(event)" />
+			<s:Button id="lostPasswordButton" label="Get Passkey" click="getNewPasswordButton_clickHandler(event)" />
 		</s:HGroup>
 		
 	</s:VGroup>

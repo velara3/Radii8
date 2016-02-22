@@ -25,6 +25,9 @@ package {
 		[Embed(source="assets/icons/general/arrow.png")]
 		public static const arrow:Class;
 		
+		[Embed(source="assets/icons/general/bringForward.png")]
+		public static const bringForwards:Class;
+		
 		[Embed(source="assets/icons/general/cancel.png")]
 		public static const cancel:Class;
 		
@@ -150,6 +153,9 @@ package {
 		
 		[Embed(source="assets/icons/general/save.png")]
 		public static const save:Class;
+		
+		[Embed(source="assets/icons/general/sendBackwards.png")]
+		public static const sendBackwards:Class;
 		
 		[Embed(source="assets/icons/general/multipleSave.png")]
 		public static const multipleSave:Class;

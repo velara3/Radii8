@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 
+		 styleName="inspectablePanel"
+		 width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			
+			import org.as3commons.lang.ArrayUtils;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
+					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+						callLater(update);
+					}
+					else {
+						return;
+					}
+				}
+				callLater(update);
+				
+			}
+			
+			public function update():void {
+				allowMultipleSelectionRenderer.data = ClassUtils.getMetaDataOfProperty(target, "allowMultipleSelection");
+				selectionColorRenderer.data 		= ClassUtils.getMetaDataOfStyle(target, "selectionColor");
+				rollOverColorRenderer.data 			= ClassUtils.getMetaDataOfStyle(target, "rollOverColor");
+				downColorRenderer.data 				= ClassUtils.getMetaDataOfStyle(target, "downColor");
+				contentBackgroundColorRenderer.data = ClassUtils.getMetaDataOfStyle(target, "contentBackgroundColor");
+				borderVisibleRenderer.data 			= ClassUtils.getMetaDataOfStyle(target, "borderVisible");
+				borderColorRenderer.data 			= ClassUtils.getMetaDataOfStyle(target, "borderColor");
+				borderAlphaRenderer.data 			= ClassUtils.getMetaDataOfStyle(target, "borderAlpha");
+				useVirtualLayoutRenderer.data 		= ClassUtils.getMetaDataOfProperty(target, "useVirtualLayout");
+				dropEnabledRenderer.data 			= ClassUtils.getMetaDataOfProperty(target, "dropEnabled");
+				dragMoveEnabledRenderer.data 		= ClassUtils.getMetaDataOfProperty(target, "dragMoveEnabled");
+				dragEnabledRenderer.data 			= ClassUtils.getMetaDataOfProperty(target, "dragEnabled");
+				
+				//alternatingItemColorsRenderer.data 	= ClassUtils.getMetaDataOfStyle(target, "alternatingItemColors");
+			}
+			
+			public var relevantProperties:Array = ["selectionColor", "rollOverColor", "downColor", "contentBackgroundColor", 
+													"borderVisible", "borderColor", "borderAlpha", "alternatingItemColors", 
+													"useVirtualLayout", "dropEnabled", "dragMoveEnabled", "dragEnabled", 
+													"allowMultipleSelection"];
+		]]>
+	</fx:Script>
+	
+	
+	<s:TileGroup width="100%" columnAlign="left" columnWidth="120" verticalAlign="middle" requestedColumnCount="2">
+		
+		<s:Label text="Allow Multiple Selection" styleName="inspectablePanelLabel"/>
+		<renderers:BooleanRenderer id="allowMultipleSelectionRenderer"/>
+		
+		<s:Label text="Selection Color" styleName="inspectablePanelLabel"/>
+		<renderers:ColorPickerRenderer id="selectionColorRenderer" />
+		
+		<s:Label text="Roll Over Color" styleName="inspectablePanelLabel" />
+		<renderers:ColorPickerRenderer id="rollOverColorRenderer"/>
+		
+		<s:Label text="Down Color" styleName="inspectablePanelLabel"/>
+		<renderers:ColorPickerRenderer id="downColorRenderer" />
+		
+		<s:Label text="Content Background Color" styleName="inspectablePanelLabel" />
+		<renderers:ColorPickerRenderer id="contentBackgroundColorRenderer" />
+		
+		<s:Label text="Border Visible" styleName="inspectablePanelLabel"/>
+		<renderers:BooleanRenderer id="borderVisibleRenderer" />
+		
+		<s:Label text="Border Color" styleName="inspectablePanelLabel"/>
+		<renderers:ColorPickerRenderer id="borderColorRenderer" />
+		
+		<s:Label text="Border Alpha" styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="borderAlphaRenderer" />
+		<!--
+		error because we need two color values
+		todo add support for two colors or text field instead of colorpicker
+		else if (format=="Color") {
+			colorChooser.selectedColor = value; // colorChooser is null-->
+		
+		<s:Label text="Alternating Item Colors" styleName="inspectablePanelLabel" />
+		<renderers:ColorPickerRenderer id="alternatingItemColorsRenderer" includeSecondColor="true" />
+		
+		<s:Label text="Use Virtual Layout" styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="useVirtualLayoutRenderer" />
+		
+		<s:Label text="Drag Enabled" styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="dragEnabledRenderer" />
+		
+		<s:Label text="Drag Move Enabled" styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="dragMoveEnabledRenderer" />
+		
+		<s:Label text="Drop Enabled" styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="dropEnabledRenderer" />
+		
+	</s:TileGroup>
+</s:Group>

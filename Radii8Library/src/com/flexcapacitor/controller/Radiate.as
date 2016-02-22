@@ -20,6 +20,7 @@ package com.flexcapacitor.controller {
 	import com.durej.PSDParser.PSDParser;
 	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.components.IDocumentContainer;
+	import com.flexcapacitor.controls.ColorPicker;
 	import com.flexcapacitor.controls.Hyperlink;
 	import com.flexcapacitor.effects.core.CallMethod;
 	import com.flexcapacitor.effects.core.PlayerType;
@@ -129,10 +130,13 @@ package com.flexcapacitor.controller {
 	import mx.containers.GridRow;
 	import mx.containers.TabNavigator;
 	import mx.controls.Alert;
+	import mx.controls.ColorPicker;
 	import mx.controls.LinkButton;
 	import mx.core.ClassFactory;
 	import mx.core.DeferredInstanceFromFunction;
 	import mx.core.DragSource;
+	import mx.core.EventPriority;
+	import mx.core.IFlexModuleFactory;
 	import mx.core.IInvalidating;
 	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
@@ -164,18 +168,26 @@ package com.flexcapacitor.controller {
 	import spark.components.Application;
 	import spark.components.BorderContainer;
 	import spark.components.Button;
+	import spark.components.CheckBox;
+	import spark.components.ColorPicker;
 	import spark.components.ComboBox;
+	import spark.components.DropDownList;
 	import spark.components.Grid;
 	import spark.components.Image;
 	import spark.components.Label;
 	import spark.components.NavigatorContent;
+	import spark.components.NumericStepper;
+	import spark.components.RadioButton;
 	import spark.components.RichEditableText;
 	import spark.components.RichText;
 	import spark.components.Scroller;
 	import spark.components.SkinnableContainer;
+	import spark.components.supportClasses.DropDownListBase;
 	import spark.components.supportClasses.GroupBase;
 	import spark.components.supportClasses.SkinnableTextBase;
+	import spark.components.supportClasses.SliderBase;
 	import spark.components.supportClasses.TextBase;
+	import spark.components.supportClasses.ToggleButtonBase;
 	import spark.core.ContentCache;
 	import spark.core.IGraphicElement;
 	import spark.core.IViewport;
@@ -659,6 +671,12 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public var userID:int = -1;
+		
+		/**
+		 * User name
+		 * */
+		[Bindable]
+		public var username:String;
 		
 		/**
 		 * Home page id
@@ -1198,11 +1216,11 @@ package com.flexcapacitor.controller {
 		 * Dispatch document size change event
 		 * */
 		public function dispatchDocumentSizeChangeEvent(target:*):void {
-			var scaleChangeEvent:RadiateEvent;
+			var sizeChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE)) {
-				scaleChangeEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SIZE_CHANGE, false, false, target);
-				dispatchEvent(scaleChangeEvent);
+				sizeChangeEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SIZE_CHANGE, false, false, target);
+				dispatchEvent(sizeChangeEvent);
 			}
 		}
 		
@@ -1756,6 +1774,8 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function initialize():void {
 			var componentsXML:XML 	= new XML(new Radii8LibrarySparkAssets.componentsManifestDefaults());
+			var sparkXML:XML	 	= new XML(new Radii8LibraryTranscodersAssets.sparkManifest());
+			var mxmlXML:XML	 		= new XML(new Radii8LibraryTranscodersAssets.mxmlManifest());
 			var toolsXML:XML 		= new XML(new Radii8LibraryToolAssets.toolsManifestDefaults());
 			var inspectorsXML:XML 	= new XML(new Radii8LibraryInspectorAssets.inspectorsManifestDefaults());
 			var devicesXML:XML		= new XML(new Radii8LibraryDeviceAssets.devicesManifestDefaults());
@@ -1771,6 +1791,8 @@ package com.flexcapacitor.controller {
 			//createDocumentTypesList(documentsXML);
 			
 			createComponentList(componentsXML);
+			createComponentList(sparkXML);
+			createComponentList(mxmlXML);
 			
 			createInspectorsList(inspectorsXML);
 			
@@ -1826,6 +1848,7 @@ package com.flexcapacitor.controller {
 			
 			XMLUtils.initialize();
 			
+			instance.createOpenImportPopUp();
 			
 			// we use this to prevent hyperlinks from opening web pages when in design mode
 			// we don't know what changes this causes with other components 
@@ -2019,6 +2042,8 @@ package com.flexcapacitor.controller {
 			var inspectorsLength:uint;
 			var items:XMLList;
 			var className:String;
+			var alternativeClassName:String;
+			var alternativeClasses:XMLList;
 			var skinClassName:String;
 			var inspectorClassName:String;
 			var hasDefinition:Boolean;
@@ -2029,6 +2054,7 @@ package com.flexcapacitor.controller {
 			var defaults:Object;
 			var propertyName:String;
 			var item:XML;
+			var altItem:XML;
 			var inspectorItems:XMLList;
 			var inspector:XML;
 			var inspectableClass:InspectableClass;
@@ -2042,11 +2068,27 @@ package com.flexcapacitor.controller {
 			
 			// add inspectable classes to the dictionary
 			for (var i:int;i<numberOfItems;i++) {
-				inspectableClass = new InspectableClass(items[i]);
+				item = items[i];
+				inspectableClass = new InspectableClass(item);
 				className = inspectableClass.className;
+				alternativeClasses = item..alternative;
 				
 				if (inspectableClassesDictionary[className]==null) {
 					inspectableClassesDictionary[className] = inspectableClass;
+					
+					// get other classes that can use the same inspectors
+					for (var k:int = 0; k < alternativeClasses.length(); k++)  {
+						altItem = alternativeClasses[k];
+						alternativeClassName = altItem.attribute("className");
+						
+						if (inspectableClassesDictionary[alternativeClassName]==null) {
+							inspectableClassesDictionary[alternativeClassName] = inspectableClass;
+						}
+						else {
+							warn("Inspectable alternative class, '" + alternativeClassName + "', was listed more than once during import.");
+						}
+					}
+					
 				}
 				else {
 					warn("Inspectable class, '" + className + "', was listed more than once during import.");
@@ -2678,7 +2720,20 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Get's the path to the multiuser wordpress site
+		 * Get's the root path to the single or multiuser wordpress site
+		 * Wp_host + WP_Path
+		 * */
+		public static function getWPHostURL():String {
+			return WP_HOST + WP_PATH;
+		}
+		
+		/**
+		 * Get's the path to the single or multiuser wordpress site
+		 * Wp_host + WP_Path + WP_USER_Path. 
+		 * When a user logs into a multiuser site the first time
+		 * they can and usually do log into wp_host + wp_path.
+		 * After they log in, future calls are made to 
+		 * wp_host + wp_path + wp_user_path. 
 		 * */
 		public static function getWPURL():String {
 			return WP_HOST + WP_PATH + WP_USER_PATH;
@@ -3041,7 +3096,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Gets array of inspector data for the given fully qualified class or object
 		 * */
-		public function getInspectors(target:Object):Array {
+		public function getInspectors(target:Object, fallBackOnSuperClasses:Boolean = false):Array {
 			var className:String;
 			var inspectors:Array;
 			var inspectorDataArray:Array;
@@ -3539,10 +3594,20 @@ package com.flexcapacitor.controller {
 		/**
 		 * Get the component by class name
 		 * */
-		public static function getDynamicComponentType(className:String, fullyQualified:Boolean = false):ComponentDefinition {
+		public static function getDynamicComponentType(componentName:Object, fullyQualified:Boolean = false):ComponentDefinition {
 			var definition:ComponentDefinition;
 			var numberOfDefinitions:uint = componentDefinitions.length;
 			var item:ComponentDefinition;
+			var className:String;
+			
+			if (componentName is QName) {
+				className = QName(componentName).localName;
+			}
+			else if (componentName is String) {
+				className = componentName as String;
+			}
+			
+			fullyQualified = className.indexOf("::")!=-1 ? true : fullyQualified;
 			
 			for (var i:uint;i<numberOfDefinitions;i++) {
 				item = ComponentDefinition(componentDefinitions.getItemAt(i));
@@ -3561,10 +3626,19 @@ package com.flexcapacitor.controller {
 			
 			
 			var hasDefinition:Boolean = ClassUtils.hasDefinition(className);
+			var classType:Object;
+			var name:String;
 			
 			
 			if (hasDefinition) {
-				addComponentType(className, className, null, null);
+				if (className.indexOf("::")!=-1) {
+					name = className.split("::")[1];
+				}
+				else {
+					name = className;
+				}
+				classType = ClassUtils.getDefinition(className);
+				addComponentType(name, className, classType, null, null);
 				item = getComponentType(className, fullyQualified);
 				return item;
 			}
@@ -5410,12 +5484,12 @@ package com.flexcapacitor.controller {
 		/**
 		 * Get values object from attributes and child tags on a component from XML node
 		 * */
-		public static function getPropertiesStylesFromNode(elementInstance:Object, node:XML, item:ComponentDefinition = null):ValuesObject {
+		public static function getPropertiesStylesEventsFromNode(elementInstance:Object, node:XML, item:ComponentDefinition = null):ValuesObject {
 			var elementName:String = node.localName();
 			var attributeName:String;
 			var attributes:Array;
 			var childNodeNames:Array;
-			var propertiesOrStyles:Array;
+			var propertiesStylesEvents:Array;
 			var properties:Array;
 			var styles:Array;
 			var events:Array;
@@ -5428,10 +5502,10 @@ package com.flexcapacitor.controller {
 			
 			attributes 				= XMLUtils.getAttributeNames(node);
 			childNodeNames 			= XMLUtils.getChildNodeNames(node);
-			propertiesOrStyles 		= attributes.concat(childNodeNames);
-			properties 				= ClassUtils.getPropertiesFromArray(elementInstance, propertiesOrStyles);
-			styles 					= ClassUtils.getStylesFromArray(elementInstance, propertiesOrStyles);
-			events 					= ClassUtils.getEventsFromArray(elementInstance, propertiesOrStyles);
+			propertiesStylesEvents 	= attributes.concat(childNodeNames);
+			properties 				= ClassUtils.getPropertiesFromArray(elementInstance, propertiesStylesEvents);
+			styles 					= ClassUtils.getStylesFromArray(elementInstance, propertiesStylesEvents);
+			events 					= ClassUtils.getEventsFromArray(elementInstance, propertiesStylesEvents);
 			
 			attributesValueObject 	= XMLUtils.getAttributesValueObject(node);
 			attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as IStyleClient, attributesValueObject, styles, failedToImportStyles);
@@ -5443,15 +5517,17 @@ package com.flexcapacitor.controller {
 			
 			valuesObject 						= new ValuesObject();
 			valuesObject.values 				= values;
+			valuesObject.events		 			= events;
 			valuesObject.styles 				= styles;
-			valuesObject.attributes 			= attributes;
 			valuesObject.properties 			= properties;
+			valuesObject.attributes 			= attributes;
 			valuesObject.childNodeNames 		= childNodeNames;
 			valuesObject.childNodeValues 		= childNodeValueObject;
 			valuesObject.stylesErrorsObject 	= failedToImportStyles;
 			valuesObject.propertiesErrorsObject = failedToImportProperties;
-			valuesObject.propertiesAndStyles	= properties.concat(styles);
-			
+			valuesObject.propertiesStylesEvents	= properties.concat(styles).concat(events);
+			valuesObject.attributesNotFound		= org.as3commons.lang.ArrayUtils.removeAllItems(attributes, valuesObject.propertiesStylesEvents);
+			/*
 			var a:Object = node.namespace().prefix;     //returns prefix i.e. rdf
 			var b:Object = node.namespace().uri;        //returns uri of prefix i.e. http://www.w3.org/1999/02/22-rdf-syntax-ns#
 			
@@ -5460,7 +5536,7 @@ package com.flexcapacitor.controller {
 			//returns all nodes in an xml doc that use the namespace
 			var nsElement:Namespace = new Namespace(node.namespace().prefix, node.namespace().uri);
 			
-			var usageCount:XMLList = node..nsElement::*;
+			var usageCount:XMLList = node..nsElement::*;*/
 			
 			return valuesObject;
 		}
@@ -5491,7 +5567,7 @@ package com.flexcapacitor.controller {
 			valuesObject.properties 			= properties;
 			valuesObject.stylesErrorsObject 	= failedToImportStyles;
 			valuesObject.propertiesErrorsObject = failedToImportProperties;
-			valuesObject.propertiesAndStyles	= properties.concat(styles);
+			valuesObject.propertiesStylesEvents	= properties.concat(styles);
 			
 			
 			return valuesObject;
@@ -6526,7 +6602,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				}
 				
 				// store changes
-				historyEventItems = HistoryManager.createHistoryEventItems(items, changes, properties, styles, values, description, RadiateEvent.MOVE_ITEM);
+				// add to history
+				if (!HistoryManager.doNotAddEventsToHistory) {
+					historyEventItems = HistoryManager.createHistoryEventItems(items, changes, properties, styles, values, description, RadiateEvent.MOVE_ITEM);
+				}
 				
 				// try moving
 				if ((!isSameParent && !isSameOwner) || movingIndexWithinParent) {
@@ -6576,15 +6655,17 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEventItems);
 				}
 				
-				// check for changes before dispatching
-				if (changes.indexOf(moveItems)!=-1) {
-					instance.dispatchMoveEvent(items, changes, properties);
-				}
-				
-				//setTargets(items, true);
-				
-				if (properties) {
-					instance.dispatchPropertyChangeEvent(items, changes, properties, styles);
+				if (Radiate.importingDocument==false) {
+					// check for changes before dispatching
+					if (changes.indexOf(moveItems)!=-1) {
+						instance.dispatchMoveEvent(items, changes, properties);
+					}
+					
+					//setTargets(items, true);
+					
+					if (properties) {
+						instance.dispatchPropertyChangeEvent(items, changes, properties, styles);
+					}
 				}
 				
 				return MOVED; // we assume moved if it got this far - needs more checking
@@ -6639,54 +6720,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 								isArray, isStyle, vectorClass, keepUndefinedValues);
 			
 			var component:Object = ArrayUtil.toArray(items)[0];
-		
-			// if text based or combo box we need to prevent 
-			// interaction with cursor
-			if (component is TextBase || component is SkinnableTextBase) {
-				component.mouseChildren = false;
-				
-				if ("textDisplay" in component && component.textDisplay) {
-					component.textDisplay.enabled = false;
-				}
-				
-				// show editor on double click
-				if (component is Label || component is RichText) {
-					component.doubleClickEnabled = true;
-					component.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
-				}
-				
-				if (component is Hyperlink) {
-					component.useHandCursor = false;
-				}
-			}
 			
-			if (component is ComboBox) {
-				if ("textInput" in component && component.textInput.textDisplay) {
-					component.textInput.textDisplay.enabled = false;
-				}
-			}
-			
-			// we can't add elements if skinnablecontainer._deferredContentCreated is false
-			if (component is BorderContainer) {
-				/*var factory:DeferredInstanceFromFunction;
-				factory = new DeferredInstanceFromFunction(deferredInstanceFromFunction);
-				BorderContainer(component).mxmlContentFactory = factory;
-				BorderContainer(component).createDeferredContent();
-				BorderContainer(component).removeAllElements();*/
-				
-				// we could probably also do this: 
-				BorderContainer(component).addElement(new Label());
-				BorderContainer(component).removeAllElements();
-				// we do this to get rid of the round joints. this skin joints default to miter
-				BorderContainer(component).setStyle("skinClass", com.flexcapacitor.skins.BorderContainerSkin);
-				
-			}
-			
-			// we need a custom FlexSprite class to do this
-			// do this after drop
-			if ("eventListeners" in component && !(component is GroupBase)) {
-				component.removeAllEventListeners();
-			}
+			updateComponentAfterAdd(instance.selectedDocument, component);
 			
 			return results;
 		}
@@ -7056,7 +7091,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var valuesObject:ValuesObject = getPropertiesStylesFromObject(componentDescription.instance, componentDescription.defaultProperties);
 			
 			// maybe do not add to history
-			setPropertiesStyles(componentDescription.instance, valuesObject.propertiesAndStyles, valuesObject.values);
+			setPropertiesStyles(componentDescription.instance, valuesObject.propertiesStylesEvents, valuesObject.values);
 			
 		}
 		
@@ -7069,84 +7104,168 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * 
 		 * @see #createComponentToAdd()
 		 * */
-		public static function updateComponentAfterAdd(iDocument:IDocument, target:Object, setDefaults:Boolean = false):void {
+		public static function updateComponentAfterAdd(iDocument:IDocument, target:Object, setDefaults:Boolean = false, interactive:Boolean = false):void {
 			var componentDescription:ComponentDescription = iDocument.getItemDescription(target);
 			var componentInstance:Object = componentDescription ? componentDescription.instance : null;
 			
-			// graphic elements need to have their display object listen to mouse events
-			if (componentDescription && componentDescription.isGraphicElement) {
-				//GraphicElement(componentInstance).addEventListener(MouseEvent.CLICK, graphicElementClicked, false, 0, true);
-				GraphicElement(componentInstance).alwaysCreateDisplayObject = true;
-				
-				if (GraphicElement(componentInstance).displayObject) {
-					//GraphicElement(componentInstance).displayObject.addEventListener(MouseEvent.CLICK, graphicElementClicked, false, 0, true);
-					Sprite(GraphicElement(componentInstance).displayObject).mouseEnabled = true;
-					Sprite(GraphicElement(componentInstance).displayObject).buttonMode = true;
-				}
-			}
-			
+			// set defaults
 			if (componentDescription && setDefaults) {
 				setDefaultProperties(componentDescription);
 			}
+			
+			
+			// need to add so we can listen for click events on transparent areas of groups
+			if (componentInstance is GroupBase) {
+				DisplayObjectUtils.addGroupMouseSupport(componentInstance as GroupBase);
+			}
+			
+			// we can't add elements if skinnablecontainer._deferredContentCreated is false
+			if (target is BorderContainer) {
+				/*var factory:DeferredInstanceFromFunction;
+				factory = new DeferredInstanceFromFunction(deferredInstanceFromFunction);
+				BorderContainer(component).mxmlContentFactory = factory;
+				BorderContainer(component).createDeferredContent();
+				BorderContainer(component).removeAllElements();*/
+				
+				// we could probably also do this: 
+				BorderContainer(target).addElement(new Label());
+				BorderContainer(target).removeAllElements();
+				// we do this to get rid of the round joints. this skin joints default to miter
+				BorderContainer(target).setStyle("skinClass", com.flexcapacitor.skins.BorderContainerSkin);
+				
+			}
+			
+			// add fill to rect if null
+			if (componentInstance is Rect && componentInstance.fill==null) {
+				var fill:SolidColor = new SolidColor();
+				fill.color = 0xf6f6f6;
+				Rect(componentInstance).fill = fill;
+			}
+			
+			makeInteractive(componentInstance, interactive);
+			
+			// prevent components from interacting with design view
+			
+			// we need a custom FlexSprite class to do this
+			// do this after drop
+			if ("eventListeners" in target && !(target is GroupBase)) {
+				target.removeAllEventListeners();
+			}
+			
+			// we need a custom FlexSprite class to do this
+			// do this after drop
+			/*if ("eventListeners" in component) {
+			component.removeAllEventListeners();
+			}*/
+			
+			// we can't add elements if skinnablecontainer._deferredContentCreated is false
+			/*if (component is BorderContainer) {
+				BorderContainer(component).creationPolicy = ContainerCreationPolicy.ALL;
+				BorderContainer(component).initialize();
+				BorderContainer(component).createDeferredContent();
+				BorderContainer(component).initialize();
+			}*/
 		}
 		
 		/**
-		 * Creates an instance of the component in the descriptor and sets the 
-		 * default properties. We may need to use setActualSize type of methods here or when added. 
-		 * 
-		 * For instructions on setting default properties or adding new component types
-		 * look in Radii8Desktop/howto/HowTo.txt
-		 * 
-		 * @see #updateComponentAfterAdd()
+		 * When set to true, makes a component interactive as in a normal app. 
 		 * */
-		public static function createComponentToAdd(iDocument:IDocument, componentDefinition:ComponentDefinition, setDefaults:Boolean = true):Object {
-			var componentDescription:ComponentDescription = new ComponentDescription();
-			var classFactory:ClassFactory;
-			var componentInstance:Object;
+		public static function makeInteractive(componentInstance:Object, interactive:Boolean = false):void {
 			
-			// Create component to drag
-			classFactory = new ClassFactory(componentDefinition.classType as Class);
-			
-			if (setDefaults) {
-				//classFactory.properties = item.defaultProperties;
-				//componentDescription.properties = componentDefinition.defaultProperties;
-				componentDescription.defaultProperties = componentDefinition.defaultProperties;
+			// graphic elements
+			// when we say interactive we mean what the user will interact with
+			// do not make graphic elements interactive for user
+			if (componentInstance is GraphicElement) {
+				GraphicElement(componentInstance).alwaysCreateDisplayObject = !interactive;
+				
+				if (GraphicElement(componentInstance).displayObject) {
+					Sprite(GraphicElement(componentInstance).displayObject).mouseEnabled = !interactive;
+					Sprite(GraphicElement(componentInstance).displayObject).buttonMode = !interactive;
+				}
 			}
 			
-			componentInstance = classFactory.newInstance();
-			
-			componentDescription.instance = componentInstance;
-			componentDescription.name = componentDefinition.name;
-			componentDescription.className = componentDefinition.name;
-			
-			if (setDefaults) {
-				var properties:Array = [];
+			// if text based or combo box we need to prevent 
+			// interaction with cursor
+			if (componentInstance is TextBase || componentInstance is SkinnableTextBase) {
+				componentInstance.mouseChildren = interactive;
 				
-				for (var property:String in componentDefinition.defaultProperties) {
-					//setProperty(component, property, [item.defaultProperties[property]]);
-					properties.push(property);
+				if ("textDisplay" in componentInstance && componentInstance.textDisplay) {
+					componentInstance.textDisplay.enabled = interactive;
 				}
 				
-				// maybe do not add to history
-				//setProperties(componentInstance, properties, item.defaultProperties);
-				setDefaultProperties(componentDescription);
+				// show editor on double click
+				if (componentInstance is Label || componentInstance is RichText) {
+					componentInstance.doubleClickEnabled = interactive;
+					
+					if (interactive) {
+						componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
+					}
+					else {
+						componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor);
+					}
+				}
+				
+				if (componentInstance is Hyperlink) {
+					componentInstance.useHandCursor = interactive;
+				}
 			}
 			
-			iDocument.setItemDescription(componentInstance, componentDescription);
-			//iDocument.descriptionsDictionary[componentInstance] = componentDescription;
+			// spark or mx ColorPicker
+			if (componentInstance is spark.components.ColorPicker || componentInstance is mx.controls.ColorPicker) {
+				Object(componentInstance).mouseChildren = interactive;
+			}
 			
-			if (componentInstance is Label) {
+			// NumericStepper
+			if (componentInstance is NumericStepper) {
+				NumericStepper(componentInstance).mouseChildren = interactive;
+			}
+			
+			// dropdown or combobox
+			if (componentInstance is ComboBox || componentInstance is DropDownList) {
+				if ("textInput" in componentInstance && componentInstance.textInput && 
+					componentInstance.textInput.textDisplay) {
+					ComboBox(componentInstance).textInput.textDisplay.enabled = interactive;
+				}
+				
+				DropDownListBase(componentInstance).mouseChildren = interactive;
+			}
+			
+			// Vertical or Horizontal Slider
+			if (componentInstance is SliderBase) {
+				SliderBase(componentInstance).mouseChildren = interactive;
+			}
+			
+			
+			if (componentInstance is LinkButton) {
+				LinkButton(componentInstance).useHandCursor = interactive;
+			}
+			
+			if (componentInstance is Hyperlink) {
+				// prevent links from clicking use UIGlobals...designMode
+				Hyperlink(componentInstance).useHandCursor = !interactive;
+				Hyperlink(componentInstance).preventLaunching = interactive;
+			}
+			
+			// checkbox or radio button or toggle button
+			if (componentInstance is ToggleButtonBase) {
+				
+				if (!interactive) {
+					IEventDispatcher(componentInstance).addEventListener(MouseEvent.CLICK, disableToggleButtonHandler, false, 0, true);
+				}
+				else {
+					IEventDispatcher(componentInstance).removeEventListener(MouseEvent.CLICK, disableToggleButtonHandler);
+				}
 				
 			}
 			
-			// working on grid
-			if (componentInstance is spark.components.Grid) {
+			// test on spark grid
+			if (false && componentInstance is spark.components.Grid) {
 				spark.components.Grid(componentInstance).itemRenderer= new ClassFactory(DefaultGridItemRenderer);
 				spark.components.Grid(componentInstance).dataProvider = new ArrayCollection(["item 1", "item 2", "item 3"]);
 			}
 			
-			// working on mx grid
-			if (componentInstance is mx.containers.Grid) {
+			// test on mx grid
+			if (false && componentInstance is mx.containers.Grid) {
 				mx.containers.Grid(componentInstance)
 				var grid:mx.containers.Grid = componentInstance as mx.containers.Grid;
 				var gridRow:GridRow	= new GridRow();
@@ -7169,56 +7288,65 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				grid.addElement(gridRow);
 			}
 			
-			// add fill to rect
-			if (componentInstance is Rect) {
-				var fill:SolidColor = new SolidColor();
-				fill.color = 0xf6f6f6;
-				Rect(componentInstance).fill = fill;
-			}
+		}
+		
+		/**
+		 * Disables toggle button base classes
+		 * */
+		public static function disableToggleButtonHandler(event:Event):void {
+			ToggleButtonBase(event.currentTarget).selected = !ToggleButtonBase(event.currentTarget).selected;
+			event.stopImmediatePropagation();
+			event.preventDefault();
+		}
+		
+		/**
+		 * Creates an instance of the component in the descriptor and sets the 
+		 * default properties. We may need to use setActualSize type of methods here or when added. 
+		 * 
+		 * For instructions on setting default properties or adding new component types
+		 * look in Radii8Desktop/howto/HowTo.txt
+		 * 
+		 * @see #updateComponentAfterAdd()
+		 * */
+		public static function createComponentToAdd(iDocument:IDocument, componentDefinition:ComponentDefinition, setDefaults:Boolean = true):Object {
+			var componentDescription:ComponentDescription = new ComponentDescription();
+			var classFactory:ClassFactory;
+			var componentInstance:Object;
 			
-			// we need a custom FlexSprite class to do this
-			// do this after drop
-			/*if ("eventListeners" in component) {
-				component.removeAllEventListeners();
+			// Create component to drag
+			classFactory = new ClassFactory(componentDefinition.classType as Class);
+			
+			/*if (setDefaults) {
+				//classFactory.properties = item.defaultProperties;
+				//componentDescription.properties = componentDefinition.defaultProperties;
+				componentDescription.defaultProperties = componentDefinition.defaultProperties;
 			}*/
 			
-			// if text based or combo box we need to prevent 
-			// interaction with cursor
-			if (componentInstance is TextBase || componentInstance is SkinnableTextBase) {
-				componentInstance.mouseChildren = false;
+			componentInstance = classFactory.newInstance();
+			
+			componentDescription.instance 	= componentInstance;
+			componentDescription.name 		= componentDefinition.name;
+			componentDescription.className 	= componentDefinition.name;
+			
+			// add default if we need to access defaults later
+			componentDescription.defaultProperties = componentDefinition.defaultProperties;
+			
+			if (setDefaults) {
+				var properties:Array = [];
 				
-				if ("textDisplay" in componentInstance && componentInstance.textDisplay) {
-					componentInstance.textDisplay.enabled = false;
+				for (var property:String in componentDefinition.defaultProperties) {
+					//setProperty(component, property, [item.defaultProperties[property]]);
+					properties.push(property);
 				}
+				
+				// maybe do not add to history
+				//setProperties(componentInstance, properties, item.defaultProperties);
+				setDefaultProperties(componentDescription);
 			}
 			
-			if (componentInstance is LinkButton) {
-				LinkButton(componentInstance).useHandCursor = false;
-			}
+			iDocument.setItemDescription(componentInstance, componentDescription);
+			//iDocument.descriptionsDictionary[componentInstance] = componentDescription;
 			
-			if (componentInstance is Hyperlink) {
-				// prevent links from clicking use UIGlobals...designMode
-				Hyperlink(componentInstance).useHandCursor = false;
-				Hyperlink(componentInstance).preventLaunching = true;
-			}
-			
-			/*
-			if (component is IFlexDisplayObject) {
-				//component.width = IFlexDisplayObject(component).measuredWidth;
-				//component.height = IFlexDisplayObject(component).measuredHeight;
-			}*/
-			
-			if (componentInstance is GroupBase) {
-				DisplayObjectUtils.addGroupMouseSupport(componentInstance as GroupBase);
-			}
-			
-			// we can't add elements if skinnablecontainer._deferredContentCreated is false
-			/*if (component is BorderContainer) {
-				BorderContainer(component).creationPolicy = ContainerCreationPolicy.ALL;
-				BorderContainer(component).initialize();
-				BorderContainer(component).createDeferredContent();
-				BorderContainer(component).initialize();
-			}*/
 			
 			return componentInstance;
 		}
@@ -7719,7 +7847,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					dispatchDocumentRemovedEvent(iDocument);
 					
 					if (deleteDocumentProjectId!=-1 && saveProjectAfter) {
-						parentProject.save(locations);
+						parentProject.saveOnlyProject(locations);
 					}
 					
 					setTarget(null);
@@ -7835,20 +7963,15 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		}
 		
 		/**
-		 * Import code. 
-		 * 
-		 * TODO: 
-		 * - import mxml code to new document
-		 * - import mxml code to existing document ovewrite current document
-		 * - import document xml (wraps mxml application) 
-		 * - import mxml to a container or group
+		 * Import MXML code
 		 * */
-		public function importMXMLDocument(project:IProject, iDocument:IDocument, container:IVisualElement, code:String, dispatchEvents:Boolean = true):Boolean {
+		public function importMXMLDocument(project:IProject, iDocument:IDocument, container:IVisualElement, code:String, name:String = null, dispatchEvents:Boolean = true):SourceData {
 			var result:Object;
 			var newDocument:Boolean;
+			var sourceData:SourceData;
 			
 			if (!iDocument) {
-				iDocument = createDocument();
+				iDocument = createDocument(name);
 				newDocument = true;
 				
 				if (project) {
@@ -7858,14 +7981,19 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			
 			if (!newDocument) {
-				parseSource(iDocument, code, container);
+				sourceData = parseSource(iDocument, code, container);
+				
+				return sourceData;
 			}
 			else {
+				iDocument.originalSource = code;
 				iDocument.source = code;
+				// we load a blank application (swf), once it's loaded, 
+				// in DocumentContainer we call Radiate.parseSource(iDocument);
 				result = openDocument(iDocument, DocumentData.INTERNAL_LOCATION, true, dispatchEvents);
 			}
 			
-			return result;
+			return sourceData;
 		}
 		
 		/**
@@ -8035,6 +8163,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				documentsPreviewDictionary[iDocument] = containerTypeInstance;
 			}
 			else if (isDesktop) {
+				
+				// we should add an option to use stage web instead of 
+				// internal webkit browser
+				
 				// show HTML page
 				html = HTMLUtils.createInstance();
 				html.id = iDocument.name ? iDocument.name : html.name; // should we be setting id like this?
@@ -8043,7 +8175,13 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				html.top = -10;
 				html.left = 0;
 				//html.setStyle("backgroundColor", "#666666");
+				
+				// not sure how to get the parsing errors 
 				html.addEventListener("uncaughtScriptException", uncaughtScriptExceptionHandler, false, 0, true);//HTMLUncaughtScriptExceptionEvent.uncaughtScriptException
+				html.addEventListener("uncaughtException", uncaughtScriptExceptionHandler, false, 0, true);//HTMLUncaughtScriptExceptionEvent.uncaughtScriptException
+				html.addEventListener("scriptException", uncaughtScriptExceptionHandler, false, 0, true);//HTMLUncaughtScriptExceptionEvent.uncaughtScriptException
+				html.addEventListener("htmlError", uncaughtScriptExceptionHandler, false, 0, true);//HTMLUncaughtScriptExceptionEvent.uncaughtScriptException
+				html.addEventListener("error", uncaughtScriptExceptionHandler, false, 0, true);//HTMLUncaughtScriptExceptionEvent.uncaughtScriptException
 				
 				navigatorContent.addElement(html);
 				documentsPreviewDictionary[iDocument] = html;
@@ -8392,6 +8530,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			return documentContainer;
 		}
 		
+		public static var htmlOptions:HTMLExportOptions;
+		
 		/**
 		 * Returns if the visible document is a preview
 		 * */
@@ -8466,7 +8606,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * If code is null and source is set then parses source.
 		 * If parent is set then imports code to the parent
 		 * */
-		public static function parseSource(document:IDocument, code:String = null, parent:IVisualElement = null):void {
+		public static function parseSource(document:IDocument, code:String = null, parent:IVisualElement = null):SourceData {
 			var codeToParse:String = code ? code : document.source;
 			var currentChildren:XMLList;
 			var nodeName:String;
@@ -8477,6 +8617,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var rootNodeName:String = "RootWrapperNode";
 			var updatedCode:String;
 			var mxmlDocumentImporter:MXMLDocumentImporter;
+			var componentDescription:ComponentDescription;
+			var sourceDataLocal:SourceData;
 			
 			// I don't like this here - should move or dispatch events to handle import
 			var transcoder:TranscoderDescription = CodeManager.getImporter(CodeManager.MXML);
@@ -8502,8 +8644,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				var message:String = "Could not parse code for document, \"" + document.name + "\". Fix the code before you import.";
 				Radiate.error("Could not parse code for document, \"" + document.name + "\". \n" + error.message + " \nCode: \n" + codeToParse);
 				
-				openImportPopUp.popUpOptions = {title:message, code:codeToParse};
-				openImportPopUp.play();
+				if (openImportPopUp) {
+					openImportPopUp.popUpOptions = {title:message, code:codeToParse};
+					openImportPopUp.play();
+				}
 			}
 			
 			
@@ -8520,9 +8664,6 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				
 				var container:IVisualElement = parent ? parent as IVisualElement : instance as IVisualElement;
 				
-
-				importer.importare(codeToParse, document, document.componentDescription);
-				
 				if (container is Application && "activate" in container) {
 					Object(container).activate();
 				}
@@ -8530,10 +8671,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				if (document && document.instance is Application && "activate" in document.instance) {
 					Object(document.instance).activate();
 				}
-				//mxmlLoader = new MXMLDocumentImporter(this, "testWindow", xml, container);
+				
+				componentDescription = document.componentDescription;
+				sourceDataLocal = importer.importare(codeToParse, document, componentDescription);
 				
 				if (container) {
-					Radiate.getInstance().setTarget(container);
+					Radiate.instance.setTarget(container);
 				}
 			}
 			
@@ -8542,6 +8685,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			new QName(mx_internal, "topMostIndex"),
 			new QName(mx_internal, "toolTipIndex"));*/
 			//return true;
+			
+			return sourceDataLocal;
 		}
 		
 		/**
@@ -8549,6 +8694,17 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function openImportMXMLWindow(title:String, code:String = "", showRevisions:Boolean = false):void {
 			
+			if (openImportPopUp==null) {
+				createOpenImportPopUp();
+			}
+			
+			if (!openImportPopUp.isOpen) {
+				openImportPopUp.popUpOptions = {title:title, code:code, showRevisions:showRevisions};
+				openImportPopUp.play();
+			}
+		}
+		
+		public function createOpenImportPopUp():void {
 			if (openImportPopUp==null) {
 				openImportPopUp = new OpenPopUp();
 				openImportPopUp.popUpType = ImportWindow; 
@@ -8562,14 +8718,21 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				openImportPopUp.closeOnEscapeKey = false;
 				openImportPopUp.addEventListener(OpenPopUp.CLOSE, closeImportWindowHandler);
 			}
-			
-			if (!openImportPopUp.isOpen) {
-				openImportPopUp.popUpOptions = {title:title, code:code, showRevisions:showRevisions};
-				openImportPopUp.play();
-			}
 		}
 		
-		protected function closeImportWindowHandler(event:Event):void {
+		/**
+		 * Opens a new document with MXML specified
+		 * */
+		public function openMXMLDocument(name:String, mxml:String):void {
+			name = name.lastIndexOf(".")!=-1 ? name.substr(0, name.lastIndexOf(".")) : name;
+			importMXMLDocument(selectedProject, null, null, mxml, name);
+		}
+		
+		/**
+		 * When import MXML window is closed we check for requested action 
+		 * and import if necessary 
+		 * */
+		public function closeImportWindowHandler(event:Event):void {
 			var selectedDocument:IDocument = selectedDocument;
 			var popUp:ImportWindow = ImportWindow(openImportPopUp.popUp);
 			var type:String = popUp.importLocation.selectedValue as String;
@@ -9977,7 +10140,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var file:Object;
 			var files:Array = sourceData.files;
 			var fileName:String;
-			var filesLength:int = files ? files.length : 0;
+			var numberOfFiles:int = files ? files.length : 0;
 			var fileClassDefinition:String = "flash.filesystem.File";
 			var fileStreamDefinition:String = "flash.filesystem.FileStream";
 			var FileClass:Object = ClassUtils.getDefinition(fileClassDefinition);
@@ -9986,10 +10149,15 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var writeFile:Boolean;
 			var filesCreated:Boolean;
 			
-			for (var i:int;i<filesLength;i++) {
+			for (var i:int;i<numberOfFiles;i++) {
 				var fileInfo:FileInfo = files[i];
 				fileInfo.created = false;
 				fileName = fileInfo.fileName + "." + fileInfo.fileExtension;
+				
+				if (!directory.exists) {
+					directory.createDirectory();
+				}
+				
 				file = directory.resolvePath(fileName);
 				
 				if (file.exists && !overwrite) {
@@ -10344,6 +10512,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				isUserLoggedIn = data.loggedIn;
 				userAvatar = data.avatar;
 				userDisplayName = data.displayName ? data.displayName : "guest";
+				username = data.username;
 				userID = data.id;
 				userEmail = data.contact;
 				user = data;
@@ -10372,6 +10541,11 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 						userSitePath = "";
 						WP_USER_PATH = "";
 					}
+				}
+				
+				if (isUserLoggedIn==false) {
+					userSitePath = "";
+					WP_USER_PATH = "";
 				}
 			}
 			else {
@@ -11713,6 +11887,25 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			if (mainView) {
 				mainView.currentState = MainView.HOME_STATE;
 			}
+		}
+		
+		/**
+		 * Gets the module factory for the specified object or 
+		 * selected document if object is null.
+		 * */
+		public static function getModuleFactory(object:Object):IFlexModuleFactory {
+			
+			if (object is UIComponent) {
+				return UIComponent(object).moduleFactory;
+			}
+			
+			if (object is null) {
+				if (instance.selectedDocument && instance.selectedDocument.instance) {
+					return instance.selectedDocument.instance.moduleFactory;
+				}
+			}
+			
+			return null;
 		}
 	}
 }

@@ -220,7 +220,7 @@
 				
 				
 				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
-				//radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, sizeChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChange, false, 0, true);
 				
 				radiate.selectDocument(iDocument);
@@ -237,6 +237,7 @@
 				
 				radiate.centerApplication(true, true, true);
 				
+				radiate.dispatchDocumentOpenEvent(iDocument);
 				//Radiate.info("Application Complete");
 				
 			}
@@ -723,6 +724,14 @@
 			}
 			
 			/**
+			 * Update the size of the document
+			 * */
+			protected function sizeChange(event:RadiateEvent):void {
+				
+				updateBackgroundSize();
+			}
+			
+			/**
 			 * Update the position of the document
 			 * */
 			protected function scaleChange(event:RadiateEvent):void {
@@ -741,7 +750,7 @@
 				var sizeChange:Boolean;
 				
 				if (event.selectedItem is Application) {
-					sizeChange = ArrayUtils.containsAny(event.properties, importantProperties);
+					sizeChange = ArrayUtils.containsAny(event.propertiesAndStyles, importantProperties);
 					
 					if (sizeChange) {
 						updateBackgroundSize();

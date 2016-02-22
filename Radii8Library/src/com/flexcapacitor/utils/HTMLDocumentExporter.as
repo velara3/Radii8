@@ -44,6 +44,10 @@ package com.flexcapacitor.utils {
 	 * 
 	 * Recommendations for compatibility: <br/>
 	 * http://www.w3.org/TR/xhtml-media-types/#C_2
+	 * 
+	 * Performance considerations: 
+	 * http://www.webperformancetoday.com/2012/05/29/browser-innovation-14-web-performance-rules-faster-loading-websites/
+	 * 
 	 * */
 	public class HTMLDocumentExporter extends DocumentTranscoder implements IDocumentExporter {
 		
@@ -87,7 +91,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Some defaults that make the html look more accurate
 		 * */
-		public var betterHTML:String = "html, body {\n\theight:100%;\n\tmargin:0;\n\tpadding:0;\n\tline-height:.8;\n}";
+		public var betterHTML:String = "html, body {\n\twidth:100%;\n\theight:100%;\n\tmargin:0;\n\tpadding:0;\n}";
 		
 		/**
 		 * Show outline around each element
@@ -174,6 +178,11 @@ package com.flexcapacitor.utils {
 		 * Convert bitmap data to graphic data
 		 * */
 		public var createImageDataForGraphics:Boolean = false;
+		
+		/**
+		 * Show image snapshot when html element is not found or supported
+		 * */
+		public var showImageWhenComponentNotFound:Boolean = true;
 		
 		/**
 		 * Last source code
@@ -575,6 +584,7 @@ package com.flexcapacitor.utils {
 			var parentVerticalAlign:String;
 			var userInstanceStyles:String;
 			var errorData:ErrorData;
+			var componentNotFound:Boolean;
 			var layoutOutput:String = "";
 			var numberOfChildren:int;
 			var type:String = "";
@@ -707,7 +717,7 @@ package com.flexcapacitor.utils {
 			
 			//exportChildDescriptors = componentDescription.exportChildDescriptors;
 			
-			if (!exportChildDescriptors) {
+			if (exportChildDescriptors==false || componentDescription.exportChildDescriptors==false) {
 				contentToken = "";
 			}
 			
@@ -726,14 +736,19 @@ package com.flexcapacitor.utils {
 				}
 				
 				
+				// the following needs works
 				if (!isGraphicalElement) {
 					if (verticalPositions.indexOf(propertyName)!=-1 && !isVerticalCenterSet) {
 						styleValue = getVerticalPositionHTML(componentInstance as IVisualElement, stylesModel, styleValue, isInBasicLayout);
-						isVerticalCenterSet = true;
+						//if (verticalCenterPosition.indexOf(propertyName)!=-1 && isInBasicLayout) {
+							isVerticalCenterSet = true;
+						//}
 					}
 					else if (horizontalPositions.indexOf(propertyName)!=-1 && !isHorizontalCenterSet) {
 						styleValue = getHorizontalPositionHTML(componentInstance as IVisualElement, stylesModel, styleValue, isInBasicLayout);
-						isHorizontalCenterSet = true;
+						//if (horizontalCenterPosition.indexOf(propertyName)!=-1 && isInBasicLayout) {
+							isHorizontalCenterSet = true;
+						//}
 					}
 				}
 				
@@ -749,12 +764,9 @@ package com.flexcapacitor.utils {
 			
 			if (localName) {
 				
-				// create code for element type or image
+				
+				// putting the convert to image code at the top. it's also used below if an element is not found
 				if (convertElementToImage) {
-					//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
-					//imageDataStyle = convertComponentToImage(componentInstance);
-					//styleValue += "" + imageDataStyle;
-					
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<img " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
@@ -773,8 +785,10 @@ package com.flexcapacitor.utils {
 					layoutOutput += getWrapperTag(wrapperTag, true);
 					
 					// if exporting an image then don't export the contents 
-					exportChildDescriptors = false;
+					//exportChildDescriptors = false;
+					contentToken = "";
 				}
+				
 				else if (localName=="application") {
 					htmlName = "div";
 					
@@ -829,6 +843,7 @@ package com.flexcapacitor.utils {
 							
 							layoutOutput += backgroundSnapshot;
 							layoutOutput += setStyles("#"+backgroundImageID, "position:absolute;opacity:"+backgroundImageAlpha+";top:0px;left:0px;", true);
+							
 							/* background-image didn't work in FF on mac. didn't test on other browsers
 							//trace(imageData);
 							var imageDataStyle:String = "#" + getIdentifierOrName(target) + "  {\n";
@@ -836,6 +851,7 @@ package com.flexcapacitor.utils {
 							imageDataStyle += "\tbackground-repeat: no-repeat;\n";
 							imageDataStyle += "\tbackground-image: url(data:image/"+imageDataFormat+";base64,"+imageData+");\n}";
 							styles += "\n" + imageDataStyle;*/
+							// UPDATE : it didn't work because there were linebreaks in the base64 encoded string - remove all linebreaks and it works
 						}
 						
 						
@@ -1362,21 +1378,12 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getLineHeight(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
+					styleValue = getTypographicCase(componentInstance, styleValue);
+					styleValue = getTracking(componentInstance, styleValue);
 					
-					var marginTop:int = getMarginTopAdjustment(componentInstance, isVerticalCenterSet);
+					styleValue = getMarginTopAdjustment(componentInstance, isVerticalCenterSet, styleValue);
 					
-					if (marginTop!=0) {
-						styleValue += "margin-top:" + marginTop + "px;";
-					}
 					
-					if (componentInstance.getStyle("typographicCase")!="default") {
-						styleValue += "text-transform:" + componentInstance.getStyle("typographicCase") + ";";
-					}
-					
-					if (componentInstance.getStyle("trackingLeft")!=0 && componentInstance.getStyle("trackingRight")!=0) {
-						tracking = Number(componentInstance.getStyle("trackingLeft") + componentInstance.getStyle("trackingRight"));
-						styleValue += "letter-spacing:" + tracking + "px;";
-					}
 					
 					//styles += getBorderString(componentInstance as IStyleClient);
 					
@@ -1400,6 +1407,9 @@ package com.flexcapacitor.utils {
 					
 					if (localName=="richtext") {
 						htmlName = "p";
+						
+						// we need to write another TextConverter.export method that doesn't include the HTML and body tag
+						
 						//layoutOutput += TextConverter.export(RichText(componentInstance).textFlow, TextConverter.TEXT_FIELD_HTML_FORMAT, ConversionType.STRING_TYPE);
 						var test:Object = TextConverter.export(RichText(componentInstance).textFlow, TextConverter.TEXT_FIELD_HTML_FORMAT, ConversionType.XML_TYPE);
 						var content:XML = test.children()[0].children()[0].children()[0].children()[0];
@@ -1423,9 +1433,11 @@ package com.flexcapacitor.utils {
 					layoutOutput += "<img " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
+					
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
 					styleValue += isInVerticalLayout ? getDisplayBlock(componentInstance) : "";
 					styleValue += getVisibleDisplay(componentInstance);
+					
 					layoutOutput += properties ? " " : "";
 					
 					if (componentInstance.source is BitmapData && createImageDataForGraphics) {
@@ -1474,9 +1486,13 @@ package com.flexcapacitor.utils {
 					//move to 
 					htmlName = "line";
 					wrapperTag = "svg";
-					/*<svg height="210" width="500">
-					<line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" />
-				  </svg>*/ 
+					
+					/*
+					<svg height="210" width="500">
+						<line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" />
+				  	</svg>
+					*/
+					
 					//if (useWrapperDivs) {
 					wrapperSVGStyles = styleValue;
 					wrapperSVGStyles += getLineWrapperSize(componentInstance);
@@ -1490,6 +1506,7 @@ package com.flexcapacitor.utils {
 						// graphic element has no name property
 						componentInstance.id = NameUtil.createUniqueName(componentInstance);
 					}
+					
 					layoutOutput += "<line "  + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					
@@ -1531,51 +1548,90 @@ package com.flexcapacitor.utils {
 					//}
 				}
 				else {
-					errorData = new ErrorData();
-					errorData.description = componentDescription.name + " is not supported in HTML export at this time.";
-					errorData.label = "Unsupported component";
-					errors.push(errorData);
 					
-					// show placeholder NOT actual component
-					htmlName = "label";
-					if (useWrapperDivs) {
+					// add error if we are converting to an image on purpose
+					// we will create a snapshot if it's an error
+					if (!convertElementToImage) {
+						errorData = new ErrorData();
+						errorData.description = componentDescription.name + " is not supported in HTML export at this time.";
+						errorData.label = "Unsupported component";
+						errors.push(errorData);
+						componentNotFound = true;
+					}
+					
+					// create code for element type or image
+					if (convertElementToImage || (componentNotFound && showImageWhenComponentNotFound)) {
+						//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
+						//imageDataStyle = convertComponentToImage(componentInstance);
+						//styleValue += "" + imageDataStyle;
+						
 						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
+						layoutOutput += "<img " + properties;
+						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
+						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
+						styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
+						styleValue += isInVerticalLayout ? getDisplayBlock(componentInstance) : "";
+						styleValue += getVisibleDisplay(componentInstance);
+						layoutOutput += properties ? " " : "";
+						
+						layoutOutput += " src=\"" + DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat) + "\"";
+						
+						styleValue += userInstanceStyles;
+						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
+						
+						layoutOutput += setStyles(componentInstance, styleValue);
+						layoutOutput += getWrapperTag(wrapperTag, true);
+						
+						// if exporting an image then don't export the contents 
+						//exportChildDescriptors = false;
+						contentToken = "";
 					}
 					else {
-						//layoutOutput = tabs;
+						// show placeholder NOT actual component
+						htmlName = "label";
+						
+						layoutOutput += "<label "  + properties;
+						
+						if (componentInstance is GraphicElement && componentInstance.id==null) {
+							// graphic element has no name property
+							componentInstance.id = NameUtil.createUniqueName(componentInstance);
+						}
+						
+						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
+						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
+						
+						styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
+						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
+						styleValue = getFontColor(componentInstance, styleValue);
+						
+						styleValue = getFontFamily(componentInstance, styleValue);
+						styleValue = getFontWeight(componentInstance, styleValue);
+						styleValue = getFontSize(componentInstance, styleValue);
+						styleValue = getLineHeight(componentInstance, styleValue, true);
+						
+						layoutOutput += properties ? " " : "";
+						// remove wrapperTagStyles since we are trying to not use wrapper tags
+						//output += setStyles(componentInstance, styleValue+wrapperTagStyles);
+						//output += setStyles(componentInstance, wrapperTagStyles+styleValue);
+						stylesOut = wrapperTagStyles + styleValue;
+						layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
+						layoutOutput += getIdentifierOrName(componentInstance);
+						layoutOutput += "</label>";
+						
+						if (useWrapperDivs) {
+							layoutOutput += getWrapperTag(wrapperTag, true);
+						}
 					}
-					layoutOutput += "<label "  + properties;
 					
-					if (componentInstance is GraphicElement && componentInstance.id==null) {
-						// graphic element has no name property
-						componentInstance.id = NameUtil.createUniqueName(componentInstance);
-					}
-					
-					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
-					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
-					
-					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
-					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
-					styleValue = getFontColor(componentInstance, styleValue);
-					
-					styleValue = getFontFamily(componentInstance, styleValue);
-					styleValue = getFontWeight(componentInstance, styleValue);
-					styleValue = getFontSize(componentInstance, styleValue);
-					styleValue = getLineHeight(componentInstance, styleValue, true);
-					
-					layoutOutput += properties ? " " : "";
-					// remove wrapperTagStyles since we are trying to not use wrapper tags
-					//output += setStyles(componentInstance, styleValue+wrapperTagStyles);
-					//output += setStyles(componentInstance, wrapperTagStyles+styleValue);
-					stylesOut = wrapperTagStyles + styleValue;
-					layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
-					layoutOutput += getIdentifierOrName(componentInstance);
-					layoutOutput += "</label>";
-					
-					if (useWrapperDivs) {
-						layoutOutput += getWrapperTag(wrapperTag, true);
-					}
-					
+				}
+				
+				
+				// we need to put this wrapper code here rather than in the code above
+				// because some code for things like the loop don't work if wrapped in div
+				//if (useWrapperDivs || wrapperTag) {
+				if (false) {
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles) + layoutOutput;
+					layoutOutput = getWrapperTag(wrapperTag, true);
 				}
 				
 				// add tabs
@@ -1655,6 +1711,8 @@ package com.flexcapacitor.utils {
 				layoutOutput = "";
 			}
 			
+			//exportChildDescriptors = true;
+			
 			return layoutOutput;
 		}
 		
@@ -1684,6 +1742,60 @@ package com.flexcapacitor.utils {
 		 * A hook to modify the markup before it is output
 		 * */
 		public var markupHookFunction:Function;
+		
+		/**
+		 * Adds a negative top margin of .2em to adjust for browsers. Flash text is flush to the top while html text is not. 
+		 * http://stackoverflow.com/questions/34983672/is-there-a-way-to-make-text-characters-flush-to-the-top-of-their-bounding-box-in/35060979#35060979
+		 * */
+		public function addTopMarginFix(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			styleValue += "margin-top: -0.2em;"
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the tracking left or right
+		 * */
+		public function getTracking(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			var tracking:Number = 0;
+			
+			// probably need to check if inline or inherited. see other methods
+			if (styleClient.getStyle("trackingLeft")!=0) {
+				tracking = Number(styleClient.getStyle("trackingLeft"));
+			}
+			
+			if (styleClient.getStyle("trackingRight")!=0) {
+				tracking += Number(styleClient.getStyle("trackingRight"));
+			}
+			
+			if (getInherited || tracking!=0) {
+				styleValue += "letter-spacing:" + tracking + "px;";
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the typographic case
+		 * */
+		public function getTypographicCase(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			// might need to check if typographic case is default and reset to actual html default value
+			// if (getInherited || componentInstance.getStyle("typographicCase")!="default") {
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "typographicCase")) {
+				styleValue += "text-transform:" + componentInstance.getStyle("typographicCase") + ";";
+			}
+			
+			return styleValue;
+		}
 		
 		/**
 		 * Gets the font color if defined inline
@@ -1774,20 +1886,22 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
+		 * Adds a negative top margin of .2em to adjust for browsers. Flash text is flush to the top while html text is not. 
+		 * http://stackoverflow.com/questions/34983672/is-there-a-way-to-make-text-characters-flush-to-the-top-of-their-bounding-box-in/35060979#35060979
+		 * 
 		 * See note on #paddingFromBrowserTextEngine.
 		 * If in vertically centered box the browser seems to align it correctly. 
 		 * Otherwise large fonts are pushed down 
 		 * @see #paddingFromBrowserTextEngine
 		 * */
-		private function getMarginTopAdjustment(componentInstance:Object, isVerticalCenterSet:Boolean):int {
-			var fontSize:Number = componentInstance.getStyle("fontSize");
-			var marginTop:int = fontSize > 14 ? fontSize * paddingFromBrowserTextEngine * -1 : 0;
+		public function getMarginTopAdjustment(componentInstance:Object, isVerticalCenterSet:Boolean, styleValue:String):String {
+			// note updated the code from using line-height:.8; to using margin-top:-0.2em;
 			
-			if (isVerticalCenterSet) {
-				return 0;
+			if (!isVerticalCenterSet) {
+				styleValue += "margin-top:-0.2em;"
 			}
 			
-			return marginTop;
+			return styleValue;
 		}		
 		
 		/**
@@ -1998,7 +2112,11 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			if (!isBasicLayout) return stylesValue;
 			// horizontal center trumps left and x properties
 			if (instance.horizontalCenter!=null) {
-				stylesValue += "display:block;margin:" + instance.horizontalCenter + " auto;left:0;right:0;";
+				// the following line doesn't work unless the width is set
+				//stylesValue += "display:block;margin:" + instance.horizontalCenter + " auto;left:0;right:0;";
+				
+				// using display table allows you to center a item without knowing it's width 
+				stylesValue += "display:table;margin:" + instance.horizontalCenter + " auto;left:0;right:0;";
 				//stylesValue = stylesValue.replace("absolute", "relative");
 				
 				propertyModel.display = Styles.BLOCK;
@@ -2025,19 +2143,44 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		
 			
 		/**
-		 * Get the vertical position string for HTML
+		 * Get the vertical position string for HTML element in basic layout
+		 * 
+		 * Parent element needs preserve 3d to prevent blurry pixels
+		 * -webkit-transform-style: preserve-3d;
+		 * -moz-transform-style: preserve-3d;
+		 * transform-style: preserve-3d;
+		 * 
+		 * see http://zerosixthree.se/vertical-align-anything-with-just-3-lines-of-css/
+		 * 
+		 * notes: 
+		 * - parent may require height to be set
+		 * - text may be blurry. use preserve-3d on parent or maybe on body:
+		 *   -webkit-transform-style: preserve-3d;
+		 *   -moz-transform-style: preserve-3d;
+		 *   transform-style: preserve-3d;
+		 * - element may need to be block element and absolute positioned
+		 * - page may need height and width set to 100% (html5)
+		 * 
+		 * vertically align in hgroup using table and table cell
+		 * https://jsfiddle.net/b74o1utw/6/
 		 * */
 		public function getVerticalPositionHTML(instance:IVisualElement, propertyModel:Styles, stylesValue:String = "", isBasicLayout:Boolean = true):String {
 			
 			if (!isBasicLayout) return stylesValue;
 			
 			if (instance.verticalCenter!=null) {
-				stylesValue += "display:block;margin:" + instance.verticalCenter + " auto;";
+				stylesValue += "display:table;margin:" + instance.verticalCenter + " auto;";
+				stylesValue += "top:50%;transform:translateY(-50%);-webkit-transform: translateY(-50%);-ms-transform: translateY(-50%);";
 				stylesValue = stylesValue.replace("absolute", "relative");
 				
-				propertyModel.display = Styles.BLOCK;
+				propertyModel.display = Styles.TABLE;
 				propertyModel.position = Styles.RELATIVE;
 				propertyModel.margin = instance.verticalCenter + " auto;";
+				propertyModel.top = "50%;";
+				propertyModel.transform = "translateY(-50%)";
+				// how to do webkit and ms 
+				//propertyModel.translateWebKit = "translateY(-50%)";
+				//propertyModel.translateMS = "translateY(-50%)";
 				
 				return stylesValue;
 			}
@@ -2107,7 +2250,7 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			var value:String = "";
 			
 			if (element.getStyle("cornerRadius")!==undefined) {
-				value += "border-radius: " + element.getStyle("cornerRadius") + ";";
+				value += "border-radius:" + element.getStyle("cornerRadius") + ";";
 			}
 			
 			return value;
@@ -2124,7 +2267,13 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 				return " style=\"" + stylesValue + "\"" + (singleton?"\>":">");
 			}
 			else {
-				formatted= "\t" + stylesValue.replace(/;/g, ";\n\t");
+				//formatted= "\t" + stylesValue.replace(/;/g, ";\n\t");
+				
+				// if we use oop we wouldn't need to do this
+				formatted = "\t" + stylesValue.replace(/\b(data:image\/[^\/;]*;)|;/g, function (_:String, matchingGroup:String, ...args):String {
+					return matchingGroup ? matchingGroup : ";\n\t";
+				});
+				
 				
 				//styles += ";";
 				//cssOutput += "#" + getIdentifierOrName(component) + "  {\n\n";

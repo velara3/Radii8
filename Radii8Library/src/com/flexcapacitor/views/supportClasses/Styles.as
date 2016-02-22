@@ -18,6 +18,7 @@ package com.flexcapacitor.views.supportClasses {
 		public static const ABSOLUTE:String = "absolute";
 		public static const FIXED:String = "fixed";
 		
+		public static const TABLE:String = "table";
 		public static const BLOCK:String = "block";
 		public static const INLINE:String = "inline";
 		public static const INLINE_BLOCK:String = "inline-block";
@@ -57,6 +58,8 @@ package com.flexcapacitor.views.supportClasses {
 		public var top:String;
 		public var right:String;
 		public var bottom:String;
+		
+		public var transform:String;
 		
 	}
 }

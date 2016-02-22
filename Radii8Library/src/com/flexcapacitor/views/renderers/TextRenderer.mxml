@@ -5,11 +5,13 @@
 		xmlns:c="com.flexcapacitor.components.*"
 		xmlns:r="com.flexcapacitor.views.renderers.*"
 
+		height="24"
+		width="100%"
 		clipAndEnableScrolling="true">
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.skins.ClearButton;
+			import com.flexcapacitor.skins.ClearButtonSkin;
 			
 			import spark.events.TextOperationEvent;
 			import spark.skins.spark.TextAreaSkin;
@@ -70,7 +72,7 @@
 	</s:TextArea>
 	
 	<s:Button id="clearStyleButton" 
-			  skinClass="com.flexcapacitor.skins.ClearButton"
+			  skinClass="com.flexcapacitor.skins.ClearButtonSkin"
 			  click="setTargetValue(true)"
 			  right="0" 
 			  verticalCenter="0"/>

@@ -656,7 +656,7 @@ package com.flexcapacitor.managers
 		
 		
 		/**
-		 * Login user through browser
+		 * Login user through browser. Doesn't work. 
 		 * */
 		public function loginThroughBrowser(username:String, password:String, remember:Boolean = false, window:String = null):void {
 			var useNavigate:Boolean = true;

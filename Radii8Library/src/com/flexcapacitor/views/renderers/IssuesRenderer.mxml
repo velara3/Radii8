@@ -8,13 +8,14 @@
 					  >
 	<fx:Script>
 		<![CDATA[
+			import com.flexcapacitor.model.ErrorData;
 			import com.flexcapacitor.model.IssueData;
 			
 			override public function set data(value:Object):void {
 				super.data = value;
 				
 				if (value is IssueData) {
-					var issueData:IssueData = value as IssueData;
+					var issueData:IssueData = value as IssueData;ErrorData
 					
 					label = " • " + issueData.label + ": " + issueData.description;
 				}

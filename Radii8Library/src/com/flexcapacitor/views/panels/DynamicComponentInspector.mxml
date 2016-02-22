@@ -8,10 +8,6 @@
 		 creationComplete="creationCompleteHandler(event)"
 		 >
 	
-	
-	<!-- 
-	
-	-->
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.views.IInspector;

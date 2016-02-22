@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 styleName="inspectablePanel"
+		 width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			
+			import org.as3commons.lang.ArrayUtils;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
+					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+						callLater(update);
+					}
+					else {
+						return;
+					}
+				}
+				callLater(update);
+				
+			}
+			
+			public function update():void {
+				/*
+				*    also properties: 
+				*
+				*    itemMatchingFunction="null"
+				*    labelToItemFunction="null"
+				*/
+				promptRenderer.data = ClassUtils.getMetaDataOfProperty(target, "prompt");
+				maxCharsRenderer.data = ClassUtils.getMetaDataOfProperty(target, "maxChars");
+				openOnInputRenderer.data = ClassUtils.getMetaDataOfProperty(target, "openOnInput");
+				restrictRenderer.data = ClassUtils.getMetaDataOfProperty(target, "restrict");
+				paddingLeftRenderer.data = ClassUtils.getMetaDataOfStyle(target, "paddingLeft");
+				paddingTopRenderer.data = ClassUtils.getMetaDataOfStyle(target, "paddingTop");
+				paddingBottomRenderer.data = ClassUtils.getMetaDataOfStyle(target, "paddingBottom");
+				paddingRightRenderer.data = ClassUtils.getMetaDataOfStyle(target, "paddingRight");
+			}
+			
+			public var relevantProperties:Array = ["prompt", "maxChars", "openOnInput", "restrict", 
+													"paddingLeft", "paddingTop", "paddingBottom", "paddingRight",];
+		]]>
+	</fx:Script>
+	
+	
+	<s:TileGroup width="100%" columnAlign="left" columnWidth="120" verticalAlign="middle" requestedColumnCount="2">
+		<s:Label text="Prompt" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="promptRenderer" height="24" width="100%"/>
+		
+		<s:Label text="Max Characters" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="maxCharsRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Open On Input" styleName="inspectablePanelLabel"/>
+		<renderers:BooleanRenderer id="openOnInputRenderer" height="24" minWidth="132"/>
+		
+		<s:Label text="Restrict" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="restrictRenderer" height="24" width="100%"/>
+		
+		<s:Label text="Padding Left" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="paddingLeftRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Padding Right" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="paddingRightRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Padding Top" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="paddingTopRenderer" height="24" stepSize="1" />
+		
+		<s:Label text="Padding Bottom" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="paddingBottomRenderer" height="24" stepSize="1" />
+	</s:TileGroup>
+</s:Group>

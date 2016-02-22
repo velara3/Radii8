@@ -5,7 +5,6 @@ package com.flexcapacitor.model {
 	import com.flexcapacitor.managers.CodeManager;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
-	import com.flexcapacitor.utils.HTMLDocumentExporter;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
 	import flash.display.DisplayObject;
@@ -37,6 +36,7 @@ package com.flexcapacitor.model {
 		
 		public function createTemplate():void
 		{
+			// this causes issues later when not exporting html refactor 
 			template = new Radii8LibraryTranscodersAssets.basicHTMLDocumentReusable();
 		}
 		

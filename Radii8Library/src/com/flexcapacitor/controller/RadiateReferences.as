@@ -12,7 +12,8 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.ZoomInspector;
 	import com.flexcapacitor.views.inspectors.BasicBackgroundStyles;
 	import com.flexcapacitor.views.inspectors.BorderStyles;
-	import com.flexcapacitor.views.inspectors.Button;
+	import com.flexcapacitor.views.inspectors.ButtonProperties;
+	import com.flexcapacitor.views.inspectors.ColorPickerProperties;
 	import com.flexcapacitor.views.inspectors.FontStyles;
 	import com.flexcapacitor.views.inspectors.Gap;
 	import com.flexcapacitor.views.inspectors.GroupAlign;
@@ -22,6 +23,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.ImageProperties;
 	import com.flexcapacitor.views.inspectors.Layout;
 	import com.flexcapacitor.views.inspectors.LineProperties;
+	import com.flexcapacitor.views.inspectors.RadioButtonProperties;
 	import com.flexcapacitor.views.inspectors.StyleNameInspector;
 	import com.flexcapacitor.views.inspectors.TextInspector;
 	import com.flexcapacitor.views.inspectors.VideoPlayerProperties;
@@ -69,7 +71,11 @@ package com.flexcapacitor.controller {
 		
 		public static var basicBackgroundInspector:com.flexcapacitor.views.inspectors.BasicBackgroundStyles;
 		public static var borderStyles:com.flexcapacitor.views.inspectors.BorderStyles;
-		public static var buttonInspector:com.flexcapacitor.views.inspectors.Button;
+		public static var buttonInspector:com.flexcapacitor.views.inspectors.ButtonProperties;
+		public static var checkboxInspector:com.flexcapacitor.views.inspectors.CheckBoxProperties;
+		public static var colorPickerInspector:com.flexcapacitor.views.inspectors.ColorPickerProperties;
+		public static var comboboxInspector:com.flexcapacitor.views.inspectors.ComboBoxProperties;
+		public static var dropDownListInspector:com.flexcapacitor.views.inspectors.DropDownListProperties;
 		public static var fontStyles:com.flexcapacitor.views.inspectors.FontStyles;
 		public static var gapInspector:com.flexcapacitor.views.inspectors.Gap;
 		public static var groupAlignInspector:com.flexcapacitor.views.inspectors.GroupAlign;
@@ -79,9 +85,15 @@ package com.flexcapacitor.controller {
 		public static var imageInspector:com.flexcapacitor.views.inspectors.ImageProperties;
 		public static var layoutInspector:com.flexcapacitor.views.inspectors.Layout;
 		public static var lineProperties:com.flexcapacitor.views.inspectors.LineProperties;
-		public static var size:com.flexcapacitor.views.Size;
+		public static var listProperties:com.flexcapacitor.views.inspectors.ListProperties;
+		public static var radioButtonInspector:com.flexcapacitor.views.inspectors.RadioButtonProperties;
+		public static var sizeInspector:com.flexcapacitor.views.Size;
+		public static var sliderInspector:com.flexcapacitor.views.inspectors.SliderProperties;
+		public static var stepperInspector:com.flexcapacitor.views.inspectors.StepperProperties;
 		public static var styleNameInspector:com.flexcapacitor.views.inspectors.StyleNameInspector;
-		public static var textInspector:com.flexcapacitor.views.inspectors.TextInspector;
+		public static var textInputInspector:com.flexcapacitor.views.inspectors.TextInspector;
+		public static var textAreaInspector:com.flexcapacitor.views.inspectors.TextAreaInspector;
+		public static var tileGroupInspector:com.flexcapacitor.views.inspectors.TileGroupProperties;
 		public static var videoPlayerInspector:com.flexcapacitor.views.inspectors.VideoPlayerProperties;
 		
 		///////////////////////////////////////////////////////

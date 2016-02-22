@@ -17,11 +17,13 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.model.DocumentRevision;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.IProject;
+			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.XMLUtils;
+			import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
 			
 			import mx.collections.ArrayCollection;
-			import mx.controls.Alert;
 			import mx.core.IVisualElement;
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
@@ -30,6 +32,9 @@
 			public static const CURRENT_DOCUMENT:String = "currentDocument";
 			public static const CURRENT_SELECTION:String = "currentSelection";
 			public static const IMPORT:String = "import";
+			
+			public static const NORMAL:String = "normal";
+			public static const REVISIONS:String = "revisions";
 			
 			private var _code:String;
 
@@ -53,7 +58,6 @@
 			}
 
 			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
-			
 			
 			public var aceEditor:*;
 			public var aceCSSEditor:*;
@@ -86,72 +90,111 @@
 			
 			private var lastFocusedEditor:Object;
 			
-			private function editorFocusInHandler(event:FocusEvent):void
-			{
+			private function editorFocusInHandler(event:FocusEvent):void {
 				lastFocusedEditor = event.currentTarget;
-				//searchInput.aceEditor = lastFocusedEditor;
-				
-				//if (wordwrapButton) {
-					//wordwrapButton.selected = !lastFocusedEditor.useWordWrap;
-				//}
 			}
 			
 			protected function changeHandler(event:Event = null):void {
+				var validationInfo:XMLValidationInfo;
+				var errorLocation:String;
+				var isValid:Boolean;
+				var message:String;
+				var error:Object;
 				
-				/*
-				if (!syntaxHighlighter) {
-					syntaxHighlighter = new SyntaxHighlighter(mxTextArea);
-					syntaxHighlighter.timerInterval = 20;
-					syntaxHighlighter.cssString = SyntaxHighlighter.CRIMSON_EDITOR_CSS;
-				}
-				
-				syntaxHighlighter.highlightCode();
-				*/
-				
-				var isValid:Boolean = XMLUtils.isValidXML(code);
+				isValid = XMLUtils.isValidXML(code);
+				//error = XMLUtils.validationError;
 				
 				if (!isValid && code!="") {
-					var message:String = XMLUtils.validationError ? "Warning:" +  XMLUtils.validationError.message : warningMessage;
-					warningLabel_Ha.text = message;
-					warningLabel_Ha.visible = true;
-					warningLabel_Ha.includeInLayout = true;
+					validationInfo = XMLUtils.validateXML(code);
+					message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
+					errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
+					showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);
 				}
 				else {
-					warningLabel_Ha.visible = false;
-					warningLabel_Ha.includeInLayout = false;
+					hideMessage();
 				}
 				
 			}
 			
+			public function showMessage(firstMessage:String, secondMessage:String = null, row:int = -1, column:int = 0):void {
+				lineError.text = firstMessage;
+				warningLabel.text = secondMessage;
+				errorGroup.visible = true;
+				errorGroup.includeInLayout = true;
+				aceEditor.clearAnnotations();
+				aceEditor.setAnnotation(row, column, secondMessage, "error");
+			}
+			
+			public function hideMessage():void {
+				errorGroup.visible = false;
+				errorGroup.includeInLayout = false;
+				lineError.text = "";
+				warningLabel.text = "";
+				aceEditor.clearAnnotations();
+			}
+			
+			public function showImportedMessage():void {
+				hideMessage();
+				
+				notesGroup.visible = false;
+				notesGroup.includeInLayout = false;
+				messageLabel.text = "Import successful";
+				aceEditor.clearAnnotations();
+			}
 			
 			/**
 			 * Import 
 			 * */
-			protected function importPopUp_closeHandler(event:Event):void {
+			public function importPopUp_closeHandler(event:Event):void {
 				var radiate:Radiate = Radiate.getInstance();
 				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedProject:IProject = radiate.selectedProject;
 				var type:String = importLocation.selectedValue as String;
+				var target:IVisualElement = radiate.target as IVisualElement;
+				var result:SourceData;
 				
-				if (action==ImportWindow.IMPORT) {
-					if (type==ImportWindow.NEW_DOCUMENT) {
-						radiate.importMXMLDocument(radiate.selectedProject, null, null, code);
-					}
-					else if (type==ImportWindow.CURRENT_DOCUMENT && selectedDocument) {
-						radiate.importMXMLDocument(radiate.selectedProject, selectedDocument, null, code);
-					}
-					else if (type==ImportWindow.CURRENT_SELECTION && radiate.target is IVisualElement) {
-						if (radiate.target is IVisualElement) {
-							radiate.importMXMLDocument(radiate.selectedProject, selectedDocument, IVisualElement(radiate.target), code);
-						}
-						Alert.show("Please select a visual element");
-					}
-					else {
-						Alert.show("Please select a document");
+				if (type==ImportWindow.NEW_DOCUMENT) {
+					result = radiate.importMXMLDocument(selectedProject, null, null, code);
+					
+					if (result) {
+						showImportedMessage();
+						return;
 					}
 				}
+				else if (type==ImportWindow.CURRENT_DOCUMENT && selectedDocument) {
+					result = radiate.importMXMLDocument(selectedProject, selectedDocument, null, code);
+					
+					if (result) {
+						showImportedMessage();
+						return;
+					}
+				}
+				else if (type==ImportWindow.CURRENT_SELECTION) {
+					if (target is IVisualElement) {
+						result = radiate.importMXMLDocument(selectedProject, selectedDocument, target, code);
+						
+						if (result) {
+							showImportedMessage();
+							return;
+						}
+					}
+					else {
+						showMessage("Please select a visual element");
+						return;
+					}
+				}
+				else {
+					showMessage("Please select a document");
+					return;
+				}
 				
-				closePopUp.startDelay = 500;
-				closePopUp.play();
+				if (result) {
+					showImportedMessage();
+				}
+				else {
+					showMessage("Did not import successfully");
+				}
+				
 			}
 			
 			protected function animatedpanelwindow1_hideHandler(event:Event):void {
@@ -220,24 +263,51 @@
 					}
 				}
 			}
-			public static const NORMAL:String = "normal";
-			public static const REVISIONS:String = "revisions";
+			
+			protected function showOriginalSourceButton_clickHandler(event:MouseEvent):void {
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				
+				if (selectedDocument) {
+					if (selectedDocument.originalSource) {
+						aceEditor.text = selectedDocument.originalSource;
+					}
+					else {
+						Radiate.warn("No source in document.");
+					}
+				}
+				else {
+					Radiate.warn("No document is selected.");
+				}
+			}
+			
+			protected function showCurrentSourceButton_clickHandler(event:MouseEvent):void {
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				
+				if (selectedDocument) {
+					var source:String =  selectedDocument.getSource();
+					aceEditor.text = source;
+				}
+				else {
+					Radiate.warn("No source to show. No document is selected.");
+				}
+			}
+			
+			protected function cancelButton_clickHandler(event:MouseEvent):void{
+				action = null;
+				code = null;
+				
+				closePopUp.startDelay = 500;
+				closePopUp.play();
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
 		
-		<!--- hide about popup -->
-		<handlers:EventHandler targets="{cancelButton}" eventName="click" setTriggerEvent="true">
-			<s:SetAction property="action" target="{this}" value="cancel"/>
-			<fc:ClosePopUp popUp="{this}"  />
-		</handlers:EventHandler>
 		
 		<!--- hide about popup -->
-		<handlers:EventHandler targets="{importButton}" eventName="click" setTriggerEvent="true">
-			<s:SetAction property="action" target="{this}" value="import"/>
-			<fc:ClosePopUp id="closePopUp" popUp="{this}"  />
-		</handlers:EventHandler>
+		<fc:ClosePopUp id="closePopUp" popUp="{this}"  />
 		
 		<fx:String id="action"></fx:String>
 		
@@ -275,9 +345,11 @@
 			
 			<s:Label x="15" y="65" text="MXML code:" fontWeight="bold"/>
 			
-			<s:HGroup x="14" y="31" width="100%" horizontalAlign="right">
-				<s:Label x="15" y="15" text="Import to:" fontWeight="bold"/>
-				<s:Spacer width="100%"/>
+			<s:HGroup x="14" y="31" width="100%" height="22" 
+					  horizontalAlign="right" 
+					  verticalAlign="middle">
+				<s:Label x="15" y="15" text="Import to:" 
+						 fontWeight="bold" paddingTop="3" paddingRight="10"/>
 				<s:RadioButton x="91" 
 							   y="128" 
 							   label="New Document" 
@@ -298,24 +370,46 @@
 							   group="{importLocation}"
 							   value="{CURRENT_SELECTION}"
 							   />
+				<s:Spacer width="100%"/>
 			</s:HGroup>
 			
-			<s:Label id="warningLabel_Ha" 
-					 x="15" y="15" 
-					 text="Warning: XML is invalid" 
-					 fontWeight="bold" 
-					 color="red"
-					 includeInLayout="false"
-					 visible="false"
-					 width="100%"/>
+			<s:HGroup id="notesGroup" width="100%" verticalAlign="middle" 
+					  includeInLayout="false" visible="false">
+				<s:Label id="messageLabel"
+						 fontWeight="bold" 
+						 color="green"/>
+				
+			</s:HGroup>
+			
+			<s:HGroup id="errorGroup" width="100%" verticalAlign="middle" 
+					  includeInLayout="false" visible="false">
+				<s:Label id="lineError" 
+						 x="15" y="15" 
+						 text="" 
+						 fontWeight="bold" 
+						 color="red"/>
+				
+				<s:Label id="warningLabel" 
+						 x="15" y="15" 
+						 text="" 
+						 fontWeight="bold" 
+						 color="red"
+						 width="100%"/>
+			</s:HGroup>
 			
 			<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
 				<s:Button id="showRevisionsButton" label.normal="Show Revisions"
 						  label.revisions="Hide Revisions"
 						  click="showRevisionsButton_clickHandler(event)"/>
+				<s:Button id="showOriginalSourceButton" 
+						  label="Show Original Source"
+						  click="showOriginalSourceButton_clickHandler(event)"/>
+				<s:Button id="showCurrentSourceButton" 
+						  label="Show Current Source"
+						  click="showCurrentSourceButton_clickHandler(event)"/>
 				<s:Spacer width="100%"/>
-				<s:Button id="cancelButton" label="Cancel" />
-				<s:Button id="importButton" label="Import" />
+				<s:Button id="cancelButton" label="Close" click="cancelButton_clickHandler(event)"/>
+				<s:Button id="importButton" label="Import" click="importPopUp_closeHandler(event)"/>
 			</s:HGroup>
 		</s:VGroup>
 	</mx:HDividedBox>

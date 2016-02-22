@@ -1,13 +1,15 @@
 package com.flexcapacitor.managers {
 	
 	import com.flexcapacitor.controller.Radiate;
-	import com.flexcapacitor.effects.clipboard.CopyToClipboard;
 	import com.flexcapacitor.effects.popup.OpenPopUp;
 	import com.flexcapacitor.model.DocumentData;
+	import com.flexcapacitor.model.HTMLExportOptions;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImageData;
+	import com.flexcapacitor.model.MetaData;
 	import com.flexcapacitor.model.SourceData;
 	import com.flexcapacitor.services.WPService;
+	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.views.ImageView;
 	import com.google.code.flexiframe.IFrame;
 	
@@ -15,9 +17,13 @@ package com.flexcapacitor.managers {
 	import flash.desktop.ClipboardFormats;
 	import flash.display.BitmapData;
 	import flash.events.ErrorEvent;
+	import flash.events.Event;
 	import flash.events.EventDispatcher;
+	import flash.net.URLRequest;
+	import flash.net.navigateToURL;
 	
 	import mx.core.UIComponent;
+	import mx.messaging.FlexClient;
 	import mx.validators.IValidator;
 
 	
@@ -139,14 +145,42 @@ package com.flexcapacitor.managers {
 			var previewDocument:Object;
 			var radiate:Radiate = Radiate.getInstance();
 			var sourceData:SourceData;
+			var htmlOptions:HTMLExportOptions;
 			
 			if (iDocument==null) {
 				Radiate.warn("Please open a document before trying to preview it");
 				return;
 			}
 			
+			htmlOptions = CodeManager.getExportOptions(CodeManager.HTML) as HTMLExportOptions;
+			
+			
+			//htmlOptions.template = html5boilerplate;
+			//htmlOptions.bordersCSS = bordersCSS;
+			//htmlOptions.showBorders = showBorders;
+			//htmlOptions.useBorderBox = useBoderBox;
+			//htmlOptions.useInlineStyles = setStylesInline.selected;
+			//htmlOptions.template = iDocument.template;
+			//htmlOptions.disableTabs = true;
+			//htmlOptions.useExternalStylesheet = false;
+			//htmlOptions.exportChildDescriptors = showChildDescriptors.selected;
+			//htmlOptions.reverseInitialCSS = true;
+			
+			/*if (updateCodeLive.selected && isCodeModifiedByUser) {
+				htmlOptions.useCustomMarkup = true;
+				htmlOptions.markup = aceEditor.text;
+				htmlOptions.styles = aceCSSEditor.text;
+			}
+			else {
+				htmlOptions.useCustomMarkup = false;
+				htmlOptions.markup = "";
+				htmlOptions.styles = "";
+			}*/
+			
+			htmlOptions.reverseInitialCSS = false;
+			
 			// get source code
-			sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, CodeManager.HTML);
+			sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, CodeManager.HTML, htmlOptions);
 			
 			iDocument.errors = sourceData.errors;
 			iDocument.warnings = sourceData.warnings;
@@ -161,6 +195,15 @@ package com.flexcapacitor.managers {
 				
 				if (previewDocument is UIComponent && sourceData) {
 					previewDocument.htmlText = sourceData.source;
+					previewDocument.addEventListener("ready", function(e:Event):void {
+						previewDocument.htmlText = sourceData.source;
+					});
+					previewDocument.addEventListener("readystate", function(e:Event):void {
+						previewDocument.htmlText = sourceData.source;
+					});
+					previewDocument.addEventListener("onreadystatechange", function(e:Event):void {
+						previewDocument.htmlText = sourceData.source;
+					});
 					
 					if (previewDocument is IValidator) {
 						previewDocument.validateNow(); // prevent editor change event
@@ -297,6 +340,71 @@ package com.flexcapacitor.managers {
 				Radiate.error("Couldn't copy link to the home page");
 			}
 			
+		}
+		
+		/**
+		 * Copies URL to the clipboard. 
+		 * */
+		public static function copyURLToClipboard(url:String):void {
+			var clipboard:Clipboard = Clipboard.generalClipboard;
+			var formatText:String = ClipboardFormats.TEXT_FORMAT;
+			var formatURL:String = ClipboardFormats.URL_FORMAT;
+			var serializable:Boolean;
+			
+			if (url) {
+				
+				// it's recommended to clear the clipboard before setting new content
+				clipboard.clear();
+				
+				try {
+					clipboard.setData(formatText, String(url), serializable);
+					
+					if (Radiate.isDesktop) {
+						clipboard.setData(formatURL, String(url), serializable);
+					}
+					
+					Radiate.info("A link to the home page was copied to the clipboard");
+				}
+				catch (error:ErrorEvent) {
+					Radiate.error("Couldn't copy link to the home page");
+				}
+			}
+		}
+		
+		/**
+		 * Opens the documentation for the object in a browser window
+		 * */
+		public static function openDocumentationInBrowserButton(object:Object):void {
+			var metadata:MetaData;
+			var path:String = "";
+			var prefix:String = "";
+			var url:String;
+			var className:String;
+			var request:URLRequest;
+			
+			if (object is MetaData) {
+				metadata = MetaData(object);
+				url = Radiate.getURLToHelp(metadata);
+			}
+			else if (object) {
+				className = ClassUtils.getQualifiedClassName(object);
+				
+				// flex capacitor classes usually extend spark classes
+				// get documentation for spark class
+				if (className.indexOf("flexcapacitor")!=-1) {
+					className = ClassUtils.getSuperClass(object);
+				}
+				
+				url = Radiate.getURLToHelp(className);
+			}
+			
+			if (url) {
+				
+				request = new URLRequest(url);
+				
+				navigateToURL(request, "asdocs");
+				
+			}
 		}
 	}
 }

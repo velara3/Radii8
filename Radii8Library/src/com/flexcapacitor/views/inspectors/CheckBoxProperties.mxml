@@ -4,13 +4,13 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
-		 styleName="inspectablePanel">
+		 styleName="inspectablePanel"
+		 width="100%">
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			
 			import org.as3commons.lang.ArrayUtils;
@@ -19,7 +19,6 @@
 			public var target:Object;
 			public var data:Object;
 			
-			public var fonts:Array;
 			
 			public function activate():void {
 				radiate = Radiate.getInstance();
@@ -50,6 +49,13 @@
 				}
 			}
 			
+			public function update():void {
+				labelRenderer.data = ClassUtils.getMetaDataOfProperty(target, "label");
+				labelPlacementRenderer.data = ClassUtils.getMetaDataOfStyle(target, "labelPlacement");
+				gapRenderer.data = ClassUtils.getMetaDataOfProperty(target, "gap");
+				selectedRenderer.data = ClassUtils.getMetaDataOfProperty(target, "selected");
+			}
+			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
 				if (event.type==RadiateEvent.PROPERTY_CHANGED) {
 					if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
@@ -59,25 +65,30 @@
 						return;
 					}
 				}
-				
 				callLater(update);
-			}
-			
-			public function update():void {
-				var textAccessor:MetaData = ClassUtils.getMetaDataOf(target, "styleName");
 				
-				textRenderer.data = textAccessor;
 			}
 			
-			public var relevantProperties:Array = ["styleName"];
+			
+			public var relevantProperties:Array = ["label", "labelPlacement", "gap", "selected"];
 		]]>
 	</fx:Script>
 	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
 	
-	<s:TileGroup width="100%" columnAlign="left" columnWidth="120" verticalAlign="middle" requestedColumnCount="2">
+	<s:TileGroup width="100%" columnAlign="left" columnWidth="118" verticalAlign="middle" requestedColumnCount="2">
+		<s:Label text="Label" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="labelRenderer" height="24" width="100%"/>
 		
-		<s:Label text="Style Name" styleName="inspectablePanelLabel" />
-		<renderers:TextRenderer id="textRenderer" />
+		<s:Label text="Gap" styleName="inspectablePanelLabel"/>
+		<renderers:NumberRenderer id="gapRenderer" height="24" stepSize="1" />
 		
+		<s:Label text="Label Placement" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="labelPlacementRenderer" height="24" minWidth="160"/>
+		
+		<s:Label text="Selected" styleName="inspectablePanelLabel"/>
+		<renderers:BooleanRenderer id="selectedRenderer" height="24" minWidth="132" />
 	</s:TileGroup>
 </s:Group>

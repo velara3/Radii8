@@ -1559,7 +1559,7 @@
 								change="formatCombobox_changeHandler(event)"
 								dataProvider="{formatsCollection}"/>
 				<c:ClearButton id="clearFormatButton" 
-						  skinClass="com.flexcapacitor.skins.ClearButton"
+						  skinClass="com.flexcapacitor.skins.ClearButtonSkin"
 						  right="0" 
 						  verticalCenter="0"/>
 			</s:HGroup>

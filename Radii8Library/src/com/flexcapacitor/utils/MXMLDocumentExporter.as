@@ -93,7 +93,13 @@ package com.flexcapacitor.utils {
 				componentDescription = document.componentDescription;
 			}
 			
-			markup = getMXMLOutputString(document, componentDescription);
+			if (document.isOpen) {
+				markup = getMXMLOutputString(document, componentDescription);
+			}
+			else {
+				warningData = IssueData.getIssue("Document is not open", "At this time you must open the document to export");
+				warnings.push(warningData);
+			}
 			
 			if (styles==null) {
 				styles = "";
@@ -217,7 +223,7 @@ package com.flexcapacitor.utils {
 			
 			//exportChildDescriptors = componentDescription.exportChildDescriptors;
 			
-			if (!exportChildDescriptors) {
+			if (exportChildDescriptors==false || componentDescription.exportChildDescriptors==false) {
 				//contentToken = "";
 			}
 			
@@ -229,7 +235,7 @@ package com.flexcapacitor.utils {
 			
 			for (var propertyName:String in properties) {
 				value = properties[propertyName];
-				if (value===undefined || value==null) {
+				if (value===undefined || value===null) {
 					continue;
 				}
 				
@@ -258,12 +264,12 @@ package com.flexcapacitor.utils {
 					continue;
 				}
 				output += " ";
-				// we could be using XML itself to set values. It should encode as necessary Refactor
+				// we could be using XML itself to set values. It should encode as necessary - todo: Refactor
 				output += styleName + "=\"" + XMLUtils.getAttributeSafeString(Object(styles[styleName]).toString()) + "\"";
 			}
 			
 			// adding extra attributes
-			// we should refactor this
+			// refactor
 			
 			if (componentDescription.locked) {
 				output += " ";

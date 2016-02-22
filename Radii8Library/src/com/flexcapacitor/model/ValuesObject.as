@@ -12,6 +12,11 @@ package com.flexcapacitor.model
 		public var properties:Array = [];
 		
 		/**
+		 * List of events 
+		 * */
+		public var events:Array = [];
+		
+		/**
 		 * List of styles 
 		 * */
 		public var styles:Array = [];
@@ -61,8 +66,15 @@ package com.flexcapacitor.model
 		public var propertiesErrorsObject:Object;
 		
 		/**
-		 * Array of valid properties and styles
+		 * Array of valid properties, events and styles 
 		 * */
-		public var propertiesAndStyles:Array;
+		public var propertiesStylesEvents:Array;
+		
+		/**
+		 * Array of attributes that are not valid properties, events and styles.
+		 * They may be valid, such as state specific attributes, but they are not known 
+		 * to the importer. 
+		 * */
+		public var attributesNotFound:Array;
 	}
 }
