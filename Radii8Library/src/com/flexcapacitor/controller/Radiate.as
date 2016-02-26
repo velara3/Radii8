@@ -20,7 +20,7 @@ package com.flexcapacitor.controller {
 	import com.durej.PSDParser.PSDParser;
 	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.components.IDocumentContainer;
-	import com.flexcapacitor.controls.BorderContainer;
+	import com.flexcapacitor.controls.ColorPicker;
 	import com.flexcapacitor.controls.Hyperlink;
 	import com.flexcapacitor.effects.core.CallMethod;
 	import com.flexcapacitor.effects.core.PlayerType;
@@ -135,6 +135,7 @@ package com.flexcapacitor.controller {
 	import mx.core.ClassFactory;
 	import mx.core.DeferredInstanceFromFunction;
 	import mx.core.DragSource;
+	import mx.core.EventPriority;
 	import mx.core.IFlexModuleFactory;
 	import mx.core.IInvalidating;
 	import mx.core.IUIComponent;
@@ -167,6 +168,7 @@ package com.flexcapacitor.controller {
 	import spark.components.Application;
 	import spark.components.BorderContainer;
 	import spark.components.Button;
+	import spark.components.CheckBox;
 	import spark.components.ColorPicker;
 	import spark.components.ComboBox;
 	import spark.components.DropDownList;
@@ -175,6 +177,7 @@ package com.flexcapacitor.controller {
 	import spark.components.Label;
 	import spark.components.NavigatorContent;
 	import spark.components.NumericStepper;
+	import spark.components.RadioButton;
 	import spark.components.RichEditableText;
 	import spark.components.RichText;
 	import spark.components.Scroller;
