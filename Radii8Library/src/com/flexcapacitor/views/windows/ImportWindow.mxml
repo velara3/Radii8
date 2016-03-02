@@ -130,7 +130,10 @@
 				errorGroup.includeInLayout = false;
 				lineError.text = "";
 				warningLabel.text = "";
-				aceEditor.clearAnnotations();
+				
+				if (aceEditor.aceFound) {
+					aceEditor.clearAnnotations();
+				}
 			}
 			
 			public function showImportedMessage():void {
@@ -139,7 +142,10 @@
 				notesGroup.visible = false;
 				notesGroup.includeInLayout = false;
 				messageLabel.text = "Import successful";
-				aceEditor.clearAnnotations();
+				
+				if (aceEditor.aceFound) {
+					aceEditor.clearAnnotations();
+				}
 			}
 			
 			/**

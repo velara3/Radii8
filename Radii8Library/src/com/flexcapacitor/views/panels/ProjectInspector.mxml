@@ -11,6 +11,8 @@
 		 implements="com.flexcapacitor.views.IInspector" 
 		 >
 	
+	<!-- we should show the documents here as well -->
+	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
@@ -305,7 +307,7 @@
 		
 		<c:BeveledImageButton id="shareIcon" 
 							  source="{Radii8LibraryAssets.share}" 
-							  toolTip="Share"
+							  toolTip="Share - copies the URL to the online home page to the clipboard"
 							  click="shareIcon_clickHandler(event)"
 							  width="16"
 							  height="22"

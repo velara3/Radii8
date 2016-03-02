@@ -281,9 +281,9 @@ package com.flexcapacitor.utils {
 				
 				Radiate.removeExplictSizeOnComponent(componentInstance, node, componentDefinition, false);
 				
-				Radiate.updateComponentAfterAdd(iDocument, componentInstance);
+				Radiate.updateComponentAfterAdd(iDocument, componentInstance, false, makeInteractive);
 				
-				Radiate.makeInteractive(componentInstance, makeInteractive);
+				//Radiate.makeInteractive(componentInstance, makeInteractive);
 				
 				// in case width or height or relevant was changed
 				if (componentInstance is Application) {

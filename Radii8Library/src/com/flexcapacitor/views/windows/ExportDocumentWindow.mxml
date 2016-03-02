@@ -551,7 +551,7 @@
 					 minWidth="120"/>
 			
 			<s:RadioButton id="allDocumentsButton" 
-					 label="All documents in project" 
+					 label="All documents in project (experimental)" 
 					 minWidth="120"
 					 selected="true"
 					 groupName="amountOfDocuments"/>

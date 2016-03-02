@@ -670,9 +670,18 @@
 			 minHeight="24"
 			 verticalAlign="middle"
 			 >
+		
+		<c:BeveledImageButton id="shareIcon" 
+							  source="{Radii8LibraryAssets.share}" 
+							  toolTip="Share - copies the URL to the selected document to the clipboard. Publish the document to view when not logged in."
+							  click="shareIcon_clickHandler(event)"
+							  width="16"
+							  height="22"
+							  />
+		
 		<c:BeveledImageButton id="importDocumentIcon" 
 					   source="{Radii8LibraryAssets.importIcon}" 
-					   toolTip="Import Document"
+					   toolTip="Import MXML"
 					   click="importDocumentIcon_clickHandler(event)"
 					   />
 		<s:Spacer width="-1"/>
@@ -697,14 +706,6 @@
 							  click="editDocumentIcon_clickHandler(event)"
 							  includeInLayout="false"
 							  visible="false"
-							  />
-		
-		<c:BeveledImageButton id="shareIcon" 
-							  source="{Radii8LibraryAssets.share}" 
-							  toolTip="Share"
-							  click="shareIcon_clickHandler(event)"
-							  width="16"
-							  height="22"
 							  />
 		
 		<s:Group click="openHomePageInBrowserButton_clickHandler()" visible="false" includeInLayout="false">

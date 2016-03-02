@@ -1791,8 +1791,8 @@ package com.flexcapacitor.controller {
 			//createDocumentTypesList(documentsXML);
 			
 			createComponentList(componentsXML);
-			createComponentList(sparkXML);
-			createComponentList(mxmlXML);
+			//createComponentList(sparkXML);
+			//createComponentList(mxmlXML);
 			
 			createInspectorsList(inspectorsXML);
 			
@@ -7169,8 +7169,9 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		
 		/**
 		 * When set to true, makes a component interactive as in a normal app. 
+		 * When false makes component behave as if it was on the design view
 		 * */
-		public static function makeInteractive(componentInstance:Object, interactive:Boolean = false):void {
+		public static function makeInteractive(componentInstance:Object, interactive:Boolean = false, showEditor:Boolean = true):void {
 			
 			// graphic elements
 			// when we say interactive we mean what the user will interact with
@@ -7193,20 +7194,34 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					componentInstance.textDisplay.enabled = interactive;
 				}
 				
-				// show editor on double click
-				if (componentInstance is Label || componentInstance is RichText) {
-					componentInstance.doubleClickEnabled = interactive;
-					
-					if (interactive) {
+				
+				// if show editor on double click then continue to be interactive 
+				if (showEditor) {
+					if (componentInstance is Label || componentInstance is RichText || componentInstance is Hyperlink) {
+						componentInstance.doubleClickEnabled = true;
+						
 						componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
 					}
-					else {
-						componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor);
+					
+					if (componentInstance is Hyperlink) {
+						componentInstance.useHandCursor = true;
 					}
 				}
-				
-				if (componentInstance is Hyperlink) {
-					componentInstance.useHandCursor = interactive;
+				else {
+					if (componentInstance is Label || componentInstance is RichText) {
+						componentInstance.doubleClickEnabled = interactive;
+						
+						if (interactive) {
+							componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
+						}
+						else {
+							componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor);
+						}
+					}
+					
+					if (componentInstance is Hyperlink) {
+						componentInstance.useHandCursor = interactive;
+					}
 				}
 			}
 			

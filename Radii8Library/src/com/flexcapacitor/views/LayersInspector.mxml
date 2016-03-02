@@ -74,6 +74,7 @@
 			import mx.states.AddItems;
 			
 			import spark.components.Application;
+			import spark.layouts.BasicLayout;
 			
 			private var rootDisplayObject:DisplayObject;
 			private var displayList:Array = [];
@@ -816,12 +817,21 @@
 				var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
 				var currentIndex:int;
 				var dropIndex:int;
+				var parentInstance:Object;
 				
 				if (componentDescription && componentDescription.parent) {
 					currentIndex = ComponentDescription(componentDescription.parent).children.getItemIndex(componentDescription);
 					
 					if (currentIndex<ComponentDescription(componentDescription.parent).children.length-1) {
-						dropIndex = currentIndex + 2;
+						parentInstance = ComponentDescription(componentDescription.parent).instance;
+						
+						if ("layout" in parentInstance && parentInstance.layout is BasicLayout) { 
+							dropIndex = currentIndex + 1;
+						}
+						else {
+							dropIndex = currentIndex + 2;
+						}
+						
 						Radiate.moveElement(componentDescription.instance, componentDescription.parent.instance, [], [], 
 							null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 						radiate.setTarget(componentDescription.instance);
