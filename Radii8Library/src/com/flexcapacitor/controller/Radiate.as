@@ -68,7 +68,6 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.services.WPAttachmentService;
 	import com.flexcapacitor.services.WPService;
-	import com.flexcapacitor.skins.BorderContainerSkin;
 	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.tools.ITool;
 	import com.flexcapacitor.tools.Selection;
@@ -1341,14 +1340,15 @@ package com.flexcapacitor.controller {
 		public function dispatchPropertyChangeEvent(localTarget:*, changes:Array, properties:Array, styles:Array, events:Array = null):void {
 			if (importingDocument) return;
 			var propertyChangeEvent:RadiateEvent;
-			var propertiesAndStyles:Array = com.flexcapacitor.utils.ArrayUtils.join(properties, styles);
 			
 			if (hasEventListener(RadiateEvent.PROPERTY_CHANGED)) {
 				propertyChangeEvent = new RadiateEvent(RadiateEvent.PROPERTY_CHANGED, false, false, localTarget);
-				propertyChangeEvent.property = propertiesAndStyles && propertiesAndStyles.length ? propertiesAndStyles[0] : null;
+				propertyChangeEvent.property = properties && properties.length ? properties[0] : null;
 				propertyChangeEvent.properties = properties;
 				propertyChangeEvent.styles = styles;
-				propertyChangeEvent.propertiesAndStyles = propertiesAndStyles;
+				propertyChangeEvent.events = events;
+				propertyChangeEvent.propertiesAndStyles = com.flexcapacitor.utils.ArrayUtils.join(properties, styles);
+				propertyChangeEvent.propertiesStylesEvents = com.flexcapacitor.utils.ArrayUtils.join(properties, styles, events);
 				propertyChangeEvent.changes = changes;
 				propertyChangeEvent.selectedItem = localTarget && localTarget is Array ? localTarget[0] : localTarget;
 				propertyChangeEvent.targets = ArrayUtil.toArray(localTarget);
@@ -1822,10 +1822,12 @@ package com.flexcapacitor.controller {
 			
 			var host:String;
 			var path:String;
+			var screenshotPath:String;
 			
 			if (!firstRun) {
 				host = PersistentStorage.read(Radiate.WP_HOST_NAME);
 				path = PersistentStorage.read(Radiate.WP_PATH_NAME);
+				screenshotPath = PersistentStorage.read(Radiate.SCREENSHOT_PATH_NAME);
 			}
 			
 			if (host) {
@@ -1840,6 +1842,13 @@ package com.flexcapacitor.controller {
 			}
 			else {
 				WP_PATH = defaultPath;
+			}
+			
+			if (screenshotPath) {
+				Radiate.SCREENSHOT_PATH = screenshotPath;
+			}
+			else {
+				SCREENSHOT_PATH = defaultScreenshotPath;
 			}
 			
 			CodeManager.setTranscodersVersion(instance.versionNumber);
@@ -2165,6 +2174,7 @@ package com.flexcapacitor.controller {
 			var cursorX:int;
 			var cursorY:int;
 			var item:XML;
+			var key:String;
 			
 			// get list of tool classes 
 			items = XML(xml).tool;
@@ -2178,6 +2188,7 @@ package com.flexcapacitor.controller {
 				className = item.attribute("class");
 				inspectorClassName = item.attribute("inspector");
 				cursorItems = item..cursor;
+				key = item.attribute("key");
 				
 				includeItem = item.attribute("include")=="false" ? false : true;
 				
@@ -2289,8 +2300,10 @@ package com.flexcapacitor.controller {
 						mouseCursors[className] = cursors;
 					}
 					
+					// add keyboard shortcut
+					
 					//trace("tool cursors:", cursors);
-					var toolDescription:ComponentDescription = addToolType(item.@id, className, toolClassDefinition, toolInstance, inspectorClassName, null, defaults, null, cursors);
+					var toolDescription:ComponentDescription = addToolType(item.@id, className, toolClassDefinition, toolInstance, inspectorClassName, null, defaults, null, cursors, key);
 					//trace("tool cursors:", toolDescription.cursors);
 				}
 				else {
@@ -2700,9 +2713,15 @@ package com.flexcapacitor.controller {
 		public static var DEFAULT_DOCUMENT_WIDTH:int = 800;
 		public static var DEFAULT_DOCUMENT_HEIGHT:int = 792;
 		public static var DEFAULT_NAVIGATION_WINDOW:String = "userNavigation";
+		public static var SCREENSHOT_PATH:String = "https://dev.windows.com/en-us/microsoft-edge/tools/screenshots/#";
+		public static var SCREENSHOT_PATH_NAME:String = "screenshotPathName";
+		public static var SITE_SCANNER_PATH:String = "https://dev.windows.com/en-us/microsoft-edge/tools/staticscan/?url=";
+		public static var SITE_SCANNER_PATH_NAME:String = "siteScannerPathName";
 		
 		public static var defaultHost:String = "https://www.radii8.com";
 		public static var defaultPath:String = "/r8m/";
+		public static var defaultScreenshotPath:String = "https://dev.windows.com/en-us/microsoft-edge/tools/screenshots/#";
+		public static var defaultSiteScannerPath:String = "https://dev.windows.com/en-us/microsoft-edge/tools/screenshots/#";
 		public static var firstRun:Boolean;
 		
 		/**
@@ -2824,7 +2843,7 @@ package com.flexcapacitor.controller {
 		 * */
 		public static function addToolType(name:String, className:String, classType:Object, instance:ITool, 
 										   inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, 
-										   defaultStyles:Object=null, cursors:Dictionary = null):ComponentDescription {
+										   defaultStyles:Object=null, cursors:Dictionary = null, key:String = null):ComponentDescription {
 			var definition:ComponentDescription;
 			var numberOfTools:uint = toolsDescriptions.length;
 			var item:ComponentDescription;
@@ -2841,15 +2860,16 @@ package com.flexcapacitor.controller {
 			
 			definition = new ComponentDescription();
 			
-			definition.name = name;
-			definition.icon = icon;
-			definition.className = className;
-			definition.classType = classType;
-			definition.defaultStyles = defaultStyles;
+			definition.name 			= name;
+			definition.icon 			= icon;
+			definition.className 		= className;
+			definition.classType 		= classType;
+			definition.defaultStyles 	= defaultStyles;
 			definition.defaultProperties = defaultProperties;
-			definition.instance = instance;
+			definition.instance 		= instance;
 			definition.inspectorClassName = inspectorClassName;
-			definition.cursors = cursors;
+			definition.cursors 			= cursors;
+			definition.key 				= key;
 			
 			toolsDescriptions.addItem(definition);
 			
@@ -3300,7 +3320,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Center the application. 
 		 * 
-		 * @param vertically center vertically so top and bottom may be cut off
+		 * @param vertically enable vertically centering options. if verticalTop is false top and bottom may be cut off. if true, scroll to top
 		 * @param verticallyTop if document is taller than avialable space keep it at the top
 		 * @param horizontalLeft if document is wider than avialable space keep it to the left
 		 * @param totalDocumentPadding adjustment for space at the top of the document. not sure really
@@ -4588,10 +4608,10 @@ package com.flexcapacitor.controller {
 		 * @see target
 		 * @see targets
 		 * */
-		public function setTarget(value:*, dispatchEvent:Boolean = true, cause:String = ""):void {
+		public function setTarget(value:*, dispatchEvent:Boolean = true, cause:String = "", reselect:Boolean = false):void {
 			var _tempTarget:* = value && value is Array && value.length ? value[0] : value;
 			
-			if (_targets.length == 1 && target==_tempTarget) {
+			if (_targets.length == 1 && target==_tempTarget && reselect==false) {
 				return;
 			}
 			
@@ -4703,8 +4723,8 @@ package com.flexcapacitor.controller {
 		/**
 		 * Selects the target
 		 * */
-		public static function setTarget(value:DisplayObject, dispatchEvent:Boolean = true, cause:String = ""):void {
-			instance.setTarget(value, dispatchEvent, cause);
+		public static function setTarget(value:Object, dispatchEvent:Boolean = true, cause:String = "", reselect:Boolean = false):void {
+			instance.setTarget(value, dispatchEvent, cause, reselect);
 		}
 		
 		/**
@@ -7130,9 +7150,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				// we could probably also do this: 
 				BorderContainer(target).addElement(new Label());
 				BorderContainer(target).removeAllElements();
-				// we do this to get rid of the round joints. this skin joints default to miter
-				BorderContainer(target).setStyle("skinClass", com.flexcapacitor.skins.BorderContainerSkin);
 				
+				// we do this to get rid of the round joints. this skin joints default to miter
+				// UPDATE - this causes an infinite loop somewhere when deleting an element
+				// so let's just remove it for now
+				//BorderContainer(target).setStyle("skinClass", com.flexcapacitor.skins.BorderContainerSkin);
+				BorderContainer(target).setStyle("cornerRadius", 0);
 			}
 			
 			// add fill to rect if null
@@ -9526,11 +9549,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			if (remote) {
 				if (remote && selectedProject is ISavable) {
 					saveProjectInProgress = true
-					ISavable(selectedProject).save(DocumentData.REMOTE_LOCATION, options);
 					
 					if (selectedProject is Project) {
 						Project(selectedProject).addEventListener(SaveResultsEvent.SAVE_RESULTS, projectSaveResults, false, 0, true);
 					}
+					
+					ISavable(selectedProject).save(DocumentData.REMOTE_LOCATION, options);
 				}
 			}
 			
@@ -9591,6 +9615,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * */
 		public function projectSaveResults(event:IServiceEvent):void {
 			var project:IProject = IProject(Event(event).currentTarget);
+			
 			saveProjectInProgress = false;
 			
 			if (project is EventDispatcher) {
@@ -9640,8 +9665,11 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		/**
 		 * Save project
 		 * */
-		public function saveProject(project:IProject, locations:String = null):Boolean {
+		public function saveProject(project:IProject, locations:String = null, options:Object = null):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var local:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var remote:Boolean = ServicesManager.getIsRemoteLocation(locations);
+			var locallySaved:Boolean;
 			
 			if (project==null) {
 				error("No project to save");
@@ -9652,20 +9680,66 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			if (!isUserLoggedIn) {
 				error("You must be logged in to save a project.");
+				return false;
 			}
 			
-			saveProjectInProgress = false;
-			project.save(locations);
-			//}
 			
-			if (project is EventDispatcher) {
+			if (project is EventDispatcher && remote) {
 				EventDispatcher(project).addEventListener(SaveResultsEvent.SAVE_RESULTS, projectSaveResults, false, 0, true);
 			}
 			
-			// TODO add support to save after response from server 
-			// because ID's may have been added from new documents
-			var locallySaved:Boolean = saveProjectLocally(project);
-			//project.saveCompleteCallback = saveData;
+			if (!local) {
+				saveProjectInProgress = true;
+			}
+			
+			project.save(locations, options);
+			
+			if (local) {
+				// TODO add support to save after response from server 
+				// because ID's may have been added from new documents
+				locallySaved = saveProjectLocally(project);
+				//project.saveCompleteCallback = saveData;
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Save project only. Save project saves the project and all documents
+		 * while save project only saves only the project.
+		 * */
+		public function saveProjectOnly(project:IProject, locations:String = null, options:Object = null):Boolean {
+			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var local:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var remote:Boolean = ServicesManager.getIsRemoteLocation(locations);
+			var locallySaved:Boolean;
+			
+			if (project==null) {
+				error("No project to save");
+				return false;
+			}
+			
+			
+			if (!isUserLoggedIn) {
+				error("You must be logged in to save a project.");
+				return false;
+			}
+			
+			
+			if (project is EventDispatcher && remote) {
+				EventDispatcher(project).addEventListener(SaveResultsEvent.SAVE_RESULTS, projectSaveResults, false, 0, true);
+			}
+			
+			saveProjectInProgress = false;
+			project.saveOnlyProject(locations, options);
+			
+			if (local) { 
+				// TODO add support to save after response from server 
+				// because ID's may have been added from new documents
+				locallySaved = saveProjectLocally(project);
+				//project.saveCompleteCallback = saveData;
+			}
+			
 			return true;
 		}
 
@@ -11344,6 +11418,11 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var request:URLRequest;
 			var url:String;
 			
+			if (documentData==null) {
+				warn("Please select a document.");
+				return;
+			}
+			
 			request = new URLRequest();
 			
 			if (windowName==null && documentData.name) {
@@ -11363,6 +11442,76 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			}
 			else {
 				error("The URL was not set. You may need to save the document first.");
+			}
+		}
+		
+		/**
+		 * Open document in browser screenshot site. 
+		 * The document must be published so the external site can view it
+		 * */
+		public static function openInBrowserScreenshot(documentData:IDocumentData, windowName:String = null):void {
+			var request:URLRequest;
+			var url:String;
+			
+			if (documentData==null) {
+				warn("Please select a document.");
+				return;
+			}
+			
+			request = new URLRequest();
+			
+			if (windowName==null && documentData.name) {
+				windowName = documentData.name;
+			}
+			
+			if (documentData is ImageData) {
+				url = ImageData(documentData).url;
+			}
+			else {
+				url = documentData.uri;
+			}
+			
+			if (url) {
+				request.url = SCREENSHOT_PATH + url;
+				navigateToURL(request, windowName);
+			}
+			else {
+				error("The URL was not set. You may need to publish and save the document first.");
+			}
+		}
+		
+		/**
+		 * Open document in browser site scanner site. 
+		 * The document must be published so the external site can view it
+		 * */
+		public static function openInBrowserSiteScanner(documentData:IDocumentData, windowName:String = null):void {
+			var request:URLRequest;
+			var url:String;
+			
+			if (documentData==null) {
+				warn("Please select a document.");
+				return;
+			}
+			
+			request = new URLRequest();
+			
+			if (windowName==null && documentData.name) {
+				windowName = documentData.name;
+			}
+			
+			if (documentData is ImageData) {
+				url = ImageData(documentData).url;
+			}
+			else {
+				url = documentData.uri;
+			}
+			
+			if (url) {
+				request.url = SITE_SCANNER_PATH + encodeURI(url);
+				navigateToURL(request, windowName);
+			}
+			else {
+				error("The URL was not set. You may need to publish and save the document first.");
 			}
 		}
 		
@@ -11805,48 +11954,81 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			return false;
 		}
 		
+		public var windowMenuDictionary:Dictionary = new Dictionary(true);
 		/**
 		 * Update the window menu item
 		 * */
-		public function updateWindowMenu(windowItem:MenuItem):void {
+		public function updateWindowMenu(windowItem:MenuItem, nativeMenuItem:Object = null):void {
 			var numberOfItems:int = windowItem.children ? windowItem.children.length : 0;
 			var menu:Object;
 			var menuItem:MenuItem;
 			var numberOfDocuments:int;
 			var iDocumentData:IDocumentData;
 			var menuFound:Boolean;
-			var dataProvider:ArrayCollection;
+			var dataProviderCollection:ArrayCollection;
+			var items:Array;
+			var numberOfMenus:int;
+			var isNativeMenu:Boolean;
 			
-			windowItem.removeAllChildren();
 			numberOfDocuments = documents.length;
 			
-			for (var j:int = 0; j < numberOfDocuments; j++) {
-				iDocumentData = documents[j];
+			
+			if (applicationMenu is Class(MenuItem.NativeMenuDefinition)) {
+				var keys:Array = org.as3commons.lang.DictionaryUtils.getKeys(windowMenuDictionary);
+				org.as3commons.lang.DictionaryUtils.deleteKeys(windowMenuDictionary, keys);
+				items = applicationMenu.items;
+				numberOfMenus = items ? items.length : 0;
+				isNativeMenu = true;
 				
-				menuItem = new MenuItem();
-				menuItem.data = iDocumentData;
-				menuItem.type = ClassUtils.getQualifiedClassName(iDocumentData);
-				menuItem.label = iDocumentData.name;
-				windowItem.addChild(menuItem);
+				return;
+				for (var j:int; j < numberOfDocuments; j++) {
+					iDocumentData = documents[j];
+					
+					menuItem = new MenuItem.NativeMenuItemDefinition();
+					menuItem.data = iDocumentData;
+					menuItem.type = ClassUtils.getQualifiedClassName(iDocumentData);
+					menuItem.label = iDocumentData.name;
+					windowItem.checked = false;
+					windowItem.addItem(menuItem);
+				}
+			}
+			else {
+				windowItem.removeAllChildren();
+				isNativeMenu = false;
+				dataProviderCollection = applicationMenu.dataProvider;
+				numberOfMenus = dataProviderCollection ? dataProviderCollection.length : 0;
+				
+				for (j; j < numberOfDocuments; j++) {
+					iDocumentData = documents[j];
+					
+					menuItem = new MenuItem();
+					menuItem.data = iDocumentData;
+					menuItem.type = ClassUtils.getQualifiedClassName(iDocumentData);
+					menuItem.label = iDocumentData.name;
+					windowItem.checked = false;
+					windowItem.addItem(menuItem);
+				}
 			}
 			
-			dataProvider = applicationMenu.dataProvider;
-			var numberOfMenus:int = dataProvider ? dataProvider.length : 0;
 			
 			for (var i:int; i < numberOfMenus; i++) {
-				if (dataProvider.getItemAt(i)==applicationWindowMenu) {
-					dataProvider.removeItemAt(i);
-					dataProvider.addItemAt(windowItem, i);
+				if (dataProviderCollection.getItemAt(i)==applicationWindowMenu) {
+					dataProviderCollection.removeItemAt(i);
+					dataProviderCollection.addItemAt(windowItem, i);
+					windowItem.checked = true;
 					menuFound = true;
 					break;
 				}
 			}
 			
-			if (!menuFound) {
-				dataProvider.addItem(windowItem);
+			if (menuFound) {
+				windowItem.checked = true;
+			}
+			else {
+				dataProviderCollection.addItem(windowItem);
 			}
 			
-			applicationMenu.dataProvider = dataProvider;
+			applicationMenu.dataProvider = dataProviderCollection;
 			
 		}
 		

@@ -31,21 +31,30 @@
 	</fx:Declarations>
 	
 	
-	<s:VGroup left="15" 
-			  top="20" 
-			  right="20"
-			  bottom="20">
+	<s:TileGroup width="100%" columnAlign="left" columnWidth="150" 
+				 verticalAlign="middle" requestedColumnCount="2"
+				 padding="20"
+				 bottom="50">
 		
-		<s:FormItem label="Videos"><controls:Hyperlink url="https://www.radii8.com/blog/?s=videos" text="Link"/></s:FormItem>
-		<s:FormItem label="Tutorials"><controls:Hyperlink url="https://www.radii8.com/r8m/" text="Link"/></s:FormItem>
+		
+		<s:Label text="Videos"/>
+		<controls:Hyperlink url="https://www.radii8.com/blog/?s=videos" text="Link"/>
+		
+		<s:Label text="Tutorials"/>
+		<controls:Hyperlink url="https://www.radii8.com/r8m/" text="Link"/>
+		
 		<!--<s:FormItem label="Examples"> </s:FormItem>-->
-		<s:FormItem label="Contact Email"><controls:Hyperlink url="https://www.radii8.com/blog/?page_id=856" text="Link"/></s:FormItem>
-		<s:FormItem label="Support Forums"><controls:Hyperlink url="https://www.radii8.com/blog/?page_id=856" text="Link"/></s:FormItem>
+		<s:Label text="Contact Email"/>
+		<controls:Hyperlink url="https://www.radii8.com/blog/?page_id=856" text="Link"/>
 		
-		<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
-			<s:Spacer width="100%"/>
-			<s:Button id="okButton" label="OK" />
-		</s:HGroup>
-	</s:VGroup>
+		<s:Label text="Support Forums"/>
+		<controls:Hyperlink url="https://www.radii8.com/blog/?page_id=856" text="Link"/>
+		
+	</s:TileGroup>
+	
+	<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
+		<s:Spacer width="100%"/>
+		<s:Button id="okButton" label="OK" />
+	</s:HGroup>
 	
 </windows:AnimatedPanelWindow>

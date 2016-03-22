@@ -1725,7 +1725,9 @@ package com.flexcapacitor.utils {
 		}
 		
 		public function getBackgroundImageData(componentInstance:Object, imageDataFormat:String = "png"):String {
-			var imageData:String = DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat, null, true);
+			var color:Number = 0x0;
+			var alpha:Number = .5;
+			var imageData:String = DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat, null, true, color);
 			var imageDataStyle:String = "";
 			//imageDataStyle = "background-repeat: no-repeat;";
 			//imageDataStyle += "background-image: url(" + imageData + ");";

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
+<s:Group xmlns:graphics="be.nascom.flash.graphics.*"
 		 xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:filters="com.flexcapacitor.filters.*"

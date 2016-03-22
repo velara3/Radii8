@@ -44,7 +44,6 @@
 			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.model.MenuItem;
 			import com.flexcapacitor.model.Settings;
-			import com.flexcapacitor.performance.PerformanceManager;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.windows.ContactWindow;
@@ -207,8 +206,18 @@
 			
 			protected function cornerLogo_clickHandler(event:MouseEvent):void {
 				
-				if (!ee) { if (!ripple) {
-					ripple = ApplicationDomain.currentDomain.getDefinition(String.fromCharCode(99,111,109,46,102,108,101,120,99,97,112,97,99,105,116,111,114,46,103,114,97,112,104,105,99,115,46,82,105,112,112,108,101,114));ripple=new ripple;}
+				// was trying to add fancy special effects to home screen
+				// but disabling for now
+				return;
+				
+				if (!ee) {
+					if (!ripple) {
+						ripple = ApplicationDomain.currentDomain.getDefinition(String.fromCharCode(99,111,109,46,102,108,101,120,99,97,112,97,99,105,116,111,114,46,103,114,97,112,104,105,99,115,46,82,105,112,112,108,101,114));
+						
+						if (ripple) {
+							ripple = new ripple;
+						}
+					}
 					//e.event = MouseEvent.CLICK;
 					//e.target = backgroundLogoImage;
 					ripple.event = MouseEvent.MOUSE_MOVE;
@@ -224,7 +233,9 @@
 				else {
 					ee = false;
 					//removeEventListener(MouseEvent.CLICK, stageHandler);
-					ripple.destroy();
+					if (ripple) {
+						ripple.destroy();
+					}
 				}
 			}
 			
@@ -270,16 +281,30 @@
 			 * we get FlexNativeMenuEvent. So we get an error if we don't use generic events
 			 * in the model menu event handlers
 			 * */
-			public function menuItemEventHandler(event:Event):void {
-				var item:MenuItem = "item" in event ? Object(event).item : null;
-				var menu:Object = "menu" in event ? Object(event).menu : null;
-				var label:String = "label" in event ? Object(event).label : null;
-				var index:int = "index" in event ? Object(event).index : -1;
+			public function menuItemEventHandler(event:Event, menuItem:MenuItem = null):void {
+				var item:MenuItem;
+				var menu:Object;
+				var label:String;
+				var index:int = -1;
+				var flexNativeMenu:Object;
 				var menuEvent:MenuEvent;
 				
-				menuEvent = new MenuEvent(event.type, event.bubbles, event.cancelable);
+				if (menuItem) {
+					item = menuItem;
+					label = menuItem.label;
+					//index = menuItem.index;
+				}
+				else {
+					menu = "menu" in event ? Object(event).menu : null;
+					label = "label" in event ? Object(event).label : null;
+					index = "index" in event ? Object(event).index : -1;
+					flexNativeMenu = "nativeMenuItem" in event ? Object(event).nativeMenuItem : null;
+					item = "item" in event ? Object(event).item : null;
+				}
+				
 				
 				if (label && item) {
+					menuEvent = new MenuEvent("itemClick", event.bubbles, event.cancelable);
 					menuEvent.index = index;
 					menuEvent.item = item;
 					menuEvent.label = label;
@@ -291,10 +316,11 @@
 				else if (menu && menu.dataProvider && 
 					menu.dataProvider[0] is MenuItem && 
 					menu.dataProvider[0].parent is MenuItem) {
+					menuEvent = new MenuEvent(event.type, event.bubbles, event.cancelable);
 					EventDispatcher(menu.dataProvider[0].parent).dispatchEvent(menuEvent);
 				}
 				
-				if (item.data is IDocument) {
+				if (item && item.data is IDocument) {
 					var iDocument:IDocument = item.data as IDocument;
 					
 					if (iDocument.isOpen) {
@@ -304,6 +330,11 @@
 					
 					if (!iDocument.isOpen) {
 						radiate.openDocumentByData(iDocument, true);
+					}
+					
+					if (flexNativeMenu) {
+						flexNativeMenu.checked = true;
+						//radiate.updateWindowMenu(item, nativeMenuItem);
 					}
 				}
 				
@@ -847,7 +878,14 @@
 			
 			
 			private function revertDocument():void {
-				radiate.revertDocument(radiate.selectedDocument);
+				var success:Boolean = radiate.revertDocument(radiate.selectedDocument);
+				if (success) {
+					Radiate.info("Document reverted");
+				}
+				else {
+					// revertDocument will display any errors
+					//Radiate.info("Document was not reverted");
+				}
 			}
 			
 			protected function instantMessengerContainer_clickHandler(event:MouseEvent):void
@@ -1105,6 +1143,7 @@
 					Radiate.info("Please open a document or project first");
 					return;
 				}
+				
 				browseForPSD.play();
 			}
 			
@@ -1145,6 +1184,16 @@
 			protected function importMXMLMenuItem_itemClickHandler(event:MenuEvent):void
 			{
 				radiate.openImportMXMLWindow("Import MXML");
+			}
+			
+			protected function viewInBrowserScreenshot_itemClickHandler(event:MenuEvent):void
+			{
+				Radiate.openInBrowserScreenshot(radiate.selectedDocument);
+			}
+			
+			protected function runSiteScanner_itemClickHandler(event:MenuEvent):void
+			{
+				Radiate.openInBrowserSiteScanner(radiate.selectedDocument);
 			}
 			
 		]]>
@@ -1339,7 +1388,7 @@
 						  modalDuration="150" 
 						  percentWidth="75"
 						  percentHeight="90"
-						  width="600"
+						  width="720"
 						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
@@ -1348,7 +1397,7 @@
 						  modalDuration="150" 
 						  percentWidth="75"
 						  percentHeight="90"
-						  width="600"
+						  width="720"
 						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
@@ -1366,10 +1415,10 @@
 				<model:MenuItem label="Open Document" itemClick="openDocument_itemClickHandler(event)"/>
 				<model:MenuItem label="Open Project" itemClick="openProject_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem label="Close Document" itemClick="{radiate.closeDocument(radiate.selectedDocument)}"/>
+				<model:MenuItem label="Close Document" itemClick="radiate.closeDocument(radiate.selectedDocument)"/>
 				<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="saveMenuItem" label="Save" keyEquivalent="s" commandKey="true" itemClick="saveMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveMenuItem" label="Save" keyEquivalent="s" itemClick="saveMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem label="Save Project" itemClick="{radiate.saveProject(radiate.selectedProject)}"/>
 				<model:MenuItem label="Save All Documents" itemClick="{radiate.saveAllDocuments()}"/>
 				<model:MenuItem id="saveDocumentAs" label="Export release..." />
@@ -1415,6 +1464,8 @@
 				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="showDocumentSource_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="getRevisions" label="Show Revisions" itemClick="getRevisions_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="viewInBrowserShots" label="View in Browser Shots" itemClick="viewInBrowserScreenshot_itemClickHandler(event)" />
 				<!--<model:MenuItem id="loginThroughWebsite" label="Login to your website" itemClick="loginThroughWebsite_itemClickHandler(event)"/>-->
 			</model:MenuItem>
 			<!--			<model:MenuItem label="Edit" menuShow="editHandler(event)">
@@ -1538,7 +1589,11 @@
 			 includeIn="home"/>
 	
 	<!-- HOME SCREEN MENU -->
-	<s:RectangularDropShadow height="380" width="640" 
+	<s:RectangularDropShadow id="welcomeContainerShadow" 
+							 minHeight="380" 
+							 height="60%" 
+							 minWidth="640"
+							 width="80%"
 							 horizontalCenter="0" 
 							 verticalCenter="-20"
 							 includeIn="home"
@@ -1547,11 +1602,22 @@
 							 />
 	
 	<!-- HOME SCREEN MENU -->
-	<s:BorderContainer height="380" width="640" 
+	<s:BorderContainer id="welcomeContainer" 
+					   minHeight="380" 
+					   height="60%" 
+					   minWidth="640"
+					   width="80%"
 					   horizontalCenter="0" verticalCenter="-20" 
 					   includeIn="home">
-		<s:BorderContainer left="0" x="81" top="0" y="82" height="120" 
-						   right="0" borderVisible="false" backgroundColor="#CCCCCC"/>
+		<s:Rect left="0" x="81" top="0" y="82" height="120" right="0">
+			<s:fill>
+				<mx:SolidColor color="#CCCCCC">
+				</mx:SolidColor>
+			</s:fill>
+		</s:Rect>
+		
+		<!--<s:BorderContainer left="0" x="81" top="0" y="82" height="120" 
+						   right="0" borderVisible="false" backgroundColor="#CCCCCC"/>-->
 		<s:Image id="mainLogo" x="0" y="0" width="128" height="128" 
 				 source="{Radii8LibraryAssets.logo256}"
 				 rollOver="{fadeInLogo.play()}" 
@@ -1580,10 +1646,10 @@
 				 >
 		</s:Image>
 		
-		<s:HGroup left="20" y="160" width="100%" right="20">
+		<s:HGroup left="20" top="160" bottom="60" width="100%" height="100%" right="20">
 			
 			
-			<s:VGroup width="100%">
+			<s:VGroup width="100%" height="100%">
 				<c:LabelButton id="examplesLabel" text="Examples" fontWeight="bold" click="examplesLabel_clickHandler(event)"/>
 				<s:Label id="checkingForExampleProjectsLabel" 
 						 text="" 
@@ -1596,8 +1662,8 @@
 						borderVisible="false"
 						dataProvider="{examplesCollection}"
 						labelField="name"
-						maxHeight="110"
-						height="110"
+						minHeight="110"
+						height="100%"
 						doubleClickEnabled="true"
 						doubleClick="examplesList_doubleClickHandler(event)"
 						change="examplesList_changeHandler(event)"
@@ -1605,7 +1671,7 @@
 						/>
 			</s:VGroup>
 			
-			<s:VGroup width="100%">
+			<s:VGroup width="100%" height="100%">
 				<c:LabelButton id="projectsLabel" 
 						 text="Projects" 
 						 fontWeight="bold"
@@ -1618,8 +1684,8 @@
 						 includeInLayout="false"/>
 				<s:List id="projectsList" 
 						width="100%"
-						maxHeight="110"
-						height="110"
+						minHeight="110"
+						height="100%"
 						borderVisible="false"
 						dataProvider="{projectsCollection}"
 						labelField="name"
@@ -1639,7 +1705,7 @@
 						/>
 			</s:VGroup>
 			
-			<s:VGroup width="100%">
+			<s:VGroup width="100%" height="100%">
 				
 				<c:LabelButton text="News and Tutorials" fontWeight="bold" click="news_clickHandler(event)"/>
 				<s:Label id="checkingForNewsLabel" 
@@ -1650,8 +1716,8 @@
 						 includeInLayout="false"/>
 				<s:List id="newsList" 
 						width="100%"
-						maxHeight="110"
-						height="110"
+						minHeight="110"
+						height="100%"
 						borderVisible="false"
 						dataProvider="{newsCollection}"
 						labelField="title"
@@ -1677,7 +1743,7 @@
 		</s:HGroup>
 		
 		
-		<s:Label id="statusLabel" top="308" horizontalCenter="0" textAlign="left" fontStyle="italic"/>
+		<s:Label id="statusLabel" bottom="40" horizontalCenter="0" textAlign="left" fontStyle="italic"/>
 		
 		<s:HGroup bottom="20" left="20" right="20"
 				  width="100%"
@@ -2015,6 +2081,8 @@
 			  left="10"
 			  color="#888888"
 			  >
+		<views:Breadcrumbs width="100%" includeIn="design"/>
+		<s:Spacer width="100%"/>
 		<s:BusyIndicator id="savingLogo" x="0" y="0" width="20" height="20" 
 				 visible="{radiate.saveDocumentInProgress}"
 				 includeInLayout="{radiate.saveDocumentInProgress}"/>
@@ -2025,6 +2093,10 @@
 				 text="{radiate.lastSaveDateFormatted}" 
 				 includeInLayout="{radiate.lastSaveDateFormatted!=null}" 
 				 visible="{radiate.lastSaveDateFormatted!=null}"/>
+		<s:Spacer width="1"/>
+		<c:VerticalLine height="16" 
+						includeInLayout="{radiate.lastSaveDateFormatted!=null}" 
+						visible="{radiate.lastSaveDateFormatted!=null}"/>
 		<!--<s:Label text="Build Date:"  />
 		<s:Label id="buildDate" text="{radiate.buildDate}" />
 		<s:Label text="Build Time:" /> 
@@ -2033,7 +2105,6 @@
 		<s:Label id="buildNumber" text="{radiate.buildNumber}" />
 		<s:Label text="Version:" />-->
 		
-		<s:Spacer width="100%"/>
 		
 		<s:Label id="versionNumber" text="{radiate.versionNumber}" />
 		<s:Spacer width="1"/>

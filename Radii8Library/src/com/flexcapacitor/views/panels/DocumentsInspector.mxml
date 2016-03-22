@@ -407,7 +407,15 @@
 			}
 			
 			protected function openDocumentInBrowserButton_clickHandler(event:MouseEvent):void {
-				RunManager.openDocumentInBrowserButton();
+				RunManager.openDocumentInBrowser();
+			}
+			
+			protected function openDocumentInBrowserScreenshotButton_clickHandler(event:MouseEvent):void {
+				RunManager.openDocumentInBrowserScreenshot();
+			}
+			
+			protected function openDocumentInBrowserSiteScannerButton_clickHandler(event:MouseEvent):void {
+				RunManager.openDocumentInBrowserSiteScanner();
 			}
 			
 			protected function list_clickHandler(event:MouseEvent):void {
@@ -737,10 +745,22 @@
 						change="documentStatusList_changeHandler(event)">
 		</s:DropDownList>
 		<c:BeveledImageButton id="openDocumentInBrowserButton" 
-							  source="{Radii8LibraryEffectsAssets.play}" 
+							  source="{Radii8LibraryAssets.documentExternalPlayIcon}" 
 							  toolTip="View a published document in the browser (if document is not published you must login to the site via in your browser before you can see it)"
 							  click="openDocumentInBrowserButton_clickHandler(event)"
 							  />
+		<c:BeveledImageButton id="openDocumentInBrowserScreenshotButton" 
+							  source="{Radii8LibraryAssets.browserScreenShot}" 
+							  toolTip="View the document in the browser screenshot (document must be published)"
+							  click="openDocumentInBrowserScreenshotButton_clickHandler(event)"
+							  includeInLayout="false"
+							  visible="false"/>
+		<c:BeveledImageButton id="openDocumentInBrowserSiteScannerButton" 
+							  source="{Radii8LibraryAssets.browserSiteScanner}" 
+							  toolTip="View the document in the browser site scanner (document must be published)"
+							  click="openDocumentInBrowserSiteScannerButton_clickHandler(event)"
+							  includeInLayout="false"
+							  visible="false"/>
 		<s:Spacer width="100%"/>
 		<c:BeveledImageButton id="saveDocumentIcon" 
 							  source="{Radii8LibraryAssets.save}" 

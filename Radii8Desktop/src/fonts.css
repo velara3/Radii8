@@ -1,0 +1,81 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+
+/**** Verdana ************************************/
+
+@font-face {
+   src: url("/assets/fonts/Verdana.ttf");
+   fontFamily: Verdana;
+   embedAsCFF: true;
+   fontWeight: normal;
+   fontStyle:  normal;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Verdana Italic.ttf");
+   fontFamily: Verdana;
+   embedAsCFF: true;
+   fontWeight: normal;
+   fontStyle:  italic;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Verdana Bold.ttf");
+   fontFamily: Verdana;
+   embedAsCFF: true;
+   fontWeight: bold;
+   fontStyle:  normal;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Verdana Bold Italic.ttf");
+   fontFamily: Verdana;
+   embedAsCFF: true;
+   fontWeight: bold;
+   fontStyle:  italic;
+   unicodeRange: U+0020-007E;
+}
+
+
+/**** Arial ************************************/
+
+@font-face {
+   src: url("/assets/fonts/Arial.ttf");
+   fontFamily: Arial;
+   embedAsCFF: true;
+   fontStyle:  normal;
+   fontWeight: normal;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Arial Italic.ttf");
+   fontFamily: Arial;
+   embedAsCFF: true;
+   fontStyle:  italic;
+   fontWeight: normal;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Arial Bold.ttf");
+   fontFamily: Arial;
+   embedAsCFF: true;
+   fontStyle:  normal;
+   fontWeight: bold;
+   unicodeRange: U+0020-007E;
+}
+ 
+@font-face {
+   src: url("/assets/fonts/Arial Bold Italic.ttf");
+   fontFamily: Arial;
+   embedAsCFF: true;
+   fontStyle:  italic;
+   fontWeight: bold;
+   unicodeRange: U+0020-007E;
+}

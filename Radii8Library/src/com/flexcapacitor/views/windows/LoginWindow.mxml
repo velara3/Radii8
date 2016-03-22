@@ -595,7 +595,7 @@
 					closePopUp.startDelay = 0;
 					closePopUp.play();
 					
-					setTimeout(Radiate.info, 1000, ["Login successful. Save any new projects you have started."]);
+					setTimeout(Radiate.info, 1500, ["Login successful. Save any new projects you have started. Click the Projects label to get your projects."]);
 				}
 				
 				

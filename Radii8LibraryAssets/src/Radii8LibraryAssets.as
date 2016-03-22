@@ -28,6 +28,12 @@ package {
 		[Embed(source="assets/icons/general/bringForward.png")]
 		public static const bringForwards:Class;
 		
+		[Embed(source="assets/icons/general/browser_screenshot.png")]
+		public static const browserScreenShot:Class;
+		
+		[Embed(source="assets/icons/general/browser_site_scanner.png")]
+		public static const browserSiteScanner:Class;
+		
 		[Embed(source="assets/icons/general/cancel.png")]
 		public static const cancel:Class;
 		

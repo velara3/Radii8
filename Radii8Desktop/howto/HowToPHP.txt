@@ -1,0 +1,424 @@
+HOW TO GUIDE FOR DEVELOPERS
+
+
+***********************************************
+How to setup WordPress side
+***********************************************
+Install WordPress
+Edit WPConfig.php
+Turn on multisite:
+Above "That's all.." line add the following
+
+/* Multisite */
+define( 'WP_ALLOW_MULTISITE', true );
+
+define('MULTISITE', true);
+define('SUBDOMAIN_INSTALL', false);
+define('DOMAIN_CURRENT_SITE', 'www.radii8.com');
+define('PATH_CURRENT_SITE', '/r8m/');
+define('SITE_ID_CURRENT_SITE', 1);
+define('BLOG_ID_CURRENT_SITE', 1);
+define('JSON_API_CONTROLLERS', "core,categories,posts,user,attachments,projects");
+define('JSON_API_EMAIL_FROM', "contact@radii8.com");
+define('JSON_API_EMAIL_FROM_NAME', "Radii8.com");
+
+/* That's all, stop editing! Happy blogging. */
+
+
+
+
+
+Duplicate the 2012 template
+Rename it vanilla template
+Edit the css file and rename to vanilla
+Edit the theme index.php
+Use the code below
+
+/**
+ * A vanilla template file
+ *
+ * This is the most generic template file in a WordPress theme
+ * and one of the two required files for a theme (the other being style.css).
+ * It is used to display a page when nothing more specific matches a query.
+ * e.g., it puts together the home page when no home.php file exists.
+ *
+ * Learn more: {@link https://codex.wordpress.org/Template_Hierarchy}
+ *
+ * @package Vanilla
+ * @subpackage None
+ * @since Never
+ */
+
+// show our custom template HTML - todo move to a function 
+if ( have_posts() ) {
+	$PROJECT_HOME_PAGE = "project_home_page";
+	$user = wp_get_current_user();
+	$blog_id = get_current_blog_id();
+	$templateFound = false;
+	//get_current_user_id();
+	//var_dump($user);
+	
+	//echo "User: ".$user;
+	if ($user) {
+		$user_id = $user->ID;
+		//echo "USER ID: ".$user_id;
+		if ($user_id!=0) {
+			//$templatePostID = get_user_option(PROJECT_HOME_PAGE, $user_id);
+			$templatePostID = get_blog_option($blog_id, $PROJECT_HOME_PAGE, 0);
+		}
+	}
+	
+	$templatePostID = get_blog_option($blog_id, $PROJECT_HOME_PAGE, 0);
+	
+	//echo "TEMPLATE ID: ".$templatePostID;
+	//die();
+	//$templatePostID = get_option($TEMPLATE_POST_ID);
+	$templatePost = null;
+	
+	if ($templatePostID && $templatePostID!=0 && $templatePostID>0) {
+		$templatePost = get_post($templatePostID);
+	}
+	
+	if ($templatePost) {
+		//echo "inside template post content";
+		$userHTML = getUserHTMLContent($templatePost);
+		$templateFound = true;
+	}
+	
+	//printHTML($userHTML, "User html 1");
+	//$test = "<!--the loop--><some thing else><!--the loop-->";
+	//preg_match('/<!--the loop-->(.*)<!--the loop-->/is', $userHTML, $loopInnerHTML);
+	
+	//$DETAILS = get_blog_details();
+	//var_dump($DETAILS);
+	//die();
+	
+	if ($templateFound) {
+		$blogInfo = getBlogInfo();
+		$userHTML = replaceBlogTokens($userHTML, $blogInfo);
+		//printHTML($userHTML, "User html replaced blog tokens");
+		$loopTemplateHTML = getLoopHTML($userHTML);
+		//printHTML($loopTemplateHTML, "The loop template HTML");
+		
+		if ($loopTemplateHTML) {
+			//printHTML("", "loop template exists");
+			//printHTML($template11);
+			$items = array();
+			
+			while (have_posts()) {
+				the_post();
+				
+				$items[] = replacePostTokens($loopTemplateHTML, $post);
+				//echo replacePostTokens($template11, $post);
+				
+			}
+			
+			//echo "Number of posts: " . count($items);
+			//echo "\n" . implode("\n", $items);
+			
+			//$theLoopContent = "\n" . implode("\n", $items);
+			$theLoopContent = implode("\n", $items);
+			//printHTML($theLoopContent, "The loop content replaced");
+			
+			$userHTML = replaceLoopToken($userHTML, $theLoopContent);
+			
+			//printHTML($userHTML, "Final HTML");
+		}
+		
+		echo $userHTML;
+		
+		// show admin tool bar?
+		if (is_user_logged_in()) {
+			get_footer();
+		}
+		
+		die();
+	}
+	
+}
+else {
+	#echo "******************we have no posts";
+}
+//echo "<br >****************after the if (have_posts) ";
+get_header(); 
+
+?>
+
+
+
+In the theme functions page add the following code: 
+
+
+/**
+ * Call this at each point of interest, passing a descriptive string
+ */
+function prof_flag($str) {
+	global $prof_timing, $prof_names;
+	$prof_timing[] = microtime(true);
+	$prof_names[] = $str;
+}
+
+// Call this when you're done and want to see the results
+function prof_print() {
+	global $prof_timing, $prof_names;
+
+	$size = count($prof_timing);
+
+	echo "<div style='padding:16px;position:absolute;top:20px;right:20px;background:rgba(255,255,255,.99);border:3px double black;box-shadow: 3px 3px 6px #999;'>";
+	for($i=0;$i<$size - 1; $i++) {
+		echo "<b>{$prof_names[$i]}</b><br>";
+		echo sprintf("&nbsp;&nbsp;&nbsp;%f<br>", $prof_timing[$i+1]-$prof_timing[$i]);
+	}
+
+	echo "<b>{$prof_names[$size-1]}</b><br>";
+	echo "</div>";
+}
+
+/**
+ * Print out value inside of pre tags. Optionally add a title.
+ */
+function printHTML($value, $title = null) {
+	if ($title) {
+		echo "<h3>".$title."</h3>";
+	}
+	
+	// This is for correct handling of newlines
+	echo '<pre>';
+	
+	ob_start();
+	//var_dump($value);
+	echo $value;
+	
+	$a = ob_get_contents();
+	ob_end_clean();
+	
+	// Escape every HTML special chars (especially > and < )
+	echo htmlspecialchars($a, ENT_QUOTES);
+	echo '</pre>';
+}
+
+/**
+ * Replace markup with tokens with values from post
+ */
+function replacePostTokens($markup, $post) {
+	$markup = preg_replace("/{title}/i", 			$post->post_title, 		$markup);
+	$markup = preg_replace("/{content}/i", 			$post->post_content,	$markup);
+	$markup = preg_replace("/{excerpt}/i", 			$post->post_excerpt, 	$markup);
+	$markup = preg_replace("/{date}/i", 			get_the_date(), 		$markup);
+	$markup = preg_replace("/{date_raw}/i", 		$post->post_date, 		$markup);
+	$markup = preg_replace("/{date_gmt}/i", 		$post->post_date_gmt, 	$markup);
+	$markup = preg_replace("/{author}/i", 			$post->post_author, 	$markup);
+	$markup = preg_replace("/{id}/i", 				$post->ID, 				$markup);
+	$markup = preg_replace("/{guid}/i", 			$post->guid, 			$markup);
+	$markup = preg_replace("/{type}/i", 			$post->post_type, 		$markup);
+	$markup = preg_replace("/{mime_type}/i", 		$post->post_mime_type, 	$markup);
+	$markup = preg_replace("/{comment_count}/i", 	$post->comment_count, 	$markup);
+	$markup = preg_replace("/{url}/i", 				get_permalink(), 		$markup);
+	
+	return $markup;
+}
+
+/**
+ * Get an object with blog info values
+ */
+function getBlogInfo() {
+	$info = new stdClass();
+	
+	$info->name 				= get_bloginfo("name");
+	$info->description 			= get_bloginfo("description");
+	$info->wpurl 				= get_bloginfo("wpurl");
+	$info->url 					= get_bloginfo("url");
+	$info->admin_email 			= get_bloginfo("admin_email");
+	$info->charset 				= get_bloginfo("charset");
+	$info->version 				= get_bloginfo("version");
+	$info->html_type 			= get_bloginfo("html_type");
+	$info->text_direction 		= is_rtl();
+	$info->language 			= get_bloginfo("language");
+	$info->stylesheet_url 		= get_bloginfo("stylesheet_url");
+	$info->stylesheet_directory = get_bloginfo("stylesheet_directory");
+	$info->template_url 		= get_bloginfo("template_url");
+	$info->template_directory 	= get_bloginfo("template_url");
+	$info->pingback_url 		= get_bloginfo("pingback_url");
+	$info->atom_url 			= get_bloginfo("atom_url");
+	$info->rdf_url 				= get_bloginfo("rdf_url");
+	$info->rss_url 				= get_bloginfo("rss_url");
+	$info->rss2_url 			= get_bloginfo("rss2_url");
+	$info->comments_atom_url 	= get_bloginfo("comments_atom_url");
+	$info->comments_rss2_url 	= get_bloginfo("comments_rss2_url");
+	$info->siteurl 				= home_url();
+	$info->home 				= home_url();
+
+	return $info;
+}
+
+/**
+ * Replace markup with tokens with blog info values
+ */
+function replaceBlogTokens($markup, $info) {
+	
+	$markup = preg_replace("/{name}/i", 				$info->name, 				$markup);
+	$markup = preg_replace("/{description}/i", 			$info->description, 		$markup);
+	$markup = preg_replace("/{wpurl}/i", 				$info->wpurl,				$markup);
+	$markup = preg_replace("/{blog_url}/i", 			$info->url, 				$markup);
+	$markup = preg_replace("/{admin_email}/i", 			$info->admin_email, 		$markup);
+	$markup = preg_replace("/{charset}/i", 				$info->charset, 			$markup);
+	$markup = preg_replace("/{version}/i", 				$info->version, 			$markup);
+	$markup = preg_replace("/{html_type}/i", 			$info->html_type, 			$markup);
+	$markup = preg_replace("/{text_direction}/i", 		$info->text_direction, 		$markup);
+	$markup = preg_replace("/{language}/i", 			$info->language, 			$markup);
+	$markup = preg_replace("/{stylesheet_url}/i", 		$info->stylesheet_url, 		$markup);
+	$markup = preg_replace("/{stylesheet_directory}/i", $info->stylesheet_directory,$markup);
+	$markup = preg_replace("/{template_url}/i", 		$info->template_url, 		$markup);
+	$markup = preg_replace("/{template_directory}/i",	$info->template_url, 		$markup);
+	$markup = preg_replace("/{pingback_url}/i", 		$info->pingback_url, 		$markup);
+	$markup = preg_replace("/{atom_url}/i", 			$info->atom_url, 			$markup);
+	$markup = preg_replace("/{rdf_url}/i", 				$info->rdf_url, 			$markup);
+	$markup = preg_replace("/{rss_url}/i", 				$info->rss_url, 			$markup);
+	$markup = preg_replace("/{rss2_url}/i", 			$info->rss2_url, 			$markup);
+	$markup = preg_replace("/{comments_atom_url}/i", 	$info->comments_atom_url, 	$markup);
+	$markup = preg_replace("/{comments_rss2_url}/i", 	$info->comments_rss2_url, 	$markup);
+	$markup = preg_replace("/{siteurl}/i", 				$info->home, 				$markup);
+	$markup = preg_replace("/{home}/i", 				$info->home, 				$markup);
+
+	return $markup;
+}
+
+/**
+ * Replace the loop unpopulated HTML with populated HTML 
+ */
+function replaceLoopToken($markup, $theLoopContent) {
+	$markup = preg_replace('/(<!--the loop-->)(.*)(<!--the loop-->)/is', $theLoopContent, $markup, 1);
+	return $markup;
+}
+
+/**
+ * Get the loop unpopulated HTML  
+ */
+function getLoopHTML($markup) {
+	
+	preg_match('/<!--the loop-->(.*)<!--the loop-->/is', $markup, $loopInnerHTML);
+	
+	if (count($loopInnerHTML)>0) {
+		$loopTemplateHTML = $loopInnerHTML[1];
+		return $loopTemplateHTML;
+	}
+	
+	return false;
+}
+
+/**
+ * Get the user created HTML content from the post  
+ */
+function getUserHTMLContent($thePost) {
+	$data = get_post_meta($thePost->ID, 'html', true);
+	
+	return $data;
+}
+
+
+
+In the Single.php file: 
+
+**
+ * The Template for displaying all single posts
+ *
+ * @package Radii8
+ * @subpackage Vanilla
+ * @since Vanilla
+ */
+
+
+//echo "******************It's single 2";
+prof_flag("Get meta data");
+$userHTML = get_post_meta($post->ID, 'html', true);
+
+if ($userHTML) {
+	prof_flag("Get blog info");
+	$blogInfo = getBlogInfo();
+	prof_flag("Replace blog tokens");
+	$userHTML = replaceBlogTokens($userHTML, $blogInfo);
+	prof_flag("Replace post tokens");
+	$userHTML = replacePostTokens($userHTML, $post); // function is in functions.php
+	
+	if (is_admin()) {
+		prof_flag("Print header");
+		get_header();
+	}
+	
+	prof_flag("Echo HTML");
+	echo $userHTML;
+	
+	if (is_admin()) {
+		prof_flag("Print footer");
+		get_footer();
+	}
+	
+	prof_flag("Done");
+	//echo "<div id='Image729' style='background-color:white'>";
+	
+	if (is_user_logged_in()) {
+		//prof_print();
+		get_footer();
+	}
+	//echo "</div>";
+	die();
+}
+
+get_header(); ?>
+
+
+
+
+HOW TO SETUP A NEW USER IN NETWORK SITE
+In blog/wp-content/plugins/json-api/singletons/api.php add: 
+
+<?php
+add_action( 'wpmu_new_blog', 'wpse_set_defaults' );
+
+function wpse_set_defaults( $blog_id ) {
+	global $json_api;
+
+	switch_to_blog( $blog_id );
+	
+	$id = 'json_api_controllers';
+	$required_controllers = explode(",", "categories,posts,user,projects,attachments");
+	$available_controllers = $json_api->get_controllers();
+	$active_controllers = explode(',', get_option($id, 'core'));
+	$action = "activate";
+	
+	foreach ($required_controllers as $controller) {
+		if (in_array($controller, $available_controllers)) {
+			if ($action == 'activate' && !in_array($controller, $active_controllers)) {
+				$active_controllers[] = $controller;
+			} else if ($action == 'deactivate') {
+				$index = array_search($controller, $active_controllers);
+				if ($index !== false) {
+					unset($active_controllers[$index]);
+				}
+			}
+		}
+	}
+	
+	$value = implode(',', $active_controllers);
+	
+	$option_exists = (get_option($id, null) !== null);
+	
+	if ($option_exists) {
+		update_option($id, $value);
+	} else {
+		add_option($id, $value);
+	}
+	
+	// Remove the default post & page
+	wp_delete_post(1, true);
+	wp_delete_post(2, true);
+	
+	// Remove the first comment
+	wp_delete_comment( 1, true );
+	
+	// add default categories
+	wp_create_category( "Project" );
+	wp_create_category( "Document" );
+	
+	restore_current_blog();
+} 

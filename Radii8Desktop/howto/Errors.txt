@@ -1,0 +1,22 @@
+COMMON ERRORS GUIDE FOR DEVELOPERS
+
+
+***********************************************
+TypeError: Error #1009: Cannot access a property or method of a null object reference.
+	at mx.containers::TabNavigator/keyDownHandler()[E:\dev\4.y\frameworks\projects\mx\src\mx\containers\TabNavigator.as:895]
+***********************************************
+Occurs 
+Switching from working view to welcome screen
+
+Expected Result
+error 
+
+Actual Result
+no errors
+
+Code
+line: 895
+    override protected function keyDownHandler(event:KeyboardEvent):void
+    {
+        if (focusManager.getFocus() == this)
+        {

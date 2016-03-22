@@ -25,23 +25,39 @@
 			
 			import mx.events.FlexEvent;
 			
+			public var NONE:String = "none";
+			public var CONNECTED:String = "connected";
+			public var DISCONNECTED:String = "disconnected";
+			
+			public var clickedOnce:Boolean;
+			
 			private var host:String;
 			private var path:String;
+			private var screenshotPath:String;
+			private var siteScannerPath:String;
 			
 			protected function window1_creationCompleteHandler(event:FlexEvent):void {
+				var settings:Settings;
+				var object:Object;
+				
+				settings = Radiate.settings;
+				
+				autoSaveCheckbox.selected = settings.enableAutoSave;
+				wordWrapCheckbox.selected = settings.enableWordWrap;
+				
 				hostInput.text = Radiate.WP_HOST;
 				pathInput.text = Radiate.WP_PATH;
 				
 				host = Radiate.WP_HOST;
 				path = Radiate.WP_PATH;
 				
-				var settings:Settings = Radiate.settings;
+				screenshotPath = Radiate.SCREENSHOT_PATH;
+				siteScannerPath = Radiate.SITE_SCANNER_PATH;
 				
-				autoSaveCheckbox.selected = settings.enableAutoSave;
-				wordWrapCheckbox.selected = settings.enableWordWrap;
+				screenshotPathInput.text = screenshotPath
+				siteScannerPathInput.text = siteScannerPath;
 				
-				var loginSaved:Boolean;
-				var object:Object = PersistentStorage.read(Radiate.USER_STORE);
+				object = PersistentStorage.read(Radiate.USER_STORE);
 				
 				// login saved
 				if (object!=null) {
@@ -54,7 +70,44 @@
 			
 			protected function applyButton_clickHandler(event:MouseEvent):void {
 				var changed:Boolean;
+				var settings:Settings;
 				
+				// save settings
+				settings = Radiate.settings;
+				
+				// set autosave
+				Radiate.instance.enableAutoSave = autoSaveCheckbox.selected;
+				settings.enableAutoSave = autoSaveCheckbox.selected;
+				settings.enableWordWrap = wordWrapCheckbox.selected;
+				
+				// set autosave
+				if (!saveLoginCheckbox.selected) {
+					PersistentStorage.remove(Radiate.USER_STORE);
+				}
+				
+				Radiate.instance.saveSettings();
+				
+				// update screenshot path
+				if (screenshotPathInput.text) {
+					
+					if (screenshotPath!=screenshotPathInput.text) {
+						PersistentStorage.write(Radiate.SCREENSHOT_PATH_NAME, screenshotPathInput.text);
+					}
+					
+					Radiate.SCREENSHOT_PATH = screenshotPathInput.text;
+				}
+				
+				// update site scanner path
+				if (siteScannerPathInput.text) {
+					
+					if (siteScannerPath!=siteScannerPathInput.text) {
+						PersistentStorage.write(Radiate.SITE_SCANNER_PATH_NAME, siteScannerPathInput.text);
+					}
+					
+					Radiate.SITE_SCANNER_PATH = siteScannerPathInput.text;
+				}
+				
+				// update host
 				if (hostInput.text || pathInput.text) {
 					
 					if (host != hostInput.text || path != pathInput.text) {
@@ -67,27 +120,13 @@
 						ServicesManager.instance.logout();
 					}
 					
+					
 					Radiate.WP_HOST = hostInput.text;
 					Radiate.WP_PATH = pathInput.text;
 					
 					closePopUp.play();
 				}
 				
-				var settings:Settings = Radiate.settings;
-				
-				// set autosave
-				Radiate.instance.enableAutoSave = autoSaveCheckbox.selected;
-				settings.enableAutoSave = autoSaveCheckbox.selected;
-				settings.enableWordWrap = wordWrapCheckbox.selected;
-				
-				//var object:Object = PersistentStorage.read(Radiate.USER_STORE);
-				
-				// set autosave
-				if (!saveLoginCheckbox.selected) {
-					PersistentStorage.remove(Radiate.USER_STORE);
-				}
-				
-				Radiate.instance.saveSettings();
 			}
 			
 			protected function clearPathButton_clickHandler(event:MouseEvent):void {
@@ -126,13 +165,7 @@
 				busyIndicator.includeInLayout = false;
 			}
 			
-			public var NONE:String = "none";
-			public var CONNECTED:String = "connected";
-			public var DISCONNECTED:String = "disconnected";
-			
-			public var clickedOnce:Boolean;
-			protected function clearAllLoginsButton_clickHandler(event:MouseEvent):void
-			{
+			protected function clearAllLoginsButton_clickHandler(event:MouseEvent):void {
 				if (!clickedOnce) {
 					warning.text = "This will erase all logins. Click to continue";
 					clickedOnce = true;
@@ -149,11 +182,26 @@
 				if (warning) {
 					warning.text = "";
 				}
+				
 				if (warningLabel_Ha) {
 					warningLabel_Ha.text = "";
 				}
+				
+				if (connectedLabel.text) {
+					connectedLabel.text = "";
+				}
+				
 				currentState = NONE;
 			}
+			
+			protected function clearBrowserScreenshotSite_clickHandler(event:MouseEvent):void {
+				screenshotPathInput.text = Radiate.defaultScreenshotPath;
+			}
+			
+			protected function clearBrowserSiteScannerSite_clickHandler(event:MouseEvent):void {
+				siteScannerPathInput.text = Radiate.defaultSiteScannerPath;
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -193,7 +241,11 @@
 			
 			<s:Label text="Host" />
 			<s:HGroup width="100%">
-				<s:TextInput id="hostInput" width="100%" focusAlpha="0" styleName="textInputStyles"/>
+				<s:TextInput id="hostInput" 
+							 width="100%"
+							 minWidth="360"
+							 focusAlpha="0" 
+							 styleName="textInputStyles"/>
 				<controls:ClearButton click="clearHostButton_clickHandler(event)"/>
 			</s:HGroup>
 			
@@ -204,19 +256,56 @@
 			</s:HGroup>
 			
 			<s:Label text="" />
-			<s:HGroup width="100%">
+			<s:HGroup width="100%" verticalAlign="middle">
 				<s:Button label="Verify Connection" click="verifyButton_clickHandler(event)"/>
 				<s:BusyIndicator id="busyIndicator" includeInLayout="false" visible="false"/>
+				<s:Label id="connectedLabel" 
+						 text="" 
+						 text.connected="Connected" 
+						 fontWeight="bold" 
+						 color.connected="green"
+						 includeInLayout="false"
+						 visible="false"
+						 includeInLayout.connected="true"
+						 visible.connected="true"
+						 minWidth="120"
+						 width="100%"/>
+			</s:HGroup>
+			
+			<s:Label text="Browser Screenshot Site" />
+			<s:HGroup width="100%" verticalAlign="middle">
+				<s:TextInput id="screenshotPathInput" 
+							 width="100%" 
+							 minWidth="360"
+							 focusAlpha="0" 
+							 styleName="textInputStyles"/>
+				<controls:ClearButton click="clearBrowserScreenshotSite_clickHandler(event)" 
+									  toolTip="Reset to the default browser screenshot site"/>
+			</s:HGroup>
+			
+			<s:Label text="Site Scanner Site" />
+			<s:HGroup width="100%" verticalAlign="middle">
+				<s:TextInput id="siteScannerPathInput" 
+							 width="100%" 
+							 minWidth="360"
+							 focusAlpha="0" 
+							 styleName="textInputStyles"/>
+				<controls:ClearButton click="clearBrowserSiteScannerSite_clickHandler(event)" 
+									  toolTip="Reset to the default site scanner site"/>
 			</s:HGroup>
 			
 			<s:Label text="Word wrap in editor" />
 			<s:CheckBox id="wordWrapCheckbox" />
+			
 			<s:Label text="Automatically upload media" />
 			<s:CheckBox id="uploadLibraryItemsCheckbox" />
+			
 			<s:Label text="Auto-Save" />
 			<s:CheckBox id="autoSaveCheckbox" toolTip="If you enable auto save do NOT edit the document in the browser and RADIATE at the same time" />
+			
 			<s:Label text="Save login" />
 			<s:CheckBox id="saveLoginCheckbox" />
+			
 			<s:Label text="Remove all logins" />
 			<s:HGroup width="100%" verticalAlign="middle">
 				<controls:ClearButton click="clearAllLoginsButton_clickHandler(event)" 
@@ -230,16 +319,12 @@
 			<s:Label id="warningLabel_Ha" 
 					 x="15" y="15" 
 					 text="" 
-					 text.connected="Connected" 
 					 text.disconnected="Service not found. Is the service plugin turned on?" 
 					 fontWeight="bold" 
 					 color="red"
-					 color.connected="green"
 					 color.disconnected="red"
 					 includeInLayout="false"
 					 visible="false"
-					 includeInLayout.connected="true"
-					 visible.connected="true"
 					 includeInLayout.disconnected="true"
 					 visible.disconnected="true"
 					 width="100%"/>

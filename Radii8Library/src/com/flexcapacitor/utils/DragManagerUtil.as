@@ -9,7 +9,6 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.utils.supportClasses.DragData;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	
-	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Sprite;
@@ -51,7 +50,6 @@ package com.flexcapacitor.utils {
 	import spark.layouts.VerticalLayout;
 	import spark.layouts.supportClasses.DropLocation;
 	import spark.layouts.supportClasses.LayoutBase;
-	import spark.primitives.BitmapImage;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.ApplicationSkin;
 	import spark.skins.spark.ListDropIndicator;
@@ -1253,9 +1251,12 @@ package com.flexcapacitor.utils {
 				}
 				
 				// build affected properties array
-				for (var propertyName:String in values) {
-					properties.push(propertyName);
-				}
+				//for (var propertyName:String in values) {
+				//	properties.push(propertyName);
+				//}
+				
+				properties 				= ClassUtils.getPropertiesFromObject(draggedItem, values);
+				styles 					= ClassUtils.getStylesFromObject(draggedItem, values);
 				
 				var moveResult:String;
 				

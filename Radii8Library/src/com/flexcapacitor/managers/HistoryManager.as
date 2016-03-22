@@ -34,19 +34,19 @@ package com.flexcapacitor.managers
 
 	
 	/**
-	* History Management
+	* History Management<br/><br/>
 	
 	* NOTE: THIS IS WRITTEN THIS WAY TO WORK WITH FLEX STATES AND TRANSITIONS
 	* there is probably a better way but I am attempting to use the flex sdk's
 	* own code to apply changes. we could extract that code, create commands, 
-	* etc but it seemed like less work and less room for error at the time
+	* etc but it seemed like less work and less room for error at the time<br/><br/>
 	
 	* update oct 27, 2013
 	* i think it would be better to move these calls and data to the document class
 	* then different document types can handle undo, redo in the way that best 
 	* makes sense to it's own needs. 
 	* For example, an text editor will handle undo redo differently than 
-	* a design or application document. 
+	* a design or application document. <br/><br/>
 	* 
 	* and another way we could do history management is create a sequence and 
 	* add actions to it (SetAction, AddItem, RemoveItem, etc)
@@ -556,7 +556,8 @@ package com.flexcapacitor.managers
 							return -1;
 							//return redo(document, dispatchEvents, dispatchForApplication, dispatchSetTargets);;
 						}
-							historyEventItem.reversed = false;
+						
+						historyEventItem.reversed = false;
 						
 						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
 							radiate.dispatchMoveEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties);
@@ -713,9 +714,11 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
+		 * This sets the canUndo and canRedo bindable properties. It may be worth 
+		 * updating to prevent events when opening a document.
 		 * @private
 		 */
-		public static function setHistoryIndex(document:IDocument, value:int):void {
+		public static function setHistoryIndex(document:IDocument, value:int, setBindables:Boolean = true):void {
 			if (document==null) return;
 			
 			if (document.historyIndex==value) {
@@ -1077,7 +1080,7 @@ package com.flexcapacitor.managers
 		 * Creates a new entry with multiple changes to the history collection
 		 * Changes include property changes, add or remove event items 
 		 * */
-		public static function addHistoryEvents(document:IDocument, historyEventItems:Array, description:String = null, mergeWithPrevious:Boolean = false):void {
+		public static function addHistoryEvents(document:IDocument, historyEventItems:Array, description:String = null, mergeWithPrevious:Boolean = false, dispatchEvents:Boolean = true):void {
 			if (doNotAddEventsToHistory) { return }
 			var currentIndex:int = getHistoryPosition(document);
 			var historyEventsLength:int = getHistoryLength(document);
@@ -1145,11 +1148,13 @@ package com.flexcapacitor.managers
 			
 			setHistoryIndex(document, getHistoryPosition(document));
 			
-			if (!mergeWithPrevious || noPreviousChanges) {
-				radiate.dispatchHistoryChangeEvent(document, currentIndex+1, currentIndex);
-			}
-			else {
-				radiate.dispatchHistoryChangeEvent(document, currentIndex, currentIndex);
+			if (dispatchEvents) {
+				if (!mergeWithPrevious || noPreviousChanges) {
+					radiate.dispatchHistoryChangeEvent(document, currentIndex+1, currentIndex);
+				}
+				else {
+					radiate.dispatchHistoryChangeEvent(document, currentIndex, currentIndex);
+				}
 			}
 		}
 		

@@ -339,6 +339,8 @@ package com.flexcapacitor.events {
 		public var property:String;
 		public var properties:Array;
 		public var propertiesAndStyles:Array;
+		public var propertiesStylesEvents:Array;
+		public var events:Array;
 		public var changes:Array;
 		public var value:*;
 		public var multipleSelection:Boolean;

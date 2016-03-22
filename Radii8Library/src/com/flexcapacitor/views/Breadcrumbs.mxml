@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Group xmlns:controls="com.flexcapacitor.graphics.*"
-		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 width="100%"
@@ -85,10 +84,12 @@
 
 
 			protected function list1_clickHandler(event:MouseEvent):void {
+				var element:DisplayObject;
+				
 				if (list.selectedItem) {
-					var element:DisplayObject = VisualElementVO(list.selectedItem).element as DisplayObject;
+					element = VisualElementVO(list.selectedItem).element as DisplayObject;
 					
-					radiate.setTarget(element, true);
+					radiate.setTarget(element, true, null, true);
 				}
 			}
 			
@@ -247,14 +248,15 @@
 							<s:State name="hovered"/>
 							<s:State name="selected"/>
 						</s:states>
+						
 						<s:Label id="labelDisplay" 
 								 fontSize="11"
 								 typographicCase="lowercaseToSmallCaps"
 								 fontWeight="normal"
 								 verticalCenter="0"
-									color="#585858"
-								 color.hovered="#787878"
-								 color.selected="#383838"
+								 color="#BBBBBB"
+								 color.hovered="#DDDDDD"
+								 color.selected="#FFFFFF"
 								 />
 						
 								<!-- dark background colors -->

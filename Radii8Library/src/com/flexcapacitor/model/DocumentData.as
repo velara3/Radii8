@@ -688,6 +688,10 @@ package com.flexcapacitor.model {
 			
 			uri = post.url;
 			
+			if (post.title) {
+				name = post.title;
+			}
+			
 			// we don't use post.content because 
 			// content is formatted and modified by WordPress
 			// UPDATE: using custom fields

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Adobe AIR Application Installer Page</title>
+<style type="text/css">
+<!--
+#AIRDownloadMessageTable {
+	width: 217px;
+	height: 180px;
+	border: 1px solid #999;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 14px;
+}
+#AIRDownloadMessageRuntime {
+	font-size: 12px;
+	color: #333;
+}
+-->
+</style>
+<script language="JavaScript" type="text/javascript">
+<!--
+// -----------------------------------------------------------------------------
+// Globals
+// Major version of Flash required
+var requiredMajorVersion = 9;
+// Minor version of Flash required
+var requiredMinorVersion = 0;
+// Minor version of Flash required
+var requiredRevision = 115;		// This is Flash Player 9 Update 3
+// -----------------------------------------------------------------------------
+// -->
+</script>
+</head>
+<body bgcolor="#ffffff" style="overflow:hidden;padding:0;margin:0;">
+<script src="AC_RunActiveContent.js" type="text/javascript"></script>
+<script language="JavaScript" type="text/javascript">
+<!--
+
+// Set the application settings for your AIR app here
+// There are two places to set your application info
+// Here and at the bottom of the page (for when JavaScript is not enabled) 
+var applicationName = "Radiate";
+var secure = true;
+var protocol = secure ? "https://" : "http://";
+var applicationURL = protocol + "www.radii8.com/updates/releases/Radiate_2.2.1.air";
+var airVersion = "2.5"; // badge installer version works fine at 2.5 even for newer versions of air
+var badgeImage = "badge_icon.png";
+var flashvars = 'appname=' + applicationName + '&appurl=' + applicationURL + '&airversion=' + airVersion + '&imageurl=' + badgeImage;
+
+// Version check based upon the values entered above in "Globals"
+var hasReqestedVersion = DetectFlashVer(requiredMajorVersion, requiredMinorVersion, requiredRevision);
+
+// Check to see if the version meets the requirements for playback
+if (hasReqestedVersion) {
+	// if we've detected an acceptable version
+	// embed the Flash Content SWF when all tests are passed
+	var pluginsPage = secure ? "https://www.macromedia.com/go/getflashplayer" : "http://www.macromedia.com/go/getflashplayer";
+	var codebase = secure ? "http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab" : "http://fpdownload.macromedia.com/pub/shockwave/cabs/flash/swflash.cab";
+	var airWinInstaller = secure ? 'https://airdownload.adobe.com/air/win/download/latest/AdobeAIRInstaller.exe' : 'http://airdownload.adobe.com/air/win/download/latest/AdobeAIRInstaller.exe';
+	var airMacInstaller = secure ? 'https://airdownload.adobe.com/air/mac/download/latest/AdobeAIR.dmg' : 'http://airdownload.adobe.com/air/mac/download/latest/AdobeAIR.dmg';
+	var genericAIRInstaller = secure ? 'https://www.adobe.com/go/getair/' : 'http://www.adobe.com/go/getair/';
+	
+	AC_FL_RunContent(
+		'codebase',codebase,
+		'width','220',
+		'height','180',
+		'id','badge',
+		'align','top',
+		'salign','tl',
+		'scale','noscale',
+		'src','badge',
+		'quality','best',
+		'bgcolor','#FFFFFF',
+		'name','badge',
+		'allowscriptaccess','always',
+		'pluginspage', pluginsPage,
+		'flashvars',flashvars,
+		'movie','badge' ); //end AC code
+
+} else {  // Flash Player is too old or we can't detect the plugin
+	document.write('<table id="AIRDownloadMessageTable"><tr><td>Download <a href="'+ applicationURL + '">' + applicationName + '</a> now.<br /><br /><span id="AIRDownloadMessageRuntime">This application requires the <a href="');
+	
+	var platform = 'unknown';
+	
+	if (typeof(window.navigator.platform) != undefined) {
+		platform = window.navigator.platform.toLowerCase();
+		
+		if (platform.indexOf('win') != -1) {
+			platform = 'win';
+		}
+		else if (platform.indexOf('mac') != -1) {
+			platform = 'mac';
+		}
+	}
+	
+	if (platform == 'win') {
+		document.write(airWinInstaller);
+	}
+	else if (platform == 'mac') {
+		document.write(airMacInstaller);
+	}
+	else {
+		document.write(genericAIRInstaller);
+	}
+
+		
+	document.write('">Adobe&#174;&nbsp;AIR&#8482; runtime</a>.</span></td></tr></table>');
+}
+// -->
+</script>
+
+<noscript>
+	<!-- Secure connection -->
+	<table id="AIRDownloadMessageTable">
+		<tr>
+			<td>
+			Download <a href="https://www.radii8.com/updates/releases/Radiate_2.2.1.air">Radiate</a> now.<br /><br /><span id="AIRDownloadMessageRuntime">This application requires Adobe&#174;&nbsp;AIR&#8482; to be installed for <a href="https://airdownload.adobe.com/air/mac/download/latest/AdobeAIR.dmg">Mac OS</a> or <a href="https://airdownload.adobe.com/air/win/download/latest/AdobeAIRInstaller.exe">Windows</a>.</span>
+			</td>
+		</tr>
+	</table>
+	<!-- Normal connection use other page -->
+</noscript>
+</body>
+</html>

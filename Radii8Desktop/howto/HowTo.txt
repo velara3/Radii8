@@ -1,0 +1,329 @@
+HOW TO GUIDE FOR DEVELOPERS
+
+***********************************************
+How to update the application online
+***********************************************
+update the application descriptor version number 1.5,1.6,1.7, etc (it might be already updated)
+
+create a new air build
+create a new dmg build
+compress the dmg with the readme.txt to make a ZIP file
+
+Login to FTP and upload the AIR and ZIP file to the updates/releases directory
+
+Open the remote file updates/update-descriptor.xml
+update the version number in the update-descriptor.xml
+update the file name in the update-descriptor.xml
+
+Open the remote file updates/badge_installer.html page
+update the file name in the badge_installer.html at top of page
+update the file name in the badge_installer.html at bottom of page
+
+login to the wordpress blog (https://www.radii8.com/blog/wp-login.php)
+open the download page for editing (https://www.radii8.com/blog/wp-admin/post.php?post=799&action=edit)
+on the download page update the version number, the air file location and the ZIP (not dmg) file location (3 places)
+on the iframe for the badge_installer.html page update the query string to prevent caching (1 location)
+update the post
+
+check the download works (sometimes is cached? add number to iframe)
+check the app sees a new update
+
+post a new blog post
+copy notes from changes.txt or sourcetree
+post to twitter (wordpress is automatically posting to twitter on each post)
+
+after all that update the application descriptor to new development version number
+
+
+***********************************************
+How to setup WordPress multiuser site
+***********************************************
+Install WordPress
+Edit WPConfig.php
+Turn on multisite:
+Above "That's all.." line add the following
+
+/* Multisite */
+define( 'WP_ALLOW_MULTISITE', true );
+
+define('MULTISITE', true);
+define('SUBDOMAIN_INSTALL', false);
+define('DOMAIN_CURRENT_SITE', 'www.radii8.com');
+define('PATH_CURRENT_SITE', '/r8m/');
+define('SITE_ID_CURRENT_SITE', 1);
+define('BLOG_ID_CURRENT_SITE', 1);
+define('JSON_API_CONTROLLERS', "core,categories,posts,user,attachments,projects");
+define('JSON_API_EMAIL_FROM', "contact@radii8.com");
+define('JSON_API_EMAIL_FROM_NAME', "Radii8.com");
+
+/* That's all, stop editing! Happy blogging. */
+
+
+
+***********************************************
+How to setup WordPress single user site
+***********************************************
+To use Radiate on your own domain you need four things:
+
+    Radiate desktop application. You can download it from the download page here.
+    Radiate Vanilla theme. That’s available here
+    Radiate modified json-api plugin available here (it’s in the same link as above)
+    WordPress install. You need to be able to upload the theme and plugin to it. 
+
+Next:
+
+    Add the theme to your WordPress themes directory and activate it. There are many tutorials online on how to upload and add a theme directory.
+    Add the json-api plugin to your WordPress plugins directory and activate it. There are many tutorials on uploading and adding a plugin to your WordPress install.
+    Go to the json-api plugin page and activate each controller
+    Add two categories, “Project” and “Document”.
+    Open Radiate and go to Menu > Help > Settings
+    In the settings menu add URL to your WordPress site and path. For example, for domain the value might be, “www.example.com” and the path might be, “blog”. The path will most likely be blank if you installed WordPress in the root of your domain.
+    Click verify or validate. If the result says “Connected” then you are now setup!
+    Click apply or OK and then exit the Settings dialog. 
+
+Read https://www.radii8.com/blog/?p=1068
+
+***********************************************
+How to set default properties after component is added to stage
+***********************************************
+use any of the following: 
+
+call Radiate.setDefaultProperties(instance);
+call Radiate.createComponentToAdd(flagTrue)
+call Radiate.updateComponentAfterAdd(flagTrue)
+
+
+***********************************************
+How to add a new tool
+***********************************************
+
+- Open the com.flexcapacitor.tools.* package and copy any of those classes
+- Rename the class to the name of your tool
+
+- Go into Radii8LibraryAssets library project
+- Go into assets/data/tools-manifest-defaults.xml
+- Find a similar tool to yours and duplicate the node
+- In the new node set the name and the class name attribute to the path to your tool class.
+
+    
+    <tool id="Hand" 
+    		class="com.flexcapacitor.tools.Hand" 
+    		inspector="com.flexcapacitor.views.HandInspector" 
+    		include="true">
+    		<!-- your Hand class must have these properties as embedded class assets
+    		<cursors>
+    			<cursor name="HandOverCursor" x="0" y="17" />
+    			<cursor name="HandGrabCursor" x="0" y="17" />
+    		</cursors>
+    </tool>
+    
+    
+- Create a new tool icons (like pointer, magnifying glass, etc) 
+- Go to Radii8LibraryAssets/src/assets/icons/tools and add the file there
+- Open Radii8LibraryToolAssets and add a reference to the icon(s)
+
+- Create an inspector class. You can copy one of the ones in the tools-manifest.defaults.xml
+
+- In your tool class add a reference to the icon and cursors
+- Look at the classes to see what to do after that :P
+
+- Add reference to your class in RadiateReferences
+- Copy Radii8LibraryAssets.SWC to main library project swsees folder
+    
+
+***********************************************
+How to switch to a tool
+***********************************************
+
+- tool = radiate.getToolByName(name);
+- radiate.setTool(tool)
+- see Radii8Desktop.mxml for more examples
+
+***********************************************
+How to control what properties show up in each component inspector for a component 
+***********************************************
+
+Open Radii8LibraryAssets
+Open src/assets/data/inspectors-manifest-defaults.xml
+Add a new entry or copy an existing
+set the name and the className to the component that needs an inspector
+add or remove inspector classes
+Checkbox entry example:  
+    
+    <item name="CheckBox" className="spark.components.CheckBox" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector"/>
+    		<inspector name="CheckBox" className="com.flexcapacitor.views.inspectors.CheckBoxProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    </item>
+
+After making changes copy the swc to the swcees directory in Radii8Library
+    
+If you need a custom property inspector copy
+an existing class like, com.flexcapacitor.views.inspectors.CheckBoxProperties
+and name it com.flexcapacitor.views.inspectors.MyComponentProperties
+Add it to the inspectors list
+
+    <inspector name="CheckBox" className="com.flexcapacitor.views.inspectors.MyComponentProperties"/>
+
+Open RadiateReferences.as and add a reference to it
+Copy the swc to the swcees directory in Radii8Library
+
+***********************************************
+How to add a new component to the component inspector
+***********************************************
+
+- Go into Radii8LibraryAssets library project
+- Go into assets/data/components-manifest-defaults.xml
+- Find the component or a similar component you are looking for
+- Create or copy an existing example and set the name and class name attributes
+- Open Radii8LibrarySpark and add a reference to the component and it's icon
+
+		[Embed(source="assets/icons/spark/containers/BorderContainer.png")]
+		public static const BorderContainerIcon:Class;
+		
+		public static var borderContainer:BorderContainer;
+		public static var borderContainerSkin:BorderContainerSkin;
+
+- Copy Radii8LibraryAssets.swc to main Radii8Library project swsees folder
+- your component may have undesired interaction on the design view
+go to Radiate.updateComponentAfterAdd() and remove listeners or interactions
+
+For example, to disable interactions with Vertical or Horizontal Sliders:
+
+	// Vertical or Horizontal Slider
+	if (target is SliderBase) {
+		SliderBase(target).mouseChildren = false;
+	}
+
+***********************************************
+How to control what components show up in the component inspector
+***********************************************
+
+Open Radii8LibraryAssets
+Open src/assets/data/components-manifest-defaults.xml
+Find the entry you want to show
+For example, the Button example:
+
+    <component id="Button" class="spark.components.Button" include="true">
+    	<defaults label="Button"/>
+    </component>
+
+set the include attribute to true or false
+Copy Radii8LibraryAssets.swc to main Radii8Library swsees folder
+if the component is not found add a new entry using the next section
+
+
+***********************************************
+How to find and edit a property inspector in a component inspector
+***********************************************
+
+- Go into Radii8LibraryAssets library project
+- Go into assets/data/inspectors-manifest-defaults.xml
+- Find the component you are looking for
+- Check the inspector class name attribute
+- Open the class listed in the className attribute
+- Copy Radii8LibraryAssets.swc to main library project swsees folder
+
+
+***********************************************
+How to add a new view in a component's inspectors
+***********************************************
+
+- Go into Radii8LibraryAssets library project
+- Go into assets/data/inspectors-manifest-defaults.xml
+- Find the component you are looking for
+- Add a new entry and point to a new or existing class
+- Copy Radii8LibraryAssets.SWC to main library project swsees folder
+
+Before: 
+    
+    <item name="CheckBox" className="spark.components.CheckBox" include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    </item>
+    
+After: 
+    
+    <item name="CheckBox" className="spark.components.CheckBox" include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    </item>
+
+***********************************************
+How to add or remove a default property when creating a new component
+***********************************************
+
+- Go into Radii8LibraryAssets library project
+- Go into assets/data/components-manifest-defaults.xml
+- Find the component you are looking for
+- Add a new entry in the default properties tag
+- Save the library project
+- Copy Radii8LibraryAssets.swc to the main library project swsees folder
+
+Before: 
+    <component id="ToggleButton" class="spark.components.ToggleButton" include="true">
+    	<defaults label="Toggle"/>
+    </component>
+    
+After: 
+
+    <component id="ToggleButton" class="spark.components.ToggleButton" include="true">
+    	<defaults label="Toggle" selected="true"/>
+    </component>
+
+***********************************************
+How to know what inspectors will show up when a component is selected 
+***********************************************
+
+- Go into Radii8LibraryAssets library project
+- Go into assets/data/inspectors-manifest-defaults.xml
+- Find the component you are looking for
+
+    <item name="CheckBox" className="spark.components.CheckBox" include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="CheckBox" className="com.flexcapacitor.views.inspectors.CheckBoxProperties"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    </item>
+
+The list of inspectors is listed above. 
+You can add alternativeClassName to support another component with the same inspector.
+This is done by adding alternativeClassName attribute
+
+    <item name="CheckBox" className="spark.components.CheckBox" >
+    		<alternative name="mxColorPicker" className="mx.controls.ColorPicker"/>
+    </item>
+    
+Check out DynamicComponentInspector.
+In the future would should be able to create the component inspector items really dynamically
+by using only XML entries. Right now it's pseudo dynamic. 
+We would add to a tilegroup labels and propertygridrenderers.
+we do this so we can support classes that extend classes we already support
+so if we have a MyCheckBoxWithBugFix and it extends CheckBox we can use either 
+and still show the same property inspector 
+
+***********************************************
+How to add or edit the HTML templates
+***********************************************
+
+
+***********************************************
+How to modify the generated HTML output
+***********************************************
+open HTMLDocumentExporter
+find code that is used to export the component
+
+
+
+***********************************************
+How to add a property to the document on save and load
+***********************************************
+
+see MXMLDocumentImporter and MXMLDocumentExporter
+
+
+
+
+
+

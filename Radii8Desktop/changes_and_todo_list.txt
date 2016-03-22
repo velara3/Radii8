@@ -1,0 +1,280 @@
+
+release 2.2
+- add wrap in anchor
+- add fix for line-height (use margin translate)
+- add support for multiple logins
+- add support for flexbox for vertical containers
+- add save as
+- add file name in export
+- add more component inspectors
+- make note about moving elements between group and relative positioning
+- add save all into export menu
+- fix line breaks on windows
+- fix copy to clipboard on code view
+
+maybe
+- enable single resize handles
+ 
+
+Usage notes: 
+--------------------------
+- prevent application move with arrow keys
+- add scroll into view for selected item in tree in layers inspector 
+- center document to top left when it's larger than view
+- on properties page add ssl for urls
+- html wrap link around object
+- add busy indicator for uploading
+- library show image on hover 
+- pop up in library does not close on click (add close icon)
+- space bar does not close library pop up window
+- add duplicate layer to layers panel
+- when deleting an image or image data Loop through and replace with missing image url
+- when saving a document, if image source is [object BitmapData] replace with missing image url or warn
+- add edit name for library
+- add edit names support to layers
+- drag and press shift to replace image source when dragging 
+• right click to replace images
+• register process much clearer to user
+- show links to getting started in sign up email
+- make messages show for longer 
+- show user getting started page as soon as they start the program for the first time (open window)
+- drag one image into another and new image fits the size of previous image
+- remove super long complicated password screen on wp
+• login to website when logging in through radiate
+• delete documents when deleting project
+• fix opening example when example is already open
+• merge console and console logs inspectors
+* add autosave to file menu
+* fix assets not assigned to project
+- add filter in library inspector for document, project, all
+- change vertical align elements to use display; table cell
+- add command to fit selection inside document
+
+Phong first use notes:
+• the app told him what to do next
+* Home screen button should be made more clear. Add Pop up 
+• do not allow switch to design view when no projects are open
+• Show CPU usage somewhere
+* show framerate somewhere
+* show memory somewhere
+* show html help inline
+* add trophies
+* add points (like mario maker)
+• make an example document
+• fix close button when logged in
+• add more pop up info about what's going on
+
+		TODO : 
+		
+		• When changing to preview enable live editing automatically
+		• Add new border container with top bottom left right sides
+		• Add Resize handles
+		• Update Last saved date in lower right hand corner every minute with time since last save
+		• When pressing clear width or height on application resize to fit content 
+		• Add context sensitive inspector for layouts
+		• Fix saving layout in border container and group - import 
+		• show documents in project panel
+		• add wordpress properties inspector
+		* add publish button
+		• add document type or document container type
+		• add document preview type
+		• add update on ctrl+s or update on keypress
+		• save to github
+		• add support to edit name of layer in layers panel
+		• add show outline around all groups
+		• show all group outlines when dragging option
+		• add ctrl + s to save document for windows- in mainview.mxml is keyEquivalentModifiers
+		• add duplicate document
+		• fix zoom in zoom out on incorrect location
+		• change URL of wordpress install directory to "main" 
+		• finish getting started tutorial
+		• add metadata dictionary cache
+		• combine multiple history events into fewer history events
+		• add double click events for tools
+		• add share url to library
+		• add share url to document
+		* add property inspectors for all components
+		* move documents into projects inspector
+		• allow drag of files into project window
+		• allow drag out of images into desktop 
+		
+		
+		2.1.0
+		* add z to switch to zoom
+		* add space to switch to pan
+		* add h to switch to pan
+		- add v to selection tool
+		- add i to eye dropper tool
+		* add html css fix for html, body height percent 
+		• add horizontal and vertical line components
+		• fix HTML issue in view single post
+		• add borders during preview so you can see the edges
+		• When saving a project show with Radiate.info()
+		* fix targets not selected on paste
+		• add revisions to wordpress custom field
+		• add keyboard shortcuts for tools
+		* add paste image files from clipboard
+		- add support to move when constraint is used - Selection line 1365
+		- fix images uploaded with same name possibly overwriting 
+		- disable keyboard events on history list
+		- video component autoplays on import 
+		- added duplicate layer
+		- added drag onto duplicated layer icon to duplicate
+		- added drag onto trash can icon to remove layer
+		• add share url to document
+		
+		
+		1.6.3
+		* turn off autoplay in video component
+		* import PSD
+		- move properties to right of document tab
+		- move library to right of layout
+		- add font styles to border container
+		- update email with asking for feedback
+		- describe that you will get an email 
+		
+		
+		1.6.2
+		- add user styles to html document exporter (top priority)
+		– copy and paste from external files into library
+		
+		
+		1.6.1
+		• added size selection to document command
+		• add zoom in and zoom out keyboard shortcuts
+		* update to include html template
+		* replace generator tag
+		• when importing example name it whatever "copy"
+		• fix set style not applying numbers 
+		
+		
+		1.6.0
+		* added paste of image files
+		• added paste of bitmap data from the clipboard
+		• added paste of text 
+		• added paste of html (rudimentary)
+		• when pasting images (image files) into a document they are resized to fit inside document
+		• changed to using flex 4.9.1 and air 19
+		* added run tool bar 
+		 - with run image preview 
+		 - document view in browser
+		 - home page in browser
+	
+		
+		1.5.1 - Nov 22 
+		• add verticalAlign to label
+		• add font styles to border container
+		• fixed bug where examples were not imported for new users
+		• automatically save images added to the library
+		• automatically save on login
+		• added more components to HTML export
+		 - numeric stepper
+		 - textarea
+		 - horizontal slider
+		 - vertical slider
+		 - rich text (paragraph)
+		 - video player
+		 - color picker
+		 - removed border on some components
+		 - fixed width too small for radio or checkbox was wrapping label
+		• added colorpicker
+		• added more styles support when exporting HTML
+		• save project on document delete
+		• save html template in document on save
+		* update window menu item on document change
+		• Change save icon from saving project to saving document
+		• add save all documents / project
+		• drag images onto the stage
+		• make pop up notes show up at the top
+		• add console log inspector to see notifications
+		• show note before launching unpublished document in browser
+		• fix numeric stepper disappearing
+		• fixed set home page not working
+		
+		Oct 30 -  1.4.0
+		// actual
+		• add size document to selection command
+		• add copy selection into library command
+		• add formatted date token in wordpress
+		• add X and Y coordinates to selection tool inspector
+		• add link to users wordpress dashboard site
+		• add link to users wordpress profile site
+		• add link to users wordpress web site
+		• add open image in browser
+		• fix clicking locked layer when application is selected 
+		• add show document published
+		• added cmd + s to save document
+		• add copy and paste to other document
+		• added original native edit menu back in 
+		• fixed creating new project bug
+		• added better messages when not online
+		• can now set home page for your site
+		
+		
+		Oct 23
+		• store bitmap data in image attachment (already stored)
+		• added drag selection into library
+		• added drag external images into library
+		• upgraded ui skins for dropdownlist and combobox
+		• added document status dropdown list
+		• added open document preview button
+		• added scale transport
+		• added full size preview for library images 
+		
+		OCT 16
+		* fix visibility not working
+		* fix width & height not working 
+		* hide component when dragging
+		• hide selection rectangle when dragging
+		* show drop shadow while dragging
+		* apply constraint when turned on in constraints panel
+		• show html in wordpress theme
+		• create new wordpress theme
+		* showing selection label by default
+		* added drag start and drag end events
+		
+		
+		OCT 8
+		* Fixed bug in zoom combobox
+		• added locked layers support
+		• saving locked layers support
+		• fixed bug in blend mode
+		• added help window
+		• added credits window
+		• refactored display list component tree function
+		• added better scrolling in code editors
+		• added better console text area
+		• switched to using native menus for desktop
+		• created new getting started tutorial
+		• changed button and button bar styles
+		• made buttons single click on welcome screen 
+		* added different perspectives code/ design develop
+		* updated the style of the tab navigators
+		• fixed save document not saving when pressing save project
+		• Fix double attribute in setPropertiesStyles
+		• Fix selection bug in HistoryManager
+		• refactored history manager code
+		• created new add items to fix range error bug (so far so good)
+		• added select targets when clicking on history event in history inspector
+		* add revert menu option
+		
+		Sept 20
+		• Add font styles inspector to border container and all the groups
+		• Fix copy and paste, where paste selects the target not the copied item
+		• Changed adding properties one by one to all at once during import
+		• Fix color picker to change to color picker tool when displayed
+		• Removed hardcoded padding value in text input
+		
+		Done Sept 18
+		• Fix StyleName not working
+		• Add up and down key handers to width height x and y positions (or use steppers)
+		• Fix color picker to allow paste of color with hash tag, "#ffffff" 
+		• Fix tool tip in layers panel expand all 
+		• Add tool tips to alpha, blend mode in layers panel
+		• rounded corners on border container
+		• Move generate password to below Confirm Password field on Login Screen
+		• Notify user to save any unsaved projects on login
+		• Add search box for the code editors
+		• Removed hardcoded class value in HTML export for buttons
+		
+		#0000FF

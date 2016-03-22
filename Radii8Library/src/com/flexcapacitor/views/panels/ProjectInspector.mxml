@@ -117,6 +117,12 @@
 				
 			}
 			
+			protected function saveProjectOnlyIcon_clickHandler(event:MouseEvent):void {
+				radiate.saveProjectOnly(radiate.selectedProject);
+				//radiate.save();
+				radiate.saveSettings();
+			}
+			
 			protected function saveProjectIcon_clickHandler(event:MouseEvent):void {
 				radiate.saveProject(radiate.selectedProject);
 				//radiate.save();
@@ -341,9 +347,15 @@
 					   click="openProjectsIcon_clickHandler(event)"
 					   />-->
 		<c:BeveledImageButton id="saveProjectIcon" 
-					   source="{Radii8LibraryAssets.save}" 
-					   toolTip="Save Project"
+					   source="{Radii8LibraryAssets.multipleSave}" 
+					   toolTip="Save the selected project and all of it's documents"
 					   click="saveProjectIcon_clickHandler(event)"
+					   height="15"
+					   />
+		<c:BeveledImageButton id="saveProjectOnlyIcon" 
+					   source="{Radii8LibraryAssets.save}" 
+					   toolTip="Save Project only and none of it's documents"
+					   click="saveProjectOnlyIcon_clickHandler(event)"
 					   height="15"
 					   />
 		<c:BeveledImageButton id="newProjectIcon" 

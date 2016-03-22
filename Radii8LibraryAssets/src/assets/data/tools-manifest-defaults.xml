@@ -17,22 +17,25 @@
     <tool id="Selection" 
     		class="com.flexcapacitor.tools.Selection" 
     		inspector="com.flexcapacitor.views.SelectionInspector" 
-    		include="true"/>
+    		include="true"
+    		key="v"/>
     
     <tool id="Zoom" 
     		class="com.flexcapacitor.tools.Zoom" 
-    		inspector="com.flexcapacitor.views.ZoomInspector" 
-    		include="true">
+    		include="true"
+    		key="z">
     		<cursors>
     			<cursor name="ZoomInCursor" x="10" y="10" />
     			<cursor name="ZoomOutCursor" x="10" y="10" />
     		</cursors>
     </tool>
+<!--     		inspector="com.flexcapacitor.views.ZoomInspector"  -->
     
     <tool id="EyeDropper" 
     		class="com.flexcapacitor.tools.EyeDropper" 
     		inspector="com.flexcapacitor.views.EyeDropperInspector" 
-    		include="true">
+    		include="true"
+    		key="i">
     		<cursors>
     			<cursor name="Cursor" x="0" y="17" />
     		</cursors>
@@ -40,7 +43,8 @@
     
     <tool id="Hand" 
     		class="com.flexcapacitor.tools.Hand" 
-    		include="true">
+    		include="true"
+    		key="h">
     		<cursors>
     			<cursor name="HandOverCursor" x="0" y="0" />
     			<cursor name="HandGrabCursor" x="0" y="0" />

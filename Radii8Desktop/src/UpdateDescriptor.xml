@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<update xmlns="http://ns.adobe.com/air/framework/update/description/2.5"> 
+	<versionNumber>1.0.0</versionNumber>
+	<url>http://www.radii8.com/updates/releases/Radiate_1.0.0.air</url> 
+	<description><![CDATA[List the changes in this version here]]> 
+	</description> 
+</update>

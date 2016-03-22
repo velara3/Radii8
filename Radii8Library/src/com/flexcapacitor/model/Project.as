@@ -912,12 +912,14 @@ package com.flexcapacitor.model {
 		}
 		
 		/**
-		 * Result from project save results 
+		 * Result from project save 
 		 * */
 		override public function saveResultsHandler(event:IWPServiceEvent):void {
 			super.saveResultsHandler(event);
 			
-			checkProjectHasChanged();
+			//checkProjectHasChanged();
+			markClean();
+			
 			
 			if (firstTimeSave) {
 				firstTimeSave = false;

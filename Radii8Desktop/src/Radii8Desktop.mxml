@@ -1,0 +1,822 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:views="com.flexcapacitor.views.*"
+					   xmlns:controls="com.flexcapacitor.controls.*"
+					   xmlns:handlers="com.flexcapacitor.handlers.*" 
+					   xmlns:local="com.flexcapacitor.effects.application.*"
+					   xmlns:status="com.flexcapacitor.effects.status.*"
+					   xmlns:core="com.flexcapacitor.effects.core.*" 
+					   xmlns:local1="*"
+					   
+					   width="100%" 
+					   height="100%" 
+					   minWidth="900" 
+					   minHeight="600"
+					   frameRate="30"
+					   pageTitle="Radiate"
+					   
+					   keyUp="windowedapplication1_keyUpHandler(event)"
+					   keyDown="windowedapplication1_keyDownHandler(event)"
+					   networkChange="windowedapplication1_networkChangeHandler(event)"
+					   uncaughtError="windowedapplication1_uncaughtErrorHandler(event)"
+					   applicationComplete="applicationCompleteHandler(event)" 
+					   initialize="initializeHandler(event)" 
+					   >
+
+					   <!--- 
+					   splashScreenImage="@Embed('../splashscreen/splashscreen.png')"
+					   splashScreenMinimumDisplayTime="15000"
+	
+	Getting error when tabbing back and forth between app and another program: 
+	Has to do with focus manager being null
+	TypeError: Error #1009: Cannot access a property or method of a null object reference.
+	at mx.containers::TabNavigator/keyDownHandler()[/Users/justinmclean/Documents/ApacheFlexSDK/frameworks/projects/mx/src/mx/containers/TabNavigator.as:903]
+	
+	
+	have error where must use clean to create a new swf
+	- noticed i had FCLibrary.swc in Radii8Library and 
+	also had FCLibrary added as a library project
+	- removed FCLibrary.swc
+	- also removed as3 syntaxhighlighter.swc and using ace editor
+	
+					   -->
+	
+	<!-- LOOK IN TODO or CHANGES.txt for what to work on -->
+	
+	
+		<!--<fx:Script source="build.as" local:test="test"/>-->
+
+		<fx:Script>
+			<![CDATA[
+				import com.flexcapacitor.controller.Radiate;
+				import com.flexcapacitor.events.RadiateEvent;
+				import com.flexcapacitor.managers.CreationManager;
+				import com.flexcapacitor.managers.HistoryManager;
+				import com.flexcapacitor.model.MenuItem;
+				import com.flexcapacitor.tools.Hand;
+				import com.flexcapacitor.tools.ITool;
+				import com.flexcapacitor.utils.DisplayObjectUtils;
+				import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+				
+				import flash.display.NativeMenu;
+				import flash.display.NativeMenuItem;
+				import flash.display.Screen;
+				import flash.display.Stage;
+				
+				import mx.binding.utils.BindingUtils;
+				import mx.collections.ArrayCollection;
+				import mx.core.FTETextField;
+				import mx.core.FlexHTMLLoader;
+				import mx.core.mx_internal;
+				import mx.events.AIREvent;
+				import mx.events.FlexEvent;
+				import mx.events.FlexNativeMenuEvent;
+				import mx.graphics.BitmapFill;
+				import mx.graphics.BitmapFillMode;
+				
+				import spark.components.Application;
+				import spark.components.ComboBox;
+				import spark.components.RichEditableText;
+				import spark.components.WindowedApplication;
+				import spark.components.supportClasses.SkinnableTextBase;
+				import spark.core.IEditableText;
+				import spark.core.SpriteVisualElement;
+				import spark.primitives.BitmapImage;
+				import spark.primitives.Rect;
+				
+				//include "build.as";
+				
+				/**
+				 * Reference to radiate
+				 * */
+				[Bindable]
+				public var radiate:Radiate;
+				
+				protected function initializeHandler(event:FlexEvent):void {
+					width = Capabilities.screenResolutionX * .96;
+					height = Capabilities.screenResolutionY * .9;
+					
+					nativeWindow.x = (Screen.mainScreen.bounds.width - width)/2;
+					nativeWindow.y = (Screen.mainScreen.bounds.height - height)/2;
+					
+					var pngEncoder:JPEGXREncoderOptions = new JPEGXREncoderOptions();
+					
+					mainViewMenu.addEventListener("nativeMenuChange", mainViewMenuChanged, false, 0, true);
+					mainViewMenu.addEventListener("keyEquivalentModifiersFunctionChanged", keyEquivalentModifiersFunctionChanged, false, 0, true);
+					mainViewMenu.addEventListener("mnemonicIndexFunctionChanged", mnemonicIndexFunctionChanged, false, 0, true);
+					
+					// add support to enable this and send error reports
+					CreationManager.showMeWhatsActivatedSoFar = false;
+					CreationManager.showMeWhatsCreatedSoFar = false;
+					//Monaco, Menlo, 'Ubuntu Mono', Consolas, source-code-pro, monospace;
+					
+					// .ace_editor {position: relative;overflow: hidden;font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;font-size: 12px;line-height: normal;color: black;}
+					
+				}
+				
+				/**
+				 * Setup the environment.  
+				 * */
+				protected function applicationCompleteHandler(event:FlexEvent):void {
+					radiate = Radiate.getInstance();
+					//radiate.buildNumber = BUILD_NUMBER;
+					//radiate.buildDate = BUILD_DATE;
+					//radiate.buildTime = BUILD_TIME;
+					
+				    var applicationDescriptor:XML;
+				    var appNamespace:Namespace;
+				    var version:String;
+					
+					applicationDescriptor 	= NativeApplication.nativeApplication.applicationDescriptor;
+					appNamespace 			= applicationDescriptor.namespace();
+					version 				= applicationDescriptor.versionNumber;
+				    version 				= applicationDescriptor.appNamespace::versionNumber;
+					
+					radiate.versionNumber 	= version;
+					Radiate.mainView 		= mainView;
+					Radiate.application 	= this;
+					
+					//Radiate.isDesktop = true;
+					Radiate.startup();
+					mainView.startup();
+					
+					// set title bar icon (doesn't seem to work in debug build)
+					titleIcon = Radii8LibraryAssets.logo;
+
+					setupNativeMenus();
+					
+					nativeApplication.addEventListener(Event.NETWORK_CHANGE, dispatchEvent);
+					radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeEventHandler, false, 0, true);
+					
+					//var loader:HTMLLoader = new HTMLLoader();
+					// Mozilla/5.0 (Macintosh; U; Intel Mac OS X; en) AppleWebKit/533.19.4 (KHTML, like Gecko) AdobeAIR/3.6
+					//trace(loader.userAgent);
+				}
+				
+				protected function resizeToShowUpdate():void {
+					height = Capabilities.screenResolutionY * .5;
+					nativeWindow.y = 240;
+				}
+				
+				protected function windowedapplication1_uncaughtErrorHandler(event:UncaughtErrorEvent):void
+				{
+					//trace("Uncaught error: " + event);
+					if ("text" in event && event.text!="") {
+						Radiate.error(event.text, event);
+					}
+					else if ("error" in event && event.error && "message" in event.error) {
+						Radiate.error(event.error.message, event);
+					}
+				}
+				
+				private function nativeMenuHandler(menuEvent:Event):void{
+					var application:WindowedApplication = this;
+					var nativeMenuItem:NativeMenuItem = menuEvent.target as NativeMenuItem;
+					var nativeMenu:NativeMenu = menuEvent.currentTarget as NativeMenu;
+					var menuItem:MenuItem = nativeMenuDictionary[nativeMenuItem];
+					
+					if (!application.nativeWindow.active) {
+						application.addEventListener(AIREvent.WINDOW_ACTIVATE, executeAsync);
+						application.activate();
+						
+						function executeAsync(event:Event):void {
+							application.removeEventListener(AIREvent.WINDOW_ACTIVATE, executeAsync);
+							
+							if (menuItem) {
+								doCommand(menuEvent, menuItem.label, menuItem);
+							}
+							else {
+								doCommand(menuEvent, nativeMenuItem.label);
+							}
+						}
+					} else {
+						if (menuItem) {
+							doCommand(menuEvent, menuItem.label, menuItem);
+						}
+						else {
+							doCommand(menuEvent, nativeMenuItem.label);
+						}
+					}
+					
+					//Radiate.info(menuEvent.item.label + " from " + menuEvent.currentTarget);
+				}
+				
+				private function nativeMenuCommand(menuEvent:FlexNativeMenuEvent):void{
+					var application:WindowedApplication = this;
+					
+					if (!application.nativeWindow.active) {
+						application.addEventListener(AIREvent.WINDOW_ACTIVATE, executeAsync);
+						application.activate();
+						
+						function executeAsync(event:Event):void {
+							application.removeEventListener(AIREvent.WINDOW_ACTIVATE, executeAsync);
+							doCommand(menuEvent, menuEvent.item.label);
+						}
+					} else {
+						doCommand(menuEvent, menuEvent.item.name);
+					}
+					
+					//Radiate.info(menuEvent.item.label + " from " + menuEvent.currentTarget);
+				}
+				
+				//Execute the selected command
+				
+				private function doCommand(event:Event, command:String, menuItem:MenuItem = null):void {
+					
+					switch(command){
+						case "cut":
+							nativeApplication.cut();
+							break;
+						case "copy":
+							nativeApplication.copy();
+							break;
+						case "paste":
+							nativeApplication.paste();
+							break;
+						case "selectAll":
+							nativeApplication.selectAll();
+							break;
+						case "clear":
+						case "delete":
+							nativeApplication.clear();
+							break;
+						case "toggleMenuBar":
+							/*if(menuBarShown){
+								menuBar.visible = false;
+							} else {
+								menuBar.visible = true;
+							}
+							menuBarShown = !menuBarShown;*/
+							break;
+						case "toggleIconMenu":
+							if(iconMenuShown){
+								dockIconMenu = new FlexNativeMenu();
+								systemTrayIconMenu = new FlexNativeMenu();
+							} else {
+								dockIconMenu = mainViewMenu;
+								systemTrayIconMenu = mainViewMenu;
+							}
+							iconMenuShown = !iconMenuShown;
+							break;
+						
+						default:
+							
+							mainView.menuItemEventHandler(event, menuItem);
+							
+							dispatchEvent(event);
+							
+							/*if (event.item is MenuItem) {
+								EventDispatcher(event.item).dispatchEvent(event);
+							} 
+							else if (event.menu && event.menu.dataProvider && 
+								event.menu.dataProvider[0] is MenuItem && 
+								event.menu.dataProvider[0].parent is MenuItem)
+							{
+								EventDispatcher(event.menu.dataProvider[0].parent).dispatchEvent(event);
+							}*/
+							//Radiate.info("Unrecognized command: " + command);
+					}
+				}
+				
+				private var iconMenuShown:Boolean;
+				
+				protected function updateApplication_errorHandler(event:Event):void
+				{
+					Radiate.warn("Could not connect to the online server. You need an internet connection to save projects.");
+				}
+				
+				protected function windowedapplication1_networkChangeHandler(event:Event):void {
+					Radiate.warn("The network has changed! You may now be connected or disconnected.");
+				}
+				
+				public var spaceBarDown:Boolean;
+				
+				protected function windowedapplication1_keyDownHandler(event:KeyboardEvent):void {
+					var keyCode:int = event.keyCode;
+					var componentDescription:ComponentDescription;
+					var applicable:Boolean;
+					var focusedObject:Object;
+					var isApplication:Boolean;
+					var target:Object = event.target;
+					
+
+					// prevent key repeat
+					if (spaceBarDown) {
+						event.preventDefault();
+						event.stopImmediatePropagation()
+						return;
+					}
+					
+					if (keyCode==Keyboard.V || 
+						keyCode==Keyboard.Z || 
+						keyCode==Keyboard.I || 
+						keyCode==Keyboard.H ||
+						keyCode==Keyboard.SPACE) {
+						
+						if (!event.controlKey && !event.commandKey) {
+							applicable = true;
+						}
+					}
+					
+					if (!applicable) return;
+					
+					focusedObject = focusManager.getFocus();
+					
+					if (focusedObject is Application || event.target is Stage) {
+						isApplication = true;
+					}
+					
+					//var t:int = getTimer();
+					// not sure if this is expensive... todo performance test
+					// would like to take out textfield and ftetextfield check
+					if (target is RichEditableText ||
+						focusedObject is IEditableText ||
+						focusedObject is SkinnableTextBase ||
+						focusedObject is TextField ||
+						focusedObject is FTETextField ||
+						focusedObject is FlexHTMLLoader ||
+						focusedObject is ComboBox) {
+						applicable = false;
+					}
+					//trace("time:" + (getTimer() - t)); takes 0 ms
+					
+					// names are in tools-manifest.xml
+					if (applicable) {
+						if (keyCode==Keyboard.V) {
+							componentDescription = radiate.getToolByName("Selection");
+							
+							if (componentDescription) {
+								radiate.setTool(componentDescription.instance as ITool);
+							}
+						}
+						else if (keyCode==Keyboard.Z) {
+							componentDescription = radiate.getToolByName("Zoom");
+							
+							if (componentDescription) {
+								radiate.setTool(componentDescription.instance as ITool);
+							}
+						}
+						else if (keyCode==Keyboard.I) {
+							componentDescription = radiate.getToolByName("EyeDropper");
+							
+							if (componentDescription) {
+								radiate.setTool(componentDescription.instance as ITool);
+							}
+						}
+						else if (keyCode==Keyboard.H || keyCode==Keyboard.SPACE) {
+							componentDescription = radiate.getToolByName("Hand");
+							
+							if (componentDescription) {
+								if (keyCode==Keyboard.SPACE) {
+									spaceBarDown = true;
+									//trace("setting temp hand cursor");
+									radiate.saveCurrentTool();
+									radiate.setTool(componentDescription.instance as ITool);
+									Hand(componentDescription.instance).updateMouseCursor(true);
+								}
+								else {
+									radiate.setTool(componentDescription.instance as ITool);
+								}
+							}
+						}
+					}
+				}
+				
+				protected function windowedapplication1_keyUpHandler(event:KeyboardEvent):void {
+					var keyCode:int = event.keyCode;
+					var componentDescription:ComponentDescription;
+					var applicable:Boolean;
+					var focusedObject:Object;
+					var isApplication:Boolean;
+					var target:Object = event.target;
+					
+					// prevent repeat key events in key down
+					spaceBarDown = false;
+					
+					if (keyCode==Keyboard.SPACE) {
+						applicable = true;
+					}
+					
+					if (!applicable) return;
+					
+					focusedObject = focusManager.getFocus();
+					
+					// not sure if this is expensive... todo performance test
+					// would like to take out textfield and ftetextfield check
+					if (target is RichEditableText ||
+						focusedObject is IEditableText ||
+						focusedObject is SkinnableTextBase ||
+						focusedObject is TextField ||
+						focusedObject is FTETextField ||
+						focusedObject is FlexHTMLLoader ||
+						focusedObject is ComboBox) {
+						applicable = false;
+					}
+					// takes 0 ms
+					
+					// names are in tools-manifest.xml
+					if (applicable) {
+						if (keyCode==Keyboard.SPACE) {
+							
+							//trace("restorin previ tool");
+							radiate.restoreTool();
+						}
+					}
+
+				}
+				
+				protected function updateApplication_firstRunHandler(event:Event):void {
+					Radiate.firstRun = true;
+				}
+				
+				protected function mainViewMenuChanged(event:Event):void {
+					//trace("Native Flex Menu changed");
+				}
+				
+				protected function keyEquivalentModifiersFunctionChanged(event:Event):void {
+					//trace("Native Flex Key Modifiers changed");
+					
+				}
+				
+				protected function mnemonicIndexFunctionChanged(event:Event):void {
+					//trace("Native Flex Mnemonic Index changed");
+					
+				}
+				
+				public static var nativeMenuDictionary:Dictionary = new Dictionary(true);
+				
+				/**
+				 * Use this to create NativeMenu and NativeMenuItems.
+				 * Maybe move this to a utility class
+				 * */
+				public static function getNativeMenuItem(menuItem:MenuItem):NativeMenuItem {
+					var subItem:NativeMenuItem;
+					var items:Array;
+					var numberOfItems:int;
+					var dispatcher:IEventDispatcher;
+					var nativeMenuItem:NativeMenuItem;
+					var isSeparator:Boolean;
+					
+					isSeparator = menuItem.type=="separator" ? true : false;
+					
+					nativeMenuItem = new NativeMenuItem(menuItem.label, isSeparator);
+					
+					nativeMenuItem.checked 				= menuItem.checked;
+					nativeMenuItem.data 				= menuItem.data;
+					nativeMenuItem.enabled 				= menuItem.enabled;
+					//nativeMenuItem.isSeparator		= menuItem.isSeparator;
+					
+					/*
+					Set the keyEquivalent with a lowercase letter to assign a shortcut 
+					without a Shift-key modifier. Set with an uppercase letter to assign 
+					a shortcut with the Shift-key modifier.
+					
+					By default, a key equivalent modifier 
+					(Ctrl on Windows or Linux and Command on Mac OS X) 
+					is included as part of the key equivalent. 
+					If you want the key equivalent to be a key with no modifier, 
+					set the keyEquivalentModifiers property to an empty array.
+					*/
+					nativeMenuItem.keyEquivalent		= menuItem.keyEquivalent;
+					//  private prop on NativeMenuItem
+					//nativeMenuItem.keyEquivalentChar	= menuItem.keyEquivalentChar;
+					
+					// If you do not assign any modifiers, then by default the 
+					// Keyboard.CONTROL key is assigned on Windows or Linux and 
+					// the Keyboard.COMMAND key is assigned on Mac OS X.
+					// If you do not want the key equivalent to include these modifiers, 
+					// set this property to an empty array.
+					nativeMenuItem.label				= menuItem.label;
+					//nativeMenuItem.menu				= menuItem.menu;
+					//nativeMenuItem.mnemonicIndex		= menuItem.mnemonicIndex;
+					nativeMenuItem.name 				= menuItem.name;
+					//nativeMenuItem.keyEquivalentModifiers = menuItem.keyEquivalentModifiers;
+					//nativeMenuItem.keyEquivalentModifiers = null; 
+					if (menuItem.keyEquivalentModifiers && menuItem.keyEquivalentModifiers.length) {
+						nativeMenuItem.keyEquivalentModifiers = menuItem.keyEquivalentModifiers;
+					}
+					//nativeMenuItem.submenu			= menuItem.submenu;
+					//nativeMenuItem.type				= menuItem.isSeparator ? "separator" : menuItem.type;
+					//nativeMenuItem.importedMenuItem	= menuItem;
+					
+					items = menuItem.children ? menuItem.children : [];
+					numberOfItems =  items ? items.length : 0;
+					
+					for (var i:int; i < numberOfItems; i++) {
+						//subItem = getNativeMenuItem(items[i] as MenuItem);
+						
+						//nativeMenuItem.addItem(subItem);
+					}
+					
+					if (nativeMenuItem is IEventDispatcher) {
+						dispatcher = nativeMenuItem as IEventDispatcher;
+						//addEventListeners(nativeMenuItem, dispatcher)
+					}
+					
+					nativeMenuDictionary[nativeMenuItem] = menuItem;
+					
+					return nativeMenuItem;
+				}
+				
+				/**
+				 * Use this to create NativeMenu and NativeMenuItems
+				 * */
+				public static function getNativeMenu(menuItem:MenuItem):NativeMenu {
+					var subItem:NativeMenuItem;
+					var items:Array;
+					var numberOfItems:int;
+					var dispatcher:IEventDispatcher;
+					var nativeMenu:NativeMenu;
+					
+					nativeMenu = new NativeMenu();
+					
+					//nativeMenu.checked 				= menuItem.checked;
+					//nativeMenu.data 				= menuItem.data;
+					//nativeMenu.enabled 				= menuItem.enabled;
+					//nativeMenu.isSeparator		= menuItem.isSeparator;
+					//nativeMenu.keyEquivalent		= menuItem.keyEquivalent;
+					//nativeMenu.keyEquivalentChar	= menuItem.keyEquivalentChar; private prop on NativeMenuItem
+					//nativeMenu.keyEquivalentModifiers	= menuItem.keyEquivalentModifiers;
+					//nativeMenu.label				= menuItem.label;
+					//nativeMenu.menu				= menuItem.menu;
+					//nativeMenu.mnemonicIndex		= menuItem.mnemonicIndex;
+					//nativeMenu.name 				= menuItem.name;
+					//nativeMenu.submenu			= menuItem.submenu;
+					//nativeMenu.type				= menuItem.isSeparator ? "separator" : menuItem.type;
+					//nativeMenu.importedMenuItem	= menuItem;
+					
+					items = menuItem.children ? menuItem.children : [];
+					numberOfItems =  items ? items.length : 0;
+					
+					for (var i:int; i < numberOfItems; i++) {
+						subItem = getNativeMenuItem(items[i] as MenuItem);
+						
+						//nativeMenu.addItem(subItem);
+					}
+					
+					if (nativeMenu is IEventDispatcher) {
+						dispatcher = nativeMenu as IEventDispatcher;
+						//addEventListeners(nativeMenu, dispatcher)
+					}
+					
+					
+					return nativeMenu;
+				}
+				
+				[Bindable]
+				public var hardReference:Object = {};
+				
+				/**
+				 * We have to convert the menus used in the browser into 
+				 * native menu items in the desktop application
+				 * */
+				private function setupNativeMenus():void {
+					// setup menus
+					var defaultMenu:NativeMenu;
+					var defaultMenuItems:Array;
+					
+					var nativeAboutMenu:NativeMenuItem;
+					var nativeEditMenu:NativeMenuItem;
+					var nativeFileMenu:NativeMenuItem;
+					var nativeWindowMenu:NativeMenuItem;
+					var nativeHelpMenu:NativeMenuItem;
+					var nativeCommandMenu:NativeMenuItem;
+					
+					var customEditMenu:MenuItem;
+					var customFileMenu:MenuItem;
+					var customCommandMenu:MenuItem;
+					var customWindowMenu:MenuItem;
+					var customHelpMenu:MenuItem;
+					
+					var customMenu:MenuItem;
+					var customMenuItems:Array;
+					var customMenuItemsCollection:ArrayCollection;
+					var nativeMenuItem:NativeMenuItem;
+					
+					var addToExistingMenu:Boolean;
+					var supportsMenu:Boolean;
+					
+					// docs incorrectly say there is a nativeApplication.menu.supportsMenu flag 
+					// but compiler disagrees
+					// actual API is NativeApplication.supportsMenu
+					supportsMenu = NativeApplication.supportsMenu;
+					
+					// set this to true to add our menu to the existing AIR application menu
+					addToExistingMenu = true;
+					
+					// native menu has About, File, Edit, Window
+					defaultMenu = nativeApplication.menu;
+					defaultMenuItems = defaultMenu ? defaultMenu.items : [];
+					
+					// our custom menu items File, Command, Settings
+					customMenuItemsCollection 	= mainViewMenu.dataProvider as ArrayCollection;
+					customMenu 					= customMenuItemsCollection.getItemAt(0) as MenuItem;
+					customMenuItems 			= customMenu.children;
+					
+					if (defaultMenuItems.length) {
+						nativeAboutMenu 	= defaultMenuItems[0];
+						nativeFileMenu 		= defaultMenuItems[1];
+						nativeEditMenu 		= defaultMenuItems[2];
+						nativeWindowMenu 	= defaultMenuItems[3];
+					}
+					
+					if (customMenu.children && customMenu.children.length) {
+						customFileMenu 			= customMenuItems[0];
+						customEditMenu 			= customMenuItems[1];
+						customCommandMenu 		= customMenuItems[2];
+						customWindowMenu 		= customMenuItems[3];
+						customHelpMenu 			= customMenuItems[4];
+						
+						nativeCommandMenu 		= new NativeMenuItem();
+						nativeHelpMenu 			= new NativeMenuItem();
+						
+						nativeCommandMenu.label = "Commands";
+						nativeHelpMenu.label 	= "Help";
+					}
+					
+					
+					// add our menu to existing menu or replace menu with our custom menu
+					if (addToExistingMenu) {
+						
+						// File menu
+						for (var i:int=customFileMenu.children.length-1;i>-1; i--) {
+							nativeMenuItem = getNativeMenuItem(customFileMenu.children[i]);
+							if (nativeMenuItem.label=="Quit") continue;
+							nativeFileMenu.submenu.addItemAt(nativeMenuItem, 0);
+						}
+						
+						// Edit menu
+						
+						// separator
+						nativeMenuItem = getNativeMenuItem(customEditMenu.children[2]);
+						nativeEditMenu.submenu.addItemAt(nativeMenuItem, 0);
+						
+						var nativeRedoMenuItem:NativeMenuItem = getNativeMenuItem(customEditMenu.children[1]);
+						hardReference.redoMenu = nativeRedoMenuItem;
+						//BindingUtils.bindProperty(nativeRedoMenuItem, "enabled", HistoryManager, "canRedo");
+						//BindingUtils.bindSetter(canRedoHandler, HistoryManager, "canRedo");
+						nativeEditMenu.submenu.addItemAt(nativeRedoMenuItem, 0);
+						
+						var nativeUndoMenuItem:NativeMenuItem = getNativeMenuItem(customEditMenu.children[0]);
+						nativeEditMenu.submenu.addItemAt(nativeUndoMenuItem, 0);
+						hardReference.undoMenu = nativeUndoMenuItem;
+						//BindingUtils.bindProperty(nativeUndoMenuItem, "enabled", HistoryManager, "canUndo");
+						//BindingUtils.bindSetter(canUndoHandler, HistoryManager, "canRedo");
+						
+						
+						// Commands menu
+						for (i=0;i<customCommandMenu.children.length; i++) {
+							nativeMenuItem = getNativeMenuItem(customCommandMenu.children[i]);
+							
+							if (nativeCommandMenu.menu==null) {
+								defaultMenu.addItem(nativeCommandMenu);
+							}
+							if (nativeCommandMenu.submenu==null) {
+								nativeCommandMenu.submenu = new NativeMenu();
+							}
+							
+							nativeCommandMenu.submenu.addItem(nativeMenuItem);
+						}
+						
+						// Help menu
+						for (i=0;i<customHelpMenu.children.length; i++) {
+							nativeMenuItem = getNativeMenuItem(customHelpMenu.children[i]);
+							
+							if (nativeHelpMenu.submenu==null) {
+								defaultMenu.addItem(nativeHelpMenu);
+							}
+							if (nativeHelpMenu.submenu==null) {
+								nativeHelpMenu.submenu = new NativeMenu();
+							}
+							
+							nativeHelpMenu.submenu.addItem(nativeMenuItem);
+							//aboutMenu.menu.addItem(nativeMenuItem, nativeMenuItem.label);
+							//nativeMenuItem.menu = windowMenu;
+						}
+						
+						// reassign the default menu 
+						// this causes it to rebuild the menu with our new additions
+						nativeApplication.menu = defaultMenu;
+						defaultMenu.addEventListener(Event.SELECT, nativeMenuHandler, false, 0, true);
+						
+						radiate.applicationMenu = defaultMenu;
+						radiate.applicationWindowMenu = nativeWindowMenu;
+					}
+					else {
+						// add the native menu items About, Edit to our custom menu items
+						// has many issues - don't use
+						if (false && nativeAboutMenu) {
+							var aboutMenuSubmenu:Object = nativeAboutMenu.submenu;
+							var menuItem:MenuItem = MenuItem.createInstance(nativeAboutMenu);
+							
+							customMenu.addItemAt(menuItem, 0);
+							
+							
+							//aboutMenu.submenu = (aboutMenuSubmenu as NativeMenu);
+							//mainViewMenuItemsCollection.refresh();
+							mainViewMenu.dataProvider = null;
+							mainViewMenu.dataProvider = customMenuItemsCollection;
+							//mainViewMenuItemsCollection.addItemAt(aboutMenu.submenu.items[0], 0);
+							//mainViewMenuItemsCollection.addItemAt(editMenu, 1);
+						}
+						
+						// assign our custom menu to the application menu
+						menu = mainViewMenu;
+						
+						radiate.applicationMenu = menu;
+						radiate.applicationWindowMenu = customWindowMenu;
+					}
+				}
+				
+				protected function historyChangeEventHandler(event:RadiateEvent):void {
+					if (hardReference.redoMenu.enabled != HistoryManager.canRedo) {
+						hardReference.redoMenu.enabled = HistoryManager.canRedo;
+					}
+					if (hardReference.undoMenu.enabled != HistoryManager.canUndo) {
+						hardReference.undoMenu.enabled = HistoryManager.canUndo;
+					}
+					
+				}
+				
+			]]>
+		</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+		
+		<!-- Was getting multiple errors with JPEGENCODER classes
+		they require 11.5 or greater. Nothing was working. 
+		Finally, I think I found the cause. The playerglobal.swc may be incorrect or not existant. 
+		/11.5/playerglobal.swc may be 11.2 playerglobal.swc or IDE was looking for 11.2 and not finding it. 
+		
+		ALSO put imports and instances in main classes
+		
+		POSSIBLE CAUSE: 
+		Stand alone player in preferences in FB is set to older debug player
+		/Applications/Adobe Flash Builder 4.7/player/mac/11.4/Flash Player Debugger.app
+		
+		Not sure
+		Also, I made FCLibrary as external libraries to get rid of defaults.css warning.
+		
+		What seemed to work is adding -swf-version=16 to the compiler arguments in the main project
+		
+		
+		-->
+		
+		<handlers:EventHandler eventName="initialize" enabled="true">
+			
+			<local:UpdateApplication id="updateApplication"
+									 traceEvents="false" 
+									 useUI="true"
+									 isCheckForUpdateVisible="false"
+									 updateURL="http://www.radii8.com/updates/UpdateDescriptor.xml" 
+									 error="updateApplication_errorHandler(event)"
+									 firstRun="updateApplication_firstRunHandler(event)"
+									 >
+				<!--<local:firstRunEffect>
+				<status:ShowStatusMessage message="First time run"
+				location="bottom" />
+				</local:firstRunEffect>-->
+				<local:updateAvailableEffect>
+					<s:Parallel>
+						<status:ShowStatusMessage message="An update is available" 
+												  location="bottom" 
+												  matchDurationToTextContent="true"
+												  data="{'Current version: ' + updateApplication.currentVersion + '. Remote version: ' + updateApplication.remoteVersion}"/>
+						<core:CallMethod method="resizeToShowUpdate"/>
+					</s:Parallel>
+				</local:updateAvailableEffect>
+			</local:UpdateApplication>
+		</handlers:EventHandler>
+		
+		<mx:FlexNativeMenu 
+			id="mainViewMenu"
+			dataProvider="{mainView.rootMenu}" 
+			labelField="label" 
+			showRoot="false"
+			
+			itemClick="nativeMenuCommand(event)"
+			/>
+		
+		<!--<mx:FlexNativeMenu 
+				id="nativeMenu"
+				dataProvider="{mainView.rootMenu}" 
+				labelField="@label" 
+				keyEquivalentField="@key"
+				keyEquivalentModifiersFunction="standardOSModifier" 
+				showRoot="false"
+				itemClick="nativeMenuCommand(event)"/>-->
+	</fx:Declarations>
+	
+	<fx:Style source="fonts.css" />
+	<fx:Style source="styles.css" />
+	
+	<!--<mx:HTML width="100%" height="100%" location="app:/"/>-->
+
+	<views:MainView id="mainView" 
+					top="0" right="0" bottom="0" left="0"/>
+	
+	
+</s:WindowedApplication>

@@ -59,7 +59,7 @@ package com.flexcapacitor.managers {
 		/**
 		 * Opens the document in a browser window
 		 * */
-		public static function openDocumentInBrowserButton(windowName:String=null):void {
+		public static function openDocumentInBrowser(windowName:String=null):void {
 			var iDocument:IDocument = Radiate.instance.selectedDocument;
 			
 			if (iDocument) {
@@ -76,6 +76,58 @@ package com.flexcapacitor.managers {
 				}
 				else {
 					Radiate.openInBrowser(iDocument);
+				}
+			}
+		}
+		
+		/**
+		 * Opens the document in a browser screenshot website
+		 * */
+		public static function openDocumentInBrowserScreenshot(windowName:String=null):void {
+			var iDocument:IDocument = Radiate.instance.selectedDocument;
+			
+			if (iDocument) {
+				
+				if (iDocument.status!=WPService.STATUS_PUBLISH) {
+					
+					/*if (documentNotPublishedWarning) {
+						Radiate.openInBrowserScreenshot(iDocument, windowName);
+					}
+					else {*/
+						//documentNotPublishedWarning = true;
+						// always warn
+						Radiate.warn("The document is not published. Publish and save the document first.")
+						Radiate.callAfter(2500, Radiate.openInBrowserScreenshot, iDocument, windowName);
+					//}
+				}
+				else {
+					Radiate.openInBrowserScreenshot(iDocument, windowName);
+				}
+			}
+		}
+		
+		/**
+		 * Opens the document in a browser site scanner website
+		 * */
+		public static function openDocumentInBrowserSiteScanner(windowName:String=null):void {
+			var iDocument:IDocument = Radiate.instance.selectedDocument;
+			
+			if (iDocument) {
+				
+				if (iDocument.status!=WPService.STATUS_PUBLISH) {
+					
+					/*if (documentNotPublishedWarning) {
+						Radiate.openInBrowserScreenshot(iDocument, windowName);
+					}
+					else {*/
+						//documentNotPublishedWarning = true;
+						// always warn
+						Radiate.warn("The document is not published. Publish and save the document first.")
+						Radiate.callAfter(2500, Radiate.openInBrowserSiteScanner, iDocument, windowName);
+					//}
+				}
+				else {
+					Radiate.openInBrowserSiteScanner(iDocument, windowName);
 				}
 			}
 		}

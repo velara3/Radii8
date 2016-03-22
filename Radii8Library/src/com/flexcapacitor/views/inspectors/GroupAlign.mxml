@@ -23,6 +23,7 @@
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
 					target = radiate.target;
@@ -35,6 +36,7 @@
 				if (radiate) {
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
 					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
 				}
 				
 				target = null;
@@ -49,6 +51,7 @@
 			}
 			
 			public function update():void {
+				if (target==null) return;
 				var horizontalAccessor:AccessorMetaData = ClassUtils.getMetaDataOfProperty(target, "horizontalAlign");
 				var verticalAccessor:AccessorMetaData = ClassUtils.getMetaDataOfProperty(target, "verticalAlign");
 

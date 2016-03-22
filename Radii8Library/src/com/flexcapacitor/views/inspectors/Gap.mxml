@@ -24,6 +24,7 @@
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
 					target = radiate.target;
@@ -36,6 +37,7 @@
 				if (radiate) {
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
 					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
 				}
 				
 				target = null;
@@ -51,7 +53,9 @@
 			
 			public function update():void {
 				//var data:Object = ClassUtils.getMetaDataOfProperty(target, "source");
-				gapRenderer.data = ClassUtils.getMetaDataOfProperty(target, "gap");
+				if (target) {
+					gapRenderer.data = ClassUtils.getMetaDataOfProperty(target, "gap");
+				}
 				
 			}
 			

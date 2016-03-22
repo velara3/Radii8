@@ -53,6 +53,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
             tabBar.dispatchEvent(event);
         }
     }
+	 		 * 
 			 * */
 			[Bindable]
 			private var radiate:Radiate;
@@ -402,7 +403,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 			<s:Spacer width="50"/>
 			<views:OperationsInspector id="operationsInspector" height="100%"/>
 			<s:Spacer width="100%"/>
-			<views:SizesInspector showRestoreSize="true" height="100%"/>
+			<!--<views:SizesInspector showRestoreSize="true" height="100%"/>-->
 			<views:ZoomInspector showActualSize="false" height="100%"/>
 			<views:PerspectivesInspector height="100%" view="{this}"/>
 		</s:HGroup>
@@ -641,9 +642,6 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 				
 				<!-- DOCUMENT FOOTER AREA -->
 				<s:VGroup width="100%" height="45%" minHeight="0" includeIn="develop,code">
-					<c:HorizontalLine height="1" width="100%" includeIn="develop"/>
-					<mx:Spacer height="-6"/>
-					<views:Breadcrumbs width="100%" includeIn="develop"/>
 				
 					<mx:TabNavigator id="thirdViewStack" 
 									 borderStyle="solid"

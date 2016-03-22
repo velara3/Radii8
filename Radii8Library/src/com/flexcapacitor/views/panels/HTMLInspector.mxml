@@ -17,18 +17,14 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.model.IDocument;
-			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.collections.ArrayCollection;
 			
-			import spark.events.IndexChangeEvent;
-			import spark.events.TextOperationEvent;
-			
 			
 			private var radiate:Radiate = Radiate.instance;
+			private var settingTarget:Boolean;
 			
 			[Bindable]
 			public var target:Object;
@@ -66,6 +62,7 @@
 			
 			
 			protected function targetChangedHandler(event:RadiateEvent = null):void {
+				if (settingTarget) return;
 				var iDocument:IDocument = radiate.selectedDocument;
 				
 				if (radiate.target!=target) {
@@ -82,29 +79,39 @@
 					wrapWithAnchor.selected = componentDescription.wrapWithAnchor;
 					targetsComboBox.selectedItem = componentDescription.anchorTarget;
 					urlTextInput.text = componentDescription.anchorURL;
+					
+					embedSnapshopIntoBackground.enabled = componentDescription.isVisualElementContainer;
 				}
+				
 			}
 			
 			public var componentDescriptor:ComponentDescription;
 			
 			protected function componentCSS_changeHandler(event:Event):void {
 				var iDocument:IDocument = radiate.selectedDocument;
+				var prevTarget:Object = radiate.target;
 				
 				if (componentDescription==null && radiate.target) {
 					componentDescription = iDocument.getItemDescription(target);
 				}
 				
+				settingTarget = true;
 				if (componentDescription) {
 					Radiate.setProperty(componentDescription, "userStyles", componentCSS.text);
+					Radiate.setTarget(prevTarget, true, "", true);
 				}
+				settingTarget = false;
 			}
 			
 			protected function wrapWithAnchor_changeHandler(event:Event):void {
 				var iDocument:IDocument = radiate.selectedDocument;
+				var prevTarget:Object = radiate.target;
 				
 				if (componentDescription==null && radiate.target) { 
 					componentDescription = iDocument.getItemDescription(target);
 				}
+				
+				settingTarget = true;
 				
 				if (componentDescription) {
 					Radiate.setProperty(componentDescription, "wrapWithAnchor", wrapWithAnchor.selected);
@@ -122,32 +129,44 @@
 						Radiate.clearProperty(componentDescription, "anchorURL");
 						Radiate.clearProperty(componentDescription, "anchorTarget");
 					}
+					
+					Radiate.setTarget(prevTarget, true, "", true);
 				}
+				
+				settingTarget = false;
 			}
 			
 			protected function embedSnapshopIntoBackground_changeHandler(event:Event):void {
 				var iDocument:IDocument;
+				var prevTarget:Object = radiate.target;
 				
-				if (componentDescription==null && radiate.target) {
+				if (prevTarget) {
 					iDocument = radiate.selectedDocument;
 					componentDescription = iDocument.getItemDescription(target);
 				}
 				
 				if (componentDescription) {
+					settingTarget = true;
 					Radiate.setProperty(componentDescription, "createBackgroundSnapshot", embedSnapshopIntoBackground.selected);
-				}				
+					Radiate.setTarget(prevTarget, true, "", true);
+					settingTarget = false;
+				}
 			}
 			
 			protected function convertElementToImage_changeHandler(event:Event):void {
 				var iDocument:IDocument;
+				var prevTarget:Object = radiate.target;
 				
-				if (componentDescription==null && radiate.target) {
+				if (radiate.target) {
 					iDocument = radiate.selectedDocument;
 					componentDescription = iDocument.getItemDescription(target);
 				}
 				
 				if (componentDescription) {
+					settingTarget = true;
 					Radiate.setProperty(componentDescription, "convertElementToImage", convertElementToImage.selected);
+					Radiate.setTarget(prevTarget, true, "", true);
+					settingTarget = false;
 				}
 			}
 			

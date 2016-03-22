@@ -362,7 +362,14 @@
 					}
 				}
 				else if (target is UIComponent) {
-					UIComponent(target).validateNow();
+					
+					if (isNaN(target.x) || isNaN(target.y)) {
+						target.x = 0;
+						target.y = 0;
+					}
+					else {
+						UIComponent(target).validateNow();
+					}
 				}
 				
 				updateView();
@@ -1286,8 +1293,8 @@
 			protected function propertyChangeHandler(event:RadiateEvent):void {
 				if (settingProperties) return;
 				
-				var properties:Array = ArrayUtils.join(event.properties, event.styles);
-				var numberOfChanges:int = properties.length;
+				var propertiesStylesEvents:Array = ArrayUtils.join(event.properties, event.styles);
+				var numberOfChanges:int = propertiesStylesEvents.length;
 				
 				
 				if (target!=event.selectedItem) {
@@ -1304,7 +1311,7 @@
 				}
 				
 				for (var i:int;i<numberOfChanges;i++) {
-					if (relevantProperties.indexOf(properties[i])!=-1) {
+					if (relevantProperties.indexOf(propertiesStylesEvents[i])!=-1) {
 						updateView();
 						break;
 					}
