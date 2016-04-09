@@ -3,6 +3,7 @@
   <includeClasses>
     <classEntry path="com.flexcapacitor.components.ColorChooser"/>
     <classEntry path="com.flexcapacitor.components.DocumentContainer"/>
+    <classEntry path="com.flexcapacitor.components.DocumentContainerNew"/>
     <classEntry path="com.flexcapacitor.components.IDocumentContainer"/>
     <classEntry path="com.flexcapacitor.controller.Radiate"/>
     <classEntry path="com.flexcapacitor.controller.RadiateReferences"/>
@@ -22,6 +23,7 @@
     <classEntry path="com.flexcapacitor.managers.ServicesManager"/>
     <classEntry path="com.flexcapacitor.model.AccessorMetaDataOld"/>
     <classEntry path="com.flexcapacitor.model.AttachmentData"/>
+    <classEntry path="com.flexcapacitor.model.ConstrainedLocations"/>
     <classEntry path="com.flexcapacitor.model.Device"/>
     <classEntry path="com.flexcapacitor.model.Document"/>
     <classEntry path="com.flexcapacitor.model.DocumentData"/>
@@ -75,6 +77,11 @@
     <classEntry path="com.flexcapacitor.tools.IToolInspector"/>
     <classEntry path="com.flexcapacitor.tools.Selection"/>
     <classEntry path="com.flexcapacitor.tools.Zoom"/>
+    <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLButtonElement"/>
+    <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLElement"/>
+    <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLLineBreak"/>
+    <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLMargin"/>
+    <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLStyles"/>
     <classEntry path="com.flexcapacitor.utils.AndroidDocumentExporter"/>
     <classEntry path="com.flexcapacitor.utils.Base64"/>
     <classEntry path="com.flexcapacitor.utils.DocumentTranscoder"/>
@@ -200,7 +207,6 @@
     <classEntry path="com.flexcapacitor.views.skins.OrientationButton"/>
     <classEntry path="com.flexcapacitor.views.skins.PropertiesDataGridSkin"/>
     <classEntry path="com.flexcapacitor.views.supportClasses.LayersDataDescriptor"/>
-    <classEntry path="com.flexcapacitor.views.supportClasses.Styles"/>
     <classEntry path="com.flexcapacitor.views.windows.AnimatedPanelWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.ContactWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.CreditsWindow"/>

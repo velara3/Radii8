@@ -550,16 +550,17 @@
 					 fontWeight="bold"
 					 minWidth="120"/>
 			
-			<s:RadioButton id="allDocumentsButton" 
-					 label="All documents in project (experimental)" 
-					 minWidth="120"
-					 selected="true"
-					 groupName="amountOfDocuments"/>
-			
 			<s:RadioButton id="selectedDocumentButton" 
 					 label="Selected Document" 
 					 color="black"
+					 selected="true"
 					 groupName="amountOfDocuments"/>
+			
+			<s:RadioButton id="allDocumentsButton" 
+					 label="All documents in project (experimental)" 
+					 minWidth="120"
+					 groupName="amountOfDocuments"/>
+			
 		</s:HGroup>
 		
 		<!--controls:HorizontalLine width="100%" alpha="1" angle="90"/>

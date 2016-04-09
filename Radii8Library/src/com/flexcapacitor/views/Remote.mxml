@@ -400,7 +400,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}"/>
 			<views:RunToolBar />
 			
-			<s:Spacer width="50"/>
+			<s:Spacer width="100%"/>
 			<views:OperationsInspector id="operationsInspector" height="100%"/>
 			<s:Spacer width="100%"/>
 			<!--<views:SizesInspector showRestoreSize="true" height="100%"/>-->

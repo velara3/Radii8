@@ -7,6 +7,7 @@
 		 
 		 paddingLeft="4"
 		 creationComplete="group1_creationCompleteHandler(event)"
+		 fontSize="9"
 		 >
 	
 	<fx:Script>
@@ -176,40 +177,36 @@
 						  height="100%"
 						  />-->
 	
-	<c:SolidFillButton id="topButton" 
-					   width="35"
-					   toolTip="Scroll to top and center"
-					   click="scrollToTopButton_clickHandler(event)"
-					   label="top"
-					   fontSize="7"
-					   />
 	<c:SolidFillButton id="fitButton" 
 					   width="30"
 					   toolTip="Fit to available screen space"
 					   click="fitInButton_clickHandler(event)"
 					   label="fit"
-					   fontSize="7"
 					   />
 	<c:SolidFillButton id="actualButton" 
-					   width="40"
+					   width="50"
 					   toolTip="Show at actual size"
 					   click="actualSize_clickHandler(event)"
 					   label="100%"
-					   fontSize="6"
+					   fontSize="8"
+					   />
+	<c:SolidFillButton id="topButton" 
+					   width="35"
+					   toolTip="Scroll to top and center"
+					   click="scrollToTopButton_clickHandler(event)"
+					   label="top"
 					   />
 	
 	<c:SolidFillButton id="zoomOutButton" 
 					   width="30"
 					   toolTip="Zoom out"
 					   click="zoomOutButton_clickHandler(event)"
-					   label="-"
-					   fontSize="9"/>
+					   label="-"/>
 	<c:SolidFillButton id="zoomInButton" 
 					   width="30"
 					   toolTip="Zoom in"
 					   click="zoomInButton_clickHandler(event)"
-					   label="+"
-					   fontSize="9"/>
+					   label="+"/>
 	<!--<s:Button id="fitSize" label="Fit Size"
 	visible="{showActualSize}"
 	includeInLayout="{showActualSize}"
@@ -219,7 +216,6 @@
 				width="65" 
 				height="21"
 				focusAlpha="0" 
-				fontSize="10"
 				selectedIndex="8"
 				change="zoomComboBox_changeHandler(event)"
 				openOnInput="true" 

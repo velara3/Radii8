@@ -815,7 +815,7 @@
 			{
 				trace("Uncaught Exception Event: " + event);
 			}
-			
+			public var FIND:String = "find";
 			private function createEditors():void {
 				var settings:Settings = Radiate.settings;
 				var enableWordWrap:Boolean = settings.enableWordWrap;
@@ -833,6 +833,7 @@
 				aceEditor.showFoldWidgets = false;
 				aceEditor.margin = editorMargin;
 				aceEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
+				aceEditor.addEventListener(FIND, editorFindHandler, false, 0, true);
 				aceEditorCreated = true;
 				aceEditor.scrollSpeed = .5;
 				aceEditor.useWordWrap = enableWordWrap;
@@ -847,6 +848,7 @@
 				aceCSSEditor.showFoldWidgets = false;
 				aceCSSEditor.margin = editorMargin;
 				aceCSSEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
+				aceCSSEditor.addEventListener(FIND, editorFindHandler, false, 0, true);
 				aceCSSEditorCreated = true;
 				aceCSSEditor.scrollSpeed = .5;
 				aceCSSEditor.useWordWrap = enableWordWrap;
@@ -865,6 +867,7 @@
 				templateEditor.visible = false;
 				templateEditor.includeInLayout = false;
 				templateEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
+				templateEditor.addEventListener(FIND, editorFindHandler, false, 0, true);
 				templateEditor.useWordWrap = enableWordWrap;
 				
 				
@@ -880,6 +883,15 @@
 				if (enableWordWrapButton) {
 					enableWordWrapButton.selected = lastFocusedEditor.useWordWrap;
 				}
+			}
+			
+			private function editorFindHandler(event:FocusEvent):void
+			{
+				lastFocusedEditor = event.currentTarget;
+				searchInput.aceEditor = lastFocusedEditor;
+				lastFocusedEditor.blur();
+				searchInput.setFocus();
+				
 			}
 			
 			
@@ -1024,6 +1036,7 @@ IFRAME_ID {
 			  paddingLeft="6" 
 			  paddingRight="10"
 			  verticalAlign="middle"
+			  fontSize="9"
 			  >
 		
 		<c:SolidFillToggleButton id="editTemplateButton" 

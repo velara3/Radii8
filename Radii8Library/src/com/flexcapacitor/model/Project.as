@@ -717,7 +717,7 @@ package com.flexcapacitor.model {
 		 * @inheritDoc
 		 * */
 		public function openFromMetaData(location:String = REMOTE_LOCATION):void {
-			var count:int = documentsMetaData.length;
+			var numberOfDocuments:int = documentsMetaData.length;
 			var documentsArray:Array = documentsMetaData;
 			var documentMetaData:IDocumentMetaData;
 			//var documentData:IDocumentData;
@@ -734,13 +734,17 @@ package com.flexcapacitor.model {
 			
 			//Radiate.instance.openPreviouslyOpenDocuments();
 			
-			for (var j:int;j<count;j++) {
+			for (var j:int;j<numberOfDocuments;j++) {
 				documentMetaData = IDocumentMetaData(documentsArray[j]);
 				
 				documentCreated = getDocumentExists(documentMetaData);
 				
 				if (!documentCreated) {
 					iDocument = radiate.createDocumentFromMetaData(documentMetaData);
+					if (iDocument.id==null || iDocument.id=="") {
+						Radiate.error("The document, \"" + iDocument.name + "\" was never saved. You have to remember to save new documents. Please save the project to prevent seeing this error again.");
+						continue;
+					}
 					DocumentData(iDocument).addEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler, false, 0, true);
 					//Radiate.info("calling retrieve on document " + iDocument.name);
 					iDocument.retrieve();

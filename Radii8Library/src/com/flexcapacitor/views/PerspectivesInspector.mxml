@@ -6,6 +6,7 @@
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 
 		 creationComplete="group1_creationCompleteHandler(event)"
+		 fontSize="9"
 		 >
 	
 	<fx:Script>

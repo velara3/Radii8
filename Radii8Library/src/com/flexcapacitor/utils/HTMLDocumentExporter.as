@@ -1,5 +1,6 @@
 
 package com.flexcapacitor.utils {
+	import com.flexcapacitor.model.ConstrainedLocations;
 	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.FileInfo;
@@ -8,11 +9,15 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.model.IDocumentExporter;
 	import com.flexcapacitor.model.IssueData;
 	import com.flexcapacitor.model.SourceData;
+	import com.flexcapacitor.transcoders.supportClasses.HTMLElement;
+	import com.flexcapacitor.transcoders.supportClasses.HTMLLineBreak;
+	import com.flexcapacitor.transcoders.supportClasses.HTMLMargin;
+	import com.flexcapacitor.transcoders.supportClasses.HTMLStyles;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
-	import com.flexcapacitor.views.supportClasses.Styles;
 	
 	import flash.display.BitmapData;
+	import flash.display.DisplayObjectContainer;
 	import flash.utils.getTimer;
 	
 	import mx.core.IVisualElement;
@@ -31,6 +36,7 @@ package com.flexcapacitor.utils {
 	import spark.layouts.HorizontalLayout;
 	import spark.layouts.TileLayout;
 	import spark.layouts.VerticalLayout;
+	import spark.layouts.supportClasses.LayoutBase;
 	import spark.primitives.Line;
 	import spark.primitives.supportClasses.GraphicElement;
 	
@@ -82,6 +88,11 @@ package com.flexcapacitor.utils {
 		 * http://www.paulirish.com/2012/box-sizing-border-box-ftw/
 		 * */
 		public var borderBoxCSS:String = "*, *:before, *:after {\n\t-moz-box-sizing:border-box;\n\t-webkit-box-sizing:border-box;\n\tbox-sizing:border-box;\n}";
+		
+		/**
+		 * Content token
+		 * */
+		public var defaultContentToken:String = "[child_content]";
 		
 		/**
 		 * Use better HTML
@@ -190,6 +201,7 @@ package com.flexcapacitor.utils {
 		public var sourceCode:String;
 		
 		public var includePreviewCode:Boolean;
+		public var useSpacerForGap:Boolean;
 		
 		public var horizontalPositions:Array = ["x","left","right","horizontalCenter"];
 		public var horizontalCenterPosition:String = "horizontalCenter";
@@ -563,9 +575,9 @@ package com.flexcapacitor.utils {
 			var isGraphicalElement:Boolean = componentDescription.isGraphicElement;
 			var contentToken:String = "[child_content]";
 			var styleValue:String = "position:absolute;";
-			var stylesModel:Styles = new Styles();
+			var stylesModel:HTMLStyles = new HTMLStyles();
 			var stylesOut:String = "";
-			var wrapperStylesModel:Styles = new Styles();
+			var wrapperStylesModel:HTMLStyles = new HTMLStyles();
 			var isInHorizontalLayout:Boolean;
 			var isInVerticalLayout:Boolean;
 			var isInBasicLayout:Boolean;
@@ -611,7 +623,7 @@ package com.flexcapacitor.utils {
 			
 			// we are setting the styles in a string now
 			// the next refactor should use the object so we can output to CSS
-			stylesModel.position = Styles.ABSOLUTE;
+			stylesModel.position = HTMLStyles.ABSOLUTE;
 			//outlineStyle = "outline:1px solid red;"; // we should enable or disable outlines via code not markup on in the export
 			
 			userInstanceStyles = componentDescription.userStyles;
@@ -631,18 +643,18 @@ package com.flexcapacitor.utils {
 					isInHorizontalLayout = true;
 					styleValue = styleValue.replace("absolute", "relative");
 					//styleValue += "vertical-align:middle;";
-					stylesModel.position = Styles.RELATIVE;
+					stylesModel.position = HTMLStyles.RELATIVE;
 					index = GroupBase(componentDescription.parent.instance).getElementIndex(componentInstance as IVisualElement);
 					numElements = GroupBase(componentDescription.parent.instance).numElements;
 					wrapperTagStyles += hasExplicitSizeSet(componentInstance as IVisualElement) ? "display:inline-block;" : "display:inline;";
-					wrapperStylesModel.display = hasExplicitSizeSet(componentInstance as IVisualElement) ? Styles.INLINE_BLOCK : Styles.INLINE;
+					wrapperStylesModel.display = hasExplicitSizeSet(componentInstance as IVisualElement) ? HTMLStyles.INLINE_BLOCK : HTMLStyles.INLINE;
 					gap = HorizontalLayout(componentDescription.parent.instance.layout).gap - 4;
 					parentVerticalAlign = componentDescription.parent.instance.verticalAlign;
 					wrapperTagStyles += getParentVerticalAlign(parentVerticalAlign);
 					
 					if (index<numElements-1 && numElements>1) {
 						//wrapperTagStyles += "padding-right:" + gap + "px;";
-						wrapperTagStyles += Styles.MARGIN_RIGHT+":" + gap + "px;";
+						wrapperTagStyles += HTMLStyles.MARGIN_RIGHT+":" + gap + "px;";
 						wrapperStylesModel.marginRight =  gap + "px";
 					}
 					
@@ -652,11 +664,11 @@ package com.flexcapacitor.utils {
 					//isHorizontalLayout = true;
 					isInTileLayout = true;
 					styleValue = styleValue.replace("absolute", "relative");
-					stylesModel.position = Styles.RELATIVE;
+					stylesModel.position = HTMLStyles.RELATIVE;
 					index = GroupBase(componentDescription.parent.instance).getElementIndex(componentInstance as IVisualElement);
 					numElements = GroupBase(componentDescription.parent.instance).numElements;
 					wrapperTagStyles += hasExplicitSizeSet(componentInstance as IVisualElement) ? "display:inline-block;" : "display:inline;";
-					wrapperStylesModel.display = hasExplicitSizeSet(componentInstance as IVisualElement) ? Styles.INLINE_BLOCK : Styles.INLINE;
+					wrapperStylesModel.display = hasExplicitSizeSet(componentInstance as IVisualElement) ? HTMLStyles.INLINE_BLOCK : HTMLStyles.INLINE;
 					gap = TileLayout(componentDescription.parent.instance.layout).horizontalGap - 4;
 					parentVerticalAlign = componentDescription.parent.instance.verticalAlign;
 					wrapperTagStyles += getParentVerticalAlign(parentVerticalAlign);
@@ -664,7 +676,7 @@ package com.flexcapacitor.utils {
 					if (index<numElements-1 && numElements>1) {
 						//wrapperTagStyles += "padding-right:" + gap + "px;";
 						// using "margin-right" because if you set a fixed width padding was not doing anything
-						wrapperTagStyles += Styles.MARGIN_RIGHT+":" + gap + "px;";
+						wrapperTagStyles += HTMLStyles.MARGIN_RIGHT+":" + gap + "px;";
 						//wrapperStyles.paddingRight =  gap + "px";
 						wrapperStylesModel.marginRight =  gap + "px";
 					}
@@ -675,7 +687,7 @@ package com.flexcapacitor.utils {
 				else if (componentDescription.parent.instance.layout is VerticalLayout) {
 					isInVerticalLayout = true;
 					styleValue = styleValue.replace("absolute", "relative");
-					stylesModel.position = Styles.RELATIVE;
+					stylesModel.position = HTMLStyles.RELATIVE;
 					index = GroupBase(componentDescription.parent.instance).getElementIndex(componentInstance as IVisualElement);
 					numElements = GroupBase(componentDescription.parent.instance).numElements;
 					gap = VerticalLayout(componentDescription.parent.instance.layout).gap;
@@ -687,7 +699,7 @@ package com.flexcapacitor.utils {
 						
 						if (gap!=0) {
 							//wrapperTagStyles += "padding-bottom:" + gap + "px;";
-							wrapperTagStyles += Styles.MARGIN_BOTTOM+":" + gap + "px;";
+							wrapperTagStyles += HTMLStyles.MARGIN_BOTTOM+":" + gap + "px;";
 						}
 						//wrapperStyles.paddingBottom =  gap + "px";
 						wrapperStylesModel.marginBottom =  gap + "px";
@@ -806,7 +818,7 @@ package com.flexcapacitor.utils {
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 						styleValue = styleValue.replace("absolute", "relative");
-						stylesModel.position = Styles.ABSOLUTE;
+						stylesModel.position = HTMLStyles.ABSOLUTE;
 						styleValue += "width:" + componentInstance.width+ "px;";
 						styleValue += "height:" + componentInstance.height+ "px;";
 						styleValue = getFontFamily(componentInstance, styleValue, true);
@@ -1724,8 +1736,396 @@ package com.flexcapacitor.utils {
 			return layoutOutput;
 		}
 		
+		/**
+		 * UPDATE: This is the start of a refactor
+		 * Previous comments below: 
+		 * ----
+		 * Gets the formatted output from a component.
+		 * Yes, this is hacky. It needs rewritten.  
+		 * I wanted to see if I could quickly generate valid HTML 
+		 * from the component tree and didn't know the performance cost
+		 * of using XML objects (need to test). Would like to use OOP or XML E4X
+		 * but whatever it is it must support plugins, pre and post processors.
+		 * 
+		 * A problem using XML is that HTML is not XML. Some XML tags will not work. 
+		 * 
+		 * I did start though. There is partial work with CSS properties objects 
+		 * but those aren't used yet. 
+		 * Basically you set the properties and styles on an object instead of inline
+		 * and then call propertyObject.toString(). The method would handle
+		 * formatting, tab spacings and possibly wrapper objects.
+		 * Wrapper objects... that's another thing. 
+		 * Different elements would extend an HTMLElement object.
+		 * ----
+		 * */
+		public function getHTMLOutputStringNEW(iDocument:IDocument, componentDescription:ComponentDescription, addLineBreak:Boolean = false, tabs:String = "", includePreview:Boolean = false):String {
+			/* 
+			var componentName:String = componentDescription.className ? componentDescription.className.toLowerCase() : "";
+			var localName:String = componentName ? componentName : "";
+			var componentChild:ComponentDescription;
+			var instanceName:String = componentInstance && "name" in componentInstance ? componentInstance.name : "";
+			var instanceID:String = componentInstance && "id" in componentInstance ? componentInstance.id : "";
+			var identity:String = ClassUtils.getIdentifier(componentInstance);
+			var isGraphicalElement:Boolean = componentDescription.isGraphicElement;
+			var styleValue:String = "position:absolute;";
+			var stylesOut:String = "";
+			var wrapperStylesModel:HTMLStyles = new HTMLStyles();
+			var childContent:String = "";
+			var wrapperTag:String = "";
+			var centeredHorizontally:Boolean;
+			var wrapperTagStyles:String = "";
+			var wrapperSVGStyles:String = "";
+			var properties:String = "";
+			var outlineStyle:String;
+			var initialTabs:String = tabs;
+			var componentNotFound:Boolean;
+			var layoutOutput:String = "";
+			var numberOfChildren:int;
+			var type:String = "";
+			var instance:Object;
+			var htmlName:String;
+			var tracking:Number;
+			var borderColor:String;
+			var index:int;
+			var value:*;
+			var newLine:String = "\n";
+			var imageDataStyle:String;
+			var imageDataFormat:String = "png";
+			var isHorizontalCenterSet:Boolean;
+			var isVerticalCenterSet:Boolean;
+			var anchor:XML;
+			var constrainedLocation:String = ConstrainedLocations.TOP_LEFT;
+			*/
+			var htmlElement:HTMLElement;
+			var wrapWithAnchor:Boolean;
+			var anchorURL:String;
+			var anchorTarget:String;
+			
+			var stylesModel:HTMLStyles;
+			var userInstanceStyles:String;
+			var propertyList:Object;
+			var propertiesStylesObject:Object;
+			var targetElementLocation:String;
+			
+			var layoutBase:LayoutBase;
+			var basicLayout:BasicLayout;
+			var horizontalLayout:HorizontalLayout;
+			var verticalLayout:VerticalLayout;
+			var tileLayout:TileLayout;
+			var visualElementContainer:IVisualElementContainer;
+			var displayObjectContainer:DisplayObjectContainer;
+			var groupBaseContainer:GroupBase;
+			
+			var containerVerticalAlign:String;
+			var containerHorizontalAlign:String;
+			var columnCount:int;
+			var columnWidth:int;
+			var rowCount:int;
+			var rowHeight:int;
+			
+			var numberOfElements:int;
+			var elementIndex:int;
+			var endOfRow:Boolean;
+			var endOfColumn:Boolean;
+			
+			var horizontalGap:int;
+			var verticalGap:int;
+			
+			var isInHorizontalLayout:Boolean;
+			var isInVerticalLayout:Boolean;
+			var isInBasicLayout:Boolean;
+			var isInTileLayout:Boolean;
+			
+			var componentInstance:Object;
+			var errorData:ErrorData;
+			
+			var exportChildContent:Boolean;
+			var value:Object;
+			
+			var addSnapshotToBackground:Boolean;
+			var convertElementToImage:Boolean;
+			
+			var tagName:String;
+			var elementType:HTMLElement;
+			
+			/////////////////////////////////////////////
+			// start
+			/////////////////////////////////////////////
+			componentInstance = componentDescription.instance;
+			
+			// should add warning that element is missing
+			if (componentInstance==null) {
+				errorData = new ErrorData();
+				errorData.description = componentDescription.name + " is not supported in HTML export at this time.";
+				errorData.label = "Unsupported component";
+				errors.push(errorData);
+				return "";
+			}
+			
+			if (componentDescription.htmlTagName) {
+				tagName = componentDescription.htmlTagName;
+			}
+			else {
+				
+			}
+			
+			propertyList 			= componentDescription.properties;
+			propertiesStylesObject 	= ObjectUtils.merge(componentDescription.properties, componentDescription.styles);
+			
+			
+			wrapWithAnchor 	= componentDescription.wrapWithAnchor;
+			anchorURL 		= componentDescription.anchorURL;
+			anchorTarget	= componentDescription.anchorTarget;
+			
+			userInstanceStyles = componentDescription.userStyles;
+			
+			// if not null replace 
+			if (userInstanceStyles==null || userInstanceStyles == "null") {
+				userInstanceStyles = "";
+			}
+			else {
+				userInstanceStyles = userInstanceStyles.replace(/\n/g, ""); // /\r?\n|\r/g
+			}
+			
+			stylesModel				= new HTMLStyles();
+			stylesModel.position 	= HTMLStyles.ABSOLUTE;
+			stylesModel.user 		= userInstanceStyles;
+			
+			
+			if (componentDescription.htmlClassType) {
+				htmlElement 			= new componentDescription.htmlClassType();
+			}
+			else {
+				htmlElement 			= new HTMLElement();
+			}
+			
+			if (componentDescription.parent) {
+				visualElementContainer 	= componentDescription.parent.instance as IVisualElementContainer;
+				displayObjectContainer 	= componentDescription.parent.instance as DisplayObjectContainer;
+				groupBaseContainer 		= componentDescription.parent.instance as GroupBase;
+			}
+			
+			// get layout positioning
+			if (groupBaseContainer) {
+				layoutBase 			= groupBaseContainer.layout;
+				numberOfElements	= groupBaseContainer.numElements;
+				elementIndex 		= groupBaseContainer.getElementIndex(componentInstance as IVisualElement);
+				
+				
+				if (layoutBase is BasicLayout) {
+					isInBasicLayout 		= true;
+					stylesModel.position 	= HTMLStyles.ABSOLUTE;
+					stylesModel.display 	= HTMLStyles.BLOCK;
+				}
+				else if (layoutBase is HorizontalLayout) {
+					isInHorizontalLayout 		= true;
+					horizontalLayout 			= layoutBase as HorizontalLayout;
+					stylesModel.position 		= HTMLStyles.RELATIVE;
+					stylesModel.display 		= hasExplicitSizeSet(componentInstance as IVisualElement) ? HTMLStyles.INLINE_BLOCK : HTMLStyles.INLINE;
+					horizontalGap 				= horizontalLayout.gap;
+					containerVerticalAlign 		= horizontalLayout.verticalAlign;
+					containerHorizontalAlign 	= horizontalLayout.horizontalAlign;
+					stylesModel.verticalAlign 	= containerVerticalAlign;
+					stylesModel.horizontalAlign = containerHorizontalAlign;
+					
+					// if not last element 
+					// add margin to the right of the element to simulate a gap
+					if (elementIndex<numberOfElements-1 && numberOfElements>1) {
+						
+						if (useSpacerForGap) {
+							// todo: add support for gap spacers 
+						}
+						else {
+							stylesModel.marginRight = horizontalGap + "px";
+						}
+					}
+					
+				}
+				else if (layoutBase is VerticalLayout) {
+					isInVerticalLayout 			= true;
+					verticalLayout 				= layoutBase as VerticalLayout;
+					stylesModel.position 		= HTMLStyles.RELATIVE;
+					stylesModel.display 		= hasExplicitSizeSet(componentInstance as IVisualElement) ? HTMLStyles.INLINE_BLOCK : HTMLStyles.INLINE;
+					verticalGap 				= verticalLayout.gap;
+					containerVerticalAlign 		= verticalLayout.verticalAlign;
+					containerHorizontalAlign 	= verticalLayout.horizontalAlign;
+					stylesModel.verticalAlign 	= containerVerticalAlign;
+					stylesModel.horizontalAlign = containerHorizontalAlign;
+					
+					// if not last element 
+					// add margin to the bottom of the element to simulate a gap
+					if (elementIndex<numberOfElements-1 && numberOfElements>1) {
+						
+						if (useSpacerForGap) {
+							// todo: add support for gap spacers 
+						}
+						else {
+							stylesModel.marginBottom = verticalGap + "px";
+						}
+					}
+					
+				}
+				else if (layoutBase is TileLayout) {
+					isInTileLayout 				= true;
+					tileLayout 					= layoutBase as TileLayout;
+					horizontalGap 				= tileLayout.horizontalGap;
+					verticalGap 				= tileLayout.verticalGap;
+					containerVerticalAlign 		= tileLayout.verticalAlign;
+					containerHorizontalAlign 	= tileLayout.horizontalAlign;
+					columnCount					= tileLayout.columnCount;
+					columnWidth 				= tileLayout.columnWidth;
+					rowCount					= tileLayout.rowCount;
+					rowHeight 					= tileLayout.rowHeight;
+					
+					stylesModel.verticalAlign 	= containerVerticalAlign;
+					stylesModel.horizontalAlign = containerHorizontalAlign;
+					stylesModel.position 		= HTMLStyles.RELATIVE;
+					stylesModel.display 		= hasExplicitSizeSet(componentInstance as IVisualElement) ? HTMLStyles.INLINE_BLOCK : HTMLStyles.INLINE;
+					
+					if (elementIndex+1 % columnCount) {
+						endOfColumn = true;
+					}
+					else {
+						endOfColumn = false;
+					}
+					
+					if (elementIndex+1 % rowCount) {
+						endOfRow = true;
+					}
+					else {
+						endOfRow = false;
+					}
+					
+					// if end of column add a new row  
+					if (endOfColumn) {
+						htmlElement.rightAdjacentElements.push(new HTMLLineBreak());
+					}
+					
+					// if not last element 
+					// add margin to the right of the element to simulate a gap
+					if (!endOfColumn) {
+						
+						if (useSpacerForGap) {
+							htmlElement.rightAdjacentElements.push(new HTMLMargin(String(horizontalGap)));
+						}
+						else {
+							stylesModel.marginRight = horizontalGap + "px";
+						}
+					}
+					
+					// if not last element 
+					// add margin to the bottom of the element to simulate a gap
+					if (elementIndex<numberOfElements-1 && numberOfElements>1) {
+						
+						if (useSpacerForGap) {
+							// todo: add support for gap spacers 
+						}
+						else {
+							stylesModel.marginBottom = verticalGap + "px";
+						}
+					}
+				}
+			}
+			
+			//exportChildDescriptors = componentDescription.exportChildDescriptors;
+			
+			if (exportChildDescriptors==false || componentDescription.exportChildDescriptors==false) {
+				//contentToken = "";
+				exportChildContent = false;
+			}
+			else {
+				exportChildContent = true;
+			}
+			
+			if (isInBasicLayout) {
+				// constraints take higher authority
+				// check for layout rules 
+				
+				///////////////////
+				// TOP
+				///////////////////
+				
+				// TOP and LEFT
+				if (propertiesStylesObject[ConstrainedLocations.TOP]!=null && 
+					propertiesStylesObject[ConstrainedLocations.LEFT]!=null) {
+					targetElementLocation = ConstrainedLocations.TOP_LEFT;
+				}
+					
+					// TOP and CENTER
+				else if (propertiesStylesObject[ConstrainedLocations.TOP]!=null && 
+					propertiesStylesObject[ConstrainedLocations.HORIZONTAL_CENTER]!=null) {
+					targetElementLocation = ConstrainedLocations.TOP_CENTER;
+				}
+					
+					// TOP and RIGHT
+				else if (propertiesStylesObject[ConstrainedLocations.TOP]!=null && 
+					propertiesStylesObject[ConstrainedLocations.RIGHT]!=null) {
+					targetElementLocation = ConstrainedLocations.TOP_RIGHT;
+				}
+					
+					///////////////////
+					// MIDDLE
+					///////////////////
+					
+					// MIDDLE and LEFT
+				else if (propertiesStylesObject[ConstrainedLocations.VERTICAL_CENTER]!=null && 
+					propertiesStylesObject[ConstrainedLocations.LEFT]!=null) {
+					targetElementLocation = ConstrainedLocations.MIDDLE_LEFT;
+				}
+					
+					// HORIZONTAL CENTER and VERTICAL CENTER
+				else if (propertiesStylesObject[ConstrainedLocations.HORIZONTAL_CENTER]!=null && 
+					propertiesStylesObject[ConstrainedLocations.VERTICAL_CENTER]!=null) {
+					targetElementLocation = ConstrainedLocations.MIDDLE_CENTER;
+				}
+					
+					// MIDDLE and RIGHT
+				else if (propertiesStylesObject[ConstrainedLocations.VERTICAL_CENTER]!=null && 
+					propertiesStylesObject[ConstrainedLocations.RIGHT]!=null) {
+					targetElementLocation = ConstrainedLocations.MIDDLE_RIGHT;
+				}
+					
+					////////////////////
+					// BOTTOM
+					///////////////////
+					
+					// BOTTOM and LEFT
+				else if (propertiesStylesObject[ConstrainedLocations.BOTTOM]!=null && 
+					propertiesStylesObject[ConstrainedLocations.LEFT]!=null) {
+					targetElementLocation = ConstrainedLocations.BOTTOM_LEFT;
+				}
+					
+					// BOTTOM and CENTER
+				else if (propertiesStylesObject[ConstrainedLocations.BOTTOM]!=null && 
+					propertiesStylesObject[ConstrainedLocations.HORIZONTAL_CENTER]!=null) {
+					targetElementLocation = ConstrainedLocations.BOTTOM_CENTER;
+				}
+					
+					// BOTTOM and RIGHT
+				else if (propertiesStylesObject[ConstrainedLocations.BOTTOM]!=null && 
+					propertiesStylesObject[ConstrainedLocations.RIGHT]!=null) {
+					targetElementLocation = ConstrainedLocations.BOTTOM_RIGHT;
+				}
+			}
+			
+			addSnapshotToBackground = componentDescription.createBackgroundSnapshot;
+			convertElementToImage = componentDescription.convertElementToImage;
+			
+			htmlElement.updateDescription(componentDescription);
+			//htmlElement.updateStyles(componentDescription);
+			
+			/*
+			if (!putStylesInline) {
+			stylesValues = htmlElement.stylesToString();
+			or 
+			stylesArray.push(htmlElement.stylesArray);
+			}
+			*/
+			return htmlElement.toString();
+		}
+		
 		public function getBackgroundImageData(componentInstance:Object, imageDataFormat:String = "png"):String {
-			var color:Number = 0x0;
+			var color:Number = 0xFF0000;
 			var alpha:Number = .5;
 			var imageData:String = DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat, null, true, color);
 			var imageDataStyle:String = "";
@@ -1991,7 +2391,7 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			// If explicit width is set then we should use inline-block 
 			// because inline does not respect width and height
 			if (!isHorizontalAlignSet && hasExplicitSize) {
-				styleValue += "display:" + Styles.INLINE_BLOCK + ";";
+				styleValue += "display:" + HTMLStyles.INLINE_BLOCK + ";";
 			}
 			
 			return styleValue;
@@ -2025,7 +2425,7 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			// If explicit height is set then we should use inline-block 
 			// because inline does not respect width and height
 			if (!isVerticalCenterSet && hasExplicitSize) {
-				styleValue += "display:" + Styles.INLINE_BLOCK + ";";
+				styleValue += "display:" + HTMLStyles.INLINE_BLOCK + ";";
 			}
 			
 			return styleValue;
@@ -2057,7 +2457,7 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			// If explicit width is set then we should use inline-block 
 			// because inline does not respect width and height
 			if (!isHorizontalAlignSet && hasExplicitSize) {
-				styleValue += "display:" + Styles.INLINE_BLOCK + ";";
+				styleValue += "display:" + HTMLStyles.INLINE_BLOCK + ";";
 			}
 			
 			return styleValue;
@@ -2117,7 +2517,7 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		/**
 		 * Get the horizontal position string for HTML
 		 * */
-		public function getHorizontalPositionHTML(instance:IVisualElement, propertyModel:Styles, stylesValue:String = "", isBasicLayout:Boolean = true):String {
+		public function getHorizontalPositionHTML(instance:IVisualElement, propertyModel:HTMLStyles, stylesValue:String = "", isBasicLayout:Boolean = true):String {
 			
 			if (!isBasicLayout) return stylesValue;
 			// horizontal center trumps left and x properties
@@ -2129,9 +2529,9 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 				stylesValue += "display:table;margin:" + instance.horizontalCenter + " auto;left:0;right:0;";
 				//stylesValue = stylesValue.replace("absolute", "relative");
 				
-				propertyModel.display = Styles.BLOCK;
+				propertyModel.display = HTMLStyles.BLOCK;
 				//propertyModel.position = Styles.RELATIVE;
-				propertyModel.position = Styles.ABSOLUTE;
+				propertyModel.position = HTMLStyles.ABSOLUTE;
 				propertyModel.margin = instance.horizontalCenter + " auto;left:0;right:0;";
 				
 				return stylesValue;
@@ -2173,8 +2573,11 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		 * 
 		 * vertically align in hgroup using table and table cell
 		 * https://jsfiddle.net/b74o1utw/6/
+		 * 
+		 * UPDATE: there are problems vertically aligning with table and table cell
+		 * https://jsfiddle.net/b74o1utw/6/
 		 * */
-		public function getVerticalPositionHTML(instance:IVisualElement, propertyModel:Styles, stylesValue:String = "", isBasicLayout:Boolean = true):String {
+		public function getVerticalPositionHTML(instance:IVisualElement, propertyModel:HTMLStyles, stylesValue:String = "", isBasicLayout:Boolean = true):String {
 			
 			if (!isBasicLayout) return stylesValue;
 			
@@ -2183,8 +2586,8 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 				stylesValue += "top:50%;transform:translateY(-50%);-webkit-transform: translateY(-50%);-ms-transform: translateY(-50%);";
 				stylesValue = stylesValue.replace("absolute", "relative");
 				
-				propertyModel.display = Styles.TABLE;
-				propertyModel.position = Styles.RELATIVE;
+				propertyModel.display = HTMLStyles.TABLE;
+				propertyModel.position = HTMLStyles.RELATIVE;
 				propertyModel.margin = instance.verticalCenter + " auto;";
 				propertyModel.top = "50%;";
 				propertyModel.transform = "translateY(-50%)";
