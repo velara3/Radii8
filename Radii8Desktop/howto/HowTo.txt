@@ -212,7 +212,12 @@ For example, the Button example:
 
 set the include attribute to true or false
 Copy Radii8LibraryAssets.swc to main Radii8Library swsees folder
-if the component is not found add a new entry using the next section
+if the component is not found add a new entry using 
+the section, "How to add a new component to the component inspector"
+
+You can manually add new components using the API
+Radiate.addComponentType();
+This adds a new ComponentDefinition to the componentDefinitions Collection
 
 
 ***********************************************
