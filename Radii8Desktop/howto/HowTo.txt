@@ -160,15 +160,16 @@ Checkbox entry example:
 
 After making changes copy the swc to the swcees directory in Radii8Library
     
+Some inspectors can be reused like, "com.flexcapacitor.views.inspectors.StyleNameInspector" 
 If you need a custom property inspector copy
 an existing class like, com.flexcapacitor.views.inspectors.CheckBoxProperties
 and name it com.flexcapacitor.views.inspectors.MyComponentProperties
 Add it to the inspectors list
 
-    <inspector name="CheckBox" className="com.flexcapacitor.views.inspectors.MyComponentProperties"/>
+    <inspector name="CheckBox 2" className="com.flexcapacitor.views.inspectors.MyComponentProperties"/>
 
 Open RadiateReferences.as and add a reference to it
-Copy the swc to the swcees directory in Radii8Library
+Copy the updated Radii8LibraryAssets swc to the swcees directory in Radii8Library
 
 ***********************************************
 How to add a new component to the component inspector
@@ -224,18 +225,24 @@ This adds a new ComponentDefinition to the componentDefinitions Collection
 How to find and edit a property inspector in a component inspector
 ***********************************************
 
-- Go into Radii8LibraryAssets library project
+If debugging locally and have miniinspector class declared
+CMD+click or CMD+SHIFT+Click on the specific property name or field. 
+This will show the name and class in the console. 
+
+Or Go into Radii8LibraryAssets library project
 - Go into assets/data/inspectors-manifest-defaults.xml
 - Find the component you are looking for
 - Check the inspector class name attribute
 - Open the class listed in the className attribute
-- Copy Radii8LibraryAssets.swc to main library project swsees folder
+- Make any necessary changes or updates 
+- Copy the updated Radii8LibraryAssets.swc to radii8 library project swsees folder
 
 
 ***********************************************
-How to add a new view in a component's inspectors
+How to add a new inspector view to an existing component's inspectors
 ***********************************************
 
+(this may be a duplicate instruction)
 - Go into Radii8LibraryAssets library project
 - Go into assets/data/inspectors-manifest-defaults.xml
 - Find the component you are looking for
@@ -278,7 +285,7 @@ After:
     </component>
 
 ***********************************************
-How to know what inspectors will show up when a component is selected 
+How to support extended or alternative components and classes with existing inspectors  
 ***********************************************
 
 - Go into Radii8LibraryAssets library project
@@ -301,6 +308,7 @@ This is done by adding alternativeClassName attribute
     </item>
     
 Check out DynamicComponentInspector.
+
 In the future would should be able to create the component inspector items really dynamically
 by using only XML entries. Right now it's pseudo dynamic. 
 We would add to a tilegroup labels and propertygridrenderers.
@@ -311,20 +319,30 @@ and still show the same property inspector
 ***********************************************
 How to add or edit the HTML templates
 ***********************************************
-
+These are found in Radii8LibraryAssets
+look in templates/html/template_reusable.html
+look in templates/html/template.html
+They are embedded individually in Radii8LibraryTranscoderAssets
+There isn't a list of templates like there's a list of components
+If there were you would add it where createDocumentTranscoders() is called
 
 ***********************************************
 How to modify the generated HTML output
 ***********************************************
 open HTMLDocumentExporter
-find code that is used to export the component
-
+find code that is used to export the specific component
+modify it
 
 
 ***********************************************
-How to add a property to the document on save and load
+How to add a custom property or attribute to the MXML document on save and load
 ***********************************************
 
+you can save custom properties or attributes to an exported MXML document 
+so that the next time you open it the custom radiate properties will be retained
+for example, if you want to rasterize a component during html export 
+there is a attribute that is read or written to the MXML document
+  
 see MXMLDocumentImporter and MXMLDocumentExporter
 
 
