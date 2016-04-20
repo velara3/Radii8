@@ -51,7 +51,6 @@
     <classEntry path="com.flexcapacitor.model.InspectableClass"/>
     <classEntry path="com.flexcapacitor.model.InspectorData"/>
     <classEntry path="com.flexcapacitor.model.LoadResultsEvent"/>
-    <classEntry path="com.flexcapacitor.model.MenuItem"/>
     <classEntry path="com.flexcapacitor.model.MetaDataOld"/>
     <classEntry path="com.flexcapacitor.model.OpenResultsEvent"/>
     <classEntry path="com.flexcapacitor.model.Project"/>

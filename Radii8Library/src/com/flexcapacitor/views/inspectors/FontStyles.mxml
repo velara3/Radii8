@@ -7,7 +7,8 @@
 		 
 		 show="group1_showHandler(event)"
 		 creationComplete="group1_showHandler(event)"
-		 styleName="inspectablePanel">
+		 styleName="inspectablePanel"
+		 width="100%">
 	
 	<fx:Script>
 		<![CDATA[
@@ -90,7 +91,7 @@
 				lineHeightRenderer.data = lineHeightStyle;
 				fontFamilyStyle.enumeration = fonts;
 				//fontsRenderer.data = data;
-				fontsRenderer.data = fontFamilyStyle;
+				fontFamilyRenderer.data = fontFamilyStyle;
 				fontSizeRenderer.data = fontSizeStyle;
 				fontWeightRenderer.data = fontWeightStyle;
 				fontStyleRenderer.data = fontStyleStyle;
@@ -132,9 +133,9 @@
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Font Family" styleName="inspectablePanelLabel" showTruncationTip="true"/>
-		<renderers:ComboBoxRenderer id="fontsRenderer" height="24" labelField="fontName"
+		<renderers:ComboBoxRenderer id="fontFamilyRenderer" height="24" labelField="fontName"
 									valueIsField="true" fieldIsValue="true"
-									minWidth="180"/>
+									minWidth="180" width="100%"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Font Size" styleName="inspectablePanelLabel" showTruncationTip="true"/>
@@ -167,8 +168,7 @@
 		<renderers:NumberRenderer id="trackingRightRenderer" height="24" 
 								  stepSize=".1" 
 								  snapInterval="0"
-								  fixedPosition="2"
-								  mouseUp="trace('mouseup')"/>
+								  fixedPosition="2"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Tracking Left" styleName="inspectablePanelLabel" showTruncationTip="true"/>

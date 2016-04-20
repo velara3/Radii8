@@ -57,7 +57,7 @@
 				import com.flexcapacitor.model.MenuItem;
 				import com.flexcapacitor.tools.Hand;
 				import com.flexcapacitor.tools.ITool;
-				import com.flexcapacitor.utils.DisplayObjectUtils;
+				import com.flexcapacitor.utils.NativeMenuManager;
 				import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 				
 				import flash.display.NativeMenu;
@@ -65,16 +65,12 @@
 				import flash.display.Screen;
 				import flash.display.Stage;
 				
-				import mx.binding.utils.BindingUtils;
 				import mx.collections.ArrayCollection;
 				import mx.core.FTETextField;
 				import mx.core.FlexHTMLLoader;
-				import mx.core.mx_internal;
 				import mx.events.AIREvent;
 				import mx.events.FlexEvent;
 				import mx.events.FlexNativeMenuEvent;
-				import mx.graphics.BitmapFill;
-				import mx.graphics.BitmapFillMode;
 				
 				import spark.components.Application;
 				import spark.components.ComboBox;
@@ -82,9 +78,6 @@
 				import spark.components.WindowedApplication;
 				import spark.components.supportClasses.SkinnableTextBase;
 				import spark.core.IEditableText;
-				import spark.core.SpriteVisualElement;
-				import spark.primitives.BitmapImage;
-				import spark.primitives.Rect;
 				
 				//include "build.as";
 				
@@ -175,7 +168,7 @@
 					var application:WindowedApplication = this;
 					var nativeMenuItem:NativeMenuItem = menuEvent.target as NativeMenuItem;
 					var nativeMenu:NativeMenu = menuEvent.currentTarget as NativeMenu;
-					var menuItem:MenuItem = nativeMenuDictionary[nativeMenuItem];
+					var menuItem:MenuItem = nativeMenuManager ? nativeMenuManager.nativeMenuDictionary[nativeMenuItem] : null;
 					
 					if (!application.nativeWindow.active) {
 						application.addEventListener(AIREvent.WINDOW_ACTIVATE, executeAsync);
@@ -445,128 +438,9 @@
 					
 				}
 				
-				public static var nativeMenuDictionary:Dictionary = new Dictionary(true);
-				
-				/**
-				 * Use this to create NativeMenu and NativeMenuItems.
-				 * Maybe move this to a utility class
-				 * */
-				public static function getNativeMenuItem(menuItem:MenuItem):NativeMenuItem {
-					var subItem:NativeMenuItem;
-					var items:Array;
-					var numberOfItems:int;
-					var dispatcher:IEventDispatcher;
-					var nativeMenuItem:NativeMenuItem;
-					var isSeparator:Boolean;
-					
-					isSeparator = menuItem.type=="separator" ? true : false;
-					
-					nativeMenuItem = new NativeMenuItem(menuItem.label, isSeparator);
-					
-					nativeMenuItem.checked 				= menuItem.checked;
-					nativeMenuItem.data 				= menuItem.data;
-					nativeMenuItem.enabled 				= menuItem.enabled;
-					//nativeMenuItem.isSeparator		= menuItem.isSeparator;
-					
-					/*
-					Set the keyEquivalent with a lowercase letter to assign a shortcut 
-					without a Shift-key modifier. Set with an uppercase letter to assign 
-					a shortcut with the Shift-key modifier.
-					
-					By default, a key equivalent modifier 
-					(Ctrl on Windows or Linux and Command on Mac OS X) 
-					is included as part of the key equivalent. 
-					If you want the key equivalent to be a key with no modifier, 
-					set the keyEquivalentModifiers property to an empty array.
-					*/
-					nativeMenuItem.keyEquivalent		= menuItem.keyEquivalent;
-					//  private prop on NativeMenuItem
-					//nativeMenuItem.keyEquivalentChar	= menuItem.keyEquivalentChar;
-					
-					// If you do not assign any modifiers, then by default the 
-					// Keyboard.CONTROL key is assigned on Windows or Linux and 
-					// the Keyboard.COMMAND key is assigned on Mac OS X.
-					// If you do not want the key equivalent to include these modifiers, 
-					// set this property to an empty array.
-					nativeMenuItem.label				= menuItem.label;
-					//nativeMenuItem.menu				= menuItem.menu;
-					//nativeMenuItem.mnemonicIndex		= menuItem.mnemonicIndex;
-					nativeMenuItem.name 				= menuItem.name;
-					//nativeMenuItem.keyEquivalentModifiers = menuItem.keyEquivalentModifiers;
-					//nativeMenuItem.keyEquivalentModifiers = null; 
-					if (menuItem.keyEquivalentModifiers && menuItem.keyEquivalentModifiers.length) {
-						nativeMenuItem.keyEquivalentModifiers = menuItem.keyEquivalentModifiers;
-					}
-					//nativeMenuItem.submenu			= menuItem.submenu;
-					//nativeMenuItem.type				= menuItem.isSeparator ? "separator" : menuItem.type;
-					//nativeMenuItem.importedMenuItem	= menuItem;
-					
-					items = menuItem.children ? menuItem.children : [];
-					numberOfItems =  items ? items.length : 0;
-					
-					for (var i:int; i < numberOfItems; i++) {
-						//subItem = getNativeMenuItem(items[i] as MenuItem);
-						
-						//nativeMenuItem.addItem(subItem);
-					}
-					
-					if (nativeMenuItem is IEventDispatcher) {
-						dispatcher = nativeMenuItem as IEventDispatcher;
-						//addEventListeners(nativeMenuItem, dispatcher)
-					}
-					
-					nativeMenuDictionary[nativeMenuItem] = menuItem;
-					
-					return nativeMenuItem;
-				}
-				
-				/**
-				 * Use this to create NativeMenu and NativeMenuItems
-				 * */
-				public static function getNativeMenu(menuItem:MenuItem):NativeMenu {
-					var subItem:NativeMenuItem;
-					var items:Array;
-					var numberOfItems:int;
-					var dispatcher:IEventDispatcher;
-					var nativeMenu:NativeMenu;
-					
-					nativeMenu = new NativeMenu();
-					
-					//nativeMenu.checked 				= menuItem.checked;
-					//nativeMenu.data 				= menuItem.data;
-					//nativeMenu.enabled 				= menuItem.enabled;
-					//nativeMenu.isSeparator		= menuItem.isSeparator;
-					//nativeMenu.keyEquivalent		= menuItem.keyEquivalent;
-					//nativeMenu.keyEquivalentChar	= menuItem.keyEquivalentChar; private prop on NativeMenuItem
-					//nativeMenu.keyEquivalentModifiers	= menuItem.keyEquivalentModifiers;
-					//nativeMenu.label				= menuItem.label;
-					//nativeMenu.menu				= menuItem.menu;
-					//nativeMenu.mnemonicIndex		= menuItem.mnemonicIndex;
-					//nativeMenu.name 				= menuItem.name;
-					//nativeMenu.submenu			= menuItem.submenu;
-					//nativeMenu.type				= menuItem.isSeparator ? "separator" : menuItem.type;
-					//nativeMenu.importedMenuItem	= menuItem;
-					
-					items = menuItem.children ? menuItem.children : [];
-					numberOfItems =  items ? items.length : 0;
-					
-					for (var i:int; i < numberOfItems; i++) {
-						subItem = getNativeMenuItem(items[i] as MenuItem);
-						
-						//nativeMenu.addItem(subItem);
-					}
-					
-					if (nativeMenu is IEventDispatcher) {
-						dispatcher = nativeMenu as IEventDispatcher;
-						//addEventListeners(nativeMenu, dispatcher)
-					}
-					
-					
-					return nativeMenu;
-				}
-				
 				[Bindable]
-				public var hardReference:Object = {};
+				public var historyMenuStrongReference:Object = {};
+				public var nativeMenuManager:NativeMenuManager;
 				
 				/**
 				 * We have to convert the menus used in the browser into 
@@ -595,7 +469,7 @@
 					var customMenuItemsCollection:ArrayCollection;
 					var nativeMenuItem:NativeMenuItem;
 					
-					var addToExistingMenu:Boolean;
+					var convertToNativeMenuItems:Boolean;
 					var supportsMenu:Boolean;
 					
 					// docs incorrectly say there is a nativeApplication.menu.supportsMenu flag 
@@ -604,7 +478,8 @@
 					supportsMenu = NativeApplication.supportsMenu;
 					
 					// set this to true to add our menu to the existing AIR application menu
-					addToExistingMenu = true;
+					// we must also support native menu items for this to work
+					convertToNativeMenuItems = true;
 					
 					// native menu has About, File, Edit, Window
 					defaultMenu = nativeApplication.menu;
@@ -638,11 +513,12 @@
 					
 					
 					// add our menu to existing menu or replace menu with our custom menu
-					if (addToExistingMenu) {
+					if (convertToNativeMenuItems && supportsMenu) {
+						nativeMenuManager = new NativeMenuManager();
 						
 						// File menu
 						for (var i:int=customFileMenu.children.length-1;i>-1; i--) {
-							nativeMenuItem = getNativeMenuItem(customFileMenu.children[i]);
+							nativeMenuItem = nativeMenuManager.getNativeMenuItem(customFileMenu.children[i]);
 							if (nativeMenuItem.label=="Quit") continue;
 							nativeFileMenu.submenu.addItemAt(nativeMenuItem, 0);
 						}
@@ -650,25 +526,22 @@
 						// Edit menu
 						
 						// separator
-						nativeMenuItem = getNativeMenuItem(customEditMenu.children[2]);
+						nativeMenuItem = nativeMenuManager.getNativeMenuItem(customEditMenu.children[2]);
 						nativeEditMenu.submenu.addItemAt(nativeMenuItem, 0);
 						
-						var nativeRedoMenuItem:NativeMenuItem = getNativeMenuItem(customEditMenu.children[1]);
-						hardReference.redoMenu = nativeRedoMenuItem;
-						//BindingUtils.bindProperty(nativeRedoMenuItem, "enabled", HistoryManager, "canRedo");
-						//BindingUtils.bindSetter(canRedoHandler, HistoryManager, "canRedo");
-						nativeEditMenu.submenu.addItemAt(nativeRedoMenuItem, 0);
+						// update: made some mistakes with undo and redo so we could probably reuse nativeMenuItem
+						nativeMenuItem = nativeMenuManager.getNativeMenuItem(customEditMenu.children[1]);
+						nativeEditMenu.submenu.addItemAt(nativeMenuItem, 0);
+						historyMenuStrongReference.redoMenu = nativeMenuItem;
 						
-						var nativeUndoMenuItem:NativeMenuItem = getNativeMenuItem(customEditMenu.children[0]);
-						nativeEditMenu.submenu.addItemAt(nativeUndoMenuItem, 0);
-						hardReference.undoMenu = nativeUndoMenuItem;
-						//BindingUtils.bindProperty(nativeUndoMenuItem, "enabled", HistoryManager, "canUndo");
-						//BindingUtils.bindSetter(canUndoHandler, HistoryManager, "canRedo");
+						nativeMenuItem = nativeMenuManager.getNativeMenuItem(customEditMenu.children[0]);
+						nativeEditMenu.submenu.addItemAt(nativeMenuItem, 0);
+						historyMenuStrongReference.undoMenu = nativeMenuItem;
 						
 						
 						// Commands menu
 						for (i=0;i<customCommandMenu.children.length; i++) {
-							nativeMenuItem = getNativeMenuItem(customCommandMenu.children[i]);
+							nativeMenuItem = nativeMenuManager.getNativeMenuItem(customCommandMenu.children[i]);
 							
 							if (nativeCommandMenu.menu==null) {
 								defaultMenu.addItem(nativeCommandMenu);
@@ -682,7 +555,7 @@
 						
 						// Help menu
 						for (i=0;i<customHelpMenu.children.length; i++) {
-							nativeMenuItem = getNativeMenuItem(customHelpMenu.children[i]);
+							nativeMenuItem = nativeMenuManager.getNativeMenuItem(customHelpMenu.children[i]);
 							
 							if (nativeHelpMenu.submenu==null) {
 								defaultMenu.addItem(nativeHelpMenu);
@@ -703,6 +576,8 @@
 						
 						radiate.applicationMenu = defaultMenu;
 						radiate.applicationWindowMenu = nativeWindowMenu;
+						
+						mainView.showMenuBar(false);
 					}
 					else {
 						// add the native menu items About, Edit to our custom menu items
@@ -722,22 +597,36 @@
 							//mainViewMenuItemsCollection.addItemAt(editMenu, 1);
 						}
 						
-						// assign our custom menu to the application menu
-						menu = mainViewMenu;
 						
-						radiate.applicationMenu = menu;
+						// clear out default menu items
+						if (supportsMenu) {
+							for (var j:int = defaultMenuItems.length; j > 0; j--) 
+							{
+								defaultMenuItems.pop();
+							}
+							
+							//defaultMenu.items = defaultMenuItems;
+							nativeApplication.menu = defaultMenu;
+						}
+						
+						// assign our custom menu to the application menu
+						//menu = mainViewMenu;
+
+						radiate.applicationMenu = mainViewMenu;
 						radiate.applicationWindowMenu = customWindowMenu;
+						
 					}
 				}
 				
 				protected function historyChangeEventHandler(event:RadiateEvent):void {
-					if (hardReference.redoMenu.enabled != HistoryManager.canRedo) {
-						hardReference.redoMenu.enabled = HistoryManager.canRedo;
+					if (historyMenuStrongReference.redoMenu) {
+						if (historyMenuStrongReference.redoMenu.enabled != HistoryManager.canRedo) {
+							historyMenuStrongReference.redoMenu.enabled = HistoryManager.canRedo;
+						}
+						if (historyMenuStrongReference.undoMenu.enabled != HistoryManager.canUndo) {
+							historyMenuStrongReference.undoMenu.enabled = HistoryManager.canUndo;
+						}
 					}
-					if (hardReference.undoMenu.enabled != HistoryManager.canUndo) {
-						hardReference.undoMenu.enabled = HistoryManager.canUndo;
-					}
-					
 				}
 				
 			]]>

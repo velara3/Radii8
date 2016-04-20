@@ -100,6 +100,9 @@ package {
 		[Embed(source="assets/icons/general/import.png")]
 		public static const importIcon:Class;
 		
+		[Embed(source="assets/icons/general/image.png")]
+		public static const image:Class;
+		
 		[Embed(source="assets/icons/general/image_play.png")]
 		public static const imagePlayIcon:Class;
 		

@@ -104,6 +104,14 @@
 				}
 			}
 			
+			public function clearSearch():void {
+				if (filterInput) {
+					text = "";
+					filterInput.text = "";
+					refresh();
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	

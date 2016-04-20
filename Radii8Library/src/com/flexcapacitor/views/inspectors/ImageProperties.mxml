@@ -42,8 +42,8 @@
 					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, propertyChangeHandler);
 				}
 				
-				target = null;
-				data = null;
+				//target = null;
+				//data = null;
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
@@ -54,6 +54,7 @@
 			}
 			
 			public function update():void {
+				if (target==null) return; // item was deleted
 				//var data:Object = ClassUtils.getMetaDataOfProperty(target, "source");
 				var sourceData:MetaData = ClassUtils.getMetaDataOfProperty(target, "source");
 				sourceRenderer.data = sourceData;

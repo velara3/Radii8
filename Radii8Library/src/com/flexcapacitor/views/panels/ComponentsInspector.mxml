@@ -183,6 +183,12 @@
 				//var o:LayoutDebugHelper = debugHelper;
 				var component:Object = event.draggedItem;
 				
+				// there is a bug where event listener for drag and drop
+				// is not removed. possibly when switching tools
+				// so until at some point we find it we'll return for now
+				// CHECK OUT LIBRARYINSPECTOR.mxml for comparison and possible answers there
+				if (currentComponentDescription==null) return;
+				
 				// if new component then need to add defaults
 				Radiate.setDefaultProperties(currentComponentDescription);
 				

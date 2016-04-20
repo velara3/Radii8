@@ -520,7 +520,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 												  minWidth="18"
 												  click="selectedTargetIcon_clickHandler(event)"/>
 							<s:ButtonBar id="propertiesOptionsButtonBar" 
-										 fontSize="11"
+										 fontSize="9"
 										 requireSelection="true"
 										 dataProvider="{forthViewStack}" 
 										 />

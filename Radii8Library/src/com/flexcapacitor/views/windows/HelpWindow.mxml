@@ -11,14 +11,6 @@
 							 title="Help" 
 							 >
 	
-	<fx:Script>
-		<![CDATA[
-			
-			
-			
-			
-		]]>
-	</fx:Script>
 	
 	<fx:Declarations>
 		
@@ -38,17 +30,17 @@
 		
 		
 		<s:Label text="Videos"/>
-		<controls:Hyperlink url="https://www.radii8.com/blog/?s=videos" text="Link"/>
+		<controls:Hyperlink styleName="linkStyle" url="https://www.radii8.com/blog/?s=videos" text="Link"/>
 		
 		<s:Label text="Tutorials"/>
-		<controls:Hyperlink url="https://www.radii8.com/r8m/" text="Link"/>
+		<controls:Hyperlink styleName="linkStyle" url="https://www.radii8.com/r8m/" text="Link"/>
 		
 		<!--<s:FormItem label="Examples"> </s:FormItem>-->
 		<s:Label text="Contact Email"/>
-		<controls:Hyperlink url="https://www.radii8.com/blog/?page_id=856" text="Link"/>
+		<controls:Hyperlink styleName="linkStyle" url="https://www.radii8.com/blog/?page_id=120" text="Link"/>
 		
 		<s:Label text="Support Forums"/>
-		<controls:Hyperlink url="https://www.radii8.com/blog/?page_id=856" text="Link"/>
+		<controls:Hyperlink styleName="linkStyle" url="https://www.radii8.com/blog/?page_id=120" text="Link"/>
 		
 	</s:TileGroup>
 	

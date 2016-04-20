@@ -43,6 +43,7 @@
 			import com.flexcapacitor.model.IProject;
 			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.model.MenuItem;
+			import com.flexcapacitor.model.MenuItemDataDescriptor;
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -156,15 +157,6 @@
 				radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, documentChangeEventHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_RENAME, documentChangeEventHandler, false, 0, true);
 				
-				//if (Radiate.isDesktop) {
-				if (true) {
-					mainMenuBar.visible = false;
-					mainMenuBar.includeInLayout = false;
-					mainMenuBarLine.visible = false;
-					mainMenuBarLine.includeInLayout = false;
-					//remote.top = 8;
-				}
-				
 				
 				var settings:com.flexcapacitor.model.Settings = Radiate.settings;
 				radiate.enableAutoSave = settings.enableAutoSave;
@@ -174,6 +166,16 @@
 				}
 				//PerformanceManager.start();
 				//trace(radiate.isUserLoggedIn);
+			}
+			
+			/**
+			 * On desktop on Mac hide the menu bar since we use the native menu bar
+			 * */
+			public function showMenuBar(value:Boolean):void {
+				mainMenuBar.visible = value;
+				mainMenuBar.includeInLayout = value;
+				mainMenuBar.visible = value;
+				mainMenuBar.includeInLayout = value;
 			}
 			
 			/**
@@ -273,21 +275,39 @@
 			private function openDocument_itemClickHandler(event:Event):void {
 				browseForMXML.play();
 			}
-			
+
 			/**
 			 * Redispatches on our custom menu items to our menu item models
 			 * The models have event listeners that handle the events 
 			 * The models expect mx.events.MenuEvent but in a desktop application
 			 * we get FlexNativeMenuEvent. So we get an error if we don't use generic events
 			 * in the model menu event handlers
+			 * 
+			 * In this function we are responding to 
+			 * - rollover
+			 * - rollout
+			 * - show
+			 * - hide
+			 * - click
+			 * 
+			 * We really only need to handle click. 
+			 * so someday we may only respond to that one event 
 			 * */
 			public function menuItemEventHandler(event:Event, menuItem:MenuItem = null):void {
+				var iDocument:IDocument;
 				var item:MenuItem;
 				var menu:Object;
 				var label:String;
 				var index:int = -1;
 				var flexNativeMenu:Object;
 				var menuEvent:MenuEvent;
+				var applicableEvent:Boolean;
+				
+				if (event) {
+					if (event.type==MenuEvent.ITEM_CLICK || event.type=="select") {
+						applicableEvent = true;
+					}
+				}
 				
 				if (menuItem) {
 					item = menuItem;
@@ -303,14 +323,14 @@
 				}
 				
 				
-				if (label && item) {
-					menuEvent = new MenuEvent("itemClick", event.bubbles, event.cancelable);
+				if (label && item && applicableEvent) {
+					menuEvent = new MenuEvent(MenuEvent.ITEM_CLICK, event.bubbles, event.cancelable);
 					menuEvent.index = index;
 					menuEvent.item = item;
 					menuEvent.label = label;
 				}
 				
-				if (item) {
+				if (item && menuEvent) {
 					EventDispatcher(item).dispatchEvent(menuEvent);
 				}
 				else if (menu && menu.dataProvider && 
@@ -320,9 +340,10 @@
 					EventDispatcher(menu.dataProvider[0].parent).dispatchEvent(menuEvent);
 				}
 				
-				if (item && item.data is IDocument) {
-					var iDocument:IDocument = item.data as IDocument;
+				if (item && item.data is IDocument && applicableEvent) {
+					iDocument = item.data as IDocument;
 					
+					// we need to deselect other windows in the menu 
 					if (iDocument.isOpen) {
 						radiate.showDocument(iDocument);
 						//radiate.selectDocument(iDocument);
@@ -1006,6 +1027,14 @@
 				}
 			}
 			
+			protected function saveAsImageMenuItem_itemClickHandler(event:MenuEvent):void
+			{
+				//Radiate.info("Saved");
+				if (radiate.selectedDocument) {
+					radiate.saveAsImage(radiate.target);
+				}
+			}
+			
 			protected function clearProjectHomePage_itemClickHandler(event:MenuEvent):void
 			{
 				serviceManager.setProjectHomePage(0);
@@ -1194,6 +1223,11 @@
 			protected function runSiteScanner_itemClickHandler(event:MenuEvent):void
 			{
 				Radiate.openInBrowserSiteScanner(radiate.selectedDocument);
+			}
+			
+			protected function menuNewDocument_itemClickHandler(event:MenuEvent):void
+			{
+				radiate.createNewDocument()
 			}
 			
 		]]>
@@ -1409,7 +1443,7 @@
 		
 		<model:MenuItem id="rootMenu">
 			<model:MenuItem label="File">
-				<model:MenuItem id="menuNewDocument" label="New Document" itemClick="{radiate.createNewDocument()}"/>
+				<model:MenuItem id="menuNewDocument" label="New Document" itemClick="menuNewDocument_itemClickHandler(event)"/>
 				<model:MenuItem id="menuNewProject" label="New Project" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem label="Open Document" itemClick="openDocument_itemClickHandler(event)"/>
@@ -1418,7 +1452,9 @@
 				<model:MenuItem label="Close Document" itemClick="radiate.closeDocument(radiate.selectedDocument)"/>
 				<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="saveMenuItem" label="Save" keyEquivalent="s" itemClick="saveMenuItem_itemClickHandler(event)"/>
+				<!-- keyEquivalent="s" seemed to be catching the s key everywhere. needs cmd for mac and ctrl for win-->
+				<model:MenuItem id="saveMenuItem" label="Save" itemClick="saveMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveAsImageMenuItem" label="Save as Image" itemClick="saveAsImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem label="Save Project" itemClick="{radiate.saveProject(radiate.selectedProject)}"/>
 				<model:MenuItem label="Save All Documents" itemClick="{radiate.saveAllDocuments()}"/>
 				<model:MenuItem id="saveDocumentAs" label="Export release..." />
@@ -1945,6 +1981,7 @@
 						includeIn="design"/>
 		
 		<mx:MenuBar id="mainMenuBar" 
+					dataDescriptor="{new MenuItemDataDescriptor()}"
 					dataProvider="{rootMenu}"
 					labelField="label"
 					height="100%"
@@ -2106,6 +2143,7 @@
 		<s:Label text="Version:" />-->
 		
 		
+		<s:Spacer width="1"/>
 		<s:Label id="versionNumber" text="{radiate.versionNumber}" />
 		<s:Spacer width="1"/>
 		<c:VerticalLine height="16" />

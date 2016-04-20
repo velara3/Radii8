@@ -42,6 +42,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.DragDropEvent;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.model.AttachmentData;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IDocument;
@@ -568,7 +569,7 @@
 				var isSelf:Boolean;
 				
 				if (event.dragInitiator) {
-					isSelf = verticalContainer.contains(event.dragInitiator as DisplayObject);
+					isSelf = mainLibraryContainer.contains(event.dragInitiator as DisplayObject);
 					if (isSelf) {
 						return;
 					}
@@ -605,9 +606,13 @@
 							radiate.addAssetToDocument(imageData, radiate.selectedDocument);
 							
 							list.selectedItem = imageData;
+							
+							searchCollection.clearSearch();
+							
+							Radiate.info("A snapshot of the selected item was added to the library");
 						}
 						else {
-							Radiate.error("Could not create a snapshot of the selected item. " + snapshot); 
+							Radiate.error("Could not create a snapshot of the selected item."); 
 						}
 					}
 				}
@@ -623,7 +628,7 @@
 				
 				// show selected image from library
 				//if (openPopUp.isOpen || popUpOpen)  {
-					var imageData:ImageData = list.selectedItem as ImageData;
+					/*var imageData:ImageData = list.selectedItem as ImageData;
 					
 					if (imageData) {
 						if (imageData.bitmapData) {
@@ -632,14 +637,14 @@
 						else if (imageData.url) {
 							openPopUp.data = imageData.url;
 						}
-					}
+					}*/
 				//}
 				
 				// if space bar is press open or close pop up
 				if (event.keyCode==Keyboard.SPACE) {
 					
 					if (!openPopUp.isOpen) {
-						openPopUp.play();
+						showSelectedItemInPopUp();
 						popUpOpen = true;
 					}
 					else {
@@ -651,6 +656,24 @@
 					//popUpOpen = true;
 				}
 				
+			}
+			
+			public function showSelectedItemInPopUp():void {
+				list.setFocus();
+				var imageData:ImageData = list.selectedItem as ImageData;
+				
+				if (imageData) {
+					if (imageData.bitmapData) {
+						openPopUp.data = imageData.bitmapData;
+					}
+					else if (imageData.url) {
+						openPopUp.data = imageData.url;
+					}
+					
+					if (!openPopUp.isOpen) {
+						openPopUp.play();
+					}
+				}
 			}
 			
 			protected function openInBrowserButton_clickHandler(event:MouseEvent):void
@@ -804,6 +827,31 @@
 			
 			}
 			
+			protected function copyImageDataIcon_clickHandler(event:MouseEvent):void {
+				var imageData:ImageData = list.selectedItem as ImageData;
+				
+				if (imageData) {
+					if (imageData.bitmapData) {
+						copyImageDataToClipboard.data = imageData.bitmapData;
+						copyImageDataToClipboard.play();
+					}
+					else if (imageData.url) {
+						openPopUp.data = imageData.url;
+					}
+				}
+			}
+			
+			protected function shareIcon_clickHandler(event:MouseEvent):void {
+				var imageData:ImageData = list.selectedItem as ImageData;
+				
+				if (imageData) {
+					RunManager.copyURLToDocument(imageData, "image");
+				}
+				else {
+					Radiate.warn("No item is selected in the library");
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -815,6 +863,15 @@
 			<collections:SortCollection target="{libraryCollection}" fields="{['name']}" />
 		</handlers:EventHandler>
 		
+		<clipboard:CopyToClipboard id="copyImageDataToClipboard" 
+								   targetAncestor="{this}" 
+								   format="{ClipboardFormats.BITMAP_FORMAT}"
+								   allowNullData="true"
+								   success="Radiate.info('The image was copied to the clipboard');"
+								   noData="Radiate.info('Nothing was available to be copied to the clipboard');"
+								   error="Radiate.info('An error occurred while attempting to copy to the clipboard');"
+								   >
+		</clipboard:CopyToClipboard>
 		
 		<!-- SHOW DELETE ATTACHMENTS POP UP -->
 		<fc:OpenPopUp id="openDeleteDocumentsPopUp" 
@@ -841,20 +898,20 @@
 						 close="openPopUp_closeHandler(event)"/>
 		
 		<!-- COPY TO THE CLIPBOARD -->
-		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
+		<!--<handlers:EventHandler eventName="click" target="{shareIcon}" setTriggerEvent="true">
 			
 			<clipboard:CopyToClipboard id="copyToClipboard" 
 									   data="{imageURLInput.text}" 
 									   targetAncestor="{this}" 
 									   allowNullData="true"
-									   success="Radiate.info('URL copied to the clipboard');"
-									   noData="Radiate.info('Nothing to copy to the clipboard');"
+									   success="Radiate.info('URL to image copied to the clipboard');"
+									   noData="Radiate.info('No URL was available to copy to the clipboard. Image must be uploaded.');"
 									   error="Radiate.info('An error occurred while attempting to copy to the clipboard');"
 									   >
 				
 			</clipboard:CopyToClipboard>
 			
-		</handlers:EventHandler>
+		</handlers:EventHandler>-->
 		
 		<!-- BROWSE FOR FILE --> 
 		<handlers:EventHandler eventName="click" targets="{[browseForFileIcon,addImageLabel]}">
@@ -887,7 +944,7 @@
 	</s:states>
 	
 	
-	<mx:VDividedBox id="verticalContainer" 
+	<mx:VDividedBox id="mainLibraryContainer" 
 					width="100%" height="100%"
 					top="0"
 					left="8" 
@@ -1052,16 +1109,31 @@
 				
 			</s:HGroup>
 			
+			
+			<c:BeveledImageButton id="shareIcon" 
+								  source="{Radii8LibraryAssets.share}" 
+								  toolTip="Share - copies the URL of the selected image to the clipboard. Image must be uploaded."
+								  width="16"
+								  height="22"
+								  click="shareIcon_clickHandler(event)"
+								  />
+			
+			<c:BeveledImageButton id="showPreviewIcon" 
+								  source="{Radii8LibraryAssets.image}" 
+								  toolTip="Show a preview of the selected image. Click anywhere or press space bar to return"
+								  click="showSelectedItemInPopUp()"/>
+			
+			<c:BeveledImageButton id="copyImageDataIcon" 
+								  source="{Radii8LibraryAssets.copy}" 
+								  toolTip="Copy the image bitmap data to the Clipboard."
+								  click="copyImageDataIcon_clickHandler(event)"/>
+			
 			<c:BeveledImageButton id="multipleUploadIcon" 
 								  source="{Radii8LibraryAssets.multipleUpload}" 
 								  toolTip="Upload all images not uploaded"
 								  click="multipleUploadIcon_clickHandler(event)"
 								  visible="true"
 								  alpha=".8"/>
-			
-			<c:BeveledImageButton id="copyIcon" 
-					 source="{Radii8LibraryAssets.copy}" 
-					 toolTip="Copy the image URL to the Clipboard"/>
 			
 			<c:BeveledImageButton id="refreshIcon" 
 					 source="{Radii8LibraryAssets.refresh}" 

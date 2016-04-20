@@ -10,15 +10,21 @@
 				mouseEnabledWhereTransparent="true"
 				mouseDown="groupMouseDownHandler(event)"
 				autoDrawBackground="false"
+				resize="itemrenderer1_resizeHandler(event)"
 				>
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.utils.DisplayObjectUtils;
-			import mx.graphics.BitmapFill;
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.model.AttachmentData;
 			import com.flexcapacitor.model.ImageData;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.ResizeEvent;
+			import mx.graphics.BitmapFill;
+			
+			import spark.components.supportClasses.ListBase;
+			import spark.layouts.VerticalLayout;
 			
 			public var imageData:ImageData;
 			public var attachmentData:AttachmentData;
@@ -32,6 +38,7 @@
 			override public function set data(value:Object):void {
 				super.data = value;
 				var path:String;
+				var imageID:String = "Not uploaded yet";
 				attachmentData = value as AttachmentData;
 				imageData = value as ImageData;
 				
@@ -55,6 +62,10 @@
 							}
 							
 							iconImage.source = imageData.bitmapData;
+						}
+						
+						if (imageData.id) {
+							imageID = imageData.id;
 						}
 					}
 					
@@ -86,7 +97,7 @@
 				}
 				
 				if (labelDisplay) {
-					toolTip = label + " - ID: " +  imageData.id + " - Parent ID: " + imageData.parentId;
+					toolTip = label + " - ID: " +  imageID + " - Parent ID: " + imageData.parentId;
 				}
 				else {
 					toolTip = "";
@@ -113,6 +124,42 @@
 				}
 				else {
 					Radiate.warn("Save the document before uploading");
+				}
+			}
+			
+			protected function showPreview(event:MouseEvent):void
+			{
+				Object(owner).document.showSelectedItemInPopUp();
+			}
+			
+			protected function itemrenderer1_resizeHandler(event:ResizeEvent):void
+			{
+				var verticalLayout:Boolean = owner ? ListBase(owner).layout is VerticalLayout : true;
+				if (!verticalLayout) {
+					preview.includeInLayout = false;
+					uploadFileIcon.includeInLayout = false;
+					preview.visible = false;
+					uploadFileIcon.visible = false;
+				}
+				else {
+					preview.includeInLayout = true;
+					uploadFileIcon.includeInLayout = true;
+					
+					// show the upload icon if not uploaded
+					if (attachmentData && attachmentData.id==null) {
+						uploadFileIcon.visible = true;
+						uploadFileIcon.enabled = true;
+						uploadFileIcon.includeInLayout = true;
+					}
+					
+					// show the upload failed icon if not uploaded
+					if (attachmentData && attachmentData.uploadFailed) {
+						uploadFileErrorIcon.visible = true;
+						uploadFileErrorIcon.enabled = true;
+						uploadFileErrorIcon.includeInLayout = true;
+					}
+					
+					preview.visible = true;
 				}
 			}
 			
@@ -148,10 +195,14 @@
 				 contentLoader="{Radiate.contentCache}"
 				 ioError="iconImage_ioErrorHandler(event)"
 				 securityError="iconImage_securityErrorHandler(event)"
-				 width="30" height="30"
+				 width="30" 
+				 height="30"
 				 scaleMode="zoom"/>
-		<s:Label id="labelDisplay" visible.dragging="false"
-				 fontSize="11" width="100%" maxDisplayedLines="1"
+		<s:Label id="labelDisplay" 
+				 visible.dragging="false"
+				 fontSize="11" 
+				 width="100%" 
+				 maxDisplayedLines="1"
 				 />
 		<s:Spacer width="100%"/>
 		<controls:BeveledImageButton id="uploadFileErrorIcon" 
@@ -167,6 +218,11 @@
 							  visible.dragging="false"
 							  alpha=".75"
 							  />
+		<controls:BeveledImageButton id="preview" 
+									 source="{Radii8LibraryAssets.image}"
+									 visible.dragging="false"
+									 click="showPreview(event)"
+									 />
 		<s:Spacer width="1"/>
 	</s:HGroup>
 	
@@ -196,7 +252,7 @@
 		</s:fill>
 	</s:Rect>-->
 	
-	<s:Rect id="selectedBox" width="40" height="100%" bottom="1" 
+	<s:Rect id="selectedBox" width="40" height="100%" bottom="1" x="1"
 			includeIn="selected,selectedAndShowsCaret">
 		<s:fill>
 			<s:SolidColor color="#989898" alpha="0"/>

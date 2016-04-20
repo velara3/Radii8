@@ -23,7 +23,6 @@ package com.flexcapacitor.managers {
 	import flash.net.navigateToURL;
 	
 	import mx.core.UIComponent;
-	import mx.messaging.FlexClient;
 	import mx.validators.IValidator;
 
 	
@@ -283,57 +282,6 @@ package com.flexcapacitor.managers {
 		}
 		
 		/**
-		 * Copy URL to document to the clipboard
-		 * */
-		public static function copyURLToDocument(documentData:DocumentData):void {
-			var clipboard:Clipboard = Clipboard.generalClipboard;
-			var formatText:String = ClipboardFormats.TEXT_FORMAT;
-			var formatURL:String = ClipboardFormats.URL_FORMAT;
-			var serializable:Boolean;
-			var url:String;
-			
-			if (documentData==null) {
-				Radiate.warn("No document was selected.");
-				return;
-			}
-			
-			if (documentData.id==null) {
-				Radiate.warn("The document is not saved. It will not have a URL until has been saved.");
-				return;
-			}
-			
-			if (documentData) {
-				
-				if (documentData is ImageData) {
-					url = ImageData(documentData).url;
-				}
-				else {
-					url = documentData.uri;
-				}
-				
-				if (documentData.status!=WPService.STATUS_PUBLISH) {
-					Radiate.warn("The document is not published. Until it is published it will only be visible when logged in with edit priviledges.");
-					//return;
-				}
-			}
-			
-			// it's recommended to clear the clipboard before setting new content
-			clipboard.clear();
-			
-			try {
-				clipboard.setData(formatText, String(url), serializable);
-				
-				if (Radiate.isDesktop) {
-					clipboard.setData(formatURL, String(url), serializable);
-				}
-				Radiate.info("A link to the document was copied to the clipboard");
-			}
-			catch (error:ErrorEvent) {
-				Radiate.error("Couldn't copy link to the document");
-			}
-		}
-		
-		/**
 		 * Copies URL to home page. This is the users WordPress sub site url
 		 * If the user does not have a home page set then this goes to their blog
 		 * In the future we should try to setup a way to have more than one
@@ -392,6 +340,57 @@ package com.flexcapacitor.managers {
 				Radiate.error("Couldn't copy link to the home page");
 			}
 			
+		}
+		
+		/**
+		 * Copy URL to document or media data to the clipboard
+		 * */
+		public static function copyURLToDocument(documentData:DocumentData, name:String = "document"):void {
+			var clipboard:Clipboard = Clipboard.generalClipboard;
+			var formatText:String = ClipboardFormats.TEXT_FORMAT;
+			var formatURL:String = ClipboardFormats.URL_FORMAT;
+			var serializable:Boolean;
+			var url:String;
+			
+			if (documentData==null) {
+				Radiate.warn("No " + name + " was selected.");
+				return;
+			}
+			
+			if (documentData.id==null) {
+				Radiate.warn("The " + name + " is not saved. It will not have a URL until has been saved.");
+				return;
+			}
+			
+			if (documentData) {
+				
+				if (documentData is ImageData) {
+					url = ImageData(documentData).url;
+				}
+				else {
+					url = documentData.uri;
+				}
+				
+				if (!(documentData is ImageData) && documentData.status!=WPService.STATUS_PUBLISH) {
+					Radiate.warn("The " + name + " is not published. Until it is published it will only be visible when logged in with edit priviledges.");
+					//return;
+				}
+			}
+			
+			// it's recommended to clear the clipboard before setting new content
+			clipboard.clear();
+			
+			try {
+				clipboard.setData(formatText, String(url), serializable);
+				
+				if (Radiate.isDesktop) {
+					clipboard.setData(formatURL, String(url), serializable);
+				}
+				Radiate.info("A link to the " + name + " was copied to the clipboard");
+			}
+			catch (error:ErrorEvent) {
+				Radiate.error("Couldn't copy link to the " + name + "");
+			}
 		}
 		
 		/**

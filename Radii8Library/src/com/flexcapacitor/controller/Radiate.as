@@ -4308,19 +4308,20 @@ package com.flexcapacitor.controller {
 		/**
 		 * Adds an asset to the document
 		 * */
-		public function addImageDataToDocument(assetData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true):void {
+		public function addImageDataToDocument(assetData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true):Boolean {
 			var item:ComponentDefinition;
 			var application:Application;
 			var componentInstance:Object;
 			var path:String;
 			var bitmapData:BitmapData;
+			var resized:Boolean;
 			
 			item = getComponentType("Image");
 			
 			
 			application = iDocument && iDocument.instance ? iDocument.instance as Application : null;
 			
-			if (!application) return;
+			if (!application) return false;
 			
 			// set to true so if we undo it has defaults to start with
 			componentInstance = createComponentToAdd(iDocument, item, true);
@@ -4341,6 +4342,7 @@ package com.flexcapacitor.controller {
 				propertiesObject = {};
 			}
 			else {
+				resized = true;
 				properties.push(WIDTH);
 				properties.push(HEIGHT);
 			}
@@ -4365,6 +4367,8 @@ package com.flexcapacitor.controller {
 			addElement(componentInstance, iDocument.instance, properties, null, propertiesObject);
 			
 			updateComponentAfterAdd(iDocument, componentInstance);
+			
+			return resized;
 		}
 		
 		public static function getImageDataFromBitmapData(bitmapData:BitmapData):ImageData {
@@ -5222,7 +5226,7 @@ package com.flexcapacitor.controller {
 			}
 			else {
 				documentThatPasteOfFilesToBeLoadedOccured = null;
-				info("No files of the acceptable type were found. Acceptable files are PNG, JPEG, PSD");
+				info("No files of the acceptable type were found. Acceptable files are PNG, JPEG, GIF, PSD");
 			}
 		}
 		
@@ -5251,7 +5255,7 @@ package com.flexcapacitor.controller {
 		 * Occurs after files pasted into the document are fully loaded 
 		 * */
 		protected function pasteFileCompleteHandler(event:Event):void {
-			
+			var resized:Boolean;
 			
 			if (event.type==LoadFile.LOADER_COMPLETE) {
 				
@@ -5278,16 +5282,24 @@ package com.flexcapacitor.controller {
 			imageData.file = pasteFileLoader.currentFileReference;
 			
 			addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
-			addImageDataToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
-			//list.selectedItem = data;
+			resized = addImageDataToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
 			
 			//uploadAttachment(fileLoader.fileReference);
+			if (resized) {
+				info("Image was added to the library and the document and resized to fit");
+			}
+			else {
+				info("Image was added to the library and the document");
+			}
+			
+			setTarget(lastCreatedComponent);
 		}
 		
 		/**
 		 * Occurs after files are dropped into the document are fully loaded 
 		 * */
 		protected function dropFileCompleteHandler(event:Event):void {
+			var resized:Boolean;
 			
 			// if we need to load the images ourselves then skip complete event
 			// and wait until loader complete event
@@ -5315,10 +5327,19 @@ package com.flexcapacitor.controller {
 			imageData.file = dropFileLoader.currentFileReference;
 			
 			addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
-			addImageDataToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
+			resized = addImageDataToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
 			//list.selectedItem = data;
 			
 			//uploadAttachment(fileLoader.fileReference);
+			
+			if (resized) {
+				info("Image was added to the library and the document and resized to fit");
+			}
+			else {
+				info("Image was added to the library and the document");
+			}
+			
+			setTarget(lastCreatedComponent);
 		}
 		
 		/**
@@ -7043,6 +7064,11 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		}
 		
 		/**
+		 * Last created component
+		 * */
+		public static var lastCreatedComponent:Object;
+		
+		/**
 		 * Component that is in edit mode. Typically a Label. 
 		 * */
 		public static var currentEditableComponent:Object;
@@ -7385,6 +7411,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			iDocument.setItemDescription(componentInstance, componentDescription);
 			//iDocument.descriptionsDictionary[componentInstance] = componentDescription;
 			
+			lastCreatedComponent = componentInstance;
 			
 			return componentInstance;
 		}
@@ -9860,6 +9887,64 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		}
 
 		/**
+		 * Save target as image.
+		 * */
+		public function saveAsImage(target:Object, options:Object = null):Boolean {
+			var bitmapData:BitmapData;
+			var fileName:String;
+			var componentDescription:ComponentDescription;
+			
+			if (target==null) {
+				error("No document to save");
+				return false;
+			}
+			
+			if (target is ComponentDescription) {
+				componentDescription = target as ComponentDescription;
+				target = componentDescription.instance;
+			}
+			else {
+				componentDescription = selectedDocument.getItemDescription(target);
+			}
+			
+			if (componentDescription) {
+				fileName = componentDescription.name;
+			}
+			else {
+				fileName = selectedDocument.name;
+			}
+			
+			if (target) {
+				if (target is IDocument) {
+					target = DisplayObjectUtils.getAnyTypeBitmapData(IDocument(target).instance);
+				}
+				else {
+					try {
+						bitmapData = DisplayObjectUtils.getAnyTypeBitmapData(target);
+					}
+					catch (errorEvent:ErrorEvent) {
+						error(errorEvent.text, errorEvent);
+					}
+				}
+				
+				var byteArray:ByteArray;
+				
+				if (bitmapData) {
+					if (bitmapData.width!=0 && bitmapData.height) {
+						byteArray = DisplayObjectUtils.getBitmapByteArray(bitmapData);
+						saveFileAs(byteArray, fileName, "png");
+						return true;
+					}
+					else {
+						error("Selection must have a width and height greater than 0");
+					}
+				}
+			}
+			
+			return false;
+		}
+
+		/**
 		 * Save document. Uses constants, DocumentData.LOCAL_LOCATION, DocumentData.REMOTE_LOCATION, etc
 		 * Separate them by ",". 
 		 * */
@@ -10237,9 +10322,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var fileStream:Object;
 			var writeFile:Boolean;
 			var filesCreated:Boolean;
+			var fileInfo:FileInfo;
 			
 			for (var i:int;i<numberOfFiles;i++) {
-				var fileInfo:FileInfo = files[i];
+				fileInfo = files[i];
 				fileInfo.created = false;
 				fileName = fileInfo.fileName + "." + fileInfo.fileExtension;
 				
@@ -10258,6 +10344,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				
 				if (writeFile) {
 					fileStream = new FileStreamClass();
+					// this might be causing an error on windows - might need to change to read / write
 					fileStream.open(file, "write");// FileMode.WRITE
 					fileStream.writeUTFBytes(fileInfo.contents);
 					fileStream.close();
@@ -11965,7 +12052,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var numberOfDocuments:int;
 			var iDocumentData:IDocumentData;
 			var menuFound:Boolean;
-			var dataProviderCollection:ArrayCollection;
+			var applicationMenusCollection:ArrayCollection;
 			var items:Array;
 			var numberOfMenus:int;
 			var isNativeMenu:Boolean;
@@ -11995,8 +12082,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			else {
 				windowItem.removeAllChildren();
 				isNativeMenu = false;
-				dataProviderCollection = applicationMenu.dataProvider;
-				numberOfMenus = dataProviderCollection ? dataProviderCollection.length : 0;
+				applicationMenusCollection = applicationMenu.dataProvider;
+				numberOfMenus = applicationMenusCollection ? applicationMenusCollection.length : 0;
 				
 				for (j; j < numberOfDocuments; j++) {
 					iDocumentData = documents[j];
@@ -12012,10 +12099,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			
 			for (var i:int; i < numberOfMenus; i++) {
-				if (dataProviderCollection.getItemAt(i)==applicationWindowMenu) {
-					dataProviderCollection.removeItemAt(i);
-					dataProviderCollection.addItemAt(windowItem, i);
-					windowItem.checked = true;
+				if (applicationMenusCollection.getItemAt(i)==applicationWindowMenu) {
+					applicationMenusCollection.removeItemAt(i);
+					applicationMenusCollection.addItemAt(windowItem, i);
+					//windowItem.checked = true;
 					menuFound = true;
 					break;
 				}
@@ -12025,10 +12112,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				windowItem.checked = true;
 			}
 			else {
-				dataProviderCollection.addItem(windowItem);
+				applicationMenusCollection.addItem(windowItem);
 			}
 			
-			applicationMenu.dataProvider = dataProviderCollection;
+			applicationMenu.dataProvider = applicationMenusCollection;
 			
 		}
 		

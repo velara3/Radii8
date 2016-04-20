@@ -68,7 +68,7 @@
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
-				var sameType:Boolean = radiate.isSameClassType(target, radiate.target);
+				//var sameType:Boolean = radiate.isSameClassType(target, radiate.target);
 				
 				if (target!=radiate.target) {
 					target = radiate.target;
@@ -87,10 +87,10 @@
 			public function updateInspectors(inspectors:Array):void {
 				var inspectorInstance:UIComponent;
 				var inspectorData:InspectorData;
-				var length:int = contentGroup.numElements;
+				var numberOfDynamicInspectors:int = contentGroup.numElements;
 				
 				// deactivate and remove previous inspectors
-				for (var j:int;j<length;j++) {
+				for (var j:int;j<numberOfDynamicInspectors;j++) {
 					if (contentGroup.getElementAt(j) is IInspector) {
 						IInspector(contentGroup.getElementAt(j)).deactivate();
 					}
@@ -98,10 +98,10 @@
 				
 				contentGroup.removeAllElements();
 				
-				length = inspectors.length;
+				numberOfDynamicInspectors = inspectors.length;
 				
 				// add and activate inspectors
-				for (var i:int;i<length;i++) {
+				for (var i:int;i<numberOfDynamicInspectors;i++) {
 					inspectorData = InspectorData(inspectors[i]);
 					inspectorInstance = inspectorData.getInstance() as UIComponent;
 					
@@ -111,7 +111,7 @@
 					}
 				}
 				
-				if (length==0) {
+				if (numberOfDynamicInspectors==0) {
 					noInspectorsLabel.visible = true;
 					noInspectorsLabel.includeInLayout = true;
 				}
