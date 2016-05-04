@@ -27,7 +27,11 @@
 				
 				if (issue) {
 					labelDisplay.text = issue.description;
-					toolTip = issue.description + " (" + issue.className + ")";
+					toolTip = issue.description;
+					
+					if (issue.className && issue.className!="") {
+						toolTip += " (" + issue.className + ")";
+					}
 				}
 				else {
 					labelDisplay.text = "";
@@ -52,15 +56,15 @@
 	</fx:Script>
 
 		
-	<s:BitmapImage id="icon" fillMode="clip" height="100%" verticalAlign="middle"
+	<s:BitmapImage id="icon" fillMode="clip" height="100%" verticalAlign="middle" left="2"
 				   width="14"/>
 	
 	<s:Label id="labelDisplay" 
 			 width="100%" 
-			 left="16"
+			 left="18"
 			 maxDisplayedLines="3" 
 			 paddingLeft="5" paddingRight="5"
-			 paddingTop="8"
+			 paddingTop="9"
 			 paddingBottom="8"/>
 	
 	<controls:HorizontalLine height="1" bottom="0" width="100%"/>

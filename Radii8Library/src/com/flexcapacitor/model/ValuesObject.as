@@ -66,6 +66,12 @@ package com.flexcapacitor.model
 		public var propertiesErrorsObject:Object;
 		
 		/**
+		 * An object containing all the events whose values could not be casted into an acceptable type
+		 * on the target object and the error as it's value.
+		 * */
+		public var eventsErrorsObject:Object;
+		
+		/**
 		 * Array of valid properties, events and styles 
 		 * */
 		public var propertiesStylesEvents:Array;

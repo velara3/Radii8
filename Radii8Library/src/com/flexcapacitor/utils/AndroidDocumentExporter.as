@@ -38,7 +38,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * @inheritDoc
 		 * */
-		override public function export(iDocument:IDocument, componentDescription:ComponentDescription = null, options:ExportOptions = null):SourceData {
+		override public function export(iDocument:IDocument, componentDescription:ComponentDescription = null, options:ExportOptions = null, dispatchEvents:Boolean = false):SourceData {
 			var application:Object = iDocument ? iDocument.instance : null;
 			var componentTree:ComponentDescription;
 			var output:String = "";

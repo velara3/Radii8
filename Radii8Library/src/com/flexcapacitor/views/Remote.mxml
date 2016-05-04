@@ -96,7 +96,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 				
 				document = radiate.getDocumentAtIndex(event.newIndex);
 				
-				if (document==null) {
+				if (document==null || document.instance==null) {
 					return; // not created yet?? 
 				}
 				
@@ -657,14 +657,19 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 							<panels:CodeInspector id="code1" width="100%" height="100%" />
 						</s:NavigatorContent>
 					
+						<!-- DOCUMENTATION INSPECTOR -->
+						<s:NavigatorContent width="100%" height="100%" label="DOCUMENTATION">
+							<panels:DocumentationInspector id="documentationInspector" width="100%" height="100%" />
+						</s:NavigatorContent>
+						
+						<!-- API INSPECTOR -->
+						<s:NavigatorContent width="100%" height="100%" label="API DOCS">
+							<panels:APIInspector id="apiInspector" width="100%" height="100%" />
+						</s:NavigatorContent>
+						
 						<!-- METADATA INSPECTOR -->
 						<s:NavigatorContent width="100%" height="100%" label="METADATA">
 							<panels:MetaDataInspector id="metadataInspector" width="100%" height="100%" />
-						</s:NavigatorContent>
-					
-						<!-- DOCS INSPECTOR -->
-						<s:NavigatorContent width="100%" height="100%" label="DOCS">
-							<panels:DocumentationInspector id="docsInspector" width="100%" height="100%" />
 						</s:NavigatorContent>
 						
 						<!-- CONSOLE -->

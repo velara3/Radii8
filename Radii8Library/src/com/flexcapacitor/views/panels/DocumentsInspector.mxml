@@ -199,7 +199,7 @@
 					var savedLocation:String = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
 					
 					var savedLocally:Boolean = radiate.saveDocument(newDocument, savedLocation);
-					radiate.saveProject(radiate.selectedProject, savedLocation);
+					radiate.saveProjectOnly(radiate.selectedProject, savedLocation);
 				//}
 			}
 			
@@ -540,6 +540,14 @@
 				}
 			}
 			
+			protected function copyIcon_clickHandler(event:MouseEvent):void
+			{
+				if (radiate.selectedDocument) {
+					var sourceData:SourceData = Radiate.getMXML(radiate.selectedDocument);
+					RunManager.copyCodeToClipboard(sourceData.source);
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -714,6 +722,14 @@
 							  click="editDocumentIcon_clickHandler(event)"
 							  includeInLayout="false"
 							  visible="false"
+							  />
+		
+		<c:BeveledImageButton id="copyIcon" 
+							  source="{Radii8LibraryAssets.copy}" 
+							  toolTip="Copy the MXML to the Clipboard"
+							  verticalAlign="middle"
+							  useHandCursor="true"
+							  click="copyIcon_clickHandler(event)"
 							  />
 		
 		<s:Group click="openHomePageInBrowserButton_clickHandler()" visible="false" includeInLayout="false">

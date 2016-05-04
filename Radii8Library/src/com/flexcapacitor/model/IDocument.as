@@ -126,6 +126,11 @@ package com.flexcapacitor.model {
 		function setItemDescription(value:*, itemDescription:ComponentDescription):void;
 		
 		/**
+		 * Updates the component tree
+		 * */
+		function updateComponentTree(value:Object = null):void;
+		
+		/**
 		 * Adds the component description into the component dictionary
 		 * */
 		function addComponentDescription(value:*):ComponentDescription;

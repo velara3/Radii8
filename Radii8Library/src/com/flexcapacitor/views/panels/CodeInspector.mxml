@@ -130,6 +130,10 @@
 					showChildDescriptors.selected = true;
 				}
 				
+				if (radiate.isDocumentPreviewOpen(radiate.selectedDocument)) {
+					languageTypeButtons.selectedItem = CodeManager.HTML;
+				}
+				
 				if (radiate.target) {
 					updateCodeEditors();
 				}
@@ -435,6 +439,7 @@
 				//radiate = Radiate.getInstance();
 				
 				if (!radiate.target && !radiate.selectedDocument) return;
+				
 				
 				updateTarget(radiate.target);
 				//updateTarget(radiate.selectedDocument.instance);

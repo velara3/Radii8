@@ -74,7 +74,7 @@
 			if (data && iDocument) {
 				var oldName:String = iDocument.name;
 				var newName:String = textInput.text;
-				Radiate.getInstance().renameDocument(iDocument, newName);
+				Radiate.instance.renameDocument(iDocument, newName);
 			    list.dataProvider.itemUpdated(iDocument, "name", oldName, newName); 
 				currentState = "normal";
 			}
@@ -86,6 +86,7 @@
 			}
 			currentState = "edit";
 			textInput.text = labelDisplay.text;
+			textInput.selectAll();
 		}
 		
 		override protected function getCurrentRendererState():String {
@@ -101,7 +102,7 @@
 		}
 		
 		protected function openIcon_clickHandler(event:MouseEvent):void {
-			Radiate.getInstance().openDocument(this.data as IDocument);
+			Radiate.instance.openDocument(this.data as IDocument);
 		}
 		
 	]]>

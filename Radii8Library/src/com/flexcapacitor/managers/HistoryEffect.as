@@ -713,6 +713,40 @@ package com.flexcapacitor.managers
 		}
 		
 		//----------------------------------
+		//  relevantEvents
+		//----------------------------------
+		
+		/**
+		 *  @private
+		 *  Storage for the relevantEvents property.
+		 */
+		private var _relevantEvents:Array /* of String */;
+		
+		/**
+		 *  @copy mx.effects.IEffect#relevantEvents
+		 *  
+		 *  @langversion 3.0
+		 *  @playerversion Flash 9
+		 *  @playerversion AIR 1.1
+		 *  @productversion Flex 3
+		 */
+		public function get relevantEvents():Array /* of String */
+		{
+			if (_relevantEvents)
+				return _relevantEvents;
+			else
+				return getAffectedEvents();
+		}
+		
+		/**
+		 *  @private
+		 */
+		public function set relevantEvents(value:Array /* of String */):void
+		{
+			_relevantEvents = value;
+		}
+		
+		//----------------------------------
 		//  relevantProperties
 		//----------------------------------
 		
@@ -1049,6 +1083,21 @@ package com.flexcapacitor.managers
 		//
 		//--------------------------------------------------------------------------
 		
+		
+		
+		/**
+		 *  @copy mx.effects.IEffect#getAffectedEvents()
+		 *  
+		 *  @langversion 3.0
+		 *  @playerversion Flash 9
+		 *  @playerversion AIR 1.1
+		 *  @productversion Flex 3
+		 */
+		public function getAffectedEvents():Array /* of String */
+		{
+			// Every subclass should override this method.
+			return [];
+		}
 		
 		
 		/**

@@ -18,6 +18,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.RunManager;
+			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -25,6 +26,7 @@
 			
 			import flash.net.navigateToURL;
 			
+			import mx.collections.ArrayCollection;
 			import mx.core.IUIComponent;
 			import mx.core.IVisualElement;
 			import mx.core.UIComponent;
@@ -36,15 +38,19 @@
 			public var radiate:Radiate;
 			
 			public var lastURL:String;
-			public var declaredBy:String;
+			public var lastDocumentName:String;
 			public var documentationViewer:IUIComponent;
 			
 			public function activate():void {
 				radiate = Radiate.getInstance();
+				serviceManager = ServicesManager.getInstance();
 				
-				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChangeHandler, false, 0, true);
+				if (newsCollection.length==0) {
+					updateCheckNews();
+				}
+				
+				serviceManager.addEventListener(RadiateEvent.BLOG_POSTS_RECEIVED, blogPostsReceivedHandler, false, 0, true);
+				serviceManager.getNewsPosts();
 				
 				if (Radiate.isDesktop) {
 					currentState = "desktop";
@@ -54,84 +60,64 @@
 						UIComponent(documentationViewer).percentWidth = 100;
 						UIComponent(documentationViewer).percentHeight = 100;
 						IVisualElement(documentationViewer).top = 28;
-						addElementAt(IVisualElement(documentationViewer), numElements);
+						docsContainer.addChildAt(DisplayObject(documentationViewer), docsContainer.numChildren);
 					}
 				}
 				else {
 					currentState = "web";
 				}
 				
-				
-				updateTarget();
 				//updateDocumentation();
 			}
 			
+			protected function blogPostsReceivedHandler(event:RadiateEvent):void {
+				var posts:Array = serviceManager.parsePostsData(event.data);
+				newsCollection.source = posts;
+				
+				if (newsCollection.length==0) {
+					updateCheckNews(0);
+					//openPreviousProject.enabled = false;
+				}
+				else {
+					updateCheckNews(1);
+				}
+			}
+			
+			[Bindable]
+			public var serviceManager:ServicesManager;
+			
 			public function deactivate():void {
-				if (radiate) {
-					radiate.removeEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
-					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
-					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, targetChangeHandler);
+				if (serviceManager) {
+					serviceManager.removeEventListener(RadiateEvent.BLOG_POSTS_RECEIVED, blogPostsReceivedHandler);
 				}
 			}
 			
-			protected function targetChangeHandler(event:RadiateEvent):void {
-				updateTarget();
-			}
-			 
-			protected function propertySelectedHandler(event:RadiateEvent):void {
-				var metadata:MetaData = MetaData(event.selectedItem);
+			/**
+			 * Updates the label checking for news
+			 * -1 = checking
+			 * 0 = no news available
+			 * 1 = projects found
+			 * */
+			private function updateCheckNews(status:int = -1):void
+			{
 				
-				// if we are deactivated or invisible should we still update the documentation?
-				var isVisible:Boolean;
-				var path:String = "";
-				var prefix:String = "";
-				var url:String;
-				
-				url = Radiate.getURLToHelp(metadata);
-				
-				// don't keep loading pages if you already loaded them
-				if (url==lastURL) {
-					return;
+				if (status==-1) {
+					checkingForNewsLabel.text = "Checking for news...";
+					checkingForNewsLabel.includeInLayout = true;
+					checkingForNewsLabel.visible = true;
 				}
-				
-				lastURL = url;
-				declaredBy = metadata.declaredBy;
-				isVisible = DisplayObjectUtils.getGreatestVisibilityDisplayList(this);
-				
-				if (!isVisible || !showDocsCheckbox.selected) {
-					
-					textURL.text = "";
-					return;
+				else if (status==0) {
+					checkingForNewsLabel.text = "No tutorials available";
+					checkingForNewsLabel.includeInLayout = true;
+					checkingForNewsLabel.visible = true;
 				}
-				
-				updateDocumentation();
-				
-			}
-			
-			private function updateTarget():void {
-				
-				if (radiate.target) {
-					// if we are deactivated or invisible should we still update the documentation?
-					//var isVisible:Boolean = DisplayObjectUtils.getGreatestVisibilityDisplayList(this);
-					
-					var className:String = ClassUtils.getQualifiedClassName(radiate.target);
-					var url:String;
-					
-					if (className) {
-						
-						url = Radiate.getURLToHelp(className);
-						
-						// don't keep loading pages if you already loaded them
-						if (url==lastURL) {
-							return;
-						}
-						
-						lastURL = url;
-						updateDocumentation();
-					}
+				else if (status==1) {
+					checkingForNewsLabel.text = "";
+					checkingForNewsLabel.includeInLayout = false;
+					checkingForNewsLabel.visible = false;
 				}
 			}
-			
+
 			protected function showDocsCheckbox_changeHandler(event:Event):void {
 				
 				updateDocumentation();
@@ -153,7 +139,7 @@
 					if (openInSeparateWindow.selected) {
 						var request:URLRequest = new URLRequest(lastURL);
 						
-						navigateToURL(request, "asdocs");
+						navigateToURL(request, "documentation");
 						
 						if (Radiate.isDesktop) {
 							Object(documentationViewer).location = "";
@@ -178,7 +164,7 @@
 						textURL.text = lastURL;
 					}
 					else {
-						textURL.text = declaredBy;
+						textURL.text = lastDocumentName;
 					}
 				}
 				else {
@@ -198,7 +184,7 @@
 					textURL.text = lastURL;
 				}
 				else {
-					textURL.text = declaredBy;
+					textURL.text = lastDocumentName;
 				}
 			}
 			
@@ -208,9 +194,29 @@
 					RunManager.copyURLToClipboard(lastURL);
 				}
 				else {
-					Radiate.info("No documentaion is open");
+					Radiate.info("No documentation is open");
 				}
 			}
+			
+			protected function newsList_doubleClickHandler(event:MouseEvent):void {
+				var request:URLRequest;
+				
+				if (newsList.selectedItem) {
+					lastDocumentName = newsList.selectedItem.name;
+					lastURL = newsList.selectedItem.url;
+					updateDocumentation();
+				}
+				
+			}
+			
+			protected function newsLabel_clickHandler(event:MouseEvent):void
+			{
+				updateCheckNews(-1);
+				serviceManager.getNewsPosts();	
+			}
+			
+			[Bindable]
+			public var newsCollection:ArrayCollection = new ArrayCollection();
 		]]>
 	</fx:Script>
 	
@@ -220,8 +226,34 @@
 		<s:State name="web"/>
 	</s:states>
 	
+	<mx:HDividedBox id="docsContainer" bottom="28" width="100%" height="100%" left="6" >
+		<s:VGroup height="100%" width="200">
+			<c:LabelButton text="News and Tutorials" fontWeight="bold" click="newsLabel_clickHandler(event)"/>
+			
+			<s:Label id="checkingForNewsLabel" 
+					 text="Checking for news..." 
+					 fontStyle="italic"
+					 color="#989898"
+					 visible="false"
+					 includeInLayout="false"/>
+			<s:List id="newsList" 
+					width="100%"
+					minHeight="90"
+					height="100%"
+					borderVisible="false"
+					dataProvider="{newsCollection}"
+					labelField="title"
+					
+					click="newsList_doubleClickHandler(event)"
+					/>
+		</s:VGroup>
+		<!-- Desktop webview goes here at runtime -->
+		<flexiframe:IFrame includeIn="web" id="docsFrame" top="28" width="100%" height="100%" />
+	</mx:HDividedBox>
+	
+	
 	<s:HGroup left="0" right="0" 
-			  width="100%"
+			  width="100%" bottom="0"
 			  clipAndEnableScrolling="true" 
 			  paddingLeft="6" 
 			  paddingRight="10"
@@ -233,7 +265,7 @@
 					 borderVisible="false"
 					 focusAlpha="0"
 					 editable="false"
-					 prompt="No documentation available. Select a property, style or event."/>
+					 prompt=""/>
 		<s:CheckBox id="showURL" label="Show URL" 
 					selected="false"
 					change="showURL_changeHandler(event)"/>
@@ -253,9 +285,4 @@
 							  height="22"
 							  />
 	</s:HGroup>
-	
-	<flexiframe:IFrame includeIn="web" id="docsFrame" top="28" width="100%" height="100%" />
-	
-	<s:Label includeIn="desktop" text="Documentation not supported on desktop yet" top="28" left="10"/>
-	
 </s:Group>

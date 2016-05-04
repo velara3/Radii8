@@ -139,8 +139,8 @@
 			public function showImportedMessage():void {
 				hideMessage();
 				
-				notesGroup.visible = false;
-				notesGroup.includeInLayout = false;
+				notesGroup.visible = true;
+				notesGroup.includeInLayout = true;
 				messageLabel.text = "Import successful";
 				
 				if (aceEditor.aceFound) {
@@ -164,6 +164,7 @@
 					
 					if (result) {
 						showImportedMessage();
+						closeWindow();
 						return;
 					}
 				}
@@ -172,6 +173,7 @@
 					
 					if (result) {
 						showImportedMessage();
+						closeWindow();
 						return;
 					}
 				}
@@ -181,6 +183,7 @@
 						
 						if (result) {
 							showImportedMessage();
+							closeWindow();
 							return;
 						}
 					}
@@ -298,7 +301,7 @@
 				}
 			}
 			
-			protected function cancelButton_clickHandler(event:MouseEvent):void{
+			protected function cancelButton_clickHandler(event:MouseEvent):void {
 				action = null;
 				code = null;
 				
@@ -306,6 +309,13 @@
 				closePopUp.play();
 			}
 			
+			public function closeWindow(updatedAction:String = null, updatedCode:String = null):void {
+				action = updatedAction;
+				code = updatedCode;
+				
+				closePopUp.startDelay = 500;
+				closePopUp.play();
+			}
 		]]>
 	</fx:Script>
 	

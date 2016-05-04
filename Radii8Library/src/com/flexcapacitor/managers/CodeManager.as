@@ -348,7 +348,7 @@ package com.flexcapacitor.managers {
 		 * Imports the source code to the provided target component. If target is null then import to document.
 		 * If language is null then we check the document for language setting
 		 * */
-		public static function setSourceData(source:String, target:Object, document:IDocument, language:* = null, importOptions:ImportOptions = null):SourceData {
+		public static function setSourceData(source:String, target:Object, document:IDocument, language:* = null, importOptions:ImportOptions = null, dispatchEvents:Boolean = false):SourceData {
 			var targetDescription:ComponentDescription;
 			var transcoderDescription:TranscoderDescription;
 			var importer:DocumentTranscoder;
@@ -406,7 +406,7 @@ package com.flexcapacitor.managers {
 				throw new Error("Could not find target in document. It may have been removed");
 			}
 			
-			sourceData = importer.importare(source, document, targetDescription, importOptions);
+			sourceData = importer.importare(source, document, targetDescription, importOptions, dispatchEvents);
 			
 			return sourceData;
 			

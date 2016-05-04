@@ -322,6 +322,9 @@ package com.flexcapacitor.model {
 			_isPreviewOpen = value;
 		}
 
+		/**
+		 * If we encounter an invalidating sprite it's may be a GraphicElement
+		 * */
 		public var invalidatingSpritesDictionary:Dictionary = new Dictionary(true);
 		
 		private var _descriptionsDictionary:Dictionary = new Dictionary(true);
@@ -357,12 +360,34 @@ package com.flexcapacitor.model {
 				}
 			}
 			
+			// this might be incorrect - should it be (if value is InvalidatingSprite && spriteFound)? 
 			if (!spriteFound) {
 				invalidatingSpritesDictionary[value] = itemDescription;
 			}
 			
+			// we also need to avoid adding the editable text field 
+			// and other other items in the future 
+			// such as resize components or guidelines 
+			
 			descriptionsDictionary[value] = itemDescription;
 			
+			// we need to set the component's parent - calling this will 
+			// try to find it in the component display list and that will
+			// set it's parent and children properties
+			updateComponentTree();
+			
+		}
+		
+		/**
+		 * Rebuilds or updates the component tree  
+		 * */
+		public function updateComponentTree(target:Object = null):void
+		{
+			if (target==null) {
+				target = instance;
+			}
+			
+			DisplayObjectUtils.getComponentDisplayList2(target, null, 0, descriptionsDictionary);
 		}
 		
 		/**

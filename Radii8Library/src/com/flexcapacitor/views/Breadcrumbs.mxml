@@ -13,14 +13,24 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.IDocument;
-			import com.flexcapacitor.model.VisualElementVO;
-			import com.flexcapacitor.utils.InspectorUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.collections.ArrayCollection;
 			import mx.core.IVisualElement;
 			import mx.events.FlexEvent;
 			
 			import spark.components.Application;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.ADD_ITEM, addChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.MOVE_ITEM, moveChangeHandler, false, 0, true);
+				
+				if (radiate.targets) {
+					target = radiate.target;
+				}
+			}
 
 			[Bindable]
 			public var dataProviderList:ArrayCollection = new ArrayCollection();
@@ -84,22 +94,15 @@
 
 
 			protected function list1_clickHandler(event:MouseEvent):void {
-				var element:DisplayObject;
+				var componentDescription:ComponentDescription;
 				
 				if (list.selectedItem) {
-					element = VisualElementVO(list.selectedItem).element as DisplayObject;
+					componentDescription = list.selectedItem as ComponentDescription;
+					//element = VisualElementVO(list.selectedItem).element as DisplayObject;
 					
-					radiate.setTarget(element, true, null, true);
-				}
-			}
-			
-			protected function creationCompleteHandler(event:FlexEvent):void {
-				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.ADD_ITEM, addChangeHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.MOVE_ITEM, moveChangeHandler, false, 0, true);
-				
-				if (radiate.targets) {
-					target = radiate.target;
+					if (componentDescription) {
+						radiate.setTarget(componentDescription.instance, true, null, true);
+					}
 				}
 			}
 			
@@ -134,10 +137,11 @@
 			}
 			
 			private function createBreadCrumbTrail():void {
-				var parentDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = radiate.selectedDocument;
 				var lastElement:IVisualElement;
 				var newScrollPosition:int;
 				var displayItems:Array;
+				var componentDescription:ComponentDescription;
 
 				if (!target) {
 					dataProviderList.source = [];
@@ -145,16 +149,28 @@
 				}
 				
 				componentsTree.length = 0;
-				if (target is IDocument) target = parentDocument.instance;
-				componentsTree = InspectorUtils.getVisualElementsArray(target, componentsTree, maxDepth, parentDocument.instance);
+				
+				if (target==iDocument.instance) {
+					componentDescription = iDocument.componentDescription;
+				}
+				else {
+					componentDescription = iDocument.getItemDescription(target);
+				}
+				
+				
+				//componentsTree = InspectorUtils.getVisualElementsArray(target, componentsTree, maxDepth, parentDocument.instance);
 				//DisplayObjectUtils.walkUpTree(target, processTree);
+				while (componentDescription) {
+					componentsTree.push(componentDescription);
+					componentDescription = componentDescription.parent;
+				}
 				
 				if (!componentsTree) {
 					dataProviderList.source = [];
 					return;
 				}
 				
-				componentsTree.forEach(labelFunction);
+				//componentsTree.forEach(labelFunction2);
 				
 				if (showRightToLeft) {
 					componentsTree.reverse();
@@ -190,7 +206,7 @@
 					}
 				}
 			}
-			
+			/*
 			public function labelFunction(item:VisualElementVO, itemIndex:int, array:Array):void {
 				var label:String = item.id && showID ? item.type + "." + item.id : item.type;
 				
@@ -213,8 +229,44 @@
 				
 				item.label = label;
 			}
+			*/
+			public function labelFunction2(item:ComponentDescription):String {
+				var label:String = item.name && showID ? item.className + "." + item.name : item.className;
+				var index:int;
+				
+				label = item.className;
+				
+				if (item.instance is Application) {
+					label = "Document";
+				}
+				/*
+				if (showRightToLeft) {
+					//if (itemIndex!=0) {
+						label = label + "  >  ";
+					//}
+				}
+				else {
+					//if (itemIndex!=array.length-1) {
+						label = label + "  >  ";
+					//}
+					
+				}*/
+				
+				index = componentsTree.indexOf(item);
+				if (index != componentsTree.length-1) {
+					label = label + "  >  ";
+				}
+				
+				return label;
+			}
 			
 			
+			
+			protected function historyChangeHandler(event:RadiateEvent):void
+			{
+				targetChanged = true;
+				invalidateProperties();
+			}
 			
 		]]>
 	</fx:Script>
@@ -229,7 +281,7 @@
 				minHeight="16"
 				dataProvider="{dataProviderList}" 
 				borderVisible="false"
-				labelField="label"
+				labelFunction="labelFunction2"
 				click="list1_clickHandler(event)"
 				horizontalScrollPolicy="auto" 
 				verticalScrollPolicy="off">

@@ -39,6 +39,7 @@
 				super.data = value;
 				var path:String;
 				var imageID:String = "Not uploaded yet";
+				var parentImageID:String = "Not uploaded yet";
 				attachmentData = value as AttachmentData;
 				imageData = value as ImageData;
 				
@@ -66,6 +67,9 @@
 						
 						if (imageData.id) {
 							imageID = imageData.id;
+						}
+						if (imageData.parentId) {
+							parentImageID = imageData.parentId;
 						}
 					}
 					
@@ -97,7 +101,7 @@
 				}
 				
 				if (labelDisplay) {
-					toolTip = label + " - ID: " +  imageID + " - Parent ID: " + imageData.parentId;
+					toolTip = label + " - ID: " +  imageID + " - Parent ID: " + parentImageID;
 				}
 				else {
 					toolTip = "";

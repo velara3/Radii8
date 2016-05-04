@@ -5,11 +5,14 @@
 					  width="100%" 
 					  height="18" 
 					  autoDrawBackground="false"
+					  doubleClickEnabled="true"
+					  doubleClick="itemrenderer1_doubleClickHandler(event)"
 					  creationComplete="creationCompleteHandler(event)"
 					  >
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
@@ -18,7 +21,21 @@
 			import mx.events.FlexEvent;
 			
 			import spark.components.Application;
-			
+			/**
+			 * TypeError: Error #1034: Type Coercion failed: cannot convert Object@391af1d2bb51 to com.flexcapacitor.utils.supportClasses.ComponentDescription.
+	at Function/<anonymous>()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/views/renderers/LayersRenderer.mxml:281]
+	at Function/http://adobe.com/AS3/2006/builtin::apply()
+	 * 
+	 * Happened when dragging and dropping and holding alt key down (to make a copy) in Tree on LayersInspector
+	 * 
+	 * Might be caused by binding in 
+<s:Rect id="parentVisibleGroup" width="16" height="16" alpha="0.3" 
+					visible="{!ComponentDescription(data).parentVisible &amp;&amp; ComponentDescription(data).visible}">
+changed to 
+ *
+ * <s:Rect id="parentVisibleGroup" width="16" height="16" alpha="0.3" 
+					visible="{data as ComponentDescription && !ComponentDescription(data).parentVisible &amp;&amp; ComponentDescription(data).visible}">
+			 * */
 			override public function set data(value:Object):void {
 				super.data = value;
 				
@@ -157,12 +174,92 @@
 				visibleGroupClicked();
 			}
 			
+			protected function textInputChangeHandler():void {
+				//this.data = textInput.text;
+				
+				//dispatch the data update event
+				//var list:ListBase = this.owner as ListBase; is null for mx.controls.Tree??
+				var tree:Object = owner && "dataProvider" in owner ? owner : null;
+				//var iDocument:IDocument = Radiate.instance.selectedDocument;
+				var componentDescription:ComponentDescription = data as ComponentDescription;
+				
+				if (componentDescription && tree) {
+					var oldName:String = componentDescription.name;
+					var newName:String = textInput.text;
+					
+					if (newName!=null && newName!="" 
+						&& newName!=oldName) {
+						Radiate.setProperty(componentDescription, "name", newName);
+						tree.dataProvider.itemUpdated(componentDescription, "name", oldName, newName); 
+					}
+					
+					if (owner && "dragEnabled" in owner) {
+						Object(owner).dragEnabled = previousDragEnabled;
+					}
+					
+					if (owner && "enableKeyBoardHandling" in owner) {
+						Object(owner).enableKeyboardHandling = previousKeyboardHandlingEnabled;
+					}
+					
+					currentState = "normal";
+				}
+			}
+			
+			protected function textInput_focusOutHandler(event:FocusEvent):void {
+				textInputChangeHandler();
+				
+				if (owner && "dragEnabled" in owner) {
+					Object(owner).dragEnabled = previousDragEnabled;
+				}
+				
+				if (owner && "enableKeyBoardHandling" in owner) {
+					Object(owner).enableKeyboardHandling = previousKeyboardHandlingEnabled;
+				}
+				
+				currentState = "normal";
+			}
+			
+			protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void {
+				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				
+				if (iDocument==null || !iDocument.isOpen) {
+					return;
+				}
+				
+				if (owner && "dragEnabled" in owner) {
+					previousDragEnabled = Object(owner).dragEnabled;
+					Object(owner).dragEnabled = false;
+				}
+				
+				if (owner && "enableKeyboardHandling" in owner) {
+					previousKeyboardHandlingEnabled = Object(owner).enableKeyboardHandling;
+					Object(owner).enableKeyboardHandling = false;
+				}
+				
+				currentState = "edit";
+				
+				textInput.text = labelDisplay.text;
+				textInput.setFocus();
+				textInput.selectAll();
+			}
+			
+			
+			override protected function getCurrentRendererState():String {
+				// if in edit state don't change unless 
+				if (currentState=="edit") return "edit";
+				
+				return super.getCurrentRendererState();
+			}
+			
+			private var previousDragEnabled:Boolean;
+			private var previousKeyboardHandlingEnabled:Boolean;
 		]]>
 	</fx:Script>
 	
 	<s:states>
 		<s:State name="normal"/>
 		<s:State name="selected"/>
+		<s:State name="edit"/>
 	</s:states>
 	
 	<s:Group width="100%" height="100%" left="0" right="2">
@@ -172,6 +269,7 @@
 			</s:fill>
 		</s:Rect>
 	</s:Group>
+	
 	
 	<s:HGroup id="hgroup" left="0"
 			  right="0"
@@ -194,7 +292,7 @@
 			
 			<!--- fade out visible image if parent is not visible -->
 			<s:Rect id="parentVisibleGroup" width="16" height="16" alpha="0.3" 
-					visible="{!ComponentDescription(data).parentVisible &amp;&amp; ComponentDescription(data).visible}">
+					visible="{data as ComponentDescription &amp;&amp; !ComponentDescription(data).parentVisible &amp;&amp; ComponentDescription(data).visible}">
 				<s:fill>
 					<s:SolidColor color="#666666"/>
 				</s:fill>
@@ -242,8 +340,19 @@
 		<s:Label id="labelDisplay" 
 				 fontSize="10"
 				 paddingLeft="3"
-				 paddingTop="1"
-				 typographicCase="lowercaseToSmallCaps"/>
+				 paddingTop="1" 
+				 itemCreationPolicy="immediate"
+				 includeIn="normal,selected"/>
+		
+		<s:TextInput id="textInput" 
+					 fontSize="10"
+					 focusAlpha="0"
+					 borderVisible="false"
+					 enter="textInputChangeHandler()" 
+					 focusOut="textInput_focusOutHandler(event)"
+					 includeIn="edit"
+					 itemCreationPolicy="immediate"
+					 width="100%" height="100%"/>
 		
 		<s:Spacer width="100%"/>
 		
@@ -254,4 +363,5 @@
 		
 		<s:Spacer width="4"/>
 	</s:HGroup>
+	
 </s:MXTreeItemRenderer>

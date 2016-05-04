@@ -64,15 +64,15 @@
 			
 			
 			public function update():void {
-				colorFieldRenderer.data 		= ClassUtils.getMetaDataOf(target, "colorField");
-				labelFieldRenderer.data 		= ClassUtils.getMetaDataOf(target, "labelField");
-				selectedColorRenderer.data 		= ClassUtils.getMetaDataOf(target, "selectedColor");
-				selectedIndexRenderer.data 		= ClassUtils.getMetaDataOf(target, "selectedIndex");
-				editableRenderer.data 			= ClassUtils.getMetaDataOf(target, "editable");
-				showTextFieldRenderer.data 		= ClassUtils.getMetaDataOf(target, "showTextField");
-				swatchBorderColorRenderer.data 	= ClassUtils.getMetaDataOf(target, "swatchBorderColor");
-				swatchBorderSizeRenderer.data 	= ClassUtils.getMetaDataOf(target, "swatchBorderSize");
-				swatchPanelStyleNameRenderer.data = ClassUtils.getMetaDataOf(target, "swatchPanelStyleName");
+				colorFieldRenderer.data 		= ClassUtils.getMetaDataOfMember(target, "colorField");
+				labelFieldRenderer.data 		= ClassUtils.getMetaDataOfMember(target, "labelField");
+				selectedColorRenderer.data 		= ClassUtils.getMetaDataOfMember(target, "selectedColor");
+				selectedIndexRenderer.data 		= ClassUtils.getMetaDataOfMember(target, "selectedIndex");
+				editableRenderer.data 			= ClassUtils.getMetaDataOfMember(target, "editable");
+				showTextFieldRenderer.data 		= ClassUtils.getMetaDataOfMember(target, "showTextField");
+				swatchBorderColorRenderer.data 	= ClassUtils.getMetaDataOfMember(target, "swatchBorderColor");
+				swatchBorderSizeRenderer.data 	= ClassUtils.getMetaDataOfMember(target, "swatchBorderSize");
+				swatchPanelStyleNameRenderer.data = ClassUtils.getMetaDataOfMember(target, "swatchPanelStyleName");
 			}
 			
 			public var relevantProperties:Array = ["colorField", "labelField", "selectedColor", "selectedIndex",

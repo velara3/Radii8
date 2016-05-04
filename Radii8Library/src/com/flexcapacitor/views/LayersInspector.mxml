@@ -108,6 +108,7 @@
 				updateComponentDisplayList();
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, addItemChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_REVERTED, documentChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler, false, 0, true);
@@ -124,6 +125,7 @@
 				if (radiate) {
 					
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, addItemChangeHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_REVERTED, documentChangeHandler);
 					radiate.removeEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
@@ -188,6 +190,7 @@
 				var rootApplicationDescription:ComponentDescription;
 				var targetDescription:ComponentDescription;
 				var parent:ComponentDescription;
+				var iDocument:IDocument = radiate.selectedDocument;
 				
 				target = selectedItem;
 				
@@ -200,7 +203,8 @@
 					rootApplicationDescription = collection.getItemAt(0) as ComponentDescription;
 					
 					if (rootApplicationDescription) {
-						targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, rootApplicationDescription);
+						//targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, rootApplicationDescription);
+						targetDescription = iDocument.getItemDescription(target);
 						
 						if (targetDescription) {
 							
@@ -220,10 +224,10 @@
 							
 							// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
 							// ALSO we are resetting the dataProvider so it's not going to find the items
-							for (var i:int;i<length;i++) {
+							//for (var i:int;i<numberOfItems;i++) {
 								//displayListTree.expandItem(openItems[i], true, false, false);
 								//trace("expanding");
-							}
+							//}
 							
 							componentListTree.selectedItem = targetDescription;
 						}
@@ -335,10 +339,13 @@
 			 * Recreate the display list and open all items.
 			 * */
 			private function updateComponentDisplayList(preserveOpenItems:Boolean = true):void {
+				var openItem:Object;
 				var openItems:Object;
 				var iDocument:IDocument;
-				var display:Object;
-				var length:int;
+				var rootComponentDescription:Object;
+				var numberOfOpenItems:int;
+				var selectedItems:Array;
+				var selectedItem:Object;
 				
 				iDocument = radiate.selectedDocument;
 				
@@ -354,8 +361,10 @@
 				// componentDescription.instance not componentDescription
 				
 				// we could check for the target and update that branch
-				display = iDocument.componentDescription;
-				componentListTree.dataProvider = display;
+				rootComponentDescription = iDocument.componentDescription;
+				selectedItem = componentListTree.selectedItem;
+				//selectedItems = radiate.targets;
+				componentListTree.dataProvider = rootComponentDescription;
 				
 				// 
 				//DisplayObjectUtils.walkDownTree(application as IVisualElement, traceTree);
@@ -369,17 +378,23 @@
 						//trace("expanding");
 					}
 					 */
-					length = openItems.length;
+					numberOfOpenItems = openItems.length;
 					
 					// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
 					// ALSO we are resetting the dataProvider so it's not going to find the items if we do that
-					for (var i:int;i<length;i++) {
-						if (!componentListTree.isItemOpen(openItems[i])) {
-							componentListTree.expandItem(openItems[i], true, false, false);
+					for (var i:int;i<numberOfOpenItems;i++) {
+						openItem = openItems[i];
+						if (!componentListTree.isItemOpen(openItem)) {
+							componentListTree.expandItem(openItem, true, false, false);
+							componentListTree.validateNow();
 						}
 						//trace("expanding");
 					}
 				}
+				
+				// for multiple targets we should loop through radiate.targets, 
+				// get the component descriptions and set them here
+				componentListTree.selectedItem = selectedItem;
 			}
 			
 			public function traceTree(element:Object):void {
@@ -609,7 +624,7 @@
 					Radiate.info("row  index:" + rowIndex);
 					Radiate.info("item index:" + droppingIndex);*/
 					
-					Radiate.moveElement(draggedElement.instance, dropParent.instance, [], [], null, 
+					Radiate.moveElement2(draggedElement.instance, dropParent.instance, null, null, 
 										RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 					
 					radiate.setTarget(draggedElement.instance);
@@ -627,7 +642,7 @@
 							//Radiate.info("Lowering index");
 						}
 						
-						Radiate.moveElement(draggedElement.instance, dropParent.instance, [], [], null, 
+						Radiate.moveElement2(draggedElement.instance, dropParent.instance, null, null, 
 										RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 					}
 					else {
@@ -690,14 +705,18 @@
 			}
 			
 			public function updateAlphaProperty():void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription = iDocument.getItemDescription(target);
+				if (componentDescription==null) return;
+				
 				var textAccessor:AccessorMetaData = ClassUtils.getMetaDataOfProperty(target, "alpha");
 
 				alphaRenderer.data = textAccessor;
 			}
 			
 			public function updateLockedProperty():void {
-				var document:IDocument = radiate.selectedDocument;
-				var componentDescription:ComponentDescription = document.getItemDescription(target);
+				var iDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription = iDocument.getItemDescription(target);
 				lockedItem.selected = componentDescription ? componentDescription.locked : false;
 			}
 			
@@ -758,9 +777,10 @@
 			
 			protected function duplicateItem_clickHandler(event:MouseEvent):void {
 				var selectedTarget:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+				var newItems:Array;
 				
 				if (selectedTarget) {
-					radiate.duplicateItem(selectedTarget);
+					newItems = radiate.duplicateItem(selectedTarget);
 				}
 				else {
 					Radiate.info("No layer selected");
@@ -804,7 +824,7 @@
 					
 					if (currentIndex>0) {
 						dropIndex = currentIndex - 1;
-						Radiate.moveElement(componentDescription.instance, componentDescription.parent.instance, [], [], 
+						Radiate.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
 											null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 						radiate.setTarget(componentDescription.instance);
 						componentListTree.selectedItem = componentDescription;
@@ -832,7 +852,7 @@
 							dropIndex = currentIndex + 2;
 						}
 						
-						Radiate.moveElement(componentDescription.instance, componentDescription.parent.instance, [], [], 
+						Radiate.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
 							null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 						radiate.setTarget(componentDescription.instance);
 						componentListTree.selectedItem = componentDescription;
@@ -860,7 +880,7 @@
 				top="0"
 				bottom="0">
 		<s:Group width="100%" height="100%">
-			<mx:Tree id="componentListTree" 
+			<c:TreeNoKeyboardHandling id="componentListTree" 
 					 width="100%"
 					 focusAlpha="0"
 					 minHeight="50"
@@ -888,7 +908,7 @@
 					 >
 
 				
-			</mx:Tree>
+			</c:TreeNoKeyboardHandling>
 		</s:Group>
 	</s:Scroller>
 	

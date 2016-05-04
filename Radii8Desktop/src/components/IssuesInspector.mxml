@@ -52,7 +52,6 @@
 				return data.label + "\n" + data.description;
 			}
 			
-			
 			/**
 			 * Update problems and warnings tree
 			 * */
@@ -195,14 +194,15 @@
 			verticalScrollPolicy="auto"
 			change="list_changeHandler(event)"
 			>
-		<!--<s:itemRenderer>
+		<s:itemRenderer>
 			<fx:Component>
-				<s:ItemRenderer>
+				<s:ItemRenderer width="100%">
 					<fx:Script>
 						<![CDATA[
 							import com.flexcapacitor.model.IssueData;
 							import com.flexcapacitor.model.WarningData;
 							import com.flexcapacitor.model.ErrorData;
+							
 							override public function set data(value:Object):void {
 								super.data = value;
 								
@@ -212,24 +212,33 @@
 								else if (value is WarningData) {
 									icon.source = Radii8LibraryAssets.warning;
 								}
-								
+								else if (value is IssueData) {
+									icon.source = Radii8LibraryAssets.info;
+								}
+								else {
+									icon.source = null;
+								}
+								/*
 								if (value is IssueData) {
 									moreLabelDisplay.text = IssueData(value).description;
 								}
 								else {
 									moreLabelDisplay.text = "";
-								}
+								}*/
 							}
 						]]>
 					</fx:Script>
+					
 					<s:layout>
 						<s:HorizontalLayout verticalAlign="middle" />
 					</s:layout>
+					
 					<s:Image id="icon" />
-					<s:Label id="labelDisplay"/>
-					<s:Label id="moreLabelDisplay"/>
+					<s:VGroup width="100%" padding="6">
+						<s:Label id="labelDisplay" width="100%"/>
+					</s:VGroup>
 				</s:ItemRenderer>
 			</fx:Component>
-		</s:itemRenderer>-->
+		</s:itemRenderer>
 	</s:List>
 </s:Group>

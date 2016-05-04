@@ -1359,7 +1359,17 @@ package com.flexcapacitor.tools {
 				return;
 			}
 			
-			if (focusedObject is Application || eventTarget is Stage) {
+			// capture key presses when application has focus
+			if (eventTarget is Stage) {
+				if (focusedObject==null) {
+					applicable = true;
+				}
+				else if (targetApplication && targetApplication.contains(focusedObject)) {
+					applicable = true;
+				}
+			}
+			
+			if (focusedObject is Application) {
 				isApplication = true;
 			}
 			
@@ -1446,7 +1456,7 @@ package com.flexcapacitor.tools {
 				}
 				
 				
-				Radiate.moveElement(targets, element.parent, properties, null, propertiesObject);
+				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.RIGHT) {
@@ -1489,7 +1499,7 @@ package com.flexcapacitor.tools {
 					}
 				}
 				
-				Radiate.moveElement(targets, element.parent, properties, null, propertiesObject);
+				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.UP) {
@@ -1533,7 +1543,7 @@ package com.flexcapacitor.tools {
 				}
 				
 				//Radiate.moveElement(targets, element.parent, properties, null, propertiesObject);
-				Radiate.moveElement(targets, null, properties, null, propertiesObject);
+				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.DOWN) {
@@ -1576,7 +1586,7 @@ package com.flexcapacitor.tools {
 					}
 				}
 				
-				Radiate.moveElement(targets, element.parent, properties, null, propertiesObject);
+				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.BACKSPACE || event.keyCode==Keyboard.DELETE) {

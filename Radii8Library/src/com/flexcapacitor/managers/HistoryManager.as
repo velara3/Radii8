@@ -355,7 +355,8 @@ package com.flexcapacitor.managers
 							}
 						}
 						else { // property change
-							Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles,
+							Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], 
+								historyEventItem.properties, historyEventItem.styles, historyEventItem.events,
 								setStartValues);
 							historyEventItem.reversed = true;
 							
@@ -364,7 +365,7 @@ package com.flexcapacitor.managers
 							Radiate.updateComponentEvents(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.events);
 							
 							if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-								radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
+								radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles, historyEventItem.events);
 							}
 						}
 					}
@@ -389,7 +390,8 @@ package com.flexcapacitor.managers
 					// undo the property changes
 				else if (action==RadiateEvent.PROPERTY_CHANGED) {
 					
-					Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles,
+					Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], 
+						historyEventItem.properties, historyEventItem.styles, historyEventItem.events,
 						setStartValues);
 					historyEventItem.reversed = true;
 					
@@ -398,7 +400,7 @@ package com.flexcapacitor.managers
 					Radiate.updateComponentEvents(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.events, true);
 					
 					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
+						radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles, historyEventItem.events);
 					}
 				}
 			}
@@ -565,12 +567,13 @@ package com.flexcapacitor.managers
 					}
 					else {
 						
-						Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles,
+						Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], 
+							historyEventItem.properties, historyEventItem.styles, historyEventItem.events,
 							setStartValues);
 						historyEventItem.reversed = false;
 						
 						if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-							radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
+							radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles, historyEventItem.events);
 						}
 					}
 					
@@ -593,7 +596,8 @@ package com.flexcapacitor.managers
 					}
 				}
 				else if (action==RadiateEvent.PROPERTY_CHANGED) {
-					Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles,
+					Radiate.applyChanges(historyEventItem.targets, [historyEventItem.propertyChanges], 
+						historyEventItem.properties, historyEventItem.styles, historyEventItem.events,
 						setStartValues);
 					historyEventItem.reversed = false;
 					
@@ -602,7 +606,7 @@ package com.flexcapacitor.managers
 					Radiate.updateComponentEvents(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.events);
 					
 					if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-						radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles);
+						radiate.dispatchPropertyChangeEvent(historyEventItem.targets, [historyEventItem.propertyChanges], historyEventItem.properties, historyEventItem.styles, historyEventItem.events);
 					}
 				}
 			}
@@ -902,7 +906,7 @@ package com.flexcapacitor.managers
 		 * Changes can contain a property or style changes or add items. 
 		 * Must call addHistoryEvent with the event items returned from this call.
 		 * */
-		public static function createHistoryEventItems(targets:Array, changes:Array, properties:*, styles:*, value:*, description:String = null, action:String=RadiateEvent.PROPERTY_CHANGED, remove:Boolean = false):Array {
+		public static function createHistoryEventItems(targets:Array, changes:Array, properties:*, styles:*, events:*, value:*, description:String = null, action:String=RadiateEvent.PROPERTY_CHANGED, remove:Boolean = false):Array {
 			var factory:ClassFactory = new ClassFactory(HistoryEventItem);
 			var historyEventItem:HistoryEventItem;
 			var reverseAddItems:AddItems;
@@ -924,6 +928,7 @@ package com.flexcapacitor.managers
 				
 				// check for property change or add display object
 				if (change is PropertyChanges) {
+					historyEventItem.events				= ArrayUtil.toArray(events);
 					historyEventItem.properties 		= ArrayUtil.toArray(properties);
 					historyEventItem.styles 			= ArrayUtil.toArray(styles);
 					historyEventItem.propertyChanges 	= PropertyChanges(change);

@@ -7,11 +7,15 @@
 					   xmlns:controls="com.flexcapacitor.controls.*"
 					   xmlns:components="components.*"
 					   
-					   minWidth="1200"
-					   minHeight="700"
+					   width="1000"
+					   height="500"
+					   minWidth="800"
+					   minHeight="400"
 					   applicationComplete="applicationCompleteHandler(event)"
 					   render="windowedapplication1_enterFrameHandler(event)"
 					   uncaughtError="windowedapplication1_uncaughtErrorHandler(event)"
+					   networkChange="windowedapplication1_networkChangeHandler(event)"
+					   invoke="windowedapplication1_invokeHandler(event)"
 					   >
 	
 	<fx:Script>
@@ -23,9 +27,9 @@
 			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.ErrorData;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.model.TranscoderDescription;
-			import com.flexcapacitor.performance.PerformanceManager;
 			import com.flexcapacitor.performance.PerformanceMeter;
 			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.ClassUtils;
@@ -38,6 +42,8 @@
 			
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
+			
+			import spark.components.WindowedApplication;
 			
 			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
 			
@@ -54,17 +60,32 @@
 			public var importer:DocumentTranscoder;
 			public var sourceData:SourceData;
 			public var updateNeeded:Boolean;
+			public var renderDeltaChanges:Boolean;
+			public var viewRendered:Boolean;
 			
 			protected function applicationCompleteHandler(event:FlexEvent):void {
+				textArea.text = message;
+				
 				XMLUtils.initialize();
 				var hasDefinition:Boolean;
 				
 				var appXML:XML = NativeApplication.nativeApplication.applicationDescriptor;
 				var ns:Namespace = appXML.namespace();
 				var version:String = appXML.versionNumber;
+				
 				version = appXML.ns::versionNumber;
 				CodeManager.setTranscodersVersion(version);
 				Radiate.initialize();
+				
+				Radiate.addComponentType("WindowedApplication", "spark.components.WindowedApplication", WindowedApplication);
+				Radiate.addComponentType("VDividedBox", "mx.components.VDividedBox", VDividedBox);
+				Radiate.addComponentType("HDividedBox", "mx.components.HDividedBox", HDividedBox);
+				
+				// only update on save keyboard shortcut or on change
+				updateOnSave = false;
+				
+				updateOnChangeButton.selected = !updateOnSave;
+				updateOnSaveButton.selected = updateOnSave;
 				
 				var transcoderDescription:TranscoderDescription = new TranscoderDescription();
 				var item:XML = <transcoder type="mxml" label="MXML" importLabel="MXML Importer" supportsImport="true" supportsExport="false" 
@@ -89,8 +110,6 @@
 				
 				createEditors();
 				
-				updateOnSave = true; // only update on save keyboard shortcut
-				
 				setDefaultXML();
 			}
 			
@@ -108,7 +127,7 @@
 				aceEditor.margin = editorMargin;
 				aceEditor.useWordWrap = true;
 				aceEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
-				aceEditor.addEventListener(Event.CHANGE, changeHandler, false, 0, true);
+				aceEditor.addEventListener(Event.CHANGE, editorChangeHandler, false, 0, true);
 				aceEditor.addEventListener("save", saveHandler, false, 0, true);
 				aceEditor.scrollSpeed = .5;
 				aceEditorCreated = true;
@@ -122,10 +141,10 @@
 			}
 			
 			protected function saveHandler(event:Event = null):void {
-				prepareUpdateView();
+				invalidateDesignView();
 			}
 			
-			protected function changeHandler(event:Event = null):void {
+			protected function editorChangeHandler(event:Event = null):void {
 				var validationInfo:XMLValidationInfo;
 				var errorLocation:String;
 				var isValid:Boolean;
@@ -134,7 +153,7 @@
 				var code:String = aceEditor.text;
 				var time:int;
 				
-				PerformanceMeter.mark("Before xml validation");
+				PerformanceMeter.mark("Before xml validation", true);
 				isValid = XMLUtils.isValidXML(code);
 				PerformanceMeter.mark("After xml validation");
 				//error = XMLUtils.validationError;
@@ -146,24 +165,27 @@
 					message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
 					errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
 					showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);
+					renderTimeLabel.text = time + "ms";
 				}
 				else {
 					hideMessage();
+					
 					if (!updateOnSave) {
-						prepareUpdateView();
+						invalidateDesignView();
+						checkForDifferences();
 					}
 				}
 				
 			}
 			
-			public function showMessage(firstMessage:String, secondMessage:String = null, row:int = -1, column:int = 0, updateIssues:Boolean = true):void {
+			public function showMessage(firstMessage:String, secondMessage:String = "", row:int = -1, column:int = 0, updateIssues:Boolean = true):void {
+				var errorData:ErrorData;
 				lineError.text = firstMessage;
 				warningLabel.text = secondMessage;
 				errorGroup.visible = true;
 				errorGroup.includeInLayout = true;
 				aceEditor.clearAnnotations();
 				aceEditor.setAnnotation(row, column, secondMessage, "error");
-				var errorData:ErrorData;
 				
 				if (updateIssues) {
 					errorData = ErrorData.getIssue(firstMessage, secondMessage, row, column);
@@ -182,9 +204,11 @@
 			/**
 			 * This method lets us show a status indication while rendering
 			 * */
-			public function prepareUpdateView():void {
+			public function invalidateDesignView():void {
 				renderTimeLabel.text = "Rendering...";
 				renderTimeLabel.validateNow();
+				
+				// we check on the next frame if any updates are needed 
 				updateNeeded = true;
 			}
 			
@@ -195,6 +219,7 @@
 				if (iDocument.instance==null) return; // not loaded yet
 				
 				var code:String = aceEditor.text;
+				var time:int;
 				
 				if (transcoder==null) {
 					transcoder = CodeManager.getImporter(CodeManager.MXML);
@@ -203,8 +228,17 @@
 					importer.makeInteractive = true;
 				}
 				
-				var time:int = getTimer();
-				sourceData = importer.importare(code, iDocument);
+				time = getTimer();
+				
+				if (!renderDeltaChanges) {
+					sourceData = importer.importare(code, iDocument);
+				}
+				else {
+					parseFile();
+					computeChanges();
+					applyChanges();
+				}
+				
 				time = getTimer()-time;
 				renderTimeLabel.text = time + "ms";
 				
@@ -213,6 +247,105 @@
 				}
 				
 				updateNeeded = false;
+			}
+			
+			private function computeChanges():void {
+				var newValues:Object;
+				var oldValues:Object;
+				var newValue:Object;
+				var oldValue:Object;
+				var removeList:Object;
+				var attributeName:String;
+				var parts:Array;
+				var changeList:Object;
+				var supportedAttributes:Object;
+				var fullAttributeName:String;
+				
+				changes = {};
+				removals = {};
+				
+				if (oldDB == null) {
+					oldDB = newDB;
+					return;
+				}
+				
+				// assume set of components with ids and their ids won't change
+				for (var nodeID:String in newDB) {
+					newValues = newDB[nodeID];
+					oldValues = oldDB[nodeID];
+					
+					if (oldValues==null) continue;
+					
+					for (fullAttributeName in newValues) {
+						newValue = newValues[fullAttributeName];
+						oldValue = oldValues[fullAttributeName];
+						
+						if (newValue != oldValue) {
+							changeList = changes[nodeID];
+							
+							if (!changeList) {
+								changeList = changes[nodeID] = {};
+							}
+							
+							changeList[fullAttributeName] = newValue;
+						}
+					}
+					
+					// look for deletions and set value back to default value
+					for (fullAttributeName in oldValues) {
+						
+						if (!newValues.hasOwnProperty(fullAttributeName)) {
+							removeList = removals[nodeID];
+							
+							if (!removeList) {
+								removeList = removals[nodeID] = {};
+							}
+							
+							attributeName = fullAttributeName;
+							
+							if (fullAttributeName.indexOf(".") > -1) {
+								parts = fullAttributeName.split(".");
+								attributeName = parts[0];
+							}
+							
+							// 
+							//removeList[fullAttributeName] = supportedAttributes[attributeName];
+						}
+					}
+					
+					//supportedAttributes = ClassUtils.getMemberNames(nodeID);
+				}
+				
+				oldDB = newDB;
+			}
+			
+			private function applyChanges():void {
+				var changedValues:Object;
+				var removedValues:Object;
+				var attributeName:String;
+				var nodeID:String;
+				
+				for (nodeID in changes) {
+					changedValues = changes[nodeID];
+					trace("Node ID:" + nodeID);
+					
+					for (attributeName in changedValues) {
+						trace(" - Attribute to change: " + attributeName);
+						trace(" - New value: " + changedValues[attributeName]);
+						//commandconnection.send("_MXMLLiveEditPluginCommands", "setValue", nodeID, attributeName, changedValues[attributeName]);
+					}
+				}
+				
+				for (nodeID in removals) {
+					removedValues = removals[nodeID];
+					trace(nodeID);
+					
+					for (attributeName in removedValues)
+					{
+						trace(" - Attribute removed: " + attributeName);
+						//commandconnection.send("_MXMLLiveEditPluginCommands", "setValue", p, q, removedValues[q]);
+					}
+				}
 			}
 			
 			public var iDocument:IDocument;
@@ -247,14 +380,14 @@
 				applicationLoader.createCleanApplication();
 				setDefaultXML();
 				aceEditor.validateNow();
-				prepareUpdateView();
+				invalidateDesignView();
 			}
 			
 			protected function addDemoDataButton_clickHandler(event:MouseEvent):void
 			{
 				aceEditor.text = embeddedMXML2.value;
 				aceEditor.validateNow();
-				prepareUpdateView();
+				invalidateDesignView();
 			}
 			
 			protected function updateOnChangeButton_clickHandler(event:MouseEvent):void
@@ -279,7 +412,7 @@
 			
 			protected function updateDocumentButton_clickHandler(event:MouseEvent):void
 			{
-				prepareUpdateView();
+				invalidateDesignView();
 			}
 			
 			protected function windowedapplication1_enterFrameHandler(event:Event):void
@@ -293,7 +426,7 @@
 			{
 				aceEditor.text = embeddedSimpleMXML.value;
 				aceEditor.validateNow();
-				prepareUpdateView();
+				invalidateDesignView();
 			}
 			
 			protected function issuesInspector_changeHandler(event:IssueDataEvent):void
@@ -301,8 +434,7 @@
 				showMessage(event.label, event.description, 0, 0, false);
 			}
 			
-			protected function windowedapplication1_uncaughtErrorHandler(event:UncaughtErrorEvent):void
-			{
+			protected function windowedapplication1_uncaughtErrorHandler(event:UncaughtErrorEvent):void {
 				// you're here probably because an incorrect style was set on Label 
 				// for example, you put "b" for fontWeight
 				// spark Label throws an error in this case. 
@@ -327,6 +459,231 @@
 				issuesInspector.updateIssuesTree([errorData]);
 			}
 			
+			protected function windowedapplication1_networkChangeHandler(event:Event):void
+			{
+				
+			}
+			
+			public var message:String;
+			
+			protected function windowedapplication1_invokeHandler(event:InvokeEvent):void {
+				var invokeArguments:Array = event.arguments;
+				var filePath:String;
+				var stream:FileStream;
+				var file:File;
+				var testing:Boolean = false;
+				
+				
+				// application icon had a file dropped on it or an associated file was double clicked
+				if (event.reason == InvokeEventReason.STANDARD && invokeArguments.length) {
+					
+					//showMessage("invoking with arguments" +  ObjectUtil.toString(invokeArguments));
+					invokeWithFile(event.currentDirectory, invokeArguments);
+				}
+				
+				// application opened normally 
+				if (event.reason == InvokeEventReason.STANDARD && invokeArguments.length == 0) {
+					//invokeWithFile(event.currentDirectory, invokeArguments);
+					
+					return;
+				}
+				
+				// application opened at login
+				if (event.reason == InvokeEventReason.LOGIN) {
+					return;
+				}
+				
+				// application opened from URL
+				if (event.reason == InvokeEventReason.OPEN_URL) {
+					return;
+				}
+				
+				// application opened from notification such as iOS APN
+				if (event.reason == InvokeEventReason.NOTIFICATION) {
+					return;
+				}
+			}
+			
+			public var invokedFile:File;
+			
+			/**
+			 * Invoked file. Move to radiate class
+			 * */
+			public function invokeWithFile(currentDirectory:File, invokedArguments:Array):void {
+				var filePath:String = invokedArguments && invokedArguments.length ? invokedArguments[0] : null;
+				var fileData:String;
+				var fileStream:FileStream;
+				var file:File;
+				
+				if (filePath) {
+					try {
+						file = new File(filePath);
+					}
+					catch (errorEvent:*) {
+						trace("Error: " + errorEvent.toString());
+						return;
+					}
+					
+					if (file && 
+						file.exists && 
+						file.isDirectory==false && 
+						file.extension && 
+						file.extension.toLowerCase()=="mxml") {
+						fileStream = new FileStream();
+						
+						try {
+							fileStream.open(file, FileMode.READ);
+							
+							if (fileStream.bytesAvailable) {
+								fileData = fileStream.readUTFBytes(fileStream.bytesAvailable);
+								aceEditor.text = fileData;
+								aceEditor.validateNow();
+								invalidateDesignView();
+							}
+						}
+						catch (error:*) {
+							
+						}
+					}
+				}
+			}
+			
+			
+			private function checkForDifferences(filePath:String = null):void {
+				var mxmlFile:File;
+				
+				if (filePath!=null && filePath!="") {
+					try {
+						mxmlFile = new File(filePath);
+						
+						if (mxmlFile.exists && mxmlFile.modificationDate.time == lastModifiedTime) {
+							return;
+						}
+					} catch (e:Error) {
+						// might check while file is open to be written so just ignore
+						// and check on the next interval;
+						return;
+					}
+				}
+				
+				parseFile();
+				computeChanges();
+				applyChanges();
+			}
+			
+			private function parseFile():void {
+				var xml:XML = new XML(aceEditor.text);
+				newDB = {};
+				generatedIDCounter = 0;
+				parseChildren(newDB, xml);
+			}
+			
+			private function parseChildren(newDB:Object, parent:XML):void {
+				var effectiveID:String;
+				var elementAttributes:XMLList;
+				var numberOfAttributes:int;
+				var attributeMap:Object;
+				var attributeName:String;
+				var children:XMLList;
+				var childNode:XML;
+				var childNodeName:String;
+				var numberOfChildren:int;
+				var memberName:String;
+				var isStateSpecific:Boolean;
+				var metaData:MetaData;
+				
+				children = parent.children();
+				numberOfChildren = children.length();
+				
+				for (var i:int = 0; i < numberOfChildren; i++){
+					childNode = children[i];
+					childNodeName = childNode.name();
+					
+					if (childNodeName == null) {
+						continue; // saw this for CDATA children
+					}
+					
+					// items to ignore
+					if (filteredMXMLNodes[childNodeName]) {
+						continue;
+					}
+					
+					// we go deep first because that's how the Falcon compiler
+					// generates IDs for tags that don't have id attributes set.
+					parseChildren(newDB, childNode);
+					
+					// check if a class rather than property, style or event
+					if (isInstance(childNodeName)) {
+						if (childNode.@id.length() == 0) {
+							effectiveID = "#" + generatedIDCounter++;
+						}
+						else {
+							effectiveID = childNode.@id;
+						}
+						
+						elementAttributes = childNode.attributes();
+						numberOfAttributes = elementAttributes.length();
+						
+						attributeMap = {};
+						newDB[effectiveID] = attributeMap;
+						
+						for (var j:int = 0; j < numberOfAttributes; j++) {
+							attributeName = elementAttributes[j].name();
+							isStateSpecific = attributeName.indexOf(".")!=-1;
+							memberName = getAttributeName(attributeName);
+							//metaData = ClassUtils.getMetaDataOfMember(childNodeName, memberName);
+							
+							//if (supportedAttributes.hasOwnProperty()) {
+							//if (supportedAttributes.hasOwnProperty(getAttributeName(attributeName))) {
+								attributeMap[attributeName] = childNode["@" + attributeName].toString();
+							//}
+						}
+					}
+				}
+			}
+			
+			// assume it is an instance if the tag name starts with a capital letter
+			private function isInstance(tagName:String):Boolean {
+				var hasNamespace:int = tagName.indexOf("::");
+				var firstCharacter:String;
+				var isCapitalLetter:Boolean;
+				
+				if (hasNamespace > -1) {
+					tagName = tagName.substring(hasNamespace + 2);
+				}
+				
+				firstCharacter = tagName.charAt(0);
+				isCapitalLetter = firstCharacter >= "A" && firstCharacter <= "Z";
+				
+				return isCapitalLetter;
+			}
+			
+			/**
+			 * If it contains a period we need to set the attribute in that state if the state exists
+			 * */
+			private function getAttributeName(attributeName:String):String {
+				var containsPeriod:int = attributeName.indexOf(".");
+				
+				if (containsPeriod > -1) {
+					attributeName = attributeName.substring(0, containsPeriod);
+				}
+				
+				return attributeName;
+			}
+			
+			
+			private var lastModifiedTime:Number = 0;
+			private var generatedIDCounter:int = 0;
+			private var newDB:Object;
+			private var oldDB:Object;
+			private var changes:Object;
+			private var removals:Object;
+			
+			private var filteredMXMLNodes:Object = {
+				"http://ns.adobe.com/mxml/2009::Script": 1,
+				"http://ns.adobe.com/mxml/2009::Declarations": 1,
+				"http://ns.adobe.com/mxml/2009::Style": 1
+			}
 		]]>
 	</fx:Script>
 	
@@ -382,7 +739,7 @@
 						width="100%"
 						horizontalScrollPolicy="off">
 			
-			<s:VGroup height="100%" includeIn="sidebar" itemCreationPolicy="immediate">
+			<s:VGroup height="100%" includeIn="sidebar" itemCreationPolicy="immediate" width="200">
 				<s:Label x="15" y="65" text="Issues:" fontWeight="bold"/>
 				
 				<components:IssuesInspector id="issuesInspector" 
@@ -402,7 +759,13 @@
 					  width="100%"
 					  height="100%">
 				
-				<s:Label x="15" y="65" text="MXML code:" fontWeight="bold"/>
+				
+				<s:HGroup width="100%" verticalAlign="middle" >
+					<s:Label x="15" y="65" text="MXML code:" fontWeight="bold"/>
+					<s:Spacer width="100%"/>
+					<s:Label id="renderTimeLabel" color="#898989" />
+					
+				</s:HGroup>
 				
 				<s:HGroup id="notesGroup" width="100%" verticalAlign="middle" 
 						  includeInLayout="false" visible="false">
@@ -443,9 +806,8 @@
 					<s:Label text="Update on:" />
 					<s:RadioButton id="updateOnChangeButton" label="change"
 								   click="updateOnChangeButton_clickHandler(event)"/>
-					<s:RadioButton id="updateOnSaveButton" label="save" selected="true"
+					<s:RadioButton id="updateOnSaveButton" label="save" 
 								   click="updateOnChangeButton_clickHandler(event)"/>
-					<s:Label id="renderTimeLabel" paddingLeft="10"/>
 					<s:Spacer width="100%"/>
 					
 					<controls:AceSearchTextInput id="findInput" aceEditor="{aceEditor}"
@@ -455,5 +817,6 @@
 			</s:VGroup>
 		</mx:HDividedBox>
 		
+		<s:TextArea id="textArea" width="100%" includeInLayout="false" visible="false"/>
 	</mx:VDividedBox>
 </s:WindowedApplication>

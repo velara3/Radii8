@@ -36,7 +36,7 @@ package com.flexcapacitor.utils {
 		}
 		
 		//override public function importare(iDocument:IDocument, id:String, container:IVisualElement) {
-		override public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, options:ImportOptions = null):SourceData {
+		override public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, options:ImportOptions = null, dispatchEvents:Boolean = false):SourceData {
 			var componentDefinition:ComponentDefinition;
 			var sourceData:SourceData;
 			var container:IVisualElementContainer;
@@ -119,7 +119,7 @@ package com.flexcapacitor.utils {
 				// TODO this is a special case we check for since 
 				// we should have already created the application by now
 				// we should handle this case before we get here (pass in the children of the application xml not application itself)
-				if (elName=="Application") {
+				if (elName=="Application" || elName=="WindowedApplication") {
 					//componentDefinition = Radiate.getDynamicComponentType(elName);
 					//Radiate.setAttributesOnComponent(document.instance, mxml, componentDefinition);
 					createChildFromNode(mxml, container, document, 0, document.instance);
@@ -182,7 +182,10 @@ package com.flexcapacitor.utils {
 			var message:String;
 			var errorData:ErrorData;
 			var issueData:IssueData;
-			
+			var property:String;
+			var event:String;
+			var style:String;
+			var attributeNotFound:String;
 			
 			if (elementName==null || kind=="text") {
 				
@@ -192,7 +195,7 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (componentDefinition==null) {
-				message = "Could not find definition for " + elementName + ". The document will be missing elements.";
+				message = "Could not find the definition for " + elementName + ". The document will be missing elements.";
 			}
 			
 			className = componentDefinition ? componentDefinition.className :null;
@@ -201,6 +204,10 @@ package com.flexcapacitor.utils {
 			
 			if (componentDefinition==null && elementName!="RootWrapperNode") {
 				//message += " Add this class to Radii8LibrarySparkAssets.sparkManifestDefaults or add the library to the project that contains it.";
+				
+				errorData = ErrorData.getIssue("Element not found", message);
+				errors.push(errorData);
+				
 				Radiate.error(message);
 				return null;
 			}
@@ -273,10 +280,10 @@ package com.flexcapacitor.utils {
 				}
 				
 				if (!componentAlreadyAdded) {
-					Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.values);
+					Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.events, valuesObject.values);
 				}
 				else if (valuesObject.propertiesStylesEvents && valuesObject.propertiesStylesEvents.length) {
-					Radiate.setPropertiesStyles(componentInstance, valuesObject.propertiesStylesEvents, valuesObject.values);
+					Radiate.setPropertiesStylesEvents(componentInstance, valuesObject.propertiesStylesEvents, valuesObject.values);
 				}
 				
 				Radiate.removeExplictSizeOnComponent(componentInstance, node, componentDefinition, false);
@@ -334,24 +341,38 @@ package com.flexcapacitor.utils {
 					}
 				}
 				
-				for (var prop:String in valuesObject.propertiesErrorsObject) {
-					errorData = ErrorData.getIssue("Invalid value", "Value for property '" + prop + "' was not applied");
-					errorData.errorID = valuesObject.propertiesErrorsObject[prop].errorID;
-					errorData.message = valuesObject.propertiesErrorsObject[prop].message;
-					errorData.name = valuesObject.propertiesErrorsObject[prop].name;
+				var layerName:String = fcNamespaceURI + "::name";
+				
+				if (attributes.indexOf(layerName)!=-1) {
+					componentDescription.name = valuesObject.values[layerName];
+				}
+				
+				for (property in valuesObject.propertiesErrorsObject) {
+					errorData = ErrorData.getIssue("Invalid property value", "Value for property '" + property + "' was not applied to " + elementName);
+					errorData.errorID = valuesObject.propertiesErrorsObject[property].errorID;
+					errorData.message = valuesObject.propertiesErrorsObject[property].message;
+					errorData.name = valuesObject.propertiesErrorsObject[property].name;
 					errors.push(errorData);
 				}
 				
-				for (var style:String in valuesObject.stylesErrorsObject) {
-					errorData = ErrorData.getIssue("Invalid value", "Value for style '" + style + "' was not applied");
+				for (style in valuesObject.stylesErrorsObject) {
+					errorData = ErrorData.getIssue("Invalid style value", "Value for style '" + style + "' was not applied to " + elementName);
 					errorData.errorID = valuesObject.stylesErrorsObject[style].errorID;
 					errorData.message = valuesObject.stylesErrorsObject[style].message;
 					errorData.name = valuesObject.stylesErrorsObject[style].name;
 					errors.push(errorData);
 				}
 				
-				for each (var attributeNotFound:String in valuesObject.attributesNotFound) {
-					errorData = ErrorData.getIssue("Invalid attribute", "Attribute '" + attributeNotFound + "' was not processed");
+				for (event in valuesObject.eventsErrorsObject) {
+					errorData = ErrorData.getIssue("Invalid event value", "Value for event '" + event + "' was not applied to " + elementName);
+					errorData.errorID = valuesObject.stylesErrorsObject[event].errorID;
+					errorData.message = valuesObject.stylesErrorsObject[event].message;
+					errorData.name = valuesObject.stylesErrorsObject[event].name;
+					errors.push(errorData);
+				}
+				
+				for each (attributeNotFound in valuesObject.attributesNotFound) {
+					errorData = ErrorData.getIssue("Invalid attribute", "Attribute '" + attributeNotFound + "' was not found on " + elementName);
 					errors.push(errorData);
 				}
 				

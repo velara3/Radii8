@@ -37,6 +37,7 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.DocumentMetaData;
 			import com.flexcapacitor.model.IDocument;
@@ -768,9 +769,13 @@
 			
 			
 			protected function newsList_doubleClickHandler(event:MouseEvent):void {
-				var request:URLRequest = new URLRequest();
-				request.url = newsList.selectedItem.url;
-				navigateToURL(request, "previewInBrowser");
+				var request:URLRequest;
+				
+				if (newsList.selectedItem) {
+					request = new URLRequest();
+					request.url = newsList.selectedItem.url;
+					navigateToURL(request, "previewInBrowser");
+				}
 				
 			}
 			
@@ -919,6 +924,24 @@
 					//notificationMessenger.play();
 					notificationMessenger.end();
 				}
+			}
+			
+			protected function sizeDocumentToImage_itemClickHandler(event:MenuEvent):void
+			{
+				var iDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(radiate.target) : null;
+				var image:Image = componentDescription ? componentDescription.instance as Image : null;
+				var bitmapData:BitmapData = image ? image.bitmapData : null;
+				
+				if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
+					Radiate.restoreImageToOriginalSize(image);
+					Radiate.sizeDocumentToBitmapData(iDocument, image.bitmapData);
+					
+					//radiate.scaleToFit(false);
+					//radiate.centerApplication();
+				}
+				
+				
 			}
 			
 			protected function sizeDocumentToSelection_itemClickHandler(event:MenuEvent):void
@@ -1109,26 +1132,6 @@
 				radiate.dropItem(event);
 			}
 			
-			/**
-			 * File load complete
-			 * */
-			protected function loadFile_completeHandler(event:Event):void {
-				// handling it in drag drop complete
-				return;
-				var imageData:ImageData = new ImageData();
-				imageData.bitmapData = loadFile.bitmapData;
-				imageData.byteArray = loadFile.data;
-				imageData.name = loadFile.currentFileReference.name;
-				imageData.contentType = loadFile.loaderContentType;
-				imageData.file = loadFile.currentFileReference;
-				
-				radiate.addAssetToDocument(imageData,  radiate.selectedDocument);
-				radiate.addImageDataToDocument(imageData, radiate.selectedDocument);
-				//list.selectedItem = data;
-				
-				//uploadAttachment(loadFile.fileReference);
-			}
-			
 			protected function mainView_dragExitHandler(event:DragEvent):void
 			{
 				dropImagesLocation.visible = false;
@@ -1178,7 +1181,8 @@
 			
 			protected function psdLoadedHandler(event:Event):void {
 				if (radiate.selectedDocument) {
-					radiate.addPSDToDocument(loadPSDFile.data, radiate.selectedDocument);
+					Radiate.info("Importing PSD");
+					Radiate.callAfter(250, radiate.addPSDToDocument, loadPSDFile.data, radiate.selectedDocument);
 				}
 			}
 			
@@ -1227,7 +1231,22 @@
 			
 			protected function menuNewDocument_itemClickHandler(event:MenuEvent):void
 			{
-				radiate.createNewDocument()
+				radiate.createNewDocument();
+			}
+			
+			/**
+			 * Create a new document with default project for quick mockups
+			 * */
+			protected function newDocumentAndProjectButton_clickHandler(event:MouseEvent):void {
+				radiate.createNewDocumentAndProject();
+			}
+			
+			public function goToDesignState(validate:Boolean = true):void {
+				currentState = DESIGN_STATE;
+				
+				if (validate) {
+					validateNow();
+				}
 			}
 			
 		]]>
@@ -1493,6 +1512,7 @@
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="copySelectionIntoLibrary" label="Merge selection into an image" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
+				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToImage_itemClickHandler(event)" />
 				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
 				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
@@ -1592,12 +1612,6 @@
 							 enabled="true"
 							 />
 		
-		<file:LoadFile id="loadFile" 
-					   loadIntoLoader="true"
-					   loaderComplete="loadFile_completeHandler(event)"
-					   >
-			
-		</file:LoadFile>
 	</fx:Declarations>
 	
 	<s:states>
@@ -1854,11 +1868,20 @@
 											  enabled="{projectsList.selectedItem!=null}"
 											  />
 				
-				<renderers:ProjectRenderer id="newProjectButton" 
+				<renderers:ItemRendererButton id="newProjectButton" 
+										   iconSource="{Radii8LibraryAssets.project}"
 										   bottom="20" 
 										   horizontalCenter="0" 
 										   label="New Project" 
 										   autoDrawBackground="true"/>
+				
+				<renderers:ItemRendererButton id="newDocumentButton" 
+										   iconSource="{Radii8LibraryAssets.document}"
+										   bottom="20" 
+										   horizontalCenter="0" 
+										   label="New Document" 
+										   autoDrawBackground="true"
+										   click="newDocumentAndProjectButton_clickHandler(event)"/>
 				
 				
 			</s:HGroup>

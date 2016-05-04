@@ -124,14 +124,18 @@ package com.flexcapacitor.controller {
 	import flash.utils.setTimeout;
 	
 	import mx.collections.ArrayCollection;
+	import mx.containers.Box;
+	import mx.containers.Canvas;
 	import mx.containers.Grid;
 	import mx.containers.GridItem;
 	import mx.containers.GridRow;
 	import mx.containers.TabNavigator;
+	import mx.containers.VBox;
 	import mx.controls.Alert;
 	import mx.controls.ColorPicker;
 	import mx.controls.LinkButton;
 	import mx.core.ClassFactory;
+	import mx.core.Container;
 	import mx.core.DeferredInstanceFromFunction;
 	import mx.core.DragSource;
 	import mx.core.EventPriority;
@@ -200,7 +204,6 @@ package com.flexcapacitor.controller {
 	import flashx.textLayout.conversion.TextConverter;
 	import flashx.textLayout.elements.TextFlow;
 	
-	import org.as3commons.lang.ArrayUtils;
 	import org.as3commons.lang.DictionaryUtils;
 	import org.as3commons.lang.ObjectUtils;
 	
@@ -353,6 +356,11 @@ package com.flexcapacitor.controller {
 	 * Dispatched when an object is selected 
 	 * */
 	[Event(name="objectSelected", type="com.flexcapacitor.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when an external asset such as an image is loaded 
+	 * */
+	[Event(name="assetLoaded", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Main class and API that handles the interactions between the view and the models. <br/><br/>
@@ -637,6 +645,12 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public var isUserConnected:Boolean;
+		
+		/**
+		 * Is the user online
+		 * */
+		[Bindable]
+		public var isUserOnline:Boolean;
 		
 		/**
 		 * Avatar of user
@@ -1135,6 +1149,22 @@ package com.flexcapacitor.controller {
 				assetAddedEvent = new RadiateEvent(RadiateEvent.ASSET_ADDED);
 				assetAddedEvent.data = data;
 				dispatchEvent(assetAddedEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch asset loaded event
+		 * */
+		public function dispatchAssetLoadedEvent(asset:Object, document:IDocument, resized:Boolean, successful:Boolean = true):void {
+			var assetLoadedEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.ASSET_LOADED)) {
+				assetLoadedEvent = new RadiateEvent(RadiateEvent.ASSET_LOADED);
+				assetLoadedEvent.data = asset;
+				assetLoadedEvent.selectedItem = document;
+				assetLoadedEvent.resized = resized;
+				assetLoadedEvent.successful = successful;
+				dispatchEvent(assetLoadedEvent);
 			}
 		}
 		
@@ -3398,7 +3428,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Sets the scale to fit the available space. 
 		 * */
-		public function scaleToFit(dispatchEvent:Boolean = true):void {
+		public function scaleToFit(enableScaleUp:Boolean = true, dispatchEvent:Boolean = true):void {
 			var width:int;
 			var height:int;
 			var availableWidth:int;
@@ -3406,16 +3436,19 @@ package com.flexcapacitor.controller {
 			var widthScale:Number;
 			var heightScale:Number;
 			var newScale:Number;
-			var documentVisualElement:IVisualElement = selectedDocument ? selectedDocument.instance as IVisualElement : null;
+			var documentInstance:IVisualElement;
+			var vsbWidth:int;
+			var hsbHeight:int;
 			
-			if (documentVisualElement) {
+			documentInstance = selectedDocument ? selectedDocument.instance as IVisualElement : null;
 			
+			if (documentInstance) {
 				//width = DisplayObject(document).width;
 				//height = DisplayObject(document).height;
-				width = documentVisualElement.width;
-				height = documentVisualElement.height;
-				var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 20;
-				var hsbHeight:int = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 20;
+				width = documentInstance.width;
+				height = documentInstance.height;
+				vsbWidth = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 20;
+				hsbHeight = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 20;
 				availableWidth = canvasScroller.width - vsbWidth*2.5;
 				availableHeight = canvasScroller.height - hsbHeight*2.5;
 				
@@ -3438,7 +3471,12 @@ package com.flexcapacitor.controller {
 					//newScale = Math.max(availableHeight/height, availableWidth/width);
                 }
 
-				setScale(newScale, dispatchEvent);
+				if (newScale>1 && !enableScaleUp) {
+					setScale(1, dispatchEvent);
+				}
+				else {
+					setScale(newScale, dispatchEvent);
+				}
 				
 				////////////////////////////////////////////////////////////////////////////////
 				/*var documentRatio:Number = width / height;
@@ -3697,6 +3735,7 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Add an asset to the document assets collection
+		 * Should be renamed to something like addAssetToGlobalResourcesAndAssociateWithDocument
 		 * */
 		public function addAssetToDocument(attachmentData:DocumentData, documentData:IDocumentData, dispatchEvent:Boolean = true):void {
 			var numberOfAssets:int = assets ? assets.length : 0;
@@ -3838,8 +3877,11 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Adds PSD to the document.
-		 * Adds assets to the library and document
+		 * Adds PSD to the document. <br/>
+		 * Adds assets to the library and document<br/>
+		 * Missing support for masks, shapes and text (text is shown as image)<br/>
+		 * Takes quite a while to import. <br/>
+		 * Could use performance testing.
 		 * */
 		public function addPSDToDocument(psdFileData:ByteArray, iDocument:IDocument, matchDocumentSizeToPSD:Boolean = true, addToAssets:Boolean = true):void {
 			var componentDefinition:ComponentDefinition;
@@ -3851,10 +3893,12 @@ package com.flexcapacitor.controller {
 			var psdParser:PSDParser;
 			var numberOfLayers:int;
 			var properties:Array = [];
-			var propertiesObject:Object;
+			var propertiesObject:Object; // could be causing performance issues - try typed
 			var psdLayer:PSDLayer;
-			var compositeBitmap:Bitmap;
-			var addCompositeImage:Boolean = true;
+			var compositeBitmapData:BitmapData;
+			var compositeWidth:int;
+			var compositeHeight:int;
+			var addCompositeImage:Boolean;
 			var imageData:ImageData;
 			var blendModeKey:String;
 			var blendMode:String;
@@ -3874,11 +3918,17 @@ package com.flexcapacitor.controller {
 			var foldersDictionary:Object = [];
 			var xOffset:int;
 			var yOffset:int;
-			var parentGroup:Object;
+			var parentGroup:Object;// could be causing performance issues - try typed
 			var hasShapes:Boolean;
+			var hasMasks:Boolean;
+			var resized:Boolean;
 			var showInfo:Boolean = false;
 			var testForErrors:Boolean = false;
 			var time:int;
+			var setDefaultsPre:Boolean = true;
+			var setDefaultsPost:Boolean = false;
+			
+			addCompositeImage = true;
 			
 			layersAndFolders = new Dictionary(true);
 			
@@ -3906,6 +3956,7 @@ package com.flexcapacitor.controller {
 			catch (errorObject:*) {
 				var errorMessage:String;
 				var stack:String;
+				
 				if ("getStackTrace" in errorObject) {
 					stack = errorObject.getStackTrace();
 				}
@@ -3932,25 +3983,27 @@ package com.flexcapacitor.controller {
 			
 			info("Time to import: " + int(time/1000) + " seconds. Number of layers: " + numberOfLayers);
 			
+			compositeBitmapData = psdParser.composite_bmp;
+			compositeWidth		= compositeBitmapData ? compositeBitmapData.width : 0;
+			compositeHeight		= compositeBitmapData ? compositeBitmapData.height : 0;
+			
 			// add composite of the PSD
 			if (addCompositeImage || numberOfLayers==0) {
-				//compositeBitmap = new Bitmap(psdParser.composite_bmp);
-				bitmapData 					= psdParser.composite_bmp;
 				
 				componentDefinition 		= getComponentType("Image");
-				componentInstance 			= createComponentToAdd(iDocument, componentDefinition, false);
+				componentInstance 			= createComponentToAdd(iDocument, componentDefinition, setDefaultsPre);
 				
 				propertiesObject 			= {};
-				propertiesObject.source 	= psdParser.composite_bmp;
+				propertiesObject.source 	= compositeBitmapData;
 				
 				propertiesObject.visible 	= numberOfLayers==0 ? true : false;
 				
 				properties.push("source");
 				properties.push("visible");
 				
-				addElement(componentInstance, application, properties, null, propertiesObject);
+				addElement(componentInstance, application, properties, null, null, propertiesObject);
 				
-				updateComponentAfterAdd(iDocument, componentInstance, true);
+				updateComponentAfterAdd(iDocument, componentInstance, setDefaultsPost);
 				
 				componentDescription = iDocument.getItemDescription(componentInstance);
 				
@@ -3962,7 +4015,7 @@ package com.flexcapacitor.controller {
 				
 				if (addToAssets) {
 					imageData = new ImageData();
-					imageData.bitmapData = bitmapData;
+					imageData.bitmapData = compositeBitmapData;
 					imageData.name = "Composite Layer";
 					imageData.layerInfo = psdLayer;
 					
@@ -3970,7 +4023,7 @@ package com.flexcapacitor.controller {
 				}
 			}
 			
-			if (numberOfLayers==0 && psdParser.composite_bmp==null) {
+			if (numberOfLayers==0 && compositeBitmapData==null) {
 				warn("The PSD did not contain any readable layers.");
 				pasteFileLoader ? pasteFileLoader.removeReferences(true) : -1;
 				dropFileLoader ? dropFileLoader.removeReferences(true) : -1;
@@ -3978,6 +4031,8 @@ package com.flexcapacitor.controller {
 				if (addToAssets && imageData) {
 					dispatchAssetAddedEvent(imageData);
 				}
+				
+				dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, false, false);
 				
 				return;
 			}
@@ -4000,11 +4055,11 @@ package com.flexcapacitor.controller {
 			
 			// loop through layers and get the folders 
 			for (var a:int;a<numberOfLayers;a++)  {
-				psdLayer		= layers[a];
-				layerType 		= psdLayer.type;
-				layerID 		= psdLayer.layerID;
-				layerName 		= psdLayer.name;
-				layersAndFolders[layerID] = psdLayer;
+				psdLayer					= layers[a];
+				layerType 					= psdLayer.type;
+				layerID 					= psdLayer.layerID;
+				layerName 					= psdLayer.name;
+				layersAndFolders[layerID] 	= psdLayer;
 				
 				// create groups 
 				if (layerType==PSDLayer.LayerType_FOLDER_OPEN || 
@@ -4022,7 +4077,7 @@ package com.flexcapacitor.controller {
 					
 					componentDefinition 		= getComponentType("Group");
 					
-					componentInstance 			= createComponentToAdd(iDocument, componentDefinition, false);
+					componentInstance 			= createComponentToAdd(iDocument, componentDefinition, setDefaultsPre);
 					
 					propertiesObject 			= {};
 					propertiesObject.x 			= 0;
@@ -4169,7 +4224,7 @@ package com.flexcapacitor.controller {
 				
 				componentDefinition 		= getComponentType("Image");
 				
-				componentInstance 			= createComponentToAdd(iDocument, componentDefinition, false);
+				componentInstance 			= createComponentToAdd(iDocument, componentDefinition, setDefaultsPre);
 				
 				propertiesObject 			= {};
 				propertiesObject.source 	= bitmapData;
@@ -4259,9 +4314,9 @@ package com.flexcapacitor.controller {
 					trace("Adding layer " + layerName + " to group " + parentLayerID);
 				}
 				
-				addElement(componentInstance, parentInstance, parentGroup.properties, null, parentGroup.propertiesObject);
+				addElement(componentInstance, parentInstance, parentGroup.properties, null, null, parentGroup.propertiesObject);
 				
-				updateComponentAfterAdd(iDocument, componentInstance, true);
+				updateComponentAfterAdd(iDocument, componentInstance, setDefaultsPost);
 				
 				componentDescription = iDocument.getItemDescription(componentInstance);
 				
@@ -4292,17 +4347,30 @@ package com.flexcapacitor.controller {
 				dropFileLoader.removeReferences(true);
 			}
 			
+			const WIDTH:String = "width";
+			const HEIGHT:String = "height";
+			
+			if (matchDocumentSizeToPSD) {
+				resized = sizeDocumentToBitmapData(documentThatPasteOfFilesToBeLoadedOccured, compositeBitmapData);
+			}
+			
 			// dispatch event 
 			if (addToAssets && imageData) {
 				dispatchAssetAddedEvent(imageData);
 			}
 			
-			if (hasShapes) {
-				info("PSD imported with warnings. It does not fully support shapes. Be sure to upload the images added to the Library.");
+			if (hasShapes || hasMasks) {
+				info("A PSD was partially imported. It does not fully support shapes or masks. Be sure to upload the images added to the Library.");
 			}
 			else {
-				info("PSD imported. Be sure to upload the images added to the Library.");
+				info("A PSD was imported. Be sure to upload the images added to the Library.");
 			}
+			
+			setTarget(iDocument.instance);
+			
+			imageData = getImageDataFromBitmapData(compositeBitmapData);
+			
+			dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
 		}
 		
 		/**
@@ -4364,7 +4432,7 @@ package com.flexcapacitor.controller {
 				properties.push("source");
 			}
 			
-			addElement(componentInstance, iDocument.instance, properties, null, propertiesObject);
+			addElement(componentInstance, iDocument.instance, properties, null, null, propertiesObject);
 			
 			updateComponentAfterAdd(iDocument, componentInstance);
 			
@@ -4623,6 +4691,7 @@ package com.flexcapacitor.controller {
 			_targets = [];
 			
 			if (value is Array) {
+				//_targets = (value as Array).slice();
 				_targets[0] = _tempTarget;
 			}
 			else {
@@ -4844,9 +4913,38 @@ package com.flexcapacitor.controller {
 				
 			}
 		}
+	
+		/**
+		 * Get MXML source of the document 
+		 * */
+		public static function getMXML(iDocument:IDocument, target:Object = null, options:ExportOptions = null):SourceData {
+			var options:ExportOptions;
+			var sourceItemData:SourceData;
+
+			if (options==null) {
+				options = new ExportOptions();
+				options.useInlineStyles = true;
+				options.exportChildDescriptors = true;
+			}
+			
+			if (target==null) {
+				target = iDocument.componentDescription.instance;
+			}
+			
+			if (iDocument.getItemDescription(target)) {
+				sourceItemData = CodeManager.getSourceData(target, iDocument, CodeManager.MXML, options);
+				
+				if (sourceItemData) {
+					return sourceItemData;
+				}
+			}
+			
+			return null;
+		}
 		
 		/**
-		 * Get destination for image files when dropped from an external source
+		 * Get destination component or application when image files are 
+		 * dropped from an external source
 		 * */
 		public function getDestinationForExternalFileDrop():Object {
 			var destination:Object = target;
@@ -4969,7 +5067,7 @@ package com.flexcapacitor.controller {
 			if (useCopyObjectsTechnique) {
 				var item:ComponentDefinition = Radiate.getComponentType(component.className);
 				newComponent = createComponentToAdd(selectedDocument, item, true);
-				addElement(newComponent, destination, descriptor.propertyNames, descriptor.styleNames, ObjectUtils.merge(descriptor.properties, descriptor.styles));
+				addElement(newComponent, destination, descriptor.propertyNames, descriptor.styleNames, descriptor.eventNames, ObjectUtils.merge(descriptor.properties, descriptor.styles));
 				updateComponentAfterAdd(selectedDocument, newComponent);
 				//setProperties(newComponent, descriptor.propertyNames, descriptor.properties);
 				HistoryManager.doNotAddEventsToHistory = true;
@@ -5039,10 +5137,14 @@ package com.flexcapacitor.controller {
 			}
 		}
 		
-		public function duplicateItem(component:Object, destination:Object = null):Object {
+		/**
+		 * Duplicates the selected items
+		 * */
+		public function duplicateItem(component:Object, destination:Object = null):Array {
 			var exportOptions:ExportOptions;
 			var sourceData:SourceData;
 			var componentDescription:ComponentDescription;
+			var newTargets:Array;
 			
 			exportOptions = new ExportOptions();
 			exportOptions.useInlineStyles = true;
@@ -5095,15 +5197,18 @@ package com.flexcapacitor.controller {
 			// add duplicate
 			sourceData = CodeManager.setSourceData(sourceData.source, destination, selectedDocument, CodeManager.MXML, null);
 			
+			// dispatch added items
+			dispatchAddEvent(sourceData.targets, null, null);
+			
 			// select first target
 			if (sourceData && sourceData.targets && sourceData.targets.length) { 
-				setTarget(sourceData.targets[0]);
+				setTarget(sourceData.targets[0], true, null, true);
 			}
 			else {
 				setTarget(destination);
 			}
 			
-			var newTargets:Array = sourceData.targets.slice();
+			newTargets = sourceData.targets.slice();
 			
 			sourceData = null;
 			
@@ -5160,6 +5265,7 @@ package com.flexcapacitor.controller {
 			var extension:String;
 			var fileSafeList:Array = [];
 			var hasPSD:Boolean;
+			var hasMXML:Boolean;
 			
 			// only accepting image files at this time
 			for each (var file:FileReference in fileList) {
@@ -5174,6 +5280,10 @@ package com.flexcapacitor.controller {
 				else if (extension=="psd") {
 					fileSafeList.push(file);
 					hasPSD = true;
+				}
+				else if (extension=="mxml") {
+					fileSafeList.push(file);
+					hasMXML = true;
 				}
 				else {
 					path_txt = "Not a recognised file format";  
@@ -5198,7 +5308,7 @@ package com.flexcapacitor.controller {
 			fileLoader.removeReferences(true);
 			
 			
-			if (!hasPSD) {
+			if (!hasPSD && !hasMXML) {
 				fileLoader.loadIntoLoader = true;
 			}
 			else {
@@ -5211,9 +5321,17 @@ package com.flexcapacitor.controller {
 					warn("You cannot load a PSD and image files at the same time. Select one or the other");
 					return;
 				}
+				else if (fileSafeList.length>1 && hasMXML) {
+					warn("You cannot load a MXML file and other files at the same time. Select one or the other");
+					return;
+				}
 				
 				if (hasPSD) {
 					loadingPSD = true;
+				}
+				else 
+				if (hasMXML) {
+					loadingMXML = true;
 				}
 				else {
 					loadingPSD = false;
@@ -5233,6 +5351,7 @@ package com.flexcapacitor.controller {
 		public var pasteFileLoader:LoadFile;
 		public var dropFileLoader:LoadFile;
 		public var documentThatPasteOfFilesToBeLoadedOccured:IDocument;
+		public var loadingMXML:Boolean;
 		public var loadingPSD:Boolean;
 		
 		protected function setupPasteFileLoader():void {
@@ -5257,8 +5376,10 @@ package com.flexcapacitor.controller {
 		protected function pasteFileCompleteHandler(event:Event):void {
 			var resized:Boolean;
 			
-			if (event.type==LoadFile.LOADER_COMPLETE) {
-				
+			// if we need to load the images ourselves then skip complete event
+			// and wait until loader complete event
+			if (dropFileLoader.loadIntoLoader && event.type!=LoadFile.LOADER_COMPLETE) {
+				return;
 			}
 			
 			if (!documentThatPasteOfFilesToBeLoadedOccured) {
@@ -5270,6 +5391,13 @@ package com.flexcapacitor.controller {
 				loadingPSD = false;
 				info("Importing PSD");
 				callAfter(250, addPSDToDocument, pasteFileLoader.data, documentThatPasteOfFilesToBeLoadedOccured);
+				return;
+			}
+			
+			if (loadingMXML) {
+				loadingMXML = false;
+				info("Importing MXML");
+				callAfter(250, importMXMLDocument, selectedProject, documentThatPasteOfFilesToBeLoadedOccured, documentThatPasteOfFilesToBeLoadedOccured.instance, pasteFileLoader.dataAsString);
 				//addPSDToDocument(pasteFileLoader.data, documentThatPasteOfFilesToBeLoadedOccured);
 				return;
 			}
@@ -5293,6 +5421,8 @@ package com.flexcapacitor.controller {
 			}
 			
 			setTarget(lastCreatedComponent);
+			
+			dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
 		}
 		
 		/**
@@ -5319,6 +5449,14 @@ package com.flexcapacitor.controller {
 				return;
 			}
 			
+			if (loadingMXML) {
+				loadingMXML = false;
+				info("Importing MXML");
+				callAfter(250, importMXMLDocument, selectedProject, documentThatPasteOfFilesToBeLoadedOccured, documentThatPasteOfFilesToBeLoadedOccured.instance, dropFileLoader.dataAsString);
+				//addPSDToDocument(pasteFileLoader.data, documentThatPasteOfFilesToBeLoadedOccured);
+				return;
+			}
+			
 			var imageData:ImageData = new ImageData();
 			imageData.bitmapData = dropFileLoader.bitmapData;
 			imageData.byteArray = dropFileLoader.data;
@@ -5333,13 +5471,15 @@ package com.flexcapacitor.controller {
 			//uploadAttachment(fileLoader.fileReference);
 			
 			if (resized) {
-				info("Image was added to the library and the document and resized to fit");
+				info("An image was added to the library and the document and resized to fit");
 			}
 			else {
-				info("Image was added to the library and the document");
+				info("An image was added to the library and the document");
 			}
 			
 			setTarget(lastCreatedComponent);
+			
+			dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
 		}
 		
 		/**
@@ -5398,7 +5538,7 @@ package com.flexcapacitor.controller {
 			var component:Label = createComponentToAdd(iDocument, definition, false) as Label;
 			
 			// not sure why we're adding it
-			addElement(component, destination, ["text"], null, {text:text});
+			addElement(component, destination, ["text"], null, null, {text:text});
 			
 			updateComponentAfterAdd(iDocument, component);
 			
@@ -5439,7 +5579,7 @@ package com.flexcapacitor.controller {
 			
 			componentInstance.textFlow = textFlow;
 			
-			addElement(componentInstance, destination, ["textFlow"], null, {textFlow:textFlow});
+			addElement(componentInstance, destination, ["textFlow"], null, null, {textFlow:textFlow});
 			
 			updateComponentAfterAdd(iDocument, componentInstance);
 			
@@ -5456,7 +5596,7 @@ package com.flexcapacitor.controller {
 		public static function isAcceptablePasteFormat(formats:Array):Boolean {
 			if (formats==null || formats.length==0) return false;
 			
-			if (org.as3commons.lang.ArrayUtils.containsAny(formats, acceptablePasteFormats)) {
+			if (ArrayUtils.containsAny(formats, acceptablePasteFormats)) {
 				return true;
 			}
 			
@@ -5489,6 +5629,76 @@ package com.flexcapacitor.controller {
 			}
 			
 			return false;
+		}
+		
+		/**
+		 * Creates a new project and document and if a file is 
+		 * provided then it imports the file and sizes the document to the fit. 
+		 * 
+		 * This is to support drag and drop of file onto application icon
+		 * and open with methods. 
+		 * */
+		public function createNewDocumentAndProject(file:Object = null, iProject:Object = null):void {
+			var documentName:String = "Document";
+			var iDocument:IDocument;
+			
+			fileToBeLoaded = file;
+			
+			mainView.goToDesignState();
+			
+			if (fileToBeLoaded) {
+				addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
+			}
+			
+			iDocument = createBlankDemoDocument(iProject, documentName);
+			
+			
+			if (isUserLoggedIn && iDocument) {
+				saveProjectOnly(iDocument.project);
+			}
+			
+		}
+		
+		public var fileToBeLoaded:Object;
+		
+		public function documentOpenedHandler(event:RadiateEvent):void {
+			var iDocument:IDocument = event.selectedItem as IDocument;
+			var newFile:Object = fileToBeLoaded;
+			
+			if (newFile.exists && newFile.isDirectory==false) {
+				addEventListener(RadiateEvent.ASSET_LOADED, fileLoadedHandler, false, 0, true);
+				addFileListDataToDocument(iDocument, [newFile]);
+			}
+			
+			removeEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler);
+		}
+		
+		protected function fileLoadedHandler(event:RadiateEvent):void {
+			var successful:Boolean = event.successful;
+			var imageData:ImageData = event.data as ImageData;
+			var iDocument:IDocument = event.selectedItem as IDocument;
+			var importedImageResized:Boolean = event.resized;
+			var bitmapData:BitmapData = imageData && imageData.bitmapData ? imageData.bitmapData : null;
+			var fileReference:FileReference;
+			
+			removeEventListener(RadiateEvent.ASSET_LOADED, fileLoadedHandler);
+			
+			if (!successful) {
+				warn("File was not imported.");
+				return;
+			}
+			
+			if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
+				sizeDocumentToBitmapData(iDocument, bitmapData);
+				
+				if (importedImageResized && target) {
+					sizeSelectionToDocument();
+				}
+				
+				scaleToFit(false);
+				centerApplication();
+			}
+			
 		}
 		
 		/**
@@ -5544,7 +5754,7 @@ package com.flexcapacitor.controller {
 			attributes 				= XMLUtils.getAttributeNames(node);
 			childNodeNames 			= XMLUtils.getChildNodeNames(node);
 			propertiesStylesEvents 	= attributes.concat(childNodeNames);
-			properties 				= ClassUtils.getPropertiesFromArray(elementInstance, propertiesStylesEvents);
+			properties 				= ClassUtils.getPropertiesFromArray(elementInstance, propertiesStylesEvents, true);
 			styles 					= ClassUtils.getStylesFromArray(elementInstance, propertiesStylesEvents);
 			events 					= ClassUtils.getEventsFromArray(elementInstance, propertiesStylesEvents);
 			
@@ -5567,7 +5777,7 @@ package com.flexcapacitor.controller {
 			valuesObject.stylesErrorsObject 	= failedToImportStyles;
 			valuesObject.propertiesErrorsObject = failedToImportProperties;
 			valuesObject.propertiesStylesEvents	= properties.concat(styles).concat(events);
-			valuesObject.attributesNotFound		= org.as3commons.lang.ArrayUtils.removeAllItems(attributes, valuesObject.propertiesStylesEvents);
+			valuesObject.attributesNotFound		= ArrayUtils.removeAllItems(attributes, valuesObject.propertiesStylesEvents);
 			/*
 			var a:Object = node.namespace().prefix;     //returns prefix i.e. rdf
 			var b:Object = node.namespace().uri;        //returns uri of prefix i.e. http://www.w3.org/1999/02/22-rdf-syntax-ns#
@@ -5595,7 +5805,7 @@ package com.flexcapacitor.controller {
 			var failedToImportStyles:Object = {};
 			var failedToImportProperties:Object = {};
 			
-			properties 				= ClassUtils.getPropertiesFromObject(elementInstance, dataObject);
+			properties 				= ClassUtils.getPropertiesFromObject(elementInstance, dataObject, true);
 			styles 					= ClassUtils.getStylesFromObject(elementInstance, dataObject);
 			
 			values					= ClassUtils.getTypedPropertyValueObject(elementInstance, dataObject, properties, failedToImportProperties);
@@ -5692,7 +5902,7 @@ package com.flexcapacitor.controller {
 			
 			if (styles.length || properties.length) {
 				var propertiesStyles:Array = styles.concat(properties);
-				setPropertiesStyles(elementInstance, propertiesStyles, valueObject);
+				setPropertiesStylesEvents(elementInstance, propertiesStyles, valueObject);
 			}
 			
 			
@@ -5768,7 +5978,7 @@ package com.flexcapacitor.controller {
 			var styleChanges:Array;
 			var historyEvents:Array;
 			
-			styleChanges = createPropertyChange(targets, null, style, value, description);
+			styleChanges = createPropertyChange(targets, null, style, null, value, description);
 			
 			
 			if (!keepUndefinedValues) {
@@ -5776,10 +5986,10 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (changesAvailable(styleChanges)) {
-				applyChanges(targets, styleChanges, null, style);
+				applyChanges(targets, styleChanges, null, style, null);
 				//LayoutManager.getInstance().validateNow(); // applyChanges calls this
 				
-				historyEvents = HistoryManager.createHistoryEventItems(targets, styleChanges, null, style, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, styleChanges, null, style, null, value);
 				
 				updateComponentStyles(targets, styleChanges, [style]);
 				
@@ -5788,7 +5998,7 @@ package com.flexcapacitor.controller {
 				}
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(targets, styleChanges, null, ArrayUtil.toArray(style));
+					instance.dispatchPropertyChangeEvent(targets, styleChanges, null, ArrayUtil.toArray(style), null);
 				}
 				return true;
 			}
@@ -5835,13 +6045,15 @@ package com.flexcapacitor.controller {
 		 * 
 		 * @param style string or array of strings containing the 
 		 * names of the styles to set or null if setting properties
+		 * 
+		 * @param event string or array of strings containing the 
+		 * names of the events to set
 		 * */
-		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, setStartValues:Boolean=false):Boolean {
+		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, event:*, setStartValues:Boolean=false, validateLayout:Boolean = true):Boolean {
 			var numberOfChanges:int = changes ? changes.length : 0;
 			var effect:HistoryEffect = new HistoryEffect();
 			var onlyPropertyChanges:Array = [];
 			var directApply:Boolean = true;
-			var isStyle:Boolean = style && style.length>0;
 			
 			for (var i:int;i<numberOfChanges;i++) {
 				if (changes[i] is PropertyChanges) { 
@@ -5852,12 +6064,8 @@ package com.flexcapacitor.controller {
 			effect.targets = targets;
 			effect.propertyChangesArray = onlyPropertyChanges;
 			
-			if (isStyle) {
-				if (style && style is Array && style.length==1) {
-					//effect.property = style;
-				}
-			}
 			
+			effect.relevantEvents = event!=null ? ArrayUtil.toArray(event) : [];
 			effect.relevantProperties = property!=null ? ArrayUtil.toArray(property) : [];
 			effect.relevantStyles = style!=null ? ArrayUtil.toArray(style) : [];
 			
@@ -5875,18 +6083,24 @@ package com.flexcapacitor.controller {
 				}
 				
 				// Revalidate after applying
-				LayoutManager.getInstance().validateNow();
+				if (validateLayout) {
+					LayoutManager.getInstance().validateNow();
+				}
 			}
 				
-				// this works for properties but not styles
-				// the style value is restored at the end
+			// this works for properties but not styles
+			// the style value is restored at the end 
+			// update: are you sure?
 			else {
 				
 				effect.applyEndValuesWhenDone = false;
 				effect.play(targets, setStartValues);
 				effect.playReversed = false;
 				effect.end();
-				LayoutManager.getInstance().validateNow();
+				
+				if (validateLayout) {
+					LayoutManager.getInstance().validateNow();
+				}
 			}
 			
 			return true;
@@ -5905,7 +6119,7 @@ package com.flexcapacitor.controller {
 			var propertyChanges:Array;
 			var historyEventItems:Array;
 			
-			propertyChanges = createPropertyChange(targets, property, null, value, description);
+			propertyChanges = createPropertyChange(targets, property, null, null, value, description);
 			
 			
 			if (!keepUndefinedValues) {
@@ -5913,11 +6127,11 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (changesAvailable(propertyChanges)) {
-				applyChanges(targets, propertyChanges, property, null);
+				applyChanges(targets, propertyChanges, property, null, null);
 				//LayoutManager.getInstance().validateNow(); // applyChanges calls this
 				//addHistoryItem(propertyChanges, description);
 				
-				historyEventItems = HistoryManager.createHistoryEventItems(targets, propertyChanges, property, null, value);
+				historyEventItems = HistoryManager.createHistoryEventItems(targets, propertyChanges, property, null, null, value);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEventItems, description);
@@ -5926,11 +6140,11 @@ package com.flexcapacitor.controller {
 				updateComponentProperties(targets, propertyChanges, [property]);
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(target, propertyChanges, ArrayUtil.toArray(property), null);
+					instance.dispatchPropertyChangeEvent(target, propertyChanges, ArrayUtil.toArray(property), null, null);
 				}
 				
 				if (dispatchEvents) {
-					if (targets.indexOf(instance.selectedDocument.instance)!=-1 && org.as3commons.lang.ArrayUtils.containsAny(notableApplicationProperties, [property])) {
+					if (targets.indexOf(instance.selectedDocument.instance)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, [property])) {
 						instance.dispatchDocumentSizeChangeEvent(target);
 					}
 				}
@@ -5965,18 +6179,18 @@ package com.flexcapacitor.controller {
 			
 			targets = ArrayUtil.toArray(target);
 			properties = ArrayUtil.toArray(properties);
-			propertyChanges = createPropertyChanges(targets, properties, null, value, description, false);
+			propertyChanges = createPropertyChanges(targets, properties, null, null, value, description, false);
 			
 			if (!keepUndefinedValues) {
 				propertyChanges = stripUnchangedValues(propertyChanges);
 			}
 			
 			if (changesAvailable(propertyChanges)) {
-				applyChanges(targets, propertyChanges, properties, null);
+				applyChanges(targets, propertyChanges, properties, null, null);
 				//LayoutManager.getInstance().validateNow();
 				//addHistoryItem(propertyChanges);
 				
-				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, null, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, null, null, value);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
@@ -5985,10 +6199,10 @@ package com.flexcapacitor.controller {
 				updateComponentProperties(targets, propertyChanges, properties);
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, null);
+					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, null, null);
 				}
 				
-				if (targets.indexOf(instance.selectedDocument)!=-1 && org.as3commons.lang.ArrayUtils.containsAny(notableApplicationProperties, properties)) {
+				if (targets.indexOf(instance.selectedDocument)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, properties)) {
 					instance.dispatchDocumentSizeChangeEvent(targets);
 				}
 				
@@ -6016,17 +6230,17 @@ package com.flexcapacitor.controller {
 			
 			targets = ArrayUtil.toArray(target);
 			styles = ArrayUtil.toArray(styles);
-			stylesChanges = createPropertyChanges(targets, styles, null, value, description, false);
+			stylesChanges = createPropertyChanges(targets, null, styles, null, value, description, false);
 			
 			if (!keepUndefinedValues) {
 				stylesChanges = stripUnchangedValues(stylesChanges);
 			}
 			
 			if (changesAvailable(stylesChanges)) {
-				applyChanges(targets, stylesChanges, null, styles);
+				applyChanges(targets, stylesChanges, null, styles, null);
 				//LayoutManager.getInstance().validateNow();
 				
-				historyEvents = HistoryManager.createHistoryEventItems(targets, stylesChanges, null, styles, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, stylesChanges, null, styles, null, value);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
@@ -6035,7 +6249,7 @@ package com.flexcapacitor.controller {
 				updateComponentStyles(targets, stylesChanges, styles);
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(targets, stylesChanges, null, styles);
+					instance.dispatchPropertyChangeEvent(targets, stylesChanges, null, styles, null);
 				}
 				
 				return true;
@@ -6048,39 +6262,45 @@ package com.flexcapacitor.controller {
 		 * Sets the properties or styles of target or targets. Returns true if the properties or styles were changed.<br/><br/>
 		 * 
 		 * Usage:<br/>
-		 * <pre>setPropertiesStyles([myButton,myButton2], ["x","y","color"], {x:40,y:50,color:"0xFF0000"});</pre>
-		 * <pre>setPropertiesStyles(myButton, "x", 40);</pre>
-		 * <pre>setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});</pre>
+<pre>
+setPropertiesStyles([myButton,myButton2], ["x","y","color"], {x:40,y:50,color:"0xFF0000"});
+setPropertiesStyles(myButton, "x", 40);
+setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
+</pre>
 		 * 
 		 * @see setStyle()
 		 * @see setStyles()
 		 * @see setProperty()
 		 * @see setProperties()
 		 * */
-		public static function setPropertiesStyles(target:Object, propertiesStyles:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
+		public static function setPropertiesStylesEvents(target:Object, propertiesStylesEvents:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var propertyChanges:Array;
 			var historyEvents:Array;
 			var targets:Array;
 			var properties:Array;
 			var styles:Array;
+			var events:Array;
 			
 			targets = ArrayUtil.toArray(target);
-			propertiesStyles = ArrayUtil.toArray(propertiesStyles);
+			propertiesStylesEvents = ArrayUtil.toArray(propertiesStylesEvents);
+			
 			// TODO: Add support for multiple targets
-			styles = ClassUtils.getStylesFromArray(target, propertiesStyles);
-			properties = ClassUtils.getPropertiesFromArray(target, propertiesStyles);
-			propertyChanges = createPropertyChanges(targets, properties, styles, value, description, false);
+			styles = ClassUtils.getStylesFromArray(target, propertiesStylesEvents);
+			properties = ClassUtils.getPropertiesFromArray(target, propertiesStylesEvents, true);
+			events = ClassUtils.getEventsFromArray(target, propertiesStylesEvents);
+			
+			propertyChanges = createPropertyChanges(targets, properties, styles, events, value, description, false);
 			
 			if (!keepUndefinedValues) {
 				propertyChanges = stripUnchangedValues(propertyChanges);
 			}
 			
 			if (changesAvailable(propertyChanges)) {
-				applyChanges(targets, propertyChanges, properties, styles);
+				applyChanges(targets, propertyChanges, properties, styles, events);
 				//LayoutManager.getInstance().validateNow();
 				//addHistoryItem(propertyChanges);
 				
-				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, styles, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, styles, events, value);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
@@ -6088,12 +6308,13 @@ package com.flexcapacitor.controller {
 				
 				updateComponentProperties(targets, propertyChanges, properties);
 				updateComponentStyles(targets, propertyChanges, styles);
+				updateComponentEvents(targets, propertyChanges, events);
 				
 				if (dispatchEvents) {
-					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, styles);
+					instance.dispatchPropertyChangeEvent(targets, propertyChanges, properties, styles, events);
 				}
 				
-				if (targets.indexOf(instance.selectedDocument)!=-1 && org.as3commons.lang.ArrayUtils.containsAny(notableApplicationProperties, propertiesStyles)) {
+				if (targets.indexOf(instance.selectedDocument)!=-1 && ArrayUtils.containsAny(notableApplicationProperties, propertiesStylesEvents)) {
 					instance.dispatchDocumentSizeChangeEvent(targets);
 				}
 				
@@ -6108,15 +6329,14 @@ package com.flexcapacitor.controller {
 		 * returns an array of PropertyChange objects.
 		 * Value must be an object containing the properties mentioned in the properties array
 		 * */
-		public static function createPropertyChanges(targets:Array, properties:Array, styles:Array, value:Object, description:String = "", storeInHistory:Boolean = true):Array {
+		public static function createPropertyChanges(targets:Array, properties:Array, styles:Array, events:Array, value:Object, description:String = "", storeInHistory:Boolean = true):Array {
 			var tempEffect:HistoryEffect = new HistoryEffect();
 			var propertyChanges:PropertyChanges;
 			var changes:Array;
-			var propertyOrStyle:String;
-			var isStyle:Boolean = styles && styles.length>0;
+			var propertStyleEvent:String;
 			
 			tempEffect.targets = targets;
-			//tempEffect.property = isStyle ? styles[0] : properties[0];
+			tempEffect.relevantEvents = events;
 			tempEffect.relevantProperties = properties;
 			tempEffect.relevantStyles = styles;
 			
@@ -6129,30 +6349,44 @@ package com.flexcapacitor.controller {
 			for each (propertyChanges in changes) {
 				
 				// for properties 
-				for each (propertyOrStyle in properties) {
+				for each (propertStyleEvent in properties) {
 					
 					// value may be an object with properties or a string
 					// because we accept an object containing the values with 
 					// the name of the properties or styles
-					if (value && propertyOrStyle in value) {
-						propertyChanges.end[propertyOrStyle] = value[propertyOrStyle];
+					if (value && propertStyleEvent in value) {
+						propertyChanges.end[propertStyleEvent] = value[propertStyleEvent];
 					}
 					else {
-						propertyChanges.end[propertyOrStyle] = value;
+						propertyChanges.end[propertStyleEvent] = value;
 					}
 				}
 				
 				// for styles
-				for each (propertyOrStyle in styles) {
+				for each (propertStyleEvent in styles) {
 					
 					// value may be an object with properties or a string
 					// because we accept an object containing the values with 
 					// the name of the properties or styles
-					if (value && propertyOrStyle in value) {
-						propertyChanges.end[propertyOrStyle] = value[propertyOrStyle];
+					if (value && propertStyleEvent in value) {
+						propertyChanges.end[propertStyleEvent] = value[propertStyleEvent];
 					}
 					else {
-						propertyChanges.end[propertyOrStyle] = value;
+						propertyChanges.end[propertStyleEvent] = value;
+					}
+				}
+				
+				// for event
+				for each (propertStyleEvent in events) {
+					
+					// value may be an object with properties or a string
+					// because we accept an object containing the values with 
+					// the name of the properties or styles
+					if (value && propertStyleEvent in value) {
+						propertyChanges.end[propertStyleEvent] = value[propertStyleEvent];
+					}
+					else {
+						propertyChanges.end[propertStyleEvent] = value;
 					}
 				}
 			}
@@ -6160,7 +6394,7 @@ package com.flexcapacitor.controller {
 			// we should move this out
 			// add property changes array to the history dictionary
 			if (storeInHistory) {
-				return HistoryManager.createHistoryEventItems(targets, changes, properties, styles, value, description);
+				return HistoryManager.createHistoryEventItems(targets, changes, properties, styles, events, value, description);
 			}
 			
 			return [propertyChanges];
@@ -6173,7 +6407,7 @@ package com.flexcapacitor.controller {
 		 * 
 		 * @see createPropertyChanges()
 		 * */
-		public static function createPropertyChange(targets:Array, property:String, style:String, value:*, description:String = ""):Array {
+		public static function createPropertyChange(targets:Array, property:String, style:String, event:String, value:*, description:String = ""):Array {
 			var values:Object = {};
 			var changes:Array;
 			
@@ -6183,8 +6417,11 @@ package com.flexcapacitor.controller {
 			else if (style) {
 				values[style] = value;
 			}
+			else if (event) {
+				values[event] = value;
+			}
 			
-			changes = createPropertyChanges(targets, ArrayUtil.toArray(property), ArrayUtil.toArray(style), values, description, false);
+			changes = createPropertyChanges(targets, ArrayUtil.toArray(property), ArrayUtil.toArray(style), ArrayUtil.toArray(event), values, description, false);
 			
 			return changes;
 		}
@@ -6427,6 +6664,58 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		
 		/**
 		 * Move a component in the display list and sets any properties 
+		 * such as positioning. Ensures properties, styles and events are 
+		 * all valid.<br/><br/>
+		 * 
+		 * Usage:
+<pre>
+Radiate.moveElement(new Button(), container, ["width","color","click"], {width:50,color:red,click:"alert('click')"});
+</pre>
+		 * Usage:
+<pre>
+Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
+</pre>
+		 * */
+		public static function moveElement2(targetItems:*, 
+										   destination:Object, 
+										   propertiesStylesEvents:Array,
+										   values:Object, 
+										   description:String 	= null, 
+										   position:String		= AddItems.LAST, 
+										   relativeTo:Object	= null, 
+										   index:int			= -1, 
+										   propertyName:String	= null, 
+										   isArray:Boolean		= false, 
+										   isStyle:Boolean		= false, 
+										   vectorClass:Class	= null,
+										   keepUndefinedValues:Boolean = true):String {
+			
+			var items:Array;
+			var item:Object;
+			var styles:Array;
+			var events:Array;
+			var properties:Array;
+			
+			items = ArrayUtil.toArray(targetItems);
+			
+			propertiesStylesEvents = ArrayUtil.toArray(propertiesStylesEvents);
+			
+			for (var i:int = 0; i < items.length; i++)  {
+				item = items[i];
+				
+				if (item) {
+					styles = ClassUtils.getStylesFromArray(item, propertiesStylesEvents);
+					properties = ClassUtils.getPropertiesFromArray(item, propertiesStylesEvents, true);
+					events = ClassUtils.getEventsFromArray(item, propertiesStylesEvents);
+				}
+			}
+			
+			return moveElement(targetItems, destination, properties, styles, events, values, description, position, relativeTo, index, propertyName, isArray, isStyle);
+			
+		}
+		
+		/**
+		 * Move a component in the display list and sets any properties 
 		 * such as positioning<br/><br/>
 		 * 
 		 * Usage:<br/>
@@ -6435,10 +6724,11 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		 * Usage:<br/>
 		 * <pre>Radiate.moveElement(radiate.target, null, ["x"], 15);</pre>
 		 * */
-		public static function moveElement(items:*, 
+		public static function moveElement(targetItems:*, 
 										   destination:Object, 
 										   properties:Array, 
 										   styles:Array,
+										   events:Array,
 										   values:Object, 
 										   description:String 	= null, 
 										   position:String		= AddItems.LAST, 
@@ -6461,23 +6751,28 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var removeBeforeAdding:Boolean;
 			var currentIndex:int;
 			var movingIndexWithinParent:Boolean;
+			var targetItem:Object;
+			var itemOwner:Object;
+			var visualElementParent:Object;
+			var visualElementOwner:IVisualElementContainer;
+			var applicationGroup:GroupBase;
 			
-			items = ArrayUtil.toArray(items);
+			targetItems = ArrayUtil.toArray(targetItems);
 			
-			var item:Object = items ? items[0] : null;
-			var itemOwner:Object = item ? item.owner : null;
+			targetItem = targetItems ? targetItems[0] : null;
+			itemOwner = targetItem ? targetItem.owner : null;
 			
-			visualElement = item as IVisualElement;
-			var visualElementParent:Object = visualElement ? visualElement.parent : null;
-			var visualElementOwner:IVisualElementContainer = itemOwner as IVisualElementContainer;
-			var applicationGroup:GroupBase = destination is Application ? Application(destination).contentGroup : null;
+			visualElement = targetItem as IVisualElement;
+			visualElementParent = visualElement ? visualElement.parent : null;
+			visualElementOwner = itemOwner as IVisualElementContainer;
+			applicationGroup = destination is Application ? Application(destination).contentGroup : null;
 			
 			isSameParent = visualElementParent && (visualElementParent==destination || visualElementParent==applicationGroup);
 			isSameOwner = visualElementOwner && visualElementOwner==destination;
 			
 			// set default description
 			if (!description) {
-				description = HistoryManager.getMoveDescription(item);
+				description = HistoryManager.getMoveDescription(targetItem);
 			}
 			
 			// if it's a basic layout then don't try to add it
@@ -6485,11 +6780,27 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			if (destination is IVisualElementContainer) {
 				//destinationGroup = destination as GroupBase;
 				
+				if (destination is Container) {
+					
+					if (destination is Canvas) {
+						// does not support multiple items?
+						if (targetItem && itemOwner==destination) {
+							isSameOwner = true;
+						}
+						
+						// check if group parent and destination are the same
+						if (targetItem && visualElementParent && (visualElementParent==destination || visualElementParent==applicationGroup)) {
+							isSameParent = true;
+						}
+					}
+					
+				}
+				else 
 				if (destination.layout is BasicLayout) {
 					
 					// does not support multiple items?
 					// check if group parent and destination are the same
-					if (item && itemOwner==destination) {
+					if (targetItem && itemOwner==destination) {
 						//trace("can't add to the same owner in a basic layout");
 						isSameOwner = true;
 						
@@ -6498,14 +6809,14 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					
 					// check if group parent and destination are the same
 					// NOTE: if the item is an element on application this will fail
-					if (item && visualElementParent && (visualElementParent==destination || visualElementParent==applicationGroup)) {
+					if (targetItem && visualElementParent && (visualElementParent==destination || visualElementParent==applicationGroup)) {
 						//trace("can't add to the same parent in a basic layout");
 						isSameParent = true;
 						//return SAME_PARENT;
 					}
 				}
 				// if element is already child of layout container and there is only one element 
-				else if (items && destination is IVisualElementContainer 
+				else if (targetItems && destination is IVisualElementContainer 
 						&& destination.numElements==1
 						&& visualElementParent
 						&& (visualElementParent==destination || visualElementParent==applicationGroup)) {
@@ -6518,8 +6829,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				}
 			}
 			
-			// if destination is null then we assume we are moving
-			// WRONG! null should mean remove
+			// if destination is null then we assume we are moving in same container 
+			// or should null mean remove
 			else {
 				//isSameParent = true;
 				//isSameOwner = true;
@@ -6546,7 +6857,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					
 					// get relative to object
 				else if (index<=destination.numElements) {
-					visualElement = items is Array && (items as Array).length>0 ? items[0] as IVisualElement : items as IVisualElement;
+					visualElement = targetItems is Array && (targetItems as Array).length>0 ? targetItems[0] as IVisualElement : targetItems as IVisualElement;
 					
 					// if element is already child of container account for removal of element before add
 					if (visualElement && visualElement.parent == destination) {
@@ -6600,7 +6911,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			// create a new AddItems instance and add it to the changes
 			moveItems = new AddItems();
-			moveItems.items = items;
+			moveItems.items = targetItems;
 			moveItems.destination = destination;
 			moveItems.position = position;
 			moveItems.relativeTo = relativeTo;
@@ -6609,9 +6920,44 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			moveItems.isStyle = isStyle;
 			moveItems.vectorClass = vectorClass;
 			
+			// if we want to check for property facades
+			var items:Array;
+			var item:Object;
+			var propertiesStylesEvents:Array;
+			var verifyValidProperties:Boolean;
+			
+			if (verifyValidProperties) {
+				items = ArrayUtil.toArray(targetItems);
+				
+				propertiesStylesEvents = ArrayUtil.toArray(properties);
+				
+				for (var i:int = 0; i < items.length; i++)  {
+					item = items[i];
+					
+					if (item) {
+						styles = ClassUtils.getStylesFromArray(properties, propertiesStylesEvents);
+						properties = ClassUtils.getPropertiesFromArray(item, propertiesStylesEvents, true);
+						events = ClassUtils.getEventsFromArray(item, propertiesStylesEvents);
+					}
+				}
+			}
+			
+			var removeConstraintsFromProperties:Boolean = true;
+			var constraintStyles:Array;
+			
+			// remove constraints from properties array
+			if (removeConstraintsFromProperties && properties && properties.length) {
+				constraintStyles = ClassUtils.removeConstraintsFromArray(properties);
+				
+				if (constraintStyles.length) {
+					if (styles==null) styles = [];
+					ArrayUtils.addMissingItems(styles, constraintStyles);
+				}
+			}
+			
 			// add properties that need to be modified
-			if (properties && properties.length>0 || styles && styles.length>0) {
-				changes = createPropertyChanges(items, properties, styles, values, description, false);
+			if ((properties && properties.length) || (styles && styles.length) || (events && events.length)) {
+				changes = createPropertyChanges(targetItems, properties, styles, events, values, description, false);
 				
 				// get the property change part
 				propertyChangeChange = changes[0];
@@ -6645,7 +6991,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				// store changes
 				// add to history
 				if (!HistoryManager.doNotAddEventsToHistory) {
-					historyEventItems = HistoryManager.createHistoryEventItems(items, changes, properties, styles, values, description, RadiateEvent.MOVE_ITEM);
+					historyEventItems = HistoryManager.createHistoryEventItems(targetItems, changes, properties, styles, events, values, description, RadiateEvent.MOVE_ITEM);
 				}
 				
 				// try moving
@@ -6682,12 +7028,12 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				
 				// try setting properties
 				if (changesAvailable([propertyChangeChange])) {
-					applyChanges(items, [propertyChangeChange], properties, styles);
+					applyChanges(targetItems, [propertyChangeChange], properties, styles, events);
 					LayoutManager.getInstance().validateNow();
 					
-					properties && properties.length ? updateComponentProperties(items, [propertyChangeChange], properties) :-1;
-					styles && styles.length ? updateComponentStyles(items, [propertyChangeChange], styles) :-(1);
-					// events && events.length ? updateComponentEvents(items, [propertyChangeChange], events) :-1;
+					properties 	&& properties.length ? updateComponentProperties(targetItems, [propertyChangeChange], properties) :-1;
+					styles 		&& styles.length ? updateComponentStyles(targetItems, [propertyChangeChange], styles) :-(1);
+					events 		&& events.length ? updateComponentEvents(targetItems, [propertyChangeChange], events) :-1;
 				}
 				
 				
@@ -6699,13 +7045,13 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				if (Radiate.importingDocument==false) {
 					// check for changes before dispatching
 					if (changes.indexOf(moveItems)!=-1) {
-						instance.dispatchMoveEvent(items, changes, properties);
+						instance.dispatchMoveEvent(targetItems, changes, properties);
 					}
 					
 					//setTargets(items, true);
 					
 					if (properties) {
-						instance.dispatchPropertyChangeEvent(items, changes, properties, styles);
+						instance.dispatchPropertyChangeEvent(targetItems, changes, properties, styles, events);
 					}
 				}
 				
@@ -6740,6 +7086,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 										  destination:Object, 
 										  properties:Array 		= null, 
 										  styles:Array			= null,
+										  events:Array			= null,
 										  values:Object			= null, 
 										  description:String 	= null, 
 										  position:String		= AddItems.LAST, 
@@ -6756,13 +7103,21 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				description = HistoryManager.getAddDescription(items);
 			}
 			
-			var results:String = moveElement(items, destination, properties, styles, values, 
+			var results:String = moveElement(items, destination, properties, styles, events, values, 
 								description, position, relativeTo, index, propertyName, 
 								isArray, isStyle, vectorClass, keepUndefinedValues);
 			
-			var component:Object = ArrayUtil.toArray(items)[0];
+			var component:Object;
 			
-			updateComponentAfterAdd(instance.selectedDocument, component);
+			var itemsArray:Array;
+			
+			itemsArray = ArrayUtil.toArray(items);
+			
+			for (var i:int; i < itemsArray.length; i++) {
+				component = itemsArray[0];
+				
+				updateComponentAfterAdd(instance.selectedDocument, component);
+			}
 			
 			return results;
 		}
@@ -6952,7 +7307,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				changes.unshift(removeItems);
 				
 				// store changes
-				historyEvents = HistoryManager.createHistoryEventItems(items, changes, null, null, null, description, RadiateEvent.REMOVE_ITEM);
+				historyEvents = HistoryManager.createHistoryEventItems(items, changes, null, null, null, null, description, RadiateEvent.REMOVE_ITEM);
 				
 				// try moving
 				//removeItems.apply(destination as UIComponent);
@@ -7005,7 +7360,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				var parentComponentDescription:ComponentDescription = targetComponentDescription.parent;
 				var rectangle:Rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
 				var propertyNames:Array = ["x", "y", "text", "minWidth"];
-				var properties:Object = {};
+				var valuesObject:Object = {};
 				var isBasicLayout:Boolean;
 				
 				if ((parentComponentDescription.instance is GroupBase || parentComponentDescription.instance is BorderContainer)
@@ -7014,30 +7369,30 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					rectangle = DisplayObjectUtils.getRectangleBounds(target, parentComponentDescription.instance);
 				}
 				
-				properties.x = rectangle.x;
-				properties.y = rectangle.y;
+				valuesObject.x = rectangle.x;
+				valuesObject.y = rectangle.y;
 				const MIN_WIDTH:int = 22;
-				properties.minWidth = MIN_WIDTH;
+				valuesObject.minWidth = MIN_WIDTH;
 				//properties.width = "100";
 				if (!isNaN(target.explicitWidth)) {
 					propertyNames.push("width");
-					properties.width = rectangle.width;
+					valuesObject.width = rectangle.width;
 				}
 				else if (!isNaN(target.percentWidth)) {
 					// if basic layout we can get percent width
 					if (isBasicLayout) {
 						propertyNames.push("percentWidth");
-						properties.percentWidth = target.percentWidth;
+						valuesObject.percentWidth = target.percentWidth;
 					}
 					else {
 						propertyNames.push("width");
-						properties.width = rectangle.width;
+						valuesObject.width = rectangle.width;
 					}
 				}
 				editableRichTextField.width = undefined;
 				editableRichTextField.percentWidth = NaN;
 				//properties.height = rectangle.height;
-				properties.text = target.text;
+				valuesObject.text = target.text;
 				currentEditableComponent.visible = false;
 				editableRichTextField.styleName = currentEditableComponent;
 				editableRichTextField.focusRect = null;
@@ -7045,10 +7400,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				
 				HistoryManager.doNotAddEventsToHistory = true;
 				if (isBasicLayout) {
-					addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, properties);
+					addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
 				}
 				else {
-					addElement(editableRichTextField, iDocument.instance, propertyNames, null, properties);
+					addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
 				}
 				HistoryManager.doNotAddEventsToHistory = false;
 				
@@ -7137,7 +7492,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var valuesObject:ValuesObject = getPropertiesStylesFromObject(componentDescription.instance, componentDescription.defaultProperties);
 			
 			// maybe do not add to history
-			setPropertiesStyles(componentDescription.instance, valuesObject.propertiesStylesEvents, valuesObject.values);
+			setPropertiesStylesEvents(componentDescription.instance, valuesObject.propertiesStylesEvents, valuesObject.values);
 			
 		}
 		
@@ -7159,6 +7514,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				setDefaultProperties(componentDescription);
 			}
 			
+			iDocument.updateComponentTree();
 			
 			// need to add so we can listen for click events on transparent areas of groups
 			if (componentInstance is GroupBase) {
@@ -7751,14 +8107,21 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		}
 		
 		/**
-		 * Creates a blank project
+		 * Creates a blank document and creates a new project if not supplied.
+		 * 
+		 * @param project if string then creates a new project. if an IProject then does not create a new project.
 		 * */
-		public function createBlankDemoDocument(projectName:String = null, documentName:String = null, type:Class = null, open:Boolean = true, dispatchEvents:Boolean = false, select:Boolean = true):IDocument {
+		public function createBlankDemoDocument(project:Object = null, documentName:String = null, type:Class = null, open:Boolean = true, dispatchEvents:Boolean = false, select:Boolean = true):IDocument {
 			var newProject:IProject;
 			var newDocument:IDocument;
 			
-			newProject = createProject(projectName); // create project
-			addProject(newProject, false);       // add to projects array - shows up in application
+			if (project is String || project==null) {
+				newProject = createProject(project as String); // create project
+				addProject(newProject, false);       // add to projects array - shows up in application
+			}
+			else if (project is IProject) {
+				newProject = project as IProject;
+			}
 			
 			newDocument = createDocument(documentName); // create document
 			addDocument(newDocument, newProject); // add to project and documents array - shows up in application
@@ -7810,6 +8173,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		public function addDocument(iDocument:IDocument, project:IProject = null, overwrite:Boolean = false, dispatchEvents:Boolean = true):IDocument {
 			var documentAlreadyExists:Boolean;
 			var documentAdded:Boolean;
+			var documentToRemove:IDocument;
 			
 			documentAlreadyExists = doesDocumentExist(iDocument.uid);
 			
@@ -7825,7 +8189,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				// remove from projects
 				// add to documents
 				// add to projects
-				var documentToRemove:IDocument = getDocumentByUID(iDocument.uid);
+				documentToRemove = getDocumentByUID(iDocument.uid);
 				removeDocument(documentToRemove, DocumentData.LOCAL_LOCATION);// this is deleting the document
 				// should there be a remove (internally) and delete method?
 				
@@ -11628,7 +11992,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var errorID:String;
 			var errorData:ErrorData;
 			var name:String;
-			var className:String = sender ? ClassUtils.getClassName(sender) : "";
+			var className:String;
+			var stackTrace:String;
+			
+			className = sender ? ClassUtils.getClassName(sender) : "";
 			
 			
 			if (event && "error" in event) {
@@ -11640,6 +12007,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				name = "name" in errorObject ? errorObject.name : "";
 			}
 			
+			stackTrace = getStackTrace();
 			
 			if (enableDiagnosticLogs) {
 				errorData = addLogData(message, LogEventLevel.ERROR, className, Arguments) as ErrorData;
@@ -11674,7 +12042,10 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			var errorID:String;
 			var type:String;
 			var name:String;
-			var className:String = sender ? ClassUtils.getClassName(sender) : "";
+			var className:String;
+			var stackTrace:String;
+			
+			className = sender ? ClassUtils.getClassName(sender) : "";
 			
 			if (message=="") {
 				
@@ -11695,6 +12066,8 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 				name = "name" in errorObject ? errorObject.name : "";
 			}
 			
+			stackTrace = getStackTrace();
+			
 			if (enableDiagnosticLogs) {
 				issueData = addLogData(message, LogEventLevel.ERROR, className, Arguments);
 				//errorData = addLogData(message, LogEventLevel.ERROR, className, Arguments);
@@ -11709,6 +12082,7 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					errorData.errorID = errorID;
 					errorData.message = message;
 					errorData.name = name;
+					errorData.stackTrace = stackTrace;
 				}
 			}
 			
@@ -11790,6 +12164,30 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 			
 			
 			return issue;
+		}
+		
+		/**
+		 * Get the stack trace from an error. Stack traces are available from 11.5 on
+		 * or possibly earlier if you set -compiler.verbose-stacktraces=true
+		 * */
+		protected static function getStackTrace(removeLines:Boolean = true):String {
+			var error:Error = new Error();
+			var value:String;
+			var stackTrace:Array;
+			
+			if ("getStackTrace" in error) {
+				value = error.getStackTrace();
+				value = value.replace(/\t/, "");
+				if (removeLines) {
+					value = value.replace(/\[.*\]/g, "");
+				}
+				stackTrace = value.split("\n");
+				stackTrace.shift();
+				stackTrace.shift();
+				return stackTrace.join("\n");
+			}
+			
+			return null;
 		}
 		
 		/**
@@ -11877,18 +12275,81 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 		}
 		
 		/**
-		 * Sizes the current selected target to the document
+		 * Sizes the document to the current selected target
 		 * */
-		public static function sizeSelectionToDocument():void {
-			var iDocument:IDocument = instance.selectedDocument;
+		public static function restoreImageToOriginalSize(target:Object):Boolean {
+			var rectangle:Rectangle;
+			var image:Image = target as Image;
+			var bitmapImage:BitmapImage = image ? image.imageDisplay : null;
+			var bitmapData:BitmapData;
+			var resized:Boolean;
 			
-			if (instance.target && iDocument) {
-				var rectangle:Rectangle = getSize(iDocument.instance);
+			if (image) {
+				bitmapData = image.bitmapData;
+			}
+			else if (bitmapImage) {
+				bitmapData = bitmapImage.bitmapData;
+			}
+			
+			if (image || bitmapImage) {
+				rectangle = new Rectangle(0, 0, target.sourceWidth, target.sourceHeight);
 				
-				if (rectangle.width>0 && rectangle.height>0) {
-					setProperties(instance.target, ["width","height"], rectangle, "Size selection to document");
+				if (rectangle.width>0 && 
+					rectangle.height>0 &&
+					target.width!=rectangle.width && 
+					target.height!=rectangle.height) {
+					setProperties(target, ["width","height"], rectangle, "Restore to original size");
+					resized = true;
 				}
 			}
+			
+			return resized;
+		}
+		
+		/**
+		 * Sizes the document to the bitmap data target
+		 * */
+		public static function sizeDocumentToBitmapData(iDocument:IDocument, bitmapData:BitmapData):Boolean {
+			var documentInstance:Object = iDocument.instance;
+			var rectangle:Rectangle;
+			var resized:Boolean;
+			
+			if (documentInstance) {
+				rectangle = new Rectangle(0, 0, bitmapData.width, bitmapData.height);
+				
+				if (rectangle.width>0 && 
+					rectangle.height>0 &&
+					documentInstance.width!=rectangle.width && 
+					documentInstance.height!=rectangle.height) {
+					setProperties(documentInstance, ["width","height"], rectangle, "Size document to image");
+					resized = true;
+				}
+			}
+			
+			return resized;
+		}
+		
+		/**
+		 * Sizes the current selected target to the document
+		 * */
+		public static function sizeSelectionToDocument(target:Object = null):Boolean {
+			var iDocument:IDocument = instance.selectedDocument;
+			var targetToResize:Object = target ? target : instance.target;
+			var rectangle:Rectangle;
+			var resized:Boolean;
+			
+			if (targetToResize && iDocument) {
+				rectangle = getSize(iDocument.instance);
+				
+				if (rectangle.width>0 && rectangle.height>0 && 
+					targetToResize.width!=rectangle.width && 
+					targetToResize.height!=rectangle.height) {
+					setProperties(targetToResize, ["width","height"], rectangle, "Size selection to document");
+					resized = true;
+				}
+			}
+			
+			return resized;
 		}
 		
 		/**
@@ -12090,9 +12551,15 @@ attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as I
 					
 					menuItem = new MenuItem();
 					menuItem.data = iDocumentData;
-					menuItem.type = ClassUtils.getQualifiedClassName(iDocumentData);
+					menuItem.type = "radio";//ClassUtils.getQualifiedClassName(iDocumentData);
 					menuItem.label = iDocumentData.name;
-					windowItem.checked = false;
+					
+					if (iDocumentData==selectedDocument) {
+						windowItem.checked = true;
+					}
+					else {
+						windowItem.checked = false;
+					}
 					windowItem.addItem(menuItem);
 				}
 			}

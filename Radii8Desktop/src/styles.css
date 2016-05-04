@@ -10,7 +10,7 @@ controls|Hyperlink {
 	color:black;
 }
 
-controls|Hyperlink .linkStyle {
+controls|Hyperlink.linkStyle {
 	color:blue;
 }
 controls|Hyperlink:hover, controls|Hyperlink:over {

@@ -64,7 +64,7 @@
 			}
 			
 			public function update():void {
-				var textAccessor:MetaData = ClassUtils.getMetaDataOf(target, "styleName");
+				var textAccessor:MetaData = ClassUtils.getMetaDataOfMember(target, "styleName");
 				
 				textRenderer.data = textAccessor;
 			}

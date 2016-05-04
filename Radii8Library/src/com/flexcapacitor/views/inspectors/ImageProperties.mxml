@@ -11,8 +11,10 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import org.as3commons.lang.ArrayUtils;
 			
@@ -54,9 +56,14 @@
 			}
 			
 			public function update():void {
-				if (target==null) return; // item was deleted
-				//var data:Object = ClassUtils.getMetaDataOfProperty(target, "source");
-				var sourceData:MetaData = ClassUtils.getMetaDataOfProperty(target, "source");
+				var iDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
+				var sourceData:MetaData;
+				
+				// item was deleted or wrong type
+				if (target==null || componentDescription==null) return;
+				
+				sourceData = ClassUtils.getMetaDataOfProperty(target, "source");
 				sourceRenderer.data = sourceData;
 				alphaRenderer.data = ClassUtils.getMetaDataOfProperty(target, "alpha");
 				smoothRenderer.data = ClassUtils.getMetaDataOfProperty(target, "smooth");

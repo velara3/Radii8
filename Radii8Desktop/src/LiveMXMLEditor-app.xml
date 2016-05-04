@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <application xmlns="http://ns.adobe.com/air/application/20.0">
 
+<!-- 
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ -->
+
 <!-- Adobe AIR Application Descriptor File Template.
 
 	Specifies parameters for identifying, installing, and launching AIR applications.
@@ -11,23 +28,46 @@
 			
 	minimumPatchLevel - The minimum patch level of the AIR runtime required to run 
 			the application. Optional.
+
 -->
 
+<!-- 
+Error: 
+The application cannot be installed due to a certificate problem.  
+The certificate does not match the installed application certificate, 
+does not support application upgrades, or is invalid.  
+Please contact the application author.
+
+Solution: 
+Renamed id from LiveMXMLEditor to com.velara3.LiveMXMLEditor
+Renamed name LiveMXMLEditor to Live MXML Editor
+
+Second export another error: 
+The application could not be installed because an application with that 
+name already exists at the selected installation location. 
+Try installing to a different location.
+
+Solution:
+Found existing app with same name (I guess it was already preinstalled)
+uninstalled existing app
+Reinstalled. worked
+
+ -->
 	<!-- A universally unique application identifier. Must be unique across all AIR applications.
 	Using a reverse DNS-style name as the id is recommended. (Eg. com.example.ExampleApplication.) Required. -->
-	<id>LiveMXMLEditor</id>
+	<id>com.velara3.LiveMXMLEditor</id>
 
 	<!-- Used as the filename for the application. Required. -->
 	<filename>LiveMXMLEditor</filename>
 
 	<!-- The name that is displayed in the AIR application installer. 
 	May have multiple values for each language. See samples or xsd schema file. Optional. -->
-	<name>LiveMXMLEditor</name>
+	<name>Live MXML Editor</name>
 	
 	<!-- A string value of the format <0-999>.<0-999>.<0-999> that represents application version which can be used to check for application upgrade. 
 	Values can also be 1-part or 2-part. It is not necessary to have a 3-part value.
 	An updated version of application must have a versionNumber value higher than the previous version. Required for namespace >= 2.5 . -->
-    <versionNumber>1.0.0</versionNumber>
+    <versionNumber>1.0.4</versionNumber>
 		         
 	<!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents the version of the application, as it should be shown to users. Optional. -->
 	<!-- <versionLabel></versionLabel> -->
@@ -111,12 +151,32 @@
 
 		<!-- Display Resolution for the app (either "standard" or "high"). Optional, OSX-only. Default "standard" -->
 		<!-- <requestedDisplayResolution></requestedDisplayResolution> -->
-	<autoOrients>true</autoOrients>
+		<autoOrients>true</autoOrients>
         <fullScreen>false</fullScreen>
         <visible>false</visible>
         <softKeyboardBehavior>none</softKeyboardBehavior>
     </initialWindow>
 
+	<icon>
+		<image128x128>logo128.png</image128x128>
+		<image57x57>logo57.png</image57x57>
+		<image72x72>logo72.png</image72x72>
+	</icon>
+	
+	<fileTypes>
+
+		<fileType>
+			<!--  name cannot contain a space -->
+			<name>MXML.File</name>
+			<!--  extension cannot be * -->
+			<extension>mxml</extension>
+			<description>MXML file</description>
+			<!--  content type is required -->
+			<contentType>text/plain</contentType>
+		</fileType>
+		
+	</fileTypes>
+	
 	<!-- We recommend omitting the supportedProfiles element, -->
 	<!-- which in turn permits your application to be deployed to all -->
 	<!-- devices supported by AIR. If you wish to restrict deployment -->

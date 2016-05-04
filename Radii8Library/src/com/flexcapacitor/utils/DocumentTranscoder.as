@@ -523,7 +523,7 @@ package com.flexcapacitor.utils {
 		 * Imports the source code for the target component. 
 		 * You override this in your class. 
 		 * */
-		public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, options:ImportOptions = null):SourceData {
+		public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, options:ImportOptions = null, dispatchEvents:Boolean = false):SourceData {
 			// override this in your class
 			return null;
 		}
@@ -532,7 +532,7 @@ package com.flexcapacitor.utils {
 		 * Exports the source code for the target component. 
 		 * You override this in your class. 
 		 * */
-		public function export(document:IDocument, componentDescription:ComponentDescription = null, options:ExportOptions = null):SourceData {
+		public function export(document:IDocument, componentDescription:ComponentDescription = null, options:ExportOptions = null, dispatchEvents:Boolean = false):SourceData {
 			// override this in your class
 			return null;
 		}

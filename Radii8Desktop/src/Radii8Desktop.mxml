@@ -23,6 +23,7 @@
 					   uncaughtError="windowedapplication1_uncaughtErrorHandler(event)"
 					   applicationComplete="applicationCompleteHandler(event)" 
 					   initialize="initializeHandler(event)" 
+					   invoke="windowedapplication1_invokeHandler(event)"
 					   >
 
 					   <!--- 
@@ -78,6 +79,8 @@
 				import spark.components.WindowedApplication;
 				import spark.components.supportClasses.SkinnableTextBase;
 				import spark.core.IEditableText;
+				
+				import air.net.URLMonitor;
 				
 				//include "build.as";
 				
@@ -281,7 +284,41 @@
 				}
 				
 				protected function windowedapplication1_networkChangeHandler(event:Event):void {
-					Radiate.warn("The network has changed! You may now be connected or disconnected.");
+					var time:Date = new Date();
+					
+					if (monitorConnectionStatus) {
+						monitorConnection();
+					}
+					
+					Radiate.warn("The network has changed! You may now be connected or disconnected. " + time.toTimeString());
+				}
+				
+				private var monitor:URLMonitor;
+				public var monitorConnectionStatus:Boolean;
+				
+				/*
+				This function checks the online status by attempting
+				to resolve a connection to a remote address
+				*/
+				private function monitorConnection():void {
+					var urlPath:String = "http://www.google.com";
+					
+					if (monitor==null) {
+						monitor = new URLMonitor(new URLRequest(urlPath));
+					}
+					
+					monitor.addEventListener(StatusEvent.STATUS, announceStatus);
+					monitor.start();
+				}
+				
+				private function announceStatus(event:StatusEvent):void {
+					
+					if (monitor.available) {
+						radiate.isUserOnline = true;
+					}
+					else {
+						radiate.isUserOnline= false;
+					}
 				}
 				
 				public var spaceBarDown:Boolean;
@@ -629,6 +666,66 @@
 					}
 				}
 				
+				protected function windowedapplication1_invokeHandler(event:InvokeEvent):void {
+					var invokeArguments:Array = event.arguments;
+					var filePath:String;
+					var stream:FileStream;
+					var file:File;
+					var testing:Boolean = false;
+
+					// to test invokation - 
+					// open run/debug launcher and set the compiler arguments to the absolute path 
+					// of a file or multiple files. add quotes if the path contains spaces
+					
+					// application opened normally
+					if (event.reason == InvokeEventReason.STANDARD && invokeArguments.length == 0) {
+						
+						invokeWithFile(event.currentDirectory, invokeArguments);
+						
+						return;
+					}
+					
+					// application had a file dropped on it or an associated file was double clicked
+					if (event.reason == InvokeEventReason.STANDARD && invokeArguments.length) {
+						
+						invokeWithFile(event.currentDirectory, invokeArguments);
+					}
+					
+					// application opened at login
+					if (event.reason == InvokeEventReason.LOGIN) {
+						return;
+					}
+					
+					// application opened from URL
+					if (event.reason == InvokeEventReason.OPEN_URL) {
+						return;
+					}
+					
+					// application opened from notification such as iOS APN
+					if (event.reason == InvokeEventReason.NOTIFICATION) {
+						return;
+					}
+				}
+				
+				/**
+				 * Invoked file. Move to radiate class
+				 * */
+				public function invokeWithFile(currentDirectory:File, invokedArguments:Array):void {
+					var filePath:String = invokedArguments && invokedArguments.length ? invokedArguments[0] : null;
+					var file:File;
+					
+					if (filePath) {
+						file = new File(filePath);
+						
+						if (file.exists && file.isDirectory==false) {
+							radiate.createNewDocumentAndProject(file, radiate.selectedProject);
+						}
+						else {
+							Radiate.error("The file you are attempting to open does not exist or is a directory");
+						}
+					}
+				}
+				
 			]]>
 		</fx:Script>
 	
@@ -685,7 +782,6 @@
 			dataProvider="{mainView.rootMenu}" 
 			labelField="label" 
 			showRoot="false"
-			
 			itemClick="nativeMenuCommand(event)"
 			/>
 		

@@ -396,10 +396,38 @@ package com.flexcapacitor.managers {
 		/**
 		 * Copies URL to the clipboard. 
 		 * */
-		public static function copyURLToClipboard(url:String):void {
+		public static function copyURLToClipboard(code:String, name:String = "page"):void {
 			var clipboard:Clipboard = Clipboard.generalClipboard;
 			var formatText:String = ClipboardFormats.TEXT_FORMAT;
 			var formatURL:String = ClipboardFormats.URL_FORMAT;
+			var serializable:Boolean;
+			
+			if (code) {
+				
+				// it's recommended to clear the clipboard before setting new content
+				clipboard.clear();
+				
+				try {
+					clipboard.setData(formatText, String(code), serializable);
+					
+					if (Radiate.isDesktop) {
+						clipboard.setData(formatURL, String(code), serializable);
+					}
+					
+					Radiate.info("A link to the " + name + " was copied to the clipboard");
+				}
+				catch (error:ErrorEvent) {
+					Radiate.error("Couldn't copy a link to the " + name);
+				}
+			}
+		}
+		
+		/**
+		 * Copies source code to the clipboard. 
+		 * */
+		public static function copyCodeToClipboard(url:String, name:String = "page"):void {
+			var clipboard:Clipboard = Clipboard.generalClipboard;
+			var formatText:String = ClipboardFormats.TEXT_FORMAT;
 			var serializable:Boolean;
 			
 			if (url) {
@@ -410,14 +438,10 @@ package com.flexcapacitor.managers {
 				try {
 					clipboard.setData(formatText, String(url), serializable);
 					
-					if (Radiate.isDesktop) {
-						clipboard.setData(formatURL, String(url), serializable);
-					}
-					
-					Radiate.info("A link to the home page was copied to the clipboard");
+					Radiate.info("The " + name + " code was copied to the clipboard");
 				}
 				catch (error:ErrorEvent) {
-					Radiate.error("Couldn't copy link to the home page");
+					Radiate.error("Couldn't copy the " + name + " code");
 				}
 			}
 		}

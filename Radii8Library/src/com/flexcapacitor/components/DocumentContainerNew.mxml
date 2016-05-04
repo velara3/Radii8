@@ -543,8 +543,8 @@ limitations under the License.
 				
 				applicationLoader.width = scaledDocumentWidth;
 				applicationLoader.height = scaledDocumentHeight;
-				applicationLoader.projectLoader.width = scaledDocumentWidth;
-				applicationLoader.projectLoader.height = scaledDocumentHeight;
+				//applicationLoader.projectLoader.width = scaledDocumentWidth;
+				//applicationLoader.projectLoader.height = scaledDocumentHeight;
 				
 				// we do this because when we scale the application the 
 				// system manager mask is not updated and the content gets clipped

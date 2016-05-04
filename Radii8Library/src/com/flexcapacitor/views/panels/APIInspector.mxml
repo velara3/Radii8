@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:components="com.flexcapacitor.components.*" 
+		 xmlns:flexiframe="com.google.code.flexiframe.*" 
+		 
+		 minWidth="200" 
+		 minHeight="100"
+		 implements="com.flexcapacitor.views.IInspector"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.RunManager;
+			import com.flexcapacitor.model.MetaData;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.HTMLUtils;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.core.IUIComponent;
+			import mx.core.IVisualElement;
+			import mx.core.UIComponent;
+			
+			
+			/**
+			 * Reference to Radiate
+			 * */
+			public var radiate:Radiate;
+			
+			public var lastURL:String;
+			public var declaredBy:String;
+			public var documentationViewer:IUIComponent;
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChangeHandler, false, 0, true);
+				
+				if (Radiate.isDesktop) {
+					currentState = "desktop";
+					
+					if (documentationViewer==null) {
+						documentationViewer = HTMLUtils.createInstance();
+						UIComponent(documentationViewer).percentWidth = 100;
+						UIComponent(documentationViewer).percentHeight = 100;
+						IVisualElement(documentationViewer).top = 28;
+						addElementAt(IVisualElement(documentationViewer), numElements);
+					}
+				}
+				else {
+					currentState = "web";
+				}
+				
+				
+				updateTarget();
+				//updateDocumentation();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, targetChangeHandler);
+				}
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				updateTarget();
+			}
+			 
+			protected function propertySelectedHandler(event:RadiateEvent):void {
+				var metadata:MetaData = MetaData(event.selectedItem);
+				
+				// if we are deactivated or invisible should we still update the documentation?
+				var isVisible:Boolean;
+				var path:String = "";
+				var prefix:String = "";
+				var url:String;
+				
+				url = Radiate.getURLToHelp(metadata);
+				
+				// don't keep loading pages if you already loaded them
+				if (url==lastURL) {
+					return;
+				}
+				
+				lastURL = url;
+				declaredBy = metadata.declaredBy;
+				isVisible = DisplayObjectUtils.getGreatestVisibilityDisplayList(this);
+				
+				if (!isVisible || !showDocsCheckbox.selected) {
+					
+					textURL.text = "";
+					return;
+				}
+				
+				updateDocumentation();
+				
+			}
+			
+			private function updateTarget():void {
+				
+				if (radiate.target) {
+					// if we are deactivated or invisible should we still update the documentation?
+					//var isVisible:Boolean = DisplayObjectUtils.getGreatestVisibilityDisplayList(this);
+					
+					var className:String = ClassUtils.getQualifiedClassName(radiate.target);
+					var url:String;
+					
+					if (className) {
+						
+						url = Radiate.getURLToHelp(className);
+						
+						// don't keep loading pages if you already loaded them
+						if (url==lastURL) {
+							return;
+						}
+						
+						lastURL = url;
+						updateDocumentation();
+					}
+				}
+			}
+			
+			protected function showDocsCheckbox_changeHandler(event:Event):void {
+				
+				updateDocumentation();
+			}
+			
+			protected function openInSeparateWindow_changeHandler(event:Event):void {
+				
+				updateDocumentation();
+				
+				if (openInSeparateWindow.selected) {
+					Radiate.info("Opening documentation in separate window. Updates will appear there.");
+				}
+			}
+			
+			public function updateDocumentation():void {
+				
+				if (showDocsCheckbox.selected) {
+					
+					if (openInSeparateWindow.selected) {
+						var request:URLRequest = new URLRequest(lastURL);
+						
+						navigateToURL(request, "asdocs");
+						
+						if (Radiate.isDesktop) {
+							Object(documentationViewer).location = "";
+						}
+						else {
+							if (docsFrame.source!="" || docsFrame.source!="about:blank") {
+								docsFrame.source = "";
+							}
+						}
+					}
+					else {
+						
+						if (Radiate.isDesktop) {
+							Object(documentationViewer).location = lastURL;
+						}
+						else {
+							docsFrame.source = lastURL;
+						}
+					}
+					
+					if (showURL.selected) {
+						textURL.text = lastURL;
+					}
+					else {
+						textURL.text = declaredBy;
+					}
+				}
+				else {
+					
+					if (Radiate.isDesktop) {
+						Object(documentationViewer).location = "about:blank";
+					}
+					else {
+						docsFrame.source = "about:blank";
+					}
+					textURL.text = "";
+				}
+			}
+			
+			protected function showURL_changeHandler(event:Event):void {
+				if (showURL.selected) {
+					textURL.text = lastURL;
+				}
+				else {
+					textURL.text = declaredBy;
+				}
+			}
+			
+			protected function shareIcon_clickHandler(event:MouseEvent):void
+			{
+				if (lastURL) {
+					RunManager.copyURLToClipboard(lastURL);
+				}
+				else {
+					Radiate.info("No documentaion is open");
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="desktop"/>
+		<s:State name="web"/>
+	</s:states>
+	
+	<s:HGroup left="0" right="0" 
+			  width="100%"
+			  clipAndEnableScrolling="true" 
+			  paddingLeft="6" 
+			  paddingRight="10"
+			  >
+		<s:TextInput id="textURL" 
+					 width="100%" 
+					 color="#A6a5a5" 
+					 borderColor="#A5A5A5"
+					 borderVisible="false"
+					 focusAlpha="0"
+					 editable="false"
+					 prompt="No documentation available. Select a property, style or event."/>
+		<s:CheckBox id="showURL" label="Show URL" 
+					selected="false"
+					change="showURL_changeHandler(event)"/>
+		<s:CheckBox id="openInSeparateWindow" label="Open in Window" 
+					change="openInSeparateWindow_changeHandler(event)"/>
+		<s:CheckBox id="showDocsCheckbox" 
+					label="Enabled" 
+					change="showDocsCheckbox_changeHandler(event)"
+					selected="true"
+					/>
+		
+		<c:BeveledImageButton id="shareIcon" 
+							  source="{Radii8LibraryAssets.share}" 
+							  toolTip="Share"
+							  click="shareIcon_clickHandler(event)"
+							  width="16"
+							  height="22"
+							  />
+	</s:HGroup>
+	
+	<flexiframe:IFrame includeIn="web" id="docsFrame" top="28" width="100%" height="100%" />
+	
+</s:Group>

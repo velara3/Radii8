@@ -1255,16 +1255,16 @@ package com.flexcapacitor.utils {
 				//	properties.push(propertyName);
 				//}
 				
-				properties 				= ClassUtils.getPropertiesFromObject(draggedItem, values);
+				properties 				= ClassUtils.getPropertiesFromObject(draggedItem, values, true);
 				styles 					= ClassUtils.getStylesFromObject(draggedItem, values);
 				
 				var moveResult:String;
 				
 				if (draggedItem.parent==null) {
-					addResult = Radiate.addElement(draggedItem, dropTarget, properties, styles, values, eventDescription);
+					addResult = Radiate.addElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
 				}
 				else {
-					moveResult = Radiate.moveElement(draggedItem, dropTarget, properties, styles, values, eventDescription);
+					moveResult = Radiate.moveElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
 				}
 				
 			}
@@ -1272,10 +1272,10 @@ package com.flexcapacitor.utils {
 			else {
 				
 				if (draggedItem.parent==null) {
-					addResult = Radiate.addElement(draggedItem, dropTarget, null, null, null, eventDescription, null, null, index);
+					addResult = Radiate.addElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
 				}
 				else {
-					moveResult = Radiate.moveElement(draggedItem, dropTarget, null, null, null, eventDescription, null, null, index);
+					moveResult = Radiate.moveElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
 				}
 			}
 			

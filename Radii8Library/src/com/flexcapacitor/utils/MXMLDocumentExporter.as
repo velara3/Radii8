@@ -58,7 +58,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * @inheritDoc
 		 * */
-		override public function export(document:IDocument, componentDescription:ComponentDescription = null, parameterOptions:ExportOptions = null):SourceData {
+		override public function export(document:IDocument, componentDescription:ComponentDescription = null, parameterOptions:ExportOptions = null, dispatchEvents:Boolean = false):SourceData {
 			var output:String;
 			var files:Array = [];
 			var file:FileInfo;

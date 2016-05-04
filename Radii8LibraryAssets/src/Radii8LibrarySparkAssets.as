@@ -4,7 +4,11 @@ package {
 	import com.flexcapacitor.controls.Hyperlink;
 	import com.flexcapacitor.controls.VerticalLine;
 	
+	import mx.containers.Canvas;
+	import mx.containers.HDividedBox;
+	import mx.containers.VDividedBox;
 	import mx.controls.LinkButton;
+	import mx.controls.Tree;
 	import mx.graphics.LinearGradient;
 	import mx.graphics.RadialGradient;
 	import mx.graphics.RadialGradientStroke;
@@ -317,6 +321,15 @@ package {
 		
 		[Embed(source="assets/icons/spark/controls/VSlider.png")]
 		public static const VSliderIcon:Class;
+		
+		/**
+		 * Common MX classes
+		 * */
+		public static var hDividedBox:HDividedBox;
+		public static var vDividedBox:VDividedBox;
+		public static var canvas:Canvas;
+		public static var tree:Tree;
+		
 		
 		///////////////////////////////////////////////////////
 		// GRAPHIC PRIMITIVES

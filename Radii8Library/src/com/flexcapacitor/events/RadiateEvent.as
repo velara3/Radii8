@@ -29,6 +29,11 @@ package com.flexcapacitor.events {
 		public static const ASSET_ADDED:String = "assetAdded";
 		
 		/**
+		 * Dispatched when an asset such as an image is loaded
+		 * */
+		public static const ASSET_LOADED:String = "assetLoaded";
+		
+		/**
 		 * Dispatched when the login results are received
 		 * */
 		public static const LOGIN_RESULTS:String = "loginResults";
@@ -365,6 +370,7 @@ package com.flexcapacitor.events {
 		public var serviceEvent:IServiceEvent;
 		public var styles:Array;
 		public var error:Object;
+		public var resized:Boolean;
 		
 		/**
 		 * Constructor.
