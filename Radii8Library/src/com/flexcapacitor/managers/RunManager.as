@@ -396,22 +396,22 @@ package com.flexcapacitor.managers {
 		/**
 		 * Copies URL to the clipboard. 
 		 * */
-		public static function copyURLToClipboard(code:String, name:String = "page"):void {
+		public static function copyURLToClipboard(url:String, name:String = "page"):void {
 			var clipboard:Clipboard = Clipboard.generalClipboard;
 			var formatText:String = ClipboardFormats.TEXT_FORMAT;
 			var formatURL:String = ClipboardFormats.URL_FORMAT;
 			var serializable:Boolean;
 			
-			if (code) {
+			if (url) {
 				
 				// it's recommended to clear the clipboard before setting new content
 				clipboard.clear();
 				
 				try {
-					clipboard.setData(formatText, String(code), serializable);
+					clipboard.setData(formatText, String(url), serializable);
 					
 					if (Radiate.isDesktop) {
-						clipboard.setData(formatURL, String(code), serializable);
+						clipboard.setData(formatURL, String(url), serializable);
 					}
 					
 					Radiate.info("A link to the " + name + " was copied to the clipboard");
@@ -425,18 +425,18 @@ package com.flexcapacitor.managers {
 		/**
 		 * Copies source code to the clipboard. 
 		 * */
-		public static function copyCodeToClipboard(url:String, name:String = "page"):void {
+		public static function copyCodeToClipboard(code:String, name:String = "page"):void {
 			var clipboard:Clipboard = Clipboard.generalClipboard;
 			var formatText:String = ClipboardFormats.TEXT_FORMAT;
 			var serializable:Boolean;
 			
-			if (url) {
+			if (code) {
 				
 				// it's recommended to clear the clipboard before setting new content
 				clipboard.clear();
 				
 				try {
-					clipboard.setData(formatText, String(url), serializable);
+					clipboard.setData(formatText, String(code), serializable);
 					
 					Radiate.info("The " + name + " code was copied to the clipboard");
 				}

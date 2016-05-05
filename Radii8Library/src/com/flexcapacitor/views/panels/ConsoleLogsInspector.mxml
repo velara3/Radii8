@@ -3,6 +3,8 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:controls="com.flexcapacitor.controls.*" 
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:popup="com.flexcapacitor.effects.popup.*" 
 		 
 		 width="100%" 
 		 height="100%"
@@ -13,7 +15,10 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.RunManager;
+			import com.flexcapacitor.model.ErrorData;
 			import com.flexcapacitor.model.IssueData;
+			import com.flexcapacitor.views.windows.ContactWindow;
 			
 			import mx.collections.ArrayCollection;
 			
@@ -49,8 +54,57 @@
 				Radiate.logsCollection.refresh();
 			}
 			
+			protected function shareIcon_clickHandler(event:MouseEvent):void {
+				var issueData:IssueData = list.selectedItem as IssueData;
+				
+				if (issueData) {
+					openContactPopUp.data = issueData;
+					openContactPopUp.play();
+				}
+				else {
+					var previousSetting:Boolean = Radiate.enableDiagnosticLogs;
+					Radiate.enableDiagnosticLogs = false;
+					Radiate.warn("No issue selected. Select an issue to send.");
+					Radiate.enableDiagnosticLogs = previousSetting;
+				}
+			}
+			
+			protected function copyIcon_clickHandler(event:MouseEvent):void {
+				var issueData:IssueData = list.selectedItem as IssueData;
+				var errorData:ErrorData = issueData as ErrorData;
+				var message:String;
+				
+				if (issueData) {
+					message = issueData.description;
+					
+					if (errorData) {
+						message += "\n" + errorData.stackTrace;
+					}
+					var previousSetting:Boolean = Radiate.enableDiagnosticLogs;
+					Radiate.enableDiagnosticLogs = false;
+					RunManager.copyCodeToClipboard(message, "log");
+					Radiate.enableDiagnosticLogs = previousSetting;
+				}
+				else {
+					Radiate.warn("No issue selected. Select an issue to send.");
+				}
+			}
 		]]>
 	</fx:Script>
+	
+	<fx:Declarations>
+		<popup:OpenPopUp id="openContactPopUp" 
+					  popUpType="{ContactWindow}" 
+					  modalDuration="100" 
+					  percentWidth="75"
+					  percentHeight="90"
+					  width="600"
+					  parent="{parentApplication}"/>
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingBottom="8"/>
+	</s:layout>
 	
 	<s:Label text="No logs available" 
 			 color="#585858"
@@ -61,6 +115,7 @@
 			 width="100%"
 			 paddingTop="100"
 			 textAlign="center"
+			 height="100%"
 			 visible="{logsCollection.length==0}"
 			 includeInLayout="{logsCollection.length==0}"
 			 />
@@ -85,14 +140,11 @@
 			click="list_clickHandler(event)"
 			>
 	</s:List>
-	<s:HGroup bottom="0"
-			  paddingRight="5"
-			  paddingLeft="5"
-			  paddingBottom="5"
-			  verticalAlign="bottom"
-			  includeInLayout="true"
-			  visible="true"
-			  width="100%">
+	
+	<s:HGroup width="100%"
+			  height="24"
+			  minHeight="24"
+			  verticalAlign="middle">
 		
 		<controls:BeveledImageButton id="clearLogsButton" 
 							  source="{Radii8LibraryAssets.clear}" 
@@ -103,6 +155,23 @@
 							  horizontalAlign="center"
 							  verticalAlign="middle"
 							  toolTip="Clear log messages"
+							  />
+		<s:Spacer width="100%"/>
+		
+		<controls:BeveledImageButton id="copyIcon" 
+							  source="{Radii8LibraryAssets.copy}" 
+							  toolTip="Copy the MXML to the Clipboard"
+							  verticalAlign="middle"
+							  useHandCursor="true"
+							  click="copyIcon_clickHandler(event)"
+							  />
+		
+		<controls:BeveledImageButton id="shareIcon" 
+							  source="{Radii8LibraryAssets.share}" 
+							  toolTip="Share - opens the contact window with the error message to email to support"
+							  click="shareIcon_clickHandler(event)"
+							  width="16"
+							  height="22"
 							  />
 	</s:HGroup>
 

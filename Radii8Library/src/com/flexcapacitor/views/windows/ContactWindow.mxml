@@ -27,6 +27,8 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.model.ErrorData;
+			import com.flexcapacitor.model.IssueData;
 			import com.flexcapacitor.status.StatusManager;
 			
 			import mx.core.mx_internal;
@@ -74,6 +76,8 @@
 			
 			[Bindable]
 			public var flexSDK:String;
+			
+			public var data:Object;
 			
 			protected function getPropertiesInfo():void {
 				
@@ -134,6 +138,9 @@
 			protected function sendButton_clickHandler():void {
 				var message:URLVariables = new URLVariables();
 				var validResultEvent:ValidationResultEvent = emailValidator.validate(emailText.text);
+				var issueData:IssueData;
+				var errorData:ErrorData;
+				
 				//var validEmail:Boolean = emailValidator.validate(emailText.text);
 				
 				if (validResultEvent.results && validResultEvent.results.length!=0) {
@@ -169,6 +176,18 @@
 				message.supports32bit = supports32bit;
 				message.supports64bit = supports64bit;
 				message.touchscreen = touchscreenType;
+				
+				if (data is IssueData) {
+					issueData = data as IssueData;
+					message.issueName = issueData.label;
+					message.issueDescription = issueData.description;
+					
+					if (data is ErrorData) {
+						errorData = data as ErrorData;
+						message.stackTrace = errorData.stackTrace;
+						message.errorMessage = errorData.message;
+					}
+				}
 				
 				message.email = emailText.text=="" ? emailText.prompt : emailText.text;
 				
@@ -226,6 +245,8 @@
 			}
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
+				var issueData:IssueData;
+				var errorData:ErrorData;
 				radiate = Radiate.getInstance();
 				serviceManager = ServicesManager.getInstance();
 				
@@ -233,8 +254,28 @@
 					emailText.text = radiate.userEmail;
 				}
 				
-				if (currentState==BUG) {
-					bugMessageTextArea.text = bugText;
+				if (currentState==BUG || data is IssueData) {
+					if (currentState!=BUG) {
+						currentState = BUG;
+						validateNow();
+						bugRadioButton.selected = true;
+					}
+					
+					
+					issueData = data as IssueData;
+					errorData = data as ErrorData;
+					
+					if (issueData) {
+						bugMessageTextArea.text = issueData.description;
+					}
+					else {
+						bugMessageTextArea.text = bugText;
+					}
+					
+					if (errorData) {
+						bugMessageTextArea.appendText("\n" + errorData.stackTrace);
+					}
+					
 					//helpTextArea.text = bugExampleText;
 				}
 				else {
@@ -331,7 +372,7 @@ Button text is blue]]></fx:String>
 						   group="{featureRadioGroup}"
 						   selected="true"
 						   />
-			<s:RadioButton id="booleanDisabledRadioButton"
+			<s:RadioButton id="bugRadioButton"
 						   label="Bug"
 						   group="{featureRadioGroup}"
 						   />

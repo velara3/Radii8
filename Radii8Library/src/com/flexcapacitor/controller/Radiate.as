@@ -4684,7 +4684,7 @@ package com.flexcapacitor.controller {
 			var _tempTarget:* = value && value is Array && value.length ? value[0] : value;
 			
 			if (_targets.length == 1 && target==_tempTarget && reselect==false) {
-				return;
+				//return;
 			}
 			
 			_targets = null;// without this, the contents of the array would change across all instances
@@ -6065,9 +6065,9 @@ package com.flexcapacitor.controller {
 			effect.propertyChangesArray = onlyPropertyChanges;
 			
 			
-			effect.relevantEvents = event!=null ? ArrayUtil.toArray(event) : [];
-			effect.relevantProperties = property!=null ? ArrayUtil.toArray(property) : [];
-			effect.relevantStyles = style!=null ? ArrayUtil.toArray(style) : [];
+			effect.relevantEvents = ArrayUtil.toArray(event);
+			effect.relevantProperties = ArrayUtil.toArray(property);
+			effect.relevantStyles = ArrayUtil.toArray(style);
 			
 			// this works for styles and properties
 			// note: the property applyActualDimensions is used to enable width and height values to stick
@@ -12180,8 +12180,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				value = value.replace(/\t/, "");
 				if (removeLines) {
 					value = value.replace(/\[.*\]/g, "");
+					value = value.replace(/.*?::/g, "");
 				}
 				stackTrace = value.split("\n");
+				stackTrace.shift();
 				stackTrace.shift();
 				stackTrace.shift();
 				return stackTrace.join("\n");

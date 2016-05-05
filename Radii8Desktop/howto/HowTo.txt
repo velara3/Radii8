@@ -5,8 +5,8 @@ How to update the application online
 ***********************************************
 update the application descriptor version number 1.5,1.6,1.7, etc (it might be already updated)
 
-create a new air build
-create a new dmg build
+create a new air build (signed AIR package)
+create a new dmg build (signed application with captive runtime)
 compress the dmg with the readme.txt to make a ZIP file
 
 Login to FTP and upload the AIR and ZIP file to the updates/releases directory
@@ -23,10 +23,18 @@ login to the wordpress blog (https://www.radii8.com/blog/wp-login.php)
 open the download page for editing (https://www.radii8.com/blog/wp-admin/post.php?post=799&action=edit)
 on the download page update the version number, the air file location and the ZIP (not dmg) file location (3 places)
 on the iframe for the badge_installer.html page update the query string to prevent caching (1 location)
+iframe embed code is as follows:
+<iframe style="width: 220px; height: 160px;" src="https://www.radii8.com/updates/badge_installer.html?date=0505"></iframe>
 update the post
 
-check the download works (sometimes is cached? add number to iframe)
-check the app sees a new update
+
+check the download works
+go to https://www.radii8.com/blog/?page_id=799
+click on the badge installer icon (sometimes is cached)
+check the app sees a new update. 
+cancel the install
+open the app locally and see if a new version notification is shown
+use either version to check install works
 
 post a new blog post
 copy notes from changes.txt or sourcetree

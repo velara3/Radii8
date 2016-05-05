@@ -1472,7 +1472,8 @@
 				<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>
 				<model:MenuItem type="separator"/>
 				<!-- keyEquivalent="s" seemed to be catching the s key everywhere. needs cmd for mac and ctrl for win-->
-				<model:MenuItem id="saveMenuItem" label="Save" itemClick="saveMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveMenuItem" label="Save" itemClick="saveMenuItem_itemClickHandler(event)"
+								keyEquivalent="s" commandKey="true"/>
 				<model:MenuItem id="saveAsImageMenuItem" label="Save as Image" itemClick="saveAsImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem label="Save Project" itemClick="{radiate.saveProject(radiate.selectedProject)}"/>
 				<model:MenuItem label="Save All Documents" itemClick="{radiate.saveAllDocuments()}"/>

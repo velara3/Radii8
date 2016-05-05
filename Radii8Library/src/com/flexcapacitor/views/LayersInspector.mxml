@@ -163,9 +163,9 @@
 			private function labelFunction(data:Object):String {
 				var identity:String =  ClassUtils.getIdentifier(data.instance);
 				
-				if (identity) {
+				/*if (identity) {
 					return data.name + " (" + identity + ")";
-				}
+				}*/
 				
 				if (String(data.name).toLowerCase()=="application") {
 					return "Document";

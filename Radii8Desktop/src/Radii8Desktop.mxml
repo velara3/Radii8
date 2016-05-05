@@ -42,6 +42,9 @@
 	- removed FCLibrary.swc
 	- also removed as3 syntaxhighlighter.swc and using ace editor
 	
+	using hand tool in a release build and the application hung
+	got error 2094
+	
 					   -->
 	
 	<!-- LOOK IN TODO or CHANGES.txt for what to work on -->
@@ -91,13 +94,17 @@
 				public var radiate:Radiate;
 				
 				protected function initializeHandler(event:FlexEvent):void {
+					isWin = (Capabilities.os.indexOf("Windows") >= 0);
+					isMac = (Capabilities.os.indexOf("Mac OS") >= 0);
+					isLinux = (Capabilities.os.indexOf("Linux") >= 0);
+					
 					width = Capabilities.screenResolutionX * .96;
 					height = Capabilities.screenResolutionY * .9;
 					
 					nativeWindow.x = (Screen.mainScreen.bounds.width - width)/2;
 					nativeWindow.y = (Screen.mainScreen.bounds.height - height)/2;
 					
-					var pngEncoder:JPEGXREncoderOptions = new JPEGXREncoderOptions();
+					//var jpegXREncoder:JPEGXREncoderOptions = new JPEGXREncoderOptions();
 					
 					mainViewMenu.addEventListener("nativeMenuChange", mainViewMenuChanged, false, 0, true);
 					mainViewMenu.addEventListener("keyEquivalentModifiersFunctionChanged", keyEquivalentModifiersFunctionChanged, false, 0, true);
@@ -124,6 +131,7 @@
 				    var applicationDescriptor:XML;
 				    var appNamespace:Namespace;
 				    var version:String;
+					var showInlineMenus:Boolean = false;
 					
 					applicationDescriptor 	= NativeApplication.nativeApplication.applicationDescriptor;
 					appNamespace 			= applicationDescriptor.namespace();
@@ -140,8 +148,8 @@
 					
 					// set title bar icon (doesn't seem to work in debug build)
 					titleIcon = Radii8LibraryAssets.logo;
-
-					setupNativeMenus();
+					
+					setupNativeMenus(showInlineMenus);
 					
 					nativeApplication.addEventListener(Event.NETWORK_CHANGE, dispatchEvent);
 					radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeEventHandler, false, 0, true);
@@ -478,12 +486,21 @@
 				[Bindable]
 				public var historyMenuStrongReference:Object = {};
 				public var nativeMenuManager:NativeMenuManager;
+
+				private var isWin:Boolean;
+
+				private var isMac:Boolean;
+
+				private var isLinux:Boolean;
 				
 				/**
 				 * We have to convert the menus used in the browser into 
 				 * native menu items in the desktop application
+				 * 
+				 * @param showInlineMenus set this to true to add our menu to the existing AIR application menu
+				 * we must also support native menu items for this to work
 				 * */
-				private function setupNativeMenus():void {
+				private function setupNativeMenus(showInlineMenus:Boolean = false):void {
 					// setup menus
 					var defaultMenu:NativeMenu;
 					var defaultMenuItems:Array;
@@ -506,7 +523,7 @@
 					var customMenuItemsCollection:ArrayCollection;
 					var nativeMenuItem:NativeMenuItem;
 					
-					var convertToNativeMenuItems:Boolean;
+					
 					var supportsMenu:Boolean;
 					
 					// docs incorrectly say there is a nativeApplication.menu.supportsMenu flag 
@@ -514,9 +531,6 @@
 					// actual API is NativeApplication.supportsMenu
 					supportsMenu = NativeApplication.supportsMenu;
 					
-					// set this to true to add our menu to the existing AIR application menu
-					// we must also support native menu items for this to work
-					convertToNativeMenuItems = true;
 					
 					// native menu has About, File, Edit, Window
 					defaultMenu = nativeApplication.menu;
@@ -550,7 +564,7 @@
 					
 					
 					// add our menu to existing menu or replace menu with our custom menu
-					if (convertToNativeMenuItems && supportsMenu) {
+					if (!showInlineMenus && supportsMenu) {
 						nativeMenuManager = new NativeMenuManager();
 						
 						// File menu
@@ -653,6 +667,64 @@
 						radiate.applicationWindowMenu = customWindowMenu;
 						
 					}
+				}
+				
+				/**
+				 * Example modifier function
+				 * http://help.adobe.com/en_US/flex/using/WSacd9bdd0c5c09f4a-690d4877120e8b878b0-7fea.html#WSacd9bdd0c5c09f4a-690d4877120e8b878b0-7fde
+				 * */
+				private function keyEquivalentModifiersFunction(item:Object):Array {
+					var result:Array = new Array();
+					var menu:Object;
+					var label:String = "label" in item ? item.label : "name" in item ? item.name : ""; 
+					
+					//var keyEquivField:String = menu.keyEquivalentField;
+					var keyEquivField:String = mainViewMenu.keyEquivalentField;
+					var altKeyField:String;
+					var controlKeyField:String;
+					var shiftKeyField:String;
+					
+					if (item is XML) { 
+						altKeyField = "@altKey";
+						controlKeyField = "@controlKey";
+						shiftKeyField = "@shiftKey";
+					}
+					else if (item is Object) { 
+						altKeyField = "altKey";
+						controlKeyField = "controlKey";
+						shiftKeyField = "shiftKey";
+					}
+					
+					if (item[keyEquivField] == null || item[keyEquivField].length == 0) { 
+						return result;
+					}
+					
+					if (item[altKeyField] != null && item[altKeyField] == true) 
+					{
+						if (isWin)
+						{
+							result.push(Keyboard.ALTERNATE); 
+						}
+					}
+					
+					if (item[controlKeyField] != null && item[controlKeyField] == true) 
+					{
+						if (isWin)
+						{
+							result.push(Keyboard.CONTROL);
+						}
+						else if (isMac) 
+						{
+							result.push(Keyboard.COMMAND);
+						}
+					}
+					
+					if (item[shiftKeyField] != null && item[shiftKeyField] == true) 
+					{
+						result.push(Keyboard.SHIFT);
+					}
+					
+					return result;
 				}
 				
 				protected function historyChangeEventHandler(event:RadiateEvent):void {
@@ -783,6 +855,7 @@
 			labelField="label" 
 			showRoot="false"
 			itemClick="nativeMenuCommand(event)"
+			keyEquivalentModifiersFunction="keyEquivalentModifiersFunction"
 			/>
 		
 		<!--<mx:FlexNativeMenu 

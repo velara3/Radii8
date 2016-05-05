@@ -78,7 +78,7 @@
     </component>
     
     <component id="Group" class="spark.components.Group">
-    	<defaults minWidth="10" minHeight="10"/>
+    	<defaults minWidth="20" minHeight="20"/>
     </component>
     
     <component id="HGroup" class="spark.components.HGroup">

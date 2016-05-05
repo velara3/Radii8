@@ -27,7 +27,7 @@
 	<!-- A string value of the format <0-999>.<0-999>.<0-999> that represents application version which can be used to check for application upgrade. 
 	Values can also be 1-part or 2-part. It is not necessary to have a 3-part value.
 	An updated version of application must have a versionNumber value higher than the previous version. Required for namespace >= 2.5 . -->
-	<versionNumber>2.5.0</versionNumber>
+	<versionNumber>2.6.0</versionNumber>
 
 	<!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents the version of the application, as it should be shown to users. Optional. -->
 	<!-- <versionLabel></versionLabel> -->
@@ -164,7 +164,7 @@
 
 		<fileType>
 			<!--  name cannot contain a space -->
-			<name>MXML_Document</name>
+			<name>MXMLDocument</name>
 			<!--  extension cannot be * -->
 			<extension>mxml</extension>
 			<description>MXML file</description>
@@ -172,31 +172,31 @@
 			<contentType>text/plain</contentType>
 		</fileType>
 		<fileType>
-			<name>Photoshop_Image</name>
+			<name>PhotoshopImage</name>
 			<extension>psd</extension>
 			<description>Adobe Photoshop Image</description>
 			<contentType>application/octet-stream</contentType>
 		</fileType>
 		<fileType>
-			<name>JPEG_Image</name>
+			<name>JPEGImage</name>
 			<extension>jpg</extension>
 			<description>JPEG Image</description>
 			<contentType>image/jpeg</contentType>
 		</fileType>
 		<fileType>
-			<name>JPEG_Image</name>
+			<name>JPEGImage</name>
 			<extension>jpeg</extension>
 			<description>JPEG Image</description>
 			<contentType>image/jpeg</contentType>
 		</fileType>
 		<fileType>
-			<name>PNG_Image</name>
+			<name>PNGImage</name>
 			<extension>png</extension>
 			<description>PNG Image</description>
 			<contentType>image/png</contentType>
 		</fileType>
 		<fileType>
-			<name>GIF_Image</name>
+			<name>GIFImage</name>
 			<extension>gif</extension>
 			<description>GIF Image</description>
 			<contentType>image/gif</contentType>
