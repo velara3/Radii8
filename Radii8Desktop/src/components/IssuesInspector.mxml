@@ -234,7 +234,11 @@
 					</s:layout>
 					
 					<s:Image id="icon" />
-					<s:VGroup width="100%" padding="6">
+					<s:VGroup width="100%" 
+							  paddingTop="6" 
+							  paddingLeft="6" 
+							  paddingRight="6" 
+							  paddingBottom="6">
 						<s:Label id="labelDisplay" width="100%"/>
 					</s:VGroup>
 				</s:ItemRenderer>

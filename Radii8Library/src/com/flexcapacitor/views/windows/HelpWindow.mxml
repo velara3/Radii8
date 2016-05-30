@@ -25,7 +25,10 @@
 	
 	<s:TileGroup width="100%" columnAlign="left" columnWidth="150" 
 				 verticalAlign="middle" requestedColumnCount="2"
-				 padding="20"
+				 paddingLeft="20"
+				 paddingTop="20"
+				 paddingRight="20"
+				 paddingBottom="20"
 				 bottom="50">
 		
 		

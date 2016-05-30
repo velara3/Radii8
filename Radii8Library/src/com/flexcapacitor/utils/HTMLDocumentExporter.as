@@ -3072,7 +3072,7 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		 * Get style name or class attribute
 		 * */
 		public function getStyleNameAttribute(instance:Object, value:String = "", appendID:String = ""):String {
-			var styleName:String = styleName in instance ? instance.styleName : null;
+			var styleName:String = "styleName" in instance ? instance.styleName : null;
 			
 			if (styleName!=null && styleName!="") {
 				value += value.charAt(value.length)!=" " ? " " : "";

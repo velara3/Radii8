@@ -1639,7 +1639,7 @@
 			 alpha=".05"
 			 includeIn="home"/>
 	
-	<!-- HOME SCREEN MENU -->
+	<!-- HOME SCREEN MENU SHADOW -->
 	<s:RectangularDropShadow id="welcomeContainerShadow" 
 							 minHeight="380" 
 							 height="60%" 
@@ -1701,7 +1701,7 @@
 			
 			
 			<s:VGroup width="100%" height="100%">
-				<c:LabelButton id="examplesLabel" text="Examples" fontWeight="bold" click="examplesLabel_clickHandler(event)"/>
+				<c:LabelButton id="examplesLabel" text="Starter Projects" fontWeight="bold" click="examplesLabel_clickHandler(event)"/>
 				<s:Label id="checkingForExampleProjectsLabel" 
 						 text="" 
 						 fontStyle="italic"
@@ -2144,7 +2144,8 @@
 			  >
 		<views:Breadcrumbs width="100%" includeIn="design"/>
 		<s:Spacer width="100%"/>
-		<s:BusyIndicator id="savingLogo" x="0" y="0" width="20" height="20" 
+		<mx:ProgressBar id="savingLogo" x="0" y="0" width="30" height="12" 
+						indeterminate="true" label=""
 				 visible="{radiate.saveDocumentInProgress}"
 				 includeInLayout="{radiate.saveDocumentInProgress}"/>
 		<s:Label text="Last saved:" 

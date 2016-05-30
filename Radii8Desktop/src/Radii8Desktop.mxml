@@ -820,7 +820,23 @@
 		
 		What seemed to work is adding -swf-version=16 to the compiler arguments in the main project
 		
+		On the desktop version using a newer AIR version than AIR 3.6 seemed to work in the library projects
+		On the web version using a newer -swf-version=16 or -swf-version=19 and making sure the player global was updated
+		in the sdk directory
 		
+		
+		ANOTHER ERROR: 
+		Process terminated without establishing connection to debugger.
+		
+		invalid application descriptor: Unknown namespace: http://ns.adobe.com/air/application/21.0
+		
+		Launch command details:  "/Applications/Adobe Flash Builder 4.7/sdks/4.9.1 AIR 19/bin/adl" -runtime 
+		"/Applications/Adobe Flash Builder 4.7/sdks/4.9.1 AIR 19/runtimes/air/mac" 
+		/Users/me/Documents/ProjectsGithub/Radii8/Radii8Desktop/bin-debug/Radii8Desktop-app.xml /Users/me/Documents/ProjectsGithub/Radii8/Radii8Desktop/bin-debug 
+		- /Users/me/Desktop/mxml_complex.mxml 
+		
+		Problem and Solution: 
+		Had an argument in the launch configuration
 		-->
 		
 		<handlers:EventHandler eventName="initialize" enabled="true">

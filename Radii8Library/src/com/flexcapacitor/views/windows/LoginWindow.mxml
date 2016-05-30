@@ -406,6 +406,11 @@
 				}
 				
 				inProgress = false;
+				
+				if (loginAfterRegistrationLabel) {
+					loginAfterRegistrationLabel.text = "";
+					loginAfterRegistrationLabel.toolTip = "";
+				}
 			
 				if (event.faultEvent is IOErrorEvent) {
 				
@@ -530,7 +535,9 @@
 					// copy the password and paste it into the login 
 					
 					registrationWarningsLabel.text = "Wait! You must activate your account through your email and then login here.";
-					loginAfterRegistrationLabel.text = "";
+					loginAfterRegistrationLabel.text = "Wait! You must activate your account through your email and then login here.";
+					loginAfterRegistrationLabel.toolTip = message;
+					
 					return;
 				}
 				
@@ -591,6 +598,7 @@
 				
 				if (data && data is Object && successful) {
 					action = LOGIN;
+					radiate.updateUserInfo(data);
 					dispatchEvent(new Event(LOGIN));
 					closePopUp.startDelay = 0;
 					closePopUp.play();
@@ -923,7 +931,7 @@
 			 visible="false"
 			 includeInLayout="false"/>
 	
-	<controls:VerticalLine height="60%" right="360" top="30" includeIn="loginAfterRegistration"/>
+	<controls:VerticalLine id="loginAfterRegistrationLine" height="60%" right="340" top="30" includeIn="loginAfterRegistration"/>
 	
 	<!-- LOGIN -->
 	<s:VGroup left="15" 

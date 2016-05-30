@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   width="900" height="400" left="10" top="10" 
+					   applicationComplete="windowedapplication1_creationCompleteHandler(event)" xmlns:ns="http://flex.apache.org/experimental/ns">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.ISystemManager;
+			import mx.managers.SystemManagerGlobals;
+			
+			import spark.components.RichEditableText;
+			import spark.components.supportClasses.TextBase;
+			import spark.layouts.BasicLayout;
+			
+			/**
+			 * Component that is in edit mode. Typically a Label. 
+			 * */
+			public static var currentEditableComponent:Object;
+			public static var editableRichTextField:RichEditableText = new RichEditableText();
+			
+			/**
+			 * Set the value that the user typed in
+			 * */
+			public static function commitTextEditorValues(event:Event):void {
+				var newValue:String = editableRichTextField.text;
+				var oldValue:String = currentEditableComponent.text;
+				var doSomething:Boolean;
+				
+				
+				if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
+					doSomething = false; trace("Click event");
+				}
+				else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
+					doSomething = false;trace("related object is still edit component");
+				}
+				else if (event is FlexEvent && event.type=="valueCommit") {
+					doSomething = false;trace('value commit');
+				}
+				else {
+					doSomething = true;trace('other event: ' + event.type);
+				}
+				
+				if (doSomething) {
+					if (currentEditableComponent && newValue!=oldValue) {
+						currentEditableComponent.text = newValue;
+						//currentEditableComponent = null;
+					}
+					
+					currentEditableComponent.visible = true;
+					editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
+					editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
+					editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
+					editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
+					
+					if (editableRichTextField.owner) {
+						currentEditableComponent.owner.removeElement(editableRichTextField);
+					}
+					
+				}
+				
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				
+			}
+			
+			
+			/**
+			 * Handles double click on text to show text editor. 
+			 * To support more components add the elements in the addElement method
+			 * */
+			public static function showTextEditor(event:MouseEvent):void {
+				var target:TextBase = event.target as TextBase;
+				
+				if (target) {
+					currentEditableComponent = target;
+					var rectangle:Rectangle = DisplayObjectUtils.getRectangleBounds(target);
+					var propertyNames:Array = ["x", "y", "text", "minWidth"];
+					var valuesObject:Object = {};
+					var isBasicLayout:Boolean;
+					
+					if (currentEditableComponent.owner.layout is BasicLayout) {
+						isBasicLayout = true;
+						rectangle = DisplayObjectUtils.getRectangleBounds(target, currentEditableComponent.owner);
+					}
+					
+					currentEditableComponent.x = rectangle.x;
+					currentEditableComponent.y = rectangle.y;
+					const MIN_WIDTH:int = 22;
+					currentEditableComponent.minWidth = MIN_WIDTH;
+					
+					//properties.width = "100";
+					if (!isNaN(target.explicitWidth)) {
+						propertyNames.push("width");
+						currentEditableComponent.width = rectangle.width;
+					}
+					else if (!isNaN(target.percentWidth)) {
+						// if basic layout we can get percent width
+						if (isBasicLayout) {
+							propertyNames.push("percentWidth");
+							currentEditableComponent.percentWidth = target.percentWidth;
+						}
+						else {
+							propertyNames.push("width");
+							currentEditableComponent.width = rectangle.width;
+						}
+					}
+					
+					//editableRichTextField.width = undefined;
+					//editableRichTextField.percentWidth = NaN;
+					//properties.height = rectangle.height;
+					currentEditableComponent.text = target.text;
+					currentEditableComponent.visible = false;
+					editableRichTextField.styleName = currentEditableComponent;
+					editableRichTextField.focusRect = null;
+					editableRichTextField.setStyle("focusAlpha", 0.25);
+					
+					
+					if (isBasicLayout) {
+						currentEditableComponent.owner.addElement(editableRichTextField);
+					}
+					else {
+						currentEditableComponent.owner.addElement(editableRichTextField);
+					}
+					
+					var topSystemManager:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+					topSystemManager.stage.stageFocusRect = false;
+					editableRichTextField.selectAll();
+					editableRichTextField.setFocus();
+					editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues, false, 0, true);
+					editableRichTextField.addEventListener(FlexEvent.ENTER, commitTextEditorValues, false, 0, true);
+					editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues, false, 0, true);
+					editableRichTextField.addEventListener(MouseEvent.CLICK, commitTextEditorValues, false, 0, true);
+				}
+			}
+			
+			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
+			{
+				nativeWindow.x = 10;
+				nativeWindow.y = 10;
+			}
+			
+			protected function bordercontainer1_clickHandler(event:MouseEvent):void
+			{
+				trace("container clicked");
+			}
+			
+		]]>
+	</fx:Script>
+	<s:BorderContainer width="300" height="300" verticalCenter="0" horizontalCenter="0"
+					   click="bordercontainer1_clickHandler(event)">
+		<s:Label text="Some really long text to work with" verticalCenter="0" horizontalCenter="0"
+				 doubleClick="showTextEditor(event)" doubleClickEnabled="true"/>
+		
+		<ns:RichTextEditor top="10"/>
+	</s:BorderContainer>
+</s:WindowedApplication>

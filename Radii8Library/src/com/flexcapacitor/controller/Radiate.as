@@ -172,7 +172,6 @@ package com.flexcapacitor.controller {
 	import spark.components.BorderContainer;
 	import spark.components.Button;
 	import spark.components.CheckBox;
-	import spark.components.ColorPicker;
 	import spark.components.ComboBox;
 	import spark.components.DropDownList;
 	import spark.components.Grid;
@@ -7343,6 +7342,17 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		/**
+		 * Last created component
+		 * */
+		public static var lastCreatedComponent:Object;
+		
+		/**
+		 * Component that is in edit mode. Typically a Label. 
+		 * */
+		public static var currentEditableComponent:Object;
+		public static var editableRichTextField:RichEditableText = new RichEditableText();
+		
+		/**
 		 * Handles double click on text to show text editor. 
 		 * To support more components add the elements in the addElement method
 		 * */
@@ -7374,6 +7384,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				const MIN_WIDTH:int = 22;
 				valuesObject.minWidth = MIN_WIDTH;
 				//properties.width = "100";
+				
 				if (!isNaN(target.explicitWidth)) {
 					propertyNames.push("width");
 					valuesObject.width = rectangle.width;
@@ -7389,6 +7400,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 						valuesObject.width = rectangle.width;
 					}
 				}
+				
 				editableRichTextField.width = undefined;
 				editableRichTextField.percentWidth = NaN;
 				//properties.height = rectangle.height;
@@ -7414,20 +7426,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues, false, 0, true);
 				editableRichTextField.addEventListener(FlexEvent.ENTER, commitTextEditorValues, false, 0, true);
 				editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues, false, 0, true);
+				editableRichTextField.addEventListener(MouseEvent.CLICK, commitTextEditorValues, false, 0, true);
 				instance.disableTool();
 			}
 		}
-		
-		/**
-		 * Last created component
-		 * */
-		public static var lastCreatedComponent:Object;
-		
-		/**
-		 * Component that is in edit mode. Typically a Label. 
-		 * */
-		public static var currentEditableComponent:Object;
-		public static var editableRichTextField:RichEditableText = new RichEditableText();
 		
 		/**
 		 * Set the value that the user typed in
@@ -7438,7 +7440,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var doSomething:Boolean;
 			
 			
-			if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
+			if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
+				doSomething = false;
+			}
+			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
 				doSomething = false;
 			}
 			else if (event is FlexEvent && event.type=="valueCommit") {
@@ -7447,6 +7452,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			else {
 				doSomething = true;
 			}
+			
 			
 			if (doSomething) {
 				if (currentEditableComponent && newValue!=oldValue) {
@@ -7458,6 +7464,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
 				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
 				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
+				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
 				
 				if (editableRichTextField.parent) {
 					HistoryManager.doNotAddEventsToHistory = true;
@@ -7630,8 +7637,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				}
 			}
 			
+			var sparkColorPicker:Class = ClassUtils.getDefinition("spark.components.ColorPicker") as Class;
+			
 			// spark or mx ColorPicker
-			if (componentInstance is spark.components.ColorPicker || componentInstance is mx.controls.ColorPicker) {
+			if ((sparkColorPicker && componentInstance is sparkColorPicker) || componentInstance is mx.controls.ColorPicker) {
 				Object(componentInstance).mouseChildren = interactive;
 			}
 			
