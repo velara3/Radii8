@@ -5,6 +5,7 @@ HOW TO GUIDE FOR DEVELOPERS
 How to setup WordPress side
 ***********************************************
 Install WordPress
+Set the email address to a valid email hosted at your domain
 Edit WPConfig.php
 Turn on multisite:
 Above "That's all.." line add the following
@@ -19,6 +20,7 @@ define('PATH_CURRENT_SITE', '/r8m/');
 define('SITE_ID_CURRENT_SITE', 1);
 define('BLOG_ID_CURRENT_SITE', 1);
 define('JSON_API_CONTROLLERS', "core,categories,posts,user,attachments,projects");
+/* many hosting companies require the email must be a valid email hosted at the same domain */
 define('JSON_API_EMAIL_FROM', "contact@radii8.com");
 define('JSON_API_EMAIL_FROM_NAME', "Radii8.com");
 

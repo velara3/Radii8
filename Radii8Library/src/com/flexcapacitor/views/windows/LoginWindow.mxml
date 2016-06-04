@@ -449,6 +449,7 @@
 				var message:String = "";
 				var successful:Boolean = event.successful;
 				var errors:Array;
+				var newRegistrationMessage:String = "Wait! Check your email. You must activate your account through your email and then login here.";
 				
 				serviceManager.removeEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler);
 				
@@ -534,8 +535,8 @@
 					
 					// copy the password and paste it into the login 
 					
-					registrationWarningsLabel.text = "Wait! You must activate your account through your email and then login here.";
-					loginAfterRegistrationLabel.text = "Wait! You must activate your account through your email and then login here.";
+					registrationWarningsLabel.text = newRegistrationMessage;
+					loginAfterRegistrationLabel.text = newRegistrationMessage;
 					loginAfterRegistrationLabel.toolTip = message;
 					
 					return;
