@@ -2,18 +2,135 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
-					   creationComplete="windowedapplication1_creationCompleteHandler(event)">
+					   xmlns:ns="http://flex.apache.org/experimental/ns" 
+					   xmlns:file="com.flexcapacitor.effects.file.*"
+					   
+					   creationComplete="windowedapplication1_creationCompleteHandler(event)"
+					   >
+	
 	<fx:Script>
 		<![CDATA[
+			import mx.collections.ArrayCollection;
 			import mx.events.FlexEvent;
+			import mx.rpc.xml.SimpleXMLEncoder;
+			
+			import spark.layouts.supportClasses.LayoutBase;
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				browseForFile.play();
+				
+			}
+			
+			protected function browseForFile_selectHandler(event:Event):void
+			{
+			}
+			
+			protected function loadfile1_totalCompleteHandler(event:Event):void
+			{
+				var files:Array = loadFile.filesArray;
+				var newFile:File;
+				var data:String;
+				var fileStream:FileStream = new FileStream();
+				
+				// Error: Error #3012: Cannot delete file or directory.
+				//  at flash.filesystem::File/copyTo()
+				// -- error because file already exists and overwrite was false
+				
+				// Error: Error #2029: This URLStream object does not have a stream opened.
+					
+				for each (var file:File in files) {
+					newFile = new File(file.nativePath + ".txt");
+					file.copyTo(newFile, true);
+					
+					fileStream.open(newFile, FileMode.WRITE);
+					data = file.data.readUTFBytes(file.data.length);
+					data = data.substr(data.lastIndexOf("Content-Description"));
+					fileStream.writeUTFBytes(data);
+					fileStream.close();
+					//newFile.data.writeUTFBytes(data);
+					trace(data);
+				}
+			}
 			
 			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
 			{
-				// TODO Auto-generated method stub
-				trace(5 % 2);
+				var x:XML = <property name="layout" something="else"/>;
+				
+				var value:String = String(x.@name);
+				var value1:String = String(x.attribute("name"));
+				var value2:String = x.@name;
+				var value3:String = x.attribute("name");
+				var value4:String = x.attribute("something");
+				var output:String = "test\n";
+				var xmlNode:XMLNode;
+				var qname:QName = new QName("http://ns.adobe.com/mxml/2009","test");
+				var xmlDocument:XMLDocument;
+				
+				xmlParentNode = new XMLNode(XMLNodeType.DOCUMENT_TYPE_NODE, "<root xmlns:fx='http://ns.adobe.com/mxml/2009'/>");
+				xmlDocument = new XMLDocument("<root xmlns:fx='http://ns.adobe.com/mxml/2009'/>");
+				
+				xmlEncoder = new SimpleXMLEncoder(xmlDocument);
+				
+				var object:Object = {property:"value"};
+				var array:Array = ["value1", "value2", "value3"];
+				var objectArray:Array = [{prop:"value1"}, {prop:"value2"}, {id:"value3"}];
+				var arrayCollection:ArrayCollection = new ArrayCollection(objectArray);
+				var layout:LayoutBase = layout;
+				
+				xmlNode = xmlEncoder.encodeValue(value, qname, xmlParentNode);
+				output = "String:\n"+ xmlNode.toString();
+				trace(output);
+				
+				xmlNode = xmlEncoder.encodeValue(array, qname, xmlParentNode);
+				output = "Array:\n"+xmlNode.toString();
+				trace(output);
+				
+				xmlNode = xmlEncoder.encodeValue(object, qname, xmlParentNode);
+				output = "Object:\n"+xmlNode.toString();
+				trace(output);
+				
+				xmlNode = xmlEncoder.encodeValue(objectArray, qname, xmlParentNode);
+				output = "Object Array:\n"+xmlNode.toString();
+				trace(output);
+				
+				
+				xmlNode = xmlEncoder.encodeValue(arrayCollection, qname, xmlParentNode);
+				output = "Array Collection:\n"+xmlNode.toString();
+				trace(output);
+				
+				xmlNode = xmlEncoder.encodeValue(arrayCollection, qname, xmlDocument);
+				output = "Array Collection Doc:\n"+xmlNode.toString();
+				trace(output);
+				
+				xmlNode = xmlEncoder.encodeValue(layout, qname, xmlDocument);
+				output = "Layout:\n"+xmlNode.toString();
+				trace(output);
 			}
 			
+			public var xmlEncoder:SimpleXMLEncoder;
+			/**
+			 * The XML document used when creating new nodes
+			 * */
+			public var xml:XML;
+			
+			/**
+			 * The parent XMLNode used when creating new nodes
+			 * */
+			public var xmlParentNode:XMLNode;
 		]]>
 	</fx:Script>
 	
+	<fx:Declarations>
+		<file:BrowseForFile id="browseForFile" allowMultipleSelection="true" 
+							select="browseForFile_selectHandler(event)">
+			<file:multipleSelectionEffect>
+				<file:LoadFile id="loadFile" totalComplete="loadfile1_totalCompleteHandler(event)"
+							   filesArray="{browseForFile.fileList}"/>
+			</file:multipleSelectionEffect>
+		</file:BrowseForFile>
+	</fx:Declarations>
+	
+	<!--<ns:RichTextEditor skinClass="spark.skins.RichTextEditorSkin" 
+					   verticalCenter="0" horizontalCenter="0" width="300" height="300"/>-->
+	<s:Button label="do stuff" click="button1_clickHandler(event)"/>
 </s:WindowedApplication>

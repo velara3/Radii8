@@ -9,18 +9,23 @@
 
 			   title="Import MXML"
 			   title.revisions="Select Revision"
-			   creationComplete="animatedpanelwindow1_creationCompleteHandler(event)"
+			   creationComplete="animatedpanelwindow1_creationCompleteHandler(event)" xmlns:controls="com.flexcapacitor.controls.*"
 			   >
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.model.DocumentRevision;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
 			import com.flexcapacitor.model.SourceData;
+			import com.flexcapacitor.model.TranscoderDescription;
 			import com.flexcapacitor.utils.AceEditorUtils;
+			import com.flexcapacitor.utils.DocumentTranscoder;
+			import com.flexcapacitor.utils.MXMLDocumentImporter;
 			import com.flexcapacitor.utils.XMLUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
 			
 			import mx.collections.ArrayCollection;
@@ -316,6 +321,37 @@
 				closePopUp.startDelay = 500;
 				closePopUp.play();
 			}
+			
+			protected function addNamespaces_clickHandler(event:MouseEvent):void {
+				var xml:XML;
+				var root:String;
+				var isValid:Boolean;
+				var rootNodeName:String = "RootWrapperNode";
+				var updatedCode:String;
+				var mxmlDocumentImporter:MXMLDocumentImporter;
+				var componentDescription:ComponentDescription;
+				var sourceDataLocal:SourceData;
+				var codeToParse:String = aceEditor.text;
+				
+				var transcoder:TranscoderDescription = CodeManager.getImporter(CodeManager.MXML);
+				var importer:DocumentTranscoder = transcoder.importer;
+				
+				isValid = XMLUtils.isValidXML(codeToParse);
+				
+				if (!isValid) {
+					root = '<'+rootNodeName + " " + importer.defaultNamespaceDeclarations +'>';
+					updatedCode = root + codeToParse + "</"+rootNodeName+">";
+				}
+				else {
+					// add missing namespaces here - NOT Finished
+					root = '<'+rootNodeName + " " + importer.defaultNamespaceDeclarations +'>';
+					updatedCode = root + codeToParse + "</"+rootNodeName+">";
+				}
+				
+				aceEditor.text = updatedCode;
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -423,6 +459,8 @@
 				<s:Button id="showCurrentSourceButton" 
 						  label="Show Current Source"
 						  click="showCurrentSourceButton_clickHandler(event)"/>
+				<controls:VerticalLine />
+				<s:Button label="Add namespaces" click="addNamespaces_clickHandler(event)"/>
 				<s:Spacer width="100%"/>
 				<s:Button id="cancelButton" label="Close" click="cancelButton_clickHandler(event)"/>
 				<s:Button id="importButton" label="Import" click="importPopUp_closeHandler(event)"/>

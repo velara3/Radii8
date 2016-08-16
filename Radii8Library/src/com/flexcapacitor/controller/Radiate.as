@@ -80,6 +80,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.MXMLDocumentImporter;
 	import com.flexcapacitor.utils.PersistentStorage;
 	import com.flexcapacitor.utils.SharedObjectUtils;
+	import com.flexcapacitor.utils.TextFieldHTMLExporter2;
 	import com.flexcapacitor.utils.TypeUtils;
 	import com.flexcapacitor.utils.XMLUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
@@ -120,6 +121,7 @@ package com.flexcapacitor.controller {
 	import flash.ui.MouseCursorData;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
+	import flash.utils.getDefinitionByName;
 	import flash.utils.getTimer;
 	import flash.utils.setTimeout;
 	
@@ -158,6 +160,7 @@ package com.flexcapacitor.controller {
 	import mx.logging.LogEventLevel;
 	import mx.managers.ISystemManager;
 	import mx.managers.LayoutManager;
+	import mx.managers.SystemManager;
 	import mx.managers.SystemManagerGlobals;
 	import mx.printing.FlexPrintJob;
 	import mx.printing.FlexPrintJobScaleType;
@@ -200,7 +203,9 @@ package com.flexcapacitor.controller {
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.DefaultGridItemRenderer;
 	
+	import flashx.textLayout.conversion.ITextImporter;
 	import flashx.textLayout.conversion.TextConverter;
+	import flashx.textLayout.elements.IConfiguration;
 	import flashx.textLayout.elements.TextFlow;
 	
 	import org.as3commons.lang.DictionaryUtils;
@@ -1139,6 +1144,19 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Dispatch component definition added 
+		 * */
+		public function dispatchComponentDefinitionAddedEvent(data:ComponentDefinition):void {
+			var assetAddedEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.COMPONENT_DEFINITION_ADDED)) {
+				assetAddedEvent = new RadiateEvent(RadiateEvent.COMPONENT_DEFINITION_ADDED);
+				assetAddedEvent.data = data;
+				dispatchEvent(assetAddedEvent);
+			}
+		}
+		
+		/**
 		 * Dispatch asset added event
 		 * */
 		public function dispatchAssetAddedEvent(data:Object):void {
@@ -1815,13 +1833,13 @@ package com.flexcapacitor.controller {
 
 			createSavedData();
 			
-			createDocumentTranscoders(exportersXML);
-			
 			//createDocumentTypesList(documentsXML);
 			
 			createComponentList(componentsXML);
 			//createComponentList(sparkXML);
 			//createComponentList(mxmlXML);
+			
+			createDocumentTranscoders(exportersXML);
 			
 			createInspectorsList(inspectorsXML);
 			
@@ -1881,6 +1899,14 @@ package com.flexcapacitor.controller {
 			}
 			
 			CodeManager.setTranscodersVersion(instance.versionNumber);
+			CodeManager.setComponentDefinitions(componentDefinitions.source);
+			
+			var importer:ITextImporter = TextConverter.getImporter(TextConverter.TEXT_FIELD_HTML_FORMAT);
+			var config:IConfiguration = importer.configuration;
+			TextConverter.removeFormat(TextConverter.TEXT_FIELD_HTML_FORMAT);
+			TextConverter.addFormat(TextConverter.TEXT_FIELD_HTML_FORMAT, flashx.textLayout.conversion.TextFieldHtmlImporter, TextFieldHTMLExporter2, null);
+			importer = TextConverter.getImporter(TextConverter.TEXT_FIELD_HTML_FORMAT);
+			importer.configuration = config;
 			
 			DisplayObjectUtils.Base64Encoder2 = Base64;
 			
@@ -1947,6 +1973,7 @@ package com.flexcapacitor.controller {
 			var item:XML;
 			var numberOfItems:uint;
 			var classType:Object;
+			var transcoder:TranscoderDescription;
 			 
 			// get list of transcoder classes 
 			items = XML(xml).transcoder;
@@ -1956,15 +1983,14 @@ package com.flexcapacitor.controller {
 			for (var i:int;i<numberOfItems;i++) {
 				item = items[i];
 				
-				var transcoder:TranscoderDescription = new TranscoderDescription();
+				transcoder = new TranscoderDescription();
 				transcoder.importXML(item);
 				
 				hasDefinition = ClassUtils.hasDefinition(transcoder.classPath);
 				
 				if (hasDefinition) {
 					//classType = ClassUtils.getDefinition(transcoder.classPath);
-					
-					CodeManager.registerTranscoder(transcoder);
+					addTranscoder(transcoder);
 				}
 				else {
 					error("Document transcoder class for " + transcoder.type + " not found: " + transcoder.classPath);
@@ -1973,6 +1999,15 @@ package com.flexcapacitor.controller {
 				}
 			}
 			
+		}
+		
+		/**
+		 * Adds a transcoder to the Code Manager and adds the current component definitions
+		 * */
+		public static function addTranscoder(transcoder:TranscoderDescription):void {
+			
+			CodeManager.registerTranscoder(transcoder);
+			CodeManager.setComponentDefinitions(componentDefinitions.source);
 		}
 		
 		/**
@@ -1990,8 +2025,13 @@ package com.flexcapacitor.controller {
 			var includeItem:Boolean;
 			var attributes:XMLList;
 			var attributesLength:int;
+			var childNodes:Array = [];
+			var childNodesList:XMLList;
+			var childNodesLength:int;
 			var defaults:Object;
 			var propertyName:String;
+			var descendents:XMLList;
+			var name:String;
 			
 			
 			// get list of component classes 
@@ -2002,13 +2042,14 @@ package com.flexcapacitor.controller {
 			for (var i:int;i<numberOfItems;i++) {
 				item = items[i];
 				
-				var name:String = String(item.id);
+				name = String(item.id);
 				className = item.attribute("class");
 				skinClassName = item.attribute("skinClass");
 				//inspectors = item.inspector;
 				
 				includeItem = item.attribute("include")=="false" ? false : true;
-				
+				descendents = item.descendents.property;
+				childNodes = [];
 				
 				
 				// check that definitions exist in domain
@@ -2048,7 +2089,17 @@ package com.flexcapacitor.controller {
 								}
 							}
 							
-							addComponentType(item.@id, className, classType, inspectors, null, defaults, null, includeItem);
+							if (descendents.length()) {
+								childNodesList = descendents.attributes();
+								childNodesLength = childNodesList.length();
+								
+								for each (var node:XML in childNodesList) {
+									propertyName = String(node);
+									childNodes.push(propertyName);
+								}
+							}
+							
+							addComponentDefinition(item.@id, className, classType, inspectors, null, defaults, null, includeItem, childNodes, false);
 						}
 						else {
 							error("Component skin class, '" + skinClassName + "' not found for '" + className + "'.");
@@ -3497,8 +3548,12 @@ package com.flexcapacitor.controller {
 		public static var docsURL:String = "http://flex.apache.org/asdoc/";
 		public static var docsURL2:String = "http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/";
 		
+		public static var w3URL:String = "https://www.w3.org/TR/DOM-Level-3-Events/events.html#event-DOMSubtreeModified";
+		
 		/**
 		 * Returns the URL to the help document online based on MetaData passed to it. 
+		 * 
+		 * For HTML, check out W3C 
 		 * */
 		public static function getURLToHelp(metadata:Object, useBackupURL:Boolean = true):String {
 			var path:String = "";
@@ -3571,8 +3626,10 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add the named component class to the list of available components
 		 * */
-		public static function addComponentType(name:String, className:String, classType:Object, inspectors:Array = null, icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null, enabled:Boolean = true):Boolean {
-			var definition:ComponentDefinition;
+		public static function addComponentDefinition(name:String, className:String, classType:Object, inspectors:Array = null, 
+													  icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null, 
+													  enabled:Boolean = true, childNodes:Array = null, dispatchEvents:Boolean = true):Boolean {
+			var componentDefinition:ComponentDefinition;
 			var numberOfDefinitions:uint = componentDefinitions.length;
 			var item:ComponentDefinition;
 			
@@ -3587,18 +3644,25 @@ package com.flexcapacitor.controller {
 			}
 			
 			
-			definition = new ComponentDefinition();
+			componentDefinition = new ComponentDefinition();
 			
-			definition.name = name;
-			definition.icon = icon;
-			definition.className = className;
-			definition.classType = classType;
-			definition.defaultStyles = defaultStyles;
-			definition.defaultProperties = defaultProperties;
-			definition.inspectors = inspectors;
-			definition.enabled = enabled;
+			componentDefinition.name = name;
+			componentDefinition.icon = icon;
+			componentDefinition.className = className;
+			componentDefinition.classType = classType;
+			componentDefinition.defaultStyles = defaultStyles;
+			componentDefinition.defaultProperties = defaultProperties;
+			componentDefinition.inspectors = inspectors;
+			componentDefinition.enabled = enabled;
+			componentDefinition.childNodes = childNodes;
 			
-			componentDefinitions.addItem(definition);
+			componentDefinitions.addItem(componentDefinition);
+			
+			if (dispatchEvents) {
+				instance.dispatchComponentDefinitionAddedEvent(componentDefinition);
+			}
+			
+			CodeManager.setComponentDefinitions(componentDefinitions.source);
 			
 			return true;
 		}
@@ -3663,8 +3727,18 @@ package com.flexcapacitor.controller {
 			else if (componentName is String) {
 				className = componentName as String;
 			}
+			else if (componentName is Object) {
+				className = ClassUtils.getQualifiedClassName(componentName);
+				
+				if (className=="application" || componentName is Application) {
+					className = ClassUtils.getSuperClassName(componentName, true);
+				}
+			}
 			
 			fullyQualified = className.indexOf("::")!=-1 ? true : fullyQualified;
+			if (fullyQualified) {
+				className = className.replace("::", ".");
+			}
 			
 			for (var i:uint;i<numberOfDefinitions;i++) {
 				item = ComponentDefinition(componentDefinitions.getItemAt(i));
@@ -3695,7 +3769,7 @@ package com.flexcapacitor.controller {
 					name = className;
 				}
 				classType = ClassUtils.getDefinition(className);
-				addComponentType(name, className, classType, null, null);
+				addComponentDefinition(name, className, classType, null, null);
 				item = getComponentType(className, fullyQualified);
 				return item;
 			}
@@ -4388,7 +4462,10 @@ package com.flexcapacitor.controller {
 			
 			application = iDocument && iDocument.instance ? iDocument.instance as Application : null;
 			
-			if (!application) return false;
+			if (!application) {
+				warn("No document instance was available to add image into. Create a new document and add the image to it manually");
+				return false;
+			}
 			
 			// set to true so if we undo it has defaults to start with
 			componentInstance = createComponentToAdd(iDocument, item, true);
@@ -4610,18 +4687,19 @@ package com.flexcapacitor.controller {
 		 * Selects the current document
 		 * */
 		public function selectDocument(value:IDocument, dispatchEvent:Boolean = true, cause:String = ""):void {
+			var iDocumentContainer:IDocumentContainer;
 			
 			if (selectedDocument != value) {
 				selectedDocument = value;
 			}
 			
-			var container:IDocumentContainer = documentsContainerDictionary[value] as IDocumentContainer;
+			iDocumentContainer = documentsContainerDictionary[value] as IDocumentContainer;
 			
-			if (container) {
-				toolLayer = container.toolLayer;
-				canvasBorder = container.canvasBorder;
-				canvasBackground= container.canvasBackground;
-				canvasScroller = container.canvasScroller;
+			if (iDocumentContainer) {
+				toolLayer = iDocumentContainer.toolLayer;
+				canvasBorder = iDocumentContainer.canvasBorder;
+				canvasBackground= iDocumentContainer.canvasBackground;
+				canvasScroller = iDocumentContainer.canvasScroller;
 			}
 			
 			HistoryManager.history = selectedDocument ? selectedDocument.history : null;
@@ -5106,7 +5184,7 @@ package com.flexcapacitor.controller {
 			}
 		}
 		
-		public function dropItem(event:DragEvent):void {
+		public function dropItem(event:DragEvent, createNewDocument:Boolean = false):void {
 			var dragSource:DragSource;
 			var hasFileListFormat:Boolean;
 			var hasFilePromiseListFormat:Boolean;
@@ -5129,11 +5207,26 @@ package com.flexcapacitor.controller {
 				}
 				
 				if (droppedFiles) {
-					destination = getDestinationForExternalFileDrop();
-					addFileListDataToDocument(selectedDocument, droppedFiles as Array, destination);
+					
+					if (selectedDocument==null || createNewDocument) {
+						createNewDocumentAndSwitchToDesignView(droppedFiles, selectedProject);
+					}
+					else if (selectedDocument) {
+						destination = getDestinationForExternalFileDrop();
+						addFileListDataToDocument(selectedDocument, droppedFiles as Array, destination);
+					}
+					else {
+						
+					}
 				}
 				
 			}
+			
+			// Error: Attempt to access a dead clipboard
+			//  at flash.desktop::Clipboard/checkAccess()
+			//  at flash.desktop::Clipboard/getData()
+			// Occurs when accessing a dragSource at a later time than the drop event
+			// droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT) as Array;
 		}
 		
 		/**
@@ -5246,6 +5339,8 @@ package com.flexcapacitor.controller {
 		 * Add file list data to a document
 		 * */
 		public function addFileListDataToDocument(iDocument:IDocument, fileList:Array, destination:Object = null, operation:String = "drop"):void {
+			var createDocument:Boolean = false;
+			
 			if (fileList==null) {
 				error("Not a valid file list");
 				return;
@@ -5255,8 +5350,14 @@ package com.flexcapacitor.controller {
 				return;
 			}
 			if (iDocument==null) {
-				error("Not a valid document");
-				return;
+				
+				if (createDocument) {
+					iDocument = createNewDocumentAndSwitchToDesignView(fileList);
+				}
+				else {
+					error("No document is open. Create a new document first. ");
+					return;
+				}
 			}
 			
 			var urlFormatData:Object;
@@ -5374,6 +5475,7 @@ package com.flexcapacitor.controller {
 		 * */
 		protected function pasteFileCompleteHandler(event:Event):void {
 			var resized:Boolean;
+			var imageData:ImageData;
 			
 			// if we need to load the images ourselves then skip complete event
 			// and wait until loader complete event
@@ -5401,7 +5503,7 @@ package com.flexcapacitor.controller {
 				return;
 			}
 			
-			var imageData:ImageData = new ImageData();
+			imageData = new ImageData();
 			imageData.bitmapData = pasteFileLoader.bitmapData;
 			imageData.byteArray = pasteFileLoader.data;
 			imageData.name = pasteFileLoader.currentFileReference.name;
@@ -5429,6 +5531,7 @@ package com.flexcapacitor.controller {
 		 * */
 		protected function dropFileCompleteHandler(event:Event):void {
 			var resized:Boolean;
+			var imageData:ImageData;
 			
 			// if we need to load the images ourselves then skip complete event
 			// and wait until loader complete event
@@ -5456,7 +5559,7 @@ package com.flexcapacitor.controller {
 				return;
 			}
 			
-			var imageData:ImageData = new ImageData();
+			imageData = new ImageData();
 			imageData.bitmapData = dropFileLoader.bitmapData;
 			imageData.byteArray = dropFileLoader.data;
 			imageData.name = dropFileLoader.currentFileReference.name;
@@ -5473,7 +5576,7 @@ package com.flexcapacitor.controller {
 				info("An image was added to the library and the document and resized to fit");
 			}
 			else {
-				info("An image was added to the library and the document");
+				info("An image was added to the library");
 			}
 			
 			setTarget(lastCreatedComponent);
@@ -5631,13 +5734,49 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Issue when loading with no there is no connection
+		 * */
+		public function resizeFix(secondResize:Boolean = false):void {
+			// i don't understand why loading a local SWF breaks the UI but resizing the application 
+			// fixes
+			var systemManager:ISystemManager = application.systemManager;
+			var component:Object;
+			if ((systemManager != null) && (systemManager.stage != null)) {
+				component = systemManager.stage.nativeWindow;
+			}
+			else {
+				return;
+			}
+			var width:int = component.width;
+			var height:int = component.height;
+			var offset:int = 1;
+			
+			if (secondResize) {
+				component.width = width - offset;
+				component.height = height - offset;
+			}
+			else {
+				component.width = width+offset;
+				component.height = height+offset;
+				
+				application.invalidateSize();
+				application.invalidateDisplayList();
+				
+				component.startResize("BR");
+			}
+			//component.validateNow();
+			//stage.nativeWindow.startResize(start);
+			//application.validateNow();
+		}
+		
+		/**
 		 * Creates a new project and document and if a file is 
 		 * provided then it imports the file and sizes the document to the fit. 
 		 * 
 		 * This is to support drag and drop of file onto application icon
 		 * and open with methods. 
 		 * */
-		public function createNewDocumentAndProject(file:Object = null, iProject:Object = null):void {
+		public function createNewDocumentAndSwitchToDesignView(file:Object = null, iProject:Object = null):IDocument {
 			var documentName:String = "Document";
 			var iDocument:IDocument;
 			
@@ -5656,6 +5795,7 @@ package com.flexcapacitor.controller {
 				saveProjectOnly(iDocument.project);
 			}
 			
+			return iDocument
 		}
 		
 		public var fileToBeLoaded:Object;
@@ -5663,10 +5803,20 @@ package com.flexcapacitor.controller {
 		public function documentOpenedHandler(event:RadiateEvent):void {
 			var iDocument:IDocument = event.selectedItem as IDocument;
 			var newFile:Object = fileToBeLoaded;
+			var destination:Object;
 			
-			if (newFile.exists && newFile.isDirectory==false) {
-				addEventListener(RadiateEvent.ASSET_LOADED, fileLoadedHandler, false, 0, true);
-				addFileListDataToDocument(iDocument, [newFile]);
+			if (newFile is FileReference) {
+				if (newFile.exists && newFile.isDirectory==false) {
+					addEventListener(RadiateEvent.ASSET_LOADED, fileLoadedHandler, false, 0, true);
+					addFileListDataToDocument(iDocument, [newFile]);
+				}
+			}
+			else if (newFile is DragEvent) {
+				dropItem(newFile as DragEvent);
+			}
+			else if (newFile is Array && newFile.length) {
+				//destination = getDestinationForExternalFileDrop();
+				addFileListDataToDocument(selectedDocument, fileToBeLoaded as Array);
 			}
 			
 			removeEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler);
@@ -6544,9 +6694,9 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 								value = propertyChange.end[style];
 							}
 							
-							if (value==null || 
-								value==undefined || 
-								value=="") {
+							if (value===null || 
+								value===undefined || 
+								value==="") {
 								// || isNaN(value)
 								delete componentDescription.styles[style];
 							}
@@ -7737,13 +7887,20 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * 
 		 * @see #updateComponentAfterAdd()
 		 * */
-		public static function createComponentToAdd(iDocument:IDocument, componentDefinition:ComponentDefinition, setDefaults:Boolean = true):Object {
-			var componentDescription:ComponentDescription = new ComponentDescription();
+		public static function createComponentToAdd(iDocument:IDocument, componentDefinition:ComponentDefinition, setDefaults:Boolean = true, instance:Object = null):Object {
+			var componentDescription:ComponentDescription;
 			var classFactory:ClassFactory;
 			var componentInstance:Object;
+			var properties:Array = [];
+			
+			if (instance && componentDefinition==null) {
+				componentDefinition = getDynamicComponentType(instance);
+			}
 			
 			// Create component to drag
-			classFactory = new ClassFactory(componentDefinition.classType as Class);
+			if (instance==null) {
+				classFactory = new ClassFactory(componentDefinition.classType as Class);
+			}
 			
 			/*if (setDefaults) {
 				//classFactory.properties = item.defaultProperties;
@@ -7751,8 +7908,14 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				componentDescription.defaultProperties = componentDefinition.defaultProperties;
 			}*/
 			
-			componentInstance = classFactory.newInstance();
+			if (instance) {
+				componentInstance = instance;
+			}
+			else {
+				componentInstance = classFactory.newInstance();
+			}
 			
+			componentDescription 			= new ComponentDescription();
 			componentDescription.instance 	= componentInstance;
 			componentDescription.name 		= componentDefinition.name;
 			componentDescription.className 	= componentDefinition.name;
@@ -7761,7 +7924,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			componentDescription.defaultProperties = componentDefinition.defaultProperties;
 			
 			if (setDefaults) {
-				var properties:Array = [];
 				
 				for (var property:String in componentDefinition.defaultProperties) {
 					//setProperty(component, property, [item.defaultProperties[property]]);
@@ -7772,6 +7934,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				//setProperties(componentInstance, properties, item.defaultProperties);
 				setDefaultProperties(componentDescription);
 			}
+			
+			componentDescription.componentDefinition = componentDefinition;
 			
 			iDocument.setItemDescription(componentInstance, componentDescription);
 			//iDocument.descriptionsDictionary[componentInstance] = componentDescription;
@@ -8782,16 +8946,22 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					if (isPreview) {
 						// TODO we must remove HTML from IFrame (inline css from previous iframes previews affects current preview)
 					}
+					else {
+						selectDocument(null);
+					}
 					
 					documentsTabNavigator.validateNow();
 					
 				}
 			}
 			
+			var otherDocument:IDocument;
+			
 			if (selectOtherDocument && wasClosed && tabCount>1) {
-				var otherDocument:IDocument = getVisibleDocument();
+				otherDocument = getVisibleDocument();
 				openTabs = documentsTabNavigator.getChildren();
 				tabCount = openTabs.length;
+				
 				if (otherDocument==null) {
 					//index = index==0 ? 1 : index-1;
 					otherDocument = documents && documents.length ? documents[0] : null;
@@ -8803,6 +8973,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 			
 			return true;
+			
 			// first attempt
 			//info("Closing " + iDocument.name);
 			for (var i:int;i<tabCount;i++) {
@@ -9115,6 +9286,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				
 				if (container) {
 					Radiate.instance.setTarget(container);
+				}
+				
+				if (sourceDataLocal.errors && sourceDataLocal.errors.length) {
+					outputMXMLErrors("", sourceDataLocal.errors);
 				}
 			}
 			
@@ -12036,6 +12211,32 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			
 			playMessage(message, LogEventLevel.FATAL);
+		}
+		
+		/**
+		 * Traces the MXML import errors
+		 * */
+		public static function outputMXMLErrors(title:String, errors:Array):void {
+			var errorData:ErrorData;
+			var message:String;
+			
+			title = title!=null && title!="" ? title : "MXML Import Errors";
+			
+			message = title;
+			message += "\n";
+			
+			for (var i:int = 0; i < errors.length; i++) {
+				errorData = errors[i] as ErrorData;
+				
+				if (errorData) {
+					message += " " + errorData.label + "\n " + errorData.description + "\n\n";
+				}
+				
+			}
+			
+			log.error(message);
+			
+			playMessage(title + " - Check console for more details", LogEventLevel.WARN);
 		}
 		
 		/**

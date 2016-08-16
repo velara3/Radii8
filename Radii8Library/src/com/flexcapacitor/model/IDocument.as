@@ -49,6 +49,12 @@ package com.flexcapacitor.model {
 		function set language(value:String):void;
 		
 		/**
+		 * Reference to the document xml. Used when loading in an MXML document. 
+		 * */
+		function get xml():XML;
+		function set xml(value:XML):void;
+		
+		/**
 		 * Reference to the document instance. 
 		 * */
 		function get instance():Object;

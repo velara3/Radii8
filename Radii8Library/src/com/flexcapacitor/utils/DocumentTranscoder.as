@@ -33,6 +33,7 @@ package com.flexcapacitor.utils {
 		public var sparkNamespace:String 	= "s";
 		public var svgNamespace:String 		= "svg";
 		public var xlinkNamespace:String 	= "xlink";
+		public var tlfNamespace:String 		= "flow";
 		
 		public var fcNamespaceURI:String 	= "library://ns.flexcapacitor.com/flex";
 		public var fxNamespaceURI:String 	= "http://ns.adobe.com/mxml/2009";
@@ -41,6 +42,7 @@ package com.flexcapacitor.utils {
 		public var sparkNamespaceURI:String = "library://ns.adobe.com/flex/spark";
 		public var svgNamespaceURI:String 	= "http://www.w3.org/2000/svg";
 		public var xlinkNamespaceURI:String = "http://www.w3.org/1999/xlink";
+		public var tlfNamespaceURI:String 	= "http://ns.adobe.com/textLayout/2008";
 		
 		public var xmlDeclaration:String 	= '<?xml version="1.0" encoding="utf-8"?>';
 		
@@ -82,6 +84,7 @@ package com.flexcapacitor.utils {
 				_namespaces[sparkNamespace] = sparkNamespaceURI;
 				_namespaces[svgNamespace] 	= svgNamespaceURI;
 				_namespaces[xlinkNamespace] = xlinkNamespaceURI;
+				_namespaces[tlfNamespace] 	= tlfNamespaceURI;
 			}
 			
 			return _namespaces;
@@ -91,6 +94,12 @@ package com.flexcapacitor.utils {
 			_defaultNamespaceDeclarations = null;
 			_namespaces = value;
 		}
+		
+		/**
+		 * An array of component definitions that can be used to get more information about
+		 * a class or object. You must manually set this.  
+		 * */
+		public var definitions:Array = [];
 
 		/**
 		 * Set this in the constructor in sub classes
@@ -559,7 +568,7 @@ package com.flexcapacitor.utils {
 		 * Get an object that contains the properties that have been set on the component.
 		 * This does this by going through the history events and checking the changes.
 		 * 
-		 * WE SHOULD CHANGE THIS
+		 * WE SHOULD CHANGE THIS: It's changed. now setting values as they are applied
 		 * */
 		public function getAppliedPropertiesFromHistory(document:IDocument, component:ComponentDescription, addToProperties:Boolean = true, removeConstraints:Boolean = true):Object {
 			var historyIndex:int = document.historyIndex+1;

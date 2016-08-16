@@ -20,6 +20,14 @@ package com.flexcapacitor.utils {
 	import mx.core.IVisualElementContainer;
 	
 	import spark.components.Application;
+	
+	import flashx.textLayout.conversion.BaseTextLayoutExporter;
+	import flashx.textLayout.conversion.ConversionType;
+	import flashx.textLayout.conversion.ITextImporter;
+	import flashx.textLayout.conversion.TextConverter;
+	import flashx.textLayout.conversion.TextLayoutImporter;
+	import flashx.textLayout.elements.IConfiguration;
+	import flashx.textLayout.elements.TextFlow;
 
 	
 	/**
@@ -169,10 +177,10 @@ package com.flexcapacitor.utils {
 		 * Create child from node
 		 * */
 		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0, componentInstance:Object = null):Object {
-			var elementName:String = node.localName();
-			var qualifiedName:QName = node.name();
-			var kind:String = node.nodeKind();
-			var domain:ApplicationDomain = ApplicationDomain.currentDomain;
+			var elementName:String;
+			var qualifiedName:QName;
+			var kind:String;
+			var domain:ApplicationDomain;
 			var componentDefinition:ComponentDefinition;
 			var includeChildren:Boolean = true;
 			var className:String;
@@ -186,6 +194,22 @@ package com.flexcapacitor.utils {
 			var event:String;
 			var style:String;
 			var attributeNotFound:String;
+			var handledChildNodes:Array = [];
+			var localName:String;
+			var textFlowXML:XML;
+			var textFlow:TextFlow;
+			var parser:ITextImporter;
+			var tlfErrors:Vector.<String>;
+			var tlfError:String;
+			var TEXT_FLOW:String = "textFlow";
+			var HTML_OVERRIDE:String = "htmlOverride";
+			var flowNamespace:Namespace;
+			var fixTextFlowNamespaceBug:Boolean = true;
+			
+			elementName = node.localName();
+			qualifiedName = node.name();
+			kind = node.nodeKind();
+			domain = ApplicationDomain.currentDomain;
 			
 			if (elementName==null || kind=="text") {
 				
@@ -266,6 +290,7 @@ package com.flexcapacitor.utils {
 				// the component is added (maybe)
 				var valuesObject:ValuesObject = Radiate.getPropertiesStylesEventsFromNode(componentInstance, node, componentDefinition);
 				var attributes:Array = valuesObject.attributes;
+				var childNodeNames:Array = valuesObject.childNodeNames;
 				//var typedValueObject:Object = Radiate.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
 				
 				var bitmapDataID:String = fcNamespaceURI + "::bitmapDataId";
@@ -277,6 +302,36 @@ package com.flexcapacitor.utils {
 					if (bitmapData) {
 						valuesObject.values["source"] = bitmapData;
 					}
+				}
+				
+				
+				if (childNodeNames.indexOf(TEXT_FLOW)!=-1) {
+					//textFlow = TextConverter.importToFlow(valuesObject.childNodeValues[TEXT_FLOW], TextConverter.TEXT_LAYOUT_FORMAT);
+
+					
+					if (textFlow==null) {
+						//parser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT) as ITextImporter;
+						//tlfErrors = parser.errors;
+						parser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT, null);
+						//if (!parser)
+						//	return null;
+						parser.throwOnError = false;
+						flowNamespace = TextLayoutImporter(parser).ns;
+						textFlowXML = new XML(valuesObject.childNodeValues[TEXT_FLOW]);
+						
+						if (fixTextFlowNamespaceBug) {
+							textFlowXML = getTextFlowWithNamespace(textFlowXML);
+						}
+						if (valuesObject.childNodeValues[TEXT_FLOW]!="") {
+							
+						}
+						//textFlowXML = new XML(valuesObject.childNodeValues[TEXT_FLOW]);
+						textFlow = parser.importToFlow(textFlowXML);
+						tlfErrors = parser.errors;
+					}
+					
+					valuesObject.values[TEXT_FLOW] = textFlow;
+					handledChildNodes.push(TEXT_FLOW);
 				}
 				
 				if (!componentAlreadyAdded) {
@@ -298,6 +353,9 @@ package com.flexcapacitor.utils {
 				}
 				
 				componentDescription = iDocument.getItemDescription(componentInstance);
+				
+				// save node XML
+				componentDescription.nodeXML = node;
 				
 				// setting namespace attributes - refactor
 				var lockedName:String = fcNamespaceURI + "::locked";
@@ -347,6 +405,32 @@ package com.flexcapacitor.utils {
 					componentDescription.name = valuesObject.values[layerName];
 				}
 				
+				var htmlTagName:String = fcNamespaceURI + "::htmlTagName";
+				
+				if (attributes.indexOf(htmlTagName)!=-1) {
+					componentDescription.htmlTagName = valuesObject.values[htmlTagName];
+				}
+				
+				var htmlOverrideName:String;
+				var htmlOverride:String;
+				var tabCount:int;
+				
+				htmlOverrideName = htmlNamespaceURI + "::" + HTML_OVERRIDE;
+				
+				if (childNodeNames.indexOf(HTML_OVERRIDE)!=-1) {
+					htmlOverride = valuesObject.values[HTML_OVERRIDE];
+					htmlOverride = htmlOverride.indexOf("\n")==0 ? htmlOverride.substr(1) : htmlOverride.substr();
+					tabCount = StringUtils.getTabCountBeforeContent(htmlOverride);
+					htmlOverride = StringUtils.outdent(htmlOverride, tabCount);
+					componentDescription.htmlOverride = htmlOverride;
+					handledChildNodes.push(HTML_OVERRIDE);
+				}
+				
+				for each (tlfError in tlfErrors) {
+					errorData = ErrorData.getIssue("Invalid TLF Markup", tlfError + " in element " + elementName);
+					errors.push(errorData);
+				}
+				
 				for (property in valuesObject.propertiesErrorsObject) {
 					errorData = ErrorData.getIssue("Invalid property value", "Value for property '" + property + "' was not applied to " + elementName);
 					errorData.errorID = valuesObject.propertiesErrorsObject[property].errorID;
@@ -389,11 +473,38 @@ package com.flexcapacitor.utils {
 			if (includeChildren) {
 				
 				for each (var childNode:XML in node.children()) {
+					localName = childNode.localName();
+					
+					if (handledChildNodes.indexOf(localName)!=-1) {
+						// needs to be more robust
+						continue;
+					}
+					
 					instance = createChildFromNode(childNode, componentInstance, iDocument, depth+1);
 				}
 			}
 			
 			return componentInstance;
+		}
+		
+		/**
+		 * Get text flow object with correct flow namespace
+		 * */
+		public function getTextFlowWithNamespace(value:Object):XML {
+			var xml:XML = value as XML;
+			var tlfNamespace:Namespace = new Namespace(tlfNamespace, tlfNamespaceURI);
+			xml.removeNamespace(new Namespace(sparkNamespace, sparkNamespaceURI));
+			xml.setNamespace(tlfNamespace);
+			
+			for each (var node:XML in xml.descendants()) {
+				node.setNamespace(tlfNamespace);
+				
+				for each (var attribute:XML in node.attributes()) {
+					attribute.setNamespace(tlfNamespace);
+				}
+			}
+			
+			return xml;
 		}
 	}
 }

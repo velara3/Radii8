@@ -8,24 +8,36 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.model.IssueData;
 	import com.flexcapacitor.model.SourceData;
+	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
 	
 	import flash.display.BitmapData;
+	import flash.xml.XMLNode;
+	import flash.xml.XMLNodeType;
 	
 	import spark.components.Application;
 	import spark.components.Image;
 	import spark.primitives.BitmapImage;
+	
+	import flashx.textLayout.conversion.ConversionType;
+	import flashx.textLayout.conversion.TextConverter;
 	
 	/**
 	 * Exports a document to MXML
 	 * */
 	public class MXMLDocumentExporter extends DocumentTranscoder implements IDocumentExporter {
 		
-		public function MXMLDocumentExporter() {
+		public function MXMLDocumentExporter(definitons:Array = null) {
 			supportsExport = true;
 			language = "MXML";
+			
+			if (definitions) {
+				this.definitions = definitions;
+			}
 		}
+		
+		public var xmlEncoder:SimpleXMLEncoder;
 		
 		/**
 		 * Sets styles inline
@@ -49,6 +61,16 @@ package com.flexcapacitor.utils {
 		public var markup:String = "";
 		
 		public var styles:String = "";
+		
+		/**
+		 * The XML document used when creating new nodes
+		 * */
+		public var xml:XML;
+		
+		/**
+		 * The parent XMLNode used when creating new nodes
+		 * */
+		public var xmlParentNode:XMLNode;
 		
 		/**
 		 * Styles added by users 
@@ -91,6 +113,17 @@ package com.flexcapacitor.utils {
 			
 			if (!componentDescription) {
 				componentDescription = document.componentDescription;
+			}
+			
+			if (document.xml) {
+				xml = document.xml;
+			}
+			else {
+				xml = getDefaultDocumentXML();
+			}
+			
+			if (xmlParentNode==null) {
+				xmlParentNode = new XMLNode(XMLNodeType.DOCUMENT_TYPE_NODE, "<root/>");
 			}
 			
 			if (document.isOpen) {
@@ -207,6 +240,8 @@ package com.flexcapacitor.utils {
 			var styles:Object;
 			var events:Object;
 			var componentChild:ComponentDescription;
+			var componentDefinition:ComponentDefinition;
+			var childNodes:Array = [];
 			var className:String;
 			var output:String = "";
 			var outputValue:String = "";
@@ -215,11 +250,19 @@ package com.flexcapacitor.utils {
 			var value:*;
 			var warningData:IssueData;
 			var errorData:IssueData;
+			var childNodesValues:Object;
+			var childNodeNames:Array = [];
+			var xmlNode:XMLNode;
 			
 			if (exportFromHistory) {
 				getAppliedPropertiesFromHistory(iDocument, componentDescription);
 			}
 			
+			componentDefinition = componentDescription.componentDefinition;
+			
+			if (!componentDefinition) {
+				componentDefinition = getComponentDefinition(componentDescription.className);
+			}
 			
 			//exportChildDescriptors = componentDescription.exportChildDescriptors;
 			
@@ -232,10 +275,60 @@ package com.flexcapacitor.utils {
 			events = componentDescription.events;// ? componentDescription.events : {};
 			className = componentDescription.className;
 			
+			// we need to make sure there is always a component definition below
+			// checking for null at the moment
+			if (componentDefinition) {
+				childNodes = componentDefinition.childNodes;
+			}
 			
+			childNodesValues = {};
+			//childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node);
+			const TEXT_FLOW:String = "textFlow";
+			const FILTERS:String = "filters";
+			const HTML_OVERRIDE:String = "htmlOverride";
+			
+			// properties
 			for (var propertyName:String in properties) {
 				value = properties[propertyName];
+				
 				if (value===undefined || value===null) {
+					continue;
+				}
+				
+				// set later as a child node
+				if (childNodes.indexOf(propertyName)!=-1) {
+					childNodesValues[propertyName] = value;
+					childNodeNames.push(propertyName);
+					
+					
+					if (propertyName==TEXT_FLOW) {
+						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
+						value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE) as XML;
+						
+						if (value) {
+							value = addNamespaceToTextFlow(value);
+							value = XML(value).toXMLString();
+						}
+						
+						childNodesValues[propertyName] = value;
+					}
+					
+					if (propertyName==FILTERS) {
+						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
+						value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE) as XML;
+						
+						xmlEncoder = new SimpleXMLEncoder();
+						
+						//xmlNode = xmlEncoder.encodeValue(value, null, xmlParentNode);
+						//output += xmlNode.toString();
+						if (value) {
+							value = addNamespaceToTextFlow(value);
+							value = XML(value).toXMLString();
+						}
+						
+						childNodesValues[propertyName] = value;
+					}
+					
 					continue;
 				}
 				
@@ -258,18 +351,34 @@ package com.flexcapacitor.utils {
 				}
 			}
 			
+			// styles
 			for (var styleName:String in styles) {
 				value = styles[styleName];
+				
 				if (value===undefined || value==null) {
 					continue;
 				}
+				
+				// set later as a child node
+				if (childNodes.indexOf(styleName)!=-1) {
+					childNodesValues[styleName] = value;
+					continue;
+				}
+				
 				output += " ";
-				// we could be using XML itself to set values. It should encode as necessary - todo: Refactor
+				// we could be using XML itself to set values. It should encode as necessary
+				// todo: Refactor
 				output += styleName + "=\"" + XMLUtils.getAttributeSafeString(Object(styles[styleName]).toString()) + "\"";
 			}
 			
+			
 			// adding extra attributes
 			// refactor
+			
+			if (componentDescription.htmlOverride) {
+				childNodeNames.push(HTML_OVERRIDE);
+				childNodesValues[HTML_OVERRIDE] = componentDescription.htmlOverride;
+			}
 			
 			if (componentDescription.locked) {
 				output += " ";
@@ -289,27 +398,32 @@ package com.flexcapacitor.utils {
 			
 			if (componentDescription.convertElementToImage) {
 				output += " ";
-				output += fcNamespace + ":" + "convertToImage=\"" +componentDescription.convertElementToImage + "\"";
+				output += fcNamespace + ":" + "convertToImage=\"" + componentDescription.convertElementToImage + "\"";
 			}
 			
 			if (componentDescription.createBackgroundSnapshot) {
 				output += " ";
-				output += fcNamespace + ":" + "createBackgroundSnapshot=\"" +componentDescription.createBackgroundSnapshot + "\"";
+				output += fcNamespace + ":" + "createBackgroundSnapshot=\"" + componentDescription.createBackgroundSnapshot + "\"";
 			}
 			
 			if (componentDescription.wrapWithAnchor) {
 				output += " ";
-				output += fcNamespace + ":" + "wrapWithAnchor=\"" +componentDescription.wrapWithAnchor + "\"";
+				output += fcNamespace + ":" + "wrapWithAnchor=\"" + componentDescription.wrapWithAnchor + "\"";
 				
 				if (componentDescription.anchorURL) {
 					output += " ";
-					output += fcNamespace + ":" + "anchorURL=\"" +componentDescription.anchorURL + "\"";
+					output += fcNamespace + ":" + "anchorURL=\"" + componentDescription.anchorURL + "\"";
 				}
 				
 				if (componentDescription.anchorTarget) {
 					output += " ";
-					output += fcNamespace + ":" + "anchorTarget=\"" +componentDescription.anchorTarget + "\"";
+					output += fcNamespace + ":" + "anchorTarget=\"" + componentDescription.anchorTarget + "\"";
 				}
+			}
+			
+			if (componentDescription.htmlTagName) {
+				output += " ";
+				output += fcNamespace + ":" + "htmlTagName=\"" + componentDescription.htmlTagName + "\"";
 			}
 			
 			if (componentDescription.instance is Image || componentDescription.instance is BitmapImage) {
@@ -339,12 +453,59 @@ package com.flexcapacitor.utils {
 					output = output.substr(1);
 				}
 				
-				// we are not handling namespaces here - we could use component descriptor
+				// we are not handling namespaces here - we could use component descriptor / component definitions
 				output = tabs + "<" + sparkNamespace + ":" + className + " " + output;
 				
-				if (exportChildDescriptors && componentDescription.children && componentDescription.children.length>0) {
+				if ((exportChildDescriptors && 
+					componentDescription.children && 
+					componentDescription.children.length>0) || 
+					childNodeNames.length) {
+					
 					output += ">\n";
-					numberOfChildren = componentDescription.children.length;
+					
+					var childNode:String
+					var childNodeNamespace:String;
+					var useCDATA:Boolean;
+					
+					for (propertyName in childNodesValues) {
+						value = childNodesValues[propertyName];
+						
+						if (propertyName==HTML_OVERRIDE) {
+							childNodeNamespace = htmlNamespace;
+							useCDATA = true;
+						}
+						else {
+							childNodeNamespace = sparkNamespace;
+							useCDATA = false;
+						}
+						
+						childNode = tabs + "\t" + "<" + childNodeNamespace + ":" + propertyName + ">";
+						
+						// we would want to use a Encoder class - maybe redo the SimpleXMLEncoder
+						// using E4X instead of original Flash XML classes
+						// maybe add converters for each child node
+						
+						//xmlEncoder = new SimpleXMLEncoder(null);
+						
+						//xmlNode = xmlEncoder.encodeValue(value, null, xmlParentNode);
+						//output += xmlNode.toString();
+						
+						value = StringUtils.indent(value.toString(), tabs + "\t\t");
+						
+						if (useCDATA) {
+							output += childNode + "<![CDATA[\n" + value.toString() + "]]>\n";
+							childNode = tabs + "\t" + "</" + childNodeNamespace + ":" + propertyName + ">";
+						}
+						else {
+							output += childNode + "\n" + value.toString() + "\n";
+							childNode = tabs + "\t" + "</" + childNodeNamespace + ":" + propertyName + ">";
+						}
+						
+						output += childNode + "\n";
+						
+					}
+					
+					numberOfChildren = componentDescription.children ? componentDescription.children.length : 0;
 					
 					for (var i:int;i<numberOfChildren;i++) {
 						componentChild = componentDescription.children[i];
@@ -367,6 +528,47 @@ package com.flexcapacitor.utils {
 			}
 			
 			return output;
+		}
+		
+		public function getComponentDefinition(componentName:Object, fullyQualified:Boolean = false):ComponentDefinition {
+			var definition:ComponentDefinition;
+			var numberOfDefinitions:uint = definitions.length;
+			var item:ComponentDefinition;
+			var className:String;
+			var fullyQualified:Boolean;
+			
+			if (componentName is QName) {
+				className = QName(componentName).localName;
+			}
+			else if (componentName is String) {
+				className = componentName as String;
+			}
+			else if (componentName is Object) {
+				className = ClassUtils.getQualifiedClassName(componentName);
+				
+				if (className=="application" || componentName is Application) {
+					className = ClassUtils.getSuperClassName(componentName, true);
+				}
+			}
+			
+			fullyQualified = className.indexOf("::")!=-1 ? true : fullyQualified;
+			
+			for (var i:uint;i<numberOfDefinitions;i++) {
+				item = ComponentDefinition(definitions.getItemAt(i));
+				
+				if (fullyQualified) {
+					if (item && item.className==className) {
+						return item;
+					}
+				}
+				else {
+					if (item && item.name==className) {
+						return item;
+					}
+				}
+			}
+			
+			return item;
 		}
 		
 		/**
@@ -397,6 +599,26 @@ package com.flexcapacitor.utils {
 			xml.@source = filePath;
 			
 			return xml.toXMLString();
+		}
+		
+		/**
+		 * Get text flow object and add the correct namespace
+		 * */
+		public function addNamespaceToTextFlow(value:Object):XML {
+			var xml:XML = value as XML;
+			var tlfNamespace:Namespace = new Namespace(tlfNamespace, tlfNamespaceURI);
+			xml.removeNamespace(new Namespace(sparkNamespace, sparkNamespaceURI));
+			xml.setNamespace(tlfNamespace);
+			
+			for each (var node:XML in xml.descendants()) {
+				node.setNamespace(tlfNamespace);
+				
+				for each (var attribute:XML in node.attributes()) {
+					attribute.setNamespace(tlfNamespace);
+				}
+			}
+			
+			return xml;
 		}
 	}
 }

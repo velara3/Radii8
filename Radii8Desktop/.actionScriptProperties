@@ -16,16 +16,19 @@
     <sourceAttachmentPath/>
   </compiler>
   <applications>
+    <application path="Radii8Desktop.mxml">
+      <airExcludes/>
+    </application>
     <application path="ApplicationDesign.mxml">
       <airExcludes/>
     </application>
-    <application path="LiveMXMLEditor.mxml">
+    <application path="DesignViewTextTest.mxml">
       <airExcludes/>
     </application>
     <application path="SetStateValueTest.mxml">
       <airExcludes/>
     </application>
-    <application path="Radii8Desktop.mxml">
+    <application path="LiveMXMLEditor.mxml">
       <airExcludes/>
     </application>
   </applications>

@@ -9,14 +9,24 @@
 -->
 <componentPackage>
 
-    <component id="Application" class="spark.components.Application" include="false"/>
+    <component id="Application" class="spark.components.Application" include="false">
+    	<descendents>
+    		<property name="layout"/>
+    	</descendents>
+    </component>
     
     <component id="BitmapImage" class="spark.primitives.BitmapImage" include="false">
     	<defaults source="assets/icons/components/BitmapImage.png" scaleMode="stretch"/>
+    	<descendents>
+    		<property name="layout"/>
+    	</descendents>
     </component>
     
     <component id="BorderContainer" class="spark.components.BorderContainer" include="true">
     	<defaults width="240" height="160"/>
+    	<descendents>
+    		<property name="layout"/>
+    	</descendents>
     </component>
     
     <component id="Button" class="spark.components.Button">
@@ -25,6 +35,9 @@
     
     <component id="ButtonBar" class="spark.components.ButtonBar" include="false" >
     	<defaults width="240" height="22" dataProvider="Button 1, Button 2, Button 3"/>
+    	<descendents>
+    		<property name="dataProvider"/>
+    	</descendents>
     </component>
     
     <component id="ButtonBarButton" class="spark.components.ButtonBarButton" include="false"/>
@@ -37,6 +50,9 @@
     
     <component id="ComboBox" class="spark.components.ComboBox" include="true">
     	<defaults width="166" height="23" dataProvider="Item 1,Item 2,Item 3"/>
+    	<descendents>
+    		<property name="dataProvider"/>
+    	</descendents>
     </component>
     
     <component id="ColorPicker" class="com.flexcapacitor.controls.ColorPicker" include="true">
@@ -45,16 +61,25 @@
 	
 	<component id="DataGrid" class="spark.components.DataGrid" include="false">
     	<defaults width="240" height="66" />
+    	<descendents>
+    		<property name="dataProvider"/>
+    	</descendents>
     </component>
     
     <component id="DataGroup" class="spark.components.DataGroup" include="false">
     	<defaults width="240" height="66"/>
+    	<descendents>
+    		<property name="dataProvider"/>
+    	</descendents>
     </component>
     
     <component id="DataRenderer" class="spark.components.DataRenderer" include="false"/>
     
     <component id="DropDownList" class="spark.components.DropDownList" include="true">
     	<defaults width="166" height="23" dataProvider="Item 1,Item 2,Item 3"/>
+    	<descendents>
+    		<property name="dataProvider"/>
+    	</descendents>
     </component>
     
     <component id="Form" class="spark.components.Form" include="false">
@@ -113,6 +138,9 @@
     
 	<component id="List" class="spark.components.List" include="true">
     	<defaults width="160" height="160" dataProvider="Item 1,Item 2,Item 3"/>
+    	<descendents>
+    		<property name="dataProvider"/>
+    	</descendents>
     </component>
     
     <component id="NavigatorContent" class="spark.components.NavigatorContent" include="false"/>
@@ -136,10 +164,16 @@
     
     <component id="RichEditableText" class="spark.components.RichEditableText" include="false">
     	<defaults text="Rich Editable Text" editable="false" selectable="false"/>
+    	<descendents>
+    		<property name="textFlow"/>
+    	</descendents>
     </component>
     
     <component id="RichText" class="spark.components.RichText" include="true">
     	<defaults text="Paragraph"/>
+    	<descendents>
+    		<property name="textFlow"/>
+    	</descendents>
     </component>
     
     <component id="Scroller" class="spark.components.Scroller" include="false">
@@ -152,6 +186,9 @@
     
     <component id="SkinnableDataContainer" class="spark.components.SkinnableDataContainer" include="false">
     	<defaults width="240" height="166"/>
+    	<descendents>
+    		<property name="dataProvider"/>
+    	</descendents>
     </component>
     
     <component id="SkinnablePopUpContainer" class="spark.components.SkinnablePopUpContainer" include="false"/>
@@ -166,10 +203,16 @@
     
     <component id="TabBar" class="spark.components.TabBar" include="false">
     	<defaults width="240" height="22" dataProvider="Item 1,Item 2,Item 3"/>
+    	<descendents>
+    		<property name="dataProvider"/>
+    	</descendents>
     </component>
     
     <component id="TextArea" class="spark.components.TextArea" include="true">
     	<defaults width="166" height="66"/>
+    	<descendents>
+    		<property name="textFlow"/>
+    	</descendents>
     </component>
     
     <component id="TextInput" class="spark.components.TextInput">

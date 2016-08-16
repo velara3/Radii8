@@ -24,6 +24,7 @@
 					   applicationComplete="applicationCompleteHandler(event)" 
 					   initialize="initializeHandler(event)" 
 					   invoke="windowedapplication1_invokeHandler(event)"
+					   resizing="windowedapplication1_resizingHandler(event)"
 					   >
 
 					   <!--- 
@@ -75,10 +76,12 @@
 				import mx.events.AIREvent;
 				import mx.events.FlexEvent;
 				import mx.events.FlexNativeMenuEvent;
+				import mx.events.ResizeEvent;
 				
 				import spark.components.Application;
 				import spark.components.ComboBox;
 				import spark.components.RichEditableText;
+				import spark.components.TextInput;
 				import spark.components.WindowedApplication;
 				import spark.components.supportClasses.SkinnableTextBase;
 				import spark.core.IEditableText;
@@ -124,10 +127,7 @@
 				 * */
 				protected function applicationCompleteHandler(event:FlexEvent):void {
 					radiate = Radiate.getInstance();
-					//radiate.buildNumber = BUILD_NUMBER;
-					//radiate.buildDate = BUILD_DATE;
-					//radiate.buildTime = BUILD_TIME;
-					
+
 				    var applicationDescriptor:XML;
 				    var appNamespace:Namespace;
 				    var version:String;
@@ -790,12 +790,18 @@
 						file = new File(filePath);
 						
 						if (file.exists && file.isDirectory==false) {
-							radiate.createNewDocumentAndProject(file, radiate.selectedProject);
+							radiate.createNewDocumentAndSwitchToDesignView(file, radiate.selectedProject);
 						}
 						else {
 							Radiate.error("The file you are attempting to open does not exist or is a directory");
 						}
 					}
+				}
+				
+				
+				protected function windowedapplication1_resizingHandler(event:NativeWindowBoundsEvent):void
+				{
+					//trace("Resizing");
 				}
 				
 			]]>
@@ -874,6 +880,10 @@
 			keyEquivalentModifiersFunction="keyEquivalentModifiersFunction"
 			/>
 		
+		<!--<s:Resize id="resizeEffect" target="{this}" widthBy="100" heightBy="100"
+				  />-->
+				  
+		
 		<!--<mx:FlexNativeMenu 
 				id="nativeMenu"
 				dataProvider="{mainView.rootMenu}" 
@@ -891,6 +901,6 @@
 
 	<views:MainView id="mainView" 
 					top="0" right="0" bottom="0" left="0"/>
-	
+	<!--<s:Button label="resize" click="button1_clickHandler(event)"/>-->
 	
 </s:WindowedApplication>

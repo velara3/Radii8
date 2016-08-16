@@ -200,6 +200,7 @@
 				updateBackgroundSize();
 				
 				iDocument.instance = targetApplication;
+				Radiate.createComponentToAdd(iDocument, null, false, targetApplication);
 				iDocument.addComponentDescription(targetApplication);
 				
 				//radiate.setDocument(iDocument);

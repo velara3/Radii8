@@ -80,6 +80,25 @@ package com.flexcapacitor.model {
 				DisplayObject(instance).scaleY = value;
 			}
 		}
+		
+		private var _xml:XML;
+
+		/**
+		 * Stores the original XML of an MXML document
+		 * */
+		public function get xml():XML
+		{
+			return _xml;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set xml(value:XML):void
+		{
+			_xml = value;
+		}
+
 
 		private var _errors:Array;
 

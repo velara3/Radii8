@@ -2,41 +2,252 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:ns="http://flex.apache.org/experimental/ns"
+					   
+					   frameRate="60"
 					   width="900" height="400" left="10" top="10" 
-					   applicationComplete="windowedapplication1_creationCompleteHandler(event)" xmlns:ns="http://flex.apache.org/experimental/ns">
+					   applicationComplete="windowedapplication1_creationCompleteHandler(event)" 
+					   xmlns:utils="com.flexcapacitor.utils.*" 
+					   >
+	
+	<fx:Style>
+		@namespace ns "http://flex.apache.org/experimental/ns";
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace utils "com.flexcapacitor.utils.*";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace components "spark.components.*";
+		
+		s|TextArea.myTextArea {
+			contentBackgroundAlpha:0;
+			focusRect:null;
+			focusAlpha:0;
+			paddingTop:0;
+			paddingLeft:0;
+			borderAlpha:.2;
+		}
+		
+		components|RichTextEditorBar {
+			skinClass: ClassReference("spark.skins.RichTextEditorBarSkin");
+		}
+	</fx:Style>
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
+			import mx.core.IVisualElementContainer;
 			import mx.events.FlexEvent;
 			import mx.managers.ISystemManager;
 			import mx.managers.SystemManagerGlobals;
 			
+			import spark.components.Label;
 			import spark.components.RichEditableText;
+			import spark.components.RichTextEditorBar;
 			import spark.components.supportClasses.TextBase;
+			import spark.events.TextOperationEvent;
 			import spark.layouts.BasicLayout;
+			
+			import flashx.textLayout.conversion.ConversionType;
+			import flashx.textLayout.conversion.ITextImporter;
+			import flashx.textLayout.conversion.TextConverter;
+			import flashx.textLayout.elements.IConfiguration;
+			import flashx.textLayout.elements.TextFlow;
 			
 			/**
 			 * Component that is in edit mode. Typically a Label. 
 			 * */
-			public static var currentEditableComponent:Object;
-			public static var editableRichTextField:RichEditableText = new RichEditableText();
+			public static var currentComponent:Object;
+			public static var editableLabelTextField:RichEditableText = new RichEditableText();
+			public static var editableRichTextEditor:RichTextEditorBar = new RichTextEditorBar();
+			
+			
+			/**
+			 * Handles double click on text to show text editor. 
+			 * To support more components add the elements in the addElement method
+			 * */
+			public function showTextEditor(event:MouseEvent):void {
+				var target:TextBase = event.target as TextBase;
+				var isRichEditor:Boolean;
+				var rectangle:Rectangle;
+				var propertyNames:Array;
+				var valuesObject:Object;
+				var isBasicLayout:Boolean;
+				var topSystemManager:ISystemManager;
+				var currentEditField:Object;
+				
+				currentComponent = target;
+				
+				if (currentComponent) {
+					isRichEditor = "textFlow" in currentComponent;
+					currentEditField = isRichEditor ? editableRichTextEditor : editableLabelTextField;
+					
+					rectangle = DisplayObjectUtils.getRectangleBounds(target);
+					propertyNames = ["x", "y", "text", "minWidth", "textFlow"];
+					valuesObject = {};
+					
+					if (currentComponent.owner.layout is BasicLayout) {
+						isBasicLayout = true;
+						rectangle = DisplayObjectUtils.getRectangleBounds(currentComponent, currentComponent.owner);
+					}
+					
+					
+					//currentComponent.x = rectangle.x;
+					//currentComponent.y = rectangle.y;
+					
+					//currentEditField.includeInLayout = false;
+					currentEditField.x = rectangle.x;
+					currentEditField.y = rectangle.y-30;
+					
+					const MIN_WIDTH:int = 22;
+					//currentComponent.minWidth = MIN_WIDTH;
+					currentEditField.minWidth = MIN_WIDTH;
+					
+					//properties.width = "100";
+					if (!isNaN(target.explicitWidth)) {
+						propertyNames.push("width");
+						currentEditField.width = rectangle.width;
+					}
+					else if (!isNaN(target.percentWidth)) {
+						// if basic layout we can get percent width
+						if (isBasicLayout) {
+							propertyNames.push("percentWidth");
+							currentEditField.percentWidth = target.percentWidth;
+						}
+						else {
+							propertyNames.push("width");
+							currentEditField.width = rectangle.width;
+						}
+					}
+					
+					//editableRichTextField.width = undefined;
+					//editableRichTextField.percentWidth = NaN;
+					//properties.height = rectangle.height;
+					//currentComponent.visible = false;
+					currentComponent.visible = false;
+					
+					if (isRichEditor) {
+						
+						if (isBasicLayout) {
+							
+							if (testRichEditableText.stage==null) {
+								currentComponent.owner.addElement(testRichEditableText);
+							}
+							//trace(editableRichTextEditor.horizontalCenter);
+							currentComponent.owner.addElement(editableRichTextEditor);
+							//trace(editableRichTextEditor.horizontalCenter);
+							editableRichTextEditor.validateNow();
+						}
+						else {
+							currentComponent.owner.addElement(editableRichTextEditor);
+						}
+					}
+					else {
+						if (isBasicLayout) {
+							currentComponent.owner.addElement(editableLabelTextField);
+						}
+						else {
+							currentComponent.owner.addElement(editableLabelTextField);
+						}
+					}
+					
+					if (isRichEditor && editableRichTextEditor.richEditableText != testRichEditableText) {
+						//testTextArea.heightInLines = NaN;
+						editableRichTextEditor.addTextArea(testRichEditableText);
+					}
+					
+					if (isRichEditor) {
+						var textFlowString:String = TextConverter.export(currentComponent.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
+						var textFlow:TextFlow = TextConverter.importToFlow(textFlowString, TextConverter.TEXT_LAYOUT_FORMAT);
+						editableRichTextEditor.textFlow = textFlow;
+						//editableRichTextEditor.styleName = currentComponent;
+						editableRichTextEditor.focusRect = null;
+						editableRichTextEditor.setStyle("focusAlpha", 0.25);
+						editableRichTextEditor.validateNow();
+					}
+					else {
+						editableLabelTextField.text = currentComponent.text;
+						editableLabelTextField.styleName = currentComponent;
+						editableLabelTextField.focusRect = null;
+						editableLabelTextField.setStyle("focusAlpha", 0.25);
+						editableLabelTextField.validateNow();
+					}
+					
+					if (isRichEditor) {
+						editableRichTextEditor.includeInLayout = false;
+						propertyNames.push("textFlow");
+						testRichEditableText.clearStyle("horizontalCenter");
+						testRichEditableText.clearStyle("verticalCenter");
+						testRichEditableText.x = rectangle.x-2;
+						testRichEditableText.y = rectangle.y-2;
+						trace(testRichEditableText.x);
+						trace(testRichEditableText.y);
+					}
+					
+					
+					topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+					topSystemManager.stage.stageFocusRect = false;
+					
+					if (isRichEditor) {
+						editableRichTextEditor.setFocus();
+						editableRichTextEditor.richEditableText.selectAll();
+						editableRichTextEditor.setFocus();
+						editableRichTextEditor.richEditableText.selectAll();
+						
+						editableRichTextEditor.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
+						editableRichTextEditor.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
+						editableRichTextEditor.addEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents, false, 0, true);
+						editableRichTextEditor.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
+					}
+					else {
+						editableLabelTextField.selectAll();
+						editableLabelTextField.setFocus();
+						
+						editableLabelTextField.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
+						editableLabelTextField.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
+						editableLabelTextField.addEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents, false, 0, true);
+						editableLabelTextField.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
+					}
+				}
+			}
 			
 			/**
 			 * Set the value that the user typed in
 			 * */
-			public static function commitTextEditorValues(event:Event):void {
-				var newValue:String = editableRichTextField.text;
-				var oldValue:String = currentEditableComponent.text;
+			public function handleEditorEvents(event:Event):void {
+				var newValue:String;
+				var oldValue:String;
 				var doSomething:Boolean;
+				var currentTarget:Object;
+				var editor:Object;
+				var isRichEditor:Boolean;
+				var textFlow:TextFlow;
 				
+				currentTarget = event.currentTarget;
 				
-				if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
+				if (currentComponent is Label) {
+					editor = editableLabelTextField;
+					newValue = editableLabelTextField.text;
+					oldValue = currentComponent.text;
+					isRichEditor = false;
+				}
+				else {
+					editor = editableRichTextEditor;
+					isRichEditor = true;
+				}
+				
+				if (event is MouseEvent && currentTarget==editor) {
 					doSomething = false; trace("Click event");
 				}
-				else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
+				else if (event is FocusEvent && FocusEvent(event).relatedObject==currentComponent) {
 					doSomething = false;trace("related object is still edit component");
+				}
+				else if (event is FocusEvent && isRichEditor) {
+					if (event.target==currentTarget) {
+						doSomething = false;trace("focus out on rich editor. ignore");
+					}
+					else {
+						doSomething = false;trace("focus out not rich editor");
+					}
 				}
 				else if (event is FlexEvent && event.type=="valueCommit") {
 					doSomething = false;trace('value commit');
@@ -46,21 +257,7 @@
 				}
 				
 				if (doSomething) {
-					if (currentEditableComponent && newValue!=oldValue) {
-						currentEditableComponent.text = newValue;
-						//currentEditableComponent = null;
-					}
-					
-					currentEditableComponent.visible = true;
-					editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
-					editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
-					editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
-					editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
-					
-					if (editableRichTextField.owner) {
-						currentEditableComponent.owner.removeElement(editableRichTextField);
-					}
-					
+					commitTextValues();
 				}
 				
 				event.preventDefault();
@@ -68,94 +265,138 @@
 				
 			}
 			
-			
-			/**
-			 * Handles double click on text to show text editor. 
-			 * To support more components add the elements in the addElement method
-			 * */
-			public static function showTextEditor(event:MouseEvent):void {
-				var target:TextBase = event.target as TextBase;
+			public function commitTextValues():void {
+				var newValue:String;
+				var oldValue:String;
+				var doSomething:Boolean;
+				var currentTarget:Object;
+				var editor:Object;
+				var isRichEditor:Boolean;
+				var textFlow:TextFlow;
 				
-				if (target) {
-					currentEditableComponent = target;
-					var rectangle:Rectangle = DisplayObjectUtils.getRectangleBounds(target);
-					var propertyNames:Array = ["x", "y", "text", "minWidth"];
-					var valuesObject:Object = {};
-					var isBasicLayout:Boolean;
-					
-					if (currentEditableComponent.owner.layout is BasicLayout) {
-						isBasicLayout = true;
-						rectangle = DisplayObjectUtils.getRectangleBounds(target, currentEditableComponent.owner);
-					}
-					
-					currentEditableComponent.x = rectangle.x;
-					currentEditableComponent.y = rectangle.y;
-					const MIN_WIDTH:int = 22;
-					currentEditableComponent.minWidth = MIN_WIDTH;
-					
-					//properties.width = "100";
-					if (!isNaN(target.explicitWidth)) {
-						propertyNames.push("width");
-						currentEditableComponent.width = rectangle.width;
-					}
-					else if (!isNaN(target.percentWidth)) {
-						// if basic layout we can get percent width
-						if (isBasicLayout) {
-							propertyNames.push("percentWidth");
-							currentEditableComponent.percentWidth = target.percentWidth;
-						}
-						else {
-							propertyNames.push("width");
-							currentEditableComponent.width = rectangle.width;
-						}
-					}
-					
-					//editableRichTextField.width = undefined;
-					//editableRichTextField.percentWidth = NaN;
-					//properties.height = rectangle.height;
-					currentEditableComponent.text = target.text;
-					currentEditableComponent.visible = false;
-					editableRichTextField.styleName = currentEditableComponent;
-					editableRichTextField.focusRect = null;
-					editableRichTextField.setStyle("focusAlpha", 0.25);
+				if (currentComponent==null) return;
+				
+				editor = editableLabelTextField;
+				newValue = editableLabelTextField.text;
+				oldValue = currentComponent.text;
+				
+				if (currentComponent is Label) {
+					editor = editableLabelTextField;
+					newValue = editableLabelTextField.text;
+					oldValue = currentComponent.text;
+					isRichEditor = false;
+				}
+				else {
+					editor = editableRichTextEditor;
+					isRichEditor = true;
+				}
+				
+				if (isRichEditor) {
+					newValue = TextConverter.export(editor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
+					oldValue = TextConverter.export(Object(currentComponent).textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
 					
 					
-					if (isBasicLayout) {
-						currentEditableComponent.owner.addElement(editableRichTextField);
+					var importer:ITextImporter = TextConverter.getImporter(TextConverter.TEXT_FIELD_HTML_FORMAT);
+					var config:IConfiguration = importer.configuration;
+				}
+				
+				if (currentComponent && newValue!=oldValue) {
+					
+					if (isRichEditor) {
+						textFlow = TextConverter.importToFlow(newValue, TextConverter.TEXT_LAYOUT_FORMAT);
+						currentComponent.textFlow = textFlow;
 					}
 					else {
-						currentEditableComponent.owner.addElement(editableRichTextField);
+						currentComponent.text = newValue;
 					}
-					
-					var topSystemManager:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
-					topSystemManager.stage.stageFocusRect = false;
-					editableRichTextField.selectAll();
-					editableRichTextField.setFocus();
-					editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues, false, 0, true);
-					editableRichTextField.addEventListener(FlexEvent.ENTER, commitTextEditorValues, false, 0, true);
-					editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues, false, 0, true);
-					editableRichTextField.addEventListener(MouseEvent.CLICK, commitTextEditorValues, false, 0, true);
+					//currentEditableComponent = null;
 				}
+				
+				currentComponent.visible = true;
+				
+				if (isRichEditor) {
+					editableRichTextEditor.removeEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents);
+					editableRichTextEditor.removeEventListener(FlexEvent.ENTER, handleEditorEvents);
+					editableRichTextEditor.removeEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents);
+					editableRichTextEditor.removeEventListener(MouseEvent.CLICK, handleEditorEvents);
+				}
+				else {
+					editableLabelTextField.removeEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents);
+					editableLabelTextField.removeEventListener(FlexEvent.ENTER, handleEditorEvents);
+					editableLabelTextField.removeEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents);
+					editableLabelTextField.removeEventListener(MouseEvent.CLICK, handleEditorEvents);
+				}
+				
+				if (editableLabelTextField.owner) {
+					currentComponent.owner.removeElement(editableLabelTextField);
+				}
+				else if (editableRichTextEditor.owner) {
+					currentComponent.owner.removeElement(editableRichTextEditor);
+				}
+				
+				if (isRichEditor) {
+					IVisualElementContainer(testRichEditableText.owner).removeElement(testRichEditableText);
+				}
+				
+				currentComponent = null;
 			}
 			
 			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
 			{
 				nativeWindow.x = 10;
 				nativeWindow.y = 10;
+				
+				
+				//editableRichTextEditor.textArea = null;
+				//editableRichTextEditor.textArea = testTextArea;
+				//editableRichTextEditor.invalidateSkinState();
 			}
 			
 			protected function bordercontainer1_clickHandler(event:MouseEvent):void
 			{
 				trace("container clicked");
+				if (event.target==editableRichTextEditor.richEditableText ||
+					event.target==testRichEditableText) { // can be textline
+					return;
+				}
+				commitTextValues();
+			}
+			
+			protected function testTextArea_clickHandler(event:MouseEvent):void
+			{
+				trace("text area clicked");
+				event.stopPropagation();
+			}
+			
+			protected function testTextArea_changeHandler(event:TextOperationEvent):void
+			{
+				trace(RichEditableText(testRichEditableText).contentHeight);
+				testRichEditableText.height = RichEditableText(testRichEditableText).contentHeight + 2;
+			}
+			
+			protected function testTextArea_updateCompleteHandler(event:FlexEvent):void
+			{
+				testRichEditableText.height = RichEditableText(testRichEditableText).contentHeight + 2;
 			}
 			
 		]]>
 	</fx:Script>
-	<s:BorderContainer width="300" height="300" verticalCenter="0" horizontalCenter="0"
+	
+	<fx:Declarations>
+		<utils:MiniInspector />
+		<s:RichEditableText id="testRichEditableText" styleName="myTextArea" 
+					change="testTextArea_changeHandler(event)" 
+					updateComplete="testTextArea_updateCompleteHandler(event)"
+					click="testTextArea_clickHandler(event)"/>
+	</fx:Declarations>
+	
+	<s:BorderContainer width="300" height="400" verticalCenter="0" horizontalCenter="0"
 					   click="bordercontainer1_clickHandler(event)">
 		<s:Label text="Some really long text to work with" verticalCenter="0" horizontalCenter="0"
 				 doubleClick="showTextEditor(event)" doubleClickEnabled="true"/>
 		
-		<ns:RichTextEditor top="10"/>
+		<s:RichText text="Some rich text" verticalCenter="40" horizontalCenter="0"
+							doubleClick="showTextEditor(event)" doubleClickEnabled="true"/>
+		
 	</s:BorderContainer>
 </s:WindowedApplication>

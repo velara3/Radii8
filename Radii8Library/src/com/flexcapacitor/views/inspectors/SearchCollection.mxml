@@ -154,7 +154,7 @@
 		<s:CheckBox id="caseSensitive" label="Case" selected="false"
 					toolTip="Is search case sensitive"/>
 		<s:CheckBox id="searchAtStart" label="At start" selected="false"
-					toolTip="Search from any where or search at the start"/>
+					toolTip="When selected search for matching text specifically from the start of the word"/>
 		<s:Spacer width="100%"/>
 		<s:Label text="Results: {dataProvider.length}"/>
 	</s:HGroup>

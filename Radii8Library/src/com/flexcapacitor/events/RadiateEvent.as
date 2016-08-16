@@ -34,6 +34,11 @@ package com.flexcapacitor.events {
 		public static const ASSET_LOADED:String = "assetLoaded";
 		
 		/**
+		 * Dispatched when a component definition is added
+		 * */
+		public static const COMPONENT_DEFINITION_ADDED:String = "componentDefinitionAdded";
+		
+		/**
 		 * Dispatched when the login results are received
 		 * */
 		public static const LOGIN_RESULTS:String = "loginResults";

@@ -46,6 +46,11 @@ package com.flexcapacitor.managers {
 		public static var transcoders:ArrayCollection = new ArrayCollection();
 		
 		/**
+		 * Array of component definitions used on import and export
+		 * */
+		public static var definitions:Array = [];
+		
+		/**
 		 * Indicates if multiple transcoders are allowed
 		 * */
 		public static var allowMultipleTranscoders:Boolean = true;
@@ -246,10 +251,12 @@ package com.flexcapacitor.managers {
 			var exporter:DocumentTranscoder;
 			var sourceData:SourceData;
 			
+			// if target is not set then use document
 			if (target==null && document) {
 				target = document.instance;
 			}
 			
+			// if language is null then use the document language
 			if (language is String || language==null) {
 				language = language==null ? document.language : language;
 			}
@@ -437,6 +444,30 @@ package com.flexcapacitor.managers {
 				}
 			}
 			
+		}
+		
+		/**
+		 * Adds the component definitions used during export or import of MXML 
+		 * */
+		public static function setComponentDefinitions(value:Array):void {
+			var transcoderDescription:TranscoderDescription;
+			var numberOfTranscoders:int = transcoders.length;
+			var documentTranscoder:DocumentTranscoder;
+			
+			for (var i:int = 0; i < numberOfTranscoders; i++) {
+				transcoderDescription = transcoders.getItemAt(i) as TranscoderDescription;
+				documentTranscoder = transcoderDescription.importer;
+				
+				if (documentTranscoder) {
+					documentTranscoder.definitions = value.slice();
+				}
+				
+				documentTranscoder = transcoderDescription.exporter;
+				
+				if (documentTranscoder) {
+					documentTranscoder.definitions = value.slice();
+				}
+			}
 		}
 	}
 }

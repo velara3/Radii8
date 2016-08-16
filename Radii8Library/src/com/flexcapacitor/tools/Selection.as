@@ -572,7 +572,8 @@ package com.flexcapacitor.tools {
 		public function updateDocument(iDocument:IDocument):void {
 			
 			// remove listeners
-			if (targetApplication && targetApplication!=iDocument.instance) {
+			if (iDocument==null || 
+				(targetApplication && iDocument && targetApplication!=iDocument.instance)) {
 				removeAllListeners();
 			}
 			

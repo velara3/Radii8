@@ -45,6 +45,9 @@
 			
 			import spark.components.WindowedApplication;
 			
+			import flashx.textLayout.conversion.ConversionType;
+			import flashx.textLayout.conversion.TextConverter;
+			
 			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
 			
 			[Bindable]
@@ -77,9 +80,9 @@
 				CodeManager.setTranscodersVersion(version);
 				Radiate.initialize();
 				
-				Radiate.addComponentType("WindowedApplication", "spark.components.WindowedApplication", WindowedApplication);
-				Radiate.addComponentType("VDividedBox", "mx.components.VDividedBox", VDividedBox);
-				Radiate.addComponentType("HDividedBox", "mx.components.HDividedBox", HDividedBox);
+				Radiate.addComponentDefinition("WindowedApplication", "spark.components.WindowedApplication", WindowedApplication);
+				Radiate.addComponentDefinition("VDividedBox", "mx.components.VDividedBox", VDividedBox);
+				Radiate.addComponentDefinition("HDividedBox", "mx.components.HDividedBox", HDividedBox);
 				
 				// only update on save keyboard shortcut or on change
 				updateOnSave = false;
@@ -111,6 +114,15 @@
 				createEditors();
 				
 				setDefaultXML();
+				
+				var textFlowString:String = TextConverter.export(richText59.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
+				// var textFlow:TextFlow = TextConverter.importToFlow(textFlowString, TextConverter.TEXT_LAYOUT_FORMAT);
+				var xml:XML = <s:TextFlow xmlns:s="library://ns.adobe.com/flex/spark" >
+					<s:p>test
+					</s:p>
+				</s:TextFlow>;
+				var textFlow:TextFlow = TextConverter.importToFlow(xml.toXMLString(), TextConverter.TEXT_LAYOUT_FORMAT);
+				richText59.textFlow = textFlow;
 			}
 			
 			private function createEditors():void {
@@ -153,9 +165,9 @@
 				var code:String = aceEditor.text;
 				var time:int;
 				
-				PerformanceMeter.mark("Before xml validation", true);
+				//PerformanceMeter.mark("Before xml validation", true);
 				isValid = XMLUtils.isValidXML(code);
-				PerformanceMeter.mark("After xml validation");
+				//PerformanceMeter.mark("After xml validation");
 				//error = XMLUtils.validationError;
 				
 				if (!isValid && code!="") {
@@ -819,4 +831,13 @@
 		
 		<s:TextArea id="textArea" width="100%" includeInLayout="false" visible="false"/>
 	</mx:VDividedBox>
+	
+	<s:RichText id="richText59">
+		<s:textFlow>
+			<s:TextFlow>
+				<s:p>test
+				</s:p>
+			</s:TextFlow>
+		</s:textFlow>
+	</s:RichText>
 </s:WindowedApplication>

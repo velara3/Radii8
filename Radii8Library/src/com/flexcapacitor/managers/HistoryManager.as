@@ -804,12 +804,12 @@ package com.flexcapacitor.managers
 		 * last action that was performed. 
 		 * */
 		public static function getHistoryPosition(document:IDocument):int {
-			var historyLength:int = getHistoryLength(document);
+			var numberOfEvents:int = getHistoryLength(document);
 			var historyEvent:HistoryEvent;
-			var events:IList = document.history as IList;
+			var events:IList = document ? document.history as IList : null;
 			
 			// go through and find last item that is reversed
-			for (var i:int;i<historyLength;i++) {
+			for (var i:int;i<numberOfEvents;i++) {
 				historyEvent = events.getItemAt(i) as HistoryEvent;
 				
 				if (historyEvent.reversed) {
@@ -817,7 +817,7 @@ package com.flexcapacitor.managers
 				}
 			}
 			
-			return historyLength-1;
+			return numberOfEvents-1;
 		}
 		
 		/**

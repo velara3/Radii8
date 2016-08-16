@@ -22,6 +22,7 @@ package com.flexcapacitor.utils {
 	
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
+	import mx.core.ScrollPolicy;
 	import mx.styles.IStyleClient;
 	import mx.utils.NameUtil;
 	
@@ -32,6 +33,7 @@ package com.flexcapacitor.utils {
 	import spark.components.VGroup;
 	import spark.components.supportClasses.GroupBase;
 	import spark.components.supportClasses.ListBase;
+	import spark.components.supportClasses.SkinnableComponent;
 	import spark.layouts.BasicLayout;
 	import spark.layouts.HorizontalLayout;
 	import spark.layouts.TileLayout;
@@ -65,7 +67,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Sets explicit size regardless if size is explicit
 		 * */
-		public var setExplicitSize:Boolean = true;
+		public var setExplicitSize:Boolean = false;
 		
 		/**
 		 * Sets styles inline
@@ -75,7 +77,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * For label components uses a span element instead of label element
 		 * */
-		public var useSpanTagForLabel:Boolean = true;
+		public var useSpanTagForLabels:Boolean = true;
 		
 		/**
 		 * Styles added by users 
@@ -608,6 +610,7 @@ package com.flexcapacitor.utils {
 			var instance:Object;
 			var numElements:int;
 			var htmlName:String;
+			var tagName:String;
 			var tracking:Number;
 			var borderColor:String;
 			var elementIndex:int;
@@ -633,6 +636,7 @@ package com.flexcapacitor.utils {
 			var numberOfElements:int;
 			var endOfRow:Boolean;
 			var endOfColumn:Boolean;
+			var htmlOverride:String;
 			
 			isInBasicLayout = false;
 			setPositioningStylesOnElement = true;
@@ -640,6 +644,8 @@ package com.flexcapacitor.utils {
 			wrapWithAnchor 	= componentDescription.wrapWithAnchor;
 			anchorURL 		= componentDescription.anchorURL;
 			anchorTarget	= componentDescription.anchorTarget;
+			
+			tagName 		= componentDescription.htmlTagName;
 			
 			// we are setting the styles in a string now
 			// the next refactor should use the object so we can output to CSS
@@ -813,6 +819,7 @@ package com.flexcapacitor.utils {
 			
 			snapshotBackground = componentDescription.createBackgroundSnapshot;
 			convertElementToImage = componentDescription.convertElementToImage;
+			htmlOverride = componentDescription.htmlOverride;
 			//var imageDataFormat:String = "jpeg";
 			
 			
@@ -821,9 +828,11 @@ package com.flexcapacitor.utils {
 			
 			if (localName) {
 				
-				
+				if (htmlOverride) {
+					layoutOutput = htmlOverride;
+				}
 				// putting the convert to image code at the top. it's also used below if an element is not found
-				if (convertElementToImage) {
+				else if (convertElementToImage) {
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<img " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
@@ -935,12 +944,16 @@ package com.flexcapacitor.utils {
 							styleValue = "";
 						}
 						
-						styleValue += "background-color:" + DisplayObjectUtils.getColorInHex(componentInstance.getStyle("backgroundColor"), true) + ";";
+						styleValue = getBackgroundColor(componentInstance, styleValue, false);
 						styleValue = getFontFamily(componentInstance, styleValue, true);
 						styleValue = getFontWeight(componentInstance, styleValue, true);
 						styleValue = getFontSize(componentInstance, styleValue, true);
 						styleValue = getFontStyle(componentInstance, styleValue);
 						styleValue = getLineHeight(componentInstance, styleValue, false);
+						styleValue = getFontColor(componentInstance, styleValue);
+						styleValue = getPadding(componentInstance, styleValue);
+						styleValue = getTypographicCase(componentInstance, styleValue);
+						styleValue = getTracking(componentInstance, styleValue);
 						
 						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 						
@@ -988,9 +1001,9 @@ package com.flexcapacitor.utils {
 				}
 				
 				else if (localName=="group" || localName=="vgroup") {
-					htmlName = "div";
+					htmlName = tagName ? tagName : "div";
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-					layoutOutput += "<div " + properties;
+					layoutOutput += "<" + htmlName + " " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					layoutOutput += properties ? " " : "";
@@ -1001,7 +1014,9 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
+					styleValue = getPadding(componentInstance, styleValue);
 					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
+					styleValue = getScrollPolicy(componentInstance, styleValue);
 					
 					if (componentInstance is VGroup) {
 						styleValue += "text-align:" + VGroup(componentInstance).horizontalAlign + ";";
@@ -1018,15 +1033,15 @@ package com.flexcapacitor.utils {
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
 					layoutOutput += contentToken;
-					layoutOutput += "\n" + tabs + "</div>";
+					layoutOutput += "\n" + tabs + "</" + htmlName + ">";
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				
 				else if (localName=="bordercontainer") {
-					htmlName = "div";
+					htmlName = tagName ? tagName : "div";
 					
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-					layoutOutput += "<div " + properties;
+					layoutOutput += "<" + htmlName + " " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					layoutOutput += properties ? " " : "";
@@ -1034,12 +1049,14 @@ package com.flexcapacitor.utils {
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
 					styleValue += getBorderString(componentInstance as BorderContainer);
 					styleValue += getCornerRadiusString(componentInstance as BorderContainer);
-					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					styleValue = getFontFamily(componentInstance, styleValue);
 					styleValue = getFontWeight(componentInstance, styleValue);
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
+					styleValue = getPadding(componentInstance, styleValue);
+					styleValue = getScrollPolicy(componentInstance, styleValue);
+					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					//styleValue += getColorString(componentInstance as BorderContainer);
 					//styles += componentInstance as BorderContainer);
 					
@@ -1054,15 +1071,15 @@ package com.flexcapacitor.utils {
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
 					layoutOutput += componentInstance.numElements==0? "&#160;": contentToken;
-					layoutOutput += "\n" + tabs + "</div>";
+					layoutOutput += "\n" + tabs + "</" + htmlName + " >";
 					layoutOutput += getWrapperTag(wrapperTag, true);
 					
 				}
 				
 				else if (localName=="hgroup" || localName=="tilegroup") {
-					htmlName = "div";
+					htmlName = tagName ? tagName : "div";
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-					layoutOutput += "<div " + properties;
+					layoutOutput += "<" + htmlName + " " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					
@@ -1080,6 +1097,8 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
+					styleValue = getPadding(componentInstance, styleValue);
+					styleValue = getScrollPolicy(componentInstance, styleValue);
 					
 					if (componentInstance is HGroup) {
 						styleValue += "text-align:" + HGroup(componentInstance).horizontalAlign + ";";
@@ -1145,16 +1164,16 @@ package com.flexcapacitor.utils {
 						layoutOutput += "\n" + tabs + "\t<span style='display:inline-block;height:100%;width:0;vertical-align:middle;'></span>";
 					}
 					
-					layoutOutput += "\n" + tabs + "</div>";
+					layoutOutput += "\n" + tabs + "</" + htmlName + ">";
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="button" || localName=="togglebutton") {
-					htmlName = "button";
+					htmlName = tagName ? tagName : "input";
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-					layoutOutput += "<input " + properties;
+					layoutOutput += "<" + htmlName + " " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
-					layoutOutput += " type=\"" + htmlName.toLowerCase() + "\"" ;
+					layoutOutput += " type=\"button\"" ;
 					layoutOutput += properties ? " " + properties : "";
 					
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
@@ -1164,6 +1183,7 @@ package com.flexcapacitor.utils {
 					styleValue = getFontStyle(componentInstance, styleValue);
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
+					styleValue = getPadding(componentInstance, styleValue);
 					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -1176,7 +1196,7 @@ package com.flexcapacitor.utils {
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="videoplayer") {
-					htmlName = "video";
+					htmlName = tagName ? tagName : "video";
 					
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					
@@ -1193,6 +1213,7 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
+					styleValue = getPadding(componentInstance, styleValue);
 					//styleValue += "padding:2px;";
 					
 					borderColor = componentInstance.getStyle("borderColor");
@@ -1214,7 +1235,7 @@ package com.flexcapacitor.utils {
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="checkbox") {
-					htmlName = localName;
+					htmlName = tagName ? tagName : "checkbox";
 					
 					if (componentInstance.label!="") {
 						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
@@ -1230,22 +1251,23 @@ package com.flexcapacitor.utils {
 						styleValue = getFontSize(componentInstance, styleValue);
 						styleValue = getFontColor(componentInstance, styleValue);
 						styleValue = getFontStyle(componentInstance, styleValue);
+						styleValue = getPadding(componentInstance, styleValue);
 						
 						styleValue += userInstanceStyles;
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 						
 						layoutOutput += setStyles("#"+getIdentifierOrName(componentInstance, true, "_Label"), styleValue);
-						layoutOutput += "<input ";
+						layoutOutput += "<" + htmlName + " ";
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
-						layoutOutput += " type=\"" + htmlName.toLowerCase() + "\" ";
+						layoutOutput += " type=\"checkbox\" ";
 						layoutOutput += "/>" ;
 					}
 					else {
 						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						layoutOutput += "<input " + properties;
+						layoutOutput += "<" + htmlName +  " " + properties;
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
-						layoutOutput += " type=\"" + htmlName.toLowerCase() + "\" " + properties;
+						layoutOutput += " type=\"checkbox\" " + properties;
 						//styleValue = getSizeString(componentInstance as IVisualElement, styleValue);
 						
 						styleValue += userInstanceStyles;
@@ -1261,7 +1283,8 @@ package com.flexcapacitor.utils {
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="radiobutton") {
-					htmlName = "radio";
+					htmlName = tagName ? tagName : "radio";
+					
 					if (componentInstance.label!="") {
 						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						layoutOutput += "<label ";
@@ -1275,18 +1298,19 @@ package com.flexcapacitor.utils {
 						styleValue = getFontSize(componentInstance, styleValue);
 						styleValue = getFontColor(componentInstance, styleValue);
 						styleValue = getFontStyle(componentInstance, styleValue);
+						styleValue = getPadding(componentInstance, styleValue);
 						
 						styleValue += userInstanceStyles;
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 						
 						layoutOutput += setStyles("#"+getIdentifierOrName(componentInstance, true, "_Label"), styleValue);
-						layoutOutput += "<input type=\"radio\" " ;
+						layoutOutput += "<" + htmlName + " type=\"radio\" " ;
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput += "/>" ;
 					}
 					else {
 						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						layoutOutput += "<input type=\"" + htmlName.toLowerCase() + "\" " + properties;
+						layoutOutput += "<" + htmlName + " type=\"radio\" " + properties;
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 						
@@ -1309,7 +1333,7 @@ package com.flexcapacitor.utils {
 						|| localName=="datefield" || localName=="colorpicker" 
 						|| localName=="hslider" || localName=="vslider" ) {
 					
-					htmlName = "input";
+					htmlName = tagName ? tagName : "input";
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					
 					layoutOutput += "<" +htmlName+ " ";
@@ -1351,6 +1375,7 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
+					styleValue = getPadding(componentInstance, styleValue);
 					
 					if (localName=="vslider") {
 						styleValue += "writing-mode:bt-lr;";
@@ -1400,10 +1425,10 @@ package com.flexcapacitor.utils {
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="dropdownlist" || localName=="list") {
-					htmlName = "select";
+					htmlName = tagName ? tagName : "select";
 					
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-					layoutOutput += "<select ";
+					layoutOutput += "<" + htmlName + " ";
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					layoutOutput += " type=\"input\" "  + properties;
@@ -1423,21 +1448,26 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
-					styleValue += "padding:0;border:1px solid " + DisplayObjectUtils.getColorInHex(componentInstance.getStyle("borderColor"), true) + ";";
+					styleValue += "border:1px solid " + DisplayObjectUtils.getColorInHex(componentInstance.getStyle("borderColor"), true) + ";";
+					styleValue = getPadding(componentInstance, styleValue);
 					
 					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
-					layoutOutput += "</select>";
+					layoutOutput += "</" + htmlName + ">";
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
-				else if (localName=="label" || localName=="hyperlink" || localName=="textarea" || localName=="richtext") {
+				else if (localName=="label" || 
+						localName=="hyperlink" || 
+						localName=="textarea" || 
+						localName=="richtext" ||
+						localName=="passthrough") {
 					
 					if (localName=="label") {
 						// we may want to use "p" but rendering and layout is slightly different
-						if (useSpanTagForLabel) {
+						if (useSpanTagForLabels) {
 							htmlName = "span";
 						}
 						else {
@@ -1447,12 +1477,17 @@ package com.flexcapacitor.utils {
 					else if (localName=="textarea") {
 						htmlName = "textarea";
 					}
-					else if (localName=="richtext") {
-						htmlName = "p";
+					else if (localName=="richtext" || localName=="richeditabletext") {
+						htmlName = "div";
 					}
 					else if (localName=="hyperlink") {
 						htmlName = "a";
 					}
+					else if (localName=="passthrough") {
+						htmlName = "div";
+					}
+					
+					htmlName = tagName ? tagName : htmlName; 
 					
 					/*
 					if (useWrapperDivs) {
@@ -1478,6 +1513,7 @@ package com.flexcapacitor.utils {
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
 					styleValue = getLineHeight(componentInstance, styleValue);
+					styleValue = getPadding(componentInstance, styleValue);
 					styleValue = getTypographicCase(componentInstance, styleValue);
 					styleValue = getTracking(componentInstance, styleValue);
 					
@@ -1509,18 +1545,37 @@ package com.flexcapacitor.utils {
 					//layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
 					layoutOutput += setStyles(componentInstance, styleValue);
 					
-					if (localName=="richtext") {
-						htmlName = "p";
+					if (localName=="richtext" || localName=="richeditabletext" || localName=="textarea") {
+						//htmlName = tagName ? tagName : "div";
+						
+						if (localName=="textarea") {
+							htmlName = "textarea";
+						}
 						
 						// we need to write another TextConverter.export method that doesn't include the HTML and body tag
 						
 						//layoutOutput += TextConverter.export(RichText(componentInstance).textFlow, TextConverter.TEXT_FIELD_HTML_FORMAT, ConversionType.STRING_TYPE);
 						var test:Object = TextConverter.export(RichText(componentInstance).textFlow, TextConverter.TEXT_FIELD_HTML_FORMAT, ConversionType.XML_TYPE);
-						var content:XML = test.children()[0].children()[0].children()[0].children()[0];
+						var content:XML;
+						var items:XMLList;
+						var richHTMLOutput:String = "";
+						//content = test.children()[0].children()[0].children()[0].children()[0];
+						items = test.children()[0].children();
 						
-						if (content) {
-							layoutOutput += content.toXMLString();
+						for each (content in items) {
+							//if (content) {
+								richHTMLOutput += content.toXMLString() + "\n";
+							//}
 						}
+						
+						if (richHTMLOutput) {
+							richHTMLOutput = "\n" + richHTMLOutput;
+							richHTMLOutput = StringUtils.indent(richHTMLOutput, tabs + "\t");
+							layoutOutput += richHTMLOutput;
+						}
+					}
+					else if (localName=="passthrough") {
+						layoutOutput += componentInstance.text;
 					}
 					else {
 						layoutOutput += componentInstance.text.replace(/\n/g, "<br/>");
@@ -1531,8 +1586,9 @@ package com.flexcapacitor.utils {
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="image") {
+					htmlName = tagName ? tagName : "img";
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-					layoutOutput += "<img " + properties;
+					layoutOutput += "<" + htmlName + " " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					
@@ -1559,11 +1615,11 @@ package com.flexcapacitor.utils {
 				else if (localName=="spacer") {
 					//move to image
 					// show placeholder NOT actual component
-					htmlName = "div";
+					htmlName = tagName ? tagName : "div";
 					
 					
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-					layoutOutput += "<div "  + properties;
+					layoutOutput += "<" + htmlName + " "  + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					
@@ -1577,13 +1633,13 @@ package com.flexcapacitor.utils {
 					//layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
 					layoutOutput += setStyles(componentInstance, styleValue);
 					//output += "&#160;"
-					layoutOutput += "</div>";
+					layoutOutput += "</" + htmlName + ">";
 					
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="horizontalline" || localName=="verticalline") {
 					//move to 
-					htmlName = "line";
+					htmlName = tagName ? tagName : "line";
 					wrapperTag = "svg";
 					
 					/*
@@ -1606,7 +1662,7 @@ package com.flexcapacitor.utils {
 						componentInstance.id = NameUtil.createUniqueName(componentInstance);
 					}
 					
-					layoutOutput += "<line "  + properties;
+					layoutOutput += "<" + htmlName + " "  + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					
 					if (localName=="horizontalline") {
@@ -1645,7 +1701,7 @@ package com.flexcapacitor.utils {
 					//layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
 					layoutOutput += setStyles(componentInstance, styleValue);
 					//output += "&#160;"
-					layoutOutput += "</line>";
+					layoutOutput += "</" + htmlName + ">";
 					
 					//if (useWrapperDivs) {
 						layoutOutput += getWrapperTag(wrapperTag, true);
@@ -1668,9 +1724,10 @@ package com.flexcapacitor.utils {
 						//imageDataStyle = "\tbackground-image: url(data:image/jpeg;base64,"+imageData+");";
 						//imageDataStyle = convertComponentToImage(componentInstance);
 						//styleValue += "" + imageDataStyle;
+						htmlName = tagName ? tagName : "img";
 						
 						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-						layoutOutput += "<img " + properties;
+						layoutOutput += "<" + htmlName + " " + properties;
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 						styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
@@ -1692,9 +1749,9 @@ package com.flexcapacitor.utils {
 					}
 					else {
 						// show placeholder NOT actual component
-						htmlName = "label";
+						htmlName = tagName ? tagName : "label";
 						
-						layoutOutput += "<label "  + properties;
+						layoutOutput += "<" + htmlName + " "  + properties;
 						
 						if (componentInstance is GraphicElement && componentInstance.id==null) {
 							// graphic element has no name property
@@ -1712,6 +1769,7 @@ package com.flexcapacitor.utils {
 						styleValue = getFontWeight(componentInstance, styleValue);
 						styleValue = getFontSize(componentInstance, styleValue);
 						styleValue = getLineHeight(componentInstance, styleValue, true);
+						styleValue = getPadding(componentInstance, styleValue);
 						
 						layoutOutput += properties ? " " : "";
 						// remove wrapperTagStyles since we are trying to not use wrapper tags
@@ -1722,7 +1780,7 @@ package com.flexcapacitor.utils {
 						//layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
 						layoutOutput += setStyles(componentInstance, styleValue);
 						layoutOutput += getIdentifierOrName(componentInstance);
-						layoutOutput += "</label>";
+						layoutOutput += "</" + htmlName + ">";
 						
 						layoutOutput += getWrapperTag(wrapperTag, true);
 					}
@@ -2283,6 +2341,61 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
+		 * Gets the scroll policy
+		 * */
+		public function getScrollPolicy(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			var verticalScrollPolicy:String;
+			var horizontalScrollPolicy:String;
+			var clipAndEnableScrolling:Boolean;
+			var hasScrollPolicy:Boolean;
+			var isSet:Boolean;
+			
+			// for GroupBase
+			if ("clipAndEnableScrolling" in componentInstance) {
+				clipAndEnableScrolling = componentInstance.clipAndEnableScrolling;
+				
+				if (clipAndEnableScrolling) {
+					styleValue += "overflow:" + "auto;"; // or scroll
+				}
+				else {
+					styleValue += "overflow:" + "visible;" // or hidden
+				}
+			}
+			else if (StyleUtils.hasStyle(styleClient, VERTICAL_SCROLL_POLICY) || 
+				StyleUtils.hasStyle(styleClient, HORIZONTAL_SCROLL_POLICY)) {
+				
+				// NOT FINISHED
+				// for ListBase
+				if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "verticalScrollPolicy")) {
+					verticalScrollPolicy = styleClient.getStyle("verticalScrollPolicy");
+					horizontalScrollPolicy = styleClient.getStyle("horizontalScrollPolicy");
+					
+					if (verticalScrollPolicy && (verticalScrollPolicy !== ScrollPolicy.AUTO)) {
+						isSet = true;
+					}
+					
+					if (horizontalScrollPolicy && (horizontalScrollPolicy !== ScrollPolicy.AUTO)) {
+						isSet = true;
+					}
+					
+				}
+				// not finished
+				styleValue += "overflow:" + "auto;"; // or scroll
+			}
+			else if (styleClient is BorderContainer || styleClient is SkinnableComponent) {
+				styleValue += "overflow:" + "auto;"; // or scroll
+			}
+			//if (!isSet) {
+				//styleValue += "overflow:" + "auto;"
+			//}
+			
+			return styleValue;
+		}
+		
+		/**
 		 * Gets the typographic case
 		 * */
 		public function getTypographicCase(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
@@ -2308,6 +2421,26 @@ package com.flexcapacitor.utils {
 			
 			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "color")) {
 				styleValue += "color:" + DisplayObjectUtils.getColorInHex(styleClient.getStyle("color"), true) + ";"
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets background color if defined inline
+		 * */
+		public function getBackgroundColor(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "backgroundColor")) {
+				
+				if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "backgroundAlpha")) {
+					styleValue += "background-color:" + DisplayObjectUtils.getColorInRGB(componentInstance.getStyle("backgroundColor"), componentInstance.getStyle("backgroundAlpha")) + ";";
+				}
+				else {
+					styleValue += "background-color:" + DisplayObjectUtils.getColorInHex(componentInstance.getStyle("backgroundColor"), true) + ";";
+				}
 			}
 			
 			return styleValue;
@@ -2378,6 +2511,35 @@ package com.flexcapacitor.utils {
 			
 			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "lineHeight")) {
 				styleValue += "line-height:" + parseInt(styleClient.getStyle("lineHeight"))/100 + ";"
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the padding if defined inline
+		 * */
+		public function getPadding(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "padding")) {
+				styleValue += "padding:" + parseInt(styleClient.getStyle("padding")) + "px;"
+			}
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "paddingBottom")) {
+				styleValue += "padding-bottom:" + parseInt(styleClient.getStyle("paddingBottom")) + "px;"
+			}
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "paddingTop")) {
+				styleValue += "padding-top:" + parseInt(styleClient.getStyle("paddingTop")) + "px;"
+			}
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "paddingLeft")) {
+				styleValue += "padding-left:" + parseInt(styleClient.getStyle("paddingLeft")) + "px;"
+			}
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "paddingRight")) {
+				styleValue += "padding-right:" + parseInt(styleClient.getStyle("paddingRight")) + "px;"
 			}
 			
 			return styleValue;
@@ -2512,6 +2674,20 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		public function getHeightString(instance:Object, styleValue:String = "", isHorizontalCenterSet:Boolean = false, isVerticalCenterSet:Boolean = false, fitToContent:Boolean = false):String {
 			var hasExplicitSize:Boolean;
 			
+			// minimum height
+			if ("explicitMinHeight" in instance) {
+				if (Object(instance).explicitMinHeight!=null && !isNaN(Object(instance).explicitMinHeight)) {
+					styleValue += "min-height:" + instance.explicitMinHeight + "px;";
+				}
+			}
+			
+			// maximum height
+			if ("explicitMaxHeight" in instance) {
+				if (Object(instance).explicitMaxHeight!=null && !isNaN(Object(instance).explicitMaxHeight)) {
+					styleValue += "max-height:" + instance.explicitMaxHeight + "px;";
+				}
+			}
+			
 			if (fitToContent) {
 				return "";
 			}
@@ -2545,6 +2721,20 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		 * */
 		public function getWidthString(instance:Object, styleValue:String = "", isHorizontalAlignSet:Boolean = false, isVerticalSet:Boolean = false, fitToContent:Boolean = false):String {
 			var hasExplicitSize:Boolean;
+			
+			// minimum width
+			if ("explicitMinWidth" in instance) {
+				if (Object(instance).explicitMinWidth!=null && !isNaN(Object(instance).explicitMinWidth)) {
+					styleValue += "min-width:" + instance.explicitMinWidth + "px;";
+				}
+			}
+			
+			// maximum width
+			if ("explicitMaxWidth" in instance) {
+				if (Object(instance).explicitMaxWidth!=null && !isNaN(Object(instance).explicitMaxWidth)) {
+					styleValue += "max-width:" + instance.explicitMaxWidth + "px;";
+				}
+			}
 			
 			if (fitToContent) {
 				return "";
@@ -2581,6 +2771,13 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			}
 			
 			return "display:block;";
+		}
+		
+		/**
+		 * Clear elements left and right
+		 * */
+		public function getRowClear(instance:Object = null):String {
+			return "clear:both;";
 		}
 		
 		/**
@@ -2982,7 +3179,7 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			var value:String = "";
 			
 			if (element.getStyle("cornerRadius")!==undefined) {
-				value += "border-radius:" + element.getStyle("cornerRadius") + ";";
+				value += "border-radius:" + element.getStyle("cornerRadius") + "px;";
 			}
 			
 			return value;
@@ -3082,6 +3279,8 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			return value;
 		}
 		
+		public static const VERTICAL_SCROLL_POLICY:String = "verticalScrollPolicy";
+		public static const HORIZONTAL_SCROLL_POLICY:String = "horizontalScrollPolicy";
 		public static const VERTICAL_LINE:String = "verticalLine";
 		public static const HORIZONTAL_LINE:String = "horizontalLine";
 		public static const LINE:String = "line";

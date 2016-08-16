@@ -22,8 +22,8 @@
 
 		 dragEnter="mainView_dragEnterHandler(event)"
 		 dragExit="mainView_dragExitHandler(event)"
-		 dragDrop="mainView_dragDropHandler(event)"
 		 dragOver="mainView_dragOverHandler(event)"
+		 dragDrop="mainView_dragDropHandler(event)"
 		 
 		 width="400" height="300"
 		 >
@@ -146,6 +146,9 @@
 				
 				if (radiate.userID!=-1) {
 					serviceManager.getProjectsByUser(radiate.userID);
+				}
+				else {
+					updateCheckProjects(0);
 				}
 				
 				serviceManager.addEventListener(RadiateEvent.BLOG_POSTS_RECEIVED, blogPostsReceivedHandler, false, 0, true);
@@ -1129,7 +1132,12 @@
 					return;
 				}
 				
-				radiate.dropItem(event);
+				if (currentState==DESIGN_STATE) {
+					radiate.dropItem(event);
+				}
+				else {
+					radiate.dropItem(event, true);
+				}
 			}
 			
 			protected function mainView_dragExitHandler(event:DragEvent):void
@@ -1224,7 +1232,7 @@
 				Radiate.openInBrowserScreenshot(radiate.selectedDocument);
 			}
 			
-			protected function runSiteScanner_itemClickHandler(event:MenuEvent):void
+			protected function viewInSiteScanner_itemClickHandler(event:MenuEvent):void
 			{
 				Radiate.openInBrowserSiteScanner(radiate.selectedDocument);
 			}
@@ -1238,7 +1246,9 @@
 			 * Create a new document with default project for quick mockups
 			 * */
 			protected function newDocumentAndProjectButton_clickHandler(event:MouseEvent):void {
-				radiate.createNewDocumentAndProject();
+				radiate.createNewDocumentAndSwitchToDesignView();
+				//Radiate.callAfter(2000, radiate.resizeFix);
+				//Radiate.callAfter(3000, radiate.resizeFix, true);
 			}
 			
 			public function goToDesignState(validate:Boolean = true):void {
@@ -1523,6 +1533,7 @@
 				<model:MenuItem id="getRevisions" label="Show Revisions" itemClick="getRevisions_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="viewInBrowserShots" label="View in Browser Shots" itemClick="viewInBrowserScreenshot_itemClickHandler(event)" />
+				<model:MenuItem id="viewInSiteScanner" label="View in Site Scanner" itemClick="viewInSiteScanner_itemClickHandler(event)" />
 				<!--<model:MenuItem id="loginThroughWebsite" label="Login to your website" itemClick="loginThroughWebsite_itemClickHandler(event)"/>-->
 			</model:MenuItem>
 			<!--			<model:MenuItem label="Edit" menuShow="editHandler(event)">
@@ -1794,7 +1805,7 @@
 		</s:HGroup>
 		
 		
-		<s:Label id="statusLabel" bottom="40" horizontalCenter="0" textAlign="left" fontStyle="italic"/>
+		<s:Label id="statusLabel" bottom="50" horizontalCenter="0" textAlign="left" fontStyle="italic"/>
 		
 		<s:HGroup bottom="20" left="20" right="20"
 				  width="100%"

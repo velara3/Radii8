@@ -181,13 +181,15 @@
 					target = iDocument.instance;
 				}
 				
-				if (editingTemplate) {
+				if (editingTemplate && iDocument) {
 					iDocument.template = templateEditor.text;
 				}
 				
-				targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, iDocument.componentDescription);
+				if (iDocument!=null) {
+					targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, iDocument.componentDescription);
+				}
 				
-				if (language==null || targetDescription==null) {
+				if (language==null || targetDescription==null || iDocument==null) {
 					sourceData = null;
 					radiate.editorSource = null;
 					setEditorText(null);
