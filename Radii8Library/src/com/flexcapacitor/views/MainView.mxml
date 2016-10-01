@@ -651,7 +651,11 @@
 				var iProject:IProject = radiate.selectedProject;
 				
 				if (iProject) {
-					Radiate.info(iProject.toString());
+					Radiate.showConsolePanel(iProject.toString());
+					//Radiate.info();
+				}
+				else {
+					Radiate.warn("No project selected");
 				}
 			}
 			
@@ -664,7 +668,10 @@
 				
 				if (iDocument) {
 					source = iDocument.marshall(DocumentMetaData.STRING_TYPE, true) as String;
-					Radiate.info(source);
+					Radiate.showConsolePanel(source);
+				}
+				else {
+					Radiate.warn("No document selected");
 				}
 				
 			}
@@ -1073,15 +1080,19 @@
 				}
 			}
 			
-			protected function openProjectButton_clickHandler(event:MouseEvent):void
-			{
+			protected function openProjectButton_clickHandler(event:MouseEvent):void {
 				var project:IProject = projectsList.selectedItem;
+				
 				if (project==null) {
 					project = examplesList.selectedItem;
 				}
 
 				if (project) {
-					openProject(project);
+					
+					Radiate.info("Opening project '" + project.name + "'");
+					
+					Radiate.callAfter(250, openProject, project);
+					//openProject(project);
 				}
 				
 			}

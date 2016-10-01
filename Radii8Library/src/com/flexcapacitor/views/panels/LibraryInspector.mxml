@@ -753,13 +753,16 @@
 				}
 			}
 			
-			protected function openPopUp_closeHandler(event:Event):void
-			{
+			protected function openPopUp_closeHandler(event:Event):void {
+				var imageView:ImageView;
+				
 				if (openPopUp.popUp) {
-					var imageView:ImageView = openPopUp.popUp as ImageView;
+					imageView = openPopUp.popUp as ImageView;
+					
 					if (imageView) {
 						imageView.data = null;
 					}
+					
 					openPopUp.popUp = null;
 				}
 				
@@ -790,6 +793,12 @@
 			protected function deleteAttachmentIcon_clickHandler(event:MouseEvent):void {
 				var selectedItems:Array = ArrayUtils.getArrayFromVector(list.selectedItems);
 				var options:Object;
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (iDocument==null) {
+					Radiate.info("No document selected.");
+					return;
+				}
 				
 				if (selectedItems.length) {
 					options = {};

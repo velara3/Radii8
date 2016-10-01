@@ -30,6 +30,7 @@ package com.flexcapacitor.utils {
 	import spark.components.HGroup;
 	import spark.components.NumericStepper;
 	import spark.components.RichText;
+	import spark.components.TextArea;
 	import spark.components.VGroup;
 	import spark.components.supportClasses.GroupBase;
 	import spark.components.supportClasses.ListBase;
@@ -268,6 +269,8 @@ package com.flexcapacitor.utils {
 			markup = "";
 			sourceCode = "";
 			template = "";
+			identifiers = [];
+			duplicateIdentifiers = [];
 			
 			
 			///////////////////////
@@ -637,6 +640,9 @@ package com.flexcapacitor.utils {
 			var endOfRow:Boolean;
 			var endOfColumn:Boolean;
 			var htmlOverride:String;
+			var htmlBefore:String;
+			var htmlAfter:String;
+			var htmlAttributes:String;
 			
 			isInBasicLayout = false;
 			setPositioningStylesOnElement = true;
@@ -820,6 +826,9 @@ package com.flexcapacitor.utils {
 			snapshotBackground = componentDescription.createBackgroundSnapshot;
 			convertElementToImage = componentDescription.convertElementToImage;
 			htmlOverride = componentDescription.htmlOverride;
+			htmlBefore = componentDescription.htmlBefore;
+			htmlAfter = componentDescription.htmlAfter;
+			htmlAttributes = componentDescription.htmlAttributes;
 			//var imageDataFormat:String = "jpeg";
 			
 			
@@ -828,11 +837,8 @@ package com.flexcapacitor.utils {
 			
 			if (localName) {
 				
-				if (htmlOverride) {
-					layoutOutput = htmlOverride;
-				}
 				// putting the convert to image code at the top. it's also used below if an element is not found
-				else if (convertElementToImage) {
+				if (convertElementToImage || htmlOverride) {
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 					layoutOutput += "<img " + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
@@ -848,11 +854,17 @@ package com.flexcapacitor.utils {
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					layoutOutput += getWrapperTag(wrapperTag, true);
 					
 					// if exporting an image then don't export the contents 
 					//exportChildDescriptors = false;
 					contentToken = "";
+					
+					if (htmlOverride) {
+						layoutOutput = htmlOverride;
+					}
 				}
 				
 				else if (localName=="application") {
@@ -899,6 +911,8 @@ package com.flexcapacitor.utils {
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 						
 						layoutOutput += setStyles(componentInstance, styleValue);
+						layoutOutput += setUserAttributes(htmlAttributes);
+						layoutOutput += closeTag(componentInstance);
 						
 						if (showScreenshotBackground) {
 							var backgroundImageID:String = "backgroundComparisonImage";
@@ -908,7 +922,9 @@ package com.flexcapacitor.utils {
 							backgroundSnapshot += " src=\"" + imageData + "\" ";
 							
 							layoutOutput += backgroundSnapshot;
-							layoutOutput += setStyles("#"+backgroundImageID, "position:absolute;opacity:"+backgroundImageAlpha+";top:0px;left:0px;", true);
+							layoutOutput += setStyles("#"+backgroundImageID, "position:absolute;opacity:"+backgroundImageAlpha+";top:0px;left:0px;");
+							layoutOutput += setUserAttributes(htmlAttributes);
+							layoutOutput += closeTag(componentInstance, true);
 							
 							/* background-image didn't work in FF on mac. didn't test on other browsers
 							//trace(imageData);
@@ -976,7 +992,9 @@ package com.flexcapacitor.utils {
 							backgroundSnapshot += " src=\"" + imageData + "\" ";
 							
 							layoutOutput += backgroundSnapshot;
-							layoutOutput += setStyles("#"+backgroundImageID, "position:absolute;opacity:"+backgroundImageAlpha+";top:0px;left:0px;", true);
+							layoutOutput += setStyles("#"+backgroundImageID, "position:absolute;opacity:"+backgroundImageAlpha+";top:0px;left:0px;");
+							layoutOutput += setUserAttributes(htmlAttributes);
+							layoutOutput += closeTag(componentInstance, true);
 							/* background-image didn't work in FF on mac. didn't test on other browsers
 							//trace(imageData);
 							var imageDataStyle:String = "#" + getIdentifierOrName(target) + "  {\n";
@@ -989,11 +1007,15 @@ package com.flexcapacitor.utils {
 						
 						if (addContainerDiv) {
 							layoutOutput += setStyles(componentInstance, styleValue);
+							layoutOutput += setUserAttributes(htmlAttributes);
+							layoutOutput += closeTag(componentInstance);
 							layoutOutput += contentToken;
 							layoutOutput += "\n</div>";
 						}
 						else {
+							layoutOutput += setUserAttributes(htmlAttributes);
 							setStyles("body", styleValue);
+							//layoutOutput += closeTag(componentInstance);
 							layoutOutput += contentToken;
 							layoutOutput += "";
 						}
@@ -1032,6 +1054,8 @@ package com.flexcapacitor.utils {
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					layoutOutput += contentToken;
 					layoutOutput += "\n" + tabs + "</" + htmlName + ">";
 					layoutOutput += getWrapperTag(wrapperTag, true);
@@ -1070,6 +1094,8 @@ package com.flexcapacitor.utils {
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					layoutOutput += componentInstance.numElements==0? "&#160;": contentToken;
 					layoutOutput += "\n" + tabs + "</" + htmlName + " >";
 					layoutOutput += getWrapperTag(wrapperTag, true);
@@ -1158,6 +1184,8 @@ package com.flexcapacitor.utils {
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					layoutOutput += contentToken;
 					
 					if (useSpanToCenterInHGroup && verticalAlign=="middle") {
@@ -1192,6 +1220,8 @@ package com.flexcapacitor.utils {
 					//layoutOutput += " class=\"buttonSkin\"";
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
@@ -1226,6 +1256,8 @@ package com.flexcapacitor.utils {
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					
 					if (componentInstance.source) {
 						layoutOutput += "\n" + tabs + "\t<source src=\"" + componentInstance.source + "\">\n";
@@ -1257,6 +1289,8 @@ package com.flexcapacitor.utils {
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 						
 						layoutOutput += setStyles("#"+getIdentifierOrName(componentInstance, true, "_Label"), styleValue);
+						layoutOutput += setUserAttributes(htmlAttributes);
+						layoutOutput += closeTag(componentInstance);
 						layoutOutput += "<" + htmlName + " ";
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput += " type=\"checkbox\" ";
@@ -1274,6 +1308,8 @@ package com.flexcapacitor.utils {
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 						
 						layoutOutput += setStyles(componentInstance, styleValue);
+						layoutOutput += setUserAttributes(htmlAttributes);
+						layoutOutput += closeTag(componentInstance);
 					}
 					
 					if (componentInstance.label!="") {
@@ -1304,6 +1340,8 @@ package com.flexcapacitor.utils {
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 						
 						layoutOutput += setStyles("#"+getIdentifierOrName(componentInstance, true, "_Label"), styleValue);
+						layoutOutput += setUserAttributes(htmlAttributes);
+						layoutOutput += closeTag(componentInstance);
 						layoutOutput += "<" + htmlName + " type=\"radio\" " ;
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput += "/>" ;
@@ -1321,6 +1359,8 @@ package com.flexcapacitor.utils {
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 						
 						layoutOutput += setStyles(componentInstance, styleValue);
+						layoutOutput += setUserAttributes(htmlAttributes);
+						layoutOutput += closeTag(componentInstance);
 					}
 					
 					if (componentInstance.label!="") {
@@ -1422,6 +1462,8 @@ package com.flexcapacitor.utils {
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="dropdownlist" || localName=="list") {
@@ -1456,6 +1498,8 @@ package com.flexcapacitor.utils {
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 					
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					layoutOutput += "</" + htmlName + ">";
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
@@ -1544,6 +1588,8 @@ package com.flexcapacitor.utils {
 					
 					//layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					
 					if (localName=="richtext" || localName=="richeditabletext" || localName=="textarea") {
 						//htmlName = tagName ? tagName : "div";
@@ -1555,7 +1601,7 @@ package com.flexcapacitor.utils {
 						// we need to write another TextConverter.export method that doesn't include the HTML and body tag
 						
 						//layoutOutput += TextConverter.export(RichText(componentInstance).textFlow, TextConverter.TEXT_FIELD_HTML_FORMAT, ConversionType.STRING_TYPE);
-						var test:Object = TextConverter.export(RichText(componentInstance).textFlow, TextConverter.TEXT_FIELD_HTML_FORMAT, ConversionType.XML_TYPE);
+						var test:Object = TextConverter.export(Object(componentInstance).textFlow, TextConverter.TEXT_FIELD_HTML_FORMAT, ConversionType.XML_TYPE);
 						var content:XML;
 						var items:XMLList;
 						var richHTMLOutput:String = "";
@@ -1566,6 +1612,11 @@ package com.flexcapacitor.utils {
 							//if (content) {
 								richHTMLOutput += content.toXMLString() + "\n";
 							//}
+						}
+						
+						// html text is not supported in an HTML textarea
+						if (componentInstance is TextArea) {
+							richHTMLOutput = TextArea(componentInstance).text;
 						}
 						
 						if (richHTMLOutput) {
@@ -1610,6 +1661,8 @@ package com.flexcapacitor.utils {
 					
 					//layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="spacer") {
@@ -1632,6 +1685,8 @@ package com.flexcapacitor.utils {
 					
 					//layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					//output += "&#160;"
 					layoutOutput += "</" + htmlName + ">";
 					
@@ -1700,6 +1755,8 @@ package com.flexcapacitor.utils {
 					
 					//layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
 					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
 					//output += "&#160;"
 					layoutOutput += "</" + htmlName + ">";
 					
@@ -1741,6 +1798,8 @@ package com.flexcapacitor.utils {
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
 						
 						layoutOutput += setStyles(componentInstance, styleValue);
+						layoutOutput += setUserAttributes(htmlAttributes);
+						layoutOutput += closeTag(componentInstance);
 						layoutOutput += getWrapperTag(wrapperTag, true);
 						
 						// if exporting an image then don't export the contents 
@@ -1778,8 +1837,10 @@ package com.flexcapacitor.utils {
 						//stylesOut = wrapperTagStyles + styleValue;
 						stylesOut = styleValue;
 						//layoutOutput += setStyles(componentInstance, wrapperTagStyles + styleValue);
-						layoutOutput += setStyles(componentInstance, styleValue);
 						layoutOutput += getIdentifierOrName(componentInstance);
+						layoutOutput += setStyles(componentInstance, styleValue);
+						layoutOutput += setUserAttributes(htmlAttributes);
+						layoutOutput += closeTag(componentInstance);
 						layoutOutput += "</" + htmlName + ">";
 						
 						layoutOutput += getWrapperTag(wrapperTag, true);
@@ -1800,6 +1861,14 @@ package com.flexcapacitor.utils {
 				if (endOfColumn) {
 					layoutOutput += "<br />";
 				}
+
+				if (htmlBefore) {
+					layoutOutput = htmlBefore + layoutOutput;
+				}
+				
+				if (htmlAfter) {
+					layoutOutput = layoutOutput + htmlAfter;
+				}
 				
 				// add tabs
 				if (layoutOutput!="") {
@@ -1809,6 +1878,7 @@ package com.flexcapacitor.utils {
 				// add anchor - rewrite this using pre or post processor
 				if (wrapWithAnchor) {
 					anchor = <a/>;
+					
 					if (anchorURL) {
 						anchor.@href = anchorURL;
 					}
@@ -1817,12 +1887,26 @@ package com.flexcapacitor.utils {
 						anchor.@target = anchorTarget;
 					}
 					
-					layoutOutput = initialTabs + XMLUtils.getOpeningTag(anchor)  + "\n\t" + layoutOutput + "\n" + initialTabs + "</a>";
+					layoutOutput = initialTabs + XMLUtils.getOpeningTag(anchor)  + "\n" + StringUtils.indent(layoutOutput) + "\n" + initialTabs + "</a>";
 				}
 				
 				// add special wordpress loop code (rewrite later by saving markup to custom field - this will be gone) 
 				if (identity && identity.toLowerCase()=="theloop") {
 					layoutOutput = "\n" + initialTabs + "<!--the loop-->"  + "\n" + layoutOutput + "\n" + initialTabs + "<!--the loop-->";
+				}
+				
+				
+				if (identity) {
+					
+					if (identifiers.indexOf(identity)!=-1) {
+						duplicateIdentifiers.push(identity);
+						
+						errorData = ErrorData.getIssue("Duplicate Identifier", "There is more than one component using the id '" + identity + "'");
+						errors.push(errorData);
+					}
+					else {
+						identifiers.push(identity);
+					}
 				}
 				
 				if (localName=="application" && !addContainerDiv) {
@@ -3188,12 +3272,12 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		/**
 		 * Set styles. REFACTOR This is doing too many things. 
 		 * */
-		public function setStyles(component:Object, stylesValue:String = "", singleton:Boolean = false):String {
+		public function setStyles(component:Object, stylesValue:String = ""):String {
 			var out:String = ">";
 			var formatted:String;
 			
 			if (useInlineStyles) {
-				return " style=\"" + stylesValue + "\"" + (singleton?"\>":">");
+				return " style=\"" + stylesValue + "\"";
 			}
 			else {
 				//formatted= "\t" + stylesValue.replace(/;/g, ";\n\t");
@@ -3224,7 +3308,29 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 				styles += out;
 			}
 			
-			return (singleton?"\>":">");
+			return "";
+		}
+		
+		/**
+		 * Close tag with greater than sign or slash plus greater than sign
+		 * */
+		public function closeTag(component:Object, singleton:Boolean = false):String {
+			
+			return singleton ? "\>" : ">";
+		}
+		
+		/**
+		 * Set user attributes.  
+		 * */
+		public function setUserAttributes(attributesValue:String = ""):String {
+			if (attributesValue) {
+				attributesValue = " " + attributesValue.replace(osNeutralLinebreaks, " ");
+			}
+			else {
+				attributesValue = "";
+			}
+			
+			return attributesValue;
 		}
 		
 		/**

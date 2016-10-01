@@ -45,6 +45,7 @@
 				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENTATION_CHANGE, documentationChangeHandler, false, 0, true);
 				
 				if (Radiate.isDesktop) {
 					currentState = "desktop";
@@ -55,6 +56,8 @@
 						UIComponent(documentationViewer).percentHeight = 100;
 						IVisualElement(documentationViewer).top = 28;
 						addElementAt(IVisualElement(documentationViewer), numElements);
+						documentationViewer.addEventListener(Event.COMPLETE, pageloadCompleteHandler, false, 0, true);
+						documentationViewer.addEventListener(Event.LOCATION_CHANGE, pageloadCompleteHandler, false, 0, true);
 					}
 				}
 				else {
@@ -71,6 +74,12 @@
 					radiate.removeEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler);
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.DOCUMENTATION_CHANGE, documentationChangeHandler);
+					
+					if (documentationViewer) {
+						documentationViewer.removeEventListener(Event.COMPLETE, pageloadCompleteHandler);
+						documentationViewer.removeEventListener(Event.LOCATION_CHANGE, pageloadCompleteHandler);
+					}
 				}
 			}
 			
@@ -147,11 +156,12 @@
 			}
 			
 			public function updateDocumentation():void {
+				var request:URLRequest 
 				
 				if (showDocsCheckbox.selected) {
 					
 					if (openInSeparateWindow.selected) {
-						var request:URLRequest = new URLRequest(lastURL);
+						request= new URLRequest(lastURL);;
 						
 						navigateToURL(request, "asdocs");
 						
@@ -178,7 +188,12 @@
 						textURL.text = lastURL;
 					}
 					else {
-						textURL.text = declaredBy;
+						if (declaredBy) {
+							textURL.text = declaredBy;
+						}
+						else {
+							textURL.text = lastURL;
+						}
 					}
 				}
 				else {
@@ -211,6 +226,28 @@
 					Radiate.info("No documentaion is open");
 				}
 			}
+			
+			protected function documentationChangeHandler(event:RadiateEvent):void
+			{
+				lastURL = event.data as String;
+				updateDocumentation();
+			}
+			
+			private function pageloadCompleteHandler(event:Event):void {
+				var pageTitle:String;
+				var eventType:String = event.type;
+				
+				//if (eventType==Event.COMPLETE || eventType==Event.LOCATION_CHANGE) {
+					if (!showURL.selected) {
+						if (Object(documentationViewer).domWindow) {
+							pageTitle = Object(documentationViewer).domWindow.document.title;
+							declaredBy = pageTitle;
+							textURL.text = pageTitle;
+						}
+					}
+				//}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -232,8 +269,7 @@
 					 borderColor="#A5A5A5"
 					 borderVisible="false"
 					 focusAlpha="0"
-					 editable="false"
-					 prompt="No documentation available. Select a property, style or event."/>
+					 editable="false"/>
 		<s:CheckBox id="showURL" label="Show URL" 
 					selected="false"
 					change="showURL_changeHandler(event)"/>

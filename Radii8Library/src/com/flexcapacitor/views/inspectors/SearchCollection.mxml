@@ -148,7 +148,7 @@
 					   enter="filterInput_enterHandler(event)"
 					   />
 	
-	<s:HGroup width="100%" top="32" left="4" verticalAlign="baseline">
+	<s:HGroup width="100%" top="33" left="4" verticalAlign="baseline">
 		<s:CheckBox id="showAllItemsOnEmpty" label="All" selected="true" 
 					toolTip="Show all items when search field is empty"/>
 		<s:CheckBox id="caseSensitive" label="Case" selected="false"

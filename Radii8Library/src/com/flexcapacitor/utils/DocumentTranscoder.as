@@ -26,75 +26,6 @@ package com.flexcapacitor.utils {
 			
 		}
 		
-		public var fcNamespace:String 		= "fc";
-		public var fxNamespace:String 		= "fx";
-		public var htmlNamespace:String 	= "html";
-		public var mxNamespace:String 		= "mx";
-		public var sparkNamespace:String 	= "s";
-		public var svgNamespace:String 		= "svg";
-		public var xlinkNamespace:String 	= "xlink";
-		public var tlfNamespace:String 		= "flow";
-		
-		public var fcNamespaceURI:String 	= "library://ns.flexcapacitor.com/flex";
-		public var fxNamespaceURI:String 	= "http://ns.adobe.com/mxml/2009";
-		public var htmlNamespaceURI:String 	= "http://www.w3.org/1999/xhtml";
-		public var mxNamespaceURI:String 	= "library://ns.adobe.com/flex";
-		public var sparkNamespaceURI:String = "library://ns.adobe.com/flex/spark";
-		public var svgNamespaceURI:String 	= "http://www.w3.org/2000/svg";
-		public var xlinkNamespaceURI:String = "http://www.w3.org/1999/xlink";
-		public var tlfNamespaceURI:String 	= "http://ns.adobe.com/textLayout/2008";
-		
-		public var xmlDeclaration:String 	= '<?xml version="1.0" encoding="utf-8"?>';
-		
-		private var _defaultNamespaceDeclarations:String;
-
-		/**
-		 * This value is cached after the first run and
-		 * then gets the _defaultNamespaceDeclarations value. 
-		 * it is set to null when namespaces object is set so it can 
-		 * regrab the new values. Not sure if you needed to know all that.
-		 * */
-		public function get defaultNamespaceDeclarations():String {
-			
-			if (_defaultNamespaceDeclarations==null) {
-				_defaultNamespaceDeclarations = "";
-				for (var namespaceName:String in namespaces) {
-					_defaultNamespaceDeclarations += "xmlns:" + namespaceName + "=\"" + namespaces[namespaceName] + "\" ";
-				}
-			}
-			
-			return _defaultNamespaceDeclarations;
-		}
-
-		public function set defaultNamespaceDeclarations(value:String):void {
-			_defaultNamespaceDeclarations = value;
-		}
-			
-		
-		private var _namespaces:Dictionary;
-
-		public function get namespaces():Dictionary {
-			
-			if (_namespaces==null) {
-				_namespaces = new Dictionary();
-				_namespaces[fcNamespace] 	= fcNamespaceURI;
-				_namespaces[fxNamespace] 	= fxNamespaceURI;
-				_namespaces[htmlNamespace] 	= htmlNamespaceURI;
-				_namespaces[mxNamespace] 	= mxNamespaceURI;
-				_namespaces[sparkNamespace] = sparkNamespaceURI;
-				_namespaces[svgNamespace] 	= svgNamespaceURI;
-				_namespaces[xlinkNamespace] = xlinkNamespaceURI;
-				_namespaces[tlfNamespace] 	= tlfNamespaceURI;
-			}
-			
-			return _namespaces;
-		}
-
-		public function set namespaces(value:Dictionary):void {
-			_defaultNamespaceDeclarations = null;
-			_namespaces = value;
-		}
-		
 		/**
 		 * An array of component definitions that can be used to get more information about
 		 * a class or object. You must manually set this.  
@@ -147,6 +78,16 @@ package com.flexcapacitor.utils {
 		 * Components created during import
 		 * */
 		public static var newComponents:Array;
+		
+		/**
+		 * List of component identifiers
+		 * */
+		public var identifiers:Array;
+		
+		/**
+		 * List of duplicate identifiers
+		 * */
+		public var duplicateIdentifiers:Array;
 		
 		/**
 		 * Export from history
@@ -211,6 +152,8 @@ package com.flexcapacitor.utils {
 		public var generatorToken:String = "<!--generator-->";
 		public var pageTitleToken:String = "<!--page_title-->";
 		public var scriptsToken:String = "<!--scripts-->";
+		
+		public var osNeutralLinebreaks:RegExp = /(\t|\r?\n)+/gm;
 		
 		private var _isValid:Boolean;
 
@@ -701,21 +644,27 @@ Default generator string is:
 			generatorTag = value;
 		}
 		
-		public function getDefaultDocumentXML():XML {
-			var document:XML = new XML("<Application/>");
-			var qname:QName;
+		/**
+		 * Returns an XML instance that contains the default MXML Application tag and namespaces
+		 * */
+		public function getDefaultMXMLDocumentXML():XML {
+			var mxmlDocument:XML = new XML(MXMLDocumentConstants.xmlDeclaration + "<Application/>");
+			var sparkNamespace:QName;
 			var namespaceObject:Namespace;
+			var namespaces:Dictionary;
+			
+			namespaces = MXMLDocumentConstants.getNamespaces();
 			
 			for (var prefix:String in namespaces) {
 				//qname = new QName(namespaces[name], name);
-				namespaceObject= new Namespace(prefix, namespaces[prefix]);
-				document.addNamespace(namespaceObject);
+				namespaceObject = new Namespace(prefix, namespaces[prefix]);
+				mxmlDocument.addNamespace(namespaceObject);
 			}
 			
-			qname = new QName(namespaces[sparkNamespace], "Application");
-			document.setName(qname);
+			sparkNamespace = new QName(namespaces[MXMLDocumentConstants.sparkNamespacePrefix], "Application");
+			mxmlDocument.setName(sparkNamespace);
 			
-			return document;
+			return mxmlDocument;
 		}
 	}
 }

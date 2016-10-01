@@ -19,9 +19,6 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.managers.ServicesManager;
-			import com.flexcapacitor.model.MetaData;
-			import com.flexcapacitor.utils.ClassUtils;
-			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.HTMLUtils;
 			
 			import flash.net.navigateToURL;
@@ -67,7 +64,14 @@
 					currentState = "web";
 				}
 				
+				radiate.addEventListener(RadiateEvent.DOCUMENTATION_CHANGE, documentationChangeHandler, false, 0, true);
 				//updateDocumentation();
+			}
+			
+			public function updateLocation(url:String):void {
+				lastURL = url;
+				
+				updateDocumentation();
 			}
 			
 			protected function blogPostsReceivedHandler(event:RadiateEvent):void {
@@ -217,6 +221,13 @@
 			
 			[Bindable]
 			public var newsCollection:ArrayCollection = new ArrayCollection();
+			
+			protected function documentationChangeHandler(event:RadiateEvent):void
+			{
+				lastURL = event.data as String;
+				updateDocumentation();
+			}
+			
 		]]>
 	</fx:Script>
 	

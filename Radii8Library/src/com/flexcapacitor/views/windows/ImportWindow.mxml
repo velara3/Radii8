@@ -6,15 +6,17 @@
 			   xmlns:handlers="com.flexcapacitor.handlers.*"
 			   xmlns:fc="com.flexcapacitor.effects.popup.*"
 			   xmlns:w="com.flexcapacitor.views.windows.*"
+			   xmlns:controls="com.flexcapacitor.controls.*"
 
 			   title="Import MXML"
 			   title.revisions="Select Revision"
-			   creationComplete="animatedpanelwindow1_creationCompleteHandler(event)" xmlns:controls="com.flexcapacitor.controls.*"
+			   creationComplete="animatedpanelwindow1_creationCompleteHandler(event)" 
 			   >
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.model.DocumentRevision;
 			import com.flexcapacitor.model.IDocument;
@@ -23,6 +25,7 @@
 			import com.flexcapacitor.model.TranscoderDescription;
 			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.DocumentTranscoder;
+			import com.flexcapacitor.utils.MXMLDocumentConstants;
 			import com.flexcapacitor.utils.MXMLDocumentImporter;
 			import com.flexcapacitor.utils.XMLUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -141,12 +144,36 @@
 				}
 			}
 			
-			public function showImportedMessage():void {
+			public function showImportedMessage(warnings:Boolean = false, errors:Boolean = false):void {
 				hideMessage();
 				
 				notesGroup.visible = true;
 				notesGroup.includeInLayout = true;
-				messageLabel.text = "Import successful";
+				
+				if (warnings && errors) { 
+					messageLabel.text = "Import successful with errors and warnings. See console";
+				}
+				else if (warnings) {
+					messageLabel.text = "Import successful with warnings. See console";
+				}
+				else if (errors) {
+					messageLabel.text = "Import successful with errors. See console";
+				}
+				else {
+					messageLabel.text = "Import successful";
+				}
+				
+				if (aceEditor.aceFound) {
+					aceEditor.clearAnnotations();
+				}
+			}
+			
+			public function showImportingMessage():void {
+				hideMessage();
+				
+				notesGroup.visible = true;
+				notesGroup.includeInLayout = true;
+				messageLabel.text = "Importing";
 				
 				if (aceEditor.aceFound) {
 					aceEditor.clearAnnotations();
@@ -170,6 +197,11 @@
 					if (result) {
 						showImportedMessage();
 						closeWindow();
+						return;
+					}
+					else {
+						radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, newDocumentOpened, false, 0, true);
+						showImportingMessage();
 						return;
 					}
 				}
@@ -339,17 +371,37 @@
 				isValid = XMLUtils.isValidXML(codeToParse);
 				
 				if (!isValid) {
-					root = '<'+rootNodeName + " " + importer.defaultNamespaceDeclarations +'>';
+					root = '<'+rootNodeName + " " + MXMLDocumentConstants.getDefaultNamespaceDeclarations() +'>';
 					updatedCode = root + codeToParse + "</"+rootNodeName+">";
 				}
 				else {
 					// add missing namespaces here - NOT Finished
-					root = '<'+rootNodeName + " " + importer.defaultNamespaceDeclarations +'>';
+					root = '<'+rootNodeName + " " + MXMLDocumentConstants.getDefaultNamespaceDeclarations() +'>';
 					updatedCode = root + codeToParse + "</"+rootNodeName+">";
 				}
 				
 				aceEditor.text = updatedCode;
 				
+			}
+			
+			protected function newDocumentOpened(event:RadiateEvent):void
+			{
+				var iDocument:IDocument = event.selectedItem as IDocument;
+				var sourceData:SourceData = iDocument ? iDocument.sourceData : null;
+				
+				if (sourceData) {
+					if (sourceData.warnings || sourceData.errors) {
+						showImportedMessage(sourceData.warnings.length>0, sourceData.errors.length>0);
+					}
+					else {
+						showImportedMessage();
+					}
+				}
+				else {
+					showMessage("Did not import successfully");
+				}
+				
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_OPEN, newDocumentOpened);
 			}
 			
 		]]>

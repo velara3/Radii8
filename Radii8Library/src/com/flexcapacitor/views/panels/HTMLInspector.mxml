@@ -19,12 +19,16 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.MXMLDocumentConstants;
 			import com.flexcapacitor.utils.StringUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.collections.ArrayCollection;
 			
-			import spark.events.TextOperationEvent;
+			import flashx.textLayout.conversion.ITextImporter;
+			import flashx.textLayout.conversion.TextConverter;
+			import flashx.textLayout.elements.Configuration;
+			import flashx.textLayout.elements.TextFlow;
 			
 			
 			private var radiate:Radiate = Radiate.instance;
@@ -35,7 +39,7 @@
 			public var componentDescription:ComponentDescription;
 			
 			public var anchorTargetsCollection:ArrayCollection;
-			public var anchorTargets:Array = ["_blank", "new", "_parent", "_self", "_top"];
+			public var anchorTargets:Array = ["_blank", "_parent", "_self", "_top"];
 			
 			public function activate():void {
 				
@@ -69,13 +73,20 @@
 				if (settingTarget) return;
 				var iDocument:IDocument = radiate.selectedDocument;
 				
+				if (iDocument==null) {
+					enabled = false;
+					return;
+				}
+				else {
+					enabled = true;
+				}
+				
 				if (radiate.target!=target) {
 					target = radiate.target;
 					componentDescription = iDocument.getItemDescription(target);
 				}
 				
 				if (componentDescription) {
-					componentCSS.text = componentDescription.userStyles;
 					
 					embedSnapshopIntoBackground.selected = componentDescription.createBackgroundSnapshot;
 					convertElementToImage.selected = componentDescription.convertElementToImage;
@@ -85,7 +96,24 @@
 					urlTextInput.text = componentDescription.anchorURL;
 					
 					tagNameTextInput.text = componentDescription.htmlTagName;
-					htmlOverride.text = componentDescription.htmlOverride;
+					
+					
+					var config:Configuration = new Configuration();
+					var parser:ITextImporter;
+					
+					config.manageTabKey = true;
+					parser = TextConverter.getImporter(TextConverter.PLAIN_TEXT_FORMAT, config);
+					
+					htmlBefore.textFlow = parser.importToFlow(componentDescription.htmlBefore);
+					htmlAfter.textFlow = parser.importToFlow(componentDescription.htmlAfter);
+					htmlOverride.textFlow = parser.importToFlow(componentDescription.htmlOverride);
+					
+					(htmlBefore.textFlow.configuration as Configuration).manageTabKey = true;
+					(htmlAfter.textFlow.configuration as Configuration).manageTabKey = true;
+					(htmlOverride.textFlow.configuration as Configuration).manageTabKey = true;
+					
+					htmlAttributes.text = componentDescription.htmlAttributes;
+					htmlStyles.text = componentDescription.userStyles;
 					
 					embedSnapshopIntoBackground.enabled = componentDescription.isVisualElementContainer;
 				}
@@ -104,7 +132,7 @@
 				
 				settingTarget = true;
 				if (componentDescription) {
-					Radiate.setProperty(componentDescription, "userStyles", componentCSS.text);
+					Radiate.setProperty(componentDescription, "userStyles", htmlStyles.text);
 					Radiate.setTarget(prevTarget, true, "", true);
 				}
 				settingTarget = false;
@@ -221,10 +249,10 @@
 					value = StringUtils.trim(htmlOverride.text);
 					
 					if (value!="") {
-						Radiate.setProperty(componentDescription, "htmlOverride", value);
+						Radiate.setProperty(componentDescription, MXMLDocumentConstants.HTML_OVERRIDE, value);
 					}
 					else {
-						Radiate.clearProperty(componentDescription, "htmlOverride");
+						Radiate.clearProperty(componentDescription, MXMLDocumentConstants.HTML_OVERRIDE);
 					}
 					
 					Radiate.setTarget(prevTarget, true, "", true);
@@ -232,6 +260,80 @@
 				
 				settingTarget = false;
 			}
+			
+			protected function htmlBefore_changeHandler(event:Event):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				var prevTarget:Object = radiate.target;
+				var value:String;
+				
+				if (componentDescription==null && radiate.target) { 
+					componentDescription = iDocument.getItemDescription(target);
+				}
+				
+				settingTarget = true;
+				
+				if (componentDescription) {
+					//Radiate.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
+					value = StringUtils.trim(htmlBefore.text);
+					
+					if (value!="") {
+						Radiate.setProperty(componentDescription, MXMLDocumentConstants.HTML_BEFORE, value);
+					}
+					else {
+						Radiate.clearProperty(componentDescription, MXMLDocumentConstants.HTML_BEFORE);
+					}
+					
+					Radiate.setTarget(prevTarget, true, "", true);
+				}
+				
+				settingTarget = false;
+			}
+			
+			protected function htmlAfter_changeHandler(event:Event):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				var prevTarget:Object = radiate.target;
+				var value:String;
+				
+				if (componentDescription==null && radiate.target) { 
+					componentDescription = iDocument.getItemDescription(target);
+				}
+				
+				settingTarget = true;
+				
+				if (componentDescription) {
+					//Radiate.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
+					value = StringUtils.trim(htmlAfter.text);
+					
+					if (value!="") {
+						Radiate.setProperty(componentDescription, MXMLDocumentConstants.HTML_AFTER, value);
+					}
+					else {
+						Radiate.clearProperty(componentDescription, MXMLDocumentConstants.HTML_AFTER);
+					}
+					
+					Radiate.setTarget(prevTarget, true, "", true);
+				}
+				
+				settingTarget = false;
+			}
+			
+			protected function attributes_changeHandler(event:Event):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				var prevTarget:Object = radiate.target;
+				
+				if (componentDescription==null && radiate.target) {
+					componentDescription = iDocument.getItemDescription(target);
+				}
+				
+				settingTarget = true;
+				if (componentDescription) {
+					Radiate.setProperty(componentDescription, MXMLDocumentConstants.HTML_ATTRIBUTES, htmlAttributes.text);
+					Radiate.setTarget(prevTarget, true, "", true);
+				}
+				settingTarget = false;
+			}
+			
+			
 		]]>
 	</fx:Script>
 	
@@ -259,20 +361,97 @@
 					 />
 	</s:HGroup>
 	
-	<s:Label text="Enter your own CSS here" />
-	
-	<s:TextArea id="componentCSS" width="100%" height="100%"
-				focusOut="componentCSS_changeHandler(event)"
-				change="componentCSS_changeHandler(event)">
+	<mx:TabNavigator id="firstViewStack" 
+					 borderStyle="solid"
+					 width="100%"
+					 height="100%"
+					 selectedIndex="0"
+					 creationPolicy="all">
 		
-	</s:TextArea>
-	<s:Label text="Enter your own HTML here" />
-	
-	<s:TextArea id="htmlOverride" width="100%" height="100%"
-				focusOut="htmlOverride_changeHandler(event)"
-				change="htmlOverride_changeHandler(event)">
+		<!-- CSS -->
+		<s:NavigatorContent width="100%" height="100%" label="CSS">
+			<s:layout>
+				<s:VerticalLayout padding="4"/>
+			</s:layout>
+			
+			<s:TextArea id="htmlStyles" 
+						width="100%" height="100%"
+						prompt="Enter your own CSS here" 
+						toolTip="(Separate each by a semicolon and new line)"
+						focusOut="componentCSS_changeHandler(event)"
+						change="componentCSS_changeHandler(event)"
+						borderVisible="false">
+				
+			</s:TextArea>
+		</s:NavigatorContent>
 		
-	</s:TextArea>
+		<!-- ATTRIBUTES -->
+		<s:NavigatorContent width="100%" height="100%" label="Attributes">
+			<s:layout>
+				<s:VerticalLayout padding="4"/>
+			</s:layout>
+			<s:TextArea id="htmlAttributes" 
+						width="100%" height="100%"
+						prompt="Enter your own attributes here" 
+						toolTip="(Separate each by a new line)"
+						focusOut="attributes_changeHandler(event)"
+						change="attributes_changeHandler(event)"
+						borderVisible="false">
+				
+			</s:TextArea>
+		</s:NavigatorContent>
+		
+		<!-- HTML BEFORE -->
+		<s:NavigatorContent width="100%" height="100%" label="Before">
+			<s:layout>
+				<s:VerticalLayout padding="4"/>
+			</s:layout>
+			<s:TextArea id="htmlBefore" 
+						width="100%" height="100%"
+						tabStops="10"
+						prompt="Enter HTML before content here" 
+						toolTip="Adds HTML before generated output"
+						focusOut="htmlBefore_changeHandler(event)"
+						change="htmlBefore_changeHandler(event)"
+						borderVisible="false">
+				
+			</s:TextArea>
+		</s:NavigatorContent>
+		
+		<!-- HTML AFTER -->
+		<s:NavigatorContent width="100%" height="100%" label="After">
+			<s:layout>
+				<s:VerticalLayout padding="4"/>
+			</s:layout>
+			<s:TextArea id="htmlAfter" 
+						width="100%" height="100%"
+						tabStops="10"
+						prompt="Enter HTML after content here" 
+						toolTip="Adds HTML after generated output"
+						focusOut="htmlAfter_changeHandler(event)"
+						change="htmlAfter_changeHandler(event)"
+						borderVisible="false">
+				
+			</s:TextArea>
+		</s:NavigatorContent>
+		
+		<!-- HTML Override -->
+		<s:NavigatorContent width="100%" height="100%" label="Override">
+			<s:layout>
+				<s:VerticalLayout padding="4"/>
+			</s:layout>
+			<s:TextArea id="htmlOverride" 
+						width="100%" height="100%"
+						tabStops="10"
+						prompt="Enter your own HTML here" 
+						toolTip="Overrides all generated HTML output"
+						focusOut="htmlOverride_changeHandler(event)"
+						change="htmlOverride_changeHandler(event)"
+						borderVisible="false">
+				
+			</s:TextArea>
+		</s:NavigatorContent>
+	</mx:TabNavigator>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="5">
 		<s:CheckBox id="wrapWithAnchor" 
@@ -280,7 +459,7 @@
 					change="wrapWithAnchor_changeHandler(event)"/>
 		<s:ComboBox id="targetsComboBox" 
 					height="22" 
-					width="80" color="blue"
+					width="80" 
 					enabled="{wrapWithAnchor.selected}"
 					textInput="wrapWithAnchor_changeHandler(event)"
 					change="wrapWithAnchor_changeHandler(event)"/>

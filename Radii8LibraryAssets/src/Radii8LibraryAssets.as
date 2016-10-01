@@ -163,6 +163,9 @@ package {
 		[Embed(source="assets/icons/general/save.png")]
 		public static const save:Class;
 		
+		[Embed(source="assets/icons/general/scrollToEnd.png")]
+		public static const scrollToEnd:Class;
+		
 		[Embed(source="assets/icons/general/sendBackwards.png")]
 		public static const sendBackwards:Class;
 		

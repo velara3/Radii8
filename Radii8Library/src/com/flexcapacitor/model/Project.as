@@ -520,7 +520,7 @@ package com.flexcapacitor.model {
 		 * @inheritDoc
 		 * */
 		override public function open(location:String = REMOTE_LOCATION):void {
-			var count:int = documents.length; //fromMetaData ? documentsMetaData.length : documents.length;
+			var numberOfDocuments:int = documents.length; //fromMetaData ? documentsMetaData.length : documents.length;
 			var documentsArray:Array = documents; //fromMetaData ? documentsMetaData : documents;
 			var documentMetaData:IDocumentMetaData;
 			var documentData:IDocumentData;
@@ -540,9 +540,12 @@ package com.flexcapacitor.model {
 			
 			
 			// open documents
+			
 			//if (!fromMetaData) {
+			
+			if (openAllDocumentOnOpen) {
 				
-				for (var i:int;i<count;i++) {
+				for (var i:int;i<numberOfDocuments;i++) {
 					iDocument = IDocument(documentsArray[i]);
 					
 					
@@ -570,13 +573,15 @@ package com.flexcapacitor.model {
 					}
 					else if (isLocal) {
 						iDocument.open(DocumentData.LOCAL_LOCATION);
-						Radiate.instance.openDocumentByData(iDocument, true);
+						Radiate.instance.openDocumentByData(iDocument, true, true);
 					}
 					else if (isInternal) {
 						iDocument.open();
 						Radiate.instance.openDocument(iDocument, location, true);
 					}
 				}
+			}
+			
 			/*	
 			}
 			else {
@@ -613,7 +618,13 @@ package com.flexcapacitor.model {
 		
 		}
 		
+		/**
+		 * Open all documents when open() is called
+		 * */
+		public var openAllDocumentOnOpen:Boolean = true;
+		
 		public var openDocumentOnResults:Boolean;
+		
 		/**
 		 * @inheritDoc
 		 * */
@@ -666,7 +677,7 @@ package com.flexcapacitor.model {
 				}
 				else if (isLocal) {
 					iDocument.open(DocumentData.LOCAL_LOCATION);
-					Radiate.instance.openDocumentByData(iDocument, true);
+					Radiate.instance.openDocumentByData(iDocument, true, true);
 				}
 				else if (isInternal) {
 					iDocument.open();
@@ -741,15 +752,18 @@ package com.flexcapacitor.model {
 				
 				if (!documentCreated) {
 					iDocument = radiate.createDocumentFromMetaData(documentMetaData);
+					
 					if (iDocument.id==null || iDocument.id=="") {
 						Radiate.error("The document, \"" + iDocument.name + "\" was never saved. You have to remember to save new documents. Please save the project to prevent seeing this error again.");
 						continue;
 					}
+					
 					DocumentData(iDocument).addEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler, false, 0, true);
 					//Radiate.info("calling retrieve on document " + iDocument.name);
 					iDocument.retrieve();
 					documents.push(iDocument);
 					iDocument.project = this;
+					
 					/*
 					if (documentData.id==null) {
 						needToWaitForDocumentsOpenResults = true;
@@ -758,7 +772,7 @@ package com.flexcapacitor.model {
 				else {
 					iDocumentData = getDocumentByUID(documentMetaData.uid);
 					iDocumentData.open(location);
-					Radiate.instance.openDocumentByData(iDocumentData, true);
+					Radiate.instance.openDocumentByData(iDocumentData, true, true);
 				}
 			}
 			
@@ -817,12 +831,14 @@ package com.flexcapacitor.model {
 		override public function save(locations:String = REMOTE_LOCATION, options:Object = null):Boolean {
 			var numOfDocuments:int = documents.length;
 			var documentData:IDocumentData;
-			var saveRemote:Boolean = locations.indexOf(REMOTE_LOCATION)!=-1;
-			var saveLocally:Boolean = locations.indexOf(LOCAL_LOCATION)!=-1;
+			var saveRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
+			var saveLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
+			var savedLocally:Boolean;
+			var needToWaitForDocumentsSaveResults:Boolean;
 			
 			// do all documents have remote ID? if not we have to save again when 
 			// we get an ID from the server
-			var needToWaitForDocumentsSaveResults:Boolean = false;
+			needToWaitForDocumentsSaveResults = false;
 			
 			if (id==null) {
 				firstTimeSave = true;
@@ -851,9 +867,9 @@ package com.flexcapacitor.model {
 					Radiate.instance.saveDocument(documentData as IDocument, locations);
 				//}
 			}
-			
+		
 			if (!needToWaitForDocumentsSaveResults) {
-				var savedLocally:Boolean = super.save(locations);
+				savedLocally = super.save(locations);
 			}
 			else {
 				// we need to save the project when we receive the response with the remote ID

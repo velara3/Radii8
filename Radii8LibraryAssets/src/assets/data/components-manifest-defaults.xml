@@ -170,7 +170,7 @@
     </component>
     
     <component id="RichText" class="spark.components.RichText" include="true">
-    	<defaults text="Paragraph"/>
+    	<defaults text="Rich Text"/>
     	<descendents>
     		<property name="textFlow"/>
     	</descendents>

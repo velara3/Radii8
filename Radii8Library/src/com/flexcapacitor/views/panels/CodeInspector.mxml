@@ -804,6 +804,10 @@
 				var iDocument:IDocument = radiate.selectedDocument;
 				var showTemplate:Boolean = editTemplateButton.selected;
 				
+				if (iDocument==null) {
+					return;
+				}
+				
 				if (templateEditor && showTemplate) {
 					editingTemplate = true;
 					templateEditor.text = iDocument.template ? iDocument.template : basicTemplate;
@@ -822,7 +826,9 @@
 			{
 				trace("Uncaught Exception Event: " + event);
 			}
+			
 			public var FIND:String = "find";
+			
 			private function createEditors():void {
 				var settings:Settings = Radiate.settings;
 				var enableWordWrap:Boolean = settings.enableWordWrap;
@@ -1046,13 +1052,6 @@ IFRAME_ID {
 			  fontSize="9"
 			  >
 		
-		<c:SolidFillToggleButton id="editTemplateButton" 
-						label="Edit Template" 
-						toolTip="Edit the webpage template"
-						visible="{isHTML}"
-						includeInLayout="{isHTML}"
-						click="editTemplateButton_clickHandler(event)"/>
-		
 		<c:BeveledImageButton id="resetTemplateButton"
 							  source="{Radii8LibraryAssets.refresh}"
 							  toolTip="Reset template code"
@@ -1075,6 +1074,13 @@ IFRAME_ID {
 					 click="languageType_changeHandler(null)"
 					 dataProvider="{languageTypes}">
 		</c:SolidFillButtonBar>
+		
+		<c:SolidFillToggleButton id="editTemplateButton" 
+								 label="Edit Template" 
+								 toolTip="Edit the webpage template"
+								 visible="{isHTML}"
+								 includeInLayout="{isHTML}"
+								 click="editTemplateButton_clickHandler(event)"/>
 		
 		<!--<mx:LinkBar id="languageTypeLinkButtons"
 					itemClick="languageTypeLinkBar_changeHandler()"

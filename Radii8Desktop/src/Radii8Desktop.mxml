@@ -28,6 +28,18 @@
 					   >
 
 					   <!--- 
+	
+	WHEN NOT ONLINE LAYOUT IS NOT VALID. POSSIBLY BECAUSE SUSPEND BACKGROUND PROCESSING??
+	
+	Do something with the following:
+	
+	UIComponentGlobals.layoutManager.validateNow();
+	// Block all layout, responses from web service, and other background
+	// processing until the tween finishes executing.
+	UIComponent.suspendBackgroundProcessing();
+	
+	
+
 					   splashScreenImage="@Embed('../splashscreen/splashscreen.png')"
 					   splashScreenMinimumDisplayTime="15000"
 	
@@ -73,6 +85,8 @@
 				import mx.collections.ArrayCollection;
 				import mx.core.FTETextField;
 				import mx.core.FlexHTMLLoader;
+				import mx.core.UIComponent;
+				import mx.core.UIComponentGlobals;
 				import mx.events.AIREvent;
 				import mx.events.FlexEvent;
 				import mx.events.FlexNativeMenuEvent;

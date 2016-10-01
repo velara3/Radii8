@@ -44,6 +44,13 @@
 			}
 			
 			protected function openHomePageInBrowserButton_clickHandler():void {
+				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
+				
+				if (!usersSignedIn) {
+					Radiate.warn("You must be signed into your account to visit your homepage");
+					return;
+				}
 				
 				if (Radiate.instance.projectHomePageID<1) {
 					Radiate.warn("A home page has not been set. Showing the default theme home page");
@@ -60,22 +67,53 @@
 				if (iDocument) {
 					RunManager.openDocumentAsImageInPopUp(iDocument as DocumentData);
 				}
+				else {
+					Radiate.info("Please select a document before previewing");
+				}
 			}
 			
 			protected function openDocumentInBrowserButton_clickHandler(event:MouseEvent):void {
-				RunManager.openDocumentInBrowser();
+				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				
+				if (iDocument) {
+					RunManager.openDocumentInBrowser();
+				}
+				else {
+					Radiate.info("Please select a document before previewing in the system browser");
+				}
 			}
 			
 			protected function openDocumentInInternalWebIcon_clickHandler(event:MouseEvent):void{
-				RunManager.openDocumentInInternalWeb(radiate.selectedDocument);
+				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				
+				if (iDocument) {
+					RunManager.openDocumentInInternalWeb(radiate.selectedDocument);
+				}
+				else {
+					Radiate.info("Please select a document before previewing in the internal browser");
+				}
 			}
 			
 			protected function openDocumentInBrowserScreenshotButton_clickHandler(event:MouseEvent):void {
-				RunManager.openDocumentInBrowserScreenshot();
+				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				
+				if (iDocument) {
+					RunManager.openDocumentInBrowserScreenshot();
+				}
+				else {
+					Radiate.info("Please select a document before previewing in the browser screenshots");
+				}
 			}
 			
 			protected function openDocumentInBrowserSiteScannerButton_clickHandler(event:MouseEvent):void {
-				RunManager.openDocumentInBrowserSiteScanner();
+				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				
+				if (iDocument) {
+					RunManager.openDocumentInBrowserSiteScanner();
+				}
+				else {
+					Radiate.info("Please select a document before previewing in a browser site scanner");
+				}
 			}
 			
 		]]>

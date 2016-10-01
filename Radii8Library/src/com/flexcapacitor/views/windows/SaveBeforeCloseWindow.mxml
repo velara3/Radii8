@@ -240,8 +240,8 @@
 					 />
 			<s:Spacer width="100%"/>
 			<s:Button id="cancelButton" label="Cancel" click="cancelButton_clickHandler(event)" />
-			<s:Button label="Close without Saving" click="closeWithoutSaving()" />
-			<s:Button label="Save and close" click="saveResource()" />
+			<s:Button label="Close" click="closeWithoutSaving()" />
+			<s:Button label="Save" click="saveResource()" />
 		</s:HGroup>
 		
 	</s:VGroup>

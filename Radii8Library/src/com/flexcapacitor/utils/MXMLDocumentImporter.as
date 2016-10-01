@@ -15,6 +15,7 @@ package com.flexcapacitor.utils {
 	
 	import flash.display.BitmapData;
 	import flash.system.ApplicationDomain;
+	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
 	import mx.core.IVisualElementContainer;
@@ -28,7 +29,7 @@ package com.flexcapacitor.utils {
 	import flashx.textLayout.conversion.TextLayoutImporter;
 	import flashx.textLayout.elements.IConfiguration;
 	import flashx.textLayout.elements.TextFlow;
-
+	
 	
 	/**
 	 * Import MXML into a IDocument. Basic support of creating components and apply properties and styles. 
@@ -48,7 +49,7 @@ package com.flexcapacitor.utils {
 			var componentDefinition:ComponentDefinition;
 			var sourceData:SourceData;
 			var container:IVisualElementContainer;
-			var rootNodeName:String = "RootWrapperNode";
+			var rootNodeName:String;
 			var elName:String;
 			var root:String;
 			var timer:int;
@@ -57,6 +58,7 @@ package com.flexcapacitor.utils {
 			var isValid:Boolean;
 			var codeWasWrapped:Boolean;
 			
+			
 			errors = [];
 			warnings = [];
 			
@@ -64,13 +66,15 @@ package com.flexcapacitor.utils {
 			
 			source = StringUtils.trim(source);
 			
-			// VALID XML BEFORE IMPORTING
+			// VALIDATE XML BEFORE IMPORTING
 			isValid = XMLUtils.isValidXML(source);
 			sourceData = new SourceData();
 			
 			if (!isValid) {
+				rootNodeName = "RootWrapperNode";
+				
 				// not valid so try adding namespaces and a root node
-				root = "<"+rootNodeName + " " + defaultNamespaceDeclarations + ">";
+				root = "<"+rootNodeName + " " + MXMLDocumentConstants.getDefaultNamespaceDeclarations() + ">";
 				updatedCode = root + "\n" + source + "\n</"+rootNodeName+">";
 				
 				isValid = XMLUtils.isValidXML(updatedCode);
@@ -135,6 +139,7 @@ package com.flexcapacitor.utils {
 				else {
 					
 					if (elName==rootNodeName || codeWasWrapped) {
+						
 						for each (var childNode:XML in mxml.children()) {
 							createChildFromNode(childNode, container, document, 0);
 						}
@@ -182,7 +187,7 @@ package com.flexcapacitor.utils {
 			var kind:String;
 			var domain:ApplicationDomain;
 			var componentDefinition:ComponentDefinition;
-			var includeChildren:Boolean = true;
+			var includeChildNodes:Boolean;
 			var className:String;
 			var classType:Class;
 			var componentDescription:ComponentDescription;
@@ -196,15 +201,23 @@ package com.flexcapacitor.utils {
 			var attributeNotFound:String;
 			var handledChildNodes:Array = [];
 			var localName:String;
-			var textFlowXML:XML;
-			var textFlow:TextFlow;
-			var parser:ITextImporter;
+			var fullNodeName:String;
 			var tlfErrors:Vector.<String>;
 			var tlfError:String;
-			var TEXT_FLOW:String = "textFlow";
-			var HTML_OVERRIDE:String = "htmlOverride";
-			var flowNamespace:Namespace;
-			var fixTextFlowNamespaceBug:Boolean = true;
+			var fixTextFlowNamespaceBug:Boolean;
+			var attributesErrorMessage:String;
+			var elementID:String;
+			var ignoreNamespaceAttributes:Boolean;
+			var htmlOverrideName:String;
+			var htmlAttributesName:String;
+			var valuesObject:ValuesObject;
+			var attributes:Array;
+			var attributesNotFound:Array;
+			var childNodeNames:Array;
+			var qualifiedChildNodeNames:Array;
+			
+			includeChildNodes = true;
+			fixTextFlowNamespaceBug = true;
 			
 			elementName = node.localName();
 			qualifiedName = node.name();
@@ -288,50 +301,26 @@ package com.flexcapacitor.utils {
 				// calling add before setting properties because some 
 				// properties such as borderVisible and trackingLeft/trackingRight need to be set after 
 				// the component is added (maybe)
-				var valuesObject:ValuesObject = Radiate.getPropertiesStylesEventsFromNode(componentInstance, node, componentDefinition);
-				var attributes:Array = valuesObject.attributes;
-				var childNodeNames:Array = valuesObject.childNodeNames;
+				valuesObject = Radiate.getPropertiesStylesEventsFromNode(componentInstance, node, componentDefinition);
+				attributes = valuesObject.attributes;
+				
+				// remove attributes with namespaces for now but warn about attributes that are not found
+				attributesNotFound = ArrayUtils.removeAllItems(valuesObject.attributesNotFound, valuesObject.qualifiedAttributes);
+				childNodeNames = valuesObject.childNodeNames;
+				qualifiedChildNodeNames = valuesObject.qualifiedChildNodeNames;
 				//var typedValueObject:Object = Radiate.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
 				
-				var bitmapDataID:String = fcNamespaceURI + "::bitmapDataId";
-				
-				if (attributes.indexOf(bitmapDataID)!=-1) {
-					var bitmapDataId:String = valuesObject.values[bitmapDataID];
-					var bitmapData:BitmapData = Radiate.getBitmapDataFromImageDataID(bitmapDataId);
-					
-					if (bitmapData) {
-						valuesObject.values["source"] = bitmapData;
-					}
+				// when copying images that do not have a URL then we use a internal reference id
+				// used when copying and pasting MXML
+				if (attributes.indexOf(MXMLDocumentConstants.BITMAP_DATA_ID_NS)!=-1) {
+					setBitmapData(componentDescription, valuesObject, MXMLDocumentConstants.BITMAP_DATA_ID_NS);
 				}
 				
-				
-				if (childNodeNames.indexOf(TEXT_FLOW)!=-1) {
-					//textFlow = TextConverter.importToFlow(valuesObject.childNodeValues[TEXT_FLOW], TextConverter.TEXT_LAYOUT_FORMAT);
-
-					
-					if (textFlow==null) {
-						//parser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT) as ITextImporter;
-						//tlfErrors = parser.errors;
-						parser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT, null);
-						//if (!parser)
-						//	return null;
-						parser.throwOnError = false;
-						flowNamespace = TextLayoutImporter(parser).ns;
-						textFlowXML = new XML(valuesObject.childNodeValues[TEXT_FLOW]);
-						
-						if (fixTextFlowNamespaceBug) {
-							textFlowXML = getTextFlowWithNamespace(textFlowXML);
-						}
-						if (valuesObject.childNodeValues[TEXT_FLOW]!="") {
-							
-						}
-						//textFlowXML = new XML(valuesObject.childNodeValues[TEXT_FLOW]);
-						textFlow = parser.importToFlow(textFlowXML);
-						tlfErrors = parser.errors;
-					}
-					
-					valuesObject.values[TEXT_FLOW] = textFlow;
-					handledChildNodes.push(TEXT_FLOW);
+				// import TextFlow
+				if (childNodeNames.indexOf(MXMLDocumentConstants.TEXT_FLOW)!=-1 || 
+					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.TEXT_FLOW_NS)!=-1) {
+					tlfErrors = setTextFlow(componentDescription, valuesObject, fixTextFlowNamespaceBug);
+					handledChildNodes.push(MXMLDocumentConstants.TEXT_FLOW_NS);
 				}
 				
 				if (!componentAlreadyAdded) {
@@ -358,6 +347,42 @@ package com.flexcapacitor.utils {
 				componentDescription.nodeXML = node;
 				
 				// setting namespace attributes - refactor
+				
+				// first refactor - this may be slower than what we're doing but not sure how much slower
+				// would need to create functions to handle each attribute
+				/*
+				*/
+				var importFunction:Function;
+				
+				if (specializedMembers==null) {
+					specializedMembers = getValidNamespaceAttributes();
+				}
+				
+				for (var namespaceAttribute:String in specializedMembers) {
+					
+					if (attributes.indexOf(namespaceAttribute)!=-1 || 
+						childNodeNames.indexOf(namespaceAttribute)!=-1 || 
+						qualifiedChildNodeNames.indexOf(namespaceAttribute)!=-1) {
+						importFunction = specializedMembers[namespaceAttribute] as Function;
+						
+						if (importFunction!=null) {
+							if (importFunction.length==2) {
+								importFunction(componentDescription, valuesObject.values[namespaceAttribute]);
+							}
+							else {
+								importFunction(componentDescription, valuesObject, namespaceAttribute);
+							}
+							
+							if (childNodeNames.indexOf(namespaceAttribute)!=-1 || 
+								qualifiedChildNodeNames.indexOf(namespaceAttribute)!=-1) {
+								handledChildNodes.push(namespaceAttribute);
+							}
+						}
+					}
+				}
+				
+				// original code
+				/*
 				var lockedName:String = fcNamespaceURI + "::locked";
 				
 				if (attributes.indexOf(lockedName)!=-1) {
@@ -411,19 +436,40 @@ package com.flexcapacitor.utils {
 					componentDescription.htmlTagName = valuesObject.values[htmlTagName];
 				}
 				
-				var htmlOverrideName:String;
 				var htmlOverride:String;
+				var htmlAttributes:String;
 				var tabCount:int;
 				
-				htmlOverrideName = htmlNamespaceURI + "::" + HTML_OVERRIDE;
+				htmlOverrideName = htmlNamespaceURI + "::" + MXMLDocumentConstants.HTML_OVERRIDE;
 				
-				if (childNodeNames.indexOf(HTML_OVERRIDE)!=-1) {
-					htmlOverride = valuesObject.values[HTML_OVERRIDE];
+				if (childNodeNames.indexOf(MXMLDocumentConstants.HTML_OVERRIDE)!=-1) {
+					htmlOverride = valuesObject.values[MXMLDocumentConstants.HTML_OVERRIDE];// should be htmlOverrideName?
 					htmlOverride = htmlOverride.indexOf("\n")==0 ? htmlOverride.substr(1) : htmlOverride.substr();
 					tabCount = StringUtils.getTabCountBeforeContent(htmlOverride);
 					htmlOverride = StringUtils.outdent(htmlOverride, tabCount);
 					componentDescription.htmlOverride = htmlOverride;
-					handledChildNodes.push(HTML_OVERRIDE);
+					handledChildNodes.push(MXMLDocumentConstants.HTML_OVERRIDE);
+				}
+				
+				htmlAttributesName = htmlNamespaceURI + "::" + MXMLDocumentConstants.HTML_ATTRIBUTES;
+				
+				if (childNodeNames.indexOf(MXMLDocumentConstants.HTML_ATTRIBUTES)!=-1) {
+					htmlAttributes = valuesObject.values[MXMLDocumentConstants.HTML_ATTRIBUTES]; // should be htmlAttributesName?
+					htmlAttributes = htmlAttributes.indexOf("\n")==0 ? htmlAttributes.substr(1) : htmlAttributes.substr();
+					tabCount = StringUtils.getTabCountBeforeContent(htmlAttributes);
+					htmlAttributes = StringUtils.outdent(htmlAttributes, tabCount);
+					componentDescription.htmlAttributes = htmlAttributes;
+					handledChildNodes.push(MXMLDocumentConstants.HTML_ATTRIBUTES);
+				}
+				*/
+				
+				
+				if (childNodeNames.indexOf(MXMLDocumentConstants.HTML_OVERRIDE_NS)!=-1) {
+					handledChildNodes.push(MXMLDocumentConstants.HTML_OVERRIDE_NS);
+				}
+				
+				if (childNodeNames.indexOf(MXMLDocumentConstants.HTML_ATTRIBUTES_NS)!=-1) {
+					handledChildNodes.push(MXMLDocumentConstants.HTML_ATTRIBUTES_NS);
 				}
 				
 				for each (tlfError in tlfErrors) {
@@ -455,12 +501,18 @@ package com.flexcapacitor.utils {
 					errors.push(errorData);
 				}
 				
-				for each (attributeNotFound in valuesObject.attributesNotFound) {
+				// right now we are skipping any attributes that have a namespace 
+				// and have removed them in code above but still warn about normal attributes that are not found
+				for each (attributeNotFound in attributesNotFound) {
+					attributesErrorMessage = "Attribute '" + attributeNotFound + "' was not found on " + elementName;
 					errorData = ErrorData.getIssue("Invalid attribute", "Attribute '" + attributeNotFound + "' was not found on " + elementName);
 					errors.push(errorData);
 				}
 				
-				newComponents.push(componentInstance);
+				if (newComponents) {
+					newComponents.push(componentInstance);
+				}
+				
 				// might want to get a properties object from the attributes 
 				// and then use that in the add element call above 
 				//Radiate.setAttributesOnComponent(instance, node, componentDefinition, false);
@@ -470,12 +522,14 @@ package com.flexcapacitor.utils {
 			
 			var instance:Object;
 			
-			if (includeChildren) {
+			if (includeChildNodes) {
 				
 				for each (var childNode:XML in node.children()) {
 					localName = childNode.localName();
+					fullNodeName = childNode.name().toString();
 					
-					if (handledChildNodes.indexOf(localName)!=-1) {
+					if (handledChildNodes.indexOf(localName)!=-1 || 
+						handledChildNodes.indexOf(fullNodeName)!=-1) {
 						// needs to be more robust
 						continue;
 					}
@@ -492,8 +546,8 @@ package com.flexcapacitor.utils {
 		 * */
 		public function getTextFlowWithNamespace(value:Object):XML {
 			var xml:XML = value as XML;
-			var tlfNamespace:Namespace = new Namespace(tlfNamespace, tlfNamespaceURI);
-			xml.removeNamespace(new Namespace(sparkNamespace, sparkNamespaceURI));
+			var tlfNamespace:Namespace = new Namespace(tlfNamespace, MXMLDocumentConstants.tlfNamespaceURI);
+			xml.removeNamespace(new Namespace(MXMLDocumentConstants.sparkNamespacePrefix, MXMLDocumentConstants.sparkNamespaceURI));
 			xml.setNamespace(tlfNamespace);
 			
 			for each (var node:XML in xml.descendants()) {
@@ -506,5 +560,186 @@ package com.flexcapacitor.utils {
 			
 			return xml;
 		}
+		
+		/**
+		 * For now, we create an array of valid namespace attributes
+		 * */
+		public function getValidNamespaceAttributes():Dictionary {
+			if (specializedMembers==null) {
+				specializedMembers = new Dictionary(true);
+				
+				specializedMembers[MXMLDocumentConstants.BITMAP_DATA_ID_NS] = setBitmapData;
+				
+				specializedMembers[MXMLDocumentConstants.LOCKED_NS] = setLockedStatus;
+				specializedMembers[MXMLDocumentConstants.CONVERT_TO_IMAGE_NS] = convertToImage;
+				specializedMembers[MXMLDocumentConstants.CREATE_BACKGROUND_SNAPSHOT_NS] = createBackgroundSnapshot;
+				specializedMembers[MXMLDocumentConstants.WRAP_WITH_ANCHOR_NS] = wrapWithAnchor;
+				specializedMembers[MXMLDocumentConstants.ANCHOR_TARGET_NS] = setAnchorTarget;
+				specializedMembers[MXMLDocumentConstants.ANCHOR_URL_NS] = setAnchorURL;
+				
+				specializedMembers[MXMLDocumentConstants.LAYER_NAME_NS] = setLayerName;
+				
+				specializedMembers[MXMLDocumentConstants.HTML_TAG_NAME_NS] = setHTMLTagName;
+				specializedMembers[MXMLDocumentConstants.HTML_OVERRIDE_NS] = setHTMLOverride;
+				specializedMembers[MXMLDocumentConstants.HTML_ATTRIBUTES_NS] = setHTMLAttributes;
+				specializedMembers[MXMLDocumentConstants.HTML_BEFORE_NS] = setHTMLBefore;
+				specializedMembers[MXMLDocumentConstants.HTML_AFTER_NS] = setHTMLAfter;
+				specializedMembers[MXMLDocumentConstants.HTML_STYLES_NS] = setHTMLStyle;
+				
+			}
+			
+			return specializedMembers;
+		}
+		
+		public var specializedMembers:Dictionary;
+		
+		public function setLockedStatus(componentDescription:ComponentDescription, value:*):void {
+			componentDescription.locked = value;
+		}
+		
+		public function setBitmapData(componentDescription:ComponentDescription, valuesObject:ValuesObject, attributeName:String):void {
+			var bitmapDataId:String;
+			var bitmapData:BitmapData;
+			
+			bitmapDataId = valuesObject.values[attributeName];
+			bitmapData = Radiate.getBitmapDataFromImageDataID(bitmapDataId);
+			
+			if (bitmapData) {
+				valuesObject.values["source"] = bitmapData;
+			}
+		}
+		
+		public function convertToImage(componentDescription:ComponentDescription, value:*):void {
+			componentDescription.convertElementToImage = value;
+		}
+		
+		public function createBackgroundSnapshot(componentDescription:ComponentDescription, value:*):void {
+			componentDescription.createBackgroundSnapshot = value;
+		}
+		
+		public function wrapWithAnchor(componentDescription:ComponentDescription, value:*):void {
+			componentDescription.wrapWithAnchor = value;
+		}
+		
+		public function setAnchorURL(componentDescription:ComponentDescription, value:String):void {
+			componentDescription.anchorURL = value;
+		}
+		
+		public function setAnchorTarget(componentDescription:ComponentDescription, value:String):void {
+			componentDescription.anchorTarget = value;
+		}
+		
+		public function setLayerName(componentDescription:ComponentDescription, value:String):void {
+			componentDescription.name = value;
+		}
+		
+		public function setHTMLTagName(componentDescription:ComponentDescription, value:String):void {
+			componentDescription.htmlTagName = value;
+		}
+		
+		public function setHTMLOverride(componentDescription:ComponentDescription, value:String):void {
+			var htmlOverride:String;
+			var tabCount:int;
+			
+			htmlOverride = value;
+			htmlOverride = htmlOverride.indexOf("\n")==0 ? htmlOverride.substr(1) : htmlOverride.substr();
+			tabCount = StringUtils.getTabCountBeforeContent(htmlOverride);
+			htmlOverride = StringUtils.outdent(htmlOverride, tabCount);
+			componentDescription.htmlOverride = htmlOverride;
+			
+		}
+		
+		public function setHTMLBefore(componentDescription:ComponentDescription, value:String):void {
+			var htmlBefore:String;
+			var tabCount:int;
+			
+			htmlBefore = value;
+			htmlBefore = htmlBefore.indexOf("\n")==0 ? htmlBefore.substr(1) : htmlBefore.substr();
+			tabCount = StringUtils.getTabCountBeforeContent(htmlBefore);
+			htmlBefore = StringUtils.outdent(htmlBefore, tabCount);
+			componentDescription.htmlBefore = htmlBefore;
+			
+		}
+		
+		public function setHTMLAfter(componentDescription:ComponentDescription, value:String):void {
+			var htmlAfter:String;
+			var tabCount:int;
+			
+			htmlAfter = value;
+			htmlAfter = htmlAfter.indexOf("\n")==0 ? htmlAfter.substr(1) : htmlAfter.substr();
+			tabCount = StringUtils.getTabCountBeforeContent(htmlAfter);
+			htmlAfter = StringUtils.outdent(htmlAfter, tabCount);
+			componentDescription.htmlAfter = htmlAfter;
+			
+		}
+		
+		public function setHTMLAttributes(componentDescription:ComponentDescription, value:String):void {
+			var htmlAttributes:String;
+			var tabCount:int;
+			
+			htmlAttributes = value; // should be htmlAttributesName?
+			htmlAttributes = htmlAttributes.indexOf("\n")==0 ? htmlAttributes.substr(1) : htmlAttributes.substr();
+			tabCount = StringUtils.getTabCountBeforeContent(htmlAttributes);
+			htmlAttributes = StringUtils.outdent(htmlAttributes, tabCount);
+			componentDescription.htmlAttributes = htmlAttributes;
+			
+		}
+		
+		public function setHTMLStyle(componentDescription:ComponentDescription, value:String):void {
+			componentDescription.userStyles = value;
+		}
+		
+		
+		public var textFlowParser:ITextImporter;
+		
+		/**
+		 * Convert TextFlow XML into actual text flow instance and set the value object to it
+		 * */
+		public function setTextFlow(componentDescription:ComponentDescription, valuesObject:ValuesObject, fixTextFlowNamespaceBug:Boolean):Vector.<String> {
+			var textFlowString:String;
+			var textFlowXML:XML;
+			var textFlow:TextFlow;
+			var parser:ITextImporter;
+			var flowNamespace:Namespace;
+			
+			if (textFlow==null) {
+				//parser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT) as ITextImporter;
+				//tlfErrors = parser.errors;
+				
+				if (textFlowParser==null) {
+					parser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT, null);
+				}
+				//if (!parser)
+				//	return null;
+				
+				parser.throwOnError = false;
+				flowNamespace = TextLayoutImporter(parser).ns;
+				
+				textFlowString = valuesObject.childNodeValues[MXMLDocumentConstants.TEXT_FLOW];
+				
+				// if not found it may be using an alternate namespace
+				if (textFlowString==null) {
+					textFlowString = valuesObject.childNodeValues[MXMLDocumentConstants.TEXT_FLOW_NS];
+				}
+				
+				textFlowXML = new XML(textFlowString);
+				
+				if (fixTextFlowNamespaceBug) {
+					textFlowXML = getTextFlowWithNamespace(textFlowXML);
+				}
+				
+				//if (valuesObject.childNodeValues[MXMLDocumentConstants.TEXT_FLOW]!="") {
+					
+				//}
+				
+				//textFlowXML = new XML(valuesObject.childNodeValues[TEXT_FLOW]);
+				textFlow = parser.importToFlow(textFlowXML);
+			}
+			
+			valuesObject.values[MXMLDocumentConstants.TEXT_FLOW] = textFlow;
+			
+			return parser.errors;
+		}
+		
 	}
 }

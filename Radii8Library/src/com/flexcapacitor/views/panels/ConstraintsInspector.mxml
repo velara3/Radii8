@@ -1285,6 +1285,8 @@
 			 * */
 			protected function targetChangeHandler(event:RadiateEvent):void {
 				target = event.selectedItem;
+				
+				enabled = target ? true : false;
 			}
 			
 			/**

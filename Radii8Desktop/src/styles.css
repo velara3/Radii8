@@ -107,6 +107,11 @@ controls|SearchTextInput:normalWithPrompt {
 	color: #b8b8b8;
 }
 
+controls|ClearButtonTextInput:normalWithPrompt {
+	fontStyle:normal;
+	color: #b8b8b8;
+}
+
 
 mx|MenuBar#mainMenuBar {
     /*chromeColor: #333333;
@@ -210,6 +215,7 @@ mx|TabBar {
 }
 
 controls|ColorPicker {
+	textInputClass:ClassReference("com.flexcapacitor.controls.ClearButtonTextInput");
 	swatchPanelStyleName:mySwatchPanelStyle;
 }
 

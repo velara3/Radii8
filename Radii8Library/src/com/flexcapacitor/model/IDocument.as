@@ -19,6 +19,12 @@ package com.flexcapacitor.model {
 		function get projectID():String;
 		
 		/**
+		 * Reference to last source data object 
+		 * */
+		function set sourceData(value:SourceData):void;
+		function get sourceData():SourceData;
+		
+		/**
 		 * Parent project. Some documents may not need projects. 
 		 * */
 		function get project():IProject;

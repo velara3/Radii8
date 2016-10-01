@@ -22,6 +22,8 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.components.IDocumentContainer;
 	import com.flexcapacitor.controls.ColorPicker;
 	import com.flexcapacitor.controls.Hyperlink;
+	import com.flexcapacitor.controls.RichTextEditorBar;
+	import com.flexcapacitor.controls.RichTextEditorBarCallout;
 	import com.flexcapacitor.effects.core.CallMethod;
 	import com.flexcapacitor.effects.core.PlayerType;
 	import com.flexcapacitor.effects.file.LoadFile;
@@ -77,6 +79,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DocumentTranscoder;
 	import com.flexcapacitor.utils.HTMLUtils;
+	import com.flexcapacitor.utils.MXMLDocumentConstants;
 	import com.flexcapacitor.utils.MXMLDocumentImporter;
 	import com.flexcapacitor.utils.PersistentStorage;
 	import com.flexcapacitor.utils.SharedObjectUtils;
@@ -87,6 +90,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.views.IInspector;
 	import com.flexcapacitor.views.MainView;
+	import com.flexcapacitor.views.Remote;
 	import com.flexcapacitor.views.windows.ImportWindow;
 	import com.google.code.flexiframe.IFrame;
 	
@@ -176,6 +180,7 @@ package com.flexcapacitor.controller {
 	import spark.components.Button;
 	import spark.components.CheckBox;
 	import spark.components.ComboBox;
+	import spark.components.ContentBackgroundAppearance;
 	import spark.components.DropDownList;
 	import spark.components.Grid;
 	import spark.components.Image;
@@ -196,13 +201,17 @@ package com.flexcapacitor.controller {
 	import spark.core.ContentCache;
 	import spark.core.IGraphicElement;
 	import spark.core.IViewport;
+	import spark.events.PopUpEvent;
+	import spark.events.TextOperationEvent;
 	import spark.formatters.DateTimeFormatter;
 	import spark.layouts.BasicLayout;
 	import spark.primitives.BitmapImage;
 	import spark.primitives.Rect;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.DefaultGridItemRenderer;
+	import spark.utils.TextFlowUtil;
 	
+	import flashx.textLayout.conversion.ConversionType;
 	import flashx.textLayout.conversion.ITextImporter;
 	import flashx.textLayout.conversion.TextConverter;
 	import flashx.textLayout.elements.IConfiguration;
@@ -249,6 +258,11 @@ package com.flexcapacitor.controller {
 	[Event(name="targetChange", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
+	 * Dispatched when the documentation url is changed
+	 * */
+	[Event(name="documentationChange", type="com.flexcapacitor.events.RadiateEvent")]
+	
+	/**
 	 * Dispatched when the document is changed
 	 * */
 	[Event(name="documentChange", type="com.flexcapacitor.events.RadiateEvent")]
@@ -262,6 +276,11 @@ package com.flexcapacitor.controller {
 	 * Dispatched when a document is opened
 	 * */
 	[Event(name="documentOpen", type="com.flexcapacitor.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when a console value is changed
+	 * */
+	[Event(name="consoleValueChange", type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a document is renamed
@@ -915,6 +934,12 @@ package com.flexcapacitor.controller {
 		 */
 		[Bindable]
 		public static var mainView:MainView;
+		
+		/**
+		 * Reference to the application main layout
+		 */
+		[Bindable]
+		public static var remoteView:Remote;
 		
 		/**
 		 * Reference to the application main view importPopUp
@@ -1662,6 +1687,31 @@ package com.flexcapacitor.controller {
 			}
 		}
 		
+		/**
+		 * Dispatch console value change event
+		 * */
+		public function dispatchConsoleValueChangeEvent(value:String):void {
+			var documentationChangeEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.CONSOLE_VALUE_CHANGE)) {
+				documentationChangeEvent = new RadiateEvent(RadiateEvent.CONSOLE_VALUE_CHANGE, false, false);
+				documentationChangeEvent.data = value;
+				dispatchEvent(documentationChangeEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch documentation change event
+		 * */
+		public function dispatchDocumentationChangeEvent(url:String):void {
+			var documentationChangeEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.DOCUMENTATION_CHANGE)) {
+				documentationChangeEvent = new RadiateEvent(RadiateEvent.DOCUMENTATION_CHANGE, false, false);
+				documentationChangeEvent.data = url;
+				dispatchEvent(documentationChangeEvent);
+			}
+		}
 		
 		/**
 		 * Dispatch document add event
@@ -1731,6 +1781,7 @@ package com.flexcapacitor.controller {
 			
 			if (hasEventListener(RadiateEvent.PROJECT_REMOVED)) {
 				projectRemovedEvent = new RadiateEvent(RadiateEvent.PROJECT_REMOVED, false, false, project);
+				projectRemovedEvent.data = project;
 				dispatchEvent(projectRemovedEvent);
 			}
 		}
@@ -2592,7 +2643,6 @@ package com.flexcapacitor.controller {
 		public function set documentsTabNavigator(value:TabNavigator):void {
 			_documentsTabNavigator = value;
 		}
-
 		
 		/**
 		 * Reference to the tab that the document belongs to
@@ -3826,9 +3876,11 @@ package com.flexcapacitor.controller {
 			}
 
 			
-			if (attachmentData.parentId != documentData.id) {
-				attachmentData.parentId = documentData.id;
-				reparented = true;
+			if (documentData) {
+				if (attachmentData.parentId != documentData.id) {
+					attachmentData.parentId = documentData.id;
+					reparented = true;
+				}
 			}
 			
 			if (!found) {
@@ -5345,10 +5397,12 @@ package com.flexcapacitor.controller {
 				error("Not a valid file list");
 				return;
 			}
+			
 			if (fileList && fileList.length==0) {
 				error("No files in the file list");
 				return;
 			}
+			
 			if (iDocument==null) {
 				
 				if (createDocument) {
@@ -5889,6 +5943,8 @@ package com.flexcapacitor.controller {
 			var attributeName:String;
 			var attributes:Array;
 			var childNodeNames:Array;
+			var qualifiedChildNodeNames:Array;
+			var childNodeNamespaces:Array;
 			var propertiesStylesEvents:Array;
 			var properties:Array;
 			var styles:Array;
@@ -5899,9 +5955,13 @@ package com.flexcapacitor.controller {
 			var valuesObject:ValuesObject;
 			var failedToImportStyles:Object = {};
 			var failedToImportProperties:Object = {};
+			var qualifiedAttributes:Array;
 			
 			attributes 				= XMLUtils.getAttributeNames(node);
+			qualifiedAttributes 	= XMLUtils.getQualifiedAttributeNames(node);
 			childNodeNames 			= XMLUtils.getChildNodeNames(node);
+			childNodeNamespaces		= XMLUtils.getChildNodeNamesNamespace(node, true);
+			qualifiedChildNodeNames	= XMLUtils.getQualifiedChildNodeNames(node);
 			propertiesStylesEvents 	= attributes.concat(childNodeNames);
 			properties 				= ClassUtils.getPropertiesFromArray(elementInstance, propertiesStylesEvents, true);
 			styles 					= ClassUtils.getStylesFromArray(elementInstance, propertiesStylesEvents);
@@ -5911,22 +5971,26 @@ package com.flexcapacitor.controller {
 			attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as IStyleClient, attributesValueObject, styles, failedToImportStyles);
 			attributesValueObject	= ClassUtils.getTypedPropertyValueObject(elementInstance, attributesValueObject, properties, failedToImportProperties);
 			
-			childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node);
+			childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node, true);
 			values 					= ObjectUtils.merge(attributesValueObject, childNodeValueObject);
 			
 			
-			valuesObject 						= new ValuesObject();
-			valuesObject.values 				= values;
-			valuesObject.events		 			= events;
-			valuesObject.styles 				= styles;
-			valuesObject.properties 			= properties;
-			valuesObject.attributes 			= attributes;
-			valuesObject.childNodeNames 		= childNodeNames;
-			valuesObject.childNodeValues 		= childNodeValueObject;
-			valuesObject.stylesErrorsObject 	= failedToImportStyles;
-			valuesObject.propertiesErrorsObject = failedToImportProperties;
-			valuesObject.propertiesStylesEvents	= properties.concat(styles).concat(events);
-			valuesObject.attributesNotFound		= ArrayUtils.removeAllItems(attributes, valuesObject.propertiesStylesEvents);
+			valuesObject 							= new ValuesObject();
+			valuesObject.values 					= values;
+			valuesObject.events		 				= events;
+			valuesObject.styles 					= styles;
+			valuesObject.properties 				= properties;
+			valuesObject.attributes 				= attributes;
+			valuesObject.qualifiedAttributes		= qualifiedAttributes;
+			valuesObject.childNodeNames 			= childNodeNames;
+			valuesObject.qualifiedChildNodeNames 	= qualifiedChildNodeNames;
+			valuesObject.childNodeValues 			= childNodeValueObject;
+			valuesObject.stylesErrorsObject 		= failedToImportStyles;
+			valuesObject.propertiesErrorsObject 	= failedToImportProperties;
+			valuesObject.propertiesStylesEvents		= properties.concat(styles).concat(events);
+			valuesObject.attributesNotFound			= ArrayUtils.removeAllItems(attributes, valuesObject.propertiesStylesEvents);
+			//valuesObject.nonNsAttributesNotFound	= ArrayUtils.removeAllItems(qualifiedAttributes, valuesObject.propertiesStylesEvents);
+			
 			/*
 			var a:Object = node.namespace().prefix;     //returns prefix i.e. rdf
 			var b:Object = node.namespace().uri;        //returns uri of prefix i.e. http://www.w3.org/1999/02/22-rdf-syntax-ns#
@@ -7501,13 +7565,688 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public static var currentEditableComponent:Object;
 		public static var editableRichTextField:RichEditableText = new RichEditableText();
+		public static var editableRichTextEditorBarCallout:RichTextEditorBarCallout = new RichTextEditorBarCallout();
 		
 		/**
 		 * Handles double click on text to show text editor. 
 		 * To support more components add the elements in the addElement method
 		 * */
 		public static function showTextEditor(event:MouseEvent):void {
+			var target:TextBase = event.target as TextBase;
+			var isRichEditor:Boolean;
+			var rectangle:Rectangle;
+			var propertyNames:Array;
+			var valuesObject:Object;
+			var isBasicLayout:Boolean;
+			var topSystemManager:ISystemManager;
+			var currentEditor:Object;
+			var textFlowString:String;
+			var textFlow:TextFlow;
+			var iDocument:IDocument;
+			var targetComponentDescription:ComponentDescription;
+			var parentComponentDescription:ComponentDescription;
+			
+			const MIN_WIDTH:int = 22;
+			
+			if (!(instance.selectedTool is Selection)) {
+				return;
+			}
+			
+			// get reference to current source label or richtext 
+			currentEditableComponent = target;
+			
+			// get positions of label or richtext
+			// and setup properties that need to be set for temporary rich text field
+			if (currentEditableComponent) {
+				iDocument = instance.selectedDocument;
+				targetComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, iDocument.componentDescription);
+				parentComponentDescription = targetComponentDescription.parent;
+				//rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
+				//propertyNames = ["x", "y", "text", "minWidth"];
+				//valuesObject = {};
+				
+				//if ((parentComponentDescription.instance is GroupBase || parentComponentDescription.instance is BorderContainer)
+				//	&& parentComponentDescription.instance.layout is BasicLayout) {
+				//	isBasicLayout = true;
+				//	rectangle = DisplayObjectUtils.getRectangleBounds(target, parentComponentDescription.instance);
+				//}
+				
+				isRichEditor = "textFlow" in currentEditableComponent;
+				//currentEditor = isRichEditor ? editableRichTextEditorBarCallout : editableRichTextField;
+				currentEditor = editableRichTextField;
+				
+				//rectangle = DisplayObjectUtils.getRectangleBounds(target);
+				propertyNames = ["x", "y", "minWidth"];
+				valuesObject = {};
+				
+				if (currentEditableComponent.owner.layout is BasicLayout) {
+					isBasicLayout = true;
+					rectangle = DisplayObjectUtils.getRectangleBounds(currentEditableComponent, currentEditableComponent.owner);
+				}
+				else {
+					rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
+				}
+				
+				
+				//currentComponent.x = rectangle.x;
+				//currentComponent.y = rectangle.y;
+				
+				//currentEditField.includeInLayout = false;
+				//currentEditField.x = rectangle.x;
+				///currentEditField.y = rectangle.y-30;
+				
+				//currentComponent.minWidth = MIN_WIDTH;
+				//currentEditField.minWidth = MIN_WIDTH;
+				
+				//currentEditField.includeInLayout = false;
+				valuesObject.x = rectangle.x;
+				valuesObject.y = rectangle.y;
+				/*
+				if (isRichEditor) {
+					valuesObject.y = rectangle.y;
+				}
+				else {
+					valuesObject.y = rectangle.y;
+				}
+				*/
+				//currentComponent.minWidth = MIN_WIDTH;
+				valuesObject.minWidth = MIN_WIDTH;
+				
+				//properties.width = "100";
+				if (!isNaN(target.explicitWidth)) {
+					propertyNames.push("width");
+					//currentEditor.width = rectangle.width;
+					valuesObject.width = rectangle.width;
+				}
+				else if (!isNaN(target.percentWidth)) {
+					// if basic layout we can get percent width
+					if (isBasicLayout) {
+						propertyNames.push("percentWidth");
+						//currentEditor.percentWidth = target.percentWidth;
+						valuesObject.percentWidth = target.percentWidth;
+					}
+					else {
+						propertyNames.push("width");
+						//currentEditor.width = rectangle.width;
+						valuesObject.width = rectangle.width;
+					}
+				}
+				
+				//editableRichTextField.width = undefined;
+				//editableRichTextField.percentWidth = NaN;
+				//properties.height = rectangle.height;
+				//currentComponent.visible = false;
+				currentEditableComponent.visible = false;
+				
+				/*
+				we add the editor later
+				if (isRichEditor) {
+					
+					// this is a wonky way to add the editable text to the 
+					if (isBasicLayout) {
+						
+						//if (editableRichTextField.stage==null) {
+						//	currentEditableComponent.owner.addElement(testRichEditableText);
+						//}
+						
+						if (editableRichTextField.stage==null) {
+							currentEditableComponent.owner.addElement(editableRichTextField);
+						}
+						
+						//trace(editableRichTextEditor.horizontalCenter);
+						currentEditableComponent.owner.addElement(editableRichTextEditor);
+						//trace(editableRichTextEditor.horizontalCenter);
+						editableRichTextEditor.validateNow();
+					}
+					else {
+						currentEditableComponent.owner.addElement(editableRichTextEditor);
+					}
+				}
+				else {
+					if (isBasicLayout) {
+						currentEditableComponent.owner.addElement(editableRichTextField);
+					}
+					else {
+						currentEditableComponent.owner.addElement(editableRichTextField);
+					}
+				}
+				*/
+				
+				if (isRichEditor && editableRichTextEditorBarCallout.richEditableText != editableRichTextField) {
+					//testTextArea.heightInLines = NaN;
+					//editableRichTextEditorBarCallout.richEditableText = editableRichTextField;
+				}
+				
+
+				if (isRichEditor) {
+					editableRichTextEditorBarCallout.hideOnMouseDownOutside = true;
+					editableRichTextEditorBarCallout.showEditorOnFocusIn = true;
+					
+					// TODO: use TextFlowUtil
+					//TextFlowUtil.importFromString();
+					//TextFlowUtil.export();
+					
+					textFlowString = TextConverter.export(currentEditableComponent.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
+					textFlow = TextConverter.importToFlow(textFlowString, TextConverter.TEXT_LAYOUT_FORMAT);
+					
+					editableRichTextEditorBarCallout.horizontalPosition = "middle";
+					editableRichTextEditorBarCallout.verticalPosition = "before";
+					editableRichTextEditorBarCallout.setStyle("contentBackgroundAppearance", ContentBackgroundAppearance.NONE);
+					editableRichTextEditorBarCallout.richEditableText = editableRichTextField;
+					
+					
+					//editableRichTextEditorBar.textFlow = textFlow;
+					
+					//isEditableRichTextEditorBarVisible = true;
+					//editableRichTextEditorBarCallout.textFlow = textFlow;
+					// not sure why the next line is commented out
+					//editableRichTextEditor.styleName = currentEditableComponent;
+					editableRichTextField.styleName = currentEditableComponent;
+					editableRichTextField.focusRect = null;
+					editableRichTextField.setStyle("focusAlpha", 0.25);
+					editableRichTextField.validateNow();
+				}
+				else {
+					//editableRichTextField.text = currentEditableComponent.text;
+					valuesObject.text = currentEditableComponent.text;
+					
+					editableRichTextField.styleName = currentEditableComponent;
+					editableRichTextField.focusRect = null;
+					editableRichTextField.setStyle("focusAlpha", 0.25);
+					editableRichTextField.validateNow();
+				}
+				
+				
+				if (isRichEditor) {
+					//editableRichTextEditorBarCallout.includeInLayout = false;
+					valuesObject.textFlow = textFlow;
+					propertyNames.push("textFlow");
+					/*
+					testRichEditableText.clearStyle("horizontalCenter");
+					testRichEditableText.clearStyle("verticalCenter");
+					testRichEditableText.x = rectangle.x-2;
+					testRichEditableText.y = rectangle.y-2;
+					trace(testRichEditableText.x);
+					trace(testRichEditableText.y);
+					*/
+					/*
+					editableRichTextEditor.clearStyle("horizontalCenter");
+					editableRichTextEditor.clearStyle("verticalCenter");
+					editableRichTextEditor.x = rectangle.x-2;
+					editableRichTextEditor.y = rectangle.y-2;
+					*/
+				}
+				else {
+					valuesObject.text = currentEditableComponent.text;
+					propertyNames.push("text");
+				}
+				
+				// add editor but prevent from adding to document history
+				HistoryManager.doNotAddEventsToHistory = true;
+				if (isBasicLayout) {
+					
+					if (isRichEditor) {
+						
+						//if (editableRichTextField.stage==null) {
+						//	currentEditableComponent.owner.addElement(editableRichTextField);
+						//}
+						
+						//addElement(editableRichTextEditorBarCallout, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
+						addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
+					}
+					else {
+						addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
+					}
+				}
+				else {
+					if (isRichEditor) {
+						
+						//if (editableRichTextField.stage==null) {
+						//	currentEditableComponent.owner.addElement(editableRichTextField);
+						//}
+						
+						//addElement(editableRichTextEditorBarCallout, iDocument.instance, propertyNames, null, null, valuesObject);
+						addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
+					}
+					else {
+						addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
+					}
+				}
+				HistoryManager.doNotAddEventsToHistory = false;
+				
+				topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+				topSystemManager.stage.stageFocusRect = false;
+				
+				if (isRichEditor) {
+					editableRichTextField.setFocus();
+					editableRichTextEditorBarCallout.open(editableRichTextField);
+					
+					editableRichTextEditorBarCallout.addEventListener(PopUpEvent.CLOSE, richTextCallOut_closeHandler, false, 0, true);
+					
+					/*
+					editableRichTextField.addEventListener(TextOperationEvent.CHANGE, richTextEditor_changeHandler, false, 0, true);
+					editableRichTextField.addEventListener(FlexEvent.UPDATE_COMPLETE, richTextEditor_updateCompleteHandler, false, 0, true);
+					editableRichTextField.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
+					
+					editableRichTextEditorBarCallout.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
+					editableRichTextEditorBarCallout.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
+					editableRichTextEditorBarCallout.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
+					editableRichTextEditorBarCallout.addEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents, false, 0, true);
+					*/
+				}
+				else {
+					editableRichTextField.selectAll();
+					editableRichTextField.setFocus();
+					
+					editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
+					editableRichTextField.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
+					editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents, false, 0, true);
+					editableRichTextField.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
+				}
+				
+				instance.disableTool();
+			}
+			
+			
+			
+			
+			// OLD CODE
+			/*
+			return; 
 			var target:TextBase = instance.target as TextBase;
+			var topSystemManager:ISystemManager;
+			
+			if (!(instance.selectedTool is Selection)) {
+				return;
+			}
+			
+			if (target) {
+				currentEditableComponent = target;
+				var iDocument:IDocument = instance.selectedDocument;
+				var targetComponentDescription:ComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, iDocument.componentDescription);
+				var parentComponentDescription:ComponentDescription = targetComponentDescription.parent;
+				var rectangle:Rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
+				var propertyNames:Array = ["x", "y", "text", "minWidth"];
+				var valuesObject:Object = {};
+				var isBasicLayout:Boolean;
+				
+				if ((parentComponentDescription.instance is GroupBase || parentComponentDescription.instance is BorderContainer)
+					&& parentComponentDescription.instance.layout is BasicLayout) {
+					isBasicLayout = true;
+					rectangle = DisplayObjectUtils.getRectangleBounds(target, parentComponentDescription.instance);
+				}
+				
+				valuesObject.x = rectangle.x;
+				valuesObject.y = rectangle.y;
+				//const MIN_WIDTH:int = 22;
+				valuesObject.minWidth = MIN_WIDTH;
+				//properties.width = "100";
+				
+				if (!isNaN(target.explicitWidth)) {
+					propertyNames.push("width");
+					valuesObject.width = rectangle.width;
+				}
+				else if (!isNaN(target.percentWidth)) {
+					// if basic layout we can get percent width
+					if (isBasicLayout) {
+						propertyNames.push("percentWidth");
+						valuesObject.percentWidth = target.percentWidth;
+					}
+					else {
+						propertyNames.push("width");
+						valuesObject.width = rectangle.width;
+					}
+				}
+				
+				editableRichTextField.width = undefined;
+				editableRichTextField.percentWidth = NaN;
+				//properties.height = rectangle.height;
+				valuesObject.text = target.text;
+				currentEditableComponent.visible = false;
+				editableRichTextField.styleName = currentEditableComponent;
+				editableRichTextField.focusRect = null;
+				editableRichTextField.setStyle("focusAlpha", 0.25);
+				
+				HistoryManager.doNotAddEventsToHistory = true;
+				if (isBasicLayout) {
+					addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
+				}
+				else {
+					addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
+				}
+				HistoryManager.doNotAddEventsToHistory = false;
+				
+				topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+				topSystemManager.stage.stageFocusRect = false;
+				editableRichTextField.selectAll();
+				editableRichTextField.setFocus();
+				editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues, false, 0, true);
+				editableRichTextField.addEventListener(FlexEvent.ENTER, commitTextEditorValues, false, 0, true);
+				editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues, false, 0, true);
+				editableRichTextField.addEventListener(MouseEvent.CLICK, commitTextEditorValues, false, 0, true);
+				instance.disableTool();
+			}
+			*/
+		}
+		
+		public static function richTextCallOut_closeHandler(event:PopUpEvent):void {
+			var data:TextFlow = event.data as TextFlow;
+			
+			commitTextEditorValues();
+		}
+		
+		/**
+		 * Set the value that the user typed in
+		 * */
+		public static function handleEditorEvents(event:Event):void {
+			var newValue:String;
+			var oldValue:String;
+			var doSomething:Boolean;
+			var currentTarget:Object;
+			var editor:Object;
+			var isRichEditor:Boolean;
+			var textFlow:TextFlow;
+			
+			currentTarget = event.currentTarget;
+			
+			if (currentEditableComponent is Label) {
+				//editor = editableLabelTextField;
+				//newValue = editableLabelTextField.text;
+				editor = editableRichTextField;
+				//newValue = editableRichTextField.text;
+				//oldValue = currentEditableComponent.text;
+				isRichEditor = false;
+			}
+			else {
+				editor = editableRichTextField; //editableRichTextEditorBarCallout;
+				isRichEditor = true;
+			}
+			
+			
+			// CHECK if we should do something
+			if (event is MouseEvent && currentTarget==editor) {
+				doSomething = false;
+				//trace("Click event");
+			}
+			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
+				doSomething = false;
+				//trace("related object is still edit component");
+			}
+			else if (event is FocusEvent && isRichEditor) {
+				
+				// if rich editable text loses focus and the focus is not the edit bar
+				if (event.target==currentTarget && currentTarget==editor) {
+					doSomething = false;
+					//trace("focus out on rich editor. ignore");
+				}
+				else {
+					doSomething = false;
+					//trace("focus out not rich editor");
+				}
+			}
+			else if (event is FlexEvent && event.type=="valueCommit") {
+				doSomething = false;
+				//trace('value commit');
+			}
+			else {
+				doSomething = true;
+				//trace('other event: ' + event.type);
+			}
+			
+			// OLD CHECK IF DO SOMETHING
+			/*
+			if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
+				doSomething = false;
+			}
+			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
+				doSomething = false;
+			}
+			else if (event is FlexEvent && event.type=="valueCommit") {
+				doSomething = false;
+			}
+			else {
+				doSomething = true;
+			}
+			*/
+			
+			
+			if (doSomething) {
+				commitTextEditorValues();
+			}
+			
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			
+		}
+		
+		/**
+		 * Set the value that the user typed in
+		 * */
+		public static function commitTextEditorValues():void {
+			var newValue:String;
+			var oldValue:String;
+			var currentTarget:Object;
+			var editor:Object;
+			var isRichEditor:Boolean;
+			var textFlow:TextFlow;
+			var importer:ITextImporter;
+			var config:IConfiguration;
+			
+			if (currentEditableComponent==null) return;
+			
+			editor = editableRichTextField;
+			newValue = editableRichTextField.text;
+			oldValue = currentEditableComponent.text;
+			
+			if (currentEditableComponent is Label) {
+				editor = editableRichTextField;
+				newValue = editableRichTextField.text;
+				oldValue = currentEditableComponent.text;
+				isRichEditor = false;
+			}
+			else {
+				editor = editableRichTextField;
+				isRichEditor = true;
+			}
+			
+			if (isRichEditor) {
+				newValue = TextConverter.export(editor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
+				oldValue = TextConverter.export(Object(currentEditableComponent).textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
+				
+				importer = TextConverter.getImporter(TextConverter.TEXT_FIELD_HTML_FORMAT);
+				config = importer.configuration;
+			}
+			
+			if (currentEditableComponent && newValue!=oldValue) {
+				
+				if (isRichEditor) {
+					textFlow = TextConverter.importToFlow(newValue, TextConverter.TEXT_LAYOUT_FORMAT);
+					//currentEditableComponent.textFlow = textFlow;
+					setProperty(currentEditableComponent, "textFlow", textFlow);
+				}
+				else {
+					//currentEditableComponent.text = newValue;
+					setProperty(currentEditableComponent, "text", newValue);
+				}
+				
+			}
+			
+			currentEditableComponent.visible = true;
+			
+			if (isRichEditor) {
+				editableRichTextEditorBarCallout.removeEventListener(PopUpEvent.CLOSE, commitTextEditorValues);
+				/*
+				editableRichTextEditorBarCallout.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
+				editableRichTextEditorBarCallout.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
+				editableRichTextEditorBarCallout.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
+				
+				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
+				editableRichTextField.removeEventListener(TextOperationEvent.CHANGE, richTextEditor_changeHandler);
+				editableRichTextField.removeEventListener(FlexEvent.UPDATE_COMPLETE, richTextEditor_updateCompleteHandler);
+				*/
+			}
+			else {
+				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
+				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
+				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
+				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
+			}
+			
+			
+			if (editableRichTextField.owner) {
+				//editableRichTextField.owner.removeElement(editableRichTextField);
+				editableRichTextEditorBarCallout.richEditableText = null;
+			}
+			else if (isRichEditor) {
+				editableRichTextEditorBarCallout.richEditableText = null;
+			}
+			/*
+			if (isRichEditor) {
+				IVisualElementContainer(editableRichTextField.owner).removeElement(editableRichTextField);
+			}
+			
+			*/
+			
+			// remove editor from stage
+			HistoryManager.doNotAddEventsToHistory = true;
+			if (isRichEditor) {
+				//removeElement(editableRichTextEditorBarCallout);
+				removeElement(editableRichTextField);
+			}
+			else if (editableRichTextField.parent) {
+				removeElement(editableRichTextField);
+			}
+			HistoryManager.doNotAddEventsToHistory = false;
+			
+			
+			instance.enableTool();
+			
+			currentEditableComponent = null;
+			
+			return;
+			
+			// OLD
+			/*
+			var newValue:String = editableRichTextField.text;
+			var oldValue:String = currentEditableComponent.text;
+			var doSomething:Boolean;
+			
+			
+			if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
+				doSomething = false;
+			}
+			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
+				doSomething = false;
+			}
+			else if (event is FlexEvent && event.type=="valueCommit") {
+				doSomething = false;
+			}
+			else {
+				doSomething = true;
+			}
+			
+			
+			if (doSomething) {
+				if (currentEditableComponent && newValue!=oldValue) {
+					setProperty(currentEditableComponent, "text", newValue);
+					//currentEditableComponent = null;
+				}
+				
+				currentEditableComponent.visible = true;
+				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
+				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
+				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
+				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
+				
+				if (editableRichTextField.parent) {
+					HistoryManager.doNotAddEventsToHistory = true;
+					removeElement(editableRichTextField);
+					HistoryManager.doNotAddEventsToHistory = false;
+				}
+				
+				instance.enableTool();
+			}
+			
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			*/
+		}
+		
+		/**
+		 * Used to size the rich text editor as the user adds or removes new lines
+		 * */
+		public static function richTextEditor_changeHandler(event:TextOperationEvent):void {
+			//trace(RichEditableText(currentEditableComponent).contentHeight);
+			if (editableRichTextField is RichEditableText) {
+				editableRichTextField.height = RichEditableText(editableRichTextField).contentHeight + 2;
+			}
+		}
+		
+		/**
+		 * Used to size the rich text editor as the user adds or removes new lines
+		 * */
+		public static function richTextEditor_updateCompleteHandler(event:FlexEvent):void {
+			if (editableRichTextField is RichEditableText) {
+				editableRichTextField.height = RichEditableText(editableRichTextField).contentHeight + 2;
+			}
+		}
+		
+		/**
+		 * Set the value that the user typed in
+		 * */
+		public static function commitTextEditorValuesOLD(event:Event):void {
+			var newValue:String = editableRichTextField.text;
+			var oldValue:String = currentEditableComponent.text;
+			var doSomething:Boolean;
+			
+			
+			if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
+				doSomething = false;
+			}
+			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
+				doSomething = false;
+			}
+			else if (event is FlexEvent && event.type=="valueCommit") {
+				doSomething = false;
+			}
+			else {
+				doSomething = true;
+			}
+			
+			
+			if (doSomething) {
+				if (currentEditableComponent && newValue!=oldValue) {
+					setProperty(currentEditableComponent, "text", newValue);
+					//currentEditableComponent = null;
+				}
+				
+				currentEditableComponent.visible = true;
+				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
+				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
+				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
+				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
+				
+				if (editableRichTextField.parent) {
+					HistoryManager.doNotAddEventsToHistory = true;
+					removeElement(editableRichTextField);
+					HistoryManager.doNotAddEventsToHistory = false;
+				}
+				
+				instance.enableTool();
+			}
+			
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			
+		}
+		
+		/**
+		 * Handles double click on text to show text editor. 
+		 * To support more components add the elements in the addElement method
+		 * */
+		public static function showTextEditorOld(event:MouseEvent):void {
+			var target:TextBase = instance.target as TextBase;
+			var topSystemManager:ISystemManager;
 			
 			if (!(instance.selectedTool is Selection)) {
 				return;
@@ -7569,7 +8308,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				}
 				HistoryManager.doNotAddEventsToHistory = false;
 				
-				var topSystemManager:ISystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+				topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
 				topSystemManager.stage.stageFocusRect = false;
 				editableRichTextField.selectAll();
 				editableRichTextField.setFocus();
@@ -7581,54 +8320,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 		}
 		
-		/**
-		 * Set the value that the user typed in
-		 * */
-		public static function commitTextEditorValues(event:Event):void {
-			var newValue:String = editableRichTextField.text;
-			var oldValue:String = currentEditableComponent.text;
-			var doSomething:Boolean;
-			
-			
-			if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
-				doSomething = false;
-			}
-			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
-				doSomething = false;
-			}
-			else if (event is FlexEvent && event.type=="valueCommit") {
-				doSomething = false;
-			}
-			else {
-				doSomething = true;
-			}
-			
-			
-			if (doSomething) {
-				if (currentEditableComponent && newValue!=oldValue) {
-					setProperty(currentEditableComponent, "text", newValue);
-					//currentEditableComponent = null;
-				}
-				
-				currentEditableComponent.visible = true;
-				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
-				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
-				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
-				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
-				
-				if (editableRichTextField.parent) {
-					HistoryManager.doNotAddEventsToHistory = true;
-					removeElement(editableRichTextField);
-					HistoryManager.doNotAddEventsToHistory = false;
-				}
-				
-				instance.enableTool();
-			}
-			
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			
-		}
 		
 		/**
 		 * Required for creating BorderContainers
@@ -8027,14 +8718,13 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				EventDispatcher(iProject).addEventListener(Project.PROJECT_OPENED, projectOpenResultHandler, false, 0, true);
 			}
 			
-			// TODO open project documents
-			iProject.open(locations);
-			
 			if (isAlreadyOpen) {
 				//setProject(iProject, dispatchEvents);
 				return true;
 			}
 			else {
+				// TODO open project documents
+				iProject.open(locations);
 				iProject.isOpen = true;
 			}
 			
@@ -8479,16 +9169,16 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * 
 		 * It returns the document container. 
 		 * */
-		public function openDocumentByData(data:IDocumentData, showDocument:Boolean = true, dispatchEvents:Boolean = true):Object {
+		public function openDocumentByData(data:IDocumentData, createIfNotFound:Boolean, showDocument:Boolean = true, dispatchEvents:Boolean = true):IDocument {
 			var iDocument:IDocument = getDocumentByUID(data.uid);
 			
-			if (!iDocument) {
+			if (!iDocument && createIfNotFound) {
 				iDocument = createDocumentFromData(data);
 			}
 			
-			var result:Boolean = openDocument(iDocument, DocumentData.INTERNAL_LOCATION, showDocument, dispatchEvents);
+			var newDocument:IDocument = openDocument(iDocument, DocumentData.INTERNAL_LOCATION, showDocument, dispatchEvents);
 			
-			return result;
+			return newDocument;
 		}
 		
 		/**
@@ -8604,7 +9294,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * 
 		 * It returns the document container. 
 		 * */
-		public function openDocument(iDocument:IDocument, locations:String = null, showDocumentInTab:Boolean = true, dispatchEvents:Boolean = true):Object {
+		public function openDocument(iDocument:IDocument, locations:String = null, showDocumentInTab:Boolean = true, dispatchEvents:Boolean = true):IDocument {
 			var documentContainer:DocumentContainer;
 			var navigatorContent:NavigatorContent;
 			var openingEventDispatched:Boolean;
@@ -8651,7 +9341,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					showDocument(iDocument, false, dispatchEvents); // the next call will dispatch events
 					selectDocument(iDocument, dispatchEvents);
 				}
-				return documentsContainerDictionary[iDocument];
+				return iDocument;
 			}
 			else {
 				iDocument.open(locations);
@@ -8700,7 +9390,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				selectDocument(iDocument, dispatchEvents);
 			}
 			
-			return documentsContainerDictionary[iDocument];
+			return iDocument;
 		}
 		
 		/**
@@ -8971,6 +9661,14 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					showDocument(otherDocument);
 				}
 			}
+			else {
+				openTabs = documentsTabNavigator.getChildren();
+				tabCount = openTabs.length;
+				
+				if (tabCount==0) {
+					setTarget(null);
+				}
+			}
 			
 			return true;
 			
@@ -9190,10 +9888,17 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					if (post.attachments) {
 						project.parseAttachments(post.attachments);
 					}
+					
 					// if id is not set in the XML set it manually
 					// we need id for  delete
-					if (project.id==null) {
+					if (project.id==null || project.id=="") {
 						project.id = post.id;
+					}
+					
+					// let's enforce url 
+					project.uri = post.url;
+					if (project.uri==null || project.uri=="") {
+						project.uri = post.url;
 					}
 					//addProject(project);
 					potentialProjects.push(project);
@@ -9236,10 +9941,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			isValid = XMLUtils.isValidXML(codeToParse);
 			
 			if (!isValid) {
-				root = '<'+rootNodeName + " " + importer.defaultNamespaceDeclarations +'>';
+				root = "<" + rootNodeName + " " + MXMLDocumentConstants.getDefaultNamespaceDeclarations() + ">";
 				updatedCode = root + codeToParse + "</"+rootNodeName+">";
 				
 				isValid = XMLUtils.isValidXML(updatedCode);
+				
 				if (isValid) {
 					codeToParse = updatedCode;
 				}
@@ -12846,9 +13552,63 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			return bitmapData;
 		}
 		
+		/**
+		 * Shows the welcome home screen
+		 * */
 		public static function goToHomeScreen():void {
 			if (mainView) {
 				mainView.currentState = MainView.HOME_STATE;
+			}
+		}
+		
+		/**
+		 * Opens and displays the documentation panel
+		 * */
+		public static function showDocumentationPanel(url:String):void {
+			if (mainView) {
+				mainView.currentState = MainView.DESIGN_STATE;
+				
+				if (remoteView) {
+					remoteView.showDocumentationPanel();
+					
+					if (url) {
+						instance.dispatchDocumentationChangeEvent(url);
+					}
+				}
+			}
+		}
+		
+		/**
+		 * Opens and displays the API documentation panel
+		 * */
+		public static function showAPIPanel(url:String):void {
+			if (mainView) {
+				mainView.currentState = MainView.DESIGN_STATE;
+				
+				if (remoteView) {
+					remoteView.showAPIPanel();
+					
+					if (url) {
+						instance.dispatchDocumentationChangeEvent(url);
+					}
+				}
+			}
+		}
+		
+		/**
+		 * Opens and displays the console panel
+		 * */
+		public static function showConsolePanel(value:String=""):void {
+			if (mainView) {
+				mainView.currentState = MainView.DESIGN_STATE;
+				
+				if (remoteView) {
+					remoteView.showConsolePanel();
+					
+					if (value) {
+						instance.dispatchConsoleValueChangeEvent(value);
+					}
+				}
 			}
 		}
 		

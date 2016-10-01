@@ -449,7 +449,7 @@ package com.flexcapacitor.managers {
 		/**
 		 * Opens the documentation for the object in a browser window
 		 * */
-		public static function openDocumentationInBrowserButton(object:Object):void {
+		public static function openDocumentationInBrowserButton(object:Object, showInternally:Boolean = true, showInAPIPanel:Boolean = true):void {
 			var metadata:MetaData;
 			var path:String = "";
 			var prefix:String = "";
@@ -473,11 +473,21 @@ package com.flexcapacitor.managers {
 				url = Radiate.getURLToHelp(className);
 			}
 			
+			
 			if (url) {
 				
-				request = new URLRequest(url);
-				
-				navigateToURL(request, "asdocs");
+				if (showInternally) {
+					if (showInAPIPanel) {
+						Radiate.showAPIPanel(url);
+					}
+					else {
+						Radiate.showDocumentationPanel(url);
+					}
+				}
+				else {
+					request = new URLRequest(url);
+					navigateToURL(request, "asdocs");
+				}
 				
 			}
 		}

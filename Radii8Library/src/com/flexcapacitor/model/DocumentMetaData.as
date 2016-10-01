@@ -330,6 +330,9 @@ package com.flexcapacitor.model {
 		
 		/**
 		 * Deserialize document data. Import.
+		 * 
+		 * Remember, if duplicating a document or creating a new document 
+		 * from an example we need to update the uri and id to the new values
 		 * */
 		public function unmarshall(data:Object):void {
 			

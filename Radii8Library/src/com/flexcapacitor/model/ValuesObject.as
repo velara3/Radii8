@@ -32,6 +32,12 @@ package com.flexcapacitor.model
 		public var attributes:Array;
 		
 		/**
+		 * Array of qualified attributes on the XML node. 
+		 * Qualified means having a specific namespace other than the parent namespace.
+		 * */
+		public var qualifiedAttributes:Array;
+		
+		/**
 		 * Array of child node names on the XML node.
 		 * For example, dataProvider would be a child node name: 
 <pre>
@@ -41,6 +47,17 @@ package com.flexcapacitor.model
 </pre>
 		 * */
 		public var childNodeNames:Array;
+		
+		/**
+		 * Array of qualified child node names on the XML node.
+		 * For example, dataProvider would be a child node name: 
+<pre>
+&lt;s:ComboBox id="listOfThings">
+   &lt;s:dataProvider>1,2,3&lt;/s:dataProvider>
+&lt;/s:ComboBox>
+</pre>
+		 * */
+		public var qualifiedChildNodeNames:Array;
 		
 		/**
 		 * Array of child node names on the XML node.
@@ -82,5 +99,12 @@ package com.flexcapacitor.model
 		 * to the importer. 
 		 * */
 		public var attributesNotFound:Array;
+		
+		/**
+		 * Array of attributes that are not valid properties, events and styles.
+		 * They may be valid, such as state specific attributes, but they are not known 
+		 * to the importer. 
+		 * */
+		public var nonNsAttributesNotFound:Array;
 	}
 }

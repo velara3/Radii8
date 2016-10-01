@@ -46,6 +46,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.core.IVisualElement;
@@ -183,6 +184,7 @@
 			protected function applicationComplete(event:Event):void {
 				var loader:Object = event.currentTarget;
 				var radiate:Radiate = Radiate.instance;
+				var sourceData:SourceData;
 				//parentAllowsChild.selected = b.parentAllowsChild;
 				//childAllowsParent.selected = b.childAllowsParent;
 				
@@ -210,7 +212,8 @@
 				//Radiate.info("Document container app complete");
 				if (iDocument.source) {
 					validateNow();
-					Radiate.parseSource(iDocument);
+					sourceData = Radiate.parseSource(iDocument);
+					iDocument.sourceData = sourceData;
 					iDocument.resetSaveStatus();
 					updateBackgroundSize();
 					//parseDocument(codeToLoad);

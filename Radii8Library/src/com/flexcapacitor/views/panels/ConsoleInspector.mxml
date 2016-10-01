@@ -23,6 +23,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.controls.IAceEditor;
+			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.views.IInspector;
 			
@@ -52,6 +53,8 @@
 			public var defaultMaxLines:int = 300;
 			public var previousConsoleValue:String;
 			public var aceEditor:Object;
+			public var editorReady:Boolean;
+			public var someDelayedValues:String = "";
 			
 			public function activate():void {
 				
@@ -69,10 +72,15 @@
 					}
 					
 				}
+				
+				radiate = Radiate.instance;
+				radiate.addEventListener(RadiateEvent.CONSOLE_VALUE_CHANGE, consoleValueChange, false, 0, true);
+				
 			}
 			
 			public function deactivate():void {
-				// keep logging
+				// do we want to keep logging?
+				// radiate.removeEventListener(RadiateEvent.CONSOLE_VALUE_CHANGE, consoleValueChange);
 			}
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
@@ -89,8 +97,10 @@
 					//aceEditor.margin = "";
 				}
 				
-				if (Radiate.isDesktop && aceEditor.editor) {
-					Radiate.setLoggingTarget(logTarget, null, aceEditor);
+				if (Radiate.isDesktop) {
+					if (aceEditor.editor) {
+						Radiate.setLoggingTarget(logTarget, null, aceEditor);
+					}
 				}
 				else {
 					Radiate.setLoggingTarget(logTarget, null, consoleTextArea);
@@ -102,6 +112,11 @@
 				
 				if (Radiate.isDesktop && aceEditor.editor) {
 					Radiate.setLoggingTarget(logTarget, null, aceEditor);
+					editorReady = true;
+					
+					if (someDelayedValues) {
+						aceEditor.appendText(someDelayedValues);
+					}
 				}
 			}
 			
@@ -155,6 +170,12 @@
 						consoleTextArea.text = "";
 					}
 				}
+					
+					// ACE EDITOR
+				else if (aceEditor is IAceEditor && aceEditor.isEditorReady) {
+					Object(aceEditor).scrollToEnd();
+					Object(aceEditor).navigateFileEnd();
+				}
 				
 				// MX TEXT AREA
 				else if (consoleTextArea is mx.controls.TextArea) {
@@ -174,10 +195,17 @@
 					}
 					
 				}
+			}
+			
+			protected function consoleValueChange(event:RadiateEvent):void {
 				
-				// ACE EDITOR
-				else if (consoleTextArea is IAceEditor) {
-					Object(aceEditor).navigateFileEnd();
+				if (aceEditor) {
+					if (aceEditor.session==null || !editorReady) {
+						someDelayedValues += event.data;
+					}
+					else {
+						aceEditor.appendText(event.data);
+					}
 				}
 			}
 			
@@ -222,6 +250,15 @@
 				change="consoleTextAreaMX_changeHandler(event)"
 				valueCommit="consoleTextArea_valueCommitHandler(event)"
 				/>
+	<c:BeveledImageButton id="scrollToTheBottomButton" 
+						  source="{Radii8LibraryAssets.scrollToEnd}" 
+						  right="28"
+						  click="scrollToTheBottom()"
+						  width="15"
+						  height="14"
+						  horizontalAlign="center"
+						  verticalAlign="middle"
+						  />
 	<c:BeveledImageButton id="clearButton" 
 						  source="{Radii8LibraryAssets.clear}" 
 						  right="8"

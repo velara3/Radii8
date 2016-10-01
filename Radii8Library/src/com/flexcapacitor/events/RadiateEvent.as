@@ -169,6 +169,11 @@ package com.flexcapacitor.events {
 		public static const DOCUMENT_ADDED:String = "documentAdded";
 		
 		/**
+		 * Dispatched when the documentation url should change
+		 * */
+		public static const DOCUMENTATION_CHANGE:String = "documentationChange";
+		
+		/**
 		 * Dispatched when the document save is complete
 		 * */
 		public static const DOCUMENT_SAVE_COMPLETE:String = "documentSaveComplete";
@@ -187,6 +192,11 @@ package com.flexcapacitor.events {
 		 * Dispatched when the document save as is canceled
 		 * */
 		public static const DOCUMENT_SAVE_AS_CANCEL:String = "documentSaveAsCancel";
+		
+		/**
+		 * Dispatched when new content can be added to the console
+		 * */
+		public static const CONSOLE_VALUE_CHANGE:String = "consoleValueChange";
 		
 		/**
 		 * Dispatched when the document is changed

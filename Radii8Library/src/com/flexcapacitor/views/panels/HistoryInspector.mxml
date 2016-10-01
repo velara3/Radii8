@@ -310,13 +310,20 @@
 			}
 			
 			/**
-			 * 
+			 * Revert the document history
 			 * */
 			protected function revertHandler(event:MouseEvent):void {
-				var length:int = HistoryManager.history.length;
+				var numberOfEvents:int;
 				var dispatch:Boolean = false;
-				var time:int = getTimer();
+				var time:int;
 				var i:int;
+				
+				if (radiate.selectedDocument==null) {
+					return;
+				}
+				
+				numberOfEvents = HistoryManager.history ? HistoryManager.history.length : 0;
+				time = getTimer();
 				
 				//trace("revert start: " + time);
 				

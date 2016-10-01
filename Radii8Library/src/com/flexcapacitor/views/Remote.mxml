@@ -33,30 +33,19 @@
 			
 			import mx.core.INavigatorContent;
 			import mx.core.UIComponent;
+			import mx.events.ChildExistenceChangedEvent;
 			import mx.events.FlexEvent;
 			import mx.events.IndexChangedEvent;
 			
 			import spark.components.Application;
 			import spark.events.IndexChangeEvent;
 			
-			/**
-			 * 
-TypeError: Error #1009: Cannot access a property or method of a null object reference.
-	at mx.containers::TabNavigator/keyDownHandler()[E:\dev\4.y\frameworks\projects\mx\src\mx\containers\TabNavigator.as:895]
-	 * 
-	 * Cause: focusManager is null check for null
-	 *     override protected function keyDownHandler(event:KeyboardEvent):void
-    {
-        if (focusManager.getFocus() == this)
-        {
-            // Redispatch the event from the TabBar so that it can handle it.
-            tabBar.dispatchEvent(event);
-        }
-    }
-	 		 * 
-			 * */
 			[Bindable]
 			private var radiate:Radiate;
+			
+			public static const DESIGN:String = "design";
+			public static const DEVELOP:String = "develop";
+			public static const CODE:String = "code";
 			
 			protected function panelsLabelFunction(item:Object):String {
 				var name:String = item is Label ? Label(item).text : " • ";
@@ -82,11 +71,21 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 			}
 			
 			protected function closeDocumentIcon_clickHandler():void {
-				if (radiate.selectedDocument && radiate.isDocumentPreviewOpen(radiate.selectedDocument)) {
-					radiate.closeVisibleDocument();
+				var iDocument:IDocument = radiate.selectedDocument;
+				var documentsOpen:int = documentsTagNavigator.numElements;
+				
+				
+				if (documentsOpen==0) {
+					return;
 				}
-				else {
-					openSaveBeforeClosePopUp.play();
+				
+				if (iDocument && documentsOpen>0) {
+					if (iDocument && radiate.isDocumentPreviewOpen(iDocument)) {
+						radiate.closeVisibleDocument();
+					}
+					else {
+						openSaveBeforeClosePopUp.play();
+					}
 				}
 			}
 			
@@ -124,6 +123,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				
+				Radiate.remoteView = this;
 				radiate.documentsTabNavigator = documentsTagNavigator;
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChange, false, 0, true);
@@ -203,6 +203,9 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 			/**
 			 * 
 			 * This error occured on switching from design view to the home screen
+			 * 
+			 * Using extended tabNavigator to fix this
+			 * 
 			TypeError: Error #1009: Cannot access a property or method of a null object reference.
 				at mx.containers::TabNavigator/keyDownHandler()[E:\dev\4.y\frameworks\projects\mx\src\mx\containers\TabNavigator.as:895]
 				 * 
@@ -303,7 +306,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 						selectedTargetIcon.source = Radii8LibraryAssets.document;
 					}
 				}
-				else {
+				else {	
 					selectedTargetIcon.source = Radii8LibraryAssets.document;
 				}
 				
@@ -321,7 +324,65 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 			public var clickToOpen:String = "Click to open documentation in the browser";
 			
 			protected function selectedTargetIcon_clickHandler(event:MouseEvent):void {
-				RunManager.openDocumentationInBrowserButton(radiate.target);
+				
+				RunManager.openDocumentationInBrowserButton(radiate.target, true);
+			}
+			
+			protected function documentsTagNavigator_childAddHandler(event:ChildExistenceChangedEvent):void
+			{
+				callLater(updateCloseDocumentButton);
+			}
+			
+			protected function documentsTagNavigator_childRemoveHandler(event:ChildExistenceChangedEvent):void
+			{
+				callLater(updateCloseDocumentButton);
+			}
+			
+			public function showConsolePanel():void
+			{
+				if (thirdViewStack==null) {
+					currentState = DEVELOP;
+					validateNow();
+				}
+				
+				if (thirdViewStack) {
+					thirdViewStack.selectedChild = consoleTab;
+					validateNow();
+				}
+			}
+			
+			public function showDocumentationPanel():void
+			{
+				if (thirdViewStack==null) {
+					currentState = DEVELOP;
+					validateNow();
+				}
+				
+				if (thirdViewStack) {
+					thirdViewStack.selectedChild = documentationTab;
+					validateNow();
+				}
+			}
+			
+			public function showAPIPanel():void
+			{
+				if (thirdViewStack==null) {
+					currentState = DEVELOP;
+					validateNow();
+				}
+				
+				if (thirdViewStack) {
+					thirdViewStack.selectedChild = apiTab;
+					validateNow();
+				}
+			}
+			
+			private function updateCloseDocumentButton():void
+			{
+				// in document removed they are not removed yet so count as if they were
+				//var numChildren:int = documentsTagNavigator.numChildren-1;
+				var numOfDocumentsOpen:int = documentsTagNavigator.numChildren;
+				closeDocumentButton.visible = numOfDocumentsOpen>0;
 			}
 			
 		]]>
@@ -416,7 +477,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 							includeIn="design,develop">
 				
 				
-				<mx:TabNavigator id="firstViewStack" 
+				<c:TabNavigator id="firstViewStack" 
 								 width="100%"
 								 height="100%"
 								 clipContent="true"
@@ -497,9 +558,9 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 							</s:VGroup>
 						</s:Scroller>
 					</s:NavigatorContent>
-				</mx:TabNavigator>
+				</c:TabNavigator>
 				
-				<mx:TabNavigator id="secondViewStack" 
+				<c:TabNavigator id="secondViewStack" 
 								 borderStyle="solid"
 								 width="100%"
 								 height="100%"
@@ -611,7 +672,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 						<views:Description showDescriptionLabel="false" left="10" right="10" top="10"/>
 					</s:NavigatorContent>-->
 					
-				</mx:TabNavigator>
+				</c:TabNavigator>
 				
 			</mx:VDividedBox>
 						
@@ -628,10 +689,12 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 		
 				
 				<!-- DOCUMENTS TAB BAR-->
-				<mx:TabNavigator id="documentsTagNavigator" width="100%" height="100%"
+				<c:TabNavigator id="documentsTagNavigator" width="100%" height="100%"
+								 childAdd="documentsTagNavigator_childAddHandler(event)"
+								 childRemove="documentsTagNavigator_childRemoveHandler(event)"
 								  change="navigatorContent_changeHandler(event)"
 								  click="documentsTagNavigator_clickHandler(event)">
-				</mx:TabNavigator>
+				</c:TabNavigator>
 				
 				<s:Label id="noDocumentLabel" 
 						 text="To create a new project or document select File > New Project or File > New Document."
@@ -643,7 +706,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 				<!-- DOCUMENT FOOTER AREA -->
 				<s:VGroup width="100%" height="45%" minHeight="0" includeIn="develop,code">
 				
-					<mx:TabNavigator id="thirdViewStack" 
+					<c:TabNavigator id="thirdViewStack" 
 									 borderStyle="solid"
 									 width="100%" pc:tag="value"
 									 height="100%"
@@ -658,12 +721,12 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 						</s:NavigatorContent>
 					
 						<!-- DOCUMENTATION INSPECTOR -->
-						<s:NavigatorContent width="100%" height="100%" label="DOCUMENTATION">
+						<s:NavigatorContent id="documentationTab" width="100%" height="100%" label="DOCUMENTATION">
 							<panels:DocumentationInspector id="documentationInspector" width="100%" height="100%" />
 						</s:NavigatorContent>
 						
 						<!-- API INSPECTOR -->
-						<s:NavigatorContent width="100%" height="100%" label="API DOCS">
+						<s:NavigatorContent id="apiTab" width="100%" height="100%" label="API DOCS">
 							<panels:APIInspector id="apiInspector" width="100%" height="100%" />
 						</s:NavigatorContent>
 						
@@ -673,7 +736,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 						</s:NavigatorContent>
 						
 						<!-- CONSOLE -->
-						<s:NavigatorContent label="CONSOLE">
+						<s:NavigatorContent id="consoleTab" label="CONSOLE">
 							<panels:ConsoleInspector width="100%" height="100%"/>
 						</s:NavigatorContent>
 					
@@ -683,7 +746,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 						</s:NavigatorContent>-->
 					
 						
-					</mx:TabNavigator>
+					</c:TabNavigator>
 				</s:VGroup>
 				
 				
@@ -692,7 +755,7 @@ TypeError: Error #1009: Cannot access a property or method of a null object refe
 		</mx:HDividedBox>
 		
 			
-		<c:BeveledImageButton id="closeDocument" 
+		<c:BeveledImageButton id="closeDocumentButton" 
 							  source="{Radii8LibraryAssets.clear}" 
 							  toolTip="Closes the visible document. Use the open button to reopen the document."
 							  right="8"

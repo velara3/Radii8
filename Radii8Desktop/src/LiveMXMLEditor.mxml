@@ -415,7 +415,7 @@
 			private function setDefaultXML():void
 			{
 				var transcoder:DocumentTranscoder = new DocumentTranscoder();
-				var defaultCode:XML = transcoder.getDefaultDocumentXML();
+				var defaultCode:XML = transcoder.getDefaultMXMLDocumentXML();
 				var comment:XML = <!--\n\n-->;
 				var code:String = defaultCode.appendChild(comment).toXMLString();
 				code = code.replace("</s:Application>", "\n\t\n</s:Application>");

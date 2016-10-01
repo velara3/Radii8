@@ -64,6 +64,7 @@
 			import com.flexcapacitor.views.supportClasses.LayersDataDescriptor;
 			
 			import mx.collections.ArrayCollection;
+			import mx.collections.ArrayList;
 			import mx.core.DragSource;
 			import mx.core.IUIComponent;
 			import mx.core.mx_internal;
@@ -161,6 +162,7 @@
 			
 			
 			private function labelFunction(data:Object):String {
+				if (!data) return ""; 
 				var identity:String =  ClassUtils.getIdentifier(data.instance);
 				
 				/*if (identity) {
@@ -179,6 +181,8 @@
 			 * */
 			protected function targetChangeHandler(event:RadiateEvent):void {
 				updateTarget(event.selectedItem);
+				
+				controlsGroup.enabled = event.selectedItem ? true : false;
 			}
 			
 			/**
@@ -193,6 +197,12 @@
 				var iDocument:IDocument = radiate.selectedDocument;
 				
 				target = selectedItem;
+				
+				if (selectedItem==null) {
+					collection.removeAll();
+					updateComponentDisplayList();
+					return;
+				}
 				
 				if (collection.length==0) {
 					updateComponentDisplayList();
@@ -353,7 +363,11 @@
 					documentItemRenderer.data = iDocument.componentDescription;
 				}
 				
-				if (!iDocument) return;
+				if (!iDocument) {
+					openItems = [];
+					componentListTree.dataProvider = null;
+					return;
+				}
 				
 				openItems = componentListTree.openItems;
 				
@@ -459,19 +473,20 @@
 			/**
 			 * 
 			 * */
-			public function getTotalRowCount(item:ComponentDescription, count:int = 0):int {
+			public function getTotalRowCount(item:ComponentDescription, numberOfRows:int = 0):int {
 				
-				if (item.children && item.children.length>0) {
-				// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
-				// ALSO we are resetting the dataProvider so it's not going to find the items if we do that
-				for (var i:int;i<item.children.length;i++) {
-					count++;
-					if (componentListTree.isItemOpen(item.children[i])) {
-						count = getTotalRowCount(item.children[i] as ComponentDescription, count);
+				if (item && item.children && item.children.length>0) {
+					// NOTE: IMPORTANT: READ: the open items can't be reassigned references. they have to be actual items
+					// ALSO we are resetting the dataProvider so it's not going to find the items if we do that
+					for (var i:int;i<item.children.length;i++) {
+						numberOfRows++;
+						if (componentListTree.isItemOpen(item.children[i])) {
+							numberOfRows = getTotalRowCount(item.children[i] as ComponentDescription, numberOfRows);
+						}
 					}
 				}
-				}
-				return count;
+				
+				return numberOfRows;
 			}
 			
 			/**
@@ -706,7 +721,7 @@
 			
 			public function updateAlphaProperty():void {
 				var iDocument:IDocument = radiate.selectedDocument;
-				var componentDescription:ComponentDescription = iDocument.getItemDescription(target);
+				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 				if (componentDescription==null) return;
 				
 				var textAccessor:AccessorMetaData = ClassUtils.getMetaDataOfProperty(target, "alpha");
@@ -716,7 +731,7 @@
 			
 			public function updateLockedProperty():void {
 				var iDocument:IDocument = radiate.selectedDocument;
-				var componentDescription:ComponentDescription = iDocument.getItemDescription(target);
+				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 				lockedItem.selected = componentDescription ? componentDescription.locked : false;
 			}
 			
@@ -725,7 +740,6 @@
 			}
 			
 			protected function lockItem_clickHandler(event:MouseEvent):void {
-				
 				var result:Boolean = Radiate.lockComponent(target, lockedItem.selected);
 				
 				if (!result) {
@@ -733,12 +747,13 @@
 				}
 			}
 			
-			protected function documentItemRenderer_clickHandler(event:MouseEvent):void
-			{
+			protected function documentItemRenderer_clickHandler(event:MouseEvent):void {
 				componentListTree.selectedIndex = -1;
 				componentListTree.validateProperties();
 				documentItemRenderer.selected = true;
-				radiate.setTarget(radiate.selectedDocument.instance);
+				if (radiate.selectedDocument) {
+					radiate.setTarget(radiate.selectedDocument.instance);
+				}
 			}
 			
 			protected function removeItem_dragEnterHandler(event:DragEvent):void{
@@ -913,7 +928,7 @@
 	</s:Scroller>
 	
 	
-	<s:HGroup width="100%"
+	<s:HGroup id="controlsGroup" width="100%"
 			 height="32"
 			 minHeight="28"
 			 verticalAlign="middle"

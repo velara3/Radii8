@@ -237,7 +237,7 @@
 					warningNeeded = true;
 				}
 				
-				if (radiate.selectedDocument.scale!=1) {
+				if (radiate.selectedDocument && radiate.selectedDocument.scale!=1) {
 					if (warningMessage!="") warningMessage += "\n";
 					warningMessage += "When the document is scaled drag and drop inside of a basic layout doesn't work. ";
 					warningMessage += "Use the arrow keys or use the Layout Panel to size and position.";

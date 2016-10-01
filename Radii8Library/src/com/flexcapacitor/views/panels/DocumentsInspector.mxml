@@ -215,6 +215,9 @@
 					
 					//Radiate.info("Saved locally: " + savedLocally);
 				}
+				else {
+					Radiate.warn("No document selected");
+				}
 			}
 			
 			/**
@@ -256,7 +259,8 @@
 				var selectedDocument:IDocument = list.selectedItem as IDocument;
 				
 				if (selectedDocument) {
-					radiate.removeDocument(selectedDocument);
+					openDeleteProjectPopUp.play();
+					//radiate.removeDocument(selectedDocument);
 				}
 				else {
 					Radiate.info("Please select a document");
@@ -304,9 +308,17 @@
 			
 			protected function list_doubleClickHandler(event:MouseEvent):void {
 				var documentData:IDocument = list.selectedItem ? IDocument(list.selectedItem) : null;
+				var iDocument:IDocument;
 				
 				if (documentData && !documentData.isOpen) {
-					radiate.openDocumentByData(documentData, true);
+					iDocument = radiate.openDocumentByData(documentData, false, true);
+					
+					if (iDocument==null) {
+						Radiate.error("Document was not found (never saved). Delete the document and save project.");
+					}
+				}
+				else if (documentData && documentData.isOpen) {
+					Radiate.info("Document '" + documentData.name + "' is already open"); 
 				}
 			}
 			
@@ -407,15 +419,36 @@
 			}
 			
 			protected function openDocumentInBrowserButton_clickHandler(event:MouseEvent):void {
-				RunManager.openDocumentInBrowser();
+				var iDocument:IDocument = list.selectedItem as IDocument;
+				
+				if (iDocument) {
+					RunManager.openDocumentInBrowser();
+				}
+				else {
+					Radiate.info("Please select a document");
+				}
 			}
 			
 			protected function openDocumentInBrowserScreenshotButton_clickHandler(event:MouseEvent):void {
-				RunManager.openDocumentInBrowserScreenshot();
+				var iDocument:IDocument = list.selectedItem as IDocument;
+				
+				if (iDocument) {
+					RunManager.openDocumentInBrowserScreenshot();
+				}
+				else {
+					Radiate.info("Please select a document");
+				}
 			}
 			
 			protected function openDocumentInBrowserSiteScannerButton_clickHandler(event:MouseEvent):void {
-				RunManager.openDocumentInBrowserSiteScanner();
+				var iDocument:IDocument = list.selectedItem as IDocument;
+				
+				if (iDocument) {
+					RunManager.openDocumentInBrowserSiteScanner();
+				}
+				else {
+					Radiate.info("Please select a document");
+				}
 			}
 			
 			protected function list_clickHandler(event:MouseEvent):void {
@@ -424,11 +457,14 @@
 				if (documentData) {
 					updateDocumentStatus(documentData);
 				}
+				else {
+					Radiate.info("Please select a document");
+				}
 			}
 			
 			protected function setHomePageDocumentIcon_clickHandler(event:MouseEvent):void {
 				var documentData:IDocument = list.selectedItem ? IDocument(list.selectedItem) : null;
-				var documentID:int = documentData.id==null ? 0 : int(documentData.id);
+				var documentID:int = documentData && documentData.id==null ? 0 : int(documentData.id);
 				var homePageID:int = Radiate.instance.projectHomePageID;
 				
 				if (documentData) {
@@ -445,6 +481,10 @@
 							services.setProjectHomePage(int(documentData.id));
 						}
 					}
+				}
+				
+				else {
+					Radiate.warn("No document selected");
 				}
 			}
 			
@@ -561,8 +601,8 @@
 		</handlers:EventHandler>
 		
 		<!--- show delete document popup -->
-		<handlers:EventHandler targets="{deleteDocumentIcon}" eventName="click" 
-							   enabled="{list.selectedItem!=null}">
+		<!--<handlers:EventHandler targets="{deleteDocumentIcon}" eventName="click" 
+							   enabled="{list.selectedItem!=null}">-->
 			<fc:OpenPopUp id="openDeleteProjectPopUp" 
 						  popUpType="{DeleteDocumentWindow}" 
 						  modalDuration="100" 
@@ -572,7 +612,7 @@
 						  parent="{parentApplication}"
 						  popUpOptions="{{currentState:'document',documentData:list.selectedItem}}"
 						  />
-		</handlers:EventHandler>
+		<!--</handlers:EventHandler>-->
 		
 		<!--- show save before close document popup. disabled for now -->
 		<!--<handlers:EventHandler targets="{closeDocumentIcon}" eventName="click" 
@@ -815,6 +855,7 @@
 		<c:BeveledImageButton id="deleteDocumentIcon" 
 					   source="{Radii8LibraryAssets.trashCan}" 
 					   toolTip="Remove Document"
+					   click="deleteDocumentIcon_clickHandler(event)"
 					   />
 	</s:HGroup>
 	

@@ -60,7 +60,7 @@
 			
 			public function getHistory():String {
 				var history:ListCollectionView = HistoryManager.history;
-				var totalHistoryLength:int = history.length;
+				var totalHistoryLength:int = history ? history.length : 0;
 				var currentHistoryIndex:int = HistoryManager.historyIndex;
 				var changesDictionary:Dictionary = HistoryManager.historyEventsDictionary;
 				var items:XMLListCollection = new XMLListCollection();
@@ -90,6 +90,10 @@
 				
 				if (currentHistoryIndex==-1) {
 					return "No changes";
+				}
+				
+				if (history==null) {
+					return "No history";
 				}
 				
 				// get current changes

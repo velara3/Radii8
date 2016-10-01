@@ -11,6 +11,7 @@
 		 minWidth="100" 
 		 minHeight="100"
 		 implements="com.flexcapacitor.views.IInspector" 
+		 fontSize="11"
 		 >
 	
 	

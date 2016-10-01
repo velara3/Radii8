@@ -72,6 +72,7 @@
 					if (documentData==null) {
 						documentData = radiate.selectedDocument;
 					}
+					
 					if (documentData) {
 						
 						if (documentData.id!=null) {
@@ -179,30 +180,34 @@
 			}
 			
 			protected function deleteResultsHandler(event:RadiateEvent):void {
-				var data:Object = event.data;
+				var data:Object = event.data || event.selectedItem;
 				var status:String = event.status;
 				var successful:Boolean = event.successful;
 				var error:String;
 				var message:String = "";
 				var iDocument:IDocument;
+				var numberOfProjects:int;
+				var eventType:String = event.type;
+				var numberOfDocuments:int;
 			
 				iDocument = event.selectedItem as IDocument;
 				inProgress = false;
 				
-				if (event.type==RadiateEvent.PROJECT_DELETED) {
+				if (eventType==RadiateEvent.PROJECT_DELETED) {
 					radiate.removeEventListener(RadiateEvent.PROJECT_DELETED, deleteResultsHandler);
 				}
-				
-				if (event.type==RadiateEvent.DOCUMENT_DELETED) {
+				else if (eventType==RadiateEvent.DOCUMENT_DELETED) {
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_DELETED, deleteResultsHandler);
 				}
-				
-				if (event.type==RadiateEvent.ATTACHMENTS_DELETED) {
+				else if (eventType==RadiateEvent.ATTACHMENTS_DELETED) {
 					radiate.removeEventListener(RadiateEvent.ATTACHMENTS_DELETED, deleteResultsHandler);
 				}
+				else if (eventType==RadiateEvent.PROJECT_REMOVED) {
+					radiate.removeEventListener(RadiateEvent.PROJECT_REMOVED, deleteResultsHandler);
+				}
 				
-				if (event.type==RadiateEvent.PROJECT_DELETED) {
-					var numberOfProjects:int = radiate.projects ? radiate.projects.length : 0;
+				if (eventType==RadiateEvent.PROJECT_DELETED) {
+					numberOfProjects = radiate.projects ? radiate.projects.length : 0;
 					
 					if (numberOfProjects==0) {
 						Radiate.goToHomeScreen();
@@ -210,7 +215,7 @@
 				}
 				
 				// there was no remote attachments to delete
-				if (data && data.localDeleted==true) {
+				if (data && "localDeleted" in data && data.localDeleted==true) {
 					
 					playDeleteSuccessfulMessage();
 					return;
@@ -219,8 +224,7 @@
 				// TODO Loop through and replace with missing images
 				
 				// loop through documents and replace bitmap data with url to source
-				var numberOfDocuments:int = radiate.documents.length;
-				var ducuments:Array = radiate.documents;
+				numberOfDocuments = radiate.documents.length;
 				k = 0;
 				
 				for (var k:int;k<numberOfDocuments;k++) {

@@ -199,6 +199,21 @@ package com.flexcapacitor.model {
 			_containerTypeName = value;
 		}
 
+		private var _sourceData:SourceData;
+
+		/**
+		 * Last reference to a source data object if document was imported from MXML data 
+		 * */
+		public function get sourceData():SourceData
+		{
+			return _sourceData;
+		}
+
+		public function set sourceData(value:SourceData):void
+		{
+			_sourceData = value;
+		}
+
 		
 		/**
 		 * @private

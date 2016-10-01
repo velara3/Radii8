@@ -8,7 +8,7 @@
 					   xmlns:skins="com.flexcapacitor.skins.*" 
 					   
 					   frameRate="60"
-					   width="1000" height="450" left="10" top="10" 
+					   width="1000" height="550" left="10" top="10" 
 					   applicationComplete="windowedapplication1_creationCompleteHandler(event)" 
 					   >
 	
@@ -38,12 +38,21 @@
 		}
 		
 		
+		controls|ColorPicker {
+			textInputClass:ClassReference("com.flexcapacitor.controls.ClearButtonTextInput");
+			swatchPanelStyleName:"textStyles";
+		}
 		
+		.textStyles {
+			textFieldWidth:80;
+		}
 	</fx:Style>
 	
 	<fx:Script>
 		<![CDATA[
+			import com.flexcapacitor.controls.ClearButtonTextInput;
 			import com.flexcapacitor.controls.RichTextEditorBar;
+			import com.flexcapacitor.controls.RichTextEditorBarCallout;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
 			import flash.debugger.enterDebugger;
@@ -60,8 +69,10 @@
 			import spark.components.PopUpAnchor;
 			import spark.components.RichEditableText;
 			import spark.core.IDisplayText;
+			import spark.events.PopUpEvent;
 			import spark.events.TextOperationEvent;
 			import spark.layouts.BasicLayout;
+			import spark.utils.TextFlowUtil;
 			
 			import flashx.textLayout.compose.IFlowComposer;
 			import flashx.textLayout.conversion.ConversionType;
@@ -90,7 +101,7 @@
 			public static var editableRichTextField:RichEditableText;
 			public static var editableRichTextEditorBar:RichTextEditorBar = new RichTextEditorBar();
 			public static var popupAnchor:PopUpAnchor = new PopUpAnchor();
-			public static var callOut:EditorCallOut = new EditorCallOut();
+			public static var callOut:RichTextEditorBarCallout = new RichTextEditorBarCallout();
 			
 			public var isEditableRichTextEditorBarVisible:Boolean;
 			
@@ -107,6 +118,48 @@
 				//editableRichTextEditor.textArea = null;
 				//editableRichTextEditor.textArea = testTextArea;
 				//editableRichTextEditor.invalidateSkinState();
+			}
+			
+			private function init():void {
+				var textFlow:TextFlow;
+				
+				// adjust the selection color when focus is not on the selection to look the same.  
+				// This is appropriate for an editor but not for UI widgets
+				TextFlow.defaultConfiguration.unfocusedSelectionFormat = TextFlow.defaultConfiguration.focusedSelectionFormat;
+				TextFlow.defaultConfiguration.inactiveSelectionFormat = TextFlow.defaultConfiguration.focusedSelectionFormat;
+				
+				textFlow = TextFlowUtil.importFromString(simpleText);
+				//textFlow = TextConverter.importToFlow(simpleText, TextConverter.TEXT_LAYOUT_FORMAT);
+				// wipe out the default inherits - format take precendence over CSS - this simplifies the example
+				//textFlow.format = null;
+				// attach a format resolver
+				//textFlow.formatResolver = new CSSFormatResolver(styleManager);
+				// set it into the editor
+				editor.textFlow = textFlow;
+				
+				callOut.hideOnMouseDownOutside = true;
+				callOut.showEditorOnFocusIn = true;
+				
+				callOut.addEventListener(PopUpEvent.CLOSE, callOutCloseHandler);
+				
+				return;
+				
+				var cfg:Configuration = TextFlow.defaultConfiguration;
+				
+				var normalTLF:TextLayoutFormat = new TextLayoutFormat(cfg.defaultLinkNormalFormat);
+				normalTLF.color = 0xFF0000;
+				
+				var hoverTLF:TextLayoutFormat = new TextLayoutFormat(cfg.defaultLinkHoverFormat);
+				hoverTLF.color = 0xFF00FF;
+				hoverTLF.textDecoration = TextDecoration.NONE;
+				
+				var activeTLF:TextLayoutFormat = new TextLayoutFormat(cfg.defaultLinkActiveFormat);
+				activeTLF.color = 0x00FF00;
+				
+				cfg.defaultLinkNormalFormat = normalTLF;
+				cfg.defaultLinkHoverFormat = hoverTLF;
+				cfg.defaultLinkActiveFormat = activeTLF;
+				TextFlow.defaultConfiguration = cfg;
 			}
 			
 			/**
@@ -202,6 +255,254 @@
 						// add reference of rich editable text field to editor bar 
 						/*if (callOut==null) {
 							currentEditableComponent.owner.addElement(editableRichTextField);
+						}*/
+						
+						// add rich editor bar to call out  
+						if (editableRichTextEditorBar.owner!=callOut) {
+							//callOut.skin.addChild(editableRichTextEditorBar);
+						}
+						
+						callOut.horizontalPosition = "middle";
+						callOut.verticalPosition = "before";
+						callOut.setStyle("contentBackgroundAppearance", ContentBackgroundAppearance.NONE);
+						callOut.richEditableText = editableRichTextField;
+						callOut.addEventListener(FocusEvent.FOCUS_OUT, callOutFocusOutHandler);
+						callOut.addEventListener("mouseDownOutside", callOutMouseDownOutsideHandler);
+						
+						if (isBasicLayout) {
+							currentEditableComponent.owner.addElement(editableRichTextField);
+						}
+						else {
+							currentEditableComponent.owner.addElement(editableRichTextField);
+						}
+						
+						if (isBasicLayout) {
+							//trace(editableRichTextEditor.horizontalCenter);
+							//currentEditableComponent.owner.addElement(editableRichTextEditorBar);
+							
+							//trace(editableRichTextEditor.horizontalCenter);
+							callOut.validateNow();
+						}
+						else {
+							//currentEditableComponent.owner.addElement(editableRichTextEditorBar);
+							
+						}
+					}
+					else {
+						
+						
+						// add rich editable text field to label container
+						if (isBasicLayout) {
+							currentEditableComponent.owner.addElement(editableRichTextField);
+						}
+						else {
+							currentEditableComponent.owner.addElement(editableRichTextField);
+						}
+					}
+					
+					// add reference of rich editable text field to editor bar 
+					if (isRichEditor && editableRichTextEditorBar.richEditableText != editableRichTextField) {
+						//testTextArea.heightInLines = NaN;
+						editableRichTextEditorBar.attachRichEditableText(editableRichTextField);
+					}
+					
+					editableRichTextField.styleName = undefined;
+					
+					if (isRichEditor) {
+						var textFlowString:String = TextConverter.export(currentEditableComponent.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
+						var textFlow:TextFlow = TextConverter.importToFlow(textFlowString, TextConverter.TEXT_LAYOUT_FORMAT);
+						textFlow.addEventListener(FlowOperationEvent.FLOW_OPERATION_END, flowOperationHandler);
+						
+						editableRichTextEditorBar.textFlow = textFlow;
+						
+						// the following lines causes errors 
+						// undefined
+						// at mx.styles::StyleProtoChain$/getStyleManager()[/Users/me/Documents/ApacheFlex4.15/frameworks/projects/framework/src/mx/styles/StyleProtoChain.as:1023]
+						//editableRichTextEditorBar.richEditableText.styleName = currentEditableComponent;
+						
+						//editableRichTextEditorBar.richEditableText.styleName = currentEditableComponent;
+						editableRichTextEditorBar.focusRect = null;
+						editableRichTextEditorBar.setStyle("focusAlpha", 0.25);
+						editableRichTextEditorBar.validateNow();
+						//  Error: Skin for Callout3.CalloutSkin19.contentGroup.RichTextEditorBar1 cannot be found.
+						var o:IFlowComposer = editableRichTextField.textFlow.flowComposer;
+						var container:DisplayObjectContainer = o.getControllerAt(0).container;
+						//callOut.open(currentEditableComponent.owner);
+						//callOut.open(container);
+					}
+					else {
+						editableRichTextField.text = currentEditableComponent.text;
+						
+						// BE CAREFUL SETTING STYLENAME BECAUSE IT COPIES OVER VERTICAL CENTER AND HORIZONTAL CENTER
+						//editableRichTextField.styleName = currentEditableComponent;
+						editableRichTextField.focusRect = null;
+						editableRichTextField.setStyle("focusAlpha", 0.25);
+						editableRichTextField.validateNow();
+					}
+					
+					if (isRichEditor) {
+						editableRichTextEditorBar.includeInLayout = false;
+						propertyNames.push("textFlow");
+						//testRichEditableText.clearStyle("horizontalCenter");
+						//testRichEditableText.clearStyle("verticalCenter");
+						//testRichEditableText.x = rectangle.x-2;
+						//testRichEditableText.y = rectangle.y-2;
+						//trace(testRichEditableText.x);
+						//trace(testRichEditableText.y);
+					}
+					
+					
+					topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+					topSystemManager.stage.stageFocusRect = false;
+					
+					if (isRichEditor) {
+						var oe:Object = editableRichTextField.owner;
+						
+						oe = editableRichTextField.owner;
+						callOut.open(editableRichTextField);
+						editableRichTextEditorBar.textFlow = textFlow;
+						
+						callOut.editorBar.addEventListener(FocusEvent.FOCUS_OUT, callOutFocusOutHandler);
+						
+						isEditableRichTextEditorBarVisible = true;
+						
+						editableRichTextEditorBar.setFocus();
+						
+						editableRichTextEditorBar.richEditableText.setFocus();
+						editableRichTextEditorBar.richEditableText.selectAll();
+						
+						editableRichTextEditorBar.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
+						editableRichTextEditorBar.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
+						editableRichTextEditorBar.addEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents, false, 0, true);
+						editableRichTextEditorBar.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
+					}
+					else {
+						editableRichTextField.selectAll();
+						editableRichTextField.setFocus();
+						
+						editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
+						editableRichTextField.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
+						editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents, false, 0, true);
+						editableRichTextField.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
+					}
+				}
+			}
+			
+			/**
+			 * Shows rich text editor bar in a call out
+			 * */
+			public function showRichEditorCallout(event:MouseEvent):void {
+				
+				callOut.horizontalPosition = "middle";
+				callOut.verticalPosition = "before";
+				callOut.setStyle("contentBackgroundAppearance", ContentBackgroundAppearance.NONE);
+				callOut.richEditableText = editor;
+				
+				callOut.open(editor);
+				//editableRichTextEditorBar.textFlow = textFlow;
+				
+				//callOut.editorBar.addEventListener(FocusEvent.FOCUS_OUT, callOutFocusOutHandler);
+				
+				isEditableRichTextEditorBarVisible = true;
+				
+				//editableRichTextEditorBar.setFocus();
+				
+				//callOut.addEventListener(FocusEvent.FOCUS_OUT, callOutFocusOutHandler);
+				//callOut.addEventListener("mouseDownOutside", callOutMouseDownOutsideHandler);
+				
+				
+				return;
+				
+				var target:IDisplayText;
+				var isRichEditor:Boolean;
+				var rectangle:Rectangle;
+				var propertyNames:Array;
+				var valuesObject:Object;
+				var isBasicLayout:Boolean;
+				var topSystemManager:ISystemManager;
+				var currentEditor:Object;
+				
+				
+				if (event==null) {
+					//target = testRichEditableText as IDisplayText;
+				}
+				else {
+					target = event.target as IDisplayText;
+				}
+				/*
+				if (editableRichTextField==null) {
+					editableRichTextField = new RichEditableText();
+					editableRichTextField.focusRect = null;
+					editableRichTextField.setStyle("focusAlpha", 0);
+					editableRichTextField.clearUndoOnFocusOut = false;
+					editableRichTextField.addEventListener(MouseEvent.CLICK, testTextArea_clickHandler);
+					editableRichTextField.addEventListener(FocusEvent.FOCUS_IN, testRichEditableText_focusInHandler);
+					editableRichTextField.addEventListener(FlowOperationEvent.FLOW_OPERATION_END, flowOperationHandler);
+					editableRichTextField.mx_internal::textContainerManager.addEventListener(
+						FlowOperationEvent.FLOW_OPERATION_COMPLETE,
+						textContainerManager_flowOperationCompleteHandler);
+				}
+				*/
+				currentEditableComponent = target;
+				
+				isRichEditor = "textFlow" in currentEditableComponent;
+				
+				if (currentEditableComponent) {
+					isRichEditor = "textFlow" in currentEditableComponent;
+					currentEditor = editableRichTextField; // isRichEditor ? editableRichTextEditorBar : editableRichTextField;
+					
+					rectangle = DisplayObjectUtils.getRectangleBounds(target);
+					propertyNames = ["x", "y", "text", "minWidth", "textFlow"];
+					valuesObject = {};
+					
+					if (currentEditableComponent.owner.layout is BasicLayout) {
+						isBasicLayout = true;
+						rectangle = DisplayObjectUtils.getRectangleBounds(currentEditableComponent, currentEditableComponent.owner);
+					}
+					else {
+						rectangle = DisplayObjectUtils.getRectangleBounds(currentEditableComponent, this);
+					}
+					
+					//currentComponent.x = rectangle.x;
+					//currentComponent.y = rectangle.y;
+					
+					//currentEditField.includeInLayout = false;
+					currentEditor.x = rectangle.x;
+					currentEditor.y = rectangle.y;
+					
+					const MIN_WIDTH:int = 22;
+					//currentComponent.minWidth = MIN_WIDTH;
+					currentEditor.minWidth = MIN_WIDTH;
+					
+					//properties.width = "100";
+					if (!isNaN(currentEditableComponent.explicitWidth)) {
+						propertyNames.push("width");
+						editableRichTextField.width = rectangle.width;
+					}
+					else if (!isNaN(currentEditableComponent.percentWidth)) {
+						// if basic layout we can get percent width
+						if (isBasicLayout) {
+							propertyNames.push("percentWidth");
+							editableRichTextField.percentWidth = currentEditableComponent.percentWidth;
+						}
+						else {
+							propertyNames.push("width");
+							editableRichTextField.width = rectangle.width;
+						}
+					}
+					
+					//editableRichTextField.width = undefined;
+					//editableRichTextField.percentWidth = NaN;
+					//properties.height = rectangle.height;
+					//currentComponent.visible = false;
+					currentEditableComponent.visible = false;
+					
+					if (isRichEditor) {
+						
+						
+						// add reference of rich editable text field to editor bar 
+						/*if (callOut==null) {
+						currentEditableComponent.owner.addElement(editableRichTextField);
 						}*/
 						
 						// add rich editor bar to call out  
@@ -511,7 +812,7 @@
 			protected function testRichEditableText_focusInHandler(event:FocusEvent):void
 			{
 				if (isEditableRichTextEditorBarVisible==false) {
-					//showTextEditor(null);
+					showTextEditor(null);
 				}
 			}
 			
@@ -601,7 +902,6 @@
 			
 			protected function flowOperationHandler(event:FlowOperationEvent):void
 			{
-				// TODO Auto-generated method stub
 				// when undo and redoing a bullet list an error occurs as shown in the comment above
 				// adding an event listener prevents this
 				var op:String = Object(event.operation).toString();
@@ -615,40 +915,6 @@
 					trace("FLOW OPERATION ERROR OCCURRED on " + op + " on " + target);
 					
 				}
-			}
-			
-			private function init():void {
-				// adjust the selection color when focus is not on the selection to look the same.  
-				// This is appropriate for an editor but not for UI widgets
-				TextFlow.defaultConfiguration.unfocusedSelectionFormat = TextFlow.defaultConfiguration.focusedSelectionFormat;
-				TextFlow.defaultConfiguration.inactiveSelectionFormat = TextFlow.defaultConfiguration.focusedSelectionFormat;
-				
-				
-				var textFlow:TextFlow = TextConverter.importToFlow(simpleText, TextConverter.TEXT_LAYOUT_FORMAT);
-				// wipe out the default inherits - format take precendence over CSS - this simplifies the example
-				//textFlow.format = null;
-				// attach a format resolver
-				//textFlow.formatResolver = new CSSFormatResolver(styleManager);
-				// set it into the editor
-				editor.textFlow = textFlow;
-				
-				return;
-				var cfg:Configuration = TextFlow.defaultConfiguration;
-				
-				var normalTLF:TextLayoutFormat = new TextLayoutFormat(cfg.defaultLinkNormalFormat);
-				normalTLF.color = 0xFF0000;
-				
-				var hoverTLF:TextLayoutFormat = new TextLayoutFormat(cfg.defaultLinkHoverFormat);
-				hoverTLF.color = 0xFF00FF;
-				hoverTLF.textDecoration = TextDecoration.NONE;
-				
-				var activeTLF:TextLayoutFormat = new TextLayoutFormat(cfg.defaultLinkActiveFormat);
-				activeTLF.color = 0x00FF00;
-				
-				cfg.defaultLinkNormalFormat = normalTLF;
-				cfg.defaultLinkHoverFormat = hoverTLF;
-				cfg.defaultLinkActiveFormat = activeTLF;
-				TextFlow.defaultConfiguration = cfg;
 			}
 			
 			/**
@@ -679,6 +945,19 @@
 					//enterDebugger();
 				}
 			}
+			
+			protected function editor_focusInHandler(event:FocusEvent):void
+			{
+				if (isEditableRichTextEditorBarVisible==false) {
+					showRichEditorCallout(null);
+				}
+			}
+			
+			protected function callOutCloseHandler(event:PopUpEvent):void
+			{
+				var data:* = event.data;
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -707,26 +986,28 @@
 		</fx:Component>
 	</fx:Declarations>
 	
+	<controls:ColorPicker top="10" horizontalCenter="0" textInputClass="{ClearButtonTextInput}"
+						  swatchPanelStyleName="textStyles"/>
 		
-		<s:RichText id="editor" text="Some rich text" 
+		<s:RichEditableText id="editor" text="Some rich text" 
 					top="100" left="100"
 					width="600"
-							doubleClick="richtext1_doubleClickHandler(event)" 
-							doubleClickEnabled="true" />
+					focusIn="editor_focusInHandler(event)"/>
 	
 	<s:BorderContainer width="300" height="400" verticalCenter="0" horizontalCenter="0" visible="false"
 					   click="bordercontainer1_clickHandler(event)">
 		<s:Label id="testLabel" text="Some really long text to work with" verticalCenter="0" horizontalCenter="0"
 				 doubleClick="showTextEditor(event)" doubleClickEnabled="true"/>
 		
-		<s:RichText id="testRichEditableText" 
+		<s:RichEditableText id="testRichEditableText" 
 							bottom="10" 
 							width="150" 
 							styleName="myTextArea" 
 							focusIn="testRichEditableText_focusInHandler(event)"
-					updateComplete="testTextArea_updateCompleteHandler(event)"
-					click="testTextArea_clickHandler(event)"
-					text="some text"/>
+							updateComplete="testTextArea_updateCompleteHandler(event)"
+							click="testTextArea_clickHandler(event)"
+							text="some text"
+							/>
 					<!--change="testTextArea_changeHandler(event)"--> 
 	</s:BorderContainer>
 	

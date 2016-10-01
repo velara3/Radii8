@@ -31,6 +31,9 @@
     <application path="LiveMXMLEditor.mxml">
       <airExcludes/>
     </application>
+    <application path="RichTextEditorCallOut.mxml">
+      <airExcludes/>
+    </application>
   </applications>
   <modules/>
   <workers/>
