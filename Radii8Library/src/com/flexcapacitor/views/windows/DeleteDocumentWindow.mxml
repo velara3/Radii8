@@ -211,6 +211,7 @@
 					
 					if (numberOfProjects==0) {
 						Radiate.goToHomeScreen();
+						Radiate.mainView.getProjectsByUser();
 					}
 				}
 				

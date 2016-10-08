@@ -37,12 +37,10 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.managers.ServicesManager;
-			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.DocumentMetaData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
-			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.model.MenuItem;
 			import com.flexcapacitor.model.MenuItemDataDescriptor;
 			import com.flexcapacitor.model.Settings;
@@ -649,9 +647,13 @@
 			 * */
 			protected function showProjectSource_itemClickHandler(event:Event):void {
 				var iProject:IProject = radiate.selectedProject;
+				var output:String;
 				
 				if (iProject) {
-					Radiate.showConsolePanel(iProject.toString());
+					output = "\nSource for project, '" + iProject.name + "':\n";
+					output += iProject.post ? JSON.stringify(iProject.post) + "\n" : "";
+					output += iProject.toString();
+					Radiate.showConsolePanel(output);
 					//Radiate.info();
 				}
 				else {
@@ -664,11 +666,14 @@
 			 * */
 			protected function showDocumentSource_itemClickHandler(event:Event):void {
 				var iDocument:IDocument = radiate.selectedDocument;
-				var source:String;
+				var output:String;
 				
 				if (iDocument) {
-					source = iDocument.marshall(DocumentMetaData.STRING_TYPE, true) as String;
-					Radiate.showConsolePanel(source);
+					output = "\nSource for document, '" + iDocument.name + "':\n";
+					output += iDocument.post ? JSON.stringify(iDocument.post) + "\n" : "";
+					output += iDocument.marshall(DocumentMetaData.STRING_TYPE, true) as String;
+					
+					Radiate.showConsolePanel(output);
 				}
 				else {
 					Radiate.warn("No document selected");
@@ -700,7 +705,9 @@
 				var project:IProject = examplesList.selectedItem;
 				
 				if (project) {
-					openExampleProject(project);
+					Radiate.info("Opening example project '" + project.name + "'");
+					
+					Radiate.callAfter(250, openExampleProject, project);
 				}
 				
 			}
@@ -741,20 +748,12 @@
 			public var exampleProject:IProject;
 			
 			protected function projectsList_doubleClickHandler(event:MouseEvent):void {
-				
 				var project:IProject = projectsList.selectedItem;
 				
-				if (project && project is IProject && !project.isOpen) {
-					currentState = DESIGN_STATE;
-					validateNow();
-					radiate.addProject(project, false);
-					radiate.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
-					radiate.setProject(project, true);
-				}
-				else if (project && project is IProject && project.isOpen) {
-					currentState = DESIGN_STATE;
-					validateNow();
-					radiate.setProject(project, true);
+				if (project) {
+					Radiate.info("Opening project '" + project.name + "'");
+					
+					Radiate.callAfter(250, openProject, project);
 				}
 			}
 			
@@ -763,7 +762,7 @@
 			 * */
 			protected function openProject(project:IProject):void {
 				
-				if (project && project is IProject) {
+				if (project && project is IProject && !project.isOpen) {
 					currentState = DESIGN_STATE;
 					validateNow();
 					radiate.addProject(project, false);

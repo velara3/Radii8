@@ -78,6 +78,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DocumentTranscoder;
+	import com.flexcapacitor.utils.FontUtils;
 	import com.flexcapacitor.utils.HTMLUtils;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
 	import com.flexcapacitor.utils.MXMLDocumentImporter;
@@ -130,13 +131,12 @@ package com.flexcapacitor.controller {
 	import flash.utils.setTimeout;
 	
 	import mx.collections.ArrayCollection;
-	import mx.containers.Box;
+	import mx.collections.ArrayList;
 	import mx.containers.Canvas;
 	import mx.containers.Grid;
 	import mx.containers.GridItem;
 	import mx.containers.GridRow;
 	import mx.containers.TabNavigator;
-	import mx.containers.VBox;
 	import mx.controls.Alert;
 	import mx.controls.ColorPicker;
 	import mx.controls.LinkButton;
@@ -144,7 +144,6 @@ package com.flexcapacitor.controller {
 	import mx.core.Container;
 	import mx.core.DeferredInstanceFromFunction;
 	import mx.core.DragSource;
-	import mx.core.EventPriority;
 	import mx.core.IFlexModuleFactory;
 	import mx.core.IInvalidating;
 	import mx.core.IUIComponent;
@@ -164,7 +163,6 @@ package com.flexcapacitor.controller {
 	import mx.logging.LogEventLevel;
 	import mx.managers.ISystemManager;
 	import mx.managers.LayoutManager;
-	import mx.managers.SystemManager;
 	import mx.managers.SystemManagerGlobals;
 	import mx.printing.FlexPrintJob;
 	import mx.printing.FlexPrintJobScaleType;
@@ -178,7 +176,6 @@ package com.flexcapacitor.controller {
 	import spark.components.Application;
 	import spark.components.BorderContainer;
 	import spark.components.Button;
-	import spark.components.CheckBox;
 	import spark.components.ComboBox;
 	import spark.components.ContentBackgroundAppearance;
 	import spark.components.DropDownList;
@@ -187,7 +184,6 @@ package com.flexcapacitor.controller {
 	import spark.components.Label;
 	import spark.components.NavigatorContent;
 	import spark.components.NumericStepper;
-	import spark.components.RadioButton;
 	import spark.components.RichEditableText;
 	import spark.components.RichText;
 	import spark.components.Scroller;
@@ -506,6 +502,9 @@ package com.flexcapacitor.controller {
 		private static var historyManager:HistoryManager;
 		
 		private static var serviceManager:ServicesManager;
+		
+		[Bindable]
+		public static var fontsArray:Array;
 		
 		/**
 		 * Create references for classes we need.
@@ -1898,7 +1897,16 @@ package com.flexcapacitor.controller {
 			
 			createDevicesList(devicesXML);
 			
+			createFontsList();
+			
 			documentStatuses.source = [WPService.STATUS_NONE, WPService.STATUS_DRAFT, WPService.STATUS_PUBLISH];
+		}
+		
+		/**
+		 * Get an array of fonts. Refactor to apply to projects and documents. 
+		 * */
+		public static function createFontsList():void {
+			fontsArray = FontUtils.getFontInformationDetails(null);
 		}
 		
 		/**
@@ -2843,15 +2851,15 @@ package com.flexcapacitor.controller {
 		public static var DEFAULT_DOCUMENT_WIDTH:int = 800;
 		public static var DEFAULT_DOCUMENT_HEIGHT:int = 792;
 		public static var DEFAULT_NAVIGATION_WINDOW:String = "userNavigation";
-		public static var SCREENSHOT_PATH:String = "https://dev.windows.com/en-us/microsoft-edge/tools/screenshots/#";
+		public static var SCREENSHOT_PATH:String = "https://dev.windows.com/en-us/microsoft-edge/tools/screenshots/?url=";
 		public static var SCREENSHOT_PATH_NAME:String = "screenshotPathName";
 		public static var SITE_SCANNER_PATH:String = "https://dev.windows.com/en-us/microsoft-edge/tools/staticscan/?url=";
 		public static var SITE_SCANNER_PATH_NAME:String = "siteScannerPathName";
 		
 		public static var defaultHost:String = "https://www.radii8.com";
 		public static var defaultPath:String = "/r8m/";
-		public static var defaultScreenshotPath:String = "https://dev.windows.com/en-us/microsoft-edge/tools/screenshots/#";
-		public static var defaultSiteScannerPath:String = "https://dev.windows.com/en-us/microsoft-edge/tools/screenshots/#";
+		public static var defaultScreenshotPath:String = "https://dev.windows.com/en-us/microsoft-edge/tools/screenshots/?url=";
+		public static var defaultSiteScannerPath:String = "https://dev.windows.com/en-us/microsoft-edge/tools/staticscan/?url=";
 		public static var firstRun:Boolean;
 		
 		/**
@@ -7565,7 +7573,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public static var currentEditableComponent:Object;
 		public static var editableRichTextField:RichEditableText = new RichEditableText();
-		public static var editableRichTextEditorBarCallout:RichTextEditorBarCallout = new RichTextEditorBarCallout();
+		public static var editableRichTextEditorBarCallout:RichTextEditorBarCallout;
 		
 		/**
 		 * Handles double click on text to show text editor. 
@@ -7585,6 +7593,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var iDocument:IDocument;
 			var targetComponentDescription:ComponentDescription;
 			var parentComponentDescription:ComponentDescription;
+			var basicFonts:Boolean = true;
 			
 			const MIN_WIDTH:int = 22;
 			
@@ -7628,89 +7637,40 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				}
 				
 				
-				//currentComponent.x = rectangle.x;
-				//currentComponent.y = rectangle.y;
-				
-				//currentEditField.includeInLayout = false;
-				//currentEditField.x = rectangle.x;
-				///currentEditField.y = rectangle.y-30;
-				
-				//currentComponent.minWidth = MIN_WIDTH;
-				//currentEditField.minWidth = MIN_WIDTH;
-				
-				//currentEditField.includeInLayout = false;
 				valuesObject.x = rectangle.x;
 				valuesObject.y = rectangle.y;
-				/*
-				if (isRichEditor) {
-					valuesObject.y = rectangle.y;
-				}
-				else {
-					valuesObject.y = rectangle.y;
-				}
-				*/
-				//currentComponent.minWidth = MIN_WIDTH;
 				valuesObject.minWidth = MIN_WIDTH;
 				
-				//properties.width = "100";
 				if (!isNaN(target.explicitWidth)) {
 					propertyNames.push("width");
-					//currentEditor.width = rectangle.width;
 					valuesObject.width = rectangle.width;
 				}
 				else if (!isNaN(target.percentWidth)) {
 					// if basic layout we can get percent width
 					if (isBasicLayout) {
 						propertyNames.push("percentWidth");
-						//currentEditor.percentWidth = target.percentWidth;
 						valuesObject.percentWidth = target.percentWidth;
 					}
 					else {
 						propertyNames.push("width");
-						//currentEditor.width = rectangle.width;
 						valuesObject.width = rectangle.width;
 					}
 				}
 				
-				//editableRichTextField.width = undefined;
-				//editableRichTextField.percentWidth = NaN;
-				//properties.height = rectangle.height;
-				//currentComponent.visible = false;
 				currentEditableComponent.visible = false;
 				
-				/*
-				we add the editor later
-				if (isRichEditor) {
-					
-					// this is a wonky way to add the editable text to the 
-					if (isBasicLayout) {
-						
-						//if (editableRichTextField.stage==null) {
-						//	currentEditableComponent.owner.addElement(testRichEditableText);
-						//}
-						
-						if (editableRichTextField.stage==null) {
-							currentEditableComponent.owner.addElement(editableRichTextField);
-						}
-						
-						//trace(editableRichTextEditor.horizontalCenter);
-						currentEditableComponent.owner.addElement(editableRichTextEditor);
-						//trace(editableRichTextEditor.horizontalCenter);
-						editableRichTextEditor.validateNow();
-					}
-					else {
-						currentEditableComponent.owner.addElement(editableRichTextEditor);
-					}
+				if (editableRichTextEditorBarCallout==null) {
+					editableRichTextEditorBarCallout = new RichTextEditorBarCallout();
+					editableRichTextEditorBarCallout.initialize();
+					editableRichTextEditorBarCallout.createDeferredContent();
 				}
-				else {
-					if (isBasicLayout) {
-						currentEditableComponent.owner.addElement(editableRichTextField);
-					}
-					else {
-						currentEditableComponent.owner.addElement(editableRichTextField);
-					}
+				
+				if (basicFonts && editableRichTextEditorBarCallout.editorBar.fontDataProvider) {
+					editableRichTextEditorBarCallout.editorBar.fontDataProvider = null;
 				}
-				*/
+				else if (!basicFonts && editableRichTextEditorBarCallout.editorBar.fontDataProvider ==null) {
+					editableRichTextEditorBarCallout.editorBar.fontDataProvider = new ArrayList(fontsArray);
+				}
 				
 				if (isRichEditor && editableRichTextEditorBarCallout.richEditableText != editableRichTextField) {
 					//testTextArea.heightInLines = NaN;
@@ -9933,10 +9893,17 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var mxmlDocumentImporter:MXMLDocumentImporter;
 			var componentDescription:ComponentDescription;
 			var sourceDataLocal:SourceData;
+			var message:String;
 			
 			// I don't like this here - should move or dispatch events to handle import
 			var transcoder:TranscoderDescription = CodeManager.getImporter(CodeManager.MXML);
 			var importer:DocumentTranscoder = transcoder.importer;
+			
+			if (codeToParse=="" || codeToParse=="null") {
+				message = "No code to parse for document, \"" + document.name + "";
+				Radiate.error(message);
+				return null;
+			}
 			
 			isValid = XMLUtils.isValidXML(codeToParse);
 			
@@ -9956,7 +9923,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				xml = new XML(codeToParse);
 			}
 			catch (error:Error) {
-				var message:String = "Could not parse code for document, \"" + document.name + "\". Fix the code before you import.";
+				message = "Could not parse code for document, \"" + document.name + "\". Fix the code before you import.";
 				Radiate.error("Could not parse code for document, \"" + document.name + "\". \n" + error.message + " \nCode: \n" + codeToParse);
 				
 				if (openImportPopUp) {
@@ -10967,6 +10934,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			if (project is EventDispatcher && remote) {
 				EventDispatcher(project).addEventListener(SaveResultsEvent.SAVE_RESULTS, projectSaveResults, false, 0, true);
+				//EventDispatcher(project).addEventListener(Project.PROJECT_SAVED, projectSaveResults, false, 0, true);
 			}
 			
 			if (!local) {
@@ -10978,7 +10946,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			if (local) {
 				// TODO add support to save after response from server 
 				// because ID's may have been added from new documents
-				locallySaved = saveProjectLocally(project);
+				// UPDATE not saving locally bc it is not managed yet (no delete)
+				//locallySaved = saveProjectLocally(project);
 				//project.saveCompleteCallback = saveData;
 			}
 			
@@ -11059,33 +11028,33 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var numberOfDocuments:int;
 			var documentData:IDocumentData;
 			var url:String = getWPURL();
-			var documents:Array;
+			var exampleDocuments:Array;
 	
 			projectData.host = url;
 			
-			if (projectData.uid=="null" || projectData.uid==null) {
+			if (projectData.uid=="null" || projectData.uid=="" || projectData.uid==null) {
 				projectData.uid = projectData.createUID();
 				projectData.name += " Copy";
 			}
 			
-			documents = IProjectData(projectData).documents;
-			numberOfDocuments = documents ? documents.length : 0;
+			exampleDocuments = IProjectData(projectData).documents;
+			numberOfDocuments = exampleDocuments ? exampleDocuments.length : 0;
 			j=0;
 			
 			for (var j:int; j < numberOfDocuments; j++) {
-				documentData = IDocumentData(documents[j]);
+				documentData = IDocumentData(exampleDocuments[j]);
 				
 				if (documentData) {
 					documentData.host = url;
 					
-					if (documentData.uid=="null" || documentData.uid==null) {
+					if (documentData.uid=="null" || documentData.uid=="" || documentData.uid==null) {
 						documentData.uid = documentData.createUID();
 						documentData.name += " Copy";
 					}
 				}
 			}
 			
-			projectData.save();
+			projectData.save(locations);
 			
 			return true;
 		}
@@ -11208,6 +11177,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var saveRemote:Boolean = ServicesManager.getIsRemoteLocation(locations);
 			var saveLocallySuccessful:Boolean;
 			
+			//trace("- Radiate save document " + iDocument.name);
 			
 			if (iDocument==null) {
 				error("No document to save");
@@ -12693,21 +12663,22 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public function clearExampleProjectData(exampleProject:IProject):Boolean {
 			if (!exampleProject) return false;
-			var documents:Array;
+			var exampleDocuments:Array;
 			var numberOfDocuments:int;
+			var exampleDocument:IDocument;
 			
 			exampleProject.id = null;
 			exampleProject.uid = null;
-			documents = exampleProject.documents;
-			numberOfDocuments = documents ? documents.length :0;
+			exampleDocuments = exampleProject.documents;
+			numberOfDocuments = exampleDocuments ? exampleDocuments.length :0;
 			
 			for (var i:int;i<numberOfDocuments;i++) {
-				var document:IDocument = documents[i] as IDocument;
+				exampleDocument = exampleDocuments[i] as IDocument;
 				
-				if (document) {
-					document.id = null;
-					document.uid = UIDUtil.createUID();
-					document.isExample = true;
+				if (exampleDocument) {
+					exampleDocument.id = null;
+					exampleDocument.uid = UIDUtil.createUID();
+					exampleDocument.isExample = true;
 				}
 			}
 			

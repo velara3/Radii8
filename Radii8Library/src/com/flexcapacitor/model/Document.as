@@ -483,6 +483,7 @@ package com.flexcapacitor.model {
 		 * */
 		override public function save(locations:String = REMOTE_LOCATION, options:Object = null):Boolean {
 			var savedLocallyResult:Boolean = super.save(locations, options);
+			//trace("- IDocument save document " + name);
 			
 			lastSavedHistoryIndex = historyIndex;
 			
@@ -509,6 +510,8 @@ package com.flexcapacitor.model {
 			if (saveFunction!=null) {
 				saveFunction(this, object);
 			}
+			
+			//trace("- IDocument save form object " + object);
 			
 			return object;
 		}
@@ -616,6 +619,7 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 		override public function getSource(target:Object = null):String {
 			var sourceData:SourceData;
 			var value:String;
+			var options:ExportOptions;
 			
 			
 			if (isOpen) {
@@ -626,10 +630,20 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 				// value was not saving so ignoring is changed property
 				//if (isChanged || source==null || source=="") {
 				if (true) {
-					var options:ExportOptions = CodeManager.getExportOptions(CodeManager.MXML);
+					options = CodeManager.getExportOptions(CodeManager.MXML);
 					options.exportChildDescriptors = true;
 					sourceData = CodeManager.getSourceData(instance, this, CodeManager.MXML, options);
 					value = sourceData.source;
+					
+					// if the document is not fully open then we get errors and warnings like:
+					// Possibly Invalid Markup - XML node kind is not element
+					// Could not continue exporting MXML on this node. - Component definition for 'null' not found
+					//  those errors mean the document may not be completely loaded or initialized yet
+					//  in that case we need to save the original source code
+					// TODO: find and track down the cause of the empty string
+					if (value==null || value=="" || sourceData.componentDescription==null) {
+						return source;
+					}
 				}
 				else if (source) {
 					value = source;
@@ -637,25 +651,7 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 				else if (originalSource) {
 					value = originalSource;
 				}
-				//Radiate.info("Saving this=" + value);
 				
-				/*
-				Radiate.info("is changed=" + isChanged);
-				Radiate.info("original source null=" + (originalSource==null));
-				Radiate.info("history length=" + history.length);
-				Radiate.info("history index=" + historyIndex);
-				Radiate.info("instance stage=" + (instance?instance.stage:null));
-				Radiate.info("date saved=" + dateSaved);
-				Radiate.info(value);*/
-/*				Main Thread (Suspended)	
-	com.flexcapacitor.model::Document/getSource	
-	com.flexcapacitor.model::DocumentData/close	
-	com.flexcapacitor.model::Document/close	
-	com.flexcapacitor.controller::Radiate/closeDocument	
-	com.flexcapacitor.controller::Radiate/closeProject	
-	com.flexcapacitor.views.panels::ProjectInspector/closeProjectIcon_clickHandler	
-	com.flexcapacitor.views.panels::ProjectInspector/__closeProjectIcon_click	
-*/
 				return value;
 				
 			}

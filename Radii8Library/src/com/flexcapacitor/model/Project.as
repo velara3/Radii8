@@ -11,9 +11,9 @@ package com.flexcapacitor.model {
 	import flash.net.URLVariables;
 	
 	/**
-	 * Dispatched when project is saved
+	 * Dispatched when a project has been saved
 	 * */
-	[Event(name="saveResults", type="flash.events.Event")]
+	[Event(name="projectSaved", type="com.flexcapacitor.model.SaveResultsEvent")]
 	
 	/**
 	 * Dispatched when project is opened
@@ -35,6 +35,7 @@ package com.flexcapacitor.model {
 		}
 		
 		public static var PROJECT_OPENED:String = "projectOpened";
+		public static var PROJECT_SAVED:String = "projectSaved";
 		
 		/**
 		 * Used when creating incremental project names
@@ -624,6 +625,8 @@ package com.flexcapacitor.model {
 		public var openAllDocumentOnOpen:Boolean = true;
 		
 		public var openDocumentOnResults:Boolean;
+
+		public var allDocumentsSaved:Boolean;
 		
 		/**
 		 * @inheritDoc
@@ -810,7 +813,7 @@ package com.flexcapacitor.model {
 				Radiate.info("calling open on document " + documentData.name);
 				documentData.retrieve(local);
 				
-				if (documentData.id==null) {
+				if (documentData.id==null || documentData.id=="") {
 					needToWaitForDocumentsOpenResults = true;
 				}
 			}
@@ -836,11 +839,14 @@ package com.flexcapacitor.model {
 			var savedLocally:Boolean;
 			var needToWaitForDocumentsSaveResults:Boolean;
 			
+			//trace("Project save");
+			
 			// do all documents have remote ID? if not we have to save again when 
 			// we get an ID from the server
 			needToWaitForDocumentsSaveResults = false;
+			allDocumentsSaved = false;
 			
-			if (id==null) {
+			if (id==null || id=="") {
 				firstTimeSave = true;
 			}
 			
@@ -860,7 +866,7 @@ package com.flexcapacitor.model {
 						DocumentData(documentData).addEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler, false, 0, true);
 					}
 					
-					if (saveRemote && documentData.id==null) {
+					if (saveRemote && (documentData.id==null || documentData.id=="")) {
 						needToWaitForDocumentsSaveResults = true;
 					}
 					
@@ -888,7 +894,7 @@ package com.flexcapacitor.model {
 			var saveLocally:Boolean = ServicesManager.getIsLocalLocation(locations);
 			var savedLocally:Boolean;
 			
-			if (id==null) {
+			if (id==null || id=="") {
 				firstTimeSave = true;
 			}
 			
@@ -935,21 +941,36 @@ package com.flexcapacitor.model {
 		 * Result from project save 
 		 * */
 		override public function saveResultsHandler(event:IWPServiceEvent):void {
+			var saveResultsEvent:SaveResultsEvent;
+			
 			super.saveResultsHandler(event);
 			
+			//trace(" Project save results id " + id);
 			//checkProjectHasChanged();
 			markClean();
 			
 			
 			if (firstTimeSave) {
 				firstTimeSave = false;
+				
+				//trace(" Project save results first time save. Resaving.");
 				super.save(REMOTE_LOCATION);
+				return;
 			}
 			else {
 				deferSave = false;
 				dispatchEvent(event as Event);
 				//Radiate.instance.setLastSaveDate();
 			}
+			
+			if (allDocumentsSaved) {
+				//trace(" Project all documents saved. project id " + id);
+				saveResultsEvent = new SaveResultsEvent(PROJECT_SAVED);
+				saveResultsEvent.multipleSaved = true;
+				dispatchEvent(saveResultsEvent);
+				allDocumentsSaved = false;
+			}
+			
 			//Radiate.info("PROJECT - Success saving project "+ name + ".");
 		}
 		
@@ -980,18 +1001,29 @@ package com.flexcapacitor.model {
 		 * Result from retrieved results
 		 * */
 		public function documentRetrievedResultsHandler(event:LoadResultsEvent):void {
-			var currentDocumentData:IDocumentData = IDocumentData(event.currentTarget);
-			var documentsArray:Array = documents; //documentsMetaData;//documents.length ? documents : documentsMetaData;
-			var numberOfDocuments:int = documentsArray.length;
+			var currentDocumentData:IDocumentData;
+			var documentsArray:Array;
+			var numberOfDocuments:int;
 			var documentData:IDocumentData;
 			var iDocument:IDocument;
-			var resultsNotIn:Array = [];
-			var openNotSuccessful:Array = [];
-			var data:Object = event.data;
+			var resultsNotIn:Array;
+			var openNotSuccessful:Array;
+			var data:Object;
+			var message:String;
+			
+			
+			currentDocumentData = IDocumentData(event.currentTarget);
+			documentsArray = documents; //documentsMetaData;//documents.length ? documents : documentsMetaData;
+			numberOfDocuments = documentsArray.length;
+			resultsNotIn = [];
+			openNotSuccessful = [];
+			data = event.data;
 			
 			//Radiate.info("Is document " + event.currentTarget.name + " open: "+ event.successful);
 			
 			DocumentData(currentDocumentData).removeEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler);
+			
+			//trace(" Project document retrieved results " + currentDocumentData.id);
 			
 			// check if all documents have loaded
 			for (var i:int;i<numberOfDocuments;i++) {
@@ -1013,7 +1045,7 @@ package com.flexcapacitor.model {
 			
 			if (!currentDocumentData.openSuccessful) {
 				currentDocumentData.isOpen = false;
-				var message:String = event.message ? event.message : event.text;
+				message = event.message ? event.message : event.text;
 				
 				Radiate.info("The document '" + currentDocumentData.name + "' could not be loaded because of the following error: " + message);
 				
@@ -1083,7 +1115,10 @@ package com.flexcapacitor.model {
 			var unsuccessfulSaves:Array = [];
 			var currentDocument:IDocumentData;
 			
+			
 			currentDocument = DocumentData(event.currentTarget);
+			
+			//trace(" Project document save results current document id " + currentDocument.id);
 			
 			if (currentDocument is IEventDispatcher) {
 				IEventDispatcher(currentDocument).removeEventListener(SaveResultsEvent.SAVE_RESULTS, documentSaveResultsHandler);
@@ -1124,6 +1159,10 @@ package com.flexcapacitor.model {
 			}
 			
 			if (resultsNotIn.length==0) {
+				//trace(" Project document save results. all results in. Saving. project id " + id);
+				allDocumentsSaved = true;
+				super.save(deferSaveLocations);
+				return;
 				//Radiate.info(name + " save complete");
 				
 				// if document was not saved recently saveSuccessful may be false?
@@ -1135,12 +1174,16 @@ package com.flexcapacitor.model {
 				}
 			}
 			
+			// not sure what's going on here. an attempt was made. 
 			if (deferSave) {
+				//trace(" Project document save results. Saving. project id " + id);
 				super.save(deferSaveLocations);
 				deferSave = false;
 			} else {
-				
+				//trace(" Project document save results. Saving. project id " + id);
+				super.save(deferSaveLocations);				
 			}
+			
 			
 			
 			//DocumentData(document).addEventListener(DocumentData.SAVE_RESULTS, documentSaveResultsHandler, false, 0, true);

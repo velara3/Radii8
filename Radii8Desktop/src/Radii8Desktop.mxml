@@ -27,7 +27,7 @@
 					   resizing="windowedapplication1_resizingHandler(event)"
 					   >
 
-					   <!--- 
+					   <!---
 	
 	WHEN NOT ONLINE LAYOUT IS NOT VALID. POSSIBLY BECAUSE SUSPEND BACKGROUND PROCESSING??
 	

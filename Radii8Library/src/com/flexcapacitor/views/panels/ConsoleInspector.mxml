@@ -131,15 +131,15 @@
 			}
 			
 			protected function consoleTextArea_valueCommitHandler(event:FlexEvent):void {
-				scrollToTheBottom();
+				scrollToEnd();
 			}
 			
 			protected function consoleTextArea_changeHandler(event:TextOperationEvent):void {
-				scrollToTheBottom()
+				scrollToEnd()
 			}
 			
 			protected function consoleTextAreaMX_changeHandler(event:Event):void {
-				scrollToTheBottom()
+				scrollToEnd()
 			}
 			
 			/**
@@ -151,7 +151,7 @@
 			 * 
 			 * We are going to use Ace Editor to allow for much higher performance 
 			 * */
-			public function scrollToTheBottom():void {
+			public function scrollToEnd():void {
 				
 				// SPARK TEXT AREA
 				if (consoleTextArea is spark.components.TextArea) {
@@ -253,11 +253,12 @@
 	<c:BeveledImageButton id="scrollToTheBottomButton" 
 						  source="{Radii8LibraryAssets.scrollToEnd}" 
 						  right="28"
-						  click="scrollToTheBottom()"
+						  click="scrollToEnd()"
 						  width="15"
 						  height="14"
 						  horizontalAlign="center"
 						  verticalAlign="middle"
+						  toolTip="Scroll to end"
 						  />
 	<c:BeveledImageButton id="clearButton" 
 						  source="{Radii8LibraryAssets.clear}" 
@@ -267,5 +268,6 @@
 						  height="16"
 						  horizontalAlign="center"
 						  verticalAlign="middle"
+						  toolTip="Clear Console"
 						  />
 </s:Group>

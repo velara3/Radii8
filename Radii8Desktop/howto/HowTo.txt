@@ -3,14 +3,27 @@ HOW TO GUIDE FOR DEVELOPERS
 ***********************************************
 How to update the application online
 ***********************************************
+
+
+UPDATE VERSION NUMBER
+--------------------------------------
 update the application descriptor version number 1.5,1.6,1.7, etc (it might be already updated)
 
+
+CREATE A BUILD
+--------------------------------------
 create a new air build (signed AIR package)
 create a new dmg build (signed native installer)
 compress the dmg with the readme.txt to make a ZIP file
 
+
+UPLOAD BINARY
+--------------------------------------
 Login to FTP and upload the AIR and ZIP file to the updates/releases directory
 
+
+UPDATE DOWNLOAD LINKS AND UPDATER
+--------------------------------------
 Open the remote file updates/update-descriptor.xml
 update the version number in the update-descriptor.xml
 update the file name in the update-descriptor.xml
@@ -29,7 +42,10 @@ iframe embed code is as follows:
 update the post
 
 
+CONFIRM DOWNLOAD LINKS AND APP WORKS
+--------------------------------------
 check the download works
+
 go to https://www.radii8.com/blog/?page_id=799
 click on the badge installer icon (sometimes is cached)
 check the app sees a new update. 
@@ -37,6 +53,9 @@ cancel the install
 open the app locally and see if a new version notification is shown
 use either version to check install works
 
+
+POST BLOG AND NOTIFY
+--------------------------------------
 post a new blog post
 copy notes from changes.txt or sourcetree
 post to twitter (wordpress is automatically posting to twitter on each post)

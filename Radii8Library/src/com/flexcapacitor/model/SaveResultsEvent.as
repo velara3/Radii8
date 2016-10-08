@@ -10,6 +10,11 @@ package com.flexcapacitor.model {
 	 * */
 	public class SaveResultsEvent extends ServiceEvent implements IWPServiceEvent {
 		
+		public function SaveResultsEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, successful:Boolean = false) {
+			super(type, bubbles, cancelable);
+			this.successful = successful;
+		}
+		
 		/**
 		 * Event dispatched when the save results are returned
 		 * */
@@ -19,7 +24,7 @@ package com.flexcapacitor.model {
 		private var _call:String;
 
 		/**
-		 * 
+		 * The name of the call, for example, "createPost"
 		 * */
 		public function get call():String {
 			return _call;
@@ -34,7 +39,7 @@ package com.flexcapacitor.model {
 		private var _message:String;
 
 		/**
-		 * 
+		 * A message returned from the server
 		 * */
 		public function get message():String {
 			return _message;
@@ -44,12 +49,10 @@ package com.flexcapacitor.model {
 			_message = value;
 		}
 
-		
-		public function SaveResultsEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false, successful:Boolean = false)
-		{
-			super(type, bubbles, cancelable);
-			this.successful = successful;
-		}
+		/**
+		 * Used to indicate if a single document was saved or multiple. 
+		 * */
+		public var multipleSaved:Boolean;
 		
 		override public function clone():Event {
 			return new SaveResultsEvent(type, bubbles, cancelable, successful);

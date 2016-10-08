@@ -515,7 +515,13 @@ package com.flexcapacitor.model {
 			object["custom[uid]"] = uid;
 			//object["custom[sponge]"] = 1;
 			//object["custom[sandpaper]"] = 1;
-			object["custom[source]"] = value;
+			
+			if (value==null || value=="") {
+				//trace("Saved source code is null");
+			}
+			else {
+				object["custom[source]"] = value;
+			}
 			
 			if (revisions) {
 				object["custom[revisions]"] = JSON.stringify(revisions);
@@ -548,9 +554,12 @@ package com.flexcapacitor.model {
 			saveResultsEvent.data = event.data;
 			saveResultsEvent.message = event.message;
 			saveResultsEvent.text = event.text;
+			//trace("- DocumentData save results handler " + name);
 			
 			if (post) {
-				if (id==null) {
+				//trace("- - document id " + id);
+				//trace("- - post id " + post.id);
+				if (id==null || id=="") {
 					//Radiate.info("Document does not have an id. Needs to be resaved: "+ name);
 					id = post.id;
 					// we don't have id so we need to save again
@@ -560,6 +569,8 @@ package com.flexcapacitor.model {
 					//return;
 				}
 				
+				//trace("- - document uri " + uri);
+				//trace("- - post url " + post.url);
 				uri = post.url;
 				status = post.status;
 				
