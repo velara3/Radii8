@@ -644,6 +644,7 @@ package com.flexcapacitor.utils {
 			var htmlBefore:String;
 			var htmlAfter:String;
 			var htmlAttributes:String;
+			var useUpdatedIndent:Boolean;
 			
 			isInBasicLayout = false;
 			setPositioningStylesOnElement = true;
@@ -1641,15 +1642,17 @@ package com.flexcapacitor.utils {
 						
 						XML.setSettings(originalXMLSettings);
 						
-						// html text is not supported in an HTML textarea
+						// html text is not supported in an HTML textarea for now
 						if (componentInstance is TextArea) {
 							richHTMLOutput = TextArea(componentInstance).text;
 						}
 						
 						if (richHTMLOutput) {
 							richHTMLOutput = "\n" + richHTMLOutput;
-							richHTMLOutput = StringUtils.indent(richHTMLOutput, tabs + "\t");
+							richHTMLOutput = StringUtils.indent(richHTMLOutput);
+							//layoutOutput += richHTMLOutput + "\n" + tabs;
 							layoutOutput += richHTMLOutput;
+							useUpdatedIndent = true;
 						}
 					}
 					else if (localName=="passthrough") {
@@ -1899,7 +1902,12 @@ package com.flexcapacitor.utils {
 				
 				// add tabs
 				if (layoutOutput!="") {
-					layoutOutput = tabs + layoutOutput;
+					if (useUpdatedIndent) {
+						layoutOutput = StringUtils.indent(layoutOutput, tabs);
+					}
+					else {
+						layoutOutput = tabs + layoutOutput;
+					}
 				}
 				
 				// add anchor - rewrite this using pre or post processor
