@@ -683,8 +683,12 @@
 				updateHTMLPreview();
 			}
 			
+			public var lastVerticalScrollPosition:int;
+			
 			public function updateHTMLPreview():void {
 				var previewDocument:Object;
+				var domWindow:Object;
+				var htmlLoader:Object;
 				
 				if (Radiate.isDesktop) {
 					// allow to swap between preview and non preview
@@ -700,9 +704,32 @@
 						//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
 					}*/
 					
+					/*
+					if (previewDocument && "domWindow" in previewDocument && previewDocument.domWindow) {
+						domWindow = previewDocument.domWindow;
+						
+						if (domWindow.document && domWindow.document.body) {
+							lastVerticalScrollPosition = domWindow.document.body.scrollTop;
+						}
+					}*/
+					
+					// get the vertical scroll position to retain previous position
+					if (previewDocument && "htmlLoader" in previewDocument && previewDocument.htmlLoader) {
+						htmlLoader = previewDocument.htmlLoader;
+						
+						lastVerticalScrollPosition = htmlLoader.scrollV;
+					}
+					
 					if (previewDocument is UIComponent && sourceData) {
 						//previewDocument.htmlText = wrapInPreview(sourceData.source);
+						
+						if (lastVerticalScrollPosition!=0) {
+							previewDocument.addEventListener("htmlRender", updateScrollPositionHandler, false, 0, true);
+							//previewDocument.addEventListener("complete", updateScrollPositionHandler, false, 0, true);
+						}
+						
 						previewDocument.htmlText = sourceData.source;
+						
 						if (previewDocument is IValidator) {
 							previewDocument.validateNow(); // prevent editor change event
 						}
@@ -728,6 +755,24 @@
 						//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
 					}
 				}
+			}
+			
+			/**
+			 * Retain the vertical scroll bar position when updating HTML preview
+			 * */
+			protected function updateScrollPositionHandler(event:Event):void {
+				var previewDocument:Object;
+				var domWindow:Object;
+				var htmlLoader:Object;
+				
+				previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+				
+				if (previewDocument && "htmlLoader" in previewDocument && previewDocument.htmlLoader) {
+					previewDocument.removeEventListener("htmlRender", updateScrollPositionHandler);
+					//previewDocument.removeEventListener("complete", updateScrollPositionHandler);
+					previewDocument.htmlLoader.scrollV = lastVerticalScrollPosition;
+				}
+				
 			}
 			
 			protected function editorViewOptionButtons_clickHandler(event:MouseEvent):void

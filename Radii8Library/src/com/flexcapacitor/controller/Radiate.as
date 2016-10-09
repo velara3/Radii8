@@ -5979,7 +5979,7 @@ package com.flexcapacitor.controller {
 			attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as IStyleClient, attributesValueObject, styles, failedToImportStyles);
 			attributesValueObject	= ClassUtils.getTypedPropertyValueObject(elementInstance, attributesValueObject, properties, failedToImportProperties);
 			
-			childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node, true);
+			childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node, true, true, false);
 			values 					= ObjectUtils.merge(attributesValueObject, childNodeValueObject);
 			
 			
@@ -7593,7 +7593,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var iDocument:IDocument;
 			var targetComponentDescription:ComponentDescription;
 			var parentComponentDescription:ComponentDescription;
-			var basicFonts:Boolean = true;
+			var basicFonts:Boolean = false;
 			
 			const MIN_WIDTH:int = 22;
 			

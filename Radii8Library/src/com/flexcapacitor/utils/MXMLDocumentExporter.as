@@ -14,8 +14,6 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
 	
 	import flash.display.BitmapData;
-	import flash.xml.XMLNode;
-	import flash.xml.XMLNodeType;
 	
 	import spark.components.Application;
 	import spark.components.Image;
@@ -247,7 +245,6 @@ package com.flexcapacitor.utils {
 			var errorData:ErrorData;
 			var childNodesValues:Object;
 			var childNodeNames:Array = [];
-			var xmlNode:XMLNode;
 			var identifier:String;
 			
 			if (exportFromHistory) {
@@ -315,6 +312,11 @@ package com.flexcapacitor.utils {
 					childNodesValues[propertyName] = value;
 					childNodeNames.push(propertyName);
 					
+					var originalSettings:Object = XML.settings();
+					
+					XML.ignoreProcessingInstructions = false;
+					XML.ignoreWhitespace = false;
+					XML.prettyPrinting = false;
 					
 					if (propertyName==MXMLDocumentConstants.TEXT_FLOW) {
 						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
@@ -323,15 +325,18 @@ package com.flexcapacitor.utils {
 						
 						if (value) {
 							value = addNamespaceToTextFlow(value);
-							value = XML(value).toXMLString();
+							//value = XML(value).toXMLString();
+							value = XML(value).toString();
 						}
 						
 						childNodesValues[propertyName] = value;
 					}
 					
+					XML.setSettings(originalSettings);
+					
 					if (propertyName==MXMLDocumentConstants.FILTERS) {
 						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
-						value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE) as XML;
+						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE) as XML;
 						
 						xmlEncoder = new SimpleXMLEncoder();
 						

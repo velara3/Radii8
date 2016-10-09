@@ -641,11 +641,13 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 					//  those errors mean the document may not be completely loaded or initialized yet
 					//  in that case we need to save the original source code
 					// TODO: find and track down the cause of the empty string
-					if (value==null || value=="" || sourceData.componentDescription==null) {
-						return source;
+					if (value!=null && value!="") {
+						return value;
 					}
+					
 				}
-				else if (source) {
+				
+				if (source) {
 					value = source;
 				}
 				else if (originalSource) {
@@ -655,7 +657,7 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 				return value;
 				
 			}
-			// return source;
+			
 			return source;
 		}
 		

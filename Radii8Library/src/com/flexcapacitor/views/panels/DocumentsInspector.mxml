@@ -21,11 +21,13 @@
 			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.DocumentRevision;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IDocumentData;
 			import com.flexcapacitor.model.IProject;
+			import com.flexcapacitor.model.SaveResultsEvent;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.services.WPService;
 			import com.flexcapacitor.views.IInspector;
@@ -187,6 +189,8 @@
 				}
 			}
 			
+			public var documentSaveLocation:Object;
+			
 			/**
 			 * Add new document
 			 * */
@@ -199,7 +203,11 @@
 					var savedLocation:String = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
 					
 					var savedLocally:Boolean = radiate.saveDocument(newDocument, savedLocation);
-					radiate.saveProjectOnly(radiate.selectedProject, savedLocation);
+					if (newDocument is Document) {
+						DocumentData(newDocument).addEventListener(SaveResultsEvent.SAVE_RESULTS, newDocumentSavedHandler, false, 0, true);
+						documentBeingSaved = newDocument;
+						documentSaveLocation = savedLocation;
+					}
 				//}
 			}
 			
@@ -318,7 +326,7 @@
 					}
 				}
 				else if (documentData && documentData.isOpen) {
-					Radiate.info("Document '" + documentData.name + "' is already open"); 
+					//Radiate.info("Document '" + documentData.name + "' is already open"); 
 				}
 			}
 			
@@ -488,7 +496,7 @@
 				}
 			}
 			
-			public var documentBeingSaved:IDocument;
+			public var documentBeingSaved:Object;
 			
 			protected function setHomePageHandler(event:RadiateEvent):void {
 				//trace(event.data);
@@ -570,8 +578,7 @@
 				}
 			}
 			
-			protected function shareIcon_clickHandler(event:MouseEvent):void
-			{
+			protected function shareIcon_clickHandler(event:MouseEvent):void {
 				if (radiate.selectedDocument) {
 					RunManager.copyURLToDocument(radiate.selectedDocument as DocumentData);
 				}
@@ -580,12 +587,17 @@
 				}
 			}
 			
-			protected function copyIcon_clickHandler(event:MouseEvent):void
-			{
+			protected function copyIcon_clickHandler(event:MouseEvent):void {
+				var sourceData:SourceData;
+				
 				if (radiate.selectedDocument) {
-					var sourceData:SourceData = Radiate.getMXML(radiate.selectedDocument);
+					sourceData = Radiate.getMXML(radiate.selectedDocument);
 					RunManager.copyCodeToClipboard(sourceData.source);
 				}
+			}
+			
+			protected function newDocumentSavedHandler(event:SaveResultsEvent):void {
+				radiate.saveProjectOnly(radiate.selectedProject, documentSaveLocation as String);				
 			}
 			
 		]]>

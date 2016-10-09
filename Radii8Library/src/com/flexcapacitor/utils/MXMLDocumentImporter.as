@@ -57,7 +57,8 @@ package com.flexcapacitor.utils {
 			var updatedCode:String;
 			var isValid:Boolean;
 			var codeWasWrapped:Boolean;
-			
+			var originalXMLSettings:Object;
+			var ignoreWhitespace:Boolean;
 			
 			errors = [];
 			warnings = [];
@@ -96,7 +97,22 @@ package com.flexcapacitor.utils {
 			
 			// SHOULD BE VALID - TRY IMPORTING INTO XML OBJECT
 			try {
+				originalXMLSettings = XML.settings();
+				
+				ignoreWhitespace = true;
+				
+				if (ignoreWhitespace) {
+					XML.ignoreProcessingInstructions = false;
+					XML.ignoreWhitespace = false;
+					XML.prettyPrinting = false;
+				}
+				
 				mxml = new XML(updatedCode);
+				
+				var string:String = mxml.toString();
+				var xmlString:String = mxml.toXMLString();
+				
+				XML.setSettings(originalXMLSettings);
 			}
 			catch (error:Error) {
 				Radiate.error("Could not parse code " + document.name + ". " + error.message);
@@ -141,6 +157,10 @@ package com.flexcapacitor.utils {
 					if (elName==rootNodeName || codeWasWrapped) {
 						
 						for each (var childNode:XML in mxml.children()) {
+							
+							if (childNode.name()==null) {
+								continue;
+							}
 							createChildFromNode(childNode, container, document, 0);
 						}
 					}
@@ -526,7 +546,11 @@ package com.flexcapacitor.utils {
 				
 				for each (var childNode:XML in node.children()) {
 					localName = childNode.localName();
-					fullNodeName = childNode.name().toString();
+					fullNodeName = childNode.name();
+					
+					if (fullNodeName==null) {
+						continue;
+					}
 					
 					if (handledChildNodes.indexOf(localName)!=-1 || 
 						handledChildNodes.indexOf(fullNodeName)!=-1) {
@@ -699,21 +723,21 @@ package com.flexcapacitor.utils {
 			var textFlowString:String;
 			var textFlowXML:XML;
 			var textFlow:TextFlow;
-			var parser:ITextImporter;
 			var flowNamespace:Namespace;
+			var originalXMLSettings:Object;
 			
 			if (textFlow==null) {
 				//parser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT) as ITextImporter;
 				//tlfErrors = parser.errors;
 				
 				if (textFlowParser==null) {
-					parser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT, null);
+					textFlowParser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT, null);
 				}
 				//if (!parser)
 				//	return null;
 				
-				parser.throwOnError = false;
-				flowNamespace = TextLayoutImporter(parser).ns;
+				textFlowParser.throwOnError = false;
+				flowNamespace = TextLayoutImporter(textFlowParser).ns;
 				
 				textFlowString = valuesObject.childNodeValues[MXMLDocumentConstants.TEXT_FLOW];
 				
@@ -722,7 +746,15 @@ package com.flexcapacitor.utils {
 					textFlowString = valuesObject.childNodeValues[MXMLDocumentConstants.TEXT_FLOW_NS];
 				}
 				
+				originalXMLSettings = XML.settings();
+				
+				XML.ignoreProcessingInstructions = false;
+				XML.ignoreWhitespace = false;
+				XML.prettyPrinting = false;
+				
 				textFlowXML = new XML(textFlowString);
+				
+				XML.setSettings(originalXMLSettings);
 				
 				if (fixTextFlowNamespaceBug) {
 					textFlowXML = getTextFlowWithNamespace(textFlowXML);
@@ -733,12 +765,12 @@ package com.flexcapacitor.utils {
 				//}
 				
 				//textFlowXML = new XML(valuesObject.childNodeValues[TEXT_FLOW]);
-				textFlow = parser.importToFlow(textFlowXML);
+				textFlow = textFlowParser.importToFlow(textFlowXML);
 			}
 			
 			valuesObject.values[MXMLDocumentConstants.TEXT_FLOW] = textFlow;
 			
-			return parser.errors;
+			return textFlowParser.errors;
 		}
 		
 	}

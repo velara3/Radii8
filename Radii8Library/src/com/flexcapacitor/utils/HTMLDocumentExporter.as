@@ -584,6 +584,7 @@ package com.flexcapacitor.utils {
 			var isGraphicalElement:Boolean = componentDescription.isGraphicElement;
 			var contentToken:String = "[child_content]";
 			var styleValue:String = "position:absolute;";
+			var secondaryStyleValue:String = "";
 			var stylesModel:HTMLStyles = new HTMLStyles();
 			var stylesOut:String = "";
 			var wrapperStylesModel:HTMLStyles = new HTMLStyles();
@@ -1079,7 +1080,10 @@ package com.flexcapacitor.utils {
 					styleValue = getFontStyle(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
-					styleValue = getScrollPolicy(componentInstance, styleValue);
+					
+					// disabling overflow to get rid of scroll bars
+					//styleValue = getScrollPolicy(componentInstance, styleValue);
+					
 					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					//styleValue += getColorString(componentInstance as BorderContainer);
 					//styles += componentInstance as BorderContainer);
@@ -1605,14 +1609,37 @@ package com.flexcapacitor.utils {
 						var content:XML;
 						var items:XMLList;
 						var richHTMLOutput:String = "";
+						var firstItem:Boolean = true;
+						var firstItemCSS:String = "margin-top:0px;";
+						var existingCSS:String;
 						//content = test.children()[0].children()[0].children()[0].children()[0];
 						items = test.children()[0].children();
 						
-						for each (content in items) {
-							//if (content) {
-								richHTMLOutput += content.toXMLString() + "\n";
-							//}
+						if (!useInlineStyles) {
+							setFirstParagraphStyles(componentInstance, firstItemCSS);
 						}
+						
+						
+						
+						var originalXMLSettings:Object = XML.settings();
+						
+						XML.ignoreProcessingInstructions = false;
+						XML.ignoreWhitespace = false;
+						XML.prettyPrinting = false;
+						
+						for each (content in items) {
+							
+							if (firstItem && useInlineStyles) {
+								existingCSS = String(content.@style);
+								if (existingCSS==null) existingCSS = "";
+								content.@style = firstItemCSS + existingCSS;
+								firstItem = false;
+							}
+							
+							richHTMLOutput += content.toXMLString() + "\n";
+						}
+						
+						XML.setSettings(originalXMLSettings);
 						
 						// html text is not supported in an HTML textarea
 						if (componentInstance is TextArea) {
@@ -3298,6 +3325,36 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 				else {
 					out = "#" + getIdentifierOrName(component) + "  {\n";
 				}
+				
+				out += formatted;
+				out += "}\n\n";
+				
+				out = out.replace(/\t}/g, "}");
+				
+				if (styles==null) styles = "";
+				styles += out;
+			}
+			
+			return "";
+		}
+		
+		
+		
+		/**
+		 * Set first paragraph style hack
+		 * */
+		public function setFirstParagraphStyles(component:Object, stylesValue:String = ""):String {
+			var out:String = "";
+			var formatted:String;
+			
+			if (useInlineStyles) {
+				//return " style=\"" + stylesValue + "\"";
+			}
+			else {
+				formatted= "\t" + stylesValue.replace(/;/g, ";\n\t");
+				
+				out = "#" + getIdentifierOrName(component) + " > :first-child {\n";
+				
 				
 				out += formatted;
 				out += "}\n\n";

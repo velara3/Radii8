@@ -503,7 +503,7 @@ package com.flexcapacitor.model {
 		 * */
 		public function toSaveFormObject():URLVariables {
 			var object:URLVariables = new URLVariables();
-			var value:String = getSource();
+			var value:String = getSource(); // move this to Radiate.saveFunction()
 			object.title = name;
 			//object.content = value;
 			object.categories = "document";
