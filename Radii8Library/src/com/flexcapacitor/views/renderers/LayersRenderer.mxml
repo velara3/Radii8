@@ -120,26 +120,26 @@ changed to
 			}
 
 			protected function visibleGroupClicked():void {
-				var item:ComponentDescription = data as ComponentDescription;
-				if (!item) return;
-				var visible:Boolean = !item.instance.visible;
+				var componentDescription:ComponentDescription = data as ComponentDescription;
+				if (!componentDescription) return;
+				var visible:Boolean = !componentDescription.instance.visible;
 				var rootApplicationDescription:ComponentDescription;
 				var visibility:Boolean;
 				
 				// setting visible with history support
-				Radiate.setProperty(item.instance, "visible", visible);
+				Radiate.setProperty(componentDescription.instance, "visible", visible);
 				
 				// old method not sure what parts are ok to remove
-				item.instance.visible = visible;
-				item.visible = visible;
+				componentDescription.instance.visible = visible;
+				componentDescription.visible = visible;
 				visibleGroup.visible = visible;
 				
 				if (owner is Tree) {
 					rootApplicationDescription = Tree(owner).dataProvider.getItemAt(0) as ComponentDescription;
 					
-					visibility = DisplayObjectUtils.getGreatestVisibility(IVisualElement(item.instance), rootApplicationDescription); 
+					visibility = DisplayObjectUtils.getGreatestVisibility(IVisualElement(componentDescription.instance), rootApplicationDescription); 
 					
-					DisplayObjectUtils.setVisibilityFlag(item, item.visible);
+					DisplayObjectUtils.setVisibilityFlag(componentDescription, componentDescription.visible);
 				}
 				else if (owner) {
 					

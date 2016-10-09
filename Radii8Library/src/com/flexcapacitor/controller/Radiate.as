@@ -6726,9 +6726,9 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 								value = propertyChange.end[property];
 							}
 							
-							if (value==null || 
-								value==undefined || 
-								value=="") {
+							if (value===null || 
+								value===undefined || 
+								value==="") {
 								//isNaN(value)) {
 								delete componentDescription.properties[property];
 							}
@@ -6836,9 +6836,9 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 								value = propertyChange.end[eventName];
 							}
 							
-							if (value==null || 
-								value==undefined || 
-								value=="") {
+							if (value===null || 
+								value===undefined || 
+								value==="") {
 								// || isNaN(value)
 								delete componentDescription.events[eventName];
 							}

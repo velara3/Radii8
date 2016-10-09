@@ -223,9 +223,9 @@
 				 >
 		
 		<s:Label text="Save the project, '{documentName}' before closing?" 
-				 fontSize="16" includeIn="project"/>
+				 fontSize="14" includeIn="project"/>
 		<s:Label text="Save the document, '{documentName}' before closing?" 
-				 fontSize="16" includeIn="document"/>
+				 fontSize="14" includeIn="document"/>
 		
 		<s:Label id="saveWarningsLabel" 
 				 x="15" y="15" 

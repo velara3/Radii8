@@ -1988,7 +1988,7 @@ package com.flexcapacitor.utils {
 					componentDescription.markupData = layoutOutput;
 					componentDescription.stylesData = stylesOut;
 					
-					if (exportChildDescriptors) {
+					if (exportChildDescriptors && contentToken!="") {
 						layoutOutput = layoutOutput.replace(contentToken, newLine);
 					}
 					

@@ -1,7 +1,5 @@
 package com.flexcapacitor.utils {
 	
-	import flash.text.engine.Kerning;
-	
 	import flashx.textLayout.tlf_internal;
 	import flashx.textLayout.conversion.TextFieldHtmlExporter;
 	import flashx.textLayout.formats.ITextLayoutFormat;
