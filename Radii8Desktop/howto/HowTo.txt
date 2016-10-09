@@ -33,11 +33,12 @@ update the file name in the badge_installer.html at top of page
 update the file name in the badge_installer.html at bottom of page
 
 login to the wordpress blog (https://www.radii8.com/blog/wp-login.php)
-open the download page for editing (https://www.radii8.com/blog/wp-admin/post.php?post=799&action=edit)
-on the download page update the version number, the air file location and the ZIP (not dmg) file location (3 places)
-update the previous releases list
+open the wordpress download page for editing (https://www.radii8.com/blog/wp-admin/post.php?post=799&action=edit)
+in the wordpress download page edit and update the version number, the air file location and the ZIP (not dmg) file location (3 places)
+update the all releases list
 on the iframe tag for the badge_installer.html page update the query string to prevent caching (1 location)
-iframe embed code is as follows:
+
+example iframe embed code is as follows:
 <iframe style="width: 220px; height: 160px;" src="https://www.radii8.com/updates/badge_installer.html?date=0505"></iframe>
 update the post
 

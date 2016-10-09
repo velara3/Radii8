@@ -85,17 +85,13 @@
 				import mx.collections.ArrayCollection;
 				import mx.core.FTETextField;
 				import mx.core.FlexHTMLLoader;
-				import mx.core.UIComponent;
-				import mx.core.UIComponentGlobals;
 				import mx.events.AIREvent;
 				import mx.events.FlexEvent;
 				import mx.events.FlexNativeMenuEvent;
-				import mx.events.ResizeEvent;
 				
 				import spark.components.Application;
 				import spark.components.ComboBox;
 				import spark.components.RichEditableText;
-				import spark.components.TextInput;
 				import spark.components.WindowedApplication;
 				import spark.components.supportClasses.SkinnableTextBase;
 				import spark.core.IEditableText;
@@ -155,6 +151,7 @@
 					radiate.versionNumber 	= version;
 					Radiate.mainView 		= mainView;
 					Radiate.application 	= this;
+					radiate.updater			= updateApplication;
 					
 					//Radiate.isDesktop = true;
 					Radiate.startup();
@@ -174,8 +171,26 @@
 				}
 				
 				protected function resizeToShowUpdate():void {
-					height = Capabilities.screenResolutionY * .5;
-					nativeWindow.y = 240;
+					//height = Capabilities.screenResolutionY * .5;
+					//nativeWindow.y = 240;
+					var windows:Array = nativeApplication.openedWindows;
+					var window:NativeWindow;
+					
+					for (var i:int;i<windows.length;i++) {
+						window = windows[i];
+						if (window==nativeWindow) {
+							//trace(NativeWindow.supportsNotification);
+							window.notifyUser(NotificationType.INFORMATIONAL);
+							window.notifyUser(NotificationType.CRITICAL);
+							continue;
+						}
+						window.orderToFront();
+						Radiate.callAfter(100, window.orderToFront);
+						Radiate.callAfter(1000, window.orderToFront);
+						Radiate.callAfter(2000, window.orderToFront);
+					}
+					
+					//Radiate.info("An update is available: " + "Current version: " + updateApplication.currentVersion + ". Remote version: " + updateApplication.remoteVersion);
 				}
 				
 				protected function windowedapplication1_uncaughtErrorHandler(event:UncaughtErrorEvent):void
@@ -875,10 +890,10 @@
 				</local:firstRunEffect>-->
 				<local:updateAvailableEffect>
 					<s:Parallel>
-						<status:ShowStatusMessage message="An update is available" 
-												  location="bottom" 
+<!--						<status:ShowStatusMessage message="An update is available" 
+												  location="top" 
 												  matchDurationToTextContent="true"
-												  data="{'Current version: ' + updateApplication.currentVersion + '. Remote version: ' + updateApplication.remoteVersion}"/>
+												  data="{'Current version: ' + updateApplication.currentVersion + '. Remote version: ' + updateApplication.remoteVersion}"/>-->
 						<core:CallMethod method="resizeToShowUpdate"/>
 					</s:Parallel>
 				</local:updateAvailableEffect>

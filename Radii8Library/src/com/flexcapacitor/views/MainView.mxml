@@ -1269,6 +1269,12 @@
 				}
 			}
 			
+			
+			protected function checkForUpdateMenuItem_itemClickHandler(event:MenuEvent):void
+			{
+				radiate.checkForUpdate();
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1564,6 +1570,7 @@
 			<model:MenuItem id="helpMenu" label="Help">
 				<model:MenuItem id="helpMenuItem" label="Online Documentation" />
 				<model:MenuItem id="creditsMenuItem" label="Notices and Credits"/>
+				<model:MenuItem id="checkForUpdateMenuItem" label="Check for update" itemClick="checkForUpdateMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="settingsMenuItem" label="Settings" />
 			</model:MenuItem>
 		</model:MenuItem>

@@ -41,8 +41,13 @@
   <flashCatalyst validateFlashCatalystCompatibility="false"/>
   <buildTargets>
     <buildTarget buildTargetName="default" platformId="default">
-      <airSettings airCertificatePath="/Users/monkeypunch/Documents/Adobe Flash Builder 45/InternalLibrary/preferences/android711/androidcert.p12" airTimestamp="true" anePathSet="true" version="1">
-        <airExcludes/>
+      <airSettings airCertificatePath="/Users/monkeypunch/Documents/Adobe Flash Builder 45/InternalLibrary/preferences/android711/androidcert.p12" airTimestamp="false" anePathSet="true" version="1">
+        <airExcludes>
+          <pathEntry path="assets/.DS_Store"/>
+          <pathEntry path="assets/images/.DS_Store"/>
+          <pathEntry path="assets/editor/.DS_Store"/>
+          <pathEntry path="assets/icons/.DS_Store"/>
+        </airExcludes>
         <anePaths/>
         <newLaunchParams/>
         <modifiedLaunchParams/>

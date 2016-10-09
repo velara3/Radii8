@@ -151,6 +151,7 @@ package com.flexcapacitor.controller {
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
 	import mx.core.mx_internal;
+	import mx.effects.IEffect;
 	import mx.effects.Sequence;
 	import mx.effects.effectClasses.PropertyChanges;
 	import mx.events.DragEvent;
@@ -1982,6 +1983,20 @@ package com.flexcapacitor.controller {
 			//radiate.openInitialProjects();
 			//LayoutManager.getInstance().usePhasedInstantiation = false;
 			
+		}
+		
+		/**
+		 * Reference to mechanism used to update the application
+		 * */
+		public var updater:IEffect;
+		
+		/**
+		 * Checks for update on the desktop version 
+		 * */
+		public function checkForUpdate():void {
+			if (updater) {
+				updater.play();
+			}
 		}
 		
 		/**
