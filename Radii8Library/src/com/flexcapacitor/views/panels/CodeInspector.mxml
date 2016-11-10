@@ -39,6 +39,9 @@
 			
 			import spark.events.IndexChangeEvent;
 			
+			public static const HTML_RENDER:String = "htmlRender";
+			public static const HTML_COMPLETE:String = "complete";
+			
 			/**
 			 * Reference to Radiate
 			 * */
@@ -95,6 +98,13 @@
 			[Bindable]
 			public var isHTML:Boolean;
 			
+			public var htmlRenderHandled:Boolean;
+			public var htmlCompleteHandled:Boolean;
+			public var htmlStartRenderTime:int;
+			public var htmlRenderTime:int;
+			public var htmlStartCompleteTime:int;
+			public var htmlCompleteTime:int;
+			
 			/**
 			 * Last source data
 			 * */
@@ -132,6 +142,7 @@
 				
 				if (radiate.isDocumentPreviewOpen(radiate.selectedDocument)) {
 					languageTypeButtons.selectedItem = CodeManager.HTML;
+					isHTML = true;
 				}
 				
 				if (radiate.target) {
@@ -151,6 +162,7 @@
 				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, handlePropertyChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, handlePropertyChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, handleDocumentChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_CLOSE, handleDocumentClosed, false, 0, true);
 				radiate.addEventListener(RadiateEvent.UNCAUGHT_EXCEPTION_EVENT, uncaughtExceptionEvent, false, 0, true);
 			}
 			
@@ -163,6 +175,7 @@
 					radiate.removeEventListener(RadiateEvent.REMOVE_ITEM, handlePropertyChange);
 					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, handlePropertyChange);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, handleDocumentChange);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_CLOSE, handleDocumentClosed);
 					radiate.removeEventListener(RadiateEvent.UNCAUGHT_EXCEPTION_EVENT, uncaughtExceptionEvent);
 				}
 			}
@@ -177,7 +190,7 @@
 				var output:String = "";
 				var xml:XML;
 				
-				if (target==null) {
+				if (target==null && iDocument) {
 					target = iDocument.instance;
 				}
 				
@@ -440,7 +453,10 @@
 				
 				//radiate = Radiate.getInstance();
 				
-				if (!radiate.target && !radiate.selectedDocument) return;
+				if (!radiate.target && !radiate.selectedDocument) {
+					updateTarget(null);
+					return;
+				}
 				
 				
 				updateTarget(radiate.target);
@@ -478,12 +494,13 @@
 			 * Resync button will visible for them to update themselves. 
 			 * */
 			protected function updateCodeLive_changeHandler(event:Event = null):void {
-				
+				clearTimeLabel();
 			
 				if (updateCodeLive.selected) {
 					aceEditor.addEventListener(Event.CHANGE, editorChangeHandler);
 					aceCSSEditor.addEventListener(Event.CHANGE, editorChangeHandler);
 					templateEditor.addEventListener(Event.CHANGE, templateEditorChangeHandler);
+					isCodeModifiedByUser = true;
 					updateCodeEditors(true);
 					radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML);
 				}
@@ -722,10 +739,13 @@
 					
 					if (previewDocument is UIComponent && sourceData) {
 						//previewDocument.htmlText = wrapInPreview(sourceData.source);
+						htmlStartCompleteTime = htmlStartRenderTime = getTimer();
+						htmlRenderHandled = htmlCompleteHandled = false;
+						
+						previewDocument.addEventListener(HTML_RENDER, htmlRenderHandler, false, 0, true);
+						previewDocument.addEventListener(HTML_COMPLETE, htmlRenderHandler, false, 0, true);
 						
 						if (lastVerticalScrollPosition!=0) {
-							previewDocument.addEventListener("htmlRender", updateScrollPositionHandler, false, 0, true);
-							previewDocument.addEventListener("complete", updateScrollPositionHandler, false, 0, true);
 							callLater(updateScrollPositionHandler);
 						}
 						
@@ -762,6 +782,52 @@
 			/**
 			 * Retain the vertical scroll bar position when updating HTML preview
 			 * */
+			protected function htmlRenderHandler(event:Event):void {
+				var previewDocument:Object;
+				var domWindow:Object;
+				var htmlLoader:Object;
+				var type:String = event.type;
+				
+				
+				if (lastVerticalScrollPosition!=0) {
+					updateScrollPositionHandler();
+				}
+				
+				if (type==HTML_RENDER) {
+					htmlRenderTime = getTimer()-htmlStartRenderTime;
+					htmlRenderHandled = true;
+				}
+				
+				if (type==HTML_COMPLETE) {
+					htmlCompleteTime = getTimer()-htmlStartCompleteTime;
+					htmlCompleteHandled = true;
+				}
+				
+				previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+				
+				if (previewDocument) {
+					previewDocument.removeEventListener(event.type, updateScrollPositionHandler);
+				}
+				
+				if (htmlRenderHandled && htmlCompleteHandled) {
+					renderTime.text = htmlCompleteTime + "ms, " + htmlRenderTime + "ms  ";
+					renderTime.toolTip = htmlCompleteTime + "ms HTML Complete, " + htmlRenderTime + "ms HTML Render";
+					//Radiate.callAfter(3000, clearTimeLabel);
+				}
+			}
+			
+			/**
+			 * Clears the time text
+			 * */
+			public function clearTimeLabel():void {
+				if (htmlRenderHandled && htmlCompleteHandled) {
+					renderTime.text = "";
+				}
+			}
+			
+			/**
+			 * Retain the vertical scroll bar position when updating HTML preview
+			 * */
 			protected function updateScrollPositionHandler(event:Event = null):void {
 				var previewDocument:Object;
 				var domWindow:Object;
@@ -770,9 +836,6 @@
 				previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
 				
 				if (previewDocument && "htmlLoader" in previewDocument && previewDocument.htmlLoader) {
-					if (event) {
-						previewDocument.removeEventListener(event.type, updateScrollPositionHandler);
-					}
 					//previewDocument.removeEventListener("complete", updateScrollPositionHandler);
 					previewDocument.htmlLoader.scrollV = lastVerticalScrollPosition;
 				}
@@ -972,6 +1035,11 @@
 				updateCodeEditors(true);
 			}
 			
+			protected function handleDocumentClosed(event:Event):void
+			{
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1141,7 +1209,7 @@ IFRAME_ID {
 		
 		<c:BeveledImageButton id="openDocumentInInternalWebIcon" 
 							  source="{Radii8LibraryAssets.documentPlayIcon}" 
-							  toolTip="View document inline with internal web browser (it's currently an old browser)"
+							  toolTip="View document inline with internal web browser"
 							  smoothingQuality="high"
 							  smooth="true"
 							  width="18"
@@ -1179,7 +1247,7 @@ IFRAME_ID {
 		
 		<c:BeveledImageButton id="resyncButton"
 							  source="{Radii8LibraryAssets.refresh}"
-							  toolTip="Revert code"
+							  toolTip="Revert to original code"
 							  click="resyncButton_clickHandler(event)"
 							  visible="{isHTML}"
 							  includeInLayout="{isHTML}"
@@ -1219,6 +1287,9 @@ IFRAME_ID {
 					visible="{isHTML}"
 					includeInLayout="{isHTML}"
 					click="showBorders_clickHandler(event)"/>
+		
+		<s:Label id="renderTime" paddingTop="4" />
+		
 		<!--
 		<s:Group id="redrawButton" 
 				 click="showBorders_clickHandler(event)"

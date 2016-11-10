@@ -43,6 +43,7 @@
 			private var designDocument:IEventDispatcher;
 			
 			public var project:IProject;
+			private var currentSavingDocument:IDocument;
 			
 
 			public function activate():void {
@@ -73,6 +74,7 @@
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_OPENING, documentOpeningHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_REMOVED, documentRemovedHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_DELETED, documentRemovedHandler);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, documentSavedHandler);
 				}
 				
 				if (services) {
@@ -189,7 +191,7 @@
 				}
 			}
 			
-			public var documentSaveLocation:Object;
+			public var documentSaveLocation:String;
 			
 			/**
 			 * Add new document
@@ -202,12 +204,14 @@
 					var saveRemote:Boolean = radiate.isUserConnected && radiate.isUserLoggedIn;
 					var savedLocation:String = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
 					
-					var savedLocally:Boolean = radiate.saveDocument(newDocument, savedLocation);
 					if (newDocument is Document) {
-						DocumentData(newDocument).addEventListener(SaveResultsEvent.SAVE_RESULTS, newDocumentSavedHandler, false, 0, true);
+						//DocumentData(newDocument).addEventListener(SaveResultsEvent.SAVE_RESULTS, newDocumentSavedHandler, false, 0, true);
 						documentBeingSaved = newDocument;
 						documentSaveLocation = savedLocation;
 					}
+					
+					
+					var savedLocally:Boolean = radiate.saveDocument(newDocument, savedLocation);
 				//}
 			}
 			
@@ -216,12 +220,9 @@
 				var iDocument:IDocument = list.selectedItem as IDocument;
 				
 				if (iDocument) {
-					var saveRemote:Boolean = radiate.isUserConnected && radiate.isUserLoggedIn;
-					var savedLocation:String = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
 					
-					var savedLocally:Boolean = radiate.saveDocument(iDocument, savedLocation);
-					
-					//Radiate.info("Saved locally: " + savedLocally);
+					Radiate.callAfter(250, saveDocument, iDocument);
+					Radiate.info("Saving document " + iDocument.name + "'");
 				}
 				else {
 					Radiate.warn("No document selected");
@@ -291,6 +292,16 @@
 				}
 			}
 			
+			protected function openDocumentByData(documentData:IDocumentData):void {
+				var iDocument:IDocument;
+				
+				iDocument = radiate.openDocumentByData(documentData, false, true);
+				
+				if (iDocument==null) {
+					Radiate.error("Document was not found (never saved). Delete the document and save project.");
+				}
+			}
+			
 			protected function openDocumentIcon_clickHandler(event:MouseEvent):void {
 				var selectedDocument:IDocument = list.selectedItem as IDocument;
 				
@@ -319,11 +330,11 @@
 				var iDocument:IDocument;
 				
 				if (documentData && !documentData.isOpen) {
-					iDocument = radiate.openDocumentByData(documentData, false, true);
 					
-					if (iDocument==null) {
-						Radiate.error("Document was not found (never saved). Delete the document and save project.");
-					}
+					Radiate.info("Opening document '" + documentData.name + "'");
+					
+					Radiate.callAfter(250, openDocumentByData, documentData);
+					
 				}
 				else if (documentData && documentData.isOpen) {
 					//Radiate.info("Document '" + documentData.name + "' is already open"); 
@@ -547,6 +558,15 @@
 			protected function documentSavedHandler(event:Event):void
 			{
 				updateCollection();
+				
+				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
+				// this is null sometimes because we save in Radiate class and not here so this var is null
+				var project:IProject = documentBeingSaved ? IDocument(documentBeingSaved).project : null;
+				
+				if (usersSignedIn && documentBeingSaved && project) {
+					Radiate.instance.saveProjectOnly(project, documentSaveLocation);
+					documentBeingSaved = null;
+				}
 			}
 			
 			protected function saveRevisionIcon_clickHandler(event:MouseEvent):void
@@ -567,6 +587,8 @@
 					iDocument.markDirty();
 					updateRevisionsToolTip();
 					Radiate.instance.saveDocument(iDocument);
+					
+					
 				}
 			}
 			
@@ -597,7 +619,58 @@
 			}
 			
 			protected function newDocumentSavedHandler(event:SaveResultsEvent):void {
-				radiate.saveProjectOnly(radiate.selectedProject, documentSaveLocation as String);				
+				radiate.saveProjectOnly(radiate.selectedProject, documentSaveLocation as String);		
+			}
+			
+			protected function duplicateDocumentIcon_clickHandler(event:MouseEvent):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				
+				if (iDocument) {
+					
+					Radiate.info("Duplicating document '" + iDocument.name + "'");
+					
+					Radiate.callAfter(250, duplicateDocument, iDocument);
+					
+				}
+				else {
+					Radiate.warn("No document is open");
+				}
+				
+			}
+			
+			public function duplicateDocument(iDocument:IDocument):void {
+				var newDocument:IDocument = radiate.duplicateDocument(iDocument);
+				newDocument = radiate.addDocument(newDocument, radiate.selectedProject, true, true);
+				radiate.openDocument(newDocument, DocumentData.INTERNAL_LOCATION, true);
+				
+				//if (!Radiate.isDesktop) {
+				var saveRemote:Boolean = radiate.isUserConnected && radiate.isUserLoggedIn;
+				var savedLocation:String = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
+				var savedLocally:Boolean = radiate.saveDocument(newDocument, savedLocation);
+				
+				if (newDocument is Document) {
+					DocumentData(newDocument).addEventListener(SaveResultsEvent.SAVE_RESULTS, newDocumentSavedHandler, false, 0, true);
+					documentBeingSaved = newDocument;
+					documentSaveLocation = savedLocation;
+				}
+			}
+			
+			public function saveDocument(iDocument:IDocument):void {
+				var iDocument:IDocument = list.selectedItem as IDocument;
+				var saveRemote:Boolean;
+				var savedLocation:String;
+				
+				if (iDocument) {
+					saveRemote = radiate.isUserConnected && radiate.isUserLoggedIn;
+					savedLocation = saveRemote ? DocumentData.REMOTE_LOCATION : DocumentData.LOCAL_LOCATION;
+					
+					if (radiate.isUserConnected && radiate.isUserLoggedIn) {
+						var savedLocally:Boolean = radiate.saveDocument(iDocument, savedLocation);
+					}
+					
+					documentBeingSaved = iDocument;
+					documentSaveLocation = savedLocation;
+				}
 			}
 			
 		]]>
@@ -778,7 +851,7 @@
 		
 		<c:BeveledImageButton id="copyIcon" 
 							  source="{Radii8LibraryAssets.copy}" 
-							  toolTip="Copy the MXML to the Clipboard"
+							  toolTip="Copy the document MXML to the Clipboard"
 							  verticalAlign="middle"
 							  useHandCursor="true"
 							  click="copyIcon_clickHandler(event)"
@@ -816,6 +889,8 @@
 							  source="{Radii8LibraryAssets.documentExternalPlayIcon}" 
 							  toolTip="View a published document in the browser (if document is not published you must login to the site via in your browser before you can see it)"
 							  click="openDocumentInBrowserButton_clickHandler(event)"
+							  includeInLayout="true"
+							  visible="true"
 							  />
 		<c:BeveledImageButton id="openDocumentInBrowserScreenshotButton" 
 							  source="{Radii8LibraryAssets.browserScreenShot}" 
@@ -858,6 +933,11 @@
 					   click="openDocumentIcon_clickHandler(event)"
 					   visible="{!list.selectedItem.isOpen}"
 					   includeInLayout="{!list.selectedItem.isOpen}"
+					   />
+		<c:BeveledImageButton id="duplicateDocumentIcon" 
+					   source="{Radii8LibraryAssets.duplicateDocument}" 
+					   toolTip="Duplicate Document"
+					   click="duplicateDocumentIcon_clickHandler(event)"
 					   />
 		<c:BeveledImageButton id="newDocumentIcon" 
 					   source="{Radii8LibraryAssets.newFile}" 

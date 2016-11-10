@@ -280,6 +280,11 @@ package com.flexcapacitor.utils {
 				dragInitiator.visible = hideDragInitiatorOnDrag ? false : true; // hide from view
 				removeMouseHandlers(dragInitiator);
 				
+				if (dragInitiator==null && event.currentTarget) {
+					removeMouseHandlers(event.currentTarget);
+					return;
+				}
+				
 				if (dragInitiator is IGraphicElement) {
 					dragInitiatorProxy = DisplayObjectUtils.duplicateIntoImage(dragInitiator as GraphicElement);
 					startDrag(dragInitiatorProxy as IUIComponent, targetApplication, event);

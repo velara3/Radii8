@@ -9,6 +9,7 @@
 		 xmlns:status="com.flexcapacitor.effects.status.*" 
 		 
 		 creationComplete="group1_creationCompleteHandler(event)" 
+		 fontSize="11"
 		 >
 
 	
@@ -139,8 +140,9 @@
 		<!-- COPY TO THE CLIPBOARD -->
 		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
 			
-			<clipboard:CopyToClipboard data="{colorTextInput.text}" targetAncestor="{this}" allowNullData="true">
-				<clipboard:successEffect>
+			<clipboard:CopyToClipboard data="{colorTextInput.text}" targetAncestor="{this}" allowNullData="true"
+									   >
+<!--				<clipboard:successEffect>
 					<status:ShowStatusMessage message="Color copied to the clipboard"/>
 				</clipboard:successEffect>
 				<clipboard:noDataEffect>
@@ -148,7 +150,7 @@
 				</clipboard:noDataEffect>
 				<clipboard:errorEffect>
 					<status:ShowStatusMessage message="An error occurred while attempting to copy to the clipboard"/>
-				</clipboard:errorEffect>
+				</clipboard:errorEffect>-->
 			</clipboard:CopyToClipboard>
 			
 		</handlers:EventHandler>

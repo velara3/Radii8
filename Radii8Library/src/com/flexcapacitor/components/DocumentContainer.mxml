@@ -1062,8 +1062,8 @@
 					For example, selection and resizing borders. 
 					-->
 					<s:Group id="toolLayerInstance" 
-							 mouseChildren="false" 
-							 mouseEnabled="false">
+							 mouseChildren="true" 
+							 mouseEnabled="true">
 						
 					</s:Group>
 				

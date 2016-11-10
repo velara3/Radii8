@@ -252,7 +252,7 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (componentDefinition==null) {
-				message = "Could not find the definition for " + elementName + ". The document will be missing elements.";
+				message = "Could not find the definition for '" + elementName + "'. The document will be missing elements.";
 			}
 			
 			className = componentDefinition ? componentDefinition.className :null;

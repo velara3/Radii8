@@ -213,7 +213,7 @@
 	click="actualSize_clickHandler(event)"/>-->
 	
 	<s:ComboBox id="zoomComboBox" 
-				width="65" 
+				width="58" 
 				height="21"
 				focusAlpha="0" 
 				selectedIndex="8"
@@ -235,6 +235,8 @@
 		</s:layout>-->
 		<s:dataProvider>
 			<s:ArrayList>
+				<fx:String>1000%</fx:String>
+				<fx:String>800%</fx:String>
 				<fx:String>600%</fx:String>
 				<fx:String>500%</fx:String>
 				<fx:String>400%</fx:String>

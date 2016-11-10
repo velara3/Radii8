@@ -67,6 +67,8 @@
 			import mx.events.MenuEvent;
 			import mx.managers.DragManager;
 			
+			import spark.collections.Sort;
+			import spark.collections.SortField;
 			import spark.effects.easing.Linear;
 			import spark.events.IndexChangeEvent;
 	/**
@@ -384,7 +386,17 @@
 			 * Handle when getting result of list of projects
 			 * */
 			protected function receivedProjectsHandler(event:RadiateEvent):void {
-				var projects:Array = radiate.parseProjectsData(event.data);
+				var iProject:IProject;
+				var projects:Array;
+				var sortFields:Array = [];
+				var dateSortField:SortField;
+				var descending:Boolean = true;
+				
+				dateSortField = new SortField("dateSaved", descending);
+				sortFields.push(dateSortField);
+				
+				projects = radiate.parseProjectsData(event.data);
+				projectsCollection.sort = new Sort(sortFields);
 				projectsCollection.source = projects;
 				documentsCollection.source = [];
 				
@@ -395,7 +407,7 @@
 				else if (checkingForProjectsLabel) {
 					updateCheckProjects(1);
 					openPreviousProject.enabled = true;
-					var iProject:IProject = projectsCollection.getItemAt(0) as IProject;
+					iProject = projectsCollection.getItemAt(0) as IProject;
 					openPreviousProject.label = "Open " + iProject.name;
 				}
 				
@@ -949,8 +961,6 @@
 					//radiate.scaleToFit(false);
 					//radiate.centerApplication();
 				}
-				
-				
 			}
 			
 			protected function sizeDocumentToSelection_itemClickHandler(event:MenuEvent):void
@@ -961,6 +971,33 @@
 			protected function sizeSelectionToDocument_itemClickHandler(event:MenuEvent):void
 			{
 				Radiate.sizeSelectionToDocument();
+			}
+			
+			protected function restoreImageToOriginalSize_itemClickHandler(event:MenuEvent):void
+			{
+				var iDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(radiate.target) : null;
+				var image:Image = componentDescription ? componentDescription.instance as Image : null;
+				var bitmapData:BitmapData = image ? image.bitmapData : null;
+				
+				if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
+					Radiate.restoreImageToOriginalSize(image);
+				}
+			}
+			
+			protected function sizeSelectionToContent_itemClickHandler(event:MenuEvent):void {
+				
+				Radiate.removeExplicitSizingFromSelection(radiate.target);
+			}
+			
+			protected function removeExplicitHeight_itemClickHandler(event:MenuEvent):void {
+				
+				Radiate.removeExplicitHeightFromSelection(radiate.target);
+			}
+			
+			protected function removeExplicitWidth_itemClickHandler(event:MenuEvent):void {
+				
+				Radiate.removeExplicitWidthFromSelection(radiate.target);
 			}
 			
 			protected function copySelectionIntoLibrary_itemClickHandler(event:MenuEvent):void
@@ -1542,6 +1579,11 @@
 				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToImage_itemClickHandler(event)" />
 				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
 				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />
+				<model:MenuItem id="sizeSelectionToContent" label="Size selection to content (remove explicit size)" itemClick="sizeSelectionToContent_itemClickHandler(event)" />
+				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />
+				<model:MenuItem id="removeExplicitWidth" label="Remove explicit width" itemClick="removeExplicitWidth_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="showProjectSource_itemClickHandler(event)" />
 				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="showDocumentSource_itemClickHandler(event)"/>

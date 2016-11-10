@@ -283,7 +283,7 @@
 				borderVisible="false"
 				labelFunction="labelFunction2"
 				click="list1_clickHandler(event)"
-				horizontalScrollPolicy="auto" 
+				horizontalScrollPolicy="off" 
 				verticalScrollPolicy="off">
 			
 			<s:layout>
@@ -292,8 +292,35 @@
 			
 			<s:itemRenderer>
 				<fx:Component>
-					<s:ItemRenderer width="100%" autoDrawBackground="false" minHeight="14"
-									useHandCursor="true" buttonMode="true">
+					<s:ItemRenderer width="100%" 
+									autoDrawBackground="false" 
+									minHeight="14"
+									useHandCursor="true" 
+									buttonMode="true"
+									toolTip=" "
+									toolTipShow="itemrenderer1_toolTipShowHandler(event)">
+						<fx:Script>
+							<![CDATA[
+								import mx.core.IToolTip;
+								import mx.managers.ToolTipManager;
+								import mx.events.ToolTipEvent;
+								
+								import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+								
+								public var myToolTip:IToolTip;
+								
+								protected function itemrenderer1_toolTipShowHandler(event:ToolTipEvent):void
+								{
+									var componentDescription:ComponentDescription = data as ComponentDescription;
+									if (componentDescription==null) return;
+									var descendantsCount:int = componentDescription.getNumberOfElements();
+									
+									myToolTip = ToolTipManager.currentToolTip;
+									myToolTip.text = descendantsCount + " descendants";
+								}
+								
+							]]>
+						</fx:Script>
 						
 						<s:states>
 							<s:State name="normal"/>

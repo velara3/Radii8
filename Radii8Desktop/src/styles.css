@@ -239,3 +239,7 @@ controls|ColorPicker {
 	verticalGap:0;
 */
 }
+
+controls|RichTextEditorBar {
+	fontSize: 10;
+}

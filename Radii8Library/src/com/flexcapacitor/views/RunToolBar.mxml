@@ -179,7 +179,7 @@
 		
 		<c:BeveledImageButton id="openDocumentInInternalWebIcon" 
 							  source="{Radii8LibraryAssets.documentPlayIcon}" 
-							  toolTip="View document inline with internal web browser (it's currently an old browser)"
+							  toolTip="View document inline with internal web browser (webkit browser)"
 							  smoothingQuality="high"
 							  smooth="true"
 							  width="18"

@@ -198,6 +198,12 @@
 				}
 				else if (eventType==RadiateEvent.DOCUMENT_DELETED) {
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_DELETED, deleteResultsHandler);
+					
+					// we need to save the project to update the number of documents it saves
+					if (radiate.selectedProject) {
+						
+						radiate.saveProjectOnly(radiate.selectedProject);
+					}
 				}
 				else if (eventType==RadiateEvent.ATTACHMENTS_DELETED) {
 					radiate.removeEventListener(RadiateEvent.ATTACHMENTS_DELETED, deleteResultsHandler);

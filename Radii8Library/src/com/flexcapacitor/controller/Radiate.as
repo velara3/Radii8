@@ -189,6 +189,7 @@ package com.flexcapacitor.controller {
 	import spark.components.RichText;
 	import spark.components.Scroller;
 	import spark.components.SkinnableContainer;
+	import spark.components.TextSelectionHighlighting;
 	import spark.components.supportClasses.DropDownListBase;
 	import spark.components.supportClasses.GroupBase;
 	import spark.components.supportClasses.SkinnableTextBase;
@@ -273,6 +274,11 @@ package com.flexcapacitor.controller {
 	 * Dispatched when a document is opened
 	 * */
 	[Event(name="documentOpen", type="com.flexcapacitor.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when a document is closed
+	 * */
+	[Event(name=RadiateEvent.DOCUMENT_CLOSE, type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when a console value is changed
@@ -1607,6 +1613,21 @@ package com.flexcapacitor.controller {
 			if (hasEventListener(RadiateEvent.DOCUMENT_OPEN)) {
 				documentOpenEvent = new RadiateEvent(RadiateEvent.DOCUMENT_OPEN, false, false);
 				documentOpenEvent.selectedItem = document;
+				dispatchEvent(documentOpenEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document closed event
+		 * */
+		public function dispatchDocumentCloseEvent(document:IDocument, documentClosed:Boolean = true, previewClosed:Boolean = false):void {
+			var documentOpenEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_CLOSE)) {
+				documentOpenEvent = new RadiateEvent(RadiateEvent.DOCUMENT_CLOSE, false, false);
+				documentOpenEvent.selectedItem = document;
+				documentOpenEvent.previewClosed = previewClosed;
+				documentOpenEvent.documentClosed = documentClosed;
 				dispatchEvent(documentOpenEvent);
 			}
 		}
@@ -5263,11 +5284,20 @@ package com.flexcapacitor.controller {
 			var dragSource:DragSource;
 			var hasFileListFormat:Boolean;
 			var hasFilePromiseListFormat:Boolean;
+			var hasURLFormat:Boolean;
 			var isSelf:Boolean;
+			var AIR_URL:String = "air:url";
+			var isHTMLPreviewOpen:Boolean;
+			
+			AIR_URL = ClipboardFormats.URL_FORMAT;
 			
 			dragSource = event.dragSource;
 			hasFileListFormat = dragSource.hasFormat(ClipboardFormats.FILE_LIST_FORMAT);
 			hasFilePromiseListFormat = dragSource.hasFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT);
+			hasURLFormat = dragSource.hasFormat(AIR_URL);
+			
+			isHTMLPreviewOpen = instance.isDocumentPreviewOpen(instance.selectedDocument);
+			
 			
 			var destination:Object;
 			var droppedFiles:Array;
@@ -5279,6 +5309,18 @@ package com.flexcapacitor.controller {
 				}
 				else if (hasFilePromiseListFormat) {
 					droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT) as Array;
+				}
+				
+				// not handling URL format. need to load it and check the file type
+				else if (hasURLFormat) {
+					
+					// if internal html preview is visible we should return false since
+					if (isHTMLPreviewOpen) {
+						
+						// dragged images are triggering the drop panel
+					}
+					
+					return;
 				}
 				
 				if (droppedFiles) {
@@ -6408,7 +6450,7 @@ package com.flexcapacitor.controller {
 		 * @see setStyles()
 		 * @see setProperty()
 		 * */
-		public static function setProperties(target:Object, properties:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
+		public static function setProperties(target:Object, properties:Array, value:*, description:String = null, removeUnchangedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var propertyChanges:Array;
 			var historyEvents:Array;
 			var targets:Array;
@@ -6417,7 +6459,7 @@ package com.flexcapacitor.controller {
 			properties = ArrayUtil.toArray(properties);
 			propertyChanges = createPropertyChanges(targets, properties, null, null, value, description, false);
 			
-			if (!keepUndefinedValues) {
+			if (!removeUnchangedValues) {
 				propertyChanges = stripUnchangedValues(propertyChanges);
 			}
 			
@@ -7619,6 +7661,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			// get reference to current source label or richtext 
 			currentEditableComponent = target;
 			
+			if (editableRichTextField==null) {
+				editableRichTextField = new RichEditableText();
+				editableRichTextField.selectionHighlighting = TextSelectionHighlighting.WHEN_ACTIVE;
+			}
+			
 			// get positions of label or richtext
 			// and setup properties that need to be set for temporary rich text field
 			if (currentEditableComponent) {
@@ -7796,6 +7843,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					editableRichTextField.setFocus();
 					editableRichTextEditorBarCallout.open(editableRichTextField);
 					
+					editableRichTextEditorBarCallout.scaleX = 1;
+					editableRichTextEditorBarCallout.scaleY = 1;
 					editableRichTextEditorBarCallout.addEventListener(PopUpEvent.CLOSE, richTextCallOut_closeHandler, false, 0, true);
 					
 					/*
@@ -8032,6 +8081,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				config = importer.configuration;
 			}
 			
+			//if (currentEditableComponent && newValue!=oldValue) {
 			if (currentEditableComponent && newValue!=oldValue) {
 				
 				if (isRichEditor) {
@@ -9157,6 +9207,39 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		/**
+		 * Duplicates the document 
+		 * 
+		 * It returns the document container. 
+		 * */
+		public function duplicateDocument(iDocument:IDocument, showDocument:Boolean = true, dispatchEvents:Boolean = true):IDocument {
+			var newDocument:IDocument;
+			
+			if (iDocument) {
+				newDocument = createDocumentFromData(iDocument);
+				removeUniqueDocumentData(newDocument);
+			}
+			else {
+				error("No document to duplicate");
+				return null;
+			}
+			
+			newDocument = openDocument(newDocument, DocumentData.INTERNAL_LOCATION, showDocument, dispatchEvents);
+			
+			return newDocument;
+		}
+		
+		/**
+		 * Removes unique document data such as remote ID and UID. 
+		 * Used for duplicating documents and importing example projects
+		 * */
+		public function removeUniqueDocumentData(iDocument:Object):void {
+			if (iDocument is IDocumentData) {
+				IDocument(iDocument).id = null;
+				IDocument(iDocument).uid = null;
+			}
+		}
+		
+		/**
 		 * Print
 		 * */
 		public function print(data:Object, scaleType:String = FlexPrintJobScaleType.MATCH_WIDTH, printAsBitmap:Boolean = false):Object {
@@ -9550,7 +9633,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var selectedDocument:IDocument = getDocumentAtIndex(documentsTabNavigator.selectedIndex);
 			var isPreview:Boolean = isPreviewDocumentVisible();
 			
-			return closeDocument(selectedDocument, isPreview);
+			return closeDocument(selectedDocument, isPreview, true);
 			
 		}
 		
@@ -9569,7 +9652,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var navigatorContent:NavigatorContent;
 			var navigatorContentDocumentContainer:Object;
 			var documentContainer:Object = isPreview ? documentsPreviewDictionary[iDocument] : documentsContainerDictionary[iDocument];
-			var wasClosed:Boolean;
+			var wasDocumentClosed:Boolean;
+			var wasPreviewClosed:Boolean;
 			var index:int;
 			
 			// third attempt
@@ -9592,6 +9676,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 						documentContainer = documentsPreviewDictionary[iDocument];
 						
 						if (documentContainer) {
+							wasPreviewClosed = true;
 							documentsTabNavigator.removeChild(documentContainer.owner);
 						}
 						
@@ -9602,10 +9687,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 						
 						delete documentsContainerDictionary[iDocument];
 						delete documentsPreviewDictionary[iDocument];
-						wasClosed = true;
+						wasDocumentClosed = true;
 					}
 					else {
 						delete documentsPreviewDictionary[iDocument];
+						wasPreviewClosed = true;
 					}
 					
 					if (isPreview) {
@@ -9617,18 +9703,20 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					
 					documentsTabNavigator.validateNow();
 					
+					dispatchDocumentCloseEvent(iDocument, wasDocumentClosed, wasPreviewClosed);
 				}
 			}
 			
 			var otherDocument:IDocument;
 			
-			if (selectOtherDocument && wasClosed && tabCount>1) {
+			if (selectOtherDocument && wasDocumentClosed && tabCount>1) {
 				otherDocument = getVisibleDocument();
 				openTabs = documentsTabNavigator.getChildren();
 				tabCount = openTabs.length;
 				
 				if (otherDocument==null) {
 					//index = index==0 ? 1 : index-1;
+					isPreviewDocumentVisible()
 					otherDocument = documents && documents.length ? documents[0] : null;
 				}
 				if (otherDocument) {
@@ -9729,7 +9817,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				return iDocument;
 			}
 			
-			return null;
+			
+			var selectedDocument:IDocument = getDocumentAtIndex(documentsTabNavigator.selectedIndex);
+			var isPreview:Boolean = isPreviewDocumentVisible();
+			
+			return selectedDocument;
 		}
 		
 		/**
@@ -11110,7 +11202,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 						if (documentData) {
 							documentData.host = url;
 							
-							if (documentData.uid=="null" || documentData.uid==null) {
+							if (documentData.uid=="null" || documentData.uid==null || documentData.uid=="") {
 								documentData.uid = documentData.createUID();
 								documentData.name += " Copy";
 							}
@@ -12336,7 +12428,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					var iProject:IProject = getProjectByID(deleteDocumentProjectId);
 					
 					if (iProject) {
-						iProject.save();
+						iProject.saveOnlyProject();
 					}
 				}
 				
@@ -12406,7 +12498,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					var iProject:IProject = getProjectByID(deleteDocumentProjectId);
 					
 					if (iProject) {
-						iProject.save();
+						iProject.saveOnlyProject();
 					}
 				}
 				
@@ -12682,8 +12774,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var numberOfDocuments:int;
 			var exampleDocument:IDocument;
 			
-			exampleProject.id = null;
-			exampleProject.uid = null;
+			removeUniqueDocumentData(exampleProject);
 			exampleDocuments = exampleProject.documents;
 			numberOfDocuments = exampleDocuments ? exampleDocuments.length :0;
 			
@@ -12691,7 +12782,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				exampleDocument = exampleDocuments[i] as IDocument;
 				
 				if (exampleDocument) {
-					exampleDocument.id = null;
+					removeUniqueDocumentData(exampleDocument);
 					exampleDocument.uid = UIDUtil.createUID();
 					exampleDocument.isExample = true;
 				}
@@ -13179,7 +13270,49 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		/**
-		 * Sizes the document to the current selected target
+		 * Removes width and height so that component is sized to content
+		 * */
+		public static function removeExplicitSizingFromSelection(target:Object):Boolean {
+			var iDocument:IDocument = instance.selectedDocument;
+			var sized:Boolean;
+			
+			if (target) {
+				sized = clearProperties(target, ["width","percentWidth", "height", "percentHeight"], "Size to content");
+			}
+			
+			return sized;
+		}
+		
+		/**
+		 * Removes explicit width 
+		 * */
+		public static function removeExplicitWidthFromSelection(target:Object):Boolean {
+			var iDocument:IDocument = instance.selectedDocument;
+			var sized:Boolean;
+			
+			if (target) {
+				sized = clearProperties(target, ["width","percentWidth"], "Removed width");
+			}
+			
+			return sized;
+		}
+		
+		/**
+		 * Removes explicit height
+		 * */
+		public static function removeExplicitHeightFromSelection(target:Object):Boolean {
+			var iDocument:IDocument = instance.selectedDocument;
+			var sized:Boolean;
+			
+			if (target) {
+				sized = clearProperties(target, ["height", "percentHeight"], "Removed height");
+			}
+			
+			return sized;
+		}
+		
+		/**
+		 * Sizes the image to it's original size
 		 * */
 		public static function restoreImageToOriginalSize(target:Object):Boolean {
 			var rectangle:Rectangle;

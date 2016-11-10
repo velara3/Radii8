@@ -71,7 +71,7 @@
 			
 			
 			public var relevantProperties:Array = ["lineHeight", "fontFamily", "fontSize", "fontWeight", "fontStyle", 
-				"trackingLeft", "trackingRight", "textDecoration", "color"];
+				"trackingLeft", "trackingRight", "textDecoration", "color", "textAlign"];
 			
 			public function update():void {
 				var lineHeightStyle:StyleMetaData 		= ClassUtils.getMetaDataOfStyle(target, "lineHeight"); // font line height
@@ -83,6 +83,7 @@
 				var trackingRightStyle:StyleMetaData 	= ClassUtils.getMetaDataOfStyle(target, "trackingRight"); // tracking
 				var textDecorationStyle:StyleMetaData  	= ClassUtils.getMetaDataOfStyle(target, "textDecoration"); // underline 
 				var colorStyle:StyleMetaData 			= ClassUtils.getMetaDataOfStyle(target, "color"); // color
+				var textAlignStyle:StyleMetaData 		= ClassUtils.getMetaDataOfStyle(target, "textAlign"); // textAlign
 				
 				if (fonts==null) {
 					fonts = FontUtils.getFontInformationDetails(target);
@@ -98,6 +99,7 @@
 				colorRenderer.data = colorStyle;
 				trackingLeftRenderer.data = trackingLeftStyle;
 				trackingRightRenderer.data = trackingRightStyle;
+				textAlignRenderer.data = textAlignStyle;
 			}
 			
 			protected function group1_showHandler(event:FlexEvent):void {
@@ -162,6 +164,10 @@
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Color" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:ColorPickerRenderer id="colorRenderer" height="24" includeCopyIcon="false"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Text Align" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:DropDownListRenderer id="textAlignRenderer" height="24" />
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Tracking Right" styleName="inspectablePanelLabel" showTruncationTip="true"/>

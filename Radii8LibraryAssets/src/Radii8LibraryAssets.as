@@ -73,6 +73,9 @@ package {
 		[Embed(source="assets/icons/general/copy.png")]
 		public static const duplicate:Class;
 		
+		[Embed(source="assets/icons/general/duplicate_document.png")]
+		public static const duplicateDocument:Class;
+		
 		[Embed(source="assets/icons/general/edit.png")]
 		public static const edit:Class;
 		

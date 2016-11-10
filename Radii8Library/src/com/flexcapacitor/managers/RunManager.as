@@ -69,7 +69,7 @@ package com.flexcapacitor.managers {
 					}
 					else {
 						documentNotPublishedWarning = true;
-						Radiate.warn("The document is not published. Publish and save first or login into your browser to see it.")
+						Radiate.warn("The document is not published. Publish and save first or login into your browser to see it.");
 						Radiate.callAfter(2500, Radiate.openInBrowser, iDocument, windowName);
 					}
 				}
@@ -95,7 +95,7 @@ package com.flexcapacitor.managers {
 					else {*/
 						//documentNotPublishedWarning = true;
 						// always warn
-						Radiate.warn("The document is not published. Publish and save the document first.")
+						Radiate.warn("The document is not published. Publish and save the document first.");
 						Radiate.callAfter(2500, Radiate.openInBrowserScreenshot, iDocument, windowName);
 					//}
 				}
@@ -121,7 +121,7 @@ package com.flexcapacitor.managers {
 					else {*/
 						//documentNotPublishedWarning = true;
 						// always warn
-						Radiate.warn("The document is not published. Publish and save the document first.")
+						Radiate.warn("The document is not published. Publish and save the document first.");
 						Radiate.callAfter(2500, Radiate.openInBrowserSiteScanner, iDocument, windowName);
 					//}
 				}

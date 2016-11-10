@@ -5,6 +5,8 @@
 		 implements="com.flexcapacitor.views.IInspector" 
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
 		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
 		 styleName="inspectablePanel"
 		 width="100%">
 	
@@ -14,6 +16,9 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
 			
 			import org.as3commons.lang.ArrayUtils;
 			
@@ -56,15 +61,16 @@
 			
 			public function update():void {
 				//var data:Object = ClassUtils.getMetaDataOfProperty(target, "source");
-				var sourceData:MetaData = ClassUtils.getMetaDataOfProperty(target, "source");
-				sourceRenderer.data = sourceData;
-				autoPlayRenderer.data = ClassUtils.getMetaDataOfProperty(target, "autoPlay");
-				autoRewindRenderer.data = ClassUtils.getMetaDataOfProperty(target, "autoRewind");
-				mutedRenderer.data = ClassUtils.getMetaDataOfProperty(target, "muted");
-				pauseWhenHiddenRenderer.data = ClassUtils.getMetaDataOfProperty(target, "pauseWhenHidden");
-				autoDisplayFirstFrameRenderer.data = ClassUtils.getMetaDataOfProperty(target, "autoDisplayFirstFrame");
-				scaleModeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "scaleMode");
-				volumeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "volume");
+				var sourceData:MetaData 			= ClassUtils.getMetaDataOfProperty(target, "source");
+				sourceRenderer.data 				= sourceData;
+				autoPlayRenderer.data 				= ClassUtils.getMetaDataOfProperty(target, "autoPlay");
+				autoRewindRenderer.data 			= ClassUtils.getMetaDataOfProperty(target, "autoRewind");
+				mutedRenderer.data 					= ClassUtils.getMetaDataOfProperty(target, "muted");
+				pauseWhenHiddenRenderer.data 		= ClassUtils.getMetaDataOfProperty(target, "pauseWhenHidden");
+				scaleModeRenderer.data 				= ClassUtils.getMetaDataOfProperty(target, "scaleMode");
+				volumeRenderer.data 				= ClassUtils.getMetaDataOfProperty(target, "volume");
+				loopRenderer.data 					= ClassUtils.getMetaDataOfProperty(target, "loop");
+				autoDisplayFirstFrameRenderer.data 	= ClassUtils.getMetaDataOfProperty(target, "autoDisplayFirstFrame");
 				
 			}
 			
@@ -81,40 +87,64 @@
 			}
 			
 			public var relevantProperties:Array = ["source", "autoPlay", "autoRewind", "autoDisplayFirstFrame", 
-						"muted", "pauseWhenHidden", "scaleMode", "volume"];
+						"muted", "pauseWhenHidden", "scaleMode", "volume", "loop"];
+			
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var length:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<length;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				length = hgroups.length;
+				
+				for (var j:int;j<length;j++) {
+					hgroups[j].gap = gap;
+				}
+			}
 		]]>
 	</fx:Script>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Source" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Source" styleName="inspectablePanelLabel"/>
 		<renderers:TextRenderer id="sourceRenderer" height="24" width="100%"/>
 	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Scale Mode" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Scale Mode" styleName="inspectablePanelLabel"/>
 		<renderers:DropDownListRenderer id="scaleModeRenderer" height="24"/>
 	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Volume" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Volume" styleName="inspectablePanelLabel"/>
 		<renderers:NumberRenderer id="volumeRenderer" height="24"/>
 	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Auto Play" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Auto Play" styleName="inspectablePanelLabel"/>
 		<renderers:BooleanRenderer id="autoPlayRenderer" height="24" showClearButton="true"/>
 	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Auto Rewind" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Auto Rewind" styleName="inspectablePanelLabel"/>
 		<renderers:BooleanRenderer id="autoRewindRenderer" height="24" showClearButton="true"/>
 	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Auto Play" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Auto Display Frame" styleName="inspectablePanelLabel"/>
 		<renderers:BooleanRenderer id="autoDisplayFirstFrameRenderer" height="24" showClearButton="true"/>
 	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Muted" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Muted" styleName="inspectablePanelLabel"/>
 		<renderers:BooleanRenderer id="mutedRenderer" height="24" showClearButton="true"/>
 	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Paused when hidden" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Paused when hidden" styleName="inspectablePanelLabel"/>
 		<renderers:BooleanRenderer id="pauseWhenHiddenRenderer" height="24" showClearButton="true"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Loop" styleName="inspectablePanelLabel"/>
+		<renderers:BooleanRenderer id="loopRenderer" height="24" showClearButton="true"/>
 	</s:HGroup>
 </s:VGroup>

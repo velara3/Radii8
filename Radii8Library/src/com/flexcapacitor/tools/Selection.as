@@ -6,14 +6,16 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
-	import com.jacobschatz.bk.shapes.ShapeModel;
+	import com.roguedevelopment.DragGeometry;
 	import com.roguedevelopment.Flex4ChildManager;
 	import com.roguedevelopment.Flex4HandleFactory;
+	import com.roguedevelopment.IHandle;
 	import com.roguedevelopment.ObjectChangedEvent;
 	import com.roguedevelopment.ObjectHandles;
 	import com.roguedevelopment.ObjectHandlesSelectionManager;
@@ -49,7 +51,6 @@ package com.flexcapacitor.tools {
 	import mx.core.FlexSprite;
 	import mx.core.IFlexDisplayObject;
 	import mx.core.ILayoutElement;
-	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
@@ -172,6 +173,8 @@ package com.flexcapacitor.tools {
 		
 		public static const X:String = "x";
 		public static const Y:String = "y";
+		public static const WIDTH:String = "width";
+		public static const HEIGHT:String = "height";
 		
 		private var _icon:Class = Radii8LibraryToolAssets.Selection;
 		
@@ -255,6 +258,7 @@ package com.flexcapacitor.tools {
 			if (value) {
 				if (lastTarget) {
 					drawSelection(lastTarget, toolLayer);
+					//updateTransformRectangle(lastTarget);
 				}
 			}
 			else {
@@ -315,6 +319,7 @@ package com.flexcapacitor.tools {
 			_showTransformControls = value;
 			
 			updateSelectionAroundTarget(lastTarget);
+			updateTransformRectangle(lastTarget);
 		}
 
 
@@ -325,6 +330,22 @@ package com.flexcapacitor.tools {
 		public var enableDrag:Boolean = true;
 		public var toolLayer:IVisualElementContainer;
 		public var updateOnUpdateComplete:Boolean = false;
+		
+		
+		public var objectHandles:ObjectHandles;
+		
+		// add resize handles
+		public var manager:Flex4ChildManager;
+		public var selectionManager:ObjectHandlesSelectionManager;
+		public var decoratorManager:DecoratorManager;
+		public var alignmentDecorator:AlignmentDecorator;
+		public var webDecorator:WebDecorator;
+		public var outlineDecorator:OutlineDecorator;
+		public var objectLinesDecorator:ObjectLinesDecorator;
+		public var sizeConstraint:SizeConstraint;
+		public var snapToGridConstraint:SnapToGridConstraint;
+		public var handleFactory:Flex4HandleFactory;
+		public var aspectRatioConstraint:MaintainProportionConstraint;
 		
 		/**
 		 * X and Y coordinates of dragged object relative to the target application
@@ -345,33 +366,67 @@ package com.flexcapacitor.tools {
 			
 			addRadiateListeners();
 			
+			setupObjectHandles();
+			
 			Mouse.cursor = MouseCursor.AUTO;
 		}
 		
+		/**
+		 * Remove references to document instance
+		 * */
+		public function removeObjectHandles():void {
+			if (objectHandles) {
+				objectHandles.container = null;
+			}
+		}
+		
+		/**
+		 * Setup object handles for resizing and rotation
+		 * */
 		public function setupObjectHandles():void {
+			var container:Sprite;
+			var useToolLayer:Boolean = true;
+			
+			if (useToolLayer) {
+				container = toolLayer as Sprite;
+			}
+			else if (document) {
+				container = document.instance as Sprite;
+			}
+			
 			
 			if (objectHandles==null && radiate.canvasBorder) {
 				manager = new Flex4ChildManager();
 				handleFactory = new Flex4HandleFactory();
 				selectionManager = new ObjectHandlesSelectionManager();
-				
+				VisualElementHandle.handleLineColor = selectionBorderColor;
+				VisualElementHandle.handleFillColor = selectionBorderColor;
 				//selectionManager.unselectedModelState();
 				
 				// CREATE OBJECT HANDLES
 				//objectHandles = new ObjectHandles(radiate.canvasBorder as Sprite, null, handleFactory, manager);
-				objectHandles = new ObjectHandles(document.instance as Sprite, null, handleFactory, manager);
-				objectHandles.enableMultiSelect = true;
+				ObjectHandles.defaultHandleClass = VisualElementHandle;
+				objectHandles = new ObjectHandles(container, selectionManager, null, manager);
+				objectHandles.enableMultiSelect = false;
 				objectHandles.snapGrid = true;
 				objectHandles.snapNumber = 8;
 				objectHandles.snapAngle = true;
+				objectHandles.moveEnabled = false;
 				
-				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVED, objectMoved);
-				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVING, objectMoving);
-				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZING, objectResizing);
+				//selectionManager = objectHandles.selectionManager;
+				
+				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVED, movedHandler);
+				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVING, movingHandler);
+				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZING, resizingHandler);
+				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZED, resizedHandler);
 				
 				
 				//decoratorManager = new DecoratorManager(objectHandles, radiate.toolLayer as Sprite);
 				aspectRatioConstraint = new MaintainProportionConstraint();
+			}
+			
+			if (objectHandles) {
+				objectHandles.container = container;
 			}
 		}
 		
@@ -417,6 +472,7 @@ package com.flexcapacitor.tools {
 			
 			// handle events last so that we get correct size
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
+			radiate.addEventListener(RadiateEvent.DOCUMENT_CLOSE, 		documentCloseHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.TARGET_CHANGE, 		targetChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, 	propertyChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.SCALE_CHANGE, 		scaleChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
@@ -430,6 +486,7 @@ package com.flexcapacitor.tools {
 			radiate = Radiate.getInstance();
 			
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler);
+			radiate.removeEventListener(RadiateEvent.DOCUMENT_CLOSE, 		documentCloseHandler);
 			radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, 		targetChangeHandler);
 			radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, 		propertyChangeHandler);
 			radiate.removeEventListener(RadiateEvent.SCALE_CHANGE, 			scaleChangeHandler);
@@ -685,6 +742,7 @@ package com.flexcapacitor.tools {
 		 * */
 		protected function propertyChangeHandler(event:RadiateEvent):void {
 			updateSelectionAroundTarget(event.selectedItem);
+			//updateTransformRectangle(event.selectedItem);
 		}
 		
 		/**
@@ -692,6 +750,7 @@ package com.flexcapacitor.tools {
 		 * */
 		protected function scaleChangeHandler(event:RadiateEvent):void {
 			updateSelectionAroundTarget(event.selectedItem);
+			//updateTransformRectangle(event.selectedItem);
 		}
 		
 		/**
@@ -699,6 +758,7 @@ package com.flexcapacitor.tools {
 		 * */
 		protected function targetChangeHandler(event:RadiateEvent):void {
 			updateSelectionAroundTarget(event.selectedItem);
+			updateTransformRectangle(event.selectedItem);
 		}
 		
 		/**
@@ -707,7 +767,15 @@ package com.flexcapacitor.tools {
 		protected function documentChangeHandler(event:RadiateEvent):void {
 			clearSelection();
 			updateDocument(IDocument(event.selectedItem));
-			//setupObjectHandles();
+			setupObjectHandles();
+		}
+		
+		/**
+		 * 
+		 * */
+		protected function documentCloseHandler(event:RadiateEvent):void {
+			clearSelection();
+			setupObjectHandles();
 		}
 		
 		/**
@@ -757,9 +825,7 @@ package com.flexcapacitor.tools {
 				}
 				else {
 					drawSelection(target, toolLayer);
-					//addResizeHandles(target, toolLayer);
 				}
-				
 				
 			}
 			else {
@@ -796,6 +862,10 @@ package com.flexcapacitor.tools {
 			// events from everywhere? stage sandboxroot?
 			if (!targetApplication || !Object(targetApplication).contains(target)) {
 				//trace("does not contain");
+				return;
+			}
+			
+			if (target is IHandle) {
 				return;
 			}
 			
@@ -887,6 +957,9 @@ package com.flexcapacitor.tools {
 			
 			if (target && enableDrag) {
 				
+				if (target is IHandle) {
+					return;
+				}
 				//Radiate.info("Selection Mouse down");
 				
 				// select target on mouse up or drag drop whichever comes first
@@ -922,42 +995,80 @@ package com.flexcapacitor.tools {
 				}
 			}
 			
-			if (componentDescription && componentDescription.parent) {
-				objectHandles;
-			}
 			
 		}
 		
-		protected function objectMoved(event:ObjectChangedEvent):void
+		protected function movedHandler(event:ObjectChangedEvent):void
 		{
-			trace("moved");
-			var model:ShapeModel = event.relatedObjects[0];
+			//trace("moved");
+			var model:Object = event.relatedObjects[0];
 			var component:Object = objectHandles.getDisplayForModel(model);
 			component.x = model.x;
 			component.y = model.y;
 		}
 		
-		protected function objectResizing(event:ObjectChangedEvent):void
+		protected function resizingHandler(event:ObjectChangedEvent):void
 		{
-			trace("sizing");
+			//trace("sizing");
 			var elements:Array = event.relatedObjects;
 			for (var i:int = 0; i < elements.length; i++) 
 			{
-				var model:ShapeModel = elements[i];
+				var model:Object = elements[i];
 				var component:Object = objectHandles.getDisplayForModel(model);
 				component.x = model.x;
 				component.y = model.y;
 				component.width = model.width;
 				component.height = model.height;
 			}
+			
+			clearSelection(false);
 		}
 		
-		protected function objectMoving(event:ObjectChangedEvent):void
+		protected function resizedHandler(event:ObjectChangedEvent):void {
+			//trace("resized");
+			var elements:Array;
+			var model:Object;
+			var originalGeometry:DragGeometry;
+			var component:Object;
+			var properties:Array;
+			var propertiesObject:Object;
+			
+			elements = event.relatedObjects;
+			
+			for (var i:int = 0; i < elements.length; i++) {
+				model = elements[i];
+				component = objectHandles.getDisplayForModel(model);
+				originalGeometry = objectHandles.getOriginalGeometryOfModel(model);
+				
+				if (originalGeometry==null) {
+					trace("Resizing bug. fix later");
+					continue;
+				}
+				// restore original values so we can use undo history
+				component.x = originalGeometry.x;
+				component.y = originalGeometry.y;
+				component.width = originalGeometry.width;
+				component.height = originalGeometry.height;
+				
+				properties = [X, Y, WIDTH, HEIGHT];
+				propertiesObject = {};
+				
+				propertiesObject[WIDTH] = model.width;
+				propertiesObject[HEIGHT] = model.height;
+				propertiesObject[X] = model.x;
+				propertiesObject[Y] = model.y;
+				
+				Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
+			}
+			
+		}
+		
+		protected function movingHandler(event:ObjectChangedEvent):void
 		{
 			var elements:Array = event.relatedObjects;
 			for (var i:int = 0; i < elements.length; i++) 
 			{
-				var model:ShapeModel = elements[i];
+				var model:Object = elements[i];
 				var component:Object = objectHandles.getDisplayForModel(model);
 				component.x = model.x;
 				component.y = model.y;
@@ -965,26 +1076,6 @@ package com.flexcapacitor.tools {
 			
 		}
 		
-		protected function oh_clickHandler(event:MouseEvent):void {
-			if (objectHandles) {
-				objectHandles.selectionManager.clearSelection();
-			}
-		}
-		
-		public var objectHandles:ObjectHandles;
-		
-		// add resize handles
-		public var manager:Flex4ChildManager;
-		public var selectionManager:ObjectHandlesSelectionManager;
-		public var decoratorManager:DecoratorManager;
-		public var alignmentDecorator:AlignmentDecorator;
-		public var webDecorator:WebDecorator;
-		public var outlineDecorator:OutlineDecorator;
-		public var objectLinesDecorator:ObjectLinesDecorator;
-		public var sizeConstraint:SizeConstraint;
-		public var snapToGridConstraint:SnapToGridConstraint;
-		public var handleFactory:Flex4HandleFactory;
-		public var aspectRatioConstraint:MaintainProportionConstraint;
 		
 		/**
 		 * Handles drag start
@@ -1140,6 +1231,10 @@ package com.flexcapacitor.tools {
 				target.setFocus();
 			}
 			
+			// draw transform controls rectangle
+			if (showTransformControls) {
+				updateTransformRectangle(target);
+			}
 			
 			removeDragManagerListeners(); // nov 6
 		}
@@ -1679,30 +1774,43 @@ package com.flexcapacitor.tools {
 		 * Show resize handles
 		 * */
 		public var showResizeHandles:Boolean = false;
+		public var useObjectHandles:Boolean = true;
 		
 		/**
 		 * Clears the outline around a target display object
 		 * */
-		public function clearSelection():void {
+		public function clearSelection(clearResizeHandles:Boolean = true):void {
 			
 			if (targetSelectionGroup) {
 				targetSelectionGroup.visible = false;
 			}
 			
-			if (selectionManager) {
-				selectionManager.clearSelection();
+			if (selectionManager && clearResizeHandles) {
+				//selectionManager.clearSelection();
+				unregisterComponents();
 			}
 		}
+		
+		/**
+		 * Unregisters components for transform
+		 * */
+		public function unregisterComponents():void {
+			
+			if (objectHandles) {
+				objectHandles.unregisterAll();
+			}
+		}
+		
 		
 		/**
 		 * Draws outline around target display object. 
 		 * Trying to add support to add different types of selection rectangles. 
 		 * */
-		public function addResizeHandles(target:Object, selection:Object = null):void {
-			var shapeModel:ShapeModel = objectHandles.getModelForDisplay(target as DisplayObject) as ShapeModel;
+		public function registerComponent(target:Object, selection:Object = null):Object {
+			var shapeModel:Object = objectHandles.getModelForDisplay(target as DisplayObject);
 			
 			if (shapeModel==null) {
-				shapeModel = new ShapeModel();
+				shapeModel = new Object();
 			}
 			
 			if (target is UIComponent) {
@@ -1712,8 +1820,56 @@ package com.flexcapacitor.tools {
 				shapeModel.y 		= target.getLayoutBoundsY();
 				shapeModel.x 		= target.x;
 				shapeModel.y 		= target.y;
+				shapeModel.selected = false;
 				
-				objectHandles.registerComponent(shapeModel, target as IEventDispatcher, null, true, [aspectRatioConstraint]);
+				//objectHandles.registerComponent(shapeModel, target as IEventDispatcher, null, true, [aspectRatioConstraint]);
+				objectHandles.registerComponent(shapeModel, target as IEventDispatcher, null, false);
+			}
+			
+			return shapeModel;
+		}
+		
+		/**
+		 * Draws transform controls around selected items
+		 * */
+		public function updateTransformRectangle(target:Object, selection:Object = null):void {
+			
+			if (useObjectHandles && objectHandles) {
+				
+				if (showTransformControls) {
+					var model:Object;
+					var position:Object;
+					
+					// don't select a resize handle
+					if (target is IHandle) {
+						return;
+					}
+					
+					if (target==targetApplication) {
+						objectHandles.unregisterAll();
+						return;
+					}
+					
+					// register selected component - todo - unregister
+					if (!objectHandles.isDisplayRegistered(target as DisplayObject)) {
+						registerComponent(target, toolLayer);
+					}
+					
+					model = objectHandles.getModelForDisplay(target as DisplayObject);
+					
+					if (model && !selectionManager.isSelected(model)) {
+						selectionManager.setSelected(model);
+					}
+					
+					selectionManager.setSelected(model);
+					if (model) {
+						objectHandles.updateModelForDisplay(target); 
+						//objectHandles.updateHandlePositions(model);
+					}
+				}
+				else {
+					selectionManager.clearSelection();
+				}
 			}
 		}
 		
@@ -1773,7 +1929,6 @@ package com.flexcapacitor.tools {
 				// get and set selection rectangle
 				sizeSelectionGroup(target, selection as DisplayObject);
 				
-				
 				// validate
 				if (selection && selection is IVisualElementContainer) {
 					//IVisualElementContainer(selection).addElement(targetSelectionGroup);
@@ -1819,6 +1974,7 @@ package com.flexcapacitor.tools {
 					targetSelectionGroup.validateNow();
 				}
 			}
+			
 		}
 		
 		/**

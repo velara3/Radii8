@@ -431,6 +431,10 @@ package com.flexcapacitor.model {
 		 * */
 		public function getItemDescription(value:*):ComponentDescription {
 			
+			if (value == instance) {
+				return componentDescription;
+			}
+			
 			if (value is InvalidatingSprite) {
 				for (var object:Object in descriptionsDictionary) {
 					if (object is GraphicElement && object.displayObject==value) {

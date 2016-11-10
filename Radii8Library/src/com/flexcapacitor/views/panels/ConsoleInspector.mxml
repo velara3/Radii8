@@ -209,6 +209,13 @@
 				}
 			}
 			
+			
+			protected function wordwrapButton_clickHandler(event:MouseEvent):void
+			{
+				if (aceEditor) {
+					aceEditor.useWordWrap = enableWordWrapButton.selected;
+				}
+			}
 		]]>
 	</fx:Script>
 	
@@ -250,24 +257,38 @@
 				change="consoleTextAreaMX_changeHandler(event)"
 				valueCommit="consoleTextArea_valueCommitHandler(event)"
 				/>
-	<c:BeveledImageButton id="scrollToTheBottomButton" 
-						  source="{Radii8LibraryAssets.scrollToEnd}" 
-						  right="28"
-						  click="scrollToEnd()"
-						  width="15"
-						  height="14"
-						  horizontalAlign="center"
-						  verticalAlign="middle"
-						  toolTip="Scroll to end"
-						  />
-	<c:BeveledImageButton id="clearButton" 
-						  source="{Radii8LibraryAssets.clear}" 
-						  right="8"
-						  click="clearTextAreaHandler(event)"
-						  width="16"
-						  height="16"
-						  horizontalAlign="center"
-						  verticalAlign="middle"
-						  toolTip="Clear Console"
-						  />
+	
+	<s:HGroup right="8">
+		<c:BeveledImageToggleButton id="enableWordWrapButton"
+									source="{Radii8LibraryAssets.wordWrap}"
+									toolTip="Word wrap"
+									width="20"
+									height="16"
+									scaleMode="letterbox"
+									click="wordwrapButton_clickHandler(event)"
+									showBackgroundWhenSelected="true"
+									/>
+			  
+		<c:BeveledImageButton id="scrollToTheBottomButton" 
+							  source="{Radii8LibraryAssets.scrollToEnd}" 
+							  right="28"
+							  click="scrollToEnd()"
+							  width="15"
+							  height="14"
+							  horizontalAlign="center"
+							  verticalAlign="middle"
+							  toolTip="Scroll to end"
+							  />
+		<c:BeveledImageButton id="clearButton" 
+							  source="{Radii8LibraryAssets.clear}" 
+							  right="8"
+							  click="clearTextAreaHandler(event)"
+							  width="16"
+							  height="16"
+							  horizontalAlign="center"
+							  verticalAlign="middle"
+							  toolTip="Clear Console"
+							  />
+	</s:HGroup>  
+	
 </s:Group>

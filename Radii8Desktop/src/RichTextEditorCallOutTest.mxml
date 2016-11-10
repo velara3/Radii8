@@ -31,12 +31,8 @@
 		
 		controls|RichTextEditorBar {
 			skinClass: ClassReference("com.flexcapacitor.skins.RichTextEditorBarSkin");
-		}
-		
-		local|EditorCallOut {
-			skinClass: ClassReference("EditorCallOutSkin");
-		}
-		
+			fontSize:10.5;
+		}		
 		
 		controls|ColorPicker {
 			textInputClass:ClassReference("com.flexcapacitor.controls.ClearButtonTextInput");
@@ -46,16 +42,22 @@
 		.textStyles {
 			textFieldWidth:80;
 		}
+		
+		#editor {
+			cornerRadius: 0;
+			focusThickness: 1;
+		}
 	</fx:Style>
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.controls.ClearButtonTextInput;
 			import com.flexcapacitor.controls.RichTextEditorBar;
 			import com.flexcapacitor.controls.RichTextEditorBarCallout;
+			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.TextFlowUtils;
 			
-			import flash.debugger.enterDebugger;
+			import flash.text.engine.FontWeight;
 			
 			import mx.core.IVisualElementContainer;
 			import mx.core.mx_internal;
@@ -63,25 +65,35 @@
 			import mx.managers.ISystemManager;
 			import mx.managers.SystemManagerGlobals;
 			
-			import spark.components.Callout;
 			import spark.components.ContentBackgroundAppearance;
 			import spark.components.Label;
 			import spark.components.PopUpAnchor;
 			import spark.components.RichEditableText;
+			import spark.components.TextSelectionHighlighting;
 			import spark.core.IDisplayText;
 			import spark.events.PopUpEvent;
 			import spark.events.TextOperationEvent;
 			import spark.layouts.BasicLayout;
 			import spark.utils.TextFlowUtil;
 			
+			import flashx.textLayout.tlf_internal;
 			import flashx.textLayout.compose.IFlowComposer;
+			import flashx.textLayout.conversion.BaseTextLayoutExporter;
 			import flashx.textLayout.conversion.ConversionType;
+			import flashx.textLayout.conversion.ITextExporter;
 			import flashx.textLayout.conversion.ITextImporter;
 			import flashx.textLayout.conversion.TextConverter;
+			import flashx.textLayout.conversion.TextLayoutExporter;
 			import flashx.textLayout.elements.Configuration;
+			import flashx.textLayout.elements.FlowElement;
 			import flashx.textLayout.elements.IConfiguration;
+			import flashx.textLayout.elements.LinkElement;
+			import flashx.textLayout.elements.ParagraphElement;
+			import flashx.textLayout.elements.SpanElement;
 			import flashx.textLayout.elements.TextFlow;
+			import flashx.textLayout.events.FlowElementMouseEvent;
 			import flashx.textLayout.events.FlowOperationEvent;
+			import flashx.textLayout.formats.FormatValue;
 			import flashx.textLayout.formats.TextDecoration;
 			import flashx.textLayout.formats.TextLayoutFormat;
 			import flashx.textLayout.operations.ApplyFormatOperation;
@@ -90,7 +102,7 @@
 			
 			
 			static private const simpleText:String = "<TextFlow xmlns='http://ns.adobe.com/textLayout/2008'>"
-				+ "<p styleName='center'><span typeName='a'>There are many </span><span styleName='italic'>such</span><span> lime-kilns </span><a href='http://www.google.com' typeName='a'><span>links</span></a><span> in that tract of country, for the purpose of burning the white marble which composes a large part of the substance of the hills. Some of them, built years ago, and long deserted, with weeds growing in the vacant round of the interior, which is open to the sky, and grass and wild-flowers rooting themselves into the chinks of the stones, look already like relics of antiquity, and may yet be overspread with the lichens of centuries to come. Others, where the lime-burner still feeds his daily and nightlong fire, afford points of interest to the wanderer among the hills, who seats himself on a log of wood or a fragment of marble, to hold a chat with the solitary man. It is a lonesome, and, when the character is inclined to thought, may be an intensely thoughtful occupation; as it proved in the case of Ethan Brand, who had mused to such strange purpose, in days gone by, while the fire in this very kiln was burning.</span></p>"
+				+ "<p styleName='center'><span typeName='a'>There are many </span><span styleName='italic'>such </span><a href='http://www.google.com' typeName='a'><span>lime-kilns</span></a><span> in that tract of country, for the purpose of burning the white marble which composes a large part of the substance of the hills. Some of them, built years ago, and long deserted, with weeds growing in the vacant round of the interior, which is open to the sky, and grass and wild-flowers rooting themselves into the chinks of the stones, look already like relics of antiquity, and may yet be overspread with the lichens of centuries to come. Others, where the lime-burner still feeds his daily and nightlong fire, afford points of interest to the wanderer among the hills, who seats himself on a log of wood or a fragment of marble, to hold a chat with the solitary man. It is a lonesome, and, when the character is inclined to thought, may be an intensely thoughtful occupation; as it proved in the case of Ethan Brand, who had mused to such strange purpose, in days gone by, while the fire in this very kiln was burning.</span></p>"
 				+ "<br/><p><span>The man who now watched the </span><span id='bold'>fire</span><span> was of a </span><span typeName='foo'>different</span><span> order, and troubled himself with no thoughts save the very few that were requisite to his business. At frequent intervals, he flung back the clashing weight of the iron door, and, turning his face from the insufferable glare, thrust in huge logs of oak, or stirred the immense brands with a long pole. Within the furnace were seen the curling and riotous flames, and the burning marble, almost molten with the intensity of heat; while without, the reflection of the fire quivered on the dark intricacy of the surrounding forest, and showed in the foreground a bright and ruddy little picture of the hut, the spring beside its door, the athletic and coal-begrimed figure of the lime-burner, and the half-frightened child, shrinking into the protection of his father's shadow. And when again the iron door was closed, then reappeared the tender light of the half-full moon, which vainly strove to trace out the indistinct shapes of the neighboring mountains; and, in the upper sky, there was a flitting congregation of clouds, still faintly tinged with the rosy sunset, though thus far down into the valley the sunshine had vanished long and long ago.</span></p>"
 				+ "</TextFlow>";
 			
@@ -142,24 +154,35 @@
 				
 				callOut.addEventListener(PopUpEvent.CLOSE, callOutCloseHandler);
 				
-				return;
-				
 				var cfg:Configuration = TextFlow.defaultConfiguration;
 				
+				
+				// NORMAL 
 				var normalTLF:TextLayoutFormat = new TextLayoutFormat(cfg.defaultLinkNormalFormat);
-				normalTLF.color = 0xFF0000;
+				//normalTLF.color = 0xFF0000;
+				normalTLF.color = undefined;
+				normalTLF.textDecoration = TextDecoration.NONE;
 				
+				
+				// HOVER
 				var hoverTLF:TextLayoutFormat = new TextLayoutFormat(cfg.defaultLinkHoverFormat);
-				hoverTLF.color = 0xFF00FF;
-				hoverTLF.textDecoration = TextDecoration.NONE;
+				//hoverTLF.color = 0xFF00FF;
+				hoverTLF.color = undefined;
+				//hoverTLF.textDecoration = TextDecoration.NONE;
+				hoverTLF.textDecoration = TextDecoration.UNDERLINE;
 				
+				
+				// ACTIVE - mouse down state 
 				var activeTLF:TextLayoutFormat = new TextLayoutFormat(cfg.defaultLinkActiveFormat);
+				//activeTLF.color = 0x00FF00;
+				activeTLF.color = undefined;
 				activeTLF.color = 0x00FF00;
 				
 				cfg.defaultLinkNormalFormat = normalTLF;
 				cfg.defaultLinkHoverFormat = hoverTLF;
 				cfg.defaultLinkActiveFormat = activeTLF;
 				TextFlow.defaultConfiguration = cfg;
+				return;
 			}
 			
 			/**
@@ -189,12 +212,13 @@
 					editableRichTextField.focusRect = null;
 					editableRichTextField.setStyle("focusAlpha", 0);
 					editableRichTextField.clearUndoOnFocusOut = false;
+					editableRichTextField.selectionHighlighting = TextSelectionHighlighting.WHEN_ACTIVE;
+					
 					editableRichTextField.addEventListener(MouseEvent.CLICK, testTextArea_clickHandler);
 					editableRichTextField.addEventListener(FocusEvent.FOCUS_IN, testRichEditableText_focusInHandler);
 					editableRichTextField.addEventListener(FlowOperationEvent.FLOW_OPERATION_END, flowOperationHandler);
 					editableRichTextField.mx_internal::textContainerManager.addEventListener(
-						FlowOperationEvent.FLOW_OPERATION_COMPLETE,
-						textContainerManager_flowOperationCompleteHandler);
+						FlowOperationEvent.FLOW_OPERATION_COMPLETE, flowOperationCompleteHandler);
 				}
 				
 				currentEditableComponent = target;
@@ -399,6 +423,9 @@
 				callOut.richEditableText = editor;
 				
 				callOut.open(editor);
+				callOut.editorBar.addEventListener(FlowOperationEvent.FLOW_OPERATION_COMPLETE, 
+					flowOperationCompleteHandler, false, 0, true);
+				//callOut.updateEditor();
 				//editableRichTextEditorBar.textFlow = textFlow;
 				
 				//callOut.editorBar.addEventListener(FocusEvent.FOCUS_OUT, callOutFocusOutHandler);
@@ -922,9 +949,7 @@
 			 *  Called when the TextContainerManager dispatches an 'operationComplete' 
 			 *  event after an editing operation.
 			 */
-			private function textContainerManager_flowOperationCompleteHandler(
-				event:FlowOperationEvent):void
-			{
+			private function flowOperationCompleteHandler(event:FlowOperationEvent):void {
 				//trace("flowOperationComplete", "level", event.level);
 				
 				// Dispatch a 'change' event from the RichEditableText
@@ -939,8 +964,9 @@
 					newEvent.operation = event.operation;
 					dispatchEvent(newEvent);
 				}*/
+				var className:String = ClassUtils.getClassName(event.operation);
 				
-				console.appendText(event.level + ": " + event.operation + "\n");
+				console.appendText(className + "\n");
 				if (event.operation is ApplyFormatOperation) {
 					//enterDebugger();
 				}
@@ -958,44 +984,205 @@
 				var data:* = event.data;
 			}
 			
+			protected function resetContent():void
+			{
+				var textFlow:TextFlow;
+				
+				TextFlow.defaultConfiguration.unfocusedSelectionFormat = TextFlow.defaultConfiguration.focusedSelectionFormat;
+				TextFlow.defaultConfiguration.inactiveSelectionFormat = TextFlow.defaultConfiguration.focusedSelectionFormat;
+				
+				textFlow = TextFlowUtil.importFromString(simpleText);
+				
+				// set it into the editor
+				editor.textFlow = textFlow;
+				
+				if (editor.selectionActivePosition==-1) {
+					editor.selectRange(0, 0);
+				}
+				
+				editor.selectRange(0, 0);
+				
+				console.text = "";
+			}
+			
+			
+			protected function editor_selectionChangeHandler(event:FlexEvent):void {
+				updateNavigationTrail();
+				getStylesFromElement();
+			}
+			
+			protected function insertImage_clickHandler(event:MouseEvent):void
+			{
+				var value:String = "https://s-media-cache-ak0.pinimg.com/236x/ca/3e/f8/ca3ef8485bf072cd3f932ab547da679d.jpg";
+				value = "https://s-media-cache-ak0.pinimg.com/236x/f0/a1/06/f0a10628909eb779225eb4d61fbdea59.jpg";
+				Clipboard.generalClipboard.clear();
+				var successful:Boolean = Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, value);
+				//callOut.editorBar.imageDetailsView.imageSource= value;
+			}
+			
+			protected function navigationEventHandler(event:FlowElementMouseEvent):void
+			{
+				var absoluteStart:int = TextFlowUtils.getSelectionBeginPosition(editor.textFlow);
+				var elements:Array = TextFlowUtils.getHierarchyFromPosition(editor.textFlow, absoluteStart, true);
+				var link:LinkElement = event.flowElement as LinkElement;
+				var index:int = parseInt(link.id);
+				var element:FlowElement = elements[index];
+				TextFlowUtils.selectElement(elements[index]);
+				updateNavigationTrail();
+				getStylesFromElement();
+			}
+			
+			public function updateNavigationTrail():void {
+				var absoluteStart:int = TextFlowUtils.getSelectionBeginPosition(editor.textFlow);
+				var elements:Array = TextFlowUtils.getHierarchyFromPosition(editor.textFlow, absoluteStart);
+				var output:String = "";
+				var element:String;
+				var reverse:Boolean = true;
+				var paragraph:ParagraphElement;
+				var link:LinkElement;
+				var span:SpanElement;
+				var textFlow:TextFlow;
+				
+				paragraph = new ParagraphElement();
+				
+				reverse ? elements.reverse(): 0;
+				
+				// text representation
+				for (var i:int; i < elements.length; i++) {
+					if (i>0) {
+						output += " >> ";
+					}
+					
+					output += TextFlowUtils.getElementName(elements[i]);
+				}
+				
+				// tlf representation
+				for (var j:int = 0; j < elements.length; j++) 
+				{
+					if (j>0) {
+						span = new SpanElement();
+						span.text = " >> ";
+						paragraph.addChild(span);
+					}
+					
+					span = new SpanElement();
+					span.text = TextFlowUtils.getElementName(elements[j]);
+					link = new LinkElement();
+					link.id = String(j);
+					link.addEventListener(MouseEvent.CLICK, navigationEventHandler, false, 0, true);
+					link.addChild(span);
+					paragraph.addChild(link);
+				}
+				
+				hierarchyLabel.text = output;
+				hierarchyText.textFlow.replaceChildren(0,hierarchyText.textFlow.numChildren);
+				hierarchyText.textFlow.addChild(paragraph);
+				//hierarchyText.textFlow.addEventListener("navigationEvent", navigationEventHandler, false, 0, true);				
+			}
+			
+			public function getStylesFromElement():void {
+				var absoluteStart:int = TextFlowUtils.getSelectionBeginPosition(editor.textFlow);
+				var elements:Array = TextFlowUtils.getHierarchyFromPosition(editor.textFlow, absoluteStart);
+				var element:FlowElement = editor.textFlow.findLeaf(absoluteStart);
+				var allStyles:Object = element.styles;
+				var currentFormat:TextLayoutFormat;
+				var properties:Array = [];
+				var textFlowString:String = TextFlowUtil.export(editor.textFlow);
+				var sortableStyles:Array;
+				
+				currentFormat = editor.getFormatOfRange(null, editor.selectionAnchorPosition, editor.selectionActivePosition);
+				
+				for (var style:String in allStyles) {
+					if (allStyles[style] !== FormatValue.INHERIT) {
+						properties.push(style);
+					}
+				}
+				
+				var exporter:BaseTextLayoutExporter = TextConverter.getExporter(TextConverter.TEXT_LAYOUT_FORMAT) as BaseTextLayoutExporter;
+				
+				
+				var xmlChild:XMLList;
+				var xmlSpan:XMLList;
+				
+				xmlChild = exporter.exportChild(element);
+				
+				if (element is SpanElement) { 
+					xmlSpan = BaseTextLayoutExporter.exportSpan(exporter, element as SpanElement);
+				}
+				
+				var output:String = "";
+				var styleObject:Object;
+				
+				styles.text = "";
+				
+				for (var j:int = 0; j < elements.length; j++) {
+					element = elements[j];
+					
+					sortableStyles = getAppliedStyles(element);
+					
+					if (sortableStyles && sortableStyles.length) {
+						if (j!=0) {
+							if (output!="") {
+								output += "\n\n";
+							}
+							
+							output += TextFlowUtils.getElementName(element) + "\n";
+						}
+						
+						for (var i:int = 0; i < sortableStyles.length; i++) {
+							if (i!=0) {
+								output += "\n";
+							}
+							
+							styleObject = sortableStyles[i];
+							output += styleObject.xmlName + ": " +styleObject.xmlVal;
+						}
+						
+					}
+					
+					styles.text = output;
+				}
+				
+				
+			}
+			
+			public function getAppliedStyles(flowElement:FlowElement):Array {
+				var exporter:BaseTextLayoutExporter = TextConverter.getExporter(TextConverter.TEXT_LAYOUT_FORMAT) as BaseTextLayoutExporter;
+				var allStyles:Object = flowElement.styles;
+				var description:Object;
+				var sortableStyles:Array;
+				
+				if (allStyles) {
+					if (flowElement.typeName!="TextFlow") {
+						// WhiteSpaceCollapse attribute should never be exported (except on TextFlow -- handled separately)
+						delete allStyles[TextLayoutFormat.whiteSpaceCollapseProperty.name];
+					}
+					
+					// TypeError: Error #1034: Type Coercion failed: cannot convert flashx.textLayout.formats::TextLayoutFormat$ to Namespace.
+					// use TextLayoutFormat.tlf_internal::description
+					// To prevent "inherit" from getting exported for the root node, comment in the following line, and remove the one after that (only need one call to exportStyles
+					//description = TextLayoutFormat.description;
+					description = TextLayoutFormat.tlf_internal::description;
+					sortableStyles = Object(exporter).tlf_internal::createStylesFromDescription(allStyles, description, true, flowElement.parent ? null : [FormatValue.INHERIT]);
+					sortableStyles.sortOn("xmlName");
+					//exportStyles(rslt, sortableStyles );
+				}
+				
+				return sortableStyles;
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
 		<utils:MiniInspector />
-		<fx:Component className="EditorCallOut">
-			<s:Callout>
-				<fx:Script>
-					<![CDATA[
-						import spark.components.RichEditableText;
-						public var richEditableText:RichEditableText;
-						override public function open(owner:DisplayObjectContainer, modal:Boolean = false):void {
-							super.open(owner, modal);
-							editorBar.attachRichEditableText(richEditableText);
-						}
-					]]>
-				</fx:Script>
-				<controls:RichTextEditorBar id="editorBar" width="100%" />
-			</s:Callout>
-		</fx:Component>
-		
-		<fx:Component className="EditorCallOutSkin">
-			<skins:CallOutSkin dropShadowVisible="true" dropShadowAlpha=".3">
-				
-			</skins:CallOutSkin>
-		</fx:Component>
 	</fx:Declarations>
 	
-	<controls:ColorPicker top="10" horizontalCenter="0" textInputClass="{ClearButtonTextInput}"
-						  swatchPanelStyleName="textStyles"/>
-		
-		<s:RichEditableText id="editor" text="Some rich text" 
-					top="100" left="100"
-					width="600"
-					focusIn="editor_focusInHandler(event)"/>
-	
-	<s:BorderContainer width="300" height="400" verticalCenter="0" horizontalCenter="0" visible="false"
+	<s:BorderContainer width="300" height="400" 
+					   verticalCenter="0" horizontalCenter="0" 
+					   visible="false"
 					   click="bordercontainer1_clickHandler(event)">
+		
 		<s:Label id="testLabel" text="Some really long text to work with" verticalCenter="0" horizontalCenter="0"
 				 doubleClick="showTextEditor(event)" doubleClickEnabled="true"/>
 		
@@ -1008,10 +1195,53 @@
 							click="testTextArea_clickHandler(event)"
 							text="some text"
 							/>
-					<!--change="testTextArea_changeHandler(event)"--> 
+		<!--change="testTextArea_changeHandler(event)"--> 
 	</s:BorderContainer>
 	
-	<s:TextInput text="test"/>
+	<!--<controls:ColorPicker top="10" horizontalCenter="0" textInputClass="{ClearButtonTextInput}"
+						  swatchPanelStyleName="textStyles"/>-->
 	
-	<s:TextArea id="console" right="10" top="10" width="200" height="100%" bottom="10"/>
+	<s:Label id="headerLabel" 
+			 text="VFX Rich Text Editor" 
+			 right="20" top="20" 
+			 fontSize="18" fontWeight="bold"
+			 doubleClick="showRichEditorCallout(event)" 
+			 doubleClickEnabled="true"/>
+	
+	<ns:HDividerGroup top="110" left="80" right="80" bottom="40">
+		<s:VGroup width="75%" gap="12"
+				  height="100%">
+			<s:RichEditableText id="editor" 
+								width="100%" 
+								height="100%"
+								selectionChange="editor_selectionChangeHandler(event)"
+								focusIn="editor_focusInHandler(event)" />
+			
+			<controls:RichDisplayText id="hierarchyText" />
+			
+		</s:VGroup>
+		
+		<s:VGroup width="25%" gap="2"
+				  height="100%">
+			<s:Label text="History" paddingTop="1" 
+					 paddingLeft="5" backgroundColor="0xf6f6f6" 
+					 width="100%" height="20" verticalAlign="middle"/>
+			<s:TextArea id="console" 
+						width="100%" 
+						height="100%" />
+			<s:Label text="Styles" 
+					 paddingLeft="5" paddingTop="1" backgroundColor="0xf6f6f6" 
+					 width="100%" height="20" verticalAlign="middle"/>
+			<s:TextArea id="styles" 
+						width="100%" 
+						height="100%" />
+			<s:Label id="hierarchyLabel" visible="false" includeInLayout="true"/>
+		</s:VGroup>
+		
+	</ns:HDividerGroup>
+	
+	
+	<s:Button id="reset" label="Reset" click="resetContent()" bottom="10" left="10"/>
+	<s:Button id="insertImage" label="Image" click="insertImage_clickHandler(event)" bottom="10" 
+			  right="10" />
 </s:WindowedApplication>

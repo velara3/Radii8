@@ -29,7 +29,6 @@ package com.flexcapacitor.utils {
 	import spark.components.BorderContainer;
 	import spark.components.HGroup;
 	import spark.components.NumericStepper;
-	import spark.components.RichText;
 	import spark.components.TextArea;
 	import spark.components.VGroup;
 	import spark.components.supportClasses.GroupBase;
@@ -957,9 +956,10 @@ package com.flexcapacitor.utils {
 							styleValue += "width:" + componentInstance.width+ "px;";
 							styleValue += "height:" + componentInstance.height+ "px;";
 							styleValue += "border:1px solid black;";
+							styleValue += "-moz-osx-font-smoothing: grayscale;";
 						}
 						else {
-							styleValue = "";
+							styleValue = "-moz-osx-font-smoothing: grayscale;";
 						}
 						
 						styleValue = getBackgroundColor(componentInstance, styleValue, false);
@@ -969,6 +969,8 @@ package com.flexcapacitor.utils {
 						styleValue = getFontStyle(componentInstance, styleValue);
 						styleValue = getLineHeight(componentInstance, styleValue, false);
 						styleValue = getFontColor(componentInstance, styleValue);
+						styleValue = getAlpha(componentInstance, styleValue);
+						styleValue = getTextAlign(componentInstance, styleValue);
 						styleValue = getPadding(componentInstance, styleValue);
 						styleValue = getTypographicCase(componentInstance, styleValue);
 						styleValue = getTracking(componentInstance, styleValue);
@@ -1038,6 +1040,9 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
+					styleValue = getAlpha(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue);
+					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
 					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					styleValue = getScrollPolicy(componentInstance, styleValue);
@@ -1073,13 +1078,16 @@ package com.flexcapacitor.utils {
 					layoutOutput += properties ? " " : "";
 					
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
-					styleValue += getBorderString(componentInstance as BorderContainer);
-					styleValue += getCornerRadiusString(componentInstance as BorderContainer);
+					styleValue = getCornerRadius(componentInstance as BorderContainer, styleValue);
 					styleValue = getFontFamily(componentInstance, styleValue);
 					styleValue = getFontWeight(componentInstance, styleValue);
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
+					styleValue = getAlpha(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue, true);
+					styleValue = getBackgroundColor(componentInstance, styleValue);
+					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
 					
 					// disabling overflow to get rid of scroll bars
@@ -1128,6 +1136,9 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
+					styleValue = getAlpha(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue);
+					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
 					styleValue = getScrollPolicy(componentInstance, styleValue);
 					
@@ -1216,6 +1227,8 @@ package com.flexcapacitor.utils {
 					styleValue = getFontStyle(componentInstance, styleValue);
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
+					styleValue = getAlpha(componentInstance, styleValue);
+					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
 					
 					styleValue += userInstanceStyles;
@@ -1238,24 +1251,26 @@ package com.flexcapacitor.utils {
 					layoutOutput += "<" +htmlName+ " ";
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
+					layoutOutput = getBooleanAttribute("autoPlay", componentInstance.autoPlay, layoutOutput);
+					layoutOutput = getBooleanAttribute("loop", componentInstance.loop, layoutOutput);
+					layoutOutput = getBooleanAttribute("muted", componentInstance.muted, layoutOutput);
 					
-					layoutOutput += " controls=\"true\" "  + properties;
+					// the mere existence of this attribute causes controls to show up regardless of attribute value
+					// layoutOutput += " controls=\"true\" "  + properties;
 					
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
 					styleValue += isInVerticalLayout ? getDisplayBlock() : "";
+					/*
 					styleValue = getFontFamily(componentInstance, styleValue);
 					styleValue = getFontWeight(componentInstance, styleValue);
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
+					*/
+					styleValue = getAlpha(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue);
 					//styleValue += "padding:2px;";
-					
-					borderColor = componentInstance.getStyle("borderColor");
-					
-					if (borderColor!=null) {
-						styleValue += "border:1px solid " + DisplayObjectUtils.getColorInHex(uint(borderColor), true) + ";";
-					}
 					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -1288,6 +1303,9 @@ package com.flexcapacitor.utils {
 						styleValue = getFontSize(componentInstance, styleValue);
 						styleValue = getFontColor(componentInstance, styleValue);
 						styleValue = getFontStyle(componentInstance, styleValue);
+						styleValue = getAlpha(componentInstance, styleValue);
+						styleValue = getBorderString(componentInstance, styleValue);
+						styleValue = getTextAlign(componentInstance, styleValue);
 						styleValue = getPadding(componentInstance, styleValue);
 						
 						styleValue += userInstanceStyles;
@@ -1307,6 +1325,9 @@ package com.flexcapacitor.utils {
 						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 						layoutOutput += " type=\"checkbox\" " + properties;
+						
+						styleValue = getAlpha(componentInstance, styleValue);
+						styleValue = getPadding(componentInstance, styleValue);
 						//styleValue = getSizeString(componentInstance as IVisualElement, styleValue);
 						
 						styleValue += userInstanceStyles;
@@ -1339,6 +1360,8 @@ package com.flexcapacitor.utils {
 						styleValue = getFontSize(componentInstance, styleValue);
 						styleValue = getFontColor(componentInstance, styleValue);
 						styleValue = getFontStyle(componentInstance, styleValue);
+						styleValue = getAlpha(componentInstance, styleValue);
+						styleValue = getTextAlign(componentInstance, styleValue);
 						styleValue = getPadding(componentInstance, styleValue);
 						
 						styleValue += userInstanceStyles;
@@ -1358,6 +1381,8 @@ package com.flexcapacitor.utils {
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 						
 						styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
+						styleValue = getAlpha(componentInstance, styleValue);
+						styleValue = getPadding(componentInstance, styleValue);
 						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 						
 						styleValue += userInstanceStyles;
@@ -1420,6 +1445,9 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
+					styleValue = getAlpha(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue);
+					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
 					
 					if (localName=="vslider") {
@@ -1495,7 +1523,9 @@ package com.flexcapacitor.utils {
 					styleValue = getFontSize(componentInstance, styleValue);
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
-					styleValue += "border:1px solid " + DisplayObjectUtils.getColorInHex(componentInstance.getStyle("borderColor"), true) + ";";
+					styleValue = getAlpha(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue);
+					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
 					
 					
@@ -1562,6 +1592,9 @@ package com.flexcapacitor.utils {
 					styleValue = getFontColor(componentInstance, styleValue);
 					styleValue = getFontStyle(componentInstance, styleValue);
 					styleValue = getLineHeight(componentInstance, styleValue);
+					styleValue = getAlpha(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue);
+					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
 					styleValue = getTypographicCase(componentInstance, styleValue);
 					styleValue = getTracking(componentInstance, styleValue);
@@ -1674,6 +1707,9 @@ package com.flexcapacitor.utils {
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
+					styleValue = getAlpha(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue);
+					styleValue = getPadding(componentInstance, styleValue);
 					styleValue += isInVerticalLayout ? getDisplayBlock(componentInstance) : "";
 					styleValue += getVisibleDisplay(componentInstance);
 					
@@ -1765,6 +1801,10 @@ package com.flexcapacitor.utils {
 
 					styleValue = "stroke:" + DisplayObjectUtils.getColorInRGB(componentInstance.color, componentInstance.alpha) + ";";
 					styleValue += "stroke-width:" + componentInstance.strokeWeight + ";";
+					styleValue = getAlpha(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue);
+					styleValue = getTextAlign(componentInstance, styleValue);
+					styleValue = getPadding(componentInstance, styleValue);
 					
 					if (true) {
 						styleValue += "shape-rendering:crispEdges;";
@@ -2532,7 +2572,7 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Gets the font color if defined inline
+		 * Gets the font color
 		 * */
 		public function getFontColor(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
@@ -2546,7 +2586,91 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Gets background color if defined inline
+		 * Get border and background styles of a border container. Not finished
+		 * */
+		public function getBorderString(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			var borderWeight:Number;
+			var borderVisible:Boolean;
+			var borderSides:String;
+			var borderValues:String;
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "borderWeight")) {
+				borderWeight = styleClient.getStyle("borderWeight");
+			}
+			
+			/*
+			if (styleClient.getStyle("backgroundAlpha")!=0) {
+				styleValue += "background-color:" + DisplayObjectUtils.getColorInRGB(styleClient.getStyle("backgroundColor"), styleClient.getStyle("backgroundAlpha")) + ";";
+			}*/
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "borderVisible")) {
+				
+				if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "borderSides")) {
+					borderSides = styleClient.getStyle("borderSides");
+				}
+				else {
+					borderSides = "";
+				}
+				
+				styleValue += "border-style:solid;";
+				
+				if (borderSides!="left top right bottom") {
+					borderValues = "";
+					
+					borderValues += (borderSides.indexOf("top")!=-1) ? borderWeight + "px" : "0px";
+					borderValues += (borderSides.indexOf("right")!=-1) ? borderWeight + "px" : "0px";
+					borderValues += (borderSides.indexOf("bottom")!=-1) ? borderWeight + "px" : "0px";
+					borderValues += (borderSides.indexOf("left")!=-1) ? borderWeight + "px" : "0px";
+					
+					styleValue += "border-width:" + borderValues;
+				}
+				else {
+					styleValue += "border-width:" + borderWeight + "px;";
+				}
+				
+				if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "borderColor")) {
+					styleValue += "border-color:" + DisplayObjectUtils.getColorInHex(styleClient.getStyle("borderColor"), true) + ";";
+				}
+				
+				
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Get corner radius styles of a border container
+		 * */
+		public function getCornerRadius(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "cornerRadius")) {
+				styleValue += "border-radius:" + styleClient.getStyle("cornerRadius") + "px;";
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the text align
+		 * */
+		public function getTextAlign(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "textAlign")) {
+				styleValue += "text-align:" + styleClient.getStyle("textAlign") + ";";
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets background color
 		 * */
 		public function getBackgroundColor(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
@@ -2566,7 +2690,7 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Gets the font family if defined inline
+		 * Gets the font family
 		 * */
 		public function getFontFamily(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
@@ -2580,7 +2704,7 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Gets the font weight if defined inline
+		 * Gets the font weight
 		 * */
 		public function getFontStyle(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
@@ -2594,7 +2718,21 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Gets the font weight if defined inline
+		 * Gets the border color
+		 * */
+		public function getBorderColor(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
+			var styleClient:IStyleClient = componentInstance as IStyleClient;
+			if (styleClient==null) return styleValue;
+			
+			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "borderColor")) {
+				styleValue += "border-color:" + styleClient.getStyle("borderColor") + ";"
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the font weight
 		 * */
 		public function getFontWeight(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
@@ -2608,7 +2746,7 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Gets the font size if defined inline
+		 * Gets the font size
 		 * */
 		public function getFontSize(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
@@ -2622,7 +2760,7 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Gets the line height if defined inline
+		 * Gets the line height
 		 * */
 		public function getLineHeight(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
@@ -2636,7 +2774,7 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
-		 * Gets the padding if defined inline
+		 * Gets the padding
 		 * */
 		public function getPadding(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
 			var styleClient:IStyleClient = componentInstance as IStyleClient;
@@ -2659,6 +2797,17 @@ package com.flexcapacitor.utils {
 			
 			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "paddingRight")) {
 				styleValue += "padding-right:" + parseInt(styleClient.getStyle("paddingRight")) + "px;"
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the alpha
+		 * */
+		public function getAlpha(componentInstance:Object, styleValue:String):String {
+			if ("alpha" in componentInstance && componentInstance.alpha!=1) {
+				styleValue += "opacity:" + componentInstance.alpha + ";"
 			}
 			
 			return styleValue;
@@ -3248,63 +3397,6 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		}
 		
 		/**
-		 * Get border and background styles of a border container
-		 * */
-		public function getBorderString(element:IStyleClient):String {
-			var value:String = "";
-			var borderWeight:Number = element.getStyle("borderWeight");
-			
-			if (element.getStyle("backgroundAlpha")!=0) {
-				value += "background-color:" + DisplayObjectUtils.getColorInRGB(element.getStyle("backgroundColor"), element.getStyle("backgroundAlpha")) + ";";
-			}
-			
-			if (element.getStyle("borderVisible")) {
-				var borderSides:String = element.getStyle("borderSides");
-				
-				value += "border-style:solid;";
-				
-				if (borderSides!="left top right bottom") {
-					var borderValues:String = "";
-					
-					borderValues += (borderSides.indexOf("top")!=-1) ? borderWeight + "px" : "0px";
-					borderValues += (borderSides.indexOf("right")!=-1) ? borderWeight + "px" : "0px";
-					borderValues += (borderSides.indexOf("bottom")!=-1) ? borderWeight + "px" : "0px";
-					borderValues += (borderSides.indexOf("left")!=-1) ? borderWeight + "px" : "0px";
-					
-					value += "border-width:" + borderValues;
-				}
-				else {
-					value += "border-width:" + borderWeight + "px;";
-				}
-				
-				if (element.getStyle("borderColor")!==undefined) {
-					value += "border-color:" + DisplayObjectUtils.getColorInHex(element.getStyle("borderColor"), true) + ";";
-				}
-				
-				
-			}
-			
-			if (StyleUtils.isStyleDeclaredInline(element, "color")) {
-				value += "color:" + DisplayObjectUtils.getColorInHex(element.getStyle("color"), true) + ";";
-			}
-			
-			return value;
-		}
-		
-		/**
-		 * Get corner radius styles of a border container
-		 * */
-		public function getCornerRadiusString(element:IStyleClient):String {
-			var value:String = "";
-			
-			if (element.getStyle("cornerRadius")!==undefined) {
-				value += "border-radius:" + element.getStyle("cornerRadius") + "px;";
-			}
-			
-			return value;
-		}
-		
-		/**
 		 * Set styles. REFACTOR This is doing too many things. 
 		 * */
 		public function setStyles(component:Object, stylesValue:String = ""):String {
@@ -3572,12 +3664,38 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		}
 		
 		/**
-		 * Get url attribute
+		 * Get specific attribute
 		 * */
-		public function getAttribute(name:String, value:String = "", encode:Boolean = true):String {
+		public function getAttribute(name:String, value:String, encode:Boolean = true, spaceBefore:Boolean = true):String {
 			// need to encode to be inside attribute quotes
-			value = "" + name + "=\"" + value + "\"";
+			value = name + "=\"" + value + "\"";
+			spaceBefore ? value = " " + value : void;
+			
 			return value;
+		}
+		
+		/**
+		 * Get specific attribute
+		 * */
+		public function getAttributeLayout(name:String, value:String, layout:String = "", encode:Boolean = true, spaceBefore:Boolean = true):String {
+			// need to encode to be inside attribute quotes
+			spaceBefore ? layout += " ":0;
+			layout += name + "=\"" + value + "\"";
+			
+			return layout;
+		}
+		
+		/**
+		 * Get boolean attribute. If value is false it doesn't add the attribute
+		 * */
+		public function getBooleanAttribute(name:String, enabled:Boolean, layout:String, spaceBefore:Boolean = true):String {
+			
+			if (enabled) {
+				spaceBefore ? layout += " ":0;
+				layout += "" + name + "=\"" + enabled + "\"";
+			}
+			
+			return layout;
 		}
 		
 		/**

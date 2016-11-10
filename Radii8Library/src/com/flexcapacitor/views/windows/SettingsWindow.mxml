@@ -258,7 +258,11 @@
 			<s:Label text="" />
 			<s:HGroup width="100%" verticalAlign="middle">
 				<s:Button label="Verify Connection" click="verifyButton_clickHandler(event)"/>
-				<mx:ProgressBar id="busyIndicator" indeterminate="true" includeInLayout="false" visible="false"/>
+				<mx:ProgressBar id="busyIndicator" 
+								indeterminate="true" 
+								label=""
+								height="10"
+								includeInLayout="false" visible="false"/>
 				<s:Label id="connectedLabel" 
 						 text="" 
 						 text.connected="Connected" 

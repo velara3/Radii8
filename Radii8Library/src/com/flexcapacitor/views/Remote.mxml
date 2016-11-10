@@ -452,7 +452,8 @@
 			<views:Tools minHeight="24"/>
 			
 			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}" 
-						   visible="{toolBarInspector.hasInspector}"/>
+						   visible="{toolBarInspector.hasInspector}"
+						   includeInLayout="{toolBarInspector.hasInspector}"/>
 			<views:SelectedToolToolBar id="toolBarInspector"/>
 			
 			<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}"/>
@@ -462,7 +463,8 @@
 			<views:RunToolBar />
 			
 			<s:Spacer width="100%"/>
-			<views:OperationsInspector id="operationsInspector" height="100%"/>
+			<views:OperationsInspector id="operationsInspector" height="100%" includeInLayout="false"
+									   visible="false"/>
 			<s:Spacer width="100%"/>
 			<!--<views:SizesInspector showRestoreSize="true" height="100%"/>-->
 			<views:ZoomInspector showActualSize="false" height="100%"/>

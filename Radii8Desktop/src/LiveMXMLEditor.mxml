@@ -16,6 +16,9 @@
 					   uncaughtError="windowedapplication1_uncaughtErrorHandler(event)"
 					   networkChange="windowedapplication1_networkChangeHandler(event)"
 					   invoke="windowedapplication1_invokeHandler(event)"
+					   dragOver="mainView_dragOverHandler(event)"
+					   dragDrop="mainView_dragDropHandler(event)"
+					   dragExit="mainView_dragExitHandler(event)"
 					   >
 	
 	<fx:Script>
@@ -27,6 +30,7 @@
 			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.ErrorData;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.IssueData;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.model.TranscoderDescription;
@@ -40,8 +44,12 @@
 			
 			import flash.utils.getTimer;
 			
+			import mx.core.DragSource;
+			import mx.core.IUIComponent;
 			import mx.core.UIComponent;
+			import mx.events.DragEvent;
 			import mx.events.FlexEvent;
+			import mx.managers.DragManager;
 			
 			import spark.components.WindowedApplication;
 			
@@ -190,12 +198,20 @@
 				
 			}
 			
+			public var useStatusText:Boolean = false;
 			public function showMessage(firstMessage:String, secondMessage:String = "", row:int = -1, column:int = 0, updateIssues:Boolean = true):void {
 				var errorData:ErrorData;
-				lineError.text = firstMessage;
-				warningLabel.text = secondMessage;
-				errorGroup.visible = true;
-				errorGroup.includeInLayout = true;
+				
+				if (useStatusText) {
+					statusText.text = firstMessage + ": " + secondMessage;
+				}
+				else {
+					errorGroup.visible = true;
+					errorGroup.includeInLayout = true;
+					lineError.text = firstMessage;
+					warningLabel.text = secondMessage;
+				}
+				 
 				aceEditor.clearAnnotations();
 				aceEditor.setAnnotation(row, column, secondMessage, "error");
 				
@@ -206,10 +222,17 @@
 			}
 			
 			public function hideMessage():void {
-				errorGroup.visible = false;
-				errorGroup.includeInLayout = false;
-				lineError.text = "";
-				warningLabel.text = "";
+				
+				if (useStatusText) {
+					statusText.text = "";
+				}
+				else {
+					errorGroup.visible = false;
+					errorGroup.includeInLayout = false;
+					lineError.text = "";
+					warningLabel.text = "";
+				}
+				
 				aceEditor.clearAnnotations();
 			}
 			
@@ -229,6 +252,7 @@
 			 * */
 			public function updateView():void {
 				if (iDocument.instance==null) return; // not loaded yet
+				var error:IssueData;
 				
 				var code:String = aceEditor.text;
 				var time:int;
@@ -256,6 +280,10 @@
 				
 				if (issuesInspector) {
 					issuesInspector.updateIssuesTree(sourceData.errors, sourceData.warnings);
+					if (sourceData.errors && sourceData.errors.length) {
+						error = sourceData.errors[0] as IssueData;
+						showMessage(error.label, error.description, error.line, error.column, false);
+					}
 				}
 				
 				updateNeeded = false;
@@ -516,12 +544,65 @@
 				}
 			}
 			
+			protected function mainView_dragOverHandler(event:DragEvent):void {
+				
+				if (event.dragInitiator==null && Radiate.isAcceptableDragAndDropFormat(event.dragSource)) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+					dropImagesLocation.visible = true;
+				}
+				
+			}
+			
+			public function mainView_dragDropHandler(event:DragEvent):void {
+				var dragSource:DragSource;
+				var hasFileListFormat:Boolean;
+				var hasFilePromiseListFormat:Boolean;
+				var hasURLFormat:Boolean;
+				var isSelf:Boolean;
+				var AIR_URL:String = "air:url";
+				var isHTMLPreviewOpen:Boolean;
+				var destination:Object;
+				var droppedFiles:Array;
+				
+				AIR_URL = ClipboardFormats.URL_FORMAT;
+				
+				dragSource = event.dragSource;
+				hasFileListFormat = dragSource.hasFormat(ClipboardFormats.FILE_LIST_FORMAT);
+				hasFilePromiseListFormat = dragSource.hasFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT);
+				hasURLFormat = dragSource.hasFormat(AIR_URL);
+				
+				
+				if (hasFileListFormat) {
+					droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT) as Array;
+				}
+				else if (hasFilePromiseListFormat) {
+					droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_PROMISE_LIST_FORMAT) as Array;
+				}
+				
+				var currentDirectory:File;
+				var currentFile:File;
+				
+				if (droppedFiles.length) {
+					currentFile = droppedFiles[0] as File;
+					currentDirectory = currentFile.parent;
+					
+					// reuse invoke with file
+					invokeWithFile(currentDirectory, [currentFile.nativePath]);
+				}
+				dropImagesLocation.visible = false;
+			}
+			
+			protected function mainView_dragExitHandler(event:DragEvent):void
+			{
+				dropImagesLocation.visible = false;
+			}
+			
 			public var invokedFile:File;
 			
 			/**
-			 * Invoked file. Move to radiate class
+			 * Invoked file.
 			 * */
-			public function invokeWithFile(currentDirectory:File, invokedArguments:Array):void {
+			public function invokeWithFile(currentDirectory:File, invokedArguments:Array = null):void {
 				var filePath:String = invokedArguments && invokedArguments.length ? invokedArguments[0] : null;
 				var fileData:String;
 				var fileStream:FileStream;
@@ -774,6 +855,23 @@
 				
 				<s:HGroup width="100%" verticalAlign="middle" >
 					<s:Label x="15" y="65" text="MXML code:" fontWeight="bold"/>
+					
+					<s:HGroup id="errorGroup" width="100%" 
+							  verticalAlign="middle" 
+							  includeInLayout="false" visible="false">
+						<s:Label id="lineError" 
+								 x="15" y="15" 
+								 text="" 
+								 fontWeight="bold" 
+								 color="red"/>
+						
+						<s:Label id="warningLabel" 
+								 x="15" y="15" 
+								 text="" maxDisplayedLines="1"
+								 fontWeight="bold" 
+								 color="red"
+								 width="100%"/>
+					</s:HGroup>
 					<s:Spacer width="100%"/>
 					<s:Label id="renderTimeLabel" color="#898989" />
 					
@@ -785,22 +883,6 @@
 							 fontWeight="bold" 
 							 color="green"/>
 					
-				</s:HGroup>
-				
-				<s:HGroup id="errorGroup" width="100%" verticalAlign="middle" 
-						  includeInLayout="false" visible="false">
-					<s:Label id="lineError" 
-							 x="15" y="15" 
-							 text="" 
-							 fontWeight="bold" 
-							 color="red"/>
-					
-					<s:Label id="warningLabel" 
-							 x="15" y="15" 
-							 text="" 
-							 fontWeight="bold" 
-							 color="red"
-							 width="100%"/>
 				</s:HGroup>
 				
 				<s:HGroup width="100%" right="10" bottom="10" verticalAlign="baseline">
@@ -840,4 +922,17 @@
 			</s:TextFlow>
 		</s:textFlow>
 	</s:RichText>
+	
+	
+	<s:BorderContainer id="dropImagesLocation" 
+					   width="100%" height="100%" 
+					   backgroundColor="#04527b" 
+					   backgroundAlpha=".75" 
+					   visible="false" >
+		<s:Label text="Drop files here" 
+				 verticalCenter="0" 
+				 horizontalCenter="0" 
+				 fontSize="28" 
+				 color="#ffffff"/>
+	</s:BorderContainer>
 </s:WindowedApplication>

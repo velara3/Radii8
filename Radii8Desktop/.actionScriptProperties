@@ -12,26 +12,36 @@
       <libraryPathEntry kind="1" linkType="1" path="libs"/>
       <libraryPathEntry kind="3" linkType="1" path="/Radii8Library/bin/Radii8Library.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="/FCLibrary/bin/FCLibrary.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="/ObjectHandles/bin/ObjectHandles.swc" useDefaultLinkType="false"/>
     </libraryPath>
     <sourceAttachmentPath/>
   </compiler>
   <applications>
-    <application path="Radii8Desktop.mxml">
+    <application path="DesignViewTextTest.mxml">
       <airExcludes/>
     </application>
     <application path="ApplicationDesign.mxml">
       <airExcludes/>
     </application>
-    <application path="DesignViewTextTest.mxml">
+    <application path="LiveMXMLEditor.mxml">
       <airExcludes/>
     </application>
     <application path="SetStateValueTest.mxml">
       <airExcludes/>
     </application>
-    <application path="LiveMXMLEditor.mxml">
+    <application path="RichTextEditorCallOutTest.mxml">
       <airExcludes/>
     </application>
-    <application path="RichTextEditorCallOut.mxml">
+    <application path="TransformTests.mxml">
+      <airExcludes/>
+    </application>
+    <application path="Radii8Desktop.mxml">
+      <airExcludes/>
+    </application>
+    <application path="InsertImageTest.mxml">
+      <airExcludes/>
+    </application>
+    <application path="PositioningTest.mxml">
       <airExcludes/>
     </application>
   </applications>

@@ -219,6 +219,11 @@ package com.flexcapacitor.events {
 		public static const DOCUMENT_OPEN:String = "documentOpen";
 		
 		/**
+		 * Dispatched when the document is closed
+		 * */
+		public static const DOCUMENT_CLOSE:String = "documentClose";
+		
+		/**
 		 * Dispatched when the canvas is changed
 		 * */
 		public static const CANVAS_CHANGE:String = "canvasChange";
@@ -386,6 +391,8 @@ package com.flexcapacitor.events {
 		public var styles:Array;
 		public var error:Object;
 		public var resized:Boolean;
+		public var previewClosed:Boolean;
+		public var documentClosed:Boolean;
 		
 		/**
 		 * Constructor.

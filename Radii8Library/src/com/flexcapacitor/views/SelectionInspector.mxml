@@ -7,6 +7,7 @@
 		 
 		 implements="com.flexcapacitor.tools.IToolInspector, com.flexcapacitor.views.IInspector" 
 		 creationComplete="creationCompleteHandler(event)" 
+		 fontSize="11"
 		 >
 
 	<fx:Script>
@@ -180,6 +181,21 @@
 				
 			}
 			
+			/**
+			 * Show transform change handler
+			 * */
+			protected function showTransform_changeHandler(event:Event):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var selectedTool:ITool = tool;
+				var selectionTool:Selection;
+				
+				if (toolDescription.instance) {
+					selectionTool = Selection(toolDescription.instance);
+					selectionTool.showTransformControls = showTransform.selected;
+				}
+				
+			}
+			
 			private function updateTarget():void {
 				var rectangle:Rectangle;
 				
@@ -283,6 +299,8 @@
 					toolTip="Show a label above the selected component(s)"/>
 		<s:CheckBox id="selectGroup" label="Group" change="selectGroup_changeHandler(event)"
 					toolTip="Select only group elements or components on the document"/>
+		<s:CheckBox id="showTransform" label="Transform" change="showTransform_changeHandler(event)"
+					toolTip="Shows resizable transform handles"/>
 		
 		<s:BitmapImage id="warnDragStrip" 
 					   source="{Radii8LibraryToolAssets.DragStrip}" 
@@ -297,7 +315,9 @@
 		
 		<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}" verticalAlign="top"/>
 		<!--<s:Label text="Drop Location: " paddingLeft="4" visible="false" includeInLayout="false"/>-->
-		<s:Label id="dropLocation" minWidth="65"  paddingTop="5" textAlign="center" toolTip="The X and Y position of the selected element"/>
+		<s:Label id="dropLocation" minWidth="65" maxWidth="90" paddingTop="8" textAlign="center"
+				 fontSize="10" 
+				 toolTip="The X and Y position of the selected element"/>
 		
 	</s:HGroup>
 	

@@ -50,6 +50,15 @@ package {
 		[Embed(source="assets/icons/tools/EyeDropperCursor.png")]
 		public static const EyeDropperCursor:Class;
 		
+		[Embed(source="assets/icons/tools/PointingHand.png")]
+		public static const PointerHand:Class;
+		
+		[Embed(source="assets/icons/tools/HandPointer.png")]
+		public static const Button:Class;
+		
+		[Embed(source="assets/icons/tools/Button32.png")]
+		public static const Button32:Class;
+		
 		[Embed(source="assets/icons/tools/Hand.png")]
 		public static const Hand:Class;
 		
