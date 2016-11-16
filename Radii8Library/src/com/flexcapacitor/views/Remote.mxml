@@ -321,6 +321,10 @@
 				}
 			}
 			
+			protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
+				selectedTargetIcon.source = Radiate.componentsIconNotFoundPath;
+			}
+			
 			public var clickToOpen:String = "Click to open documentation in the browser";
 			
 			protected function selectedTargetIcon_clickHandler(event:MouseEvent):void {
@@ -581,6 +585,7 @@
 						<s:HGroup width="100%" verticalAlign="baseline" paddingRight="8" paddingLeft="8">
 							<c:BeveledImageButton id="selectedTargetIcon"
 												  minWidth="18"
+												  ioError="iconImage_ioErrorHandler(event)"
 												  click="selectedTargetIcon_clickHandler(event)"/>
 							<s:ButtonBar id="propertiesOptionsButtonBar" 
 										 fontSize="9"

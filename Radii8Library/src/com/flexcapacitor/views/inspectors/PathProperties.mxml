@@ -61,17 +61,8 @@
 			
 			public function update():void {
 				//var data:Object = ClassUtils.getMetaDataOfProperty(target, "source");
-				var sourceData:MetaData 			= ClassUtils.getMetaDataOfProperty(target, "source");
-				sourceRenderer.data 				= sourceData;
-				autoPlayRenderer.data 				= ClassUtils.getMetaDataOfProperty(target, "autoPlay");
-				autoRewindRenderer.data 			= ClassUtils.getMetaDataOfProperty(target, "autoRewind");
-				mutedRenderer.data 					= ClassUtils.getMetaDataOfProperty(target, "muted");
-				pauseWhenHiddenRenderer.data 		= ClassUtils.getMetaDataOfProperty(target, "pauseWhenHidden");
-				scaleModeRenderer.data 				= ClassUtils.getMetaDataOfProperty(target, "scaleMode");
-				volumeRenderer.data 				= ClassUtils.getMetaDataOfProperty(target, "volume");
-				loopRenderer.data 					= ClassUtils.getMetaDataOfProperty(target, "loop");
-				autoDisplayFirstFrameRenderer.data 	= ClassUtils.getMetaDataOfProperty(target, "autoDisplayFirstFrame");
-				
+				var pathData:MetaData 			= ClassUtils.getMetaDataOfProperty(target, "data");
+				pathDataRenderer.data 			= pathData;
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
@@ -86,8 +77,7 @@
 				callLater(update);
 			}
 			
-			public var relevantProperties:Array = ["source", "autoPlay", "autoRewind", "autoDisplayFirstFrame", 
-						"muted", "pauseWhenHidden", "scaleMode", "volume", "loop"];
+			public var relevantProperties:Array = ["data"];
 			
 			
 			protected function sizeLabels_showHandler(event:FlexEvent):void {
@@ -112,39 +102,7 @@
 	
 	
 	<s:HGroup width="100%" verticalAlign="baseline">
-		<s:Label text="Source" styleName="inspectablePanelLabel"/>
-		<renderers:TextRenderer id="sourceRenderer" height="24" width="100%"/>
-	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline">
-		<s:Label text="Scale Mode" styleName="inspectablePanelLabel"/>
-		<renderers:DropDownListRenderer id="scaleModeRenderer" height="24"/>
-	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline">
-		<s:Label text="Volume" styleName="inspectablePanelLabel"/>
-		<renderers:NumberRenderer id="volumeRenderer" height="24"/>
-	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline">
-		<s:Label text="Auto Play" styleName="inspectablePanelLabel"/>
-		<renderers:BooleanRenderer id="autoPlayRenderer" height="24" showClearButton="true"/>
-	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline">
-		<s:Label text="Auto Rewind" styleName="inspectablePanelLabel"/>
-		<renderers:BooleanRenderer id="autoRewindRenderer" height="24" showClearButton="true"/>
-	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline">
-		<s:Label text="Auto Display Frame" styleName="inspectablePanelLabel"/>
-		<renderers:BooleanRenderer id="autoDisplayFirstFrameRenderer" height="24" showClearButton="true"/>
-	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline">
-		<s:Label text="Muted" styleName="inspectablePanelLabel"/>
-		<renderers:BooleanRenderer id="mutedRenderer" height="24" showClearButton="true"/>
-	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline">
-		<s:Label text="Paused when hidden" styleName="inspectablePanelLabel"/>
-		<renderers:BooleanRenderer id="pauseWhenHiddenRenderer" height="24" showClearButton="true"/>
-	</s:HGroup>
-	<s:HGroup width="100%" verticalAlign="baseline">
-		<s:Label text="Loop" styleName="inspectablePanelLabel"/>
-		<renderers:BooleanRenderer id="loopRenderer" height="24" showClearButton="true"/>
+		<s:Label text="Data" styleName="inspectablePanelLabel"/>
+		<renderers:TextRenderer id="pathDataRenderer" height="24" width="100%"/>
 	</s:HGroup>
 </s:VGroup>

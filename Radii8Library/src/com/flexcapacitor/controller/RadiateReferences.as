@@ -23,6 +23,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.ImageProperties;
 	import com.flexcapacitor.views.inspectors.Layout;
 	import com.flexcapacitor.views.inspectors.LineProperties;
+	import com.flexcapacitor.views.inspectors.PathProperties;
 	import com.flexcapacitor.views.inspectors.RadioButtonProperties;
 	import com.flexcapacitor.views.inspectors.StyleNameInspector;
 	import com.flexcapacitor.views.inspectors.TextInspector;
@@ -95,6 +96,7 @@ package com.flexcapacitor.controller {
 		public static var textAreaInspector:com.flexcapacitor.views.inspectors.TextAreaInspector;
 		public static var tileGroupInspector:com.flexcapacitor.views.inspectors.TileGroupProperties;
 		public static var videoPlayerInspector:com.flexcapacitor.views.inspectors.VideoPlayerProperties;
+		public static var pathInspector:com.flexcapacitor.views.inspectors.PathProperties;
 		
 		///////////////////////////////////////////////////////
 		// TRANSCODER CLASSES

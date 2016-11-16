@@ -1105,7 +1105,12 @@ package com.flexcapacitor.tools {
 				propertiesObject[X] = model.x;
 				propertiesObject[Y] = model.y;
 				
-				Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
+				if (component is InvalidatingSprite && lastTarget is GraphicElement) {
+					Radiate.setProperties(lastTarget, properties, propertiesObject, "Resized", true);
+				}
+				else {
+					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
+				}
 			}
 			
 		}
@@ -1855,6 +1860,7 @@ package com.flexcapacitor.tools {
 		 * */
 		public function registerComponent(target:Object, selection:Object = null):Object {
 			var shapeModel:Object = objectHandles.getModelForDisplay(target as DisplayObject);
+			var graphicElement:GraphicElement = target as GraphicElement;
 			
 			if (shapeModel==null) {
 				shapeModel = new Object();
@@ -1873,6 +1879,19 @@ package com.flexcapacitor.tools {
 				objectHandles.registerComponent(shapeModel, target as IEventDispatcher, null, false);
 			}
 			
+			if (graphicElement) {
+				shapeModel.width 	= graphicElement;
+				shapeModel.height 	= graphicElement.getLayoutBoundsHeight();
+				shapeModel.x 		= graphicElement.getLayoutBoundsX();
+				shapeModel.y 		= graphicElement.getLayoutBoundsY();
+				shapeModel.x 		= graphicElement.x;
+				shapeModel.y 		= graphicElement.y;
+				shapeModel.selected = false;
+				
+				//objectHandles.registerComponent(shapeModel, target as IEventDispatcher, null, true, [aspectRatioConstraint]);
+				objectHandles.registerComponent(shapeModel, graphicElement.displayObject as IEventDispatcher, null, false);
+			}
+			
 			return shapeModel;
 		}
 		
@@ -1886,6 +1905,7 @@ package com.flexcapacitor.tools {
 				if (showTransformControls) {
 					var model:Object;
 					var position:Object;
+					var graphicElement:GraphicElement = target as GraphicElement;
 					
 					// don't select a resize handle
 					if (target is IHandle) {
@@ -1898,11 +1918,22 @@ package com.flexcapacitor.tools {
 					}
 					
 					// register selected component - todo - unregister
-					if (!objectHandles.isDisplayRegistered(target as DisplayObject)) {
+					// note should we register the graphic element or only it's display object?
+					if (graphicElement) {
+						if (!objectHandles.isDisplayRegistered(graphicElement.displayObject)) {
+							registerComponent(target, toolLayer);
+						}
+					}
+					else if (!objectHandles.isDisplayRegistered(target as DisplayObject)) {
 						registerComponent(target, toolLayer);
 					}
 					
-					model = objectHandles.getModelForDisplay(target as DisplayObject);
+					if (graphicElement) {
+						model = objectHandles.getModelForDisplay(graphicElement.displayObject);
+					}
+					else {
+						model = objectHandles.getModelForDisplay(target as DisplayObject);
+					}
 					
 					if (model && targetSelectionGroup) {
 						model.width = targetSelectionGroup.width;
@@ -1917,7 +1948,13 @@ package com.flexcapacitor.tools {
 					
 					if (model) {
 						selectionManager.setSelected(model);
-						objectHandles.updateModelForDisplay(target); 
+						
+						if (graphicElement) {
+							objectHandles.updateModelForDisplay(graphicElement.displayObject);
+						}
+						else {
+							objectHandles.updateModelForDisplay(target);
+						}
 						//objectHandles.updateHandlePositions(model);
 					}
 				}

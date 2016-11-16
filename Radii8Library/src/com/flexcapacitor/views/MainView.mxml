@@ -61,11 +61,14 @@
 			import flash.utils.setTimeout;
 			
 			import mx.core.DragSource;
+			import mx.core.FlexGlobals;
 			import mx.core.IUIComponent;
+			import mx.core.UIComponent;
 			import mx.events.DragEvent;
 			import mx.events.EffectEvent;
 			import mx.events.MenuEvent;
 			import mx.managers.DragManager;
+			import mx.managers.LayoutManager;
 			
 			import spark.collections.Sort;
 			import spark.collections.SortField;
@@ -1293,17 +1296,18 @@
 			 * Create a new document with default project for quick mockups
 			 * */
 			protected function newDocumentAndProjectButton_clickHandler(event:MouseEvent):void {
-				radiate.createNewDocumentAndSwitchToDesignView();
-				//Radiate.callAfter(2000, radiate.resizeFix);
-				//Radiate.callAfter(3000, radiate.resizeFix, true);
+				Radiate.info("Creating a new document");
+				Radiate.callAfter(250, radiate.createNewDocumentAndSwitchToDesignView);
+				Radiate.callAfter(3000, LayoutManager.getInstance().invalidateSize, FlexGlobals.topLevelApplication);
+				Radiate.callAfter(4000, LayoutManager.getInstance().invalidateSize, FlexGlobals.topLevelApplication);
+				Radiate.callAfter(5000, LayoutManager.getInstance().invalidateSize, FlexGlobals.topLevelApplication);
+				Radiate.callAfter(10000, LayoutManager.getInstance().validateClient, FlexGlobals.topLevelApplication);
+				Radiate.callAfter(5000, UIComponent.resumeBackgroundProcessing);
 			}
 			
 			public function goToDesignState(validate:Boolean = true):void {
-				currentState = DESIGN_STATE;
+				Radiate.goToDesignScreen(validate);
 				
-				if (validate) {
-					validateNow();
-				}
 			}
 			
 			

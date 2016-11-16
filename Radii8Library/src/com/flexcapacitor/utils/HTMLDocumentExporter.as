@@ -823,6 +823,12 @@ package com.flexcapacitor.utils {
 				}
 				*/
 			}
+			else {
+				
+				if (isInBasicLayout && !(componentInstance is Line)) {
+					styleValue = getPositionHTML(componentInstance as IVisualElement, stylesModel, styleValue, isInBasicLayout);
+				}
+			}
 			
 			snapshotBackground = componentDescription.createBackgroundSnapshot;
 			convertElementToImage = componentDescription.convertElementToImage;
@@ -1799,8 +1805,8 @@ package com.flexcapacitor.utils {
 					
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 
-					styleValue = "stroke:" + DisplayObjectUtils.getColorInRGB(componentInstance.color, componentInstance.alpha) + ";";
-					styleValue += "stroke-width:" + componentInstance.strokeWeight + ";";
+					styleValue = getLineColor(componentInstance, styleValue);
+					styleValue = getLineWeight(componentInstance, styleValue);
 					styleValue = getAlpha(componentInstance, styleValue);
 					styleValue = getBorderString(componentInstance, styleValue);
 					styleValue = getTextAlign(componentInstance, styleValue);
@@ -2808,6 +2814,28 @@ package com.flexcapacitor.utils {
 		public function getAlpha(componentInstance:Object, styleValue:String):String {
 			if ("alpha" in componentInstance && componentInstance.alpha!=1) {
 				styleValue += "opacity:" + componentInstance.alpha + ";"
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the stroke weight
+		 * */
+		public function getLineWeight(componentInstance:Object, styleValue:String):String {
+			if ("strokeWeight" in componentInstance && componentInstance.strokeWeight!=1) {
+				styleValue += "stroke-width:" + componentInstance.strokeWeight+ ";"
+			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the line color
+		 * */
+		public function getLineColor(componentInstance:Object, styleValue:String):String {
+			if ("color" in componentInstance && componentInstance.color!=0) {
+				styleValue += "stroke:" + DisplayObjectUtils.getColorInRGB(componentInstance.color, componentInstance.alpha) + ";";
 			}
 			
 			return styleValue;

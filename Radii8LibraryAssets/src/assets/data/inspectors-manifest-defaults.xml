@@ -217,5 +217,12 @@
     		<inspector name="Video" className="com.flexcapacitor.views.inspectors.VideoPlayerProperties"/>
     </item>
     
+    <!-- GRAPHIC ELEMENTS -->
+    
+    <item name="Path" className="spark.primitives.Path" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Path" className="com.flexcapacitor.views.inspectors.PathProperties"/>
+    </item>
 
 </inspectorsPackage>

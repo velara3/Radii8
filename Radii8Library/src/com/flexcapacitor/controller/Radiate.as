@@ -206,6 +206,7 @@ package com.flexcapacitor.controller {
 	import spark.formatters.DateTimeFormatter;
 	import spark.layouts.BasicLayout;
 	import spark.primitives.BitmapImage;
+	import spark.primitives.Path;
 	import spark.primitives.Rect;
 	import spark.primitives.supportClasses.FilledElement;
 	import spark.primitives.supportClasses.GraphicElement;
@@ -2307,7 +2308,7 @@ package com.flexcapacitor.controller {
 							classType = ClassUtils.getDefinition(className);
 						}
 						else {
-							error("Inspector class not found: " + className + " Add a reference to RadiateReferences");
+							error("Inspector class not found: " + className + " Add a reference to RadiateReferences. Also check the spelling.");
 						}
 						
 						// not passing in classType now since we may load it in later dynamically
@@ -5910,7 +5911,7 @@ package com.flexcapacitor.controller {
 			
 			fileToBeLoaded = file;
 			
-			mainView.goToDesignState();
+			goToDesignScreen();
 			
 			if (fileToBeLoaded) {
 				addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
@@ -8464,6 +8465,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					stroke = new SolidColorStroke();
 					stroke.color = 0xA6A6A6;
 					StrokedElement(componentInstance).stroke = stroke;
+				}
+				
+				if (componentInstance is Path) {
+					Path(componentInstance).data = "L 80 80 V 0 L 0 80 V 0";
 				}
 			}
 			
@@ -13724,6 +13729,19 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		public static function goToHomeScreen():void {
 			if (mainView) {
 				mainView.currentState = MainView.HOME_STATE;
+			}
+		}
+		
+		/**
+		 * Shows the design screen
+		 * */
+		public static function goToDesignScreen(validate:Boolean = true):void {
+			if (mainView) {
+				mainView.currentState = MainView.DESIGN_STATE;
+			}
+			
+			if (validate) {
+				mainView.validateNow();
 			}
 		}
 		

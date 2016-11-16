@@ -25,6 +25,8 @@
 					   initialize="initializeHandler(event)" 
 					   invoke="windowedapplication1_invokeHandler(event)"
 					   resizing="windowedapplication1_resizingHandler(event)"
+					   windowResize="windowedapplication1_windowResizeHandler(event)"
+					   enterFrame="windowedapplication1_enterFrameHandler(event)"
 					   >
 
 					   <!---
@@ -39,7 +41,7 @@
 	// processing until the tween finishes executing.
 	UIComponent.suspendBackgroundProcessing();
 	
-	
+	LayoutManager.doPhasedInstantiationCallback() may have answers
 
 					   splashScreenImage="@Embed('../splashscreen/splashscreen.png')"
 					   splashScreenMinimumDisplayTime="15000"
@@ -86,9 +88,14 @@
 				import mx.collections.ArrayCollection;
 				import mx.core.FTETextField;
 				import mx.core.FlexHTMLLoader;
+				import mx.core.UIComponentGlobals;
+				import mx.core.mx_internal;
 				import mx.events.AIREvent;
 				import mx.events.FlexEvent;
 				import mx.events.FlexNativeMenuEvent;
+				import mx.events.FlexNativeWindowBoundsEvent;
+				import mx.managers.ILayoutManager;
+				import mx.managers.LayoutManager;
 				
 				import spark.components.Application;
 				import spark.components.ComboBox;
@@ -99,6 +106,7 @@
 				
 				import air.net.URLMonitor;
 				
+				use namespace mx_internal;
 				//include "build.as";
 				
 				/**
@@ -143,6 +151,10 @@
 				    var appNamespace:Namespace;
 				    var version:String;
 					var showInlineMenus:Boolean = false;
+					
+					UIComponentGlobals.catchCallLaterExceptions = true;
+					var layoutManager:ILayoutManager = UIComponentGlobals.layoutManager;
+					layoutManager.usePhasedInstantiation;
 					
 					applicationDescriptor 	= NativeApplication.nativeApplication.applicationDescriptor;
 					appNamespace 			= applicationDescriptor.namespace();
@@ -339,7 +351,7 @@
 				to resolve a connection to a remote address
 				*/
 				private function monitorConnection():void {
-					var urlPath:String = "http://www.google.com";
+					var urlPath:String = "http://www.google.com";// should use radii8.com
 					
 					if (monitor==null) {
 						monitor = new URLMonitor(new URLRequest(urlPath));
@@ -832,6 +844,17 @@
 				protected function windowedapplication1_resizingHandler(event:NativeWindowBoundsEvent):void
 				{
 					//trace("Resizing");
+				}
+				
+				protected function windowedapplication1_enterFrameHandler(event:Event):void
+				{
+					// TODO Auto-generated method stub
+					//trace(UIComponentGlobals.callLaterSuspendCount);
+				}
+				
+				protected function windowedapplication1_windowResizeHandler(event:FlexNativeWindowBoundsEvent):void
+				{
+					//trace("Window resize");
 				}
 				
 			]]>
