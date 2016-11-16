@@ -31,6 +31,7 @@ package com.flexcapacitor.utils {
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.events.DragEvent;
+	import mx.events.SandboxMouseEvent;
 	import mx.managers.DragManager;
 	import mx.managers.ISystemManager;
 	import mx.managers.PopUpManager;
@@ -229,6 +230,16 @@ package com.flexcapacitor.utils {
 			}
 			
 			swfRoot.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+			swfRoot.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler);
+		}
+		
+		protected function mouseUpSomewhereHandler(event:Event):void
+		{
+			// sometimes elements disappear because mouse coordinates are off somewhere
+			// try and catch those cases and show components that were hidden
+			if (dragInitiator && hideDragInitiatorOnDrag) {
+				dragInitiator.visible = hideDragInitiatorOnDrag ? false : true; // hide from view
+			}
 		}
 		
 		/**
@@ -271,6 +282,9 @@ package com.flexcapacitor.utils {
 		 * */
 		protected function mouseMoveHandler(event:MouseEvent):void {
 			var dragToleranceMet:Boolean;
+			
+			// this value is sometimes much higher. this may be what's contributing to 
+			// graphic element counting as a mouse move but not really a mouse move because no event up. 
 			dragToleranceMet = Math.abs(startingPoint.x - event.stageX) >= dragStartTolerance;
 			dragToleranceMet = !dragToleranceMet ? Math.abs(startingPoint.y - event.stageY)  >= dragStartTolerance: true;
 			
@@ -1358,6 +1372,10 @@ package com.flexcapacitor.utils {
 		 * */
 		protected function mouseUpHandler(event:Event):void {
 			
+			if (dragInitiator && hideDragInitiatorOnDrag) { 
+				dragInitiator.visible = true;
+			}
+			
 			if (dragging) {
 				dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_DROP_INCOMPLETE));
 				dragging = false;
@@ -1386,6 +1404,7 @@ package com.flexcapacitor.utils {
 			target.removeEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);
 			target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
 			swfRoot.removeEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
+			swfRoot.removeEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler);
 		}
 		
 		

@@ -8509,9 +8509,13 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			if (componentInstance is GraphicElement) {
 				GraphicElement(componentInstance).alwaysCreateDisplayObject = !interactive;
 				
+				// button mode may be preventing keyboard events from reaching the application
+				// turning it off seems to fix the problem but if the height or width are
+				// but button mode shows a hand cursor so small elements are easier to select 
 				if (GraphicElement(componentInstance).displayObject) {
 					Sprite(GraphicElement(componentInstance).displayObject).mouseEnabled = !interactive;
 					Sprite(GraphicElement(componentInstance).displayObject).buttonMode = !interactive;
+					//Sprite(GraphicElement(componentInstance).displayObject).mouseChildren = false;
 				}
 			}
 			

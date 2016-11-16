@@ -1257,6 +1257,45 @@
 				return rendererFactory; 
 			}
 			
+			protected function propertiesGrid_doubleClickHandler(event:MouseEvent):void
+			{
+				
+				var item:XML = propertiesGrid.selectedItem as XML;
+				var actualValue:*;
+				var isStyle:Boolean;
+				var type:String;
+				var enumeration:Array;
+				var format:String;
+				var propertyObject:MetaData;
+				var property:String;
+				var value:*;
+				var nodename:String;
+				
+				if (settingProperties) return;
+				
+				if (item) {
+					nodename = item.name();
+					
+					if (nodename=="metadata") {
+						isStyle = true;
+						propertyObject = new StyleMetaData(item, target);
+					}
+					else if (nodename=="accessor") {
+						propertyObject = new AccessorMetaData(item, target);
+					}
+					else {
+						propertyObject = new MetaData(item, target);
+					}
+					
+					
+					value = propertyObject.value;
+					
+					if (!ClassUtils.isSimple(value)) {
+						radiate.setTarget(value);
+					}
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1337,6 +1376,8 @@
 					dataProvider="{filteredPropertiesCollection}"
 					selectionChange="propertiesGrid_selectionChangeHandler(event)"
 					click="propertiesGrid_selectionChangeHandler()"
+					doubleClick="propertiesGrid_doubleClickHandler(event)"
+					doubleClickEnabled="true"
 					keyUp="propertiesGrid_keyUpHandler(event)"
 					excludeFrom="properties"
 					>

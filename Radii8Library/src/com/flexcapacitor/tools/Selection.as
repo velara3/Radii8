@@ -423,6 +423,8 @@ package com.flexcapacitor.tools {
 				
 				//decoratorManager = new DecoratorManager(objectHandles, radiate.toolLayer as Sprite);
 				aspectRatioConstraint = new MaintainProportionConstraint();
+				aspectRatioConstraint.shiftKeyRequired = true;
+				objectHandles.addDefaultConstraint(aspectRatioConstraint);
 			}
 			
 			if (objectHandles) {
@@ -1102,8 +1104,8 @@ package com.flexcapacitor.tools {
 				
 				propertiesObject[WIDTH] = parseInt(model.width);
 				propertiesObject[HEIGHT] = parseInt(model.height);
-				propertiesObject[X] = model.x;
-				propertiesObject[Y] = model.y;
+				propertiesObject[X] = parseInt(model.x);
+				propertiesObject[Y] = parseInt(model.y);
 				
 				if (component is InvalidatingSprite && lastTarget is GraphicElement) {
 					Radiate.setProperties(lastTarget, properties, propertiesObject, "Resized", true);
@@ -1905,7 +1907,10 @@ package com.flexcapacitor.tools {
 				if (showTransformControls) {
 					var model:Object;
 					var position:Object;
-					var graphicElement:GraphicElement = target as GraphicElement;
+					var graphicElement:GraphicElement;
+					
+					target = target is Array && target.length ? target[0] : target;
+					graphicElement = target as GraphicElement;
 					
 					// don't select a resize handle
 					if (target is IHandle) {

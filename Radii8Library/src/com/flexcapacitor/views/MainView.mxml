@@ -1299,10 +1299,19 @@
 				Radiate.info("Creating a new document");
 				Radiate.callAfter(250, radiate.createNewDocumentAndSwitchToDesignView);
 				Radiate.callAfter(3000, LayoutManager.getInstance().invalidateSize, FlexGlobals.topLevelApplication);
-				Radiate.callAfter(4000, LayoutManager.getInstance().invalidateSize, FlexGlobals.topLevelApplication);
-				Radiate.callAfter(5000, LayoutManager.getInstance().invalidateSize, FlexGlobals.topLevelApplication);
+				Radiate.callAfter(4000, LayoutManager.getInstance().invalidateProperties, FlexGlobals.topLevelApplication);
+				Radiate.callAfter(4000, LayoutManager.getInstance().invalidateDisplayList, FlexGlobals.topLevelApplication);
+				Radiate.callAfter(5000, LayoutManager.getInstance().validateClient, FlexGlobals.topLevelApplication);
 				Radiate.callAfter(10000, LayoutManager.getInstance().validateClient, FlexGlobals.topLevelApplication);
-				Radiate.callAfter(5000, UIComponent.resumeBackgroundProcessing);
+				/*
+				Radiate.callAfter(5000, resizing);
+				Radiate.callAfter(6000, resizing);
+				Radiate.callAfter(7000, resizing);
+				*/
+			}
+			
+			public function resizing():void {
+				UIComponent.resumeBackgroundProcessing();
 			}
 			
 			public function goToDesignState(validate:Boolean = true):void {
