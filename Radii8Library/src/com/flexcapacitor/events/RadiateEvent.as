@@ -375,6 +375,7 @@ package com.flexcapacitor.events {
 		public var oldIndex:int;
 		public var historyEvent:HistoryEvent;
 		public var historyEventItem:HistoryEventItem;
+		public var historyEventItems:Array;
 		public var targets:Array;
 		public var tool:ITool;
 		public var previewType:String;

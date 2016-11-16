@@ -880,7 +880,8 @@
 		</s:Group>
 		<s:Spacer width="-1"/>
 		<s:DropDownList id="documentStatusList" 
-						width="80"
+						fontSize="10"
+						width="75"
 						toolTip="If the document is a private draft only viewable to you or a published document viewable to anyone"
 						dataProvider="{Radiate.documentStatuses}" 
 						change="documentStatusList_changeHandler(event)">

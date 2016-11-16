@@ -474,9 +474,12 @@ package com.flexcapacitor.tools {
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CLOSE, 		documentCloseHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.TARGET_CHANGE, 		targetChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
-			radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, 	propertyChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.SCALE_CHANGE, 		scaleChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, scaleChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
+			
+			// with the history change event we can probably get rid of document size change and property
+			//radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, 	propertyChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
+			radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, 		historyEventHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 		}
 		
 		/**
@@ -488,9 +491,11 @@ package com.flexcapacitor.tools {
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler);
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_CLOSE, 		documentCloseHandler);
 			radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, 		targetChangeHandler);
-			radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, 		propertyChangeHandler);
 			radiate.removeEventListener(RadiateEvent.SCALE_CHANGE, 			scaleChangeHandler);
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, 	scaleChangeHandler);
+			
+			//radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, 		propertyChangeHandler);
+			radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, 		historyEventHandler);
 		}
 		
 		/**
@@ -738,23 +743,58 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * 
+		 * Property change
 		 * */
 		protected function propertyChangeHandler(event:RadiateEvent):void {
 			updateSelectionAroundTarget(event.selectedItem);
-			//updateTransformRectangle(event.selectedItem);
+			updateTransformRectangle(event.selectedItem);
 		}
 		
 		/**
-		 * 
+		 * History event 
+		 * */
+		protected function historyEventHandler(event:RadiateEvent):void {
+			if (event.targets && event.targets.length) {
+				//updateSelectionAroundTarget(event.targets[0]);
+				//updateTransformRectangle(event.targets[0]);
+				
+				Radiate.callAfter(1, updateSelectionAroundTarget, event.targets);
+				Radiate.callAfter(1, updateTransformRectangle, event.targets);
+			}
+		}
+		
+		public var lastTransformState:String;
+		
+		/**
+		 * Scale change
 		 * */
 		protected function scaleChangeHandler(event:RadiateEvent):void {
 			updateSelectionAroundTarget(event.selectedItem);
-			//updateTransformRectangle(event.selectedItem);
+			var scaled:Boolean;
+			
+			if (event.selectedItem==document.instance) {
+				scaled = event.scaleX!=1 || event.scaleY!=1;
+				
+				// if scaled we need to disable transform controls 
+				// bc it's not working when scaled right now
+				if (scaled && showTransformControls) {
+					lastTransformState = "true";
+					showTransformControls = false;
+					unregisterComponents();
+				}
+				else if (!scaled) {
+					if (lastTransformState =="true") {
+						showTransformControls = true;
+					}
+					updateTransformRectangle(event.selectedItem);
+					lastTransformState = null;
+				}
+			}
+			
 		}
 		
 		/**
-		 * 
+		 * Target change
 		 * */
 		protected function targetChangeHandler(event:RadiateEvent):void {
 			updateSelectionAroundTarget(event.selectedItem);
@@ -762,7 +802,7 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * 
+		 * Document change
 		 * */
 		protected function documentChangeHandler(event:RadiateEvent):void {
 			clearSelection();
@@ -771,7 +811,7 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * 
+		 * Document close
 		 * */
 		protected function documentCloseHandler(event:RadiateEvent):void {
 			clearSelection();
@@ -809,6 +849,13 @@ package com.flexcapacitor.tools {
 		 * Updates selection around the target
 		 * */
 		public function updateSelectionAroundTarget(target:Object):void {
+			
+			// force single selection for now
+			if (target is Array) {
+				if (target.length) {
+					target = target[0];
+				}
+			}
 			
 			removeTargetListeners();
 			
@@ -1053,8 +1100,8 @@ package com.flexcapacitor.tools {
 				properties = [X, Y, WIDTH, HEIGHT];
 				propertiesObject = {};
 				
-				propertiesObject[WIDTH] = model.width;
-				propertiesObject[HEIGHT] = model.height;
+				propertiesObject[WIDTH] = parseInt(model.width);
+				propertiesObject[HEIGHT] = parseInt(model.height);
 				propertiesObject[X] = model.x;
 				propertiesObject[Y] = model.y;
 				
@@ -1857,18 +1904,26 @@ package com.flexcapacitor.tools {
 					
 					model = objectHandles.getModelForDisplay(target as DisplayObject);
 					
+					if (model && targetSelectionGroup) {
+						model.width = targetSelectionGroup.width;
+						model.height = targetSelectionGroup.height;
+						//model.x = targetSelectionGroup.x;
+						//model.y = targetSelectionGroup.y;
+					}
+					
 					if (model && !selectionManager.isSelected(model)) {
 						selectionManager.setSelected(model);
 					}
 					
-					selectionManager.setSelected(model);
 					if (model) {
+						selectionManager.setSelected(model);
 						objectHandles.updateModelForDisplay(target); 
 						//objectHandles.updateHandlePositions(model);
 					}
 				}
 				else {
 					selectionManager.clearSelection();
+					unregisterComponents();
 				}
 			}
 		}
@@ -1882,6 +1937,9 @@ package com.flexcapacitor.tools {
 		public function drawSelection(target:Object, selection:Object = null):void {
 			var rectangle:Rectangle;
 			var selectionGroup:ISelectionGroup;
+			
+			// sometimes the width and height are zero
+			// look into LayoutElementUIComponentUtils class
 			
 			// creates an instance of the bounding box that will be shown around the drop target
 			if (!targetSelectionGroup) {

@@ -257,16 +257,20 @@
     
     <!--  GRAPHIC PRIMITIVES -->
 
-    <component id="Rect" name="Rectangle" class="spark.primitives.Rect" include="false">
+    <component id="Rect" name="Rectangle" class="spark.primitives.Rect" include="true">
     	<defaults width="160" height="160" />
     </component>
 
-    <component id="Path" name="Path" class="spark.primitives.Path" include="false">
+    <component id="Path" name="Path" class="spark.primitives.Path" include="true">
     	<defaults width="160" height="160" />
     </component>
 
-    <component id="Ellipse" name="Ellipse" class="spark.primitives.Ellipse" include="false">
+    <component id="Ellipse" name="Ellipse" class="spark.primitives.Ellipse" include="true">
     	<defaults width="160" height="160" />
+    </component>
+
+    <component id="Line" name="Line" class="spark.primitives.Line" include="true">
+    	<defaults width="16" height="16" />
     </component>
     
     <component id="LinearGradient" name="Linear Gradient Fill" class="mx.graphics.LinearGradient" include="false">

@@ -1758,7 +1758,7 @@ package com.flexcapacitor.utils {
 					
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
-				else if (localName=="horizontalline" || localName=="verticalline") {
+				else if (localName=="horizontalline" || localName=="verticalline" || localName=="line") {
 					//move to 
 					htmlName = tagName ? tagName : "line";
 					wrapperTag = "svg";
@@ -1855,7 +1855,7 @@ package com.flexcapacitor.utils {
 						
 						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
 						layoutOutput += "<" + htmlName + " " + properties;
-						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
+						layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput, "", true);
 						layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 						styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
 						styleValue += isInVerticalLayout ? getDisplayBlock(componentInstance) : "";
@@ -3650,7 +3650,7 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		/**
 		 * Get ID from ID or else name attribute
 		 * */
-		public function getIdentifierAttribute(instance:Object, value:String = "", appendID:String = ""):String {
+		public function getIdentifierAttribute(instance:Object, value:String = "", appendID:String = "", createUniqueName:Boolean = false):String {
 			
 			if (instance && "id" in instance && instance.id) {
 				value += "id=\"" + instance.id + appendID + "\"";
@@ -3658,6 +3658,11 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 				
 			else if (instance && "name" in instance && instance.name) {
 				value += "id=\"" + instance.name + appendID + "\"";
+			}
+			
+			if (instance is GraphicElement && instance.id ==null) {
+				// graphic element has no name property
+				instance.id = NameUtil.createUniqueName(instance);
 			}
 			
 			return value;

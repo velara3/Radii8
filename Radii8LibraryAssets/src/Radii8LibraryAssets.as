@@ -211,6 +211,9 @@ package {
 		[Embed(source="assets/icons/general/warning.png")]
 		public static const warning:Class;
 		
+		[Embed(source="assets/icons/general/warningLight.png")]
+		public static const warningLight:Class;
+		
 		[Embed(source="assets/backgrounds/wall.png")]
 		public static const wall:Class;
 		

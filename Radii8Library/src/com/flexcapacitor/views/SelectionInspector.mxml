@@ -257,6 +257,9 @@
 					if (warningMessage!="") warningMessage += "\n";
 					warningMessage += "When the document is scaled drag and drop inside of a basic layout doesn't work. ";
 					warningMessage += "Use the arrow keys or use the Layout Panel to size and position.";
+					warningMessage += "\n\n";
+					warningMessage += "Also, resize handles do not work when the document is scaled. ";
+					warningMessage += "Use the Layout Panel to resize.";
 					warningMessage += "\n";
 					warningNeeded = true;
 				}
@@ -273,12 +276,14 @@
 					return warningMessage;
 				}
 				
-				return null;
+				return "";
 			}
 			
 			protected function scaleChangeHandler(event:RadiateEvent):void
 			{
 				updateTarget();
+				var scaled:Boolean = event.scaleX!=1 || event.scaleY!=1;
+				showTransform.enabled = !scaled;
 			}
 			
 		]]>
@@ -308,7 +313,7 @@
 					   />
 		<s:Image id="warnIcon" 
 				 buttonMode="true"
-				 source="{Radii8LibraryAssets.warning}" 
+				 source="{Radii8LibraryAssets.warningLight}" 
 				 click="warnIcon_clickHandler(event)"
 				 height="18"
 				 />

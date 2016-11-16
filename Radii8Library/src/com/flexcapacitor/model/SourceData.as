@@ -61,5 +61,11 @@ package com.flexcapacitor.model {
 		 * */
 		public var componentDescription:ComponentDescription;
 		
+		/**
+		 * Time in milliseconds to perform action.
+		 * Document Transcoder classes use this to store length of time. 
+		 * */
+		public var duration:int;
+		
 	}
 }

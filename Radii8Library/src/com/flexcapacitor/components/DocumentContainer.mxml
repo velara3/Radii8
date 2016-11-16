@@ -212,7 +212,7 @@
 				//Radiate.info("Document container app complete");
 				if (iDocument.source) {
 					validateNow();
-					sourceData = Radiate.parseSource(iDocument);
+					sourceData = Radiate.parseSource(iDocument, null, null, false);
 					iDocument.sourceData = sourceData;
 					iDocument.resetSaveStatus();
 					updateBackgroundSize();

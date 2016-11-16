@@ -34,7 +34,6 @@
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.model.TranscoderDescription;
-			import com.flexcapacitor.performance.PerformanceMeter;
 			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DocumentTranscoder;

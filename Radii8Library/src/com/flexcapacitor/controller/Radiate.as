@@ -28,6 +28,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.effects.core.PlayerType;
 	import com.flexcapacitor.effects.file.LoadFile;
 	import com.flexcapacitor.effects.popup.OpenPopUp;
+	import com.flexcapacitor.events.HistoryEvent;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.formatters.HTMLFormatterTLF;
 	import com.flexcapacitor.logging.RadiateLogTarget;
@@ -158,6 +159,7 @@ package com.flexcapacitor.controller {
 	import mx.events.FlexEvent;
 	import mx.graphics.ImageSnapshot;
 	import mx.graphics.SolidColor;
+	import mx.graphics.SolidColorStroke;
 	import mx.logging.AbstractTarget;
 	import mx.logging.ILogger;
 	import mx.logging.Log;
@@ -205,15 +207,21 @@ package com.flexcapacitor.controller {
 	import spark.layouts.BasicLayout;
 	import spark.primitives.BitmapImage;
 	import spark.primitives.Rect;
+	import spark.primitives.supportClasses.FilledElement;
 	import spark.primitives.supportClasses.GraphicElement;
+	import spark.primitives.supportClasses.StrokedElement;
 	import spark.skins.spark.DefaultGridItemRenderer;
 	import spark.utils.TextFlowUtil;
 	
+	import flashx.textLayout.container.ContainerController;
 	import flashx.textLayout.conversion.ConversionType;
 	import flashx.textLayout.conversion.ITextImporter;
 	import flashx.textLayout.conversion.TextConverter;
 	import flashx.textLayout.elements.IConfiguration;
+	import flashx.textLayout.elements.InlineGraphicElement;
+	import flashx.textLayout.elements.InlineGraphicElementStatus;
 	import flashx.textLayout.elements.TextFlow;
+	import flashx.textLayout.events.StatusChangeEvent;
 	
 	import org.as3commons.lang.DictionaryUtils;
 	import org.as3commons.lang.ObjectUtils;
@@ -1263,14 +1271,15 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch a history change event
 		 * */
-		public function dispatchHistoryChangeEvent(document:IDocument, newIndex:int, oldIndex:int):void {
+		public function dispatchHistoryChangeEvent(document:IDocument, newIndex:int, oldIndex:int, historyEvent:HistoryEvent = null):void {
 			var event:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.HISTORY_CHANGE)) {
 				event = new RadiateEvent(RadiateEvent.HISTORY_CHANGE);
 				event.newIndex = newIndex;
 				event.oldIndex = oldIndex;
-				event.historyEvent = HistoryManager.getHistoryEventAtIndex(document, newIndex);
+				event.historyEvent = historyEvent ? historyEvent : null;
+				event.targets = historyEvent ? historyEvent.targets : [];
 				dispatchEvent(event);
 			}
 		}
@@ -4800,7 +4809,7 @@ package com.flexcapacitor.controller {
 			
 			HistoryManager.history = selectedDocument ? selectedDocument.history : null;
 			HistoryManager.history ? HistoryManager.history.refresh() : void;
-			HistoryManager.setHistoryIndex(selectedDocument, HistoryManager.getHistoryPosition(selectedDocument));
+			HistoryManager.updateUndoRedoBindings(selectedDocument, HistoryManager.getHistoryPosition(selectedDocument));
 			
 			if (dispatchEvent) {
 				instance.dispatchDocumentChangeEvent(selectedDocument);
@@ -6581,7 +6590,7 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, styles, events, value);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
-					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
+					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description, false, dispatchEvents);
 				}
 				
 				updateComponentProperties(targets, propertyChanges, properties);
@@ -8086,6 +8095,12 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				
 				if (isRichEditor) {
 					textFlow = TextConverter.importToFlow(newValue, TextConverter.TEXT_LAYOUT_FORMAT);
+					
+					if (currentEditableComponent.textFlow) {
+						currentEditableComponent.textFlow.removeEventListener(StatusChangeEvent.INLINE_GRAPHIC_STATUS_CHANGE, inlineGraphicStatusChange);
+					}
+					
+					textFlow.addEventListener(StatusChangeEvent.INLINE_GRAPHIC_STATUS_CHANGE, inlineGraphicStatusChange, false, 0, true);
 					//currentEditableComponent.textFlow = textFlow;
 					setProperty(currentEditableComponent, "textFlow", textFlow);
 				}
@@ -8195,6 +8210,27 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			*/
+		}
+		
+		/**
+		 * Handles when an remote image is loaded 
+		 * We must invalidate RichText components so that images are visible
+		 * See RichText class docs 
+		 * */
+		protected static function inlineGraphicStatusChange(event:StatusChangeEvent):void {
+			var textFlow:TextFlow;
+			var status:String = event.status;
+			var graphic:DisplayObject = InlineGraphicElement(event.element).graphic;
+			var component:UIComponent;
+			
+			// in a test READY status is not being received so checking for size pending
+			if (status==InlineGraphicElementStatus.READY || status==InlineGraphicElementStatus.SIZE_PENDING) {
+				component = DisplayObjectUtils.getTypeFromDisplayObject(graphic, UIComponent);
+				
+				if (component) {
+					component.invalidateSize();
+				}
+			}
 		}
 		
 		/**
@@ -8413,11 +8449,22 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				BorderContainer(target).setStyle("cornerRadius", 0);
 			}
 			
-			// add fill to rect if null
-			if (componentInstance is Rect && componentInstance.fill==null) {
-				var fill:SolidColor = new SolidColor();
-				fill.color = 0xf6f6f6;
-				Rect(componentInstance).fill = fill;
+			// add fill to graphic elements if null
+			if (componentInstance is GraphicElement) {
+				var fill:SolidColor;
+				var stroke:SolidColorStroke;
+				
+				if (componentInstance is FilledElement && componentInstance.fill==null) {
+					fill = new SolidColor();
+					fill.color = 0xf6f6f6;
+					FilledElement(componentInstance).fill = fill;
+				}
+				
+				if (componentInstance is StrokedElement && componentInstance.stroke==null) {
+					stroke = new SolidColorStroke();
+					stroke.color = 0xA6A6A6;
+					StrokedElement(componentInstance).stroke = stroke;
+				}
 			}
 			
 			makeInteractive(componentInstance, interactive);
@@ -9987,7 +10034,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * If code is null and source is set then parses source.
 		 * If parent is set then imports code to the parent
 		 * */
-		public static function parseSource(document:IDocument, code:String = null, parent:IVisualElement = null):SourceData {
+		public static function parseSource(document:IDocument, code:String = null, parent:IVisualElement = null, dispatchEvents:Boolean = true):SourceData {
 			var codeToParse:String = code ? code : document.source;
 			var currentChildren:XMLList;
 			var nodeName:String;
@@ -10062,7 +10109,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				}
 				
 				componentDescription = document.componentDescription;
-				sourceDataLocal = importer.importare(codeToParse, document, componentDescription);
+				sourceDataLocal = importer.importare(codeToParse, document, componentDescription, null, dispatchEvents);
 				
 				if (container) {
 					Radiate.instance.setTarget(container);

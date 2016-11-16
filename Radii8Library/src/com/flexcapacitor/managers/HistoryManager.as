@@ -14,6 +14,7 @@ package com.flexcapacitor.managers
 	import flash.utils.getTimer;
 	
 	import mx.collections.ArrayCollection;
+	import mx.collections.ICollectionView;
 	import mx.collections.IList;
 	import mx.collections.ListCollectionView;
 	import mx.core.ClassFactory;
@@ -82,6 +83,7 @@ package com.flexcapacitor.managers
 		public static var ADD_ITEM_DESCRIPTION:String = "Add";
 		public static var MOVE_ITEM_DESCRIPTION:String = "Move";
 		private static var BEGINNING_OF_HISTORY:String = "Reverted";
+		public static var debug:Boolean = true;
 		
 		/**
 		 * Indicates if undo is available
@@ -178,6 +180,7 @@ package com.flexcapacitor.managers
 			}
 			else if (newIndex>oldIndex) {
 				difference = oldIndex<0 ? newIndex+1 : newIndex - oldIndex;
+				
 				for (var j:int;j<difference;j++) {
 					if (difference>1) {
 						// if we're not on last redo then use faster redo
@@ -197,7 +200,7 @@ package com.flexcapacitor.managers
 			layoutManager.usePhasedInstantiation = phasedInstantiation;
 			
 			document.history.refresh();
-			setHistoryIndex(document, getHistoryPosition(document));
+			updateUndoRedoBindings(document, getHistoryPosition(document));
 			
 			radiate.dispatchHistoryChangeEvent(document, historyIndex, oldIndex);
 			
@@ -224,14 +227,14 @@ package com.flexcapacitor.managers
 		public static function undo(document:IDocument, dispatchEvents:Boolean = false, dispatchForApplication:Boolean = true, dispatchSetTargets:Boolean = true):int {
 			var changeIndex:int = getPreviousHistoryIndex(document); // index of next change to undo 
 			var currentIndex:int = getHistoryPosition(document);
-			var historyLength:int = getHistoryLength(document);
+			var historyLength:int = getHistoryCount(document);
 			var historyEventItem:HistoryEventItem;
 			var previousHistoryEvent:HistoryEvent;
 			var currentTargetDocument:Application;
 			var setStartValues:Boolean = true;
 			var historyEvent:HistoryEvent;
 			var affectsDocument:Boolean;
-			var historyEvents:Array;
+			var historyEventItems:Array;
 			var dictionary:Dictionary;
 			var reverseItems:AddItems;
 			var eventTargets:Array;
@@ -243,6 +246,7 @@ package com.flexcapacitor.managers
 			var action:String;
 			var isInvalid:Boolean;
 			var documentHistory:ListCollectionView;
+			var description:String;
 			
 			currentTargetDocument = document.instance as Application;
 			documentHistory = document.history;
@@ -263,18 +267,23 @@ package com.flexcapacitor.managers
 			
 			// get current change to be redone
 			historyEvent = documentHistory.length ? documentHistory.getItemAt(changeIndex) as HistoryEvent : null;
-			historyEvents = historyEvent.historyEventItems;
-			numberOfEvents = historyEvents.length;
+			historyEventItems = historyEvent.historyEventItems;
+			numberOfEvents = historyEventItems.length;
 			
 			
 			// loop through changes starting with newest change then going to oldest
 			for (var i:int=numberOfEvents;i--;) {
 				//changesLength = changes ? changes.length: 0;
 				
-				historyEventItem = historyEvents[i];
+				historyEventItem = historyEventItems[i];
 				addItems = historyEventItem.addItemsInstance;
 				action = historyEventItem.action;//==RadiateEvent.MOVE_ITEM && addItems ? RadiateEvent.MOVE_ITEM : RadiateEvent.PROPERTY_CHANGE;
 				affectsDocument = dispatchForApplication && historyEventItem.targets.indexOf(currentTargetDocument)!=-1;
+				description = historyEventItem.description;
+				
+				if (debug) {
+					trace("Undo: " + description + ", Action: " + action);
+				}
 				
 				// undo the add
 				if (action==RadiateEvent.ADD_ITEM) {
@@ -447,10 +456,10 @@ package com.flexcapacitor.managers
 			}
 			
 			if (numberOfEvents) {
-				setHistoryIndex(document, getHistoryPosition(document));
+				updateUndoRedoBindings(document, getHistoryPosition(document));
 				
 				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-					radiate.dispatchHistoryChangeEvent(document, historyIndex, currentIndex);
+					radiate.dispatchHistoryChangeEvent(document, historyIndex, currentIndex, historyEvent);
 				}
 				return changeIndex-1;
 			}
@@ -473,12 +482,13 @@ package com.flexcapacitor.managers
 			var historyEvent:HistoryEvent;
 			var affectsDocument:Boolean;
 			var setStartValues:Boolean;
-			var historyEvents:Array;
+			var historyEventItems:Array;
 			var addItems:AddItems;
 			var isInvalid:Boolean;
 			var numberOfEvents:int;
 			var remove:Boolean;
 			var action:String;
+			var description:String;
 			
 			
 			// need to make sure everything is validated first
@@ -503,19 +513,20 @@ package com.flexcapacitor.managers
 			// get current change to be redone
 			historyEvent = historyCollection.length ? historyCollection.getItemAt(changeIndex) as HistoryEvent : null;
 			
-			historyEvents = historyEvent.historyEventItems;
-			numberOfEvents = historyEvents.length;
-			//changes = historyEvents;
+			historyEventItems = historyEvent.historyEventItems;
+			numberOfEvents = historyEventItems.length;
 			
-			//for (var j:int;j<numberOfEvents;j++) {
 			for (var j:int=numberOfEvents;j--;) {
-				historyEventItem = HistoryEventItem(historyEvents[j]);
-				//changesLength = changes ? changes.length: 0;
+				historyEventItem = HistoryEventItem(historyEventItems[j]);
 				
 				addItems = historyEventItem.addItemsInstance;
 				action = historyEventItem.action;
 				affectsDocument = dispatchForApplication && historyEventItem.targets.indexOf(currentTargetDocument)!=-1;
+				description = historyEventItem.description;
 				
+				if (debug) {
+					trace("Redo: " + description + ", Action: " + action);
+				}
 				
 				if (action==RadiateEvent.ADD_ITEM) {
 					isInvalid = layoutManager.isInvalid();
@@ -625,10 +636,11 @@ package com.flexcapacitor.managers
 			}
 			
 			if (numberOfEvents) {
-				setHistoryIndex(document, getHistoryPosition(document));
+				updateUndoRedoBindings(document, getHistoryPosition(document));
 				
 				if (dispatchEvents || (dispatchForApplication && affectsDocument)) {
-					radiate.dispatchHistoryChangeEvent(document, historyIndex, currentIndex);
+					
+					radiate.dispatchHistoryChangeEvent(document, historyIndex, currentIndex, historyEvent);
 				}
 				
 				return changeIndex;
@@ -722,7 +734,7 @@ package com.flexcapacitor.managers
 		 * updating to prevent events when opening a document.
 		 * @private
 		 */
-		public static function setHistoryIndex(document:IDocument, value:int, setBindables:Boolean = true):void {
+		public static function updateUndoRedoBindings(document:IDocument, value:int, setBindables:Boolean = true):void {
 			if (document==null) return;
 			
 			if (document.historyIndex==value) {
@@ -761,7 +773,7 @@ package com.flexcapacitor.managers
 		 * a zero based index. 
 		 * */
 		public static function getPreviousHistoryIndex(document:IDocument):int {
-			var historyLength:int = getHistoryLength(document);var listCollectionView:ListCollectionView = document.history;
+			var historyLength:int = getHistoryCount(document);var listCollectionView:ListCollectionView = document.history;
 			var historyEvent:HistoryEvent;
 			var index:int;
 			
@@ -783,7 +795,7 @@ package com.flexcapacitor.managers
 		 * a zero based index. 
 		 * */
 		public static function getNextHistoryIndex(document:IDocument):int {
-			var historyLength:int = getHistoryLength(document);
+			var historyLength:int = getHistoryCount(document);
 			var historyItem:HistoryEvent;
 			var index:int;
 			
@@ -804,7 +816,7 @@ package com.flexcapacitor.managers
 		 * last action that was performed. 
 		 * */
 		public static function getHistoryPosition(document:IDocument):int {
-			var numberOfEvents:int = getHistoryLength(document);
+			var numberOfEvents:int = getHistoryCount(document);
 			var historyEvent:HistoryEvent;
 			var events:IList = document ? document.history as IList : null;
 			
@@ -835,7 +847,7 @@ package com.flexcapacitor.managers
 		 * Returns the history event by index
 		 * */
 		public static function getHistoryEventAtIndex(document:IDocument, index:int):HistoryEvent {
-			var historyLength:int = getHistoryLength(document);
+			var historyLength:int = getHistoryCount(document);
 			var historyEvent:HistoryEvent;
 			
 			// no changes
@@ -858,7 +870,7 @@ package com.flexcapacitor.managers
 		 * Returns the history event by index
 		 * */
 		public static function removeHistoryItemAtIndex(document:IDocument, index:int, purge:Boolean = true):HistoryEvent {
-			var historyLength:int = getHistoryLength(document);
+			var historyLength:int = getHistoryCount(document);
 			var historyEvent:HistoryEvent;
 			
 			// no changes
@@ -912,13 +924,13 @@ package com.flexcapacitor.managers
 			var reverseAddItems:AddItems;
 			var eventItems:Array = [];
 			var change:Object;
-			var targetsLength:int;
-			var changesLength:int = changes ? changes.length : 0;
+			var numberOfTargets:int;
+			var numberOfChanges:int = changes ? changes.length : 0;
 			
 			if (disableHistoryManagement) return [];
 			
 			// create property change objects for each
-			for (var i:int;i<changesLength;i++) {
+			for (var i:int;i<numberOfChanges;i++) {
 				change = changes[i];
 				
 				historyEventItem 						= factory.newInstance();
@@ -935,21 +947,21 @@ package com.flexcapacitor.managers
 				}
 				else if (change is AddItems && !remove) {
 					historyEventItem.addItemsInstance 	= AddItems(change);
-					targetsLength = targets.length;
+					numberOfTargets = targets.length;
 					
 					// trying to add support for multiple targets - it's not all there yet
 					// probably not the best place to get the previous values or is it???
-					for (var j:int=0;j<targetsLength;j++) {
+					for (var j:int=0;j<numberOfTargets;j++) {
 						historyEventItem.reverseAddItemsDictionary[targets[j]] = createReverseAddItems(targets[j]);
 					}
 				}
 				else if (change is AddItems && remove) {
 					historyEventItem.removeItemsInstance 	= AddItems(change);
-					targetsLength = targets.length;
+					numberOfTargets = targets.length;
 					
 					// trying to add support for multiple targets - it's not all there yet
 					// probably not the best place to get the previous values or is it???
-					for (j=0;j<targetsLength;j++) {
+					for (j=0;j<numberOfTargets;j++) {
 						historyEventItem.reverseRemoveItemsDictionary[targets[j]] = createReverseAddItems(targets[j]);
 					}
 				}
@@ -1086,13 +1098,13 @@ package com.flexcapacitor.managers
 		 * Changes include property changes, add or remove event items 
 		 * */
 		public static function addHistoryEvents(document:IDocument, historyEventItems:Array, description:String = null, mergeWithPrevious:Boolean = false, dispatchEvents:Boolean = true):void {
-			if (doNotAddEventsToHistory) { return }
+			if (doNotAddEventsToHistory) { return; }
 			var currentIndex:int = getHistoryPosition(document);
-			var historyEventsLength:int = getHistoryLength(document);
-			var historyEventItemsLength:int;
+			var numberOfHistoryEvents:int = getHistoryCount(document);
+			var numberOfHistoryEventItems:int;
 			var historyEventItem:HistoryEventItem;
 			var historyEvent:HistoryEvent;
-			var historyTargetsLength:int;
+			var numberOfTargets:int;
 			var historyTargets:Array;
 			var historyTarget:Object;
 			var noPreviousChanges:Boolean = !hasPreviousEvents(document);
@@ -1102,8 +1114,8 @@ package com.flexcapacitor.managers
 			document.history.disableAutoUpdate();
 			
 			// trim history 
-			if (currentIndex!=historyEventsLength-1) {
-				for (var i:int = historyEventsLength-1;i>currentIndex;i--) {
+			if (currentIndex!=numberOfHistoryEvents-1) {
+				for (var i:int = numberOfHistoryEvents-1;i>currentIndex;i--) {
 					historyEvent = document.history.removeItemAt(i) as HistoryEvent;
 					historyEvent.purge();
 				}
@@ -1111,7 +1123,7 @@ package com.flexcapacitor.managers
 			
 			if (!mergeWithPrevious || noPreviousChanges) {
 				historyEvent = new HistoryEvent();
-				historyEvent.description = description ? HistoryEventItem(historyEventItems[0]).description : description;
+				historyEvent.description = description ? description : HistoryEventItem(historyEventItems[0]).description;
 				historyEvent.historyEventItems = historyEventItems;
 			}
 			else {
@@ -1119,17 +1131,18 @@ package com.flexcapacitor.managers
 				historyEvent.historyEventItems.concat(historyEventItems);
 			}
 			
-			historyEventItemsLength = historyEventItems.length;
+			numberOfHistoryEventItems = historyEventItems.length;
+			
 			// UPDATE: We could remove the following and let other code pull the targets from the event item changes
 			// add targets that are affected by this history change
 			// so we can select them later
 			// we should remember to remove these references when truncating history
-			for (i=0;i<historyEventItemsLength;i++) {
+			for (i=0;i<numberOfHistoryEventItems;i++) {
 				historyEventItem = historyEventItems[i];
 				historyTargets = historyEventItem.targets;
-				historyTargetsLength = historyTargets.length;
+				numberOfTargets = historyTargets.length;
 				
-				for (var j:int=0;j<historyTargetsLength;j++) {
+				for (var j:int=0;j<numberOfTargets;j++) {
 					historyTarget = historyTargets[j];
 					
 					if (historyEvent.targets.indexOf(historyTarget)==-1) {
@@ -1151,16 +1164,44 @@ package com.flexcapacitor.managers
 			// so we can probably fix what this is trying to do...
 			document.historyIndex = getHistoryPosition(document);
 			
-			setHistoryIndex(document, getHistoryPosition(document));
+			updateUndoRedoBindings(document, getHistoryPosition(document));
 			
 			if (dispatchEvents) {
+				var eventTargets:Array = getHistoryEventTargets(historyEventItems);
 				if (!mergeWithPrevious || noPreviousChanges) {
-					radiate.dispatchHistoryChangeEvent(document, currentIndex+1, currentIndex);
+					radiate.dispatchHistoryChangeEvent(document, currentIndex+1, currentIndex, historyEvent);
 				}
 				else {
-					radiate.dispatchHistoryChangeEvent(document, currentIndex, currentIndex);
+					radiate.dispatchHistoryChangeEvent(document, currentIndex, currentIndex, historyEvent);
 				}
 			}
+		}
+		
+		/**
+		 * Get targets from history event items
+		 * */
+		public static function getHistoryEventTargets(historyEventItems:Array):Array {
+			var targets:Array = [];
+			var historyEventItem:HistoryEventItem;
+			var target:Object;
+			var eventTargets:Array;
+			
+			for (var i:int = 0; i < historyEventItems.length; i++) {
+				historyEventItem = historyEventItems[i];
+				eventTargets = historyEventItem.targets;
+				
+				for (var j:int = 0; j < historyEventItems.length; j++) 
+				{
+					target = eventTargets[j];
+					
+					if (targets.indexOf(target)==-1) {
+						targets.push(target);
+					}
+				}
+				
+			}
+			
+			return targets;
 		}
 		
 		/**
@@ -1170,7 +1211,7 @@ package com.flexcapacitor.managers
 		 * */
 		public static function mergeLastHistoryEvent(document:IDocument, description:String = null):HistoryEvent {
 			var currentPosition:int = getHistoryPosition(document);
-			var historyEventsLength:int = getHistoryLength(document);
+			var historyEventsLength:int = getHistoryCount(document);
 			var currentHistoryEvent:HistoryEvent;
 			var previousHistoryEvent:HistoryEvent;
 			var historyEventItemsLength:int;
@@ -1226,9 +1267,9 @@ package com.flexcapacitor.managers
 			// so we can probably fix what this is trying to do...
 			document.historyIndex = getHistoryPosition(document);
 			
-			setHistoryIndex(document, getHistoryPosition(document));
+			updateUndoRedoBindings(document, getHistoryPosition(document));
 			
-			radiate.dispatchHistoryChangeEvent(document, currentPosition-1, currentPosition);
+			radiate.dispatchHistoryChangeEvent(document, currentPosition-1, currentPosition, previousHistoryEvent);
 			
 			return previousHistoryEvent;
 		}
@@ -1251,7 +1292,7 @@ package com.flexcapacitor.managers
 		/**
 		 * Get length of history events
 		 * */
-		public static function getHistoryLength(document:IDocument):int
+		public static function getHistoryCount(document:IDocument):int
 		{
 			return document && document.history ? document.history.length : 0;
 		}
@@ -1272,20 +1313,28 @@ package com.flexcapacitor.managers
 			}
 			
 			document.historyIndex = getHistoryPosition(document);
-			setHistoryIndex(document, getHistoryPosition(document));
+			updateUndoRedoBindings(document, document.historyIndex);
 			
 			radiate.dispatchHistoryChangeEvent(document, currentIndex-1, currentIndex);
 		}
 		
 		/**
 		 * Removes all history in the history array. 
-		 * Note: We should set the changes to null. 
 		 * */
 		public static function removeAllHistory(document:IDocument):void {
 			//var document:IDocument = instance.selectedDocument;
 			var currentIndex:int = getHistoryPosition(document);
-			document.history.removeAll();
-			document.history.refresh(); // we should loop through and run purge on each HistoryItem
+			var collection:ListCollectionView = document.history;
+			var numberOfHistoryEvents:int = collection.length;
+			var historyEvent:HistoryEvent;
+			
+			for (var i:int = numberOfHistoryEvents-1;i>currentIndex;i--) {
+				historyEvent = collection.getItemAt(i) as HistoryEvent;
+				historyEvent.purge();
+			}
+			collection.removeAll();
+			collection.refresh();
+			
 			radiate.dispatchHistoryChangeEvent(document, -1, currentIndex);
 		}
 		

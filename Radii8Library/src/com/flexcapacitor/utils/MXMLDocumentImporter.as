@@ -22,12 +22,9 @@ package com.flexcapacitor.utils {
 	
 	import spark.components.Application;
 	
-	import flashx.textLayout.conversion.BaseTextLayoutExporter;
-	import flashx.textLayout.conversion.ConversionType;
 	import flashx.textLayout.conversion.ITextImporter;
 	import flashx.textLayout.conversion.TextConverter;
 	import flashx.textLayout.conversion.TextLayoutImporter;
-	import flashx.textLayout.elements.IConfiguration;
 	import flashx.textLayout.elements.TextFlow;
 	
 	
@@ -59,11 +56,16 @@ package com.flexcapacitor.utils {
 			var codeWasWrapped:Boolean;
 			var originalXMLSettings:Object;
 			var ignoreWhitespace:Boolean;
+			var startTime:int;
+			
+			startTime = getTimer();
 			
 			errors = [];
 			warnings = [];
 			
 			newComponents = [];
+			
+			startTime = getTimer();
 			
 			source = StringUtils.trim(source);
 			
@@ -150,7 +152,7 @@ package com.flexcapacitor.utils {
 				if (elName=="Application" || elName=="WindowedApplication") {
 					//componentDefinition = Radiate.getDynamicComponentType(elName);
 					//Radiate.setAttributesOnComponent(document.instance, mxml, componentDefinition);
-					createChildFromNode(mxml, container, document, 0, document.instance);
+					createChildFromNode(mxml, container, document, 0, document.instance, dispatchEvents);
 				}
 				else {
 					
@@ -161,11 +163,11 @@ package com.flexcapacitor.utils {
 							if (childNode.name()==null) {
 								continue;
 							}
-							createChildFromNode(childNode, container, document, 0);
+							createChildFromNode(childNode, container, document, 0, null, dispatchEvents);
 						}
 					}
 					else {
-						createChildFromNode(mxml, container, document);
+						createChildFromNode(mxml, container, document, 0, null, dispatchEvents);
 					}
 				}
 				
@@ -188,6 +190,7 @@ package com.flexcapacitor.utils {
 			sourceData.targets = newComponents.slice();
 			sourceData.errors = errors;
 			sourceData.warnings = warnings;
+			sourceData.duration = getTimer() - startTime;
 			
 			if (newComponents && newComponents.length) {
 				sourceData.componentDescription = document.getItemDescription(newComponents[0]);
@@ -201,7 +204,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Create child from node
 		 * */
-		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0, componentInstance:Object = null):Object {
+		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0, componentInstance:Object = null, dispatchEvents:Boolean = true):Object {
 			var elementName:String;
 			var qualifiedName:QName;
 			var kind:String;
@@ -347,7 +350,7 @@ package com.flexcapacitor.utils {
 					Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.events, valuesObject.values);
 				}
 				else if (valuesObject.propertiesStylesEvents && valuesObject.propertiesStylesEvents.length) {
-					Radiate.setPropertiesStylesEvents(componentInstance, valuesObject.propertiesStylesEvents, valuesObject.values);
+					Radiate.setPropertiesStylesEvents(componentInstance, valuesObject.propertiesStylesEvents, valuesObject.values, null, false, dispatchEvents);
 				}
 				
 				Radiate.removeExplictSizeOnComponent(componentInstance, node, componentDefinition, false);
@@ -357,7 +360,7 @@ package com.flexcapacitor.utils {
 				//Radiate.makeInteractive(componentInstance, makeInteractive);
 				
 				// in case width or height or relevant was changed
-				if (componentInstance is Application) {
+				if (componentInstance is Application && dispatchEvents) {
 					Radiate.instance.dispatchDocumentSizeChangeEvent(componentInstance);
 				}
 				
@@ -558,7 +561,7 @@ package com.flexcapacitor.utils {
 						continue;
 					}
 					
-					instance = createChildFromNode(childNode, componentInstance, iDocument, depth+1);
+					instance = createChildFromNode(childNode, componentInstance, iDocument, depth+1, null, dispatchEvents);
 				}
 			}
 			

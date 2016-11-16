@@ -1364,7 +1364,14 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (event.currentTarget is InvalidatingSprite) {
-				removeMouseHandlers((dragInitiator as IGraphicElement).displayObject);
+				if (dragInitiator is IGraphicElement) {
+					removeMouseHandlers((dragInitiator as IGraphicElement).displayObject);
+				}
+				else {
+					if (event.currentTarget is EventDispatcher) {
+						removeMouseHandlers(event.currentTarget);
+					}
+				}
 			}
 			else {
 				removeMouseHandlers(IVisualElement(event.currentTarget));
