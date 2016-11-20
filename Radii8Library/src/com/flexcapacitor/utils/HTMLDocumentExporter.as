@@ -190,7 +190,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Convert bitmap data to graphic data
 		 * */
-		public var createImageDataForGraphics:Boolean = false;
+		public var createImageDataForGraphics:Boolean = true;
 		
 		/**
 		 * Show image snapshot when html element is not found or supported
@@ -827,6 +827,17 @@ package com.flexcapacitor.utils {
 				
 				if (isInBasicLayout && !(componentInstance is Line)) {
 					styleValue = getPositionHTML(componentInstance as IVisualElement, stylesModel, styleValue, isInBasicLayout);
+				}
+					
+				else {
+					
+					if (setPositioningStylesOnElement) {
+						styleValue += wrapperTagStyles;
+						wrapperTag = "";
+					}
+					else {
+						wrapperTag = "div";
+					}
 				}
 			}
 			

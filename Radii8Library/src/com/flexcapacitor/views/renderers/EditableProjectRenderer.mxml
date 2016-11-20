@@ -55,8 +55,12 @@
 		}
 		
 		protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void {
-			currentState = "edit";
-			textInput.text = labelDisplay.text;
+			
+			var project:IProject = IProject(data);
+			if (project.isOpen) {
+				currentState = "edit";
+				textInput.text = labelDisplay.text;
+			}
 		}
 		
 		override protected function getCurrentRendererState():String {
@@ -99,7 +103,7 @@
 	</s:Rect>-->
 	
 	<s:BitmapImage id="icon" 
-				   source="{data &amp;&amp; DocumentData(data).isOpen ? Radii8LibraryAssets.openFolder : Radii8LibraryAssets.project}"
+				   source="{data &amp;&amp; DocumentData(data).isOpen ? Radii8LibraryAssets.openFolder : Radii8LibraryAssets.closedFolder}"
 				   top="4"
 				   left="5"
 				   >

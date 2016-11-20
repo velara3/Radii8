@@ -8,13 +8,24 @@
 				typographicCase="capsToSmallCaps"
 				useHandCursor="true"
 				buttonMode="true"
+				toolTip=" "
+				toolTipShow="itemrenderer1_toolTipShowHandler(event)"
 				>
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.events.HistoryEvent;
+			import com.flexcapacitor.events.HistoryEventItem;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.core.IToolTip;
+			import mx.effects.effectClasses.PropertyChanges;
+			import mx.events.ToolTipEvent;
+			import mx.managers.ToolTipManager;
+			import mx.utils.ObjectUtil;
 			
 			public var historyItem:HistoryEvent;
+			public var myToolTip:IToolTip;
 			
 			override public function set data(value:Object):void {
 				super.data = value;
@@ -32,6 +43,34 @@
 				}
 			}
 			
+			
+			protected function itemrenderer1_toolTipShowHandler(event:ToolTipEvent):void {
+				var historyEventItems:Array;
+				var message:String = "";
+				var change:PropertyChanges;
+				
+				if (data) {
+					historyItem = data as HistoryEvent;
+					
+					if (historyItem) {
+						historyEventItems = historyItem.historyEventItems;
+						
+						for each (var historyEventItem:HistoryEventItem in historyEventItems) {
+							
+							if (message!="") message +="\n";
+							
+							change = historyEventItem.propertyChanges;
+							if (change) {
+								message += "Start: " + ObjectUtil.toString(change.start) + "\n";
+								message += "End: " + ObjectUtil.toString(change.end);
+							}
+						}
+					}
+				}
+				
+				myToolTip = ToolTipManager.currentToolTip;
+				myToolTip.text = message=="" ? null : message;
+			}
 			
 		]]>
 	</fx:Script>

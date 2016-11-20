@@ -70,6 +70,30 @@ package com.flexcapacitor.utils {
 		
 		private static var _defaultNamespaceDeclarations:String;
 		
+		
+		public static const X:String = "x";
+		public static const Y:String = "y";
+		public static const WIDTH:String = "width";
+		public static const HEIGHT:String = "height";
+		
+		public static const PERCENT_HEIGHT:String = "percentHeight";
+		public static const PERCENT_WIDTH:String = "percentWidth";
+		
+		public static const EXPLICIT_WIDTH:String = "explicitWidth";
+		public static const EXPLICIT_HEIGHT:String = "explicitHeight";
+		
+		public static const LEFT:String = "left";
+		public static const RIGHT:String = "right";
+		public static const TOP:String = "top";
+		public static const BOTTOM:String = "bottom";
+		
+		public static const HORIZONTAL_CENTER:String = "horizontalCenter";
+		public static const VERTICAL_CENTER:String = "verticalCenter";
+		public static const BASELINE:String = "baseline";
+				
+		public static var sizeAndPositionProperties:Array = [X, Y, WIDTH, HEIGHT, PERCENT_WIDTH, PERCENT_HEIGHT, VERTICAL_CENTER, HORIZONTAL_CENTER, TOP, LEFT, BOTTOM, RIGHT, BASELINE];
+		public static var explicitSizeAndPositionProperties:Array = sizeAndPositionProperties.concat([EXPLICIT_HEIGHT, EXPLICIT_WIDTH]);
+		
 		/**
 		 * This contains a string of the namespaces and their prefixes used in the Application MXML tag.  
 		 * This value is cached after the first run and

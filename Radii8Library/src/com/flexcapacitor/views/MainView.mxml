@@ -403,6 +403,13 @@
 				projectsCollection.source = projects;
 				documentsCollection.source = [];
 				
+				for (var i:int = 0; i < projects.length; i++) 
+				{
+					iProject = projects[i];
+					radiate.addProject(iProject);
+				}
+				
+				
 				if (projectsCollection.length==0 && checkingForProjectsLabel) {
 					updateCheckProjects(0);
 					openPreviousProject.enabled = false;
@@ -1011,7 +1018,7 @@
 					Radiate.error("Could not create a snapshot of the selected item. " + result); 
 				}
 				else if (result) {
-					Radiate.info("Selection was saved to the library.");
+					Radiate.info("Selection was saved as an image into the library.");
 				}
 			}
 			
@@ -1545,7 +1552,7 @@
 				<model:MenuItem label="Open Project" itemClick="openProject_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem label="Close Document" itemClick="radiate.closeDocument(radiate.selectedDocument)"/>
-				<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>
+				<!--<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>-->
 				<model:MenuItem type="separator"/>
 				<!-- keyEquivalent="s" seemed to be catching the s key everywhere. needs cmd for mac and ctrl for win-->
 				<model:MenuItem id="saveMenuItem" label="Save" itemClick="saveMenuItem_itemClickHandler(event)"
@@ -1587,16 +1594,16 @@
 			<model:MenuItem label="Commands" >
 				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="clearProjectHomePage_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="copySelectionIntoLibrary" label="Merge selection into an image" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
+				<model:MenuItem id="copySelectionIntoLibrary" label="Create image from selection" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToImage_itemClickHandler(event)" />
 				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
 				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />
-				<model:MenuItem id="sizeSelectionToContent" label="Size selection to content (remove explicit size)" itemClick="sizeSelectionToContent_itemClickHandler(event)" />
+				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="sizeSelectionToContent_itemClickHandler(event)" />
 				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />
 				<model:MenuItem id="removeExplicitWidth" label="Remove explicit width" itemClick="removeExplicitWidth_itemClickHandler(event)" />
+				<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="showProjectSource_itemClickHandler(event)" />
 				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="showDocumentSource_itemClickHandler(event)"/>

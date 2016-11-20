@@ -20,9 +20,7 @@ package com.flexcapacitor.controller {
 	import com.durej.PSDParser.PSDParser;
 	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.components.IDocumentContainer;
-	import com.flexcapacitor.controls.ColorPicker;
 	import com.flexcapacitor.controls.Hyperlink;
-	import com.flexcapacitor.controls.RichTextEditorBar;
 	import com.flexcapacitor.controls.RichTextEditorBarCallout;
 	import com.flexcapacitor.effects.core.CallMethod;
 	import com.flexcapacitor.effects.core.PlayerType;
@@ -233,6 +231,16 @@ package com.flexcapacitor.controller {
 	 * Dispatched on history change
 	 * */
 	[Event(name="historyChange", type="com.flexcapacitor.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched on beginning of undo history
+	 * */
+	[Event(name=RadiateEvent.BEGINNING_OF_UNDO_HISTORY, type="com.flexcapacitor.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched on end of undo history
+	 * */
+	[Event(name=RadiateEvent.END_OF_UNDO_HISTORY, type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when register results are received
@@ -6261,7 +6269,7 @@ package com.flexcapacitor.controller {
 		 * <pre>Radiate.setProperty(myButton, "x", 40);</pre>
 		 * <pre>Radiate.setProperty([myButton,myButton2], "x", 40);</pre>
 		 * */
-		public static function setStyle(target:Object, style:String, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
+		public static function setStyle(target:Object, style:String, value:*, description:String = null, removeUnchangedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var targets:Array = ArrayUtil.toArray(target);
 			var styleChanges:Array;
 			var historyEvents:Array;
@@ -6269,7 +6277,7 @@ package com.flexcapacitor.controller {
 			styleChanges = createPropertyChange(targets, null, style, null, value, description);
 			
 			
-			if (!keepUndefinedValues) {
+			if (!removeUnchangedValues) {
 				styleChanges = stripUnchangedValues(styleChanges);
 			}
 			
@@ -6323,6 +6331,61 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Restores captured values in changes array.
+		 * */
+		public static function restoreCapturedValues(changes:Array, property:Array, style:Array = null, event:Array = null, validateLayout:Boolean = true):Boolean {
+			var numberOfChanges:int = changes ? changes.length : 0;
+			var effect:HistoryEffect = new HistoryEffect();
+			var onlyPropertyChanges:Array = [];
+			var directApply:Boolean = true;
+			var change:PropertyChanges;
+			var targets:Array = [];
+			
+			for (var i:int;i<numberOfChanges;i++) {
+				change = changes[i] as PropertyChanges;
+				
+				if (change) { 
+					onlyPropertyChanges.push(change);
+					
+					if (targets.indexOf(change.target)==-1) {
+						targets.push(change.target);
+					}
+				}
+			}
+			
+			onlyPropertyChanges = captureSizingPropertyValues(targets, ArrayUtil.toArray(property), false, onlyPropertyChanges);
+			onlyPropertyChanges = stripUnchangedValues(onlyPropertyChanges);
+			
+			effect.targets = targets;
+			effect.propertyChangesArray = onlyPropertyChanges;
+			
+			effect.relevantEvents = ArrayUtil.toArray(event);
+			effect.relevantProperties = ArrayUtil.toArray(property);
+			effect.relevantStyles = ArrayUtil.toArray(style);
+			
+			// this works for styles and properties
+			// note: the property applyActualDimensions is used to enable width and height values to stick
+			if (directApply) {
+				effect.applyEndValuesWhenDone = false;
+				effect.applyActualDimensions = false;
+				
+				//if (setStartValues) {
+					effect.applyStartValues(onlyPropertyChanges, targets);
+				//}
+				//else {
+				//	effect.applyEndValues(onlyPropertyChanges, targets);
+				//}
+				
+				// Revalidate after applying
+				if (validateLayout) {
+					LayoutManager.getInstance().validateNow();
+				}
+			}
+			
+			return true;
+		}
+		
+		/**
 		 * Apply changes to targets. You do not call this. Set properties through setProperties method. 
 		 * 
 		 * @param setStartValues applies the start values rather 
@@ -6337,7 +6400,7 @@ package com.flexcapacitor.controller {
 		 * @param event string or array of strings containing the 
 		 * names of the events to set
 		 * */
-		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, event:*, setStartValues:Boolean=false, validateLayout:Boolean = true):Boolean {
+		public static function applyChanges(targets:Array, changes:Array, property:*, style:*, event:*, setStartValues:Boolean=false, validateLayout:Boolean = false):Boolean {
 			var numberOfChanges:int = changes ? changes.length : 0;
 			var effect:HistoryEffect = new HistoryEffect();
 			var onlyPropertyChanges:Array = [];
@@ -6478,7 +6541,7 @@ package com.flexcapacitor.controller {
 				//LayoutManager.getInstance().validateNow();
 				//addHistoryItem(propertyChanges);
 				
-				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, null, null, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, null, null, value, description);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
@@ -6511,7 +6574,7 @@ package com.flexcapacitor.controller {
 		 * @see setProperty()
 		 * @see setProperties()
 		 * */
-		public static function setStyles(target:Object, styles:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
+		public static function setStyles(target:Object, styles:Array, value:*, description:String = null, removeUnchangedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var stylesChanges:Array;
 			var historyEvents:Array;
 			var targets:Array;
@@ -6520,7 +6583,7 @@ package com.flexcapacitor.controller {
 			styles = ArrayUtil.toArray(styles);
 			stylesChanges = createPropertyChanges(targets, null, styles, null, value, description, false);
 			
-			if (!keepUndefinedValues) {
+			if (!removeUnchangedValues) {
 				stylesChanges = stripUnchangedValues(stylesChanges);
 			}
 			
@@ -6561,7 +6624,7 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 		 * @see setProperty()
 		 * @see setProperties()
 		 * */
-		public static function setPropertiesStylesEvents(target:Object, propertiesStylesEvents:Array, value:*, description:String = null, keepUndefinedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
+		public static function setPropertiesStylesEvents(target:Object, propertiesStylesEvents:Array, value:*, description:String = null, removeUnchangedValues:Boolean = false, dispatchEvents:Boolean = true):Boolean {
 			var propertyChanges:Array;
 			var historyEvents:Array;
 			var targets:Array;
@@ -6579,7 +6642,7 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 			
 			propertyChanges = createPropertyChanges(targets, properties, styles, events, value, description, false);
 			
-			if (!keepUndefinedValues) {
+			if (!removeUnchangedValues) {
 				propertyChanges = stripUnchangedValues(propertyChanges);
 			}
 			
@@ -6588,9 +6651,9 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 				//LayoutManager.getInstance().validateNow();
 				//addHistoryItem(propertyChanges);
 				
-				historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, styles, events, value);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
+					historyEvents = HistoryManager.createHistoryEventItems(targets, propertyChanges, properties, styles, events, value, description);
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description, false, dispatchEvents);
 				}
 				
@@ -6610,6 +6673,280 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 			}
 			
 			return false;
+		}
+		
+		/**
+		 * Capture property values. Use to save the current values of the properties, styles or events of an object.
+		 * */
+		public static function capturePropertyValues(targets:Array, properties:Array, styles:Array = null, events:Array = null):Array {
+			var tempEffect:HistoryEffect = new HistoryEffect();
+			var propertyChanges:PropertyChanges;
+			var changes:Array;
+			var propertStyleEvent:String;
+			
+			tempEffect.targets = targets;
+			tempEffect.relevantEvents = events;
+			tempEffect.relevantProperties = properties;
+			tempEffect.relevantStyles = styles;
+			
+			// get start values for undo
+			changes = tempEffect.captureValues(null, true);
+			
+			return changes;
+		}
+		
+		/**
+		 * Capture sizing property values. Skips height and width unless explicitly set. 
+		 * */
+		public static function captureSizingPropertyValues(targets:Array, properties:Array = null, startValues:Boolean = true, previousChanges:Array = null):Array {
+			var tempEffect:HistoryEffect;
+			var propertyChanges:PropertyChanges;
+			var changes:Array;
+			var change:PropertyChanges;
+			var previousChange:PropertyChanges;
+			
+			if (properties==null) {
+				properties = MXMLDocumentConstants.explicitSizeAndPositionProperties.slice();
+			}
+			
+			tempEffect = new HistoryEffect();
+			tempEffect.targets = targets;
+			tempEffect.relevantProperties = properties;
+			
+			// get start values for undo
+			changes = tempEffect.captureValues(null, startValues);
+			
+			if (startValues) {
+				for each (change in changes) {
+					
+					// if explicit size is not set then do not use size value
+					if (change.start[MXMLDocumentConstants.EXPLICIT_WIDTH]===undefined) {
+						change.start[MXMLDocumentConstants.WIDTH] = undefined;
+					}
+					
+					if (change.start[MXMLDocumentConstants.EXPLICIT_HEIGHT]===undefined) {
+						change.start[MXMLDocumentConstants.HEIGHT] = undefined;
+					}
+					
+					// if the percent is set then to do not use size value
+					if (!isNaN(change.start[MXMLDocumentConstants.PERCENT_WIDTH])) {
+						change.start[MXMLDocumentConstants.WIDTH] = undefined;
+					}
+					
+					if (!isNaN(change.start[MXMLDocumentConstants.PERCENT_HEIGHT])) {
+						change.start[MXMLDocumentConstants.HEIGHT] = undefined;
+					}
+					
+					change.start[MXMLDocumentConstants.EXPLICIT_WIDTH] = undefined;
+					change.start[MXMLDocumentConstants.EXPLICIT_HEIGHT] = undefined;
+				}
+			}
+			else if (previousChanges) {
+				// if we pass in another change group and we are not start values
+				// we are getting end values and so we match the targets and then 
+				// return the previous changes array
+				for each (previousChange in previousChanges) {
+					for each (change in changes) {
+						if (change.target==previousChange.target) {
+							previousChange.end = change.end;
+							//previousChange.start = change.start;
+						}
+					}
+				}
+				
+				return previousChanges;
+			}
+			
+			return changes;
+		}
+		
+		/**
+		 * Given a target or targets, properties and value object (name value pair)
+		 * returns an array of PropertyChange objects.
+		 * Value must be an object containing the properties mentioned in the properties array
+		 * */
+		public static function getPropertiesObjectFromBounds(element:Object, model:Object, roundToWhole:Boolean = true):Object {
+			var leftValue:Object;
+			var rightValue:Object;
+			var topValue:Object;
+			var bottomValue:Object;
+			var horizontalCenter:Object;
+			var verticalCenter:Object;
+			var properties:Array;
+			var propertiesObject:Object;
+			var verticalDifference:int;
+			var horizontalDifference:int;
+			var widthDifference:Number;
+			var heightDifference:Number;
+			var width:Number;
+			var height:Number;
+			var elementX:Number;
+			var elementY:Number;
+			var changes:Array;
+			var movedDown:Boolean;
+			var movedLeft:Boolean;
+			var movedRight:Boolean;
+			var movedUp:Boolean;
+			
+			changes = [];
+			properties = [];
+			propertiesObject = {};
+			
+			width = model.width;
+			height = model.height;
+			
+			elementX = element.x;
+			elementY = element.y;
+			
+			if (model.y>elementY) {
+				movedDown = true;
+			}
+			else if (model.y<elementY) {
+				movedUp = true;
+			}
+			
+			if (model.x>elementX) {
+				movedRight = true;
+			}
+			else if (model.x<elementX) {
+				movedLeft = true;
+			}
+			
+			// get size
+			propertiesObject.width = width;
+			propertiesObject.height = height;
+			properties.push(MXMLDocumentConstants.WIDTH, MXMLDocumentConstants.HEIGHT);
+			
+			// get vertical changes
+			if (movedUp) {
+				verticalDifference = (elementY - model.y);
+				
+				topValue = element.top;
+				bottomValue = element.bottom;
+				verticalCenter = element.verticalCenter;
+				
+				if (topValue!=null && bottomValue!=null) {
+					propertiesObject.top = Number(element.top) - verticalDifference;
+					propertiesObject.bottom = Number(element.bottom) + verticalDifference;
+					properties.push(MXMLDocumentConstants.TOP, MXMLDocumentConstants.BOTTOM);
+				}
+				else if (topValue!=null) {
+					propertiesObject.top = Number(element.top) - verticalDifference;
+					properties.push(MXMLDocumentConstants.TOP);
+				}
+				else if (bottomValue!=null) {
+					propertiesObject.bottom = Number(element.bottom) + verticalDifference;
+					properties.push(MXMLDocumentConstants.BOTTOM);
+				}
+				else if (verticalCenter!=null) {
+					propertiesObject.verticalCenter = Number(element.verticalCenter) - verticalDifference;
+					properties.push(MXMLDocumentConstants.VERTICAL_CENTER);
+				}
+				else {
+					propertiesObject.y = element.y - verticalDifference;
+					properties.push(MXMLDocumentConstants.Y);
+				}
+			}
+			else if (movedDown) {
+				verticalDifference = (model.y - elementY);
+				
+				topValue = element.top;
+				bottomValue = element.bottom;
+				verticalCenter = element.verticalCenter;
+				
+				if (topValue!=null && bottomValue!=null) {
+					propertiesObject.top = Number(element.top) + verticalDifference;
+					propertiesObject.bottom = Number(element.bottom) - verticalDifference;
+					properties.push(MXMLDocumentConstants.TOP, MXMLDocumentConstants.BOTTOM);
+				}
+				else if (leftValue!=null) {
+					propertiesObject.top = Number(element.top) + verticalDifference;
+					properties.push(MXMLDocumentConstants.TOP);
+				}
+				else if (bottomValue!=null) {
+					propertiesObject.bottom = Number(element.bottom) - verticalDifference;
+					properties.push(MXMLDocumentConstants.BOTTOM);
+				}
+				else if (verticalCenter!=null) {
+					propertiesObject.verticalCenter = Number(element.verticalCenter) + verticalDifference;
+					properties.push(MXMLDocumentConstants.VERTICAL_CENTER);
+				}
+				else {
+					propertiesObject.y = element.y + verticalDifference;
+					properties.push(MXMLDocumentConstants.Y);
+				}
+			}
+			
+			// get horizontal changes
+			if (movedLeft) {
+				horizontalDifference = (elementX - model.x);
+				
+				/**
+				 * If left is set then set x to nothing
+				 * If left and right are set then set width to nothing
+				 * If horizontalCenter is set than set left and right to nothing
+				 * Otherwise set left to nothing
+				 * */
+				if (leftValue!=null && rightValue!=null) {
+					propertiesObject.left = Number(element.left) - horizontalDifference;
+					propertiesObject.right = Number(element.right) + horizontalDifference;
+					properties.push(MXMLDocumentConstants.LEFT, MXMLDocumentConstants.RIGHT);
+				}
+				else if (leftValue!=null) {
+					propertiesObject.left = Number(element.left) - horizontalDifference;
+					properties.push(MXMLDocumentConstants.LEFT);
+				}
+				else if (rightValue!=null) {
+					propertiesObject.right = Number(element.right) + horizontalDifference;
+					properties.push(MXMLDocumentConstants.RIGHT);
+				}
+				else if (horizontalCenter!=null) {
+					propertiesObject.horizontalCenter = Number(element.horizontalCenter) - horizontalDifference;
+					properties.push(MXMLDocumentConstants.HORIZONTAL_CENTER);
+				}
+				else {
+					propertiesObject.x = element.x - horizontalDifference;
+					properties.push(MXMLDocumentConstants.X);
+				}
+			}
+			else if (movedRight) {
+				horizontalDifference = (model.x - elementX);
+				
+				leftValue = element.left;
+				rightValue = element.right;
+				horizontalCenter = element.horizontalCenter;
+				
+				if (leftValue!=null && rightValue!=null) {
+					propertiesObject.left = Number(element.left) + horizontalDifference;
+					propertiesObject.right = Number(element.right) - horizontalDifference;
+					properties.push(MXMLDocumentConstants.LEFT, MXMLDocumentConstants.RIGHT);
+				}
+				else if (leftValue!=null) {
+					propertiesObject.left = Number(element.left) + horizontalDifference;
+					properties.push(MXMLDocumentConstants.LEFT);
+				}
+				else if (rightValue!=null) {
+					propertiesObject.right = Number(element.right) - horizontalDifference;
+					properties.push(MXMLDocumentConstants.RIGHT);
+				}
+				else if (horizontalCenter!=null) {
+					propertiesObject.horizontalCenter = Number(element.horizontalCenter) + horizontalDifference;
+					properties.push(MXMLDocumentConstants.HORIZONTAL_CENTER);
+				}
+				else {
+					propertiesObject.x = element.x + horizontalDifference;
+					properties.push(MXMLDocumentConstants.X);
+				}
+			}
+			
+			if (roundToWhole) {
+				for (var i:int = 0; i < properties.length; i++)  {
+					propertiesObject[properties[i]] = Math.ceil(propertiesObject[properties[i]]);
+				}
+				
+			}
+
+			return propertiesObject;
 		}
 		
 		/**
@@ -6646,6 +6983,7 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 						propertyChanges.end[propertStyleEvent] = value[propertStyleEvent];
 					}
 					else {
+						// BUG - this will assign the value object if property is not found in the value object - fix
 						propertyChanges.end[propertStyleEvent] = value;
 					}
 				}
@@ -7026,7 +7364,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 										   isArray:Boolean		= false, 
 										   isStyle:Boolean		= false, 
 										   vectorClass:Class	= null,
-										   keepUndefinedValues:Boolean = true):String {
+										   removeUnchangedValues:Boolean = true):String {
 			
 			var visualElement:IVisualElement;
 			var moveItems:AddItems;
@@ -7256,7 +7594,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			// constraints use undefined values 
 			// so if we use constraints do not strip out values
-			if (!keepUndefinedValues) {
+			if (!removeUnchangedValues) {
 				changes = stripUnchangedValues(changes);
 			}
 			
@@ -7430,16 +7768,24 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var removeBeforeAdding:Boolean;
 			var currentIndex:int;
 			var movingIndexWithinParent:Boolean;
+			var destination:Object;
+			var index:int;
+			var position:String;
+			var item:Object;
+			var itemOwner:Object;
+			var visualElementParent:Object;
+			var visualElementOwner:IVisualElementContainer;
+			var applicationGroup:GroupBase;
 			
 			items = ArrayUtil.toArray(items);
 			
-			var item:Object = items ? items[0] : null;
-			var itemOwner:Object = item ? item.owner : null;
+			item = items ? items[0] : null;
+			itemOwner = item ? item.owner : null;
 			
 			visualElement = item as IVisualElement;
-			var visualElementParent:Object = visualElement ? visualElement.parent : null;
-			var visualElementOwner:IVisualElementContainer = itemOwner as IVisualElementContainer;
-			var applicationGroup:GroupBase = destination is Application ? Application(destination).contentGroup : null;
+			visualElementParent = visualElement ? visualElement.parent : null;
+			visualElementOwner = itemOwner as IVisualElementContainer;
+			applicationGroup = destination is Application ? Application(destination).contentGroup : null;
 			
 			isSameParent = visualElementParent && (visualElementParent==destination || visualElementParent==applicationGroup);
 			isSameOwner = visualElementOwner && visualElementOwner==destination;
@@ -7448,144 +7794,15 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			if (!description) {
 				description = HistoryManager.getRemoveDescription(item);
 			}
-			/*
-			// if it's a basic layout then don't try to add it
-			// NO DO ADD IT bc we may need to swap indexes
-			if (destination is IVisualElementContainer) {
-				//destinationGroup = destination as GroupBase;
-				
-				if (destination.layout is BasicLayout) {
-					
-					// does not support multiple items?
-					// check if group parent and destination are the same
-					if (item && itemOwner==destination) {
-						//trace("can't add to the same owner in a basic layout");
-						isSameOwner = true;
-						
-						//return SAME_OWNER;
-					}
-					
-					// check if group parent and destination are the same
-					// NOTE: if the item is an element on application this will fail
-					if (item && visualElementParent && (visualElementParent==destination || visualElementParent==applicationGroup)) {
-						//trace("can't add to the same parent in a basic layout");
-						isSameParent = true;
-						//return SAME_PARENT;
-					}
-				}
-				// if element is already child of layout container and there is only one element 
-				else if (items && destination is IVisualElementContainer 
-						&& destination.numElements==1
-						&& visualElementParent
-						&& (visualElementParent==destination || visualElementParent==applicationGroup)) {
-					
-					isSameParent = true;
-					isSameOwner = true;
-					//trace("can't add to the same parent in a basic layout");
-					//return SAME_PARENT;
-					
-				}
-			}
-			
-			// if destination is null then we assume we are moving
-			// WRONG! null should mean remove
-			else {
-				//isSameParent = true;
-				//isSameOwner = true;
-			}*/
-			
-			
-			// set default
-			/*if (!position) {
-				position = AddItems.LAST;
-			}*/
-			
-			// if destination is not a basic layout Group and the index is set 
-			// then find and override position and set the relative object 
-			// so we can position the target in the drop location point index
-			/*if (destination is IVisualElementContainer 
-				&& !relativeTo 
-				&& index!=-1
-				&& destination.numElements>0) {
-				
-				// add as first item
-				if (index==0) {
-					position = AddItems.FIRST;
-				}
-					
-					// get relative to object
-				else if (index<=destination.numElements) {
-					visualElement = items is Array && (items as Array).length>0 ? items[0] as IVisualElement : items as IVisualElement;
-					
-					// if element is already child of container account for removal of element before add
-					if (visualElement && visualElement.parent == destination) {
-						childIndex = destination.getElementIndex(visualElement);
-						index = childIndex < index ? index-1: index;
-						
-						if (index<=0) {
-							position = AddItems.FIRST;
-						}
-						else {
-							relativeTo = destination.getElementAt(index-1);
-							position = AddItems.AFTER;
-						}
-					}
-						// add as last item
-					else if (index>=destination.numElements) {
-						
-						// we need to remove first or we get an error in AddItems
-						// or we can set relativeTo item and set AFTER
-						if (isSameParent && destination.numElements>1) {
-							removeBeforeAdding = true;
-							relativeTo = destination.getElementAt(destination.numElements-1);
-							position = AddItems.AFTER;
-						}
-						else if (isSameParent) {
-							removeBeforeAdding = true;
-							position = AddItems.LAST;
-						}
-						else {
-							position = AddItems.LAST;
-						}
-					}
-						// add after first item
-					else if (index>0) {
-						relativeTo = destination.getElementAt(index-1);
-						position = AddItems.AFTER;
-					}
-				}
-				
-				
-				// check if moving to another index within the same parent 
-				if (visualElementOwner && visualElement) {
-					currentIndex = visualElementOwner.getElementIndex(visualElement);
-					
-					if (currentIndex!=index) {
-						movingIndexWithinParent = true;
-					}
-				}
-			}*/
 			
 			if (visualElement is Application) {
 				//info("You can't remove the document");
 				return REMOVE_ERROR;
 			}
 			
-			var destination:Object = item.owner;
-			var index:int = destination.getElementIndex(visualElement);
-			var position:String;
-			
-			// create a new AddItems instance and add it to the changes
-			//moveItems = new AddItems();
-			//moveItems.items = items;
-			//moveItems.destination = destination;
-			//moveItems.position = position;
-			//moveItems.relativeTo = relativeTo;
-			//moveItems.propertyName = propertyName;
-			//moveItems.isArray = isArray;
-			//moveItems.isStyle = isStyle;
-			//moveItems.vectorClass = vectorClass;
-			
+
+			destination = item.owner;
+			index = destination ? destination.getElementIndex(visualElement) : -1;
 			changes = [];
 			
 			
@@ -8402,8 +8619,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var valuesObject:ValuesObject = getPropertiesStylesFromObject(componentDescription.instance, componentDescription.defaultProperties);
 			
 			// maybe do not add to history
-			setPropertiesStylesEvents(componentDescription.instance, valuesObject.propertiesStylesEvents, valuesObject.values);
-			
+			setPropertiesStylesEvents(componentDescription.instance, valuesObject.propertiesStylesEvents, valuesObject.values, "Setting defaults");
+			//HistoryManager.mergeLastHistoryEvent(instance.selectedDocument);
 		}
 		
 		/**
@@ -8535,6 +8752,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 						componentInstance.doubleClickEnabled = true;
 						
 						componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
+					}
+					else {
+						componentInstance.doubleClickEnabled = false;
+						componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor);
 					}
 					
 					if (componentInstance is Hyperlink) {
@@ -13465,6 +13686,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					else if (target is DisplayObject) {
 						snapshot = DisplayObjectUtils.rasterize2(target as DisplayObject);
 					}
+					else if (target is GraphicElement) {
+						snapshot = DisplayObjectUtils.getGraphicElementBitmapData(target as GraphicElement);
+					}
 				}
 				else {
 					if (target is UIComponent) {
@@ -13472,6 +13696,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					}
 					else if (target is DisplayObject) {
 						snapshot = DisplayObjectUtils.rasterize2(target as DisplayObject);
+					}
+					else if (target is GraphicElement) {
+						snapshot = DisplayObjectUtils.getGraphicElementBitmapData(target as GraphicElement);
 					}
 				}
 				

@@ -212,7 +212,7 @@
 				
 				var warningMessage:String = getWarningMessages(target);
 
-				if (warningMessage!=null) {
+				if (warningMessage!=null && warningMessage!="") {
 					if (warnIcon.toolTip!=warningMessage) {
 						warnIcon.toolTip = warningMessage;
 					}
@@ -316,6 +316,7 @@
 				 source="{Radii8LibraryAssets.warningLight}" 
 				 click="warnIcon_clickHandler(event)"
 				 height="18"
+				 enabled="false"
 				 />
 		
 		<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}" verticalAlign="top"/>

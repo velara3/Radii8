@@ -7,8 +7,10 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
+	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
+	import com.flexcapacitor.utils.MXMLDocumentConstants;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
@@ -44,6 +46,7 @@ package com.flexcapacitor.tools {
 	import flash.ui.Keyboard;
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
+	import flash.utils.Dictionary;
 	
 	import mx.containers.TabNavigator;
 	import mx.core.EventPriority;
@@ -120,12 +123,6 @@ package com.flexcapacitor.tools {
 	[Event(name="keyEvent", type="flash.events.Event")]
 	
 	/**
-	 * Dispatched when the selection class handles a key event. 
-	 * For example, moving the selected object. 
-	 * */
-	[Event(name="keyEvent", type="flash.events.Event")]
-	
-	/**
 	 * Finds and selects the item or items under the pointer. 
 	 * 
 	 * Adds mouse down listener to the system manager. We check
@@ -159,22 +156,6 @@ package com.flexcapacitor.tools {
 		
 		public static var COPY:String = "copy";
 		public static var PASTE:String = "paste";
-		
-		public static const BASELINE:String = "baseline";
-		public static const BOTTOM:String = "bottom";
-		public static const HORIZONTAL_CENTER:String = "horizontalCenter";
-		public static const LEFT:String = "left";
-		
-		public static const PERCENT_HEIGHT:String = "percentHeight";
-		public static const PERCENT_WIDTH:String = "percentWidth";
-		public static const RIGHT:String = "right";
-		public static const TOP:String = "top";
-		public static const VERTICAL_CENTER:String = "verticalCenter";
-		
-		public static const X:String = "x";
-		public static const Y:String = "y";
-		public static const WIDTH:String = "width";
-		public static const HEIGHT:String = "height";
 		
 		private var _icon:Class = Radii8LibraryToolAssets.Selection;
 		
@@ -482,6 +463,19 @@ package com.flexcapacitor.tools {
 			// with the history change event we can probably get rid of document size change and property
 			//radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, 	propertyChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
 			radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, 		historyEventHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
+			// this should be history manager not radiate
+			radiate.addEventListener(RadiateEvent.BEGINNING_OF_UNDO_HISTORY, beginningOfUndoHistoryHandler, false, EventPriority.DEFAULT_HANDLER, true);
+			radiate.addEventListener(RadiateEvent.END_OF_UNDO_HISTORY, 	endOfUndoHistoryHandler, false, EventPriority.DEFAULT_HANDLER, true);
+		}
+		
+		protected function beginningOfUndoHistoryHandler(event:Event):void
+		{
+			updateSelectionLater(radiate.selectedDocument);
+		}
+		
+		protected function endOfUndoHistoryHandler(event:Event):void
+		{
+			
 		}
 		
 		/**
@@ -498,6 +492,8 @@ package com.flexcapacitor.tools {
 			
 			//radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, 		propertyChangeHandler);
 			radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, 		historyEventHandler);
+			radiate.removeEventListener(RadiateEvent.BEGINNING_OF_UNDO_HISTORY, 	beginningOfUndoHistoryHandler);
+			radiate.removeEventListener(RadiateEvent.END_OF_UNDO_HISTORY, 	endOfUndoHistoryHandler);
 		}
 		
 		/**
@@ -760,8 +756,12 @@ package com.flexcapacitor.tools {
 				//updateSelectionAroundTarget(event.targets[0]);
 				//updateTransformRectangle(event.targets[0]);
 				
-				Radiate.callAfter(1, updateSelectionAroundTarget, event.targets);
-				Radiate.callAfter(1, updateTransformRectangle, event.targets);
+				Radiate.callAfter(1, updateSelectionAroundTarget, null);
+				Radiate.callAfter(1, updateTransformRectangle, null);
+			}
+			
+			if (event.newIndex<0) {
+				updateSelectionLater(radiate.selectedDocument);
 			}
 		}
 		
@@ -850,7 +850,10 @@ package com.flexcapacitor.tools {
 		/**
 		 * Updates selection around the target
 		 * */
-		public function updateSelectionAroundTarget(target:Object):void {
+		public function updateSelectionAroundTarget(target:Object = null):void {
+			if (target==null) {
+				target = radiate.targets;
+			}
 			
 			// force single selection for now
 			if (target is Array) {
@@ -1031,6 +1034,17 @@ package com.flexcapacitor.tools {
 					}
 					
 				}
+				
+				// select target right away
+				if (radiate && radiate.target!=target) {
+					radiate.setTarget(target, true);
+				}
+				
+				// draw selection rectangle
+				if (showSelection) {
+					updateSelectionAroundTarget(target);
+					updateTransformRectangle(target);
+				}
 			}
 			else if (target && !enableDrag) {
 				// select target right away
@@ -1056,14 +1070,28 @@ package com.flexcapacitor.tools {
 			component.y = model.y;
 		}
 		
+		public var startValuesDictionary:Object = new Dictionary(true);
+		
 		protected function resizingHandler(event:ObjectChangedEvent):void
 		{
 			//trace("sizing");
 			var elements:Array = event.relatedObjects;
+			var startValues:Array;
+			
 			for (var i:int = 0; i < elements.length; i++) 
 			{
 				var model:Object = elements[i];
 				var component:Object = objectHandles.getDisplayForModel(model);
+				
+				if (component is InvalidatingSprite && lastTarget is GraphicElement) {
+					component = lastTarget;
+				}
+				
+				if (startValuesDictionary[component]==null) {
+					startValues = Radiate.captureSizingPropertyValues([component]);
+					startValuesDictionary[component] = startValues;
+				}
+				
 				component.x = model.x;
 				component.y = model.y;
 				component.width = model.width;
@@ -1079,36 +1107,52 @@ package com.flexcapacitor.tools {
 			var model:Object;
 			var originalGeometry:DragGeometry;
 			var component:Object;
-			var properties:Array;
+			var uicomponent:UIComponent;
+			var graphicElement:GraphicElement;
+			var startValues:Array;
 			var propertiesObject:Object;
+			var manualRestore:Boolean = true;
+			var properties:Array;
 			
 			elements = event.relatedObjects;
 			
 			for (var i:int = 0; i < elements.length; i++) {
 				model = elements[i];
 				component = objectHandles.getDisplayForModel(model);
-				originalGeometry = objectHandles.getOriginalGeometryOfModel(model);
-				
-				if (originalGeometry==null) {
-					trace("Resizing bug. fix later");
-					continue;
-				}
-				// restore original values so we can use undo history
-				component.x = originalGeometry.x;
-				component.y = originalGeometry.y;
-				component.width = originalGeometry.width;
-				component.height = originalGeometry.height;
-				
-				properties = [X, Y, WIDTH, HEIGHT];
-				propertiesObject = {};
-				
-				propertiesObject[WIDTH] = parseInt(model.width);
-				propertiesObject[HEIGHT] = parseInt(model.height);
-				propertiesObject[X] = parseInt(model.x);
-				propertiesObject[Y] = parseInt(model.y);
 				
 				if (component is InvalidatingSprite && lastTarget is GraphicElement) {
-					Radiate.setProperties(lastTarget, properties, propertiesObject, "Resized", true);
+					component = lastTarget;
+				}
+				
+				originalGeometry = objectHandles.getOriginalGeometryOfModel(model);
+				startValues = startValuesDictionary[component];
+				
+				if (originalGeometry==null) {
+					trace("Resizing bug. Not sure of cause. Fix later");
+					continue;
+				}
+				
+				uicomponent = component as UIComponent;
+				graphicElement = component as GraphicElement;
+				
+				// restore original values so we can use undo history
+				// we should use captureStartValues of effect class in Radiate
+				// and then create restoreStartValues or get the change object
+				
+				Radiate.restoreCapturedValues(startValues, MXMLDocumentConstants.sizeAndPositionProperties);
+				delete startValuesDictionary[component];
+				
+				propertiesObject = Radiate.getPropertiesObjectFromBounds(component, model);;
+				properties = ClassUtils.getPropertyNames(propertiesObject);
+				//propertiesObject[MXMLDocumentConstants.WIDTH] = Math.ceil(model.width);
+				//propertiesObject[MXMLDocumentConstants.HEIGHT] = Math.ceil(model.height);
+				//propertiesObject[PERCENT_WIDTH] = Math.ceil(model.percentWidth);
+				//propertiesObject[PERCENT_HEIGHT] = Math.ceil(model.percentHeight);
+				//propertiesObject[MXMLDocumentConstants.X] = Math.ceil(model.x);
+				//propertiesObject[MXMLDocumentConstants.Y] = Math.ceil(model.y);
+				
+				if (component is GraphicElement) {
+					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
 				}
 				else {
 					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
@@ -1233,6 +1277,11 @@ package com.flexcapacitor.tools {
 		 * */
 		protected function mouseUpHandler(event:MouseEvent):void {
 			var target:Object = event.currentTarget;
+			var componentTree:ComponentDescription;
+			var componentDescription:ComponentDescription;
+			
+			componentTree = radiate.selectedDocument.componentDescription;
+			componentDescription = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
 			//Radiate.info("Selection Mouse up");
 			
 			if (target is List) {
@@ -1258,13 +1307,31 @@ package com.flexcapacitor.tools {
 			var actualTarget:GraphicElement;
 			if (target is InvalidatingSprite) {
 				actualTarget = currentComponentDescription && currentComponentDescription.instance ? currentComponentDescription.instance as GraphicElement : null;
-				var graphicComponent:ComponentDescription = document.getItemDescription(target);
+				componentDescription = document.getItemDescription(target);
 				
-				if (graphicComponent!=null) {
-					target = graphicComponent.instance;
+				if (componentDescription!=null) {
+					target = componentDescription.instance;
 				}
 				else if (actualTarget is GraphicElement && actualTarget.displayObject==target) {
 					target = actualTarget;
+				}
+			}
+			
+			
+			// select only groups or items on the application
+			if (selectGroup) {
+				
+				// if parent is application let user select it
+				if (componentDescription.parent==componentTree) {
+					// it's on the root so we're good
+				}
+				else if (componentDescription.instance is IVisualElementContainer) {
+					// it's a group so we're good
+				}
+				else {
+					// select group container
+					componentDescription = componentDescription.parent;
+					target = componentDescription.instance;
 				}
 			}
 			
@@ -1278,6 +1345,7 @@ package com.flexcapacitor.tools {
 			// draw selection rectangle
 			if (showSelection) {
 				updateSelectionAroundTarget(target);
+				updateTransformRectangle(target);
 			}
 			
 			// draw selection rectangle
@@ -1417,6 +1485,8 @@ package com.flexcapacitor.tools {
 		 * */
 	    private function keyDownHandlerStage(event:KeyboardEvent):void
 	    {
+			var tabNav:TabNavigator = radiate.documentsTabNavigator;
+			
 			//Radiate.info("Key down: " + event.keyCode);
             switch (event.keyCode)
             {
@@ -1453,11 +1523,13 @@ package com.flexcapacitor.tools {
 						Radiate.instance.increaseScale()
 					}
 				}
+				case Keyboard.Y:
 				case Keyboard.Z:
 				{
 					//Radiate.info("UNDO REDO: Target = " + event.target);
 					if ((targetApplication as DisplayObjectContainer).contains(event.target as DisplayObject)
-						|| event.target is Stage) {
+						|| event.target is Stage 
+						|| (event.target==tabNav && event.currentTarget is Stage)) {
 						
 						//trace("UNDO REDO: Target = " + event.target); 
 						// undo 
@@ -1467,6 +1539,11 @@ package com.flexcapacitor.tools {
 						}
 						// redo
 						else if (event.keyCode==Keyboard.Z && event.ctrlKey && event.shiftKey) {
+							HistoryManager.redo(radiate.selectedDocument, true);
+							dispatchEditEvent(event, REDO);
+						}
+						// legacy redo
+						else if (event.keyCode==Keyboard.Y && event.ctrlKey) {
 							HistoryManager.redo(radiate.selectedDocument, true);
 							dispatchEditEvent(event, REDO);
 						}
@@ -1480,7 +1557,6 @@ package com.flexcapacitor.tools {
 		 * Up left right down, etc.
 		 * */
 		protected function keyUpHandler(event:KeyboardEvent):void {
-			var changes:Array = [];
 			var constant:int = event.shiftKey ? 10 : 1;
 			var index:int;
 			var applicable:Boolean;
@@ -1580,27 +1656,23 @@ package com.flexcapacitor.tools {
 					if (leftValue!=null && rightValue!=null) {
 						propertiesObject.left = Number(element.left) - constant;
 						propertiesObject.right = Number(element.right) + constant;
-						changes.push(propertiesObject);
-						properties.push(LEFT, RIGHT);
+						properties.push(MXMLDocumentConstants.LEFT, MXMLDocumentConstants.RIGHT);
 					}
 					else if (leftValue!=null) {
 						propertiesObject.left = Number(element.left) - constant;
-						changes.push(propertiesObject);
-						properties.push(LEFT);
+						properties.push(MXMLDocumentConstants.LEFT);
 					}
 					else if (rightValue!=null) {
 						propertiesObject.right = Number(element.right) + constant;
-						changes.push(propertiesObject);
-						properties.push(RIGHT);
+						properties.push(MXMLDocumentConstants.RIGHT);
 					}
 					else if (horizontalCenter!=null) {
 						propertiesObject.horizontalCenter = Number(element.horizontalCenter) - constant;
-						changes.push(propertiesObject);
-						properties.push(HORIZONTAL_CENTER);
+						properties.push(MXMLDocumentConstants.HORIZONTAL_CENTER);
 					}
 					else {
 						propertiesObject.x = element.x - constant;
-						properties.push(X);
+						properties.push(MXMLDocumentConstants.X);
 					}
 					
 				}
@@ -1625,27 +1697,23 @@ package com.flexcapacitor.tools {
 					if (leftValue!=null && rightValue!=null) {
 						propertiesObject.left = Number(element.left) + constant;
 						propertiesObject.right = Number(element.right) - constant;
-						changes.push(propertiesObject);
-						properties.push(LEFT, RIGHT);
+						properties.push(MXMLDocumentConstants.LEFT, MXMLDocumentConstants.RIGHT);
 					}
 					else if (leftValue!=null) {
 						propertiesObject.left = Number(element.left) + constant;
-						changes.push(propertiesObject);
-						properties.push(LEFT);
+						properties.push(MXMLDocumentConstants.LEFT);
 					}
 					else if (rightValue!=null) {
 						propertiesObject.right = Number(element.right) - constant;
-						changes.push(propertiesObject);
-						properties.push(RIGHT);
+						properties.push(MXMLDocumentConstants.RIGHT);
 					}
 					else if (horizontalCenter!=null) {
 						propertiesObject.horizontalCenter = Number(element.horizontalCenter) + constant;
-						changes.push(propertiesObject);
-						properties.push(HORIZONTAL_CENTER);
+						properties.push(MXMLDocumentConstants.HORIZONTAL_CENTER);
 					}
 					else {
 						propertiesObject.x = element.x + constant;
-						properties.push(X);
+						properties.push(MXMLDocumentConstants.X);
 					}
 				}
 				
@@ -1668,27 +1736,23 @@ package com.flexcapacitor.tools {
 					if (topValue!=null && bottomValue!=null) {
 						propertiesObject.top = Number(element.top) - constant;
 						propertiesObject.bottom = Number(element.bottom) + constant;
-						changes.push(propertiesObject);
-						properties.push(TOP, BOTTOM);
+						properties.push(MXMLDocumentConstants.TOP, MXMLDocumentConstants.BOTTOM);
 					}
 					else if (topValue!=null) {
 						propertiesObject.top = Number(element.top) - constant;
-						changes.push(propertiesObject);
-						properties.push(TOP);
+						properties.push(MXMLDocumentConstants.TOP);
 					}
 					else if (bottomValue!=null) {
 						propertiesObject.bottom = Number(element.bottom) + constant;
-						changes.push(propertiesObject);
-						properties.push(BOTTOM);
+						properties.push(MXMLDocumentConstants.BOTTOM);
 					}
 					else if (verticalCenter!=null) {
 						propertiesObject.verticalCenter = Number(element.verticalCenter) - constant;
-						changes.push(propertiesObject);
-						properties.push(VERTICAL_CENTER);
+						properties.push(MXMLDocumentConstants.VERTICAL_CENTER);
 					}
 					else {
 						propertiesObject.y = element.y - constant;
-						properties.push(Y);
+						properties.push(MXMLDocumentConstants.Y);
 					}
 				}
 				
@@ -1712,27 +1776,23 @@ package com.flexcapacitor.tools {
 					if (topValue!=null && bottomValue!=null) {
 						propertiesObject.top = Number(element.top) + constant;
 						propertiesObject.bottom = Number(element.bottom) - constant;
-						changes.push(propertiesObject);
-						properties.push(TOP, BOTTOM);
+						properties.push(MXMLDocumentConstants.TOP, MXMLDocumentConstants.BOTTOM);
 					}
 					else if (leftValue!=null) {
 						propertiesObject.top = Number(element.top) + constant;
-						changes.push(propertiesObject);
-						properties.push(TOP);
+						properties.push(MXMLDocumentConstants.TOP);
 					}
 					else if (bottomValue!=null) {
 						propertiesObject.bottom = Number(element.bottom) - constant;
-						changes.push(propertiesObject);
-						properties.push(BOTTOM);
+						properties.push(MXMLDocumentConstants.BOTTOM);
 					}
 					else if (verticalCenter!=null) {
 						propertiesObject.verticalCenter = Number(element.verticalCenter) + constant;
-						changes.push(propertiesObject);
-						properties.push(VERTICAL_CENTER);
+						properties.push(MXMLDocumentConstants.VERTICAL_CENTER);
 					}
 					else {
 						propertiesObject.y = element.y + constant;
-						properties.push(Y);
+						properties.push(MXMLDocumentConstants.Y);
 					}
 				}
 				
@@ -1740,8 +1800,8 @@ package com.flexcapacitor.tools {
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.BACKSPACE || event.keyCode==Keyboard.DELETE) {
-				
 				Radiate.removeElement(radiate.targets);
+				updateSelectionLater(radiate.selectedDocument);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
@@ -1752,12 +1812,16 @@ package com.flexcapacitor.tools {
 				HistoryManager.redo(radiate.selectedDocument, true);
 				actionOccured = true;
 			}
+			else if (event.keyCode==Keyboard.Y && event.ctrlKey) {
+				HistoryManager.redo(radiate.selectedDocument, true); // legacy redo
+				actionOccured = true;
+			}
 			else if (event.keyCode==Keyboard.MINUS && (event.ctrlKey || event.commandKey)) {
-				Radiate.instance.decreaseScale()
+				Radiate.instance.decreaseScale();
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.EQUAL && (event.ctrlKey || event.commandKey)) {
-				Radiate.instance.increaseScale()
+				Radiate.instance.increaseScale();
 				actionOccured = true;
 			}
 			
@@ -1900,7 +1964,10 @@ package com.flexcapacitor.tools {
 		/**
 		 * Draws transform controls around selected items
 		 * */
-		public function updateTransformRectangle(target:Object, selection:Object = null):void {
+		public function updateTransformRectangle(target:Object = null, selection:Object = null):void {
+			if (target==null) {
+				target = radiate.target;
+			}
 			
 			if (useObjectHandles && objectHandles) {
 				
@@ -2618,7 +2685,10 @@ package com.flexcapacitor.tools {
 				event.currentTarget.removeEventListener(Event.COMPLETE, setSelectionLaterHandler);
 			}*/
 		}
-	
+		public function updateSelectionLater(target:Object):void {
+			Radiate.callAfter(5, updateSelectionAroundTarget, target);
+			Radiate.callAfter(5, updateTransformRectangle, target);
+		}
 	}
 }
 

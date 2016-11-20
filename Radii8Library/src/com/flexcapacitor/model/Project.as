@@ -109,6 +109,18 @@ package com.flexcapacitor.model {
 		public function set projectData(value:IProjectData):void {
 			_projectData = value;
 		}
+		
+		private var _openedFromMetaData:Boolean;
+
+		public function get openedFromMetaData():Boolean
+		{
+			return _openedFromMetaData;
+		}
+
+		public function set openedFromMetaData(value:Boolean):void
+		{
+			_openedFromMetaData = value;
+		}
 
 		/**
 		 * Create unique document name
@@ -120,9 +132,9 @@ package com.flexcapacitor.model {
 				name = document.name ? document.name : defaultDocumentName;
 			}
 			
-			var length:int = documents.length;
+			var numberOfDocuments:int = documents.length;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				if (IDocument(documents[i])!=document) {
 					if (name==IDocument(documents[i]).name) {
 						name = name + " " + ++documentNameIndex; // update name
@@ -232,9 +244,9 @@ package com.flexcapacitor.model {
 		 * Returns true if the document data is contained in the documents array
 		 * */
 		public function getDocumentExists(data:IDocumentMetaData):Boolean {
-			var length:int = documents.length;
+			var numberOfDocuments:int = documents.length;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				if (IDocumentData(documents[i]).uid == data.uid) {
 					return true;
 				}
@@ -247,9 +259,9 @@ package com.flexcapacitor.model {
 		 * Returns true if the document exists in the documents array
 		 * */
 		public function getDocumentExistsByID(uid:String):Boolean {
-			var length:int = documents.length;
+			var numberOfDocuments:int = documents.length;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				if (IDocumentData(documents[i]).uid == uid) {
 					return true;
 				}
@@ -262,9 +274,9 @@ package com.flexcapacitor.model {
 		 * Returns the document if it exists or null if not
 		 * */
 		public function getDocumentByUID(uid:String):IDocumentData {
-			var length:int = documents.length;
+			var numberOfDocuments:int = documents.length;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				if (IDocumentData(documents[i]).uid == uid) {
 					return IDocumentData(documents[i]);
 				}
@@ -278,9 +290,9 @@ package com.flexcapacitor.model {
 		 * Returns the document index
 		 * */
 		public function getDocumentIndexByUID(uid:String):int {
-			var length:int = documents.length;
+			var numberOfDocuments:int = documents.length;
 			
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfDocuments;i++) {
 				if (IDocumentData(documents[i]).uid == uid) {
 					return i;
 				}
@@ -372,7 +384,7 @@ package com.flexcapacitor.model {
 		 * Serialize project data for saving. Export.
 		 * */
 		override public function marshall(format:String = PROJECT_TYPE, representation:Boolean = false):Object {
-			var documentsCount:int = documents.length;
+			var numberOfDocuments:int = documents.length;
 			var documentsArray:Array = [];
 			var documentData:IDocumentData;
 			var projectData:ProjectData;
@@ -389,7 +401,7 @@ package com.flexcapacitor.model {
 				projectData = new ProjectData();
 				projectData.unmarshall(object);
 				
-				for (var i:int;i<documentsCount;i++) {
+				for (var i:int;i<numberOfDocuments;i++) {
 					documentData = IDocumentData(documents[i]);
 					documentsArray.push(documentData.marshall(METADATA_TYPE, true));
 				}
@@ -582,41 +594,57 @@ package com.flexcapacitor.model {
 					}
 				}
 			}
-			
-			/*	
-			}
-			else {
-				
-				for (var j:int;j<length;j++) {
-					documentMetaData = IDocumentMetaData(documentsArray[j]);
-					
-					documentCreated = getDocumentExists(documentMetaData);
-					
-					if (!documentCreated) {
-						if (documentData is DocumentData) {
-							DocumentData(documentData).addEventListener(DocumentData.RETRIEVED_RESULTS, documentRetrievedResultsHandler, false, 0, true);
-						}
-						
-						Radiate.info("calling retrieve on document " + documentData.name);
-						documentData.retrieve();
-					}
-					else {
-						iDocument = getDocumentByID(documentMetaData.uid);
-						iDocument.open();
-						Radiate.instance.openDocumentByData(iDocument, true);
-					}
-				}
-			}*/
-			
-			/*
-			if (!needToWaitForDocumentsOpenResults) {
-				//super.open(local);
-			}
-			else {
-				// we need to open the project with the remote ID
-				deferOpen = true;
-			}*/
 		
+		}
+		
+		/**
+		 * @inheritDoc
+		 * */
+		public function openFromMetaData(location:String = REMOTE_LOCATION):void {
+			var numberOfDocuments:int = documentsMetaData.length;
+			var documentsArray:Array = documentsMetaData;
+			var documentMetaData:IDocumentMetaData;
+			//var documentData:IDocumentData;
+			var iDocument:IDocument;
+			var iDocumentData:IDocumentData;
+			var documentCreated:Boolean;
+			var radiate:Radiate = Radiate.getInstance();
+			
+			// do documents have remote ID? if so we have to open from the server
+			var needToWaitForDocumentsOpenResults:Boolean;
+			
+			// should set isOpen to true
+			isOpen = true;
+			openedFromMetaData = true;
+			
+			for (var j:int;j<numberOfDocuments;j++) {
+				documentMetaData = IDocumentMetaData(documentsArray[j]);
+				
+				documentCreated = getDocumentExists(documentMetaData);
+				
+				if (!documentCreated) {
+					iDocument = radiate.createDocumentFromMetaData(documentMetaData);
+					
+					if (iDocument.id==null || iDocument.id=="") {
+						Radiate.error("The document, \"" + iDocument.name + "\" was never saved. You have to remember to save new documents. Please save the project to prevent seeing this error again.");
+						continue;
+					}
+					
+					DocumentData(iDocument).addEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler, false, 0, true);
+					//Radiate.info("calling retrieve on document " + iDocument.name);
+					iDocument.retrieve();
+					documents.push(iDocument);
+					iDocument.project = this;
+					
+				}
+				else {
+					iDocumentData = getDocumentByUID(documentMetaData.uid);
+					iDocumentData.open(location);
+					Radiate.instance.openDocumentByData(iDocumentData, true, true);
+				}
+			}
+			
+			
 		}
 		
 		/**
@@ -718,70 +746,6 @@ package com.flexcapacitor.model {
 			
 			/*
 			if (!needToWaitForDocumentsOpenResults) {
-				//super.open(local);
-			}
-			else {
-				// we need to open the project with the remote ID
-				deferOpen = true;
-			}*/
-		
-		}
-		
-		/**
-		 * @inheritDoc
-		 * */
-		public function openFromMetaData(location:String = REMOTE_LOCATION):void {
-			var numberOfDocuments:int = documentsMetaData.length;
-			var documentsArray:Array = documentsMetaData;
-			var documentMetaData:IDocumentMetaData;
-			//var documentData:IDocumentData;
-			var iDocument:IDocument;
-			var iDocumentData:IDocumentData;
-			var documentCreated:Boolean;
-			var radiate:Radiate = Radiate.getInstance();
-			
-			// do documents have remote ID? if so we have to open from the server
-			var needToWaitForDocumentsOpenResults:Boolean;
-			
-			// should set isOpen to true
-			isOpen = true;
-			
-			//Radiate.instance.openPreviouslyOpenDocuments();
-			
-			for (var j:int;j<numberOfDocuments;j++) {
-				documentMetaData = IDocumentMetaData(documentsArray[j]);
-				
-				documentCreated = getDocumentExists(documentMetaData);
-				
-				if (!documentCreated) {
-					iDocument = radiate.createDocumentFromMetaData(documentMetaData);
-					
-					if (iDocument.id==null || iDocument.id=="") {
-						Radiate.error("The document, \"" + iDocument.name + "\" was never saved. You have to remember to save new documents. Please save the project to prevent seeing this error again.");
-						continue;
-					}
-					
-					DocumentData(iDocument).addEventListener(LoadResultsEvent.LOAD_RESULTS, documentRetrievedResultsHandler, false, 0, true);
-					//Radiate.info("calling retrieve on document " + iDocument.name);
-					iDocument.retrieve();
-					documents.push(iDocument);
-					iDocument.project = this;
-					
-					/*
-					if (documentData.id==null) {
-						needToWaitForDocumentsOpenResults = true;
-					}*/
-				}
-				else {
-					iDocumentData = getDocumentByUID(documentMetaData.uid);
-					iDocumentData.open(location);
-					Radiate.instance.openDocumentByData(iDocumentData, true, true);
-				}
-			}
-			
-			
-			// project is already open...?
-			/*if (!needToWaitForDocumentsOpenResults) {
 				//super.open(local);
 			}
 			else {

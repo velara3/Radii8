@@ -185,6 +185,12 @@
 				var loader:Object = event.currentTarget;
 				var radiate:Radiate = Radiate.instance;
 				var sourceData:SourceData;
+				var documentName:String = iDocument.name;trace("Opening " + documentName);
+				
+				if (parsingSourceCode) return;
+				if (targetSystemManager) {
+					targetSystemManager.removeEventListener(FlexEvent.APPLICATION_COMPLETE, applicationComplete);
+				}
 				//parentAllowsChild.selected = b.parentAllowsChild;
 				//childAllowsParent.selected = b.childAllowsParent;
 				
@@ -211,8 +217,10 @@
 				//codeAvailable = true;
 				//Radiate.info("Document container app complete");
 				if (iDocument.source) {
+					parsingSourceCode = true;
 					validateNow();
 					sourceData = Radiate.parseSource(iDocument, null, null, false);
+					parsingSourceCode = false;
 					iDocument.sourceData = sourceData;
 					iDocument.resetSaveStatus();
 					updateBackgroundSize();
@@ -245,6 +253,8 @@
 				//Radiate.info("Application Complete");
 				
 			}
+			
+			public var parsingSourceCode:Boolean;
 			
 			/**
 			 * The document / application

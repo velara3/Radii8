@@ -1339,7 +1339,7 @@ package com.flexcapacitor.utils {
 			dragListener.addEventListener(DragEvent.DRAG_OVER, dragOverHandler);
 			dragListener.addEventListener(DragEvent.DRAG_DROP, dragDropHandler);
 			
-			dragInitiator.addEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);			
+			dragInitiator.addEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);
 		}
 		
 		private function removeDragListeners(dragListener:DisplayObject):void {
@@ -1348,7 +1348,7 @@ package com.flexcapacitor.utils {
 			dragListener.removeEventListener(DragEvent.DRAG_OVER, dragOverHandler);
 			dragListener.removeEventListener(DragEvent.DRAG_DROP, dragDropHandler);
 			
-			dragInitiator.removeEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);	
+			dragInitiator.removeEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);
 		}
 		
 		private function removeDragDisplayObjects():void {
@@ -1378,6 +1378,7 @@ package com.flexcapacitor.utils {
 			
 			if (dragging) {
 				dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_DROP_INCOMPLETE));
+				dragCompleteHandler(null);
 				dragging = false;
 			}
 			
@@ -1400,7 +1401,7 @@ package com.flexcapacitor.utils {
 		 * Remove listeners from selected target and swfroot. 
 		 * */
 		protected function removeMouseHandlers(target:Object):void {
-			
+			if (target==null) return;
 			target.removeEventListener(DragEvent.DRAG_COMPLETE, dragCompleteHandler);
 			target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
 			swfRoot.removeEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);

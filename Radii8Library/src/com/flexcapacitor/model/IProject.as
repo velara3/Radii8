@@ -33,6 +33,13 @@ package com.flexcapacitor.model {
 		function set projectData(value:IProjectData):void;
 		
 		/**
+		 * Set to true when opened from metadata
+		 * */
+		function get openedFromMetaData():Boolean;
+		function set openedFromMetaData(value:Boolean):void;
+		
+		
+		/**
 		 * Import documents
 		 * */
 		function importDocumentInstances(documents:Array, overwrite:Boolean = false):void;

@@ -52,6 +52,7 @@
 				
 				
 				radiate.addEventListener(RadiateEvent.PROJECT_CHANGE, projectChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROJECT_CLOSED, projectClosedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_ADDED, documentAddedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_OPENING, documentOpeningHandler, false, 0, true);
@@ -69,6 +70,7 @@
 			public function deactivate():void {
 				if (radiate) {
 					radiate.removeEventListener(RadiateEvent.PROJECT_CHANGE, projectChangeHandler);
+					radiate.removeEventListener(RadiateEvent.PROJECT_CLOSED, projectClosedHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_ADDED, documentAddedHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_OPENING, documentOpeningHandler);
@@ -671,6 +673,12 @@
 					documentBeingSaved = iDocument;
 					documentSaveLocation = savedLocation;
 				}
+			}
+			
+			protected function projectClosedHandler(event:Event):void
+			{
+				documentsCollection.removeAll();
+				documentsCollection.refresh();
 			}
 			
 		]]>

@@ -187,7 +187,7 @@ package com.flexcapacitor.utils {
 			//Radiate.info("Time to import: " + (getTimer()-timer));
 			
 			sourceData.source = source;
-			sourceData.targets = newComponents.slice();
+			sourceData.targets = newComponents ? newComponents.slice() : [];
 			sourceData.errors = errors;
 			sourceData.warnings = warnings;
 			sourceData.duration = getTimer() - startTime;
