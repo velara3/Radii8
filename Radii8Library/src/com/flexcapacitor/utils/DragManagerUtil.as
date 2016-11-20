@@ -9,6 +9,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.utils.supportClasses.DragData;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	
+	import flash.display.BlendMode;
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Sprite;
@@ -35,6 +36,7 @@ package com.flexcapacitor.utils {
 	import mx.managers.DragManager;
 	import mx.managers.ISystemManager;
 	import mx.managers.PopUpManager;
+	import mx.managers.SystemManager;
 	import mx.utils.NameUtil;
 	
 	import spark.components.Application;
@@ -172,6 +174,7 @@ package com.flexcapacitor.utils {
 		private var topLevelApplication:Application;
 		public var testScaledMovement:Boolean;
 		
+		public var hiddenItemsDictionary:Dictionary = new Dictionary(true);
 		
 		/**
 		 * Sets up a target to listen for drag like behavior. 
@@ -237,9 +240,7 @@ package com.flexcapacitor.utils {
 		{
 			// sometimes elements disappear because mouse coordinates are off somewhere
 			// try and catch those cases and show components that were hidden
-			if (dragInitiator && hideDragInitiatorOnDrag) {
-				dragInitiator.visible = hideDragInitiatorOnDrag ? false : true; // hide from view
-			}
+			restoreHiddenItems();
 		}
 		
 		/**
@@ -291,11 +292,16 @@ package com.flexcapacitor.utils {
 			updateDropTargetLocation(targetApplication, event);
 			
 			if (dragToleranceMet) {
-				dragInitiator.visible = hideDragInitiatorOnDrag ? false : true; // hide from view
+				
+				if (hideDragInitiatorOnDrag) {
+					addToHiddenItemsDictionary(dragInitiator);
+				}
+				
 				removeMouseHandlers(dragInitiator);
 				
 				if (dragInitiator==null && event.currentTarget) {
 					removeMouseHandlers(event.currentTarget);
+					restoreHiddenItems();
 					return;
 				}
 				
@@ -437,9 +443,14 @@ package com.flexcapacitor.utils {
 			
 			if (setDragManagerOffset) {
 				DragManager.doDrag(dragInitiator, dragSource, event, snapshot, -offset.x, -offset.y, 1);
+				
+				var icon:Sprite = getDragIcon();
+				
 			}
 			else {
 				DragManager.doDrag(dragInitiator, dragSource, event, snapshot, 0, 0, 1);
+				
+				icon = getDragIcon();
 				
 				// error when snapshot is null and running on desktop: 
 				// 
@@ -456,6 +467,32 @@ package com.flexcapacitor.utils {
 			
 			dragging = true;
 			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_START));
+		}
+		
+		private function getDragIcon():Sprite
+		{
+			var modalWindow:FlexSprite;
+			if (systemManager==null) {
+				systemManager = SystemManager.getSWFRoot(FlexGlobals.topLevelApplication);
+			}
+			var numOfChildren:int = systemManager.rawChildren.numChildren;
+			var sprite:Sprite;
+			
+			for (var i:int = 0; i < numOfChildren; i++) 
+			{
+				sprite = systemManager.rawChildren.getChildAt(i);
+				sprite.scaleX = targetApplication.scaleX;
+				sprite.scaleY = targetApplication.scaleY;
+				//modalWindow = systemManager.rawChildren.getChildAt(index-1) as FlexSprite;
+				
+				if (modalWindow) {
+					modalWindow.blendMode = BlendMode.NORMAL;
+					//modalWindow.addEventListener(MouseEvent.CLICK, mouseUpOutsideHandler, false, 0, true);
+				}
+			}
+			
+			
+			return modalWindow;
 		}
 		
 		public function removeDragInitiatorProxy():void {
@@ -1327,9 +1364,18 @@ package com.flexcapacitor.utils {
 			//removeGroupListeners(targetApplication);
 			removeMouseHandlers(dragInitiator as IVisualElement);
 			
-			dragInitiator.visible = hideDragInitiatorOnDrag ? true : false; // hide from view
+			restoreHiddenItems();
 			dragging = false;
 			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_END));
+		}
+		
+		public function restoreHiddenItems():void {
+			for (var item:Object in hiddenItemsDictionary) {
+				if ("visible" in item) {
+					item.visible = true;
+				}
+				delete hiddenItemsDictionary[item];
+			}
 		}
 		
 		private function addDragListeners(dragInitiator:IUIComponent, dragListener:DisplayObject):void {
@@ -1373,7 +1419,7 @@ package com.flexcapacitor.utils {
 		protected function mouseUpHandler(event:Event):void {
 			
 			if (dragInitiator && hideDragInitiatorOnDrag) { 
-				dragInitiator.visible = true;
+				restoreHiddenItems();
 			}
 			
 			if (dragging) {
@@ -1395,6 +1441,11 @@ package com.flexcapacitor.utils {
 			else {
 				removeMouseHandlers(IVisualElement(event.currentTarget));
 			}
+		}
+		
+		public function addToHiddenItemsDictionary(dragInitiator:IVisualElement):void {
+			dragInitiator.visible = false;
+			hiddenItemsDictionary[dragInitiator] = 1;
 		}
 		
 		/**
