@@ -3,6 +3,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.tools.EyeDropper;
 	import com.flexcapacitor.tools.Hand;
 	import com.flexcapacitor.tools.Selection;
+	import com.flexcapacitor.tools.Text;
 	import com.flexcapacitor.tools.Zoom;
 	import com.flexcapacitor.utils.HTMLDocumentExporter;
 	import com.flexcapacitor.utils.MXMLDocumentImporter;
@@ -14,6 +15,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.BorderStyles;
 	import com.flexcapacitor.views.inspectors.ButtonProperties;
 	import com.flexcapacitor.views.inspectors.ColorPickerProperties;
+	import com.flexcapacitor.views.inspectors.FillStyles;
 	import com.flexcapacitor.views.inspectors.FontStyles;
 	import com.flexcapacitor.views.inspectors.Gap;
 	import com.flexcapacitor.views.inspectors.GroupAlign;
@@ -66,6 +68,9 @@ package com.flexcapacitor.controller {
 		public static var handTool:com.flexcapacitor.tools.Hand;
 		public static var handInspector:com.flexcapacitor.views.HandInspector;
 		
+		public static var textTool:com.flexcapacitor.tools.Text;
+		//public static var textInspector:com.flexcapacitor.views.TextInspector;
+		
 		///////////////////////////////////////////////////////
 		// TOOLS CLASSES
 		///////////////////////////////////////////////////////
@@ -97,6 +102,8 @@ package com.flexcapacitor.controller {
 		public static var tileGroupInspector:com.flexcapacitor.views.inspectors.TileGroupProperties;
 		public static var videoPlayerInspector:com.flexcapacitor.views.inspectors.VideoPlayerProperties;
 		public static var pathInspector:com.flexcapacitor.views.inspectors.PathProperties;
+		public static var fillInspector:com.flexcapacitor.views.inspectors.FillStyles;
+		public static var strokeInspector:com.flexcapacitor.views.inspectors.StrokeStyles;
 		
 		///////////////////////////////////////////////////////
 		// TRANSCODER CLASSES

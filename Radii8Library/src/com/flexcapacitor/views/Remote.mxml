@@ -277,15 +277,20 @@
 				var componentDescription:ComponentDescription;
 				var selectedTarget:Object;
 				var targetNameValue:String;
+				var previousValue:Object;
+				var newValue:Object;
 				
 				if (!radiate) {
 					radiate = Radiate.instance;
 				}
+				
 				selectedTarget = radiate.target;
 				
 				if (!selectedTargetIcon) {
 					return;
 				}
+				
+				previousValue = selectedTargetIcon.source;
 				
 				if (selectedTargetIcon.contentLoader==null) {
 					selectedTargetIcon.contentLoader = Radiate.contentCache;
@@ -296,18 +301,22 @@
 					
 					if (componentDescription) {
 						if (selectedTarget is Application) {
-							selectedTargetIcon.source = Radii8LibraryAssets.document;
+							newValue = Radii8LibraryAssets.document;
 						}
 						else {
-							selectedTargetIcon.source = Radiate.componentsIconPath + componentDescription.className + ".png";
+							newValue = Radiate.componentsIconPath + componentDescription.className + ".png";
 						}
 					}
 					else {
-						selectedTargetIcon.source = Radii8LibraryAssets.document;
+						newValue = Radii8LibraryAssets.document;
 					}
 				}
 				else {	
-					selectedTargetIcon.source = Radii8LibraryAssets.document;
+					newValue = Radii8LibraryAssets.document;
+				}
+				
+				if (newValue!=previousValue) {
+					selectedTargetIcon.source = newValue;
 				}
 				
 				targetNameValue = ClassUtils.getIdentifierOrName(selectedTarget, true, true);
@@ -325,7 +334,7 @@
 				selectedTargetIcon.source = Radiate.componentsIconNotFoundPath;
 			}
 			
-			public var clickToOpen:String = "Click to open documentation in the browser";
+			public var clickToOpen:String = "Click to open documentation";
 			
 			protected function selectedTargetIcon_clickHandler(event:MouseEvent):void {
 				
@@ -505,18 +514,18 @@
 						<views:LayersInspector width="100%" minHeight="180"/>
 					</s:NavigatorContent>
 					
+					<!-- HISTORY -->
+					<s:NavigatorContent label="HISTORY">
+						<panels:HistoryInspector id="history" minHeight="100" 
+												 clearOnTargetChange="false"
+												 height="100%" width="100%"/>
+					</s:NavigatorContent>
+					
 					<!-- STATES -->
 					<s:NavigatorContent label="STATES">
 						<s:Scroller width="100%" height="100%">
 							<panels:States height="100%" width="100%" />
 						</s:Scroller>
-					</s:NavigatorContent>
-					
-					<!-- HISTORY -->
-					<s:NavigatorContent label="HISTORY">
-						<panels:HistoryInspector id="history" minHeight="100" 
-											clearOnTargetChange="false"
-											height="100%" width="100%"/>
 					</s:NavigatorContent>
 					
 					<!-- OTHER -->

@@ -48,6 +48,7 @@
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			import com.flexcapacitor.utils.supportClasses.log;
 			
 			import mx.core.IVisualElement;
 			import mx.core.IVisualElementContainer;
@@ -62,7 +63,7 @@
 			
 			import org.as3commons.lang.ArrayUtils;
 			
-			
+			public var debug:Boolean;
 			
 			/**
 			 * STEP 1. 
@@ -185,7 +186,12 @@
 				var loader:Object = event.currentTarget;
 				var radiate:Radiate = Radiate.instance;
 				var sourceData:SourceData;
-				var documentName:String = iDocument.name;trace("Opening " + documentName);
+				var documentName:String = iDocument.name;
+				var containerIndex:int = -1;
+				
+				if (debug) {
+					log("Opening " + documentName);
+				}
 				
 				if (parsingSourceCode) return;
 				if (targetSystemManager) {
@@ -219,7 +225,7 @@
 				if (iDocument.source) {
 					parsingSourceCode = true;
 					validateNow();
-					sourceData = Radiate.parseSource(iDocument, null, null, false);
+					sourceData = Radiate.parseSource(iDocument, null, null, containerIndex, false);
 					parsingSourceCode = false;
 					iDocument.sourceData = sourceData;
 					iDocument.resetSaveStatus();

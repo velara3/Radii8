@@ -338,7 +338,16 @@ package {
 		// 1110: The constant was not initialized.
 		// - change const to var
 		//public static const rect:Rect;
-
+		
+		[Embed(source="assets/icons/spark/controls/Path.png")]
+		public static const PathIcon:Class;
+		[Embed(source="assets/icons/spark/controls/Rect.png")]
+		public static const RectIcon:Class;
+		[Embed(source="assets/icons/spark/controls/Ellipse.png")]
+		public static const EllipseIcon:Class;
+		[Embed(source="assets/icons/spark/controls/Line.png")]
+		public static const LineIcon:Class;
+		
 		public static var rect:Rect;
 		public static var ellipse:Ellipse;
 		public static var path:Path;

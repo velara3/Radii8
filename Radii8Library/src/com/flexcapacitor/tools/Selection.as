@@ -7,6 +7,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
+	import com.flexcapacitor.tools.supportClasses.VisualElementRotationHandle;
 	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
@@ -14,6 +15,8 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
+	import com.flexcapacitor.utils.supportClasses.log;
+	import com.roguedevelopment.DisplayModel;
 	import com.roguedevelopment.DragGeometry;
 	import com.roguedevelopment.Flex4ChildManager;
 	import com.roguedevelopment.Flex4HandleFactory;
@@ -167,6 +170,8 @@ package com.flexcapacitor.tools {
 		 * The radiate instance.
 		 * */
 		public var radiate:Radiate;
+		
+		public static var debug:Boolean;
 		
 		/**
 		 * Drag helper utility.
@@ -367,6 +372,7 @@ package com.flexcapacitor.tools {
 		public function setupObjectHandles():void {
 			var container:Sprite;
 			var useToolLayer:Boolean = true;
+			var enableRotation:Boolean = false;
 			
 			if (useToolLayer) {
 				container = toolLayer as Sprite;
@@ -380,18 +386,28 @@ package com.flexcapacitor.tools {
 				manager = new Flex4ChildManager();
 				handleFactory = new Flex4HandleFactory();
 				selectionManager = new ObjectHandlesSelectionManager();
+				
 				VisualElementHandle.handleLineColor = selectionBorderColor;
 				VisualElementHandle.handleFillColor = selectionBorderColor;
+				VisualElementRotationHandle.handleFillColor = selectionBorderColor;
 				//selectionManager.unselectedModelState();
 				
 				// CREATE OBJECT HANDLES
 				//objectHandles = new ObjectHandles(radiate.canvasBorder as Sprite, null, handleFactory, manager);
+				
+				
 				ObjectHandles.defaultHandleClass = VisualElementHandle;
+				
+				// ROTATION - to enable rotation uncomment the next line
+				if (enableRotation) {
+					ObjectHandles.defaultRotationHandleClass = VisualElementRotationHandle;
+				}
+				
 				objectHandles = new ObjectHandles(container, selectionManager, null, manager);
 				objectHandles.enableMultiSelect = false;
 				objectHandles.snapGrid = true;
 				objectHandles.snapNumber = 8;
-				objectHandles.snapAngle = true;
+				objectHandles.snapAngle = false;
 				objectHandles.moveEnabled = false;
 				
 				//selectionManager = objectHandles.selectionManager;
@@ -400,12 +416,19 @@ package com.flexcapacitor.tools {
 				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVING, movingHandler);
 				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZING, resizingHandler);
 				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZED, resizedHandler);
+				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_ROTATING, rotatingHandler);
+				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_ROTATED, rotatedHandler);
 				
 				
 				//decoratorManager = new DecoratorManager(objectHandles, radiate.toolLayer as Sprite);
 				aspectRatioConstraint = new MaintainProportionConstraint();
 				aspectRatioConstraint.shiftKeyRequired = true;
 				objectHandles.addDefaultConstraint(aspectRatioConstraint);
+				
+				sizeConstraint = new SizeConstraint();
+				sizeConstraint.minHeight = 1;
+				sizeConstraint.minWidth = 1;
+				objectHandles.addDefaultConstraint(sizeConstraint);
 			}
 			
 			if (objectHandles) {
@@ -608,7 +631,13 @@ package com.flexcapacitor.tools {
 				dragManagerInstance.addEventListener(DragDropEvent.DRAG_OVER, handleDragOver, false, 0, true);
 				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP, handleDragDrop, false, 0, true);
 				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete, false, 0, true);
+				dragManagerInstance.addEventListener(DragDropEvent.DRAG_DROP_INCOMPLETE, handleDragDropIncomplete, false, 0, true);
 			}
+			
+		}
+		
+		protected function handleDragDropIncomplete(event:DragDropEvent):void
+		{
 			
 		}
 		
@@ -623,6 +652,7 @@ package com.flexcapacitor.tools {
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_OVER, handleDragOver);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
+				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_INCOMPLETE, handleDragDropIncomplete);
 			}
 		}
 		
@@ -799,8 +829,9 @@ package com.flexcapacitor.tools {
 		 * Target change
 		 * */
 		protected function targetChangeHandler(event:RadiateEvent):void {
-			updateSelectionAroundTarget(event.selectedItem);
-			updateTransformRectangle(event.selectedItem);
+			updateSelectionLater(event.selectedItem);
+			//updateSelectionAroundTarget(event.selectedItem);
+			//updateTransformRectangle(event.selectedItem);
 		}
 		
 		/**
@@ -1072,8 +1103,7 @@ package com.flexcapacitor.tools {
 		
 		public var startValuesDictionary:Object = new Dictionary(true);
 		
-		protected function resizingHandler(event:ObjectChangedEvent):void
-		{
+		protected function resizingHandler(event:ObjectChangedEvent):void {
 			//trace("sizing");
 			var elements:Array = event.relatedObjects;
 			var startValues:Array;
@@ -1136,20 +1166,11 @@ package com.flexcapacitor.tools {
 				graphicElement = component as GraphicElement;
 				
 				// restore original values so we can use undo history
-				// we should use captureStartValues of effect class in Radiate
-				// and then create restoreStartValues or get the change object
-				
 				Radiate.restoreCapturedValues(startValues, MXMLDocumentConstants.sizeAndPositionProperties);
 				delete startValuesDictionary[component];
 				
-				propertiesObject = Radiate.getPropertiesObjectFromBounds(component, model);;
+				propertiesObject = Radiate.getPropertiesObjectFromBounds(component, model);
 				properties = ClassUtils.getPropertyNames(propertiesObject);
-				//propertiesObject[MXMLDocumentConstants.WIDTH] = Math.ceil(model.width);
-				//propertiesObject[MXMLDocumentConstants.HEIGHT] = Math.ceil(model.height);
-				//propertiesObject[PERCENT_WIDTH] = Math.ceil(model.percentWidth);
-				//propertiesObject[PERCENT_HEIGHT] = Math.ceil(model.percentHeight);
-				//propertiesObject[MXMLDocumentConstants.X] = Math.ceil(model.x);
-				//propertiesObject[MXMLDocumentConstants.Y] = Math.ceil(model.y);
 				
 				if (component is GraphicElement) {
 					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
@@ -1161,17 +1182,92 @@ package com.flexcapacitor.tools {
 			
 		}
 		
-		protected function movingHandler(event:ObjectChangedEvent):void
-		{
+		protected function movingHandler(event:ObjectChangedEvent):void {
 			var elements:Array = event.relatedObjects;
-			for (var i:int = 0; i < elements.length; i++) 
-			{
+			
+			for (var i:int = 0; i < elements.length; i++) {
 				var model:Object = elements[i];
 				var component:Object = objectHandles.getDisplayForModel(model);
 				component.x = model.x;
 				component.y = model.y;
 			}
 			
+		}
+		
+		protected function rotatingHandler(event:ObjectChangedEvent):void {
+			var elements:Array = event.relatedObjects;
+			var startValues:Array;
+			
+			for (var i:int = 0; i < elements.length; i++) {
+				var model:Object = elements[i];
+				var component:Object = objectHandles.getDisplayForModel(model);
+				
+				if (component is InvalidatingSprite && lastTarget is GraphicElement) {
+					component = lastTarget;
+				}
+				
+				if (startValuesDictionary[component]==null) {
+					startValues = Radiate.captureSizingPropertyValues([component]);
+					startValuesDictionary[component] = startValues;
+				}
+				
+				if (MXMLDocumentConstants.ROTATION in model) {
+					component.rotation = model.rotation;
+				}
+			}
+		}
+		
+		protected function rotatedHandler(event:ObjectChangedEvent):void {
+			//trace("rotated");
+			var elements:Array;
+			var model:Object;
+			var originalGeometry:DragGeometry;
+			var component:Object;
+			var uicomponent:UIComponent;
+			var graphicElement:GraphicElement;
+			var startValues:Array;
+			var propertiesObject:Object;
+			var properties:Array;
+			
+			elements = event.relatedObjects;
+			
+			for (var i:int = 0; i < elements.length; i++) {
+				model = elements[i];
+				component = objectHandles.getDisplayForModel(model);
+				
+				if (component is InvalidatingSprite && lastTarget is GraphicElement) {
+					component = lastTarget;
+				}
+				
+				originalGeometry = objectHandles.getOriginalGeometryOfModel(model);
+				startValues = startValuesDictionary[component];
+				
+				if (originalGeometry==null) {
+					trace("Rotating bug. Not sure of cause. Fix later");
+					continue;
+				}
+				
+				uicomponent = component as UIComponent;
+				graphicElement = component as GraphicElement;
+				
+				// restore original values so we can use undo history
+				// we should use captureStartValues of effect class in Radiate
+				// and then create restoreStartValues or get the change object
+				
+				Radiate.restoreCapturedValues(startValues, [MXMLDocumentConstants.ROTATION]);
+				delete startValuesDictionary[component];
+				
+				propertiesObject = {};
+				propertiesObject.rotation = model.rotation;
+				properties = [MXMLDocumentConstants.ROTATION];
+				
+				if (component is GraphicElement) {
+					Radiate.setProperties(component, properties, propertiesObject, "Rotated", true);
+				}
+				else {
+					Radiate.setProperties(component, properties, propertiesObject, "Rotated", true);
+				}
+			}
 		}
 		
 		
@@ -1265,7 +1361,9 @@ package com.flexcapacitor.tools {
 		 * Handles drag drop event on drag manager
 		 * */
 		protected function handleDragDropComplete(event:DragDropEvent):void {
-			
+			if (debug) {
+				log("drag drop complete");
+			}
 			// drag manager removes these because it doesn't know or care what
 			// the current tool it has to add group mouse handlers. 
 			// it's all like, "whateva, whateva i do what i want"
@@ -1276,6 +1374,10 @@ package com.flexcapacitor.tools {
 		 * Handle mouse up on the stage
 		 * */
 		protected function mouseUpHandler(event:MouseEvent):void {
+			
+			if (debug) {
+				log("mouseUpHandler");
+			}
 			var target:Object = event.currentTarget;
 			var componentTree:ComponentDescription;
 			var componentDescription:ComponentDescription;
@@ -1557,6 +1659,9 @@ package com.flexcapacitor.tools {
 		 * Up left right down, etc.
 		 * */
 		protected function keyUpHandler(event:KeyboardEvent):void {
+			if (debug) {
+				log("Key: " + event.keyCode);
+			}
 			var constant:int = event.shiftKey ? 10 : 1;
 			var index:int;
 			var applicable:Boolean;
@@ -1838,7 +1943,12 @@ package com.flexcapacitor.tools {
 		}
 		
 		public function copyHandler(event:Event):void {
-			var applicable:Boolean = isEventApplicable(event);
+			var applicable:Boolean;
+			applicable = isEventApplicable(event);
+			
+			if (debug) {
+				log("Is applicable: " + applicable);
+			}
 			
 			// this is a hack - if graphic element is selected then we say it's applicable
 			// because it does not have focus - need to refactor
@@ -1852,6 +1962,10 @@ package com.flexcapacitor.tools {
 		
 		public function pasteHandler(event:Event):void {
 			var applicable:Boolean = isEventApplicable(event);
+			
+			if (debug) {
+				log("Is applicable: " + applicable);
+			}
 			
 			// this is a hack - if graphic element is selected then we say it's applicable
 			// because it will not register as having focus - need to refactor
@@ -1925,11 +2039,11 @@ package com.flexcapacitor.tools {
 		 * Trying to add support to add different types of selection rectangles. 
 		 * */
 		public function registerComponent(target:Object, selection:Object = null):Object {
-			var shapeModel:Object = objectHandles.getModelForDisplay(target as DisplayObject);
+			var shapeModel:Object = objectHandles.getModelForDisplay(target);
 			var graphicElement:GraphicElement = target as GraphicElement;
 			
 			if (shapeModel==null) {
-				shapeModel = new Object();
+				shapeModel = new DisplayModel();
 			}
 			
 			if (target is UIComponent) {
@@ -1939,6 +2053,7 @@ package com.flexcapacitor.tools {
 				shapeModel.y 		= target.getLayoutBoundsY();
 				shapeModel.x 		= target.x;
 				shapeModel.y 		= target.y;
+				shapeModel.rotation = target.rotation;
 				shapeModel.selected = false;
 				
 				//objectHandles.registerComponent(shapeModel, target as IEventDispatcher, null, true, [aspectRatioConstraint]);
@@ -1952,6 +2067,7 @@ package com.flexcapacitor.tools {
 				shapeModel.y 		= graphicElement.getLayoutBoundsY();
 				shapeModel.x 		= graphicElement.x;
 				shapeModel.y 		= graphicElement.y;
+				shapeModel.rotation = target.rotation;
 				shapeModel.selected = false;
 				
 				//objectHandles.registerComponent(shapeModel, target as IEventDispatcher, null, true, [aspectRatioConstraint]);

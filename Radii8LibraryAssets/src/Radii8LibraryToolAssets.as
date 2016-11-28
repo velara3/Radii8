@@ -71,6 +71,9 @@ package {
 		[Embed(source="assets/icons/tools/Selection.png")]
 		public static const Selection:Class;
 		
+		[Embed(source="assets/icons/tools/Text.png")]
+		public static const Text:Class;
+		
 		[Embed(source="assets/icons/tools/WhiteArrow.png")]
 		public static const WhiteArrow:Class;
 		

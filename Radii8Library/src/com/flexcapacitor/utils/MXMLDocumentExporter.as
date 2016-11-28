@@ -15,9 +15,14 @@ package com.flexcapacitor.utils {
 	
 	import flash.display.BitmapData;
 	
+	import mx.graphics.IFill;
+	import mx.graphics.IStroke;
+	
 	import spark.components.Application;
 	import spark.components.Image;
 	import spark.primitives.BitmapImage;
+	import spark.primitives.supportClasses.FilledElement;
+	import spark.primitives.supportClasses.StrokedElement;
 	import spark.utils.TextFlowUtil;
 	
 	import flashx.textLayout.conversion.ConversionType;
@@ -40,6 +45,11 @@ package com.flexcapacitor.utils {
 		public var xmlEncoder:SimpleXMLEncoder;
 		
 		/**
+		 * When using the Simple XML encoder encodes primitives as attributes
+		 * */
+		public var encodePrimitivesAsAttributes:Boolean = true;
+		
+		/**
 		 * Sets styles inline
 		 * */
 		public var useInlineStyles:Boolean;
@@ -48,6 +58,12 @@ package com.flexcapacitor.utils {
 		 * Any styles not set inline are placed in an external stylesheet
 		 * */
 		public var useExternalStylesheet:Boolean;
+		
+		/**
+		 * Embed image data when image source is not a string or url
+		 * */
+		public var embedImageData:Boolean = true;
+		
 		/**
 		 * Default file extension. Default is mxml. 
 		 * This can be changed by setting the export options.
@@ -234,22 +250,36 @@ package com.flexcapacitor.utils {
 			var events:Object;
 			var componentChild:ComponentDescription;
 			var componentDefinition:ComponentDefinition;
+			var componentInstance:Object;
 			var childNodes:Array = [];
 			var className:String;
 			var output:String = "";
 			var outputValue:String = "";
 			var namespaces:String;
 			var numberOfChildren:int;
-			var value:*;
 			var warningData:IssueData;
 			var errorData:ErrorData;
 			var childNodesValues:Object;
 			var childNodeNames:Array = [];
 			var identifier:String;
+			var strokedElement:StrokedElement;
+			var filledElement:FilledElement;
+			var stroke:IStroke;
+			var fill:IFill;
+			var qname:QName;
+			var value:*;
+			var xmlValue:XML;
 			
 			if (exportFromHistory) {
 				getAppliedPropertiesFromHistory(iDocument, componentDescription);
 			}
+			
+			if (xmlEncoder==null) {
+				xmlEncoder = new SimpleXMLEncoder();
+			}
+			
+			xmlEncoder.encodePrimitivesAsAttributes = encodePrimitivesAsAttributes;
+			xmlEncoder.encodeColorFunction = DisplayObjectUtils.getColorInHexWithHash;
 			
 			componentDefinition = componentDescription.componentDefinition;
 			
@@ -270,7 +300,9 @@ package com.flexcapacitor.utils {
 				//contentToken = "";
 			}
 			
-			identifier = ClassUtils.getIdentifier(componentDescription.instance);
+			componentInstance = componentDescription.instance;
+			
+			identifier = ClassUtils.getIdentifier(componentInstance);
 			
 			if (identifier) {
 				
@@ -292,6 +324,7 @@ package com.flexcapacitor.utils {
 			
 			// we need to make sure there is always a component definition below
 			// checking for null at the moment
+			// these are set in components-manifest.xml
 			if (componentDefinition) {
 				childNodes = componentDefinition.childNodes;
 			}
@@ -312,42 +345,64 @@ package com.flexcapacitor.utils {
 					childNodesValues[propertyName] = value;
 					childNodeNames.push(propertyName);
 					
-					var originalSettings:Object = XML.settings();
-					
-					XML.ignoreProcessingInstructions = false;
-					XML.ignoreWhitespace = false;
-					XML.prettyPrinting = false;
+					var originalSettings:Object;
+					var useXMLFormatting:Boolean;
 					
 					if (propertyName==MXMLDocumentConstants.TEXT_FLOW) {
+						originalSettings = XML.settings();
+						useXMLFormatting = true;
+						
+						XML.ignoreProcessingInstructions = false;
+						XML.ignoreWhitespace = false;
+						XML.prettyPrinting = false;
+						
 						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
 						value = TextFlowUtil.export(value);
 						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE) as XML;
 						
 						if (value) {
 							value = addNamespaceToTextFlow(value);
-							//value = XML(value).toXMLString();
-							value = XML(value).toString();
+							
+							if (useXMLFormatting) {
+								value = XML(value).toXMLString();
+							}
+							else {
+								value = XML(value).toString();
+							}
 						}
 						
 						childNodesValues[propertyName] = value;
+						
+						XML.setSettings(originalSettings);
 					}
 					
-					XML.setSettings(originalSettings);
 					
+					// filters
 					if (propertyName==MXMLDocumentConstants.FILTERS) {
-						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
-						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE) as XML;
-						
-						xmlEncoder = new SimpleXMLEncoder();
-						
 						//xmlNode = xmlEncoder.encodeValue(value, null, xmlParentNode);
 						//output += xmlNode.toString();
-						if (value) {
-							value = addNamespaceToTextFlow(value, MXMLDocumentConstants.sparkNamespacePrefix);
-							value = XML(value).toXMLString();
-						}
 						
-						childNodesValues[propertyName] = value;
+						xmlValue = xmlEncoder.encodeValue(componentInstance.filters, null);
+						
+						childNodesValues[propertyName] = xmlValue;
+					}
+					
+					else if (propertyName==MXMLDocumentConstants.FILL) {
+						fill = value as IFill;
+						qname = new QName(MXMLDocumentConstants.sparkNamespace, ClassUtils.getClassName(fill));
+						xmlEncoder.skipNaNValues = true;
+						xmlEncoder.skipEmptyArrays = true;
+						xmlValue = xmlEncoder.encodeValue(fill, qname, null, 3);
+						xmlValue = XMLUtils.addNamespace(xmlValue, MXMLDocumentConstants.sparkNamespacePrefix, MXMLDocumentConstants.sparkNamespaceURI);
+						childNodesValues[propertyName] = xmlValue;
+					}
+					
+					else if (propertyName==MXMLDocumentConstants.STROKE) {
+						stroke = value as IStroke;
+						qname = new QName(MXMLDocumentConstants.sparkNamespace, ClassUtils.getClassName(stroke));
+						xmlValue = xmlEncoder.encodeValue(stroke, qname);
+						xmlValue = XMLUtils.addNamespace(xmlValue, MXMLDocumentConstants.sparkNamespacePrefix, MXMLDocumentConstants.sparkNamespaceURI);
+						childNodesValues[propertyName] = xmlValue;
 					}
 					
 					continue;
@@ -470,12 +525,24 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (componentDescription.instance is Image || componentDescription.instance is BitmapImage) {
+				var imageData:ImageData;
+				var base64ImageData:String;
 				
 				if (componentDescription.instance.source is BitmapData) {
-					var imageData:ImageData = Radiate.getImageDataFromBitmapData(componentDescription.instance.source);
+					imageData = Radiate.getImageDataFromBitmapData(componentDescription.instance.source);
+					
 					if (imageData && imageData.uid) {
 						output += " ";
 						output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "bitmapDataId=\"" +imageData.uid + "\"";
+					}
+					
+					// if the image hasn't been uploaded we can save it as an attribute or node
+					if (embedImageData && imageData) {
+						base64ImageData = DisplayObjectUtils.getBase64ImageDataString(componentDescription.instance.source, DisplayObjectUtils.PNG, null, true);
+						
+						// we may need to change this so it doesn't conflict with "bitmapData" in the spark namespace
+						childNodeNames.push(MXMLDocumentConstants.BITMAP_DATA);
+						childNodesValues[MXMLDocumentConstants.BITMAP_DATA] = base64ImageData;
 					}
 					
 					warningData = IssueData.getIssue("Image data was not uploaded", "If you don't upload the image it will not be visible online.");
@@ -521,6 +588,10 @@ package com.flexcapacitor.utils {
 							childNodeNamespace = MXMLDocumentConstants.htmlNamespacePrefix;
 							useCDATA = true;
 						}
+						else if (propertyName==MXMLDocumentConstants.BITMAP_DATA) {
+							childNodeNamespace = MXMLDocumentConstants.fcNamespacePrefix;
+							useCDATA = false;
+						}
 						else {
 							childNodeNamespace = MXMLDocumentConstants.sparkNamespacePrefix;
 							useCDATA = false;
@@ -536,8 +607,12 @@ package com.flexcapacitor.utils {
 						
 						//xmlNode = xmlEncoder.encodeValue(value, null, xmlParentNode);
 						//output += xmlNode.toString();
-						
-						value = StringUtils.indent(value.toString(), tabs + "\t\t");
+						if (value is XML) {
+							value = StringUtils.indent(XML(value).toXMLString(), tabs + "\t\t");
+						}
+						else {
+							value = StringUtils.indent(value.toString(), tabs + "\t\t");
+						}
 						
 						if (useCDATA) {
 							output += childNode + "<![CDATA[\n" + value.toString() + "]]>\n";

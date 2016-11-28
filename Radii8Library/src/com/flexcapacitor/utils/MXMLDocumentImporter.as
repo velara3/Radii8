@@ -10,15 +10,28 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.model.IssueData;
 	import com.flexcapacitor.model.SourceData;
 	import com.flexcapacitor.model.ValuesObject;
+	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
+	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.display.LoaderInfo;
+	import flash.events.Event;
+	import flash.geom.Rectangle;
 	import flash.system.ApplicationDomain;
+	import flash.text.engine.ContentElement;
 	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
 	import mx.core.IVisualElementContainer;
+	import mx.graphics.BitmapFill;
+	import mx.graphics.GradientEntry;
+	import mx.graphics.IFill;
+	import mx.graphics.IStroke;
+	import mx.graphics.LinearGradient;
+	import mx.graphics.SolidColor;
+	import mx.graphics.SolidColorStroke;
 	
 	import spark.components.Application;
 	
@@ -42,7 +55,7 @@ package com.flexcapacitor.utils {
 		}
 		
 		//override public function importare(iDocument:IDocument, id:String, container:IVisualElement) {
-		override public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, options:ImportOptions = null, dispatchEvents:Boolean = false):SourceData {
+		override public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, parentPosition:int = -1, options:ImportOptions = null, dispatchEvents:Boolean = false):SourceData {
 			var componentDefinition:ComponentDefinition;
 			var sourceData:SourceData;
 			var container:IVisualElementContainer;
@@ -73,8 +86,9 @@ package com.flexcapacitor.utils {
 			isValid = XMLUtils.isValidXML(source);
 			sourceData = new SourceData();
 			
+			rootNodeName = MXMLDocumentConstants.ROOT_NODE_NAME;
+			
 			if (!isValid) {
-				rootNodeName = "RootWrapperNode";
 				
 				// not valid so try adding namespaces and a root node
 				root = "<"+rootNodeName + " " + MXMLDocumentConstants.getDefaultNamespaceDeclarations() + ">";
@@ -152,7 +166,7 @@ package com.flexcapacitor.utils {
 				if (elName=="Application" || elName=="WindowedApplication") {
 					//componentDefinition = Radiate.getDynamicComponentType(elName);
 					//Radiate.setAttributesOnComponent(document.instance, mxml, componentDefinition);
-					createChildFromNode(mxml, container, document, 0, document.instance, dispatchEvents);
+					createChildFromNode(mxml, container, document, 0, document.instance, parentPosition, dispatchEvents);
 				}
 				else {
 					
@@ -163,11 +177,11 @@ package com.flexcapacitor.utils {
 							if (childNode.name()==null) {
 								continue;
 							}
-							createChildFromNode(childNode, container, document, 0, null, dispatchEvents);
+							createChildFromNode(childNode, container, document, 0, null, parentPosition, dispatchEvents);
 						}
 					}
 					else {
-						createChildFromNode(mxml, container, document, 0, null, dispatchEvents);
+						createChildFromNode(mxml, container, document, 0, null, parentPosition, dispatchEvents);
 					}
 				}
 				
@@ -204,7 +218,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Create child from node
 		 * */
-		private function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0, componentInstance:Object = null, dispatchEvents:Boolean = true):Object {
+		public function createChildFromNode(node:XML, parent:Object, iDocument:IDocument, depth:int = 0, componentInstance:Object = null, parentPosition:int = -1, dispatchEvents:Boolean = true):Object {
 			var elementName:String;
 			var qualifiedName:QName;
 			var kind:String;
@@ -333,10 +347,31 @@ package com.flexcapacitor.utils {
 				qualifiedChildNodeNames = valuesObject.qualifiedChildNodeNames;
 				//var typedValueObject:Object = Radiate.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
 				
+				var bitmapDataFound:Boolean;
 				// when copying images that do not have a URL then we use a internal reference id
 				// used when copying and pasting MXML
 				if (attributes.indexOf(MXMLDocumentConstants.BITMAP_DATA_ID_NS)!=-1) {
-					setBitmapData(componentDescription, valuesObject, MXMLDocumentConstants.BITMAP_DATA_ID_NS);
+					bitmapDataFound = setBitmapData(componentDescription, valuesObject, MXMLDocumentConstants.BITMAP_DATA_ID_NS);
+				}
+				
+				if (!bitmapDataFound && childNodeNames.indexOf(MXMLDocumentConstants.BITMAP_DATA)!=-1 || 
+					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.BITMAP_DATA_NS)!=-1) {
+					parseBase64BitmapData(componentInstance, valuesObject, MXMLDocumentConstants.BITMAP_DATA_NS);
+					handledChildNodes.push(MXMLDocumentConstants.BITMAP_DATA_NS);
+				}
+				
+				if (childNodeNames.indexOf(MXMLDocumentConstants.FILL)!=-1 || 
+					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.FILL_NS)!=-1) {
+					setFillData(componentDescription, valuesObject);
+					handledChildNodes.push(MXMLDocumentConstants.FILL);
+					//handledChildNodes.push(MXMLDocumentConstants.FILL_NS);
+				}
+				
+				if (childNodeNames.indexOf(MXMLDocumentConstants.STROKE)!=-1 || 
+					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.STROKE_NS)!=-1) {
+					setStrokeData(componentDescription, valuesObject);
+					handledChildNodes.push(MXMLDocumentConstants.STROKE);
+					//handledChildNodes.push(MXMLDocumentConstants.STROKE_NS);
 				}
 				
 				// import TextFlow
@@ -347,7 +382,7 @@ package com.flexcapacitor.utils {
 				}
 				
 				if (!componentAlreadyAdded) {
-					Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.events, valuesObject.values);
+					Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.events, valuesObject.values, null, AddItems.LAST, null, parentPosition);
 				}
 				else if (valuesObject.propertiesStylesEvents && valuesObject.propertiesStylesEvents.length) {
 					Radiate.setPropertiesStylesEvents(componentInstance, valuesObject.propertiesStylesEvents, valuesObject.values, null, false, dispatchEvents);
@@ -561,7 +596,7 @@ package com.flexcapacitor.utils {
 						continue;
 					}
 					
-					instance = createChildFromNode(childNode, componentInstance, iDocument, depth+1, null, dispatchEvents);
+					instance = createChildFromNode(childNode, componentInstance, iDocument, depth+1, null, -1, dispatchEvents);
 				}
 			}
 			
@@ -624,18 +659,94 @@ package com.flexcapacitor.utils {
 			componentDescription.locked = value;
 		}
 		
-		public function setBitmapData(componentDescription:ComponentDescription, valuesObject:ValuesObject, attributeName:String):void {
+		public function setBitmapData(componentDescription:ComponentDescription, valuesObject:ValuesObject, attributeName:String):Boolean {
 			var bitmapDataId:String;
 			var bitmapData:BitmapData;
+			var successful:Boolean;
 			
 			bitmapDataId = valuesObject.values[attributeName];
 			bitmapData = Radiate.getBitmapDataFromImageDataID(bitmapDataId);
 			
 			if (bitmapData) {
 				valuesObject.values["source"] = bitmapData;
+				successful = true;
 			}
+			
+			return successful;
 		}
 		
+		/**
+		 * Attempt to parse base 64 image data into a bitmap data.
+		 * */
+		public function parseBase64BitmapData(componentDescription:Object, valuesObject:ValuesObject, childNodeName:String):Boolean {
+			var bitmapDataString:String;
+			var bitmapData:BitmapData;
+			var successful:Boolean;
+			var removeLineBreaks:Boolean = true;
+			var removeHeader:Boolean = true;
+			var contentLoader:LoaderInfo;
+			
+			bitmapDataString = valuesObject.childNodeValues[MXMLDocumentConstants.BITMAP_DATA];
+			
+			// if not found it may be using an alternate namespace
+			if (bitmapDataString==null) {
+				bitmapDataString = valuesObject.childNodeValues[MXMLDocumentConstants.BITMAP_DATA_NS];
+			}
+			
+			if (removeLineBreaks) {
+				bitmapDataString = bitmapDataString.replace(/\n/g, "");
+			}
+			
+			//A partial block (3 of 4 bytes) was dropped. Decoded data is probably truncated!
+			//Error: A partial block (3 of 4 bytes) was dropped. Decoded data is probably truncated!
+			if (removeHeader) {
+				bitmapDataString = bitmapDataString.replace(/.*base64,/si, "");
+			}
+			
+			bitmapData = DisplayObjectUtils.getBitmapDataFromBase64(bitmapDataString);
+			
+			if (bitmapData) {
+				valuesObject.values["source"] = bitmapData;
+				contentLoader = DisplayObjectUtils.loader.contentLoaderInfo;
+				
+				// save a reference to the loader info so it doesn't get garbage collected
+				bitmapDictionary[contentLoader] = componentDescription;
+				
+				contentLoader.addEventListener(Event.INIT, handleLoadingImages, false, 0, true);
+				successful = true;
+			}
+			
+			return successful;
+		}
+		
+		public static function handleLoadingImages(event:Event):void {
+			var newBitmapData:BitmapData;
+			var bitmap:Bitmap;
+			var rectangle:Rectangle;
+			var contentLoader:LoaderInfo = event.currentTarget as LoaderInfo;
+			var componentDescription:Object = bitmapDictionary[contentLoader];
+			var componentInstance:Object;
+			
+			if (contentLoader.loader.content) {
+				bitmap = contentLoader.loader.content as Bitmap;
+				newBitmapData = bitmap ? bitmap.bitmapData : null;
+			}
+			
+			if (componentDescription is ComponentDescription) {
+				componentInstance = ComponentDescription(componentDescription).instance;
+			}
+			else {
+				componentInstance = componentDescription;
+			}
+			
+			if (newBitmapData && componentInstance) {
+				Radiate.setProperty(componentInstance, "source", newBitmapData, "Source loaded");
+			}
+			
+			delete bitmapDictionary[contentLoader];
+		}
+		
+		public static var bitmapDictionary:Dictionary = new Dictionary(true);
 		public function convertToImage(componentDescription:ComponentDescription, value:*):void {
 			componentDescription.convertElementToImage = value;
 		}
@@ -774,6 +885,266 @@ package com.flexcapacitor.utils {
 			valuesObject.values[MXMLDocumentConstants.TEXT_FLOW] = textFlow;
 			
 			return textFlowParser.errors;
+		}
+		
+		/**
+		 * Convert Stroke XML into actual stroke instance and set the value object to it
+		 * */
+		public function setStrokeData(componentDescription:ComponentDescription, valuesObject:ValuesObject):void {
+			var strokeString:String;
+			var strokeXML:XML;
+			var stroke:IStroke;
+			var strokeType:String;
+			var solidColorStroke:SolidColorStroke;
+			
+			if (stroke==null) {
+				strokeString = valuesObject.childNodeValues[MXMLDocumentConstants.STROKE];
+				
+				// if not found it may be using an alternate namespace
+				if (strokeString==null) {
+					strokeString = valuesObject.childNodeValues[MXMLDocumentConstants.STROKE_NS];
+				}
+				
+				strokeXML = new XML(strokeString);
+				
+				strokeType = strokeXML.localName();
+				
+				if (strokeType==MXMLDocumentConstants.SOLID_COLOR_STROKE) {
+					solidColorStroke = getSolidColorStroke(strokeXML);
+					stroke = solidColorStroke;
+				}
+			}
+			
+			valuesObject.values[MXMLDocumentConstants.STROKE] = stroke;
+			
+		}
+		
+		public function getSolidColorStroke(strokeXML:XML):SolidColorStroke {
+			var solidColorStroke:SolidColorStroke = new SolidColorStroke();
+			
+			if (XMLUtils.hasAttribute(strokeXML, "color")) {
+				solidColorStroke.color = DisplayObjectUtils.getColorAsUInt(strokeXML.@color); 
+			}
+			
+			if (XMLUtils.hasAttribute(strokeXML, "alpha")) {
+				solidColorStroke.alpha = strokeXML.@alpha; 
+			}
+			
+			if (XMLUtils.hasAttribute(strokeXML, "caps")) {
+				solidColorStroke.caps = strokeXML.@caps; 
+			}
+			
+			if (XMLUtils.hasAttribute(strokeXML, "joints")) {
+				solidColorStroke.joints = strokeXML.@joints; 
+			}
+			
+			if (XMLUtils.hasAttribute(strokeXML, "miterLimit")) {
+				solidColorStroke.miterLimit = strokeXML.@miterLimit; 
+			}
+			
+			if (XMLUtils.hasAttribute(strokeXML, "pixelHinting")) {
+				solidColorStroke.pixelHinting = strokeXML.@pixelHinting; 
+			}
+			
+			if (XMLUtils.hasAttribute(strokeXML, "scaleMode")) {
+				solidColorStroke.scaleMode = strokeXML.@scaleMode; 
+			}
+			
+			if (XMLUtils.hasAttribute(strokeXML, "weight")) {
+				solidColorStroke.weight = strokeXML.@weight; 
+			}
+			
+			return solidColorStroke;
+		}
+		
+		/**
+		 * Convert Fill XML into actual fill instance and set the value object to it
+		 * */
+		public function setFillData(componentDescription:ComponentDescription, valuesObject:ValuesObject):void {
+			var fillString:String;
+			var fillXML:XML;
+			var fill:IFill;
+			var flowNamespace:Namespace;
+			var originalXMLSettings:Object;
+			var fillType:String;
+			var solidColor:SolidColor;
+			var linearGradient:LinearGradient;
+			var bitmapFill:BitmapFill;
+			
+			if (fill==null) {
+				fillString = valuesObject.childNodeValues[MXMLDocumentConstants.FILL];
+				
+				// if not found it may be using an alternate namespace
+				if (fillString==null) {
+					fillString = valuesObject.childNodeValues[MXMLDocumentConstants.FILL_NS];
+				}
+				
+				fillXML = new XML(fillString);
+				
+				fillType = fillXML.localName();
+				
+				if (fillType==MXMLDocumentConstants.SOLID_COLOR) {
+					solidColor = getSolidColorFill(fillXML);
+					fill = solidColor;
+				}
+				else if (fillType==MXMLDocumentConstants.BITMAP_FILL) {
+					bitmapFill = getBitmapFill(fillXML);
+					fill = bitmapFill;
+				}
+				else if (fillType==MXMLDocumentConstants.LINEAR_GRADIENT) {
+					linearGradient = getLinearGradientFill(fillXML);
+					fill = linearGradient;
+				}
+			}
+			
+			valuesObject.values[MXMLDocumentConstants.FILL] = fill;
+			
+		}
+		
+		public function getSolidColorFill(fillXML:XML):SolidColor {
+			var solidColor:SolidColor = new SolidColor();
+			
+			if (XMLUtils.hasAttribute(fillXML, "color")) {
+				solidColor.color = DisplayObjectUtils.getColorAsUInt(fillXML.@color); 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "alpha")) {
+				solidColor.alpha = fillXML.@alpha; 
+			}
+			
+			return solidColor;
+		}
+		
+		public function getLinearGradientFill(fillXML:XML):LinearGradient {
+			var linearGradient:LinearGradient;
+			var entries:Array;
+			var entriesXML:XMLList;
+			var entryXML:XML;
+			var entry:GradientEntry;
+			var qname:QName = new QName(MXMLDocumentConstants.sparkNamespaceURI, MXMLDocumentConstants.GRADIENT_ENTRY);
+			
+			linearGradient = new LinearGradient();
+			entriesXML = fillXML.descendants(MXMLDocumentConstants.GRADIENT_ENTRY);
+			
+			if (entriesXML.length()==0) {
+				entriesXML = fillXML.descendants(qname);
+			}
+			
+			entries = [];
+			
+			if (XMLUtils.hasAttribute(fillXML, "interpolationMethod")) {
+				linearGradient.interpolationMethod = fillXML.@interpolationMethod; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "matrix")) {
+				linearGradient.matrix = fillXML.@matrix; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "rotation")) {
+				linearGradient.rotation = fillXML.@rotation; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "spreadMethod")) {
+				linearGradient.spreadMethod = fillXML.@spreadMethod; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "x")) {
+				linearGradient.x = fillXML.@x; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "y")) {
+				linearGradient.y = fillXML.@y; 
+			}
+			
+			for (var i:int = 0; i < entriesXML.length(); i++)  {
+				entryXML = entriesXML[i];
+				
+				entry = getGradientEntry(entryXML);
+				
+				entries.push(entry);
+			}
+			
+			linearGradient.entries = entries;
+			
+			return linearGradient;
+		}
+		
+		public function getGradientEntry(entryXML:XML):GradientEntry {
+			var gradientEntry:GradientEntry;
+			
+			gradientEntry = new GradientEntry();
+			
+			if (XMLUtils.hasAttribute(entryXML, "color")) {
+				gradientEntry.color = DisplayObjectUtils.getColorAsUInt(entryXML.@color); 
+			}
+			
+			if (XMLUtils.hasAttribute(entryXML, "alpha")) {
+				gradientEntry.alpha = entryXML.@alpha; 
+			}
+			
+			if (XMLUtils.hasAttribute(entryXML, "ratio")) {
+				gradientEntry.ratio = entryXML.@ratio;
+			}
+			
+			return gradientEntry;
+		}
+		
+		public function getBitmapFill(fillXML:XML):BitmapFill {
+			var bitmapFill:BitmapFill = new BitmapFill();
+			
+			if (XMLUtils.hasAttribute(fillXML, "alpha")) {
+				bitmapFill.alpha = fillXML.@alpha; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "fillMode")) {
+				bitmapFill.fillMode = fillXML.@fillMode; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "matrix")) {
+				bitmapFill.matrix = fillXML.@matrix; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "rotation")) {
+				bitmapFill.rotation = fillXML.@rotation; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "scaleX")) {
+				bitmapFill.scaleX = fillXML.@scaleX; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "scaleY")) {
+				bitmapFill.scaleY = fillXML.@scaleY; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "smooth")) {
+				bitmapFill.smooth = fillXML.@smooth; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "source")) {
+				bitmapFill.source = fillXML.@source; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "x")) {
+				bitmapFill.x = fillXML.@x; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "y")) {
+				bitmapFill.y = fillXML.@y; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "transformX")) {
+				bitmapFill.transformX = fillXML.@transformX; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "transformY")) {
+				bitmapFill.transformY = fillXML.@transformY; 
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "smooth")) {
+				bitmapFill.smooth = fillXML.@smooth; 
+			}
+			
+			return bitmapFill;
 		}
 		
 	}

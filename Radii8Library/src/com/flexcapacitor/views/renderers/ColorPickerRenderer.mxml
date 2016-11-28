@@ -11,6 +11,9 @@
 		<![CDATA[
 			import com.flexcapacitor.skins.ClearButtonSkin;
 			
+			[Bindable]
+			[Inspectable(enumeration="hexidecimalHash,hexidecimalPrefix,hexidecimal,stringUint,number,uint,int")]
+			public var returnType:String = "hexidecimalHash";
 		]]>
 	</fx:Script>
 	
@@ -20,14 +23,20 @@
 	</fx:Declarations>
 	
 	<s:HGroup width="100%" verticalAlign="middle">
-		<c:ColorChooser id="colorChooser" left="0" top="0" right="0" bottom="0"
-						returnType="hexidecimalHash" 
+		<c:ColorChooser id="colorChooser" 
+						left="0" top="0" right="0" bottom="0"
+						
 						change="setTargetValue()"
+						
+						returnType="{returnType}" 
 						includeTextInput="{includeTextInput}"
 						includeCopyIcon="{includeCopyIcon}"/>
-		<c:ColorChooser id="colorChooser2" left="0" top="0" right="0" bottom="0"
-						returnType="hexidecimalHash" 
+		<c:ColorChooser id="colorChooser2" 
+						left="0" top="0" right="0" bottom="0"
+						
 						change="setTargetValue()"
+						
+						returnType="{returnType}"
 						includeInLayout="{includeSecondColor}"
 						visible="{includeSecondColor}"
 						includeTextInput="{includeTextInput}"

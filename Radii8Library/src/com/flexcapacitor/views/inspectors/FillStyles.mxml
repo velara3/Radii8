@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
+		 styleName="inspectablePanel"
+		 width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.AccessorMetaData;
+			import com.flexcapacitor.utils.ArrayUtils;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.MXMLDocumentConstants;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.graphics.BitmapFill;
+			import mx.graphics.IFill;
+			import mx.graphics.LinearGradient;
+			import mx.graphics.RadialGradient;
+			import mx.graphics.SolidColor;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.primitives.Ellipse;
+			import spark.primitives.supportClasses.FilledElement;
+			
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			public var fillTypes:Array =[	{name:MXMLDocumentConstants.NONE,				label:"None"},
+											{name:MXMLDocumentConstants.SOLID_COLOR, 		label:"Solid Color"},
+											{name:MXMLDocumentConstants.LINEAR_GRADIENT, 	label:"Linear Gradient"},
+											{name:MXMLDocumentConstants.RADIAL_GRADIENT, 	label:"Radial Gradient"},
+											{name:MXMLDocumentConstants.BITMAP_FILL, 		label:"Image"}
+										];
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				if (fillList.dataProvider==null) {
+					fillList.dataProvider = new ArrayCollection(fillTypes.slice(0,2));
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				var relevant:Boolean;
+				
+				if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+					relevant = true;
+				}
+				
+				if (relevant) {
+					//trace("property changed");
+					callLater(update);
+				}
+			}
+			
+			public function update():void {
+				var filledElement:FilledElement 	= target as FilledElement;
+				var fill:IFill 						= filledElement ? filledElement.fill : null;
+				var solidColor:SolidColor 			= fill as SolidColor;
+				var linearGradient:LinearGradient 	= fill as LinearGradient;
+				var bitmapFill:BitmapFill 			= fill as BitmapFill;
+				
+				if (solidColor) {
+					fillList.selectedItem = ArrayUtils.getItem(fillTypes, MXMLDocumentConstants.SOLID_COLOR, "name");
+					updateSolidColorFill(solidColor);
+				}
+				else if (linearGradient) {
+					fillList.selectedItem = ArrayUtils.getItem(fillTypes, MXMLDocumentConstants.LINEAR_GRADIENT, "name");
+					updateLinearGradient(linearGradient);
+				}
+				else if (bitmapFill) {
+					fillList.selectedItem = ArrayUtils.getItem(fillTypes, MXMLDocumentConstants.BITMAP_FILL, "name");
+					updateBitmapFill(bitmapFill);
+				}
+				else if (fill==null) {
+					fillList.selectedIndex = 0;
+					updateNoFill();
+				}
+				
+				
+			}
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var length:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<length;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				length = hgroups.length;
+				
+				for (var j:int;j<length;j++) {
+					hgroups[j].gap = gap;
+				}
+			}
+			
+			
+			private function updateSolidColorFill(solidColor:SolidColor):void {
+				if (currentState!=MXMLDocumentConstants.SOLID_COLOR) {
+					setCurrentState(MXMLDocumentConstants.SOLID_COLOR, false);
+					validateNow();
+				}
+				
+				// solid color fill
+				var colorStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(solidColor, "color");
+				var alphaStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(solidColor, "alpha");
+				
+				colorRenderer.data = colorStyle;
+				alphaRenderer.data = alphaStyle;
+			}
+			
+			private function updateLinearGradient(linearGradient:LinearGradient):void {
+				if (currentState!=MXMLDocumentConstants.LINEAR_GRADIENT) {
+					setCurrentState(MXMLDocumentConstants.LINEAR_GRADIENT, false);
+					validateNow();
+				}
+				
+				// linear gradient fill
+				var colorStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(linearGradient, "color");
+				var alphaStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(linearGradient, "alpha");
+				var interpolationStyle:AccessorMetaData = ClassUtils.getMetaDataOfProperty(linearGradient, "interpolationMethod");
+				var matrixStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(linearGradient, "matrix");
+				var rotationStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(linearGradient, "rotation");
+				var spreadMethodStyle:AccessorMetaData  = ClassUtils.getMetaDataOfProperty(linearGradient, "spreadMethod");
+				var xStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(linearGradient, "x");
+				var yStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(linearGradient, "y");
+				
+				colorRenderer.data 			= colorStyle;
+				alphaRenderer.data 			= alphaStyle;
+				interpolationRenderer.data 	= interpolationStyle;
+				matrixRenderer.data 		= matrixStyle;
+				rotationRenderer.data 		= rotationStyle;
+				spreadMethodRenderer.data 	= spreadMethodStyle;
+				xRenderer.data 				= xStyle;
+				yRenderer.data 				= yStyle;	
+			}
+			
+			// bitmap fill
+			private function updateBitmapFill(bitmapFill:BitmapFill):void {
+				if (currentState!=MXMLDocumentConstants.BITMAP_FILL) {
+					setCurrentState(MXMLDocumentConstants.BITMAP_FILL, false);
+					validateNow();
+				}
+				
+				var alphaStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "alpha");
+				var fillModeStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(bitmapFill, "fillMode");
+				var matrixStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(bitmapFill, "matrix");
+				var rotationStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(bitmapFill, "rotation");
+				var scaleXStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "scaleX");
+				var scaleYStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "scaleY");
+				var smoothStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "smooth");
+				var sourceStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "source");
+				var transformXStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(bitmapFill, "transformX");
+				var transformYStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(bitmapFill, "transformY");
+				var xStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(bitmapFill, "x");
+				var yStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(bitmapFill, "y");
+				
+				alphaRenderer.data 		= alphaStyle;
+				fillModeRenderer.data 	= fillModeStyle;
+				matrixRenderer.data 	= matrixStyle;
+				rotationRenderer.data 	= rotationStyle;
+				scaleXRenderer.data 	= scaleXStyle;
+				scaleYRenderer.data 	= scaleYStyle;
+				smoothRenderer.data 	= smoothStyle;
+				sourceRenderer.data 	= sourceStyle;
+				transformXRenderer.data = transformXStyle;
+				transformYRenderer.data = transformYStyle;
+				xRenderer.data 			= xStyle;
+				yRenderer.data 			= yStyle;	
+			}
+			
+			private function updateNoFill():void {
+				if (currentState!=MXMLDocumentConstants.NONE) {
+					setCurrentState(MXMLDocumentConstants.NONE, false);
+					validateNow();
+				}
+				
+			}
+			
+			
+			public var solidColorFillProperties:Array = ["color", "alpha"];
+			
+			public var linearGradientFillProperties:Array = ["interpolationMethod", "matrix", "rotation", 
+				"spreadMethod", "x", "y", "entries"];
+			
+			public var bitmapFillProperties:Array = ["alpha", "fillMode", "matrix", "rotation",
+				"scaleX", "scaleY", "smooth", "source", "x", "y", "transformX", "transformY"];
+			
+			public var gradientEntryProperties:Array = ["color", "alpha", "ratio"];
+			
+			public var relevantProperties:Array = solidColorFillProperties.concat(linearGradientFillProperties).concat(bitmapFillProperties);
+			
+			protected function fillList_changeHandler(event:IndexChangeEvent):void {
+				var filledElement:FilledElement = target as FilledElement;
+				var fill:IFill 					= filledElement ? filledElement.fill : null;
+				var fillType:Object 			= fillList.selectedItem;
+				
+				if (fillType.name == MXMLDocumentConstants.NONE && fill!=null) {
+					Radiate.clearProperty(filledElement, MXMLDocumentConstants.FILL, null, "Removed fill"); 
+				}
+				else if (fillType.name == MXMLDocumentConstants.SOLID_COLOR && !(fill is SolidColor)) {
+					fill = new SolidColor();
+					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
+				}
+				else if (fillType.name == MXMLDocumentConstants.LINEAR_GRADIENT && !(fill is LinearGradient)) {
+					fill = new LinearGradient();
+					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
+				}
+				else if (fillType.name == MXMLDocumentConstants.RADIAL_GRADIENT && !(fill is RadialGradient)) {
+					fill = new RadialGradient();
+					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
+				}
+				else if (fillType.name == MXMLDocumentConstants.BITMAP_FILL && !(fill is BitmapFill)) {
+					fill = new BitmapFill();
+					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
+				}
+				
+				update();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="none"/>
+		<s:State name="SolidColor"/>
+		<s:State name="LinearGradient"/>
+		<s:State name="RadialGradient"/>
+		<s:State name="BitmapFill"/>
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Fill Type" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<s:DropDownList id="fillList" height="24" requireSelection="true" 
+						minWidth="120" change="fillList_changeHandler(event)"/>
+	</s:HGroup>
+	
+	<!-- SOLID COLOR -->
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColor">
+		<s:Label text="Fill Color" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:ColorPickerRenderer id="colorRenderer" height="24" includeCopyIcon="false"
+									   returnType="hexidecimalPrefix"
+									   subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColor">
+		<s:Label text="Alpha" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="alphaRenderer" 
+								  snapInterval="0" 
+								  stepSize="0.05" 
+								  height="24"
+								  focusAlpha="0"
+								  defaultValue="1"
+								  subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<!-- Linear gradient -->
+	
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient">
+		<s:Label text="Interpolation" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:DropDownListRenderer id="interpolationRenderer" height="24" 
+									minWidth="180" width="100%"
+									subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient">
+		<s:Label text="Rotation" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="rotationRenderer" height="24"
+										subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient">
+		<s:Label text="Spread Method" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:DropDownListRenderer id="spreadMethodRenderer" height="24" 
+										subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill">
+		<s:Label text="Matrix" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:TextRenderer id="matrixRenderer" height="24"
+								  subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+		<s:Label text="Fill Mode" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:DropDownListRenderer id="fillModeRenderer" height="24" 
+										minWidth="180" width="100%"
+										subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+		<s:Label text="Smooth" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:BooleanRenderer id="smoothRenderer" height="24"
+								   subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+		<s:Label text="Source" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:TextRenderer id="sourceRenderer" height="24" width="100%"
+								subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill">
+		<s:Label text="X" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="xRenderer" 
+								  height="24" 
+								  stepSize="1" 
+								  snapInterval="0"
+								  subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill">
+		<s:Label text="Y" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="yRenderer" 
+								  height="24" 
+								  stepSize="1" 
+								  snapInterval="0"
+								  subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+		<s:Label text="Scale X" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="scaleXRenderer" 
+								  height="24" 
+								  stepSize="1" 
+								  snapInterval="0"
+								  subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+		<s:Label text="Scale Y" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="scaleYRenderer" 
+								  height="24" 
+								  stepSize="1" 
+								  snapInterval="0"
+								  subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+		<s:Label text="Transform X" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="transformXRenderer" 
+								  height="24" 
+								  stepSize="1" 
+								  snapInterval="0"
+								  subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+		<s:Label text="Transform Y" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="transformYRenderer" 
+								  height="24" 
+								  stepSize="1" 
+								  snapInterval="0"
+								  subPropertyName="fill"
+								  defaultValue="1"/>
+	</s:HGroup>
+</s:Group>

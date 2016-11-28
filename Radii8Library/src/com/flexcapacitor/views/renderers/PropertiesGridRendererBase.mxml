@@ -28,6 +28,16 @@
 			import spark.components.supportClasses.DropDownListBase;
 			
 			/**
+			 * Default value when none is found in the metadata. Used when reseting the previous values
+			 * */
+			public var defaultValue:Object;
+			
+			/**
+			 * Set this to a property name if the property is an object on the target
+			 * */
+			public var subPropertyName:String;
+			
+			/**
 			 * Indicates if property selected events should be dispatched
 			 * */
 			public var dispatchProperySelectedEvents:Boolean;
@@ -324,20 +334,30 @@
 				// do not auto update if setting properties
 				settingProperties = true;
 				
+				var settableObject:Object;
+				
+				// for things like setting fill on graphic element
+				if (subPropertyName==null) {
+					settableObject = target;
+				}
+				else {
+					settableObject = target[subPropertyName];
+				}
+				
 				if (isStyle) {
 					if (clearStyle) {
-						valueSuccessfullyApplied = Radiate.clearStyle(target, property);
+						valueSuccessfullyApplied = Radiate.clearStyle(settableObject, property);
 					}
 					else {
-						valueSuccessfullyApplied = Radiate.setStyle(target, property, actualValue);
+						valueSuccessfullyApplied = Radiate.setStyle(settableObject, property, actualValue);
 					}
 				}
 				else {
 					if (clearStyle) {
-						valueSuccessfullyApplied = Radiate.clearProperty(target, property);
+						valueSuccessfullyApplied = Radiate.clearProperty(settableObject, property, defaultValue);
 					}
 					else {
-						valueSuccessfullyApplied = Radiate.setProperty(target, property, actualValue);
+						valueSuccessfullyApplied = Radiate.setProperty(settableObject, property, actualValue);
 					}
 				}
 				

@@ -151,14 +151,17 @@ How to add a new tool
 - Go to Radii8LibraryAssets/src/assets/icons/tools and add the file there
 - Open Radii8LibraryToolAssets and add a reference to the icon(s)
 
-- Create an inspector class. You can copy one of the ones in the tools-manifest.defaults.xml
+- Optionally create an inspector class. You can copy one of the ones in the tools-manifest.defaults.xml
 
 - In your tool class add a reference to the icon and cursors
 - Look at the classes to see what to do after that :P
+- Go to Radii8Desktop/src/assets/images/tools and add the icon from earlier
 
 - Add reference to your class in RadiateReferences
 - Copy Radii8LibraryAssets.SWC to main library project swsees folder
     
+- Select the new classes in the Radii8Library project properties in Classes 
+  I've had problems compiling when I use Select All Classes from all sources  
 
 ***********************************************
 How to switch to a tool

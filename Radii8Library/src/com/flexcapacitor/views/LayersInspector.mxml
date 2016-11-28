@@ -57,6 +57,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.AccessorMetaData;
+			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -111,6 +112,7 @@
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, addItemChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_UPDATED, documentUpdatedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_REVERTED, documentChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler, false, 0, true);
@@ -128,6 +130,7 @@
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, addItemChangeHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
+					radiate.removeEventListener(RadiateEvent.DOCUMENT_UPDATED, documentUpdatedHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_REVERTED, documentChangeHandler);
 					radiate.removeEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
 					radiate.removeEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler);
@@ -826,7 +829,12 @@
 			}
 			
 			protected function refreshTree_clickHandler(event:MouseEvent):void {
-				updateComponentDisplayList();
+				var selectedDocument:Document = radiate.selectedDocument as Document;
+
+				if (selectedDocument) {
+					selectedDocument.updateComponentTree();
+					updateComponentDisplayList();
+				}
 			}
 			
 			protected function moveBelowButton_clickHandler(event:MouseEvent):void {
@@ -874,6 +882,11 @@
 					}
 					
 				}
+			}
+			
+			protected function documentUpdatedHandler(event:Event):void
+			{
+				updateComponentDisplayList(true);
 			}
 			
 		]]>
@@ -946,6 +959,13 @@
 								  focusAlpha="0"/>
 		
 		<s:Spacer width="100%"/>
+		<c:BeveledImageButton id="refreshTree" 
+							  source="{Radii8LibraryAssets.refresh}" 
+							  toolTip="Refresh Tree"
+							  click="refreshTree_clickHandler(event)"
+							  includeInLayout="true"
+							  visible="true"
+							  />
 		<c:BeveledImageToggleButton id="lockedItem" 
 									source="{Radii8LibraryAssets.locked}"
 									toolTip="Lock position and prevent selection"
@@ -962,13 +982,6 @@
 					   source="{Radii8LibraryAssets.bringForwards}" 
 					   toolTip="Bring Forward"
 					   click="moveAboveButton_clickHandler(event)"
-					   />
-		<c:BeveledImageButton id="refreshTree" 
-					   source="{Radii8LibraryAssets.refresh}" 
-					   toolTip="Refresh Tree"
-					   click="refreshTree_clickHandler(event)"
-					   includeInLayout="false"
-					   visible="false"
 					   />
 		<c:BeveledImageButton id="closeAllNodes" 
 					   source="{Radii8LibraryAssets.treeViewClosed}" 

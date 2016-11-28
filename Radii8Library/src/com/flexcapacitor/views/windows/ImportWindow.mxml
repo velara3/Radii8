@@ -108,15 +108,46 @@
 				var isValid:Boolean;
 				var message:String;
 				var error:Object;
+				var root:String;
+				var updatedCode:String;
+				var codeToParse:String = aceEditor.text;
+				var rootNodeName:String = MXMLDocumentConstants.ROOT_NODE_NAME;
+				var namespaces:Object;
+				var namespacesString:String;
+				var stringMethod:Boolean;
 				
-				isValid = XMLUtils.isValidXML(code);
+				isValid = XMLUtils.isValidXML(codeToParse);
 				//error = XMLUtils.validationError;
 				
-				if (!isValid && code!="") {
-					validationInfo = XMLUtils.validateXML(code);
-					message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
-					errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
-					showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);
+				if (!isValid && codeToParse!="") {
+					validationInfo = XMLUtils.validateXML(codeToParse);
+					error = validationInfo.error;
+					
+					if (error is TypeError && error.errorID==1083) {
+						namespaces = MXMLDocumentConstants.getNamespaces();
+						namespacesString = MXMLDocumentConstants.getDefaultNamespaceDeclarations();
+						
+						if (stringMethod) {
+							updatedCode = XMLUtils.addNamespacesToXMLString(codeToParse, namespaces);
+						}
+						else {
+							root = '<'+rootNodeName + " " + namespacesString +'>';
+							updatedCode = root + codeToParse + "</"+rootNodeName+">";
+						}
+						
+						isValid = XMLUtils.isValidXML(updatedCode);
+						
+						if (isValid) {
+							hideMessage();
+						}
+					}
+					
+					if (!isValid) {
+						message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
+						
+						errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
+						showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);
+					}
 				}
 				else {
 					hideMessage();
@@ -192,7 +223,7 @@
 				var result:SourceData;
 				
 				if (type==ImportWindow.NEW_DOCUMENT) {
-					result = radiate.importMXMLDocument(selectedProject, null, null, code);
+					result = radiate.importMXMLDocument(selectedProject, null, code);
 					
 					if (result) {
 						showImportedMessage();
@@ -206,7 +237,7 @@
 					}
 				}
 				else if (type==ImportWindow.CURRENT_DOCUMENT && selectedDocument) {
-					result = radiate.importMXMLDocument(selectedProject, selectedDocument, null, code);
+					result = radiate.importMXMLDocument(selectedProject, selectedDocument, code);
 					
 					if (result) {
 						showImportedMessage();
@@ -216,7 +247,7 @@
 				}
 				else if (type==ImportWindow.CURRENT_SELECTION) {
 					if (target is IVisualElement) {
-						result = radiate.importMXMLDocument(selectedProject, selectedDocument, target, code);
+						result = radiate.importMXMLDocument(selectedProject, selectedDocument, code, target);
 						
 						if (result) {
 							showImportedMessage();
@@ -358,7 +389,7 @@
 				var xml:XML;
 				var root:String;
 				var isValid:Boolean;
-				var rootNodeName:String = "RootWrapperNode";
+				var rootNodeName:String = MXMLDocumentConstants.ROOT_NODE_NAME;
 				var updatedCode:String;
 				var mxmlDocumentImporter:MXMLDocumentImporter;
 				var componentDescription:ComponentDescription;

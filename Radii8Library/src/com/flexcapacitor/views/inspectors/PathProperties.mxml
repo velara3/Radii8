@@ -62,7 +62,11 @@
 			public function update():void {
 				//var data:Object = ClassUtils.getMetaDataOfProperty(target, "source");
 				var pathData:MetaData 			= ClassUtils.getMetaDataOfProperty(target, "data");
+				var winding:MetaData 			= ClassUtils.getMetaDataOfProperty(target, "winding");
 				pathDataRenderer.data 			= pathData;
+				winding.enumeration 			= [GraphicsPathWinding.EVEN_ODD, GraphicsPathWinding.NON_ZERO];
+				windingRenderer.defaultValue	= GraphicsPathWinding.EVEN_ODD;
+				windingRenderer.data 			= winding;
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
@@ -74,10 +78,11 @@
 						return;
 					}
 				}
+				
 				callLater(update);
 			}
 			
-			public var relevantProperties:Array = ["data"];
+			public var relevantProperties:Array = ["data", "winding"];
 			
 			
 			protected function sizeLabels_showHandler(event:FlexEvent):void {
@@ -104,5 +109,10 @@
 	<s:HGroup width="100%" verticalAlign="baseline">
 		<s:Label text="Data" styleName="inspectablePanelLabel"/>
 		<renderers:TextRenderer id="pathDataRenderer" height="24" width="100%"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline">
+		<s:Label text="Winding" styleName="inspectablePanelLabel"/>
+		<renderers:DropDownListRenderer id="windingRenderer" height="24" width="100%"/>
 	</s:HGroup>
 </s:VGroup>

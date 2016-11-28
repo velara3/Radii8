@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="false" version="3">
-  <includeClasses/>
+<flexLibProperties includeAllClasses="false" useMultiPlatformConfig="false" version="3">
+  <includeClasses>
+    <classEntry path="Radii8LibraryAssets"/>
+    <classEntry path="Radii8LibraryDeviceAssets"/>
+    <classEntry path="Radii8LibraryEffectsAssets"/>
+    <classEntry path="Radii8LibraryInspectorAssets"/>
+    <classEntry path="Radii8LibraryMXAssets"/>
+    <classEntry path="Radii8LibrarySparkAssets"/>
+    <classEntry path="Radii8LibraryToolAssets"/>
+    <classEntry path="Radii8LibraryTranscodersAssets"/>
+  </includeClasses>
   <includeResources/>
   <namespaceManifests/>
 </flexLibProperties>

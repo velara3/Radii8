@@ -8,13 +8,13 @@ package com.flexcapacitor.managers
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.utils.ClassUtils;
+	import com.flexcapacitor.utils.supportClasses.log;
 	
 	import flash.events.EventDispatcher;
 	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
 	import mx.collections.ArrayCollection;
-	import mx.collections.ICollectionView;
 	import mx.collections.IList;
 	import mx.collections.ListCollectionView;
 	import mx.core.ClassFactory;
@@ -83,7 +83,7 @@ package com.flexcapacitor.managers
 		public static var ADD_ITEM_DESCRIPTION:String = "Add";
 		public static var MOVE_ITEM_DESCRIPTION:String = "Move";
 		private static var BEGINNING_OF_HISTORY:String = "Reverted";
-		public static var debug:Boolean = true;
+		public static var debug:Boolean;
 		
 		/**
 		 * Indicates if undo is available
@@ -282,7 +282,7 @@ package com.flexcapacitor.managers
 				description = historyEventItem.description;
 				
 				if (debug) {
-					trace("Undo: " + description + ", Action: " + action);
+					log("Undo: " + description + ", Action: " + action);
 				}
 				
 				// undo the add
@@ -535,7 +535,7 @@ package com.flexcapacitor.managers
 				description = historyEventItem.description;
 				
 				if (debug) {
-					trace("Redo: " + description + ", Action: " + action);
+					log("Redo: " + description + ", Action: " + action);
 				}
 				
 				if (action==RadiateEvent.ADD_ITEM) {
@@ -1237,6 +1237,7 @@ package com.flexcapacitor.managers
 			var numberOfHistoryTargets:int;
 			var historyTargets:Array;
 			var historyTarget:Object;
+			var historyCollection:ListCollectionView;var prev:String;var current:String;
 			
 			// more than one thing has happened
 			if (!hasPreviousEvents(document)) {
@@ -1246,7 +1247,13 @@ package com.flexcapacitor.managers
 			currentHistoryEvent = getHistoryEventAtIndex(document, currentPosition);
 			previousHistoryEvent = getHistoryEventAtIndex(document, currentPosition-1);
 			
-			previousHistoryEvent.historyEventItems.concat(currentHistoryEvent.historyEventItems);
+			prev = previousHistoryEvent.description;
+			current = currentHistoryEvent.description;
+			
+			// the order seems to matter - if you are removing something then adding something else
+			// the position in non basic layout changes when an object is removed 
+			previousHistoryEvent.historyEventItems = currentHistoryEvent.historyEventItems.concat(previousHistoryEvent.historyEventItems);
+			//previousHistoryEvent.historyEventItems = previousHistoryEvent.historyEventItems.concat(currentHistoryEvent.historyEventItems);
 			
 			if (description!=null) {
 				previousHistoryEvent.description = description;
@@ -1254,7 +1261,9 @@ package com.flexcapacitor.managers
 			
 			if (disableHistoryManagement) return null;
 			
-			document.history.disableAutoUpdate();
+			historyCollection = document.history;
+			
+			historyCollection.disableAutoUpdate();
 			
 			historyEventItems = previousHistoryEvent.historyEventItems;
 			numberOfHistoryEventItems = historyEventItems.length;
@@ -1275,8 +1284,11 @@ package com.flexcapacitor.managers
 				}
 			}
 			
+			historyCollection.removeItem(currentHistoryEvent);
 			
-			document.history.enableAutoUpdate();
+			historyCollection.enableAutoUpdate();
+			
+			historyCollection.refresh();
 			
 			// the next few lines could be refactored. 
 			// we created a history manager class and 
@@ -1370,6 +1382,7 @@ package com.flexcapacitor.managers
 		 * */
 		public static function selectTargetsAtIndex(document:IDocument, index:int, dispatchEvent:Boolean = true):void {
 			var historyEvent:HistoryEvent = getHistoryEventAtIndex(document, index);
+			
 			if (historyEvent) {
 				Radiate.setTargets(historyEvent.targets, dispatchEvent);
 			}
@@ -1381,9 +1394,35 @@ package com.flexcapacitor.managers
 		 * */
 		public static function selectCurrentEventTargets(document:IDocument, dispatchEvent:Boolean = true):void {
 			var historyEvent:HistoryEvent = getCurrentHistoryEvent(document);
+			
 			if (historyEvent) {
 				Radiate.setTargets(historyEvent.targets, dispatchEvent);
 			}
+		}
+		
+		/**
+		 * Useful if you need to perform an action if the first action is successful 
+		 * */
+		public static function swapLastHistoryEvents(document:IDocument, offset:int = 1, dispatchEvent:Boolean = true):void {
+			var history:ListCollectionView = document.history;
+			var lastItem:HistoryEvent;
+			var previousItem:HistoryEvent;
+			
+			history.disableAutoUpdate();
+			
+			lastItem = history.removeItemAt(history.length-1) as HistoryEvent;
+			previousItem = history.removeItemAt(history.length-1) as HistoryEvent;
+			
+			history.addItem(lastItem);
+			history.addItem(previousItem);
+			
+			history.enableAutoUpdate();
+			history.refresh();
+			
+			if (dispatchEvent) {
+				Radiate.instance.dispatchHistoryChangeEvent(document, history.length-2, history.length-1, previousItem);
+			}
+			
 		}
 	}
 }

@@ -109,6 +109,9 @@ package {
 		[Embed(source="assets/icons/general/image_play.png")]
 		public static const imagePlayIcon:Class;
 		
+		[Embed(source="assets/icons/general/importInto.png")]
+		public static const importInto:Class;
+		
 		[Embed(source="assets/icons/general/info.png")]
 		public static const info:Class;
 		
@@ -192,6 +195,12 @@ package {
 		
 		[Embed(source="assets/icons/general/trash_can.png")]
 		public static const trashCan:Class;
+		
+		[Embed(source="assets/icons/general/transform.png")]
+		public static const transform:Class;
+		
+		[Embed(source="assets/icons/general/transformWithArrows.png")]
+		public static const transformWithArrows:Class;
 		
 		[Embed(source="assets/icons/general/tree_view_close.png")]
 		public static const treeViewClosed:Class;

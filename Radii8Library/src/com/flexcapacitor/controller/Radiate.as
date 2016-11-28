@@ -51,6 +51,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.model.IProjectData;
 	import com.flexcapacitor.model.ISavable;
 	import com.flexcapacitor.model.ImageData;
+	import com.flexcapacitor.model.ImportOptions;
 	import com.flexcapacitor.model.InspectableClass;
 	import com.flexcapacitor.model.InspectorData;
 	import com.flexcapacitor.model.IssueData;
@@ -72,6 +73,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.tools.ITool;
 	import com.flexcapacitor.tools.Selection;
+	import com.flexcapacitor.tools.Text;
 	import com.flexcapacitor.utils.ArrayUtils;
 	import com.flexcapacitor.utils.Base64;
 	import com.flexcapacitor.utils.ClassUtils;
@@ -119,6 +121,7 @@ package com.flexcapacitor.controller {
 	import flash.net.SharedObject;
 	import flash.net.URLRequest;
 	import flash.net.navigateToURL;
+	import flash.net.dns.AAAARecord;
 	import flash.system.ApplicationDomain;
 	import flash.system.Capabilities;
 	import flash.ui.Mouse;
@@ -139,6 +142,7 @@ package com.flexcapacitor.controller {
 	import mx.controls.Alert;
 	import mx.controls.ColorPicker;
 	import mx.controls.LinkButton;
+	import mx.controls.Text;
 	import mx.core.ClassFactory;
 	import mx.core.Container;
 	import mx.core.DeferredInstanceFromFunction;
@@ -1316,6 +1320,18 @@ package com.flexcapacitor.controller {
 			if (hasEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE)) {
 				sizeChangeEvent = new RadiateEvent(RadiateEvent.DOCUMENT_SIZE_CHANGE, false, false, target);
 				dispatchEvent(sizeChangeEvent);
+			}
+		}
+		
+		/**
+		 * Dispatch document updated event
+		 * */
+		public function dispatchDocumentUpdatedEvent(target:*):void {
+			var documentUpdatedEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_UPDATED)) {
+				documentUpdatedEvent = new RadiateEvent(RadiateEvent.DOCUMENT_UPDATED, false, false, target);
+				dispatchEvent(documentUpdatedEvent);
 			}
 		}
 		
@@ -5176,6 +5192,9 @@ package com.flexcapacitor.controller {
 			var useCopyObjectsTechnique:Boolean = false;
 			var bitmapData:BitmapData;
 			var data:Object;
+			var description:ComponentDescription;
+			var destinationIndex:int = -1;
+			var importOptions:ImportOptions;
 			
 			// get destination of clipboard contents
 			if (destination && !(destination is IVisualElementContainer)) {
@@ -5271,7 +5290,7 @@ package com.flexcapacitor.controller {
 				exportOptions = new ExportOptions();
 				exportOptions.useInlineStyles = true;
 				exportOptions.exportChildDescriptors = true;
-				var description:ComponentDescription = selectedDocument.getItemDescription(component);
+				description = selectedDocument.getItemDescription(component);
 				
 				// copy selection
 				if (description) {
@@ -5280,10 +5299,10 @@ package com.flexcapacitor.controller {
 				
 				// paste selection
 				if (itemData && description) {
-					itemData = CodeManager.setSourceData(itemData.source, destination, selectedDocument, CodeManager.MXML, null);
+					itemData = CodeManager.setSourceData(itemData.source, destination, selectedDocument, CodeManager.MXML, destinationIndex, importOptions);
 				}
 				else if (copiedDataSource) {
-					itemData = CodeManager.setSourceData(copiedDataSource, destination, selectedDocument, CodeManager.MXML, null);
+					itemData = CodeManager.setSourceData(copiedDataSource, destination, selectedDocument, CodeManager.MXML, destinationIndex, importOptions);
 				}
 				
 				// select first target
@@ -5372,6 +5391,7 @@ package com.flexcapacitor.controller {
 			var sourceData:SourceData;
 			var componentDescription:ComponentDescription;
 			var newTargets:Array;
+			var containerIndex:int = -1;
 			
 			exportOptions = new ExportOptions();
 			exportOptions.useInlineStyles = true;
@@ -5422,7 +5442,7 @@ package com.flexcapacitor.controller {
 			}
 			
 			// add duplicate
-			sourceData = CodeManager.setSourceData(sourceData.source, destination, selectedDocument, CodeManager.MXML, null);
+			sourceData = CodeManager.setSourceData(sourceData.source, destination, selectedDocument, CodeManager.MXML, containerIndex, null);
 			
 			// dispatch added items
 			dispatchAddEvent(sourceData.targets, null, null);
@@ -5740,7 +5760,7 @@ package com.flexcapacitor.controller {
 			var name:String;
 			
 			imageData.bitmapData = bitmapData;
-			imageData.byteArray = DisplayObjectUtils.getBitmapByteArray(bitmapData);
+			imageData.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(bitmapData);
 			
 			if (destination) {
 				name = ClassUtils.getIdentifierNameOrClass(destination) + ".png";
@@ -6239,9 +6259,23 @@ package com.flexcapacitor.controller {
 		 * Usage:<br/>
 		 * <pre>Radiate.clearProperty(myButton, "width");</pre>
 		 * */
-		public static function clearProperty(target:Object, property:String, description:String = null, dispatchEvents:Boolean = true):Boolean {
+		public static function clearProperty(target:Object, property:String, defaultValue:* = undefined, description:String = null, dispatchEvents:Boolean = true):Boolean {
+			var successful:Boolean;
 			
-			return setProperty(target, property, undefined, description, true, dispatchEvents);
+			if (description==null) {
+				description = "Reset " + property;
+			}
+			
+			if (defaultValue!==undefined && defaultValue!==null) {
+				successful = setProperty(target, property, defaultValue, description, true, dispatchEvents);
+				// undefined values automatically get removed but nonundefined do not so we remove them manually 
+				removeComponentProperties([target], [property]);
+			}
+			else {
+				successful = setProperty(target, property, undefined, description, true, dispatchEvents);
+			}
+			
+			return successful;
 		}
 		
 		/**
@@ -6250,15 +6284,33 @@ package com.flexcapacitor.controller {
 		 * Usage:<br/>
 		 * <pre>Radiate.clearProperties(myButton, ["width", "percentWidth"]);</pre>
 		 * */
-		public static function clearProperties(target:Object, properties:Array, description:String = null, dispatchEvents:Boolean = true):Boolean {
-			var object:Object = {};
+		public static function clearProperties(target:Object, properties:Array, defaultValue:* = undefined, description:String = null, dispatchEvents:Boolean = true):Boolean {
+			var propertiesObject:Object = {};
 			var numberOfProperties:uint = properties.length;
+			var successful:Boolean;
 			
-			for (var i:int;i<numberOfProperties;i++) {
-				object[properties[i]] = undefined;
+			if (description==null) {
+				description = "Reset " + properties;
 			}
 			
-			return setProperties(target, properties, object, description, true, dispatchEvents);
+			for (var i:int;i<numberOfProperties;i++) {
+				if (defaultValue!==undefined && defaultValue!==null) {
+					propertiesObject[properties[i]] = defaultValue;
+				}
+				else {
+					propertiesObject[properties[i]] = undefined;
+				}
+			}
+			
+			if (defaultValue!==undefined && defaultValue!==null) {
+				successful = setProperties(target, properties, propertiesObject, description, true, dispatchEvents);
+				removeComponentProperties([target], properties);
+			}
+			else {
+				successful = setProperties(target, properties, propertiesObject, description, true, dispatchEvents);
+			}
+			
+			return successful;
 		}
 		
 		/**
@@ -6285,7 +6337,7 @@ package com.flexcapacitor.controller {
 				applyChanges(targets, styleChanges, null, style, null);
 				//LayoutManager.getInstance().validateNow(); // applyChanges calls this
 				
-				historyEvents = HistoryManager.createHistoryEventItems(targets, styleChanges, null, style, null, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, styleChanges, null, style, null, value, description);
 				
 				updateComponentStyles(targets, styleChanges, [style]);
 				
@@ -6405,7 +6457,7 @@ package com.flexcapacitor.controller {
 			var effect:HistoryEffect = new HistoryEffect();
 			var onlyPropertyChanges:Array = [];
 			var directApply:Boolean = true;
-			
+			// note: i think the Animation effect has an example of using this that verify we are doing it right - nov 27,16
 			for (var i:int;i<numberOfChanges;i++) {
 				if (changes[i] is PropertyChanges) { 
 					onlyPropertyChanges.push(changes[i]);
@@ -6482,7 +6534,7 @@ package com.flexcapacitor.controller {
 				//LayoutManager.getInstance().validateNow(); // applyChanges calls this
 				//addHistoryItem(propertyChanges, description);
 				
-				historyEventItems = HistoryManager.createHistoryEventItems(targets, propertyChanges, property, null, null, value);
+				historyEventItems = HistoryManager.createHistoryEventItems(targets, propertyChanges, property, null, null, value, description);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEventItems, description);
@@ -6591,7 +6643,7 @@ package com.flexcapacitor.controller {
 				applyChanges(targets, stylesChanges, null, styles, null);
 				//LayoutManager.getInstance().validateNow();
 				
-				historyEvents = HistoryManager.createHistoryEventItems(targets, stylesChanges, null, styles, null, value);
+				historyEvents = HistoryManager.createHistoryEventItems(targets, stylesChanges, null, styles, null, value, description);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
 					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEvents, description);
@@ -6706,7 +6758,7 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 			var previousChange:PropertyChanges;
 			
 			if (properties==null) {
-				properties = MXMLDocumentConstants.explicitSizeAndPositionProperties.slice();
+				properties = MXMLDocumentConstants.explicitSizeAndPositionRotationProperties.slice();
 			}
 			
 			tempEffect = new HistoryEffect();
@@ -7246,6 +7298,39 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 			}
 		}
 		
+		
+		
+		/**
+		 * Updates the properties on a component description
+		 * */
+		public static function removeComponentProperties(localTargets:Array, properties:Array):void {
+			var componentDescription:ComponentDescription;
+			var numberOfTargets:int;
+			var localTarget:Object;
+			var property:String;
+			var selectedDocument:IDocument;
+			var numberOfProperties:int;
+			
+			numberOfTargets = localTargets.length;
+			selectedDocument = instance.selectedDocument;
+			numberOfProperties = properties ? properties.length : 0;
+			
+			if (numberOfProperties==0) return;
+			
+			for (var i:int;i<numberOfTargets;i++) {
+				localTarget = localTargets[i];
+				componentDescription = selectedDocument.getItemDescription(localTarget);
+				
+				if (componentDescription) {
+					for (var k:int = 0; k < numberOfProperties; k++) {
+						property = properties[k];
+						
+						delete componentDescription.properties[property];
+					}
+				}
+			}
+		}
+		
 		/**
 		 * Gets the value translated into a type. 
 		 * */
@@ -7756,7 +7841,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * <pre>Radiate.removeElement(radiate.targets);</pre>
 		 * */
 		public static function removeElement(items:*, description:String = null):String {
-			
 			var visualElement:IVisualElement;
 			var removeItems:AddItems;
 			var childIndex:int;
@@ -7863,8 +7947,18 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Handles double click on text to show text editor. 
 		 * To support more components add the elements in the addElement method
 		 * */
-		public static function showTextEditor(event:MouseEvent):void {
-			var target:TextBase = event.target as TextBase;
+		public static function showTextEditorHandler(event:MouseEvent):void {
+			var currentTarget:Object = event.target;
+			
+			showTextEditor(currentTarget);
+		}
+		
+		/**
+		 * Handles double click on text to show text editor. 
+		 * To support more components add the elements in the addElement method
+		 * */
+		public static function showTextEditor(textField:Object):void {
+			var textTarget:TextBase = textField as TextBase;
 			var isRichEditor:Boolean;
 			var rectangle:Rectangle;
 			var propertyNames:Array;
@@ -7881,12 +7975,12 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			const MIN_WIDTH:int = 22;
 			
-			if (!(instance.selectedTool is Selection)) {
+			if (!(instance.selectedTool is Selection) && !(instance.selectedTool is com.flexcapacitor.tools.Text)) {
 				return;
 			}
 			
 			// get reference to current source label or richtext 
-			currentEditableComponent = target;
+			currentEditableComponent = textTarget;
 			
 			if (editableRichTextField==null) {
 				editableRichTextField = new RichEditableText();
@@ -7897,7 +7991,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			// and setup properties that need to be set for temporary rich text field
 			if (currentEditableComponent) {
 				iDocument = instance.selectedDocument;
-				targetComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, iDocument.componentDescription);
+				targetComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(textTarget, iDocument.componentDescription);
 				parentComponentDescription = targetComponentDescription.parent;
 				//rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
 				//propertyNames = ["x", "y", "text", "minWidth"];
@@ -7922,7 +8016,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					rectangle = DisplayObjectUtils.getRectangleBounds(currentEditableComponent, currentEditableComponent.owner);
 				}
 				else {
-					rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
+					rectangle = DisplayObjectUtils.getRectangleBounds(textTarget, iDocument.instance);
 				}
 				
 				
@@ -7930,15 +8024,15 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				valuesObject.y = rectangle.y;
 				valuesObject.minWidth = MIN_WIDTH;
 				
-				if (!isNaN(target.explicitWidth)) {
+				if (!isNaN(textTarget.explicitWidth)) {
 					propertyNames.push("width");
 					valuesObject.width = rectangle.width;
 				}
-				else if (!isNaN(target.percentWidth)) {
+				else if (!isNaN(textTarget.percentWidth)) {
 					// if basic layout we can get percent width
 					if (isBasicLayout) {
 						propertyNames.push("percentWidth");
-						valuesObject.percentWidth = target.percentWidth;
+						valuesObject.percentWidth = textTarget.percentWidth;
 					}
 					else {
 						propertyNames.push("width");
@@ -8093,6 +8187,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					editableRichTextField.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
 					editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents, false, 0, true);
 					editableRichTextField.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
+				}
+				
+				if (!(instance.selectedTool is com.flexcapacitor.tools.Text)) {
+					instance.disableTool();
 				}
 				
 				instance.disableTool();
@@ -8667,26 +8765,40 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				BorderContainer(target).setStyle("cornerRadius", 0);
 			}
 			
-			// add fill to graphic elements if null
+			// add fill and stroke to graphic elements
 			if (componentInstance is GraphicElement) {
 				var fill:SolidColor;
 				var stroke:SolidColorStroke;
+				var object:Object = {};
+				var properties:Array = [];
 				
 				if (componentInstance is FilledElement && componentInstance.fill==null) {
 					fill = new SolidColor();
 					fill.color = 0xf6f6f6;
-					FilledElement(componentInstance).fill = fill;
+					object.fill = fill;
 				}
 				
 				if (componentInstance is StrokedElement && componentInstance.stroke==null) {
 					stroke = new SolidColorStroke();
 					stroke.color = 0xA6A6A6;
-					StrokedElement(componentInstance).stroke = stroke;
+					object.stroke = stroke;
 				}
 				
-				if (componentInstance is Path) {
-					Path(componentInstance).data = "L 80 80 V 0 L 0 80 V 0";
+				if (componentInstance is Path && componentInstance.data==null) {
+					object.data = "L 80 80 V 0 L 0 80 V 0";
 				}
+				
+				
+				for (var property:String in object) {
+					//setProperty(component, property, [item.defaultProperties[property]]);
+					properties.push(property);
+					//componentDescription.defaultProperties[property] = object[property];
+				}
+				
+				if (properties.length) {
+					setProperties(componentInstance, properties, object, "Setting graphic element properties");
+				}
+				//HistoryManager.mergeLastHistoryEvent(instance.selectedDocument);
 			}
 			
 			makeInteractive(componentInstance, interactive);
@@ -8751,11 +8863,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					if (componentInstance is Label || componentInstance is RichText || componentInstance is Hyperlink) {
 						componentInstance.doubleClickEnabled = true;
 						
-						componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
+						componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditorHandler, false, 0, true);
 					}
 					else {
 						componentInstance.doubleClickEnabled = false;
-						componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor);
+						componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditorHandler);
 					}
 					
 					if (componentInstance is Hyperlink) {
@@ -8767,10 +8879,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 						componentInstance.doubleClickEnabled = interactive;
 						
 						if (interactive) {
-							componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor, false, 0, true);
+							componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditorHandler, false, 0, true);
 						}
 						else {
-							componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditor);
+							componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditorHandler);
 						}
 					}
 					
@@ -8994,6 +9106,25 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 
 			return newProject;
+		}
+		
+		/**
+		 * Opens project from main view
+		 * */
+		public function openProjectFromMainView(project:IProject):void {
+			
+			if (project && project is IProject && !project.isOpen) {
+				mainView.currentState = MainView.DESIGN_STATE;
+				mainView.validateNow();
+				addProject(project, false);
+				openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
+				setProject(project, true);
+			}
+			else if (project && project is IProject && project.isOpen) {
+				mainView.currentState = MainView.DESIGN_STATE;
+				mainView.validateNow();
+				setProject(project, true);
+			}
 		}
 		
 		/**
@@ -9592,7 +9723,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		/**
 		 * Import MXML code
 		 * */
-		public function importMXMLDocument(project:IProject, iDocument:IDocument, container:IVisualElement, code:String, name:String = null, dispatchEvents:Boolean = true):SourceData {
+		public function importMXMLDocument(project:IProject, iDocument:IDocument, code:String, container:Object = null, containerIndex:int = -1, name:String = null, dispatchEvents:Boolean = true):SourceData {
 			var result:Object;
 			var newDocument:Boolean;
 			var sourceData:SourceData;
@@ -9606,9 +9737,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				}
 			}
 			
-			
 			if (!newDocument) {
-				sourceData = parseSource(iDocument, code, container);
+				sourceData = parseSource(iDocument, code, container, containerIndex);
 				
 				return sourceData;
 			}
@@ -10264,7 +10394,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * If code is null and source is set then parses source.
 		 * If parent is set then imports code to the parent
 		 * */
-		public static function parseSource(document:IDocument, code:String = null, parent:IVisualElement = null, dispatchEvents:Boolean = true):SourceData {
+		public static function parseSource(document:IDocument, code:String = null, parent:Object = null, containerIndex:int = -1, dispatchEvents:Boolean = true):SourceData {
 			var codeToParse:String = code ? code : document.source;
 			var currentChildren:XMLList;
 			var nodeName:String;
@@ -10272,12 +10402,13 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var xml:XML;
 			var root:String;
 			var isValid:Boolean;
-			var rootNodeName:String = "RootWrapperNode";
+			var rootNodeName:String = MXMLDocumentConstants.ROOT_NODE_NAME;
 			var updatedCode:String;
 			var mxmlDocumentImporter:MXMLDocumentImporter;
 			var componentDescription:ComponentDescription;
 			var sourceDataLocal:SourceData;
 			var message:String;
+			var openPopUpOnError:Boolean;
 			
 			// I don't like this here - should move or dispatch events to handle import
 			var transcoder:TranscoderDescription = CodeManager.getImporter(CodeManager.MXML);
@@ -10310,7 +10441,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				message = "Could not parse code for document, \"" + document.name + "\". Fix the code before you import.";
 				Radiate.error("Could not parse code for document, \"" + document.name + "\". \n" + error.message + " \nCode: \n" + codeToParse);
 				
-				if (openImportPopUp) {
+				if (openImportPopUp && openPopUpOnError) {
 					openImportPopUp.popUpOptions = {title:message, code:codeToParse};
 					openImportPopUp.play();
 				}
@@ -10338,8 +10469,15 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					Object(document.instance).activate();
 				}
 				
-				componentDescription = document.componentDescription;
-				sourceDataLocal = importer.importare(codeToParse, document, componentDescription, null, dispatchEvents);
+				if (parent) {
+					componentDescription = document.getItemDescription(parent);
+				}
+				
+				if (componentDescription==null) {
+					componentDescription = document.componentDescription;
+				}
+				
+				sourceDataLocal = importer.importare(codeToParse, document, componentDescription, containerIndex, null, dispatchEvents);
 				
 				if (container) {
 					Radiate.instance.setTarget(container);
@@ -10395,7 +10533,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public function openMXMLDocument(name:String, mxml:String):void {
 			name = name.lastIndexOf(".")!=-1 ? name.substr(0, name.lastIndexOf(".")) : name;
-			importMXMLDocument(selectedProject, null, null, mxml, name);
+			importMXMLDocument(selectedProject, null, mxml, null, -1, name);
 		}
 		
 		/**
@@ -10411,14 +10549,14 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			if (action==ImportWindow.IMPORT) {
 				if (type==ImportWindow.NEW_DOCUMENT) {
-					importMXMLDocument(selectedProject, null, null, code);
+					importMXMLDocument(selectedProject, null, code);
 				}
 				else if (type==ImportWindow.CURRENT_DOCUMENT && selectedDocument) {
-					importMXMLDocument(selectedProject, selectedDocument, null, code);
+					importMXMLDocument(selectedProject, selectedDocument, code);
 				}
 				else if (type==ImportWindow.CURRENT_SELECTION && target is IVisualElement) {
 					if (target is IVisualElement) {
-						importMXMLDocument(selectedProject, selectedDocument, IVisualElement(target), code);
+						importMXMLDocument(selectedProject, selectedDocument, code, IVisualElement(target));
 					}
 					Alert.show("Please select a visual element");
 				}
@@ -11538,7 +11676,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				
 				if (bitmapData) {
 					if (bitmapData.width!=0 && bitmapData.height) {
-						byteArray = DisplayObjectUtils.getBitmapByteArray(bitmapData);
+						byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(bitmapData);
 						saveFileAs(byteArray, fileName, "png");
 						return true;
 					}
@@ -11849,7 +11987,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				
 				if (imageData) {
 					if (imageData.byteArray==null && imageData.bitmapData) {
-						imageData.byteArray = DisplayObjectUtils.getBitmapByteArray(imageData.bitmapData);
+						imageData.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(imageData.bitmapData);
 						//imageData.name = ClassUtils.getIdentifierNameOrClass(initiator) + ".png";
 						imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
 						imageData.file = null;
@@ -12182,7 +12320,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 			
 			if (imageData && imageData.bitmapData && imageData.byteArray==null) {
-				attachmentData.byteArray = DisplayObjectUtils.getBitmapByteArray(BitmapData(imageData.bitmapData));
+				attachmentData.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(BitmapData(imageData.bitmapData));
 				
 				if (formattedName && formattedName.indexOf(".")==-1) {
 					formattedName = formattedName + ".png";
@@ -12255,7 +12393,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					uploadAttachmentService.fileData = data as ByteArray;
 				}
 				else if (data is BitmapData) {
-					uploadAttachmentService.fileData = DisplayObjectUtils.getBitmapByteArray(BitmapData(data));
+					uploadAttachmentService.fileData = DisplayObjectUtils.getByteArrayFromBitmapData(BitmapData(data));
 					
 					if (formattedName && formattedName.indexOf(".")==-1) {
 						formattedName = formattedName + ".png";
@@ -13554,7 +13692,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var sized:Boolean;
 			
 			if (target) {
-				sized = clearProperties(target, ["width","percentWidth", "height", "percentHeight"], "Size to content");
+				sized = clearProperties(target, ["width","percentWidth", "height", "percentHeight"], null, "Size to content");
 			}
 			
 			return sized;
@@ -13568,7 +13706,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var sized:Boolean;
 			
 			if (target) {
-				sized = clearProperties(target, ["width","percentWidth"], "Removed width");
+				sized = clearProperties(target, ["width","percentWidth"], null, "Removed width");
 			}
 			
 			return sized;
@@ -13582,7 +13720,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var sized:Boolean;
 			
 			if (target) {
-				sized = clearProperties(target, ["height", "percentHeight"], "Removed height");
+				sized = clearProperties(target, ["height", "percentHeight"], null, "Removed height");
 			}
 			
 			return sized;
@@ -13705,7 +13843,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				if (snapshot is BitmapData) {
 					data = new ImageData();
 					data.bitmapData = snapshot as BitmapData;
-					data.byteArray = DisplayObjectUtils.getBitmapByteArray(snapshot as BitmapData);
+					data.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(snapshot as BitmapData);
 					data.name = ClassUtils.getIdentifierNameOrClass(target) + ".png";
 					data.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
 					data.file = null;
@@ -14037,7 +14175,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				return UIComponent(object).moduleFactory;
 			}
 			
-			if (object is null) {
+			if (object==null || object is GraphicElement) {
 				if (instance.selectedDocument && instance.selectedDocument.instance) {
 					return instance.selectedDocument.instance.moduleFactory;
 				}

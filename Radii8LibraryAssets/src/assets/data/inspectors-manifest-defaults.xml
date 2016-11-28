@@ -223,6 +223,25 @@
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
     		<inspector name="Path" className="com.flexcapacitor.views.inspectors.PathProperties"/>
+    		<inspector name="Stroke" className="com.flexcapacitor.views.inspectors.StrokeStyles"/>
+    		<inspector name="Fill" className="com.flexcapacitor.views.inspectors.FillStyles"/>
+    </item>
+    <item name="Rect" className="spark.primitives.Rect" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Stroke" className="com.flexcapacitor.views.inspectors.StrokeStyles"/>
+    		<inspector name="Fill" className="com.flexcapacitor.views.inspectors.FillStyles"/>
+    </item>
+    <item name="Ellipse" className="spark.primitives.Ellipse" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Stroke" className="com.flexcapacitor.views.inspectors.StrokeStyles"/>
+    		<inspector name="Fill" className="com.flexcapacitor.views.inspectors.FillStyles"/>
+    </item>
+    <item name="Line" className="spark.primitives.Line" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Stroke" className="com.flexcapacitor.views.inspectors.StrokeStyles"/>
     </item>
 
 </inspectorsPackage>

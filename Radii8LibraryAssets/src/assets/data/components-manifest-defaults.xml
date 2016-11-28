@@ -259,18 +259,33 @@
 
     <component id="Rect" name="Rectangle" class="spark.primitives.Rect" include="true">
     	<defaults width="100" height="100" />
+    	<descendents>
+    		<property name="fill"/>
+    		<property name="stroke"/>
+    	</descendents>
     </component>
 
     <component id="Path" name="Path" class="spark.primitives.Path" include="true">
     	<defaults width="100" height="100" data="L 80 80 V 0 L 0 80 V 0"/>
+    	<descendents>
+    		<property name="fill"/>
+    		<property name="stroke"/>
+    	</descendents>
     </component>
 
     <component id="Ellipse" name="Ellipse" class="spark.primitives.Ellipse" include="true">
     	<defaults width="100" height="100" />
+    	<descendents>
+    		<property name="fill"/>
+    		<property name="stroke"/>
+    	</descendents>
     </component>
 
     <component id="Line" name="Line" class="spark.primitives.Line" include="true">
     	<defaults width="16" height="16" />
+    	<descendents>
+    		<property name="stroke"/>
+    	</descendents>
     </component>
     
     <component id="LinearGradient" name="Linear Gradient Fill" class="mx.graphics.LinearGradient" include="false">

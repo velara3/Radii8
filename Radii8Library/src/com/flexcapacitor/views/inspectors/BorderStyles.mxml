@@ -5,6 +5,8 @@
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
 		 xmlns:local="*"
 		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
 		 implements="com.flexcapacitor.views.IInspector" 
 		 styleName="inspectablePanel"
 		 >
@@ -20,6 +22,11 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.StyleMetaData;
 			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.primitives.Ellipse;
 
 			public var radiate:Radiate;
 			public var target:Object;
@@ -67,6 +74,24 @@
 			protected function propertyChangeHandler(event:RadiateEvent):void {
 				callLater(update);
 			}
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var length:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<length;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				length = hgroups.length;
+				
+				for (var j:int;j<length;j++) {
+					hgroups[j].gap = gap;
+				}
+			}
 		]]>
 	</fx:Script>
 	
@@ -75,23 +100,23 @@
 	</fx:Declarations>
 
 	
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Corner Radius" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Corner Radius" styleName="inspectablePanelLabel" />
 		<renderers:NumberRenderer id="cornerRadiusRenderer" height="24" stepSize="1" snapInterval="0"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Border Weight" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Border Weight" styleName="inspectablePanelLabel" />
 		<renderers:NumberRenderer id="borderWeightRenderer" height="24" stepSize="1"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Border Alpha" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Border Alpha" styleName="inspectablePanelLabel" />
 		<renderers:NumberRenderer id="borderAlphaRenderer" height="24" />
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
-		<s:Label text="Border Color" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Border Color" styleName="inspectablePanelLabel" />
 		<renderers:ColorPickerRenderer id="borderColorRenderer" height="24" includeCopyIcon="false"/>
 	</s:HGroup>
 	

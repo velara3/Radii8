@@ -1,10 +1,6 @@
 <?xml version="1.0"?>
 <!--
 
--->
-
-<!--
-
     Tools
     
     Be sure to include a reference to the classes in RadiateReferences
@@ -19,6 +15,12 @@
     		inspector="com.flexcapacitor.views.SelectionInspector" 
     		include="true"
     		key="v"/>
+    		
+    <tool id="Text" 
+    		class="com.flexcapacitor.tools.Text" 
+    		include="true"
+    		key="t"/>
+<!--     		inspector="com.flexcapacitor.views.TextInspector"  -->
     
     <tool id="Zoom" 
     		class="com.flexcapacitor.tools.Zoom" 

@@ -130,10 +130,6 @@
 			 * */
 			protected function mouseUpHandler(event:MouseEvent):void
 			{
-				// we need a custom FlexSprite class to do this
-				/*if (event.currentTarget.eventListeners) {
-					event.currentTarget.removeAllEventListeners();
-				}*/
 				
 				//list.dragEnabled = true;
 				event.currentTarget.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
@@ -149,18 +145,6 @@
 			{
 				var component:Object = event.draggedItem;
 				
-				// if text based or combo box we need to prevent 
-				// interaction with cursor
-				
-				// UPDATE THIS IN DRAG DROP COMPLETE
-				/*
-				if (component is TextBase || component is SkinnableTextBase) {
-					component.mouseChildren = false;
-					
-					if ("textDisplay" in component && component.textDisplay) {
-						component.textDisplay.enabled = false;
-					}
-				}*/
 				
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
 				dropTargetLabel.text = "Drag drop to:" + dragManagerInstance.dropTargetName;
@@ -198,48 +182,14 @@
 					dragManagerInstance.addGroupListeners(component as IVisualElement);
 				}
 				
-				/*
-				// if text based or combo box we need to prevent 
-				// interaction with cursor
-				if (component is TextBase || component is SkinnableTextBase) {
-					component.mouseChildren = false;
-					
-					if ("textDisplay" in component && component.textDisplay) {
-						component.textDisplay.enabled = false;
-					}
-				}
-				
-				if (component is ComboBox) {
-					if ("textInput" in component && component.textInput.textDisplay) {
-						component.textInput.textDisplay.enabled = false;
-					}
-				}
-				
-				// we can't add elements if skinnablecontainer._deferredContentCreated is false
-				if (component is BorderContainer) {
-					var factory:DeferredInstanceFromFunction = new DeferredInstanceFromFunction(deferredInstanceFromFunction);
-					BorderContainer(component).mxmlContentFactory = factory;
-					//BorderContainer(component).initialize();
-					BorderContainer(component).createDeferredContent();
-					BorderContainer(component).removeAllElements();
-					
-					// we could probably also do this: 
-					//BorderContainer(component).addElement(new Button());
-					
-				}
-				
-				// we need a custom FlexSprite class to do this
-				// do this after drop
-				if ("eventListeners" in component && !(component is GroupBase)) {
-					component.removeAllEventListeners();
-				}*/
-				
 				//o.addElement(component as ILayoutElement);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
 				dropTargetLabel.text = "Drag Complete to:" + dragManagerInstance.dropTargetName;
 				
 				
 				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
+				
+				radiate.setTarget(component);
 			}
 			
 			protected function addItemHandler(event:RadiateEvent):void {

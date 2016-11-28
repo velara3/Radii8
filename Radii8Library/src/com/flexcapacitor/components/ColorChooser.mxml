@@ -17,7 +17,6 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.controls.SearchTextInput;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -28,6 +27,7 @@
 			import mx.events.DropdownEvent;
 			
 			public static const HEXIDECIMAL_HASH_TYPE:String = "hexidecimalHash";
+			public static const HEXIDECIMAL_PREFIX_TYPE:String = "hexidecimalPrefix";
 			public static const HEXIDECIMAL_TYPE:String = "hexidecimal";
 			public static const STRING_UINT_TYPE:String = "stringUint";
 			public static const NUMBER_TYPE:String = "number";
@@ -51,7 +51,8 @@
 			/**
 			 * Type of value to return
 			 * */
-			[Inspectable(enumeration="hexidecimalHash,hexidecimal,stringUint,number,uint,int,original")]
+			[Inspectable(enumeration="hexidecimalHash,hexidecimalPrefix,hexidecimal,stringUint,number,uint,int,original")]
+			[Bindable]
 			public var returnType:String;
 
 			public function get selectedColor():Object {

@@ -1616,6 +1616,7 @@
 	<fc:BorderContainer id="constraintsContainer" 
 					   styleName="constraintStyles"
 					   horizontalCenter="0"
+					   bottom="10"
 					   y="66"
 					   borderVisible="false"
 					   backgroundAlpha="0">

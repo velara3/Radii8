@@ -40,6 +40,7 @@
 	// Block all layout, responses from web service, and other background
 	// processing until the tween finishes executing.
 	UIComponent.suspendBackgroundProcessing();
+	UIComponentGlobals.callLaterSuspendCount
 	
 	LayoutManager.doPhasedInstantiationCallback() may have answers
 
@@ -77,6 +78,9 @@
 				import com.flexcapacitor.model.MenuItem;
 				import com.flexcapacitor.tools.Hand;
 				import com.flexcapacitor.tools.ITool;
+				import com.flexcapacitor.tools.Selection;
+				import com.flexcapacitor.tools.Text;
+				import com.flexcapacitor.utils.DragManagerUtil;
 				import com.flexcapacitor.utils.NativeMenuManager;
 				import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 				
@@ -85,9 +89,13 @@
 				import flash.display.Screen;
 				import flash.display.Stage;
 				
+				import mx.accessibility.UIComponentAccProps;
 				import mx.collections.ArrayCollection;
 				import mx.core.FTETextField;
 				import mx.core.FlexHTMLLoader;
+				import mx.core.UIComponent;
+				import mx.core.UIComponentCachePolicy;
+				import mx.core.UIComponentDescriptor;
 				import mx.core.UIComponentGlobals;
 				import mx.core.mx_internal;
 				import mx.events.AIREvent;
@@ -151,9 +159,16 @@
 				    var appNamespace:Namespace;
 				    var version:String;
 					var showInlineMenus:Boolean = false;
+					var layoutManager:ILayoutManager;
+					
+					// set debugging options here
+					HistoryManager.debug 	= false;
+					DragManagerUtil.debug 	= false;
+					Text.debug 				= false;
+					Selection.debug			= false;
 					
 					UIComponentGlobals.catchCallLaterExceptions = true;
-					var layoutManager:ILayoutManager = UIComponentGlobals.layoutManager;
+					layoutManager = UIComponentGlobals.layoutManager;
 					layoutManager.usePhasedInstantiation;
 					
 					applicationDescriptor 	= NativeApplication.nativeApplication.applicationDescriptor;
@@ -393,6 +408,7 @@
 						keyCode==Keyboard.Z || 
 						keyCode==Keyboard.I || 
 						keyCode==Keyboard.H ||
+						keyCode==Keyboard.T ||
 						keyCode==Keyboard.SPACE) {
 						
 						if (!event.controlKey && !event.commandKey) {
@@ -433,6 +449,13 @@
 						}
 						else if (keyCode==Keyboard.Z) {
 							componentDescription = radiate.getToolByName("Zoom");
+							
+							if (componentDescription) {
+								radiate.setTool(componentDescription.instance as ITool);
+							}
+						}
+						else if (keyCode==Keyboard.T) {
+							componentDescription = radiate.getToolByName("Text");
 							
 							if (componentDescription) {
 								radiate.setTool(componentDescription.instance as ITool);
@@ -780,6 +803,9 @@
 					}
 				}
 				
+				/**
+				 * This event occurs when a file is dragged and dropped onto the application
+				 * */
 				protected function windowedapplication1_invokeHandler(event:InvokeEvent):void {
 					var invokeArguments:Array = event.arguments;
 					var filePath:String;
@@ -850,6 +876,7 @@
 				{
 					// TODO Auto-generated method stub
 					//trace(UIComponentGlobals.callLaterSuspendCount);
+					//trace(UIComponentGlobals.callLaterDispatcherCount);
 				}
 				
 				protected function windowedapplication1_windowResizeHandler(event:FlexNativeWindowBoundsEvent):void

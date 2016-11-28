@@ -204,6 +204,13 @@ package com.flexcapacitor.events {
 		public static const DOCUMENT_CHANGE:String = "documentChange";
 		
 		/**
+		 * Dispatched when the document is updated in some. For example
+		 * after a drag and drop we need to update the tree because 
+		 * proxy components are added and then removed.
+		 * */
+		public static const DOCUMENT_UPDATED:String = "documentUpdated";
+		
+		/**
 		 * Dispatched when the documents are set
 		 * */
 		public static const DOCUMENTS_SET:String = "documentsSet";

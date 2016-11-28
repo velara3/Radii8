@@ -11,7 +11,6 @@
     <classEntry path="com.flexcapacitor.events.DragDropEvent"/>
     <classEntry path="com.flexcapacitor.events.HistoryEvent"/>
     <classEntry path="com.flexcapacitor.events.HistoryEventItem"/>
-    <classEntry path="com.flexcapacitor.events.InspectorEvent"/>
     <classEntry path="com.flexcapacitor.events.RadiateEvent"/>
     <classEntry path="com.flexcapacitor.logging.RadiateLogTarget"/>
     <classEntry path="com.flexcapacitor.managers.CodeManager"/>
@@ -75,7 +74,10 @@
     <classEntry path="com.flexcapacitor.tools.ITool"/>
     <classEntry path="com.flexcapacitor.tools.IToolInspector"/>
     <classEntry path="com.flexcapacitor.tools.Selection"/>
+    <classEntry path="com.flexcapacitor.tools.Text"/>
     <classEntry path="com.flexcapacitor.tools.Zoom"/>
+    <classEntry path="com.flexcapacitor.tools.supportClasses.VisualElementHandle"/>
+    <classEntry path="com.flexcapacitor.tools.supportClasses.VisualElementRotationHandle"/>
     <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLButtonElement"/>
     <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLElement"/>
     <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLLineBreak"/>
@@ -87,10 +89,11 @@
     <classEntry path="com.flexcapacitor.utils.DragManagerUtil"/>
     <classEntry path="com.flexcapacitor.utils.DragManagerUtil2"/>
     <classEntry path="com.flexcapacitor.utils.HTMLDocumentExporter"/>
-    <classEntry path="com.flexcapacitor.utils.InspectorUtils"/>
+    <classEntry path="com.flexcapacitor.utils.MXMLDocumentConstants"/>
     <classEntry path="com.flexcapacitor.utils.MXMLDocumentExporter"/>
     <classEntry path="com.flexcapacitor.utils.MXMLDocumentImporter"/>
     <classEntry path="com.flexcapacitor.utils.MXMLImporterEvent"/>
+    <classEntry path="com.flexcapacitor.utils.TextFieldHTMLExporter2"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.DragData"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.ISelectionGroup"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.TargetSelectionGroup"/>
@@ -142,6 +145,7 @@
     <classEntry path="com.flexcapacitor.views.inspectors.ColorPickerProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.ComboBoxProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.DropDownListProperties"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.FillStyles"/>
     <classEntry path="com.flexcapacitor.views.inspectors.FontStyles"/>
     <classEntry path="com.flexcapacitor.views.inspectors.Gap"/>
     <classEntry path="com.flexcapacitor.views.inspectors.GroupAlign"/>
@@ -152,15 +156,18 @@
     <classEntry path="com.flexcapacitor.views.inspectors.Layout"/>
     <classEntry path="com.flexcapacitor.views.inspectors.LineProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.ListProperties"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.PathProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.RadioButtonProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.SearchCollection"/>
     <classEntry path="com.flexcapacitor.views.inspectors.SliderProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.StepperProperties"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.StrokeStyles"/>
     <classEntry path="com.flexcapacitor.views.inspectors.StyleNameInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.TextAreaInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.TextInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.TileGroupProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.VideoPlayerProperties"/>
+    <classEntry path="com.flexcapacitor.views.panels.APIInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.CodeInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.ComponentsInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.ConsoleInspector"/>
@@ -221,7 +228,6 @@
     <classEntry path="com.flexcapacitor.views.windows.PublishWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.SaveBeforeCloseWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.SettingsWindow"/>
-    <classEntry path="com.flexcapacitor.utils.MXMLDocumentConstants"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

@@ -598,7 +598,7 @@
 						
 						if (snapshot is BitmapData) {
 							imageData.bitmapData = snapshot as BitmapData;
-							imageData.byteArray = DisplayObjectUtils.getBitmapByteArray(snapshot as BitmapData);
+							imageData.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(snapshot as BitmapData);
 							imageData.name = ClassUtils.getIdentifierNameOrClass(initiator) + ".png";
 							imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
 							imageData.file = null;

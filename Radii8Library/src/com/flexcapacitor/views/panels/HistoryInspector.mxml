@@ -141,34 +141,36 @@
 			 * Label for the history item
 			 * */
 			public function labelFunction(item:Object):String {
-				var historyItem:HistoryEvent = item as HistoryEvent;
-				var historyEvents:Array = historyItem.historyEventItems;
-				var historyEvent:HistoryEventItem = historyEvents && historyEvents.length ? historyEvents[0] : null;
+				var historyEvent:HistoryEvent = item as HistoryEvent;
+				var historyEventItems:Array = historyEvent.historyEventItems;
+				var historyEventItem:HistoryEventItem = historyEventItems && historyEventItems.length ? historyEventItems[0] : null;
 				var label:String;
 				
-				
-				if (historyEvent.action==RadiateEvent.PROPERTY_CHANGED) {
-					if (historyEvent.properties.length) {
-						label = historyEvent.description || historyEvent.properties + " changed";
+				if (historyEvent.description!=null) {
+					label = historyEventItem.description;
+				}
+				else if (historyEventItem.action==RadiateEvent.PROPERTY_CHANGED) {
+					if (historyEventItem.properties.length) {
+						label = historyEventItem.description || historyEventItem.properties + " changed";
 					}
 					else {
-						label = historyEvent.description || historyEvent.styles + " changed";
+						label = historyEventItem.description || historyEventItem.styles + " changed";
 					}
 				}
-				else if (historyEvent.action==RadiateEvent.ADD_ITEM) {
-					label = historyEvent.description || "Item added";
+				else if (historyEventItem.action==RadiateEvent.ADD_ITEM) {
+					label = historyEventItem.description || "Item added";
 				}
-				else if (historyEvent.action==RadiateEvent.REMOVE_ITEM) {
-					label = historyEvent.description || "Item removed";
+				else if (historyEventItem.action==RadiateEvent.REMOVE_ITEM) {
+					label = historyEventItem.description || "Item removed";
 				}
-				else if (historyEvent.action==RadiateEvent.MOVE_ITEM) {
-					label = historyEvent.description || "Moved";
+				else if (historyEventItem.action==RadiateEvent.MOVE_ITEM) {
+					label = historyEventItem.description || "Moved";
 				}
 				else {
 					label = "Something Changed";
 				}
 				
-				if (!historyEvent) return "";
+				if (!historyEventItem) return "";
 				
 				return label;
 			}

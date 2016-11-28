@@ -15,6 +15,7 @@
 	
 	<fx:Script>
 	<![CDATA[
+		import com.flexcapacitor.controller.Radiate;
 		import com.flexcapacitor.model.IProject;
 		
 		import spark.components.List;
@@ -34,7 +35,18 @@
 			
 		}
 		
-		
+		protected function openProject_clickHandler(event:MouseEvent):void {
+			var project:IProject = data as IProject;
+			
+			if (project) {
+				
+				Radiate.info("Opening project '" + project.name + "'");
+				
+				Radiate.callAfter(250, Radiate.instance.openProjectFromMainView, project);
+				//openProject(project);
+			}
+			
+		}
 	]]>
 	</fx:Script>
 	
@@ -63,5 +75,9 @@
 			 paddingLeft="5"
 			 includeIn="hovered, normal, selected"/>
 	
+	<s:Button label="open" right="10" verticalCenter="0"
+			  width="55" height="16" alpha=".75"
+			  click="openProject_clickHandler(event)"
+			  includeIn="hovered, selected"/>
 
 </s:ItemRenderer>

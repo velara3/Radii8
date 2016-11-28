@@ -119,13 +119,6 @@
 					hgroups[j].gap = gap;
 				}
 			}
-			
-			protected function trackingRightRenderer_mouseUpHandler(event:MouseEvent):void
-			{
-				// TODO Auto-generated method stub
-				
-			}
-			
 		]]>
 	</fx:Script>
 	

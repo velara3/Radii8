@@ -22,6 +22,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.CodeManager;
+			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.model.ExportOptions;
 			import com.flexcapacitor.model.HTMLExportOptions;
 			import com.flexcapacitor.model.IDocument;
@@ -30,14 +31,20 @@
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.MXMLDocumentConstants;
+			import com.flexcapacitor.utils.XMLUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
 			import com.google.code.flexiframe.IFrame;
 			
+			import mx.core.IVisualElement;
+			import mx.core.IVisualElementContainer;
 			import mx.core.UIComponent;
 			import mx.events.ItemClickEvent;
 			import mx.validators.IValidator;
 			
 			import spark.events.IndexChangeEvent;
+			import spark.layouts.BasicLayout;
 			
 			public static const HTML_RENDER:String = "htmlRender";
 			public static const HTML_COMPLETE:String = "complete";
@@ -46,6 +53,16 @@
 			 * Reference to Radiate
 			 * */
 			public var radiate:Radiate;
+			
+			/**
+			 * Last target
+			 * */
+			public var lastTarget:Object;
+			
+			/**
+			 * Last target parent instance
+			 * */
+			public var lastParentInstance:Object;
 			
 			/**
 			 * Basic HTML template
@@ -97,6 +114,8 @@
 			
 			[Bindable]
 			public var isHTML:Boolean;
+			[Bindable]
+			public var isMXML:Boolean;
 			
 			public var htmlRenderHandled:Boolean;
 			public var htmlCompleteHandled:Boolean;
@@ -144,6 +163,8 @@
 					languageTypeButtons.selectedItem = CodeManager.HTML;
 					isHTML = true;
 				}
+				
+				isMXML = languageTypeButtons.selectedItem==CodeManager.MXML;
 				
 				if (radiate.target) {
 					updateCodeEditors();
@@ -261,12 +282,14 @@
 				
 				//if (radiate.isPreviewDocumentVisible() && updateCodeLive.selected && isCodeModifiedByUser) {
 				if (updateCodeLive.selected && isCodeModifiedByUser) {
-					updateHTMLPreview();
+					if (language==CodeManager.HTML) {
+						updateHTMLPreview();
+					}
 				}
 				else {
 					setEditorText(sourceData);
 					
-					if (radiate.isPreviewDocumentVisible()) {
+					if (radiate.isPreviewDocumentVisible() && language==CodeManager.HTML) {
 						updateHTMLPreview();
 					}
 				}
@@ -291,8 +314,8 @@
 					updateHTMLPreview();
 				}
 				
-				if (updateCodeLive.selected) {
-					radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML);
+				if (updateCodeLive.selected) {var language:String = getSelectedLanguage();
+					radiate.dispatchCodeUpdatedEvent(sourceData, language);
 				}
 			}
 			
@@ -336,10 +359,13 @@
 			 * Updates the code to reflect the selected language 
 			 * */
 			protected function languageType_changeHandler(event:IndexChangeEvent):void {
+				var selectedLanguage:Object;
+				
 				isCodeModifiedByUser = false;
 				updateCodeLive.selected = false;
 				updateCodeEditors(true);
-				var selectedLanguage:Object = getSelectedLanguage();
+				
+				selectedLanguage = getSelectedLanguage();
 				
 				// if HTML preview is visible then dispatch an event to 
 				// so that preview can be changed else where
@@ -351,6 +377,7 @@
 				}
 				
 				isHTML = selectedLanguage==CodeManager.HTML;
+				isMXML = selectedLanguage==CodeManager.MXML;
 			}
 			
 			/**
@@ -378,16 +405,22 @@
 			private function editorChangeHandler(event:Object = null):void {
 				if (settingEditorText) return;
 				
-				var selectedItem:Object = getSelectedLanguage();
+				var selectedLanguage:String = getSelectedLanguage();
+				var code:String;
 				
-				if (selectedItem == CodeManager.HTML) {
+				if (selectedLanguage == CodeManager.HTML) {
 					isCodeModifiedByUser = true;
+					updatePreviewDocument();
+				}
+				else if (selectedLanguage == CodeManager.MXML) {
+					code = aceEditor.text;
+					isCodeModifiedByUser = true;
+					importSource(code);
 				}
 				else {
 					isCodeModifiedByUser = false;
 				}
 				
-				updatePreviewDocument();
 				
 			}
 			
@@ -450,6 +483,7 @@
 			 * */
 			public function updateCodeEditors(dispatchCodeUpdatedEvent:Boolean = false):void {
 				var previewDocument:Object;
+				var selectedLanguage:String = getSelectedLanguage();
 				
 				//radiate = Radiate.getInstance();
 				
@@ -479,7 +513,7 @@
 					//}
 					
 					//radiate.dispatchCodeUpdatedEvent(sourceData, HTML, openInSeparateWindow.selected);
-					radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML, false);
+					radiate.dispatchCodeUpdatedEvent(sourceData, selectedLanguage, false);
 				}
 				
 				return;
@@ -495,6 +529,7 @@
 			 * */
 			protected function updateCodeLive_changeHandler(event:Event = null):void {
 				clearTimeLabel();
+				var language:String;
 			
 				if (updateCodeLive.selected) {
 					aceEditor.addEventListener(Event.CHANGE, editorChangeHandler);
@@ -502,7 +537,11 @@
 					templateEditor.addEventListener(Event.CHANGE, templateEditorChangeHandler);
 					isCodeModifiedByUser = true;
 					updateCodeEditors(true);
-					radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML);
+					language = getSelectedLanguage();
+					radiate.dispatchCodeUpdatedEvent(sourceData, language);
+					if (language==CodeManager.MXML && aceEditor) {
+						importSource(aceEditor.text);
+					}
 				}
 				else {
 					aceEditor.removeEventListener(Event.CHANGE, editorChangeHandler);
@@ -510,7 +549,8 @@
 					templateEditor.addEventListener(Event.CHANGE, templateEditorChangeHandler);
 					isCodeModifiedByUser = false;
 					updateCodeEditors(true);
-					radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML);
+					language = getSelectedLanguage();
+					radiate.dispatchCodeUpdatedEvent(sourceData, language);
 				}
 			}
 			
@@ -936,7 +976,7 @@
 			
 			protected function uncaughtExceptionEvent(event:RadiateEvent):void
 			{
-				trace("Uncaught Exception Event: " + event);
+				//trace("Uncaught Exception Event: " + event);
 			}
 			
 			public var FIND:String = "find";
@@ -1039,7 +1079,228 @@
 			{
 				
 			}
+			protected function importButton_clickHandler(event:MouseEvent):void {
+				var code:String = aceEditor.text;
+				
+				importSource(code);
+			}
 			
+			protected function importSource(code:String):void {
+				var sourceData:SourceData;
+				var validationInfo:XMLValidationInfo;
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedProject:IProject = radiate.selectedProject;
+				var container:Object;
+				var importedTargets:Array;
+				var currentTarget:Object;				
+				var componentDescription:ComponentDescription;
+				var parentComponentDescription:ComponentDescription;
+				var currentIndex:int = -1;
+				var dropIndex:int;
+				var parentInstance:Object;
+				var namespaces:Object;
+				var namespacesString:String;
+				var xml:XML;
+				var errorLocation:String;
+				var isValid:Boolean;
+				var message:String;
+				var rootString:String;
+				var rootNodeName:String = MXMLDocumentConstants.ROOT_NODE_NAME;
+				var updatedCode:String;
+				var error:Object;
+				var stringMethod:Boolean = true;
+				var mxmlRenderTime:int;
+				
+				// NOTE: 
+				// this is importing on the fly and then removing a reference to the last target
+				// this may be expensive not sure 
+				// 
+				// in time it would be better to check for attributes that have changed 
+				// and only apply those
+				// we would have to keep an updated XML reference
+				// then we could use compare to find the attributes or child nodes on the selected 
+				// node that have changed
+				// see the LiveMXMLEditor for some initial work
+				
+				if (selectedDocument==null || selectedProject==null) {
+					Radiate.warn("Please open a document before importing");
+					return;
+				}
+				
+				/*
+				results = XMLUtils.getXMLFromStringWithNamespaces(code, MXMLDocumentConstants.getNamespaces());
+				validationInfo = results as XMLValidationInfo;
+				xml = results as XML;*/
+
+				
+				mxmlRenderTime = getTimer();
+				isValid = XMLUtils.isValidXML(code);
+				//error = XMLUtils.validationError;
+				
+				if (!isValid && code!="") {
+					validationInfo = XMLUtils.validateXML(code);
+					error = validationInfo.error;
+					
+					if (error is TypeError && error.errorID==1083) {
+						
+						if (stringMethod) {
+							namespaces = MXMLDocumentConstants.getNamespaces();
+							updatedCode = XMLUtils.addNamespacesToXMLString(code, namespaces);
+						}
+						else {
+							namespacesString = MXMLDocumentConstants.getDefaultNamespaceDeclarations();
+							//updatedCode = XMLUtils.getXMLFromStringWithNamespaces(code, namespacesString);
+							
+							rootString = '<'+rootNodeName + " " + namespacesString +'>';
+							updatedCode = rootString + code + "</"+rootNodeName+">";
+						}
+						
+						isValid = XMLUtils.isValidXML(updatedCode);
+						
+						if (isValid) {
+							hideMessage();
+						}
+					}
+					
+					if (!isValid) {
+						message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
+						
+						errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
+						showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);
+						
+						renderTime.text = "";
+						renderTime.toolTip = "";
+						return;
+					}
+				}
+				else {
+					hideMessage();
+				}
+				
+				
+				lastTarget = radiate.target;
+				componentDescription = selectedDocument.getItemDescription(lastTarget);
+				parentComponentDescription = componentDescription ? componentDescription.parent: null;
+				
+				if (parentComponentDescription && parentComponentDescription.instance) {
+					parentInstance = parentComponentDescription.instance as IVisualElementContainer;
+					currentIndex = parentComponentDescription.children.getItemIndex(componentDescription);
+					
+					if (currentIndex<parentComponentDescription.children.length-1) {
+						
+						if ("layout" in parentInstance && parentInstance.layout is BasicLayout) { 
+							dropIndex = currentIndex + 1;
+						}
+						else {
+							dropIndex = currentIndex + 2;
+						}
+					}
+					
+					//currentIndex = Math.max(0, currentIndex-1);
+				}
+				
+				if (lastTarget) {
+					Radiate.removeElement(lastTarget);
+				}
+				
+				try {
+					sourceData = radiate.importMXMLDocument(selectedProject, selectedDocument, code, parentInstance as IVisualElement, currentIndex);
+				}
+				catch (importError:Error) {
+					HistoryManager.undo(selectedDocument);
+					message = importError.toString();
+					showMessage(errorLocation, message);
+				}
+				
+				if (sourceData) {
+					// move to correct location
+					/*
+					HistoryManager.disableHistoryManagement = true;
+					for (var i:int = 0; i < importedTargets.length; i++) {
+						currentTarget = importedTargets[i];
+						
+						Radiate.moveElement2(currentTarget, parentInstance, null, 
+							null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
+						
+					}
+					
+					HistoryManager.disableHistoryManagement = false;*/
+					parentInstance = null;
+					lastTarget = null;
+					
+					HistoryManager.mergeLastHistoryEvent(selectedDocument, "Updated source");
+					Radiate.setTargets(sourceData.targets);
+					hideMessage();
+				}
+				else {
+					validationInfo = XMLUtils.validateXML(code);
+					error = validationInfo.error;
+					
+					if (error is TypeError && error.errorID==1083) {
+						namespaces = MXMLDocumentConstants.getNamespaces();
+						namespacesString = MXMLDocumentConstants.getDefaultNamespaceDeclarations();
+						
+						if (stringMethod) {
+							updatedCode = XMLUtils.addNamespacesToXMLString(code, namespaces);
+						}
+						else {
+							rootString = '<'+rootNodeName + " " + namespacesString +'>';
+							updatedCode = rootString + code + "</"+rootNodeName+">";
+						}
+						
+						isValid = XMLUtils.isValidXML(updatedCode);
+						
+						if (isValid) {
+							hideMessage();
+						}
+					}
+					
+					message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
+					
+					
+					errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
+					showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);
+				
+					renderTime.text = "";
+					renderTime.toolTip = "";
+				}
+				
+				mxmlRenderTime = getTimer()-mxmlRenderTime;
+				
+				if (sourceData) {
+					renderTime.text = mxmlRenderTime + "ms";
+					renderTime.toolTip = mxmlRenderTime + "ms";
+				}
+				else {
+					renderTime.text = "";
+					renderTime.toolTip = "";
+				}
+			}
+			
+			
+			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
+			
+			public function showMessage(firstMessage:String, secondMessage:String = null, row:int = -1, column:int = 0):void {
+				lineError.text = firstMessage;
+				warningLabel.text = secondMessage;
+				errorGroup.visible = true;
+				errorGroup.includeInLayout = true;
+				aceEditor.clearAnnotations();
+				aceEditor.setAnnotation(row, column, secondMessage, "error");
+				editorGroup.bottom = 20;
+			}
+			
+			public function hideMessage():void {
+				errorGroup.visible = false;
+				errorGroup.includeInLayout = false;
+				lineError.text = "";
+				warningLabel.text = "";
+				
+				if (aceEditor.aceFound) {
+					aceEditor.clearAnnotations();
+				}
+				editorGroup.bottom = 0;
+			}
 		]]>
 	</fx:Script>
 	
@@ -1145,6 +1406,7 @@ IFRAME_ID {
 		<s:State name="desktop"/>
 	</s:states>
 	
+	
 	<mx:HDividedBox id="editorGroup" top="0" width="100%" height="100%" >
 		
 		
@@ -1206,6 +1468,14 @@ IFRAME_ID {
 					dataProvider="{languageTypes}">
 		</mx:LinkBar>-->
 		
+		<c:BeveledImageButton id="importButton"
+							  source="{Radii8LibraryAssets.importInto}"
+							  toolTip="Import MXML"
+							  click="importButton_clickHandler(event)"
+							  visible="{isMXML}"
+							  includeInLayout="{isMXML}"
+							  />
+		
 		
 		<c:BeveledImageButton id="openDocumentInInternalWebIcon" 
 							  source="{Radii8LibraryAssets.documentPlayIcon}" 
@@ -1239,11 +1509,14 @@ IFRAME_ID {
 							  />
 		
 		
-		<s:CheckBox id="showChildDescriptors"
-					label="Nested Elements"
-					toolTip="Show nested elements"
-					click="showChildDescriptors_clickHandler(event)"
-					/>
+		<c:BeveledImageToggleButton id="showChildDescriptors"
+									source="{Radii8LibraryAssets.treeViewOpen}"
+									toolTip="Show nested elements"
+									click="showChildDescriptors_clickHandler(event)"
+									width="20"
+									height="16"
+									scaleMode="letterbox"
+									showBackgroundWhenSelected="true"/>
 		
 		<c:BeveledImageButton id="resyncButton"
 							  source="{Radii8LibraryAssets.refresh}"
@@ -1257,8 +1530,8 @@ IFRAME_ID {
 					selected="false"
 					label="Live"
 					toolTip="Edit code live (experimental)"
-					visible="{isHTML}"
-					includeInLayout="{isHTML}"
+					visible="{isHTML || isMXML}"
+					includeInLayout="{isHTML || isMXML}"
 					change="updateCodeLive_changeHandler(event)"/>
 		
 		<!-- enabled="{isCodeModifiedByUser}" -->
@@ -1325,7 +1598,23 @@ IFRAME_ID {
 					   />
 	</s:HGroup>
 	
-
+	
+	<s:HGroup id="errorGroup" width="100%" verticalAlign="middle" 
+			  bottom="5" left="5"
+			  includeInLayout="false" visible="false">
+		<s:Label id="lineError" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"/>
+		
+		<s:Label id="warningLabel" 
+				 x="15" y="15" 
+				 text="" 
+				 fontWeight="bold" 
+				 color="red"
+				 width="100%"/>
+	</s:HGroup>
 	
 	
 </s:Group>

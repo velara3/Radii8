@@ -26,6 +26,8 @@ package com.flexcapacitor.utils {
 			
 		}
 		
+		public var debug:Boolean;
+		
 		/**
 		 * An array of component definitions that can be used to get more information about
 		 * a class or object. You must manually set this.  
@@ -475,7 +477,7 @@ package com.flexcapacitor.utils {
 		 * Imports the source code for the target component. 
 		 * You override this in your class. 
 		 * */
-		public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, options:ImportOptions = null, dispatchEvents:Boolean = false):SourceData {
+		public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, parentPosition:int = -1, options:ImportOptions = null, dispatchEvents:Boolean = false):SourceData {
 			// override this in your class
 			return null;
 		}

@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
+		 styleName="inspectablePanel"
+		 width="100%">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.AccessorMetaData;
+			import com.flexcapacitor.utils.ArrayUtils;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.MXMLDocumentConstants;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.graphics.BitmapFill;
+			import mx.graphics.IFill;
+			import mx.graphics.IStroke;
+			import mx.graphics.LinearGradient;
+			import mx.graphics.RadialGradient;
+			import mx.graphics.SolidColor;
+			import mx.graphics.SolidColorStroke;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.primitives.supportClasses.FilledElement;
+			import spark.primitives.supportClasses.StrokedElement;
+			
+			import org.as3commons.lang.ArrayUtils;
+			
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			
+			public var strokeTypes:Array = [{name:"none", label:"None"},
+											{name:MXMLDocumentConstants.SOLID_COLOR_STROKE, label:"Solid Color"}];
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				if (strokeList.dataProvider==null) {
+					strokeList.dataProvider = new ArrayCollection(strokeTypes.slice(0,2));
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				var relevant:Boolean;
+				
+				if (org.as3commons.lang.ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+					relevant = true;
+				}
+				
+				if (relevant) {
+					//trace("property changed");
+					callLater(update);
+				}
+			}
+			
+			
+			public var relevantProperties:Array = ["color", "alpha", "caps", "joints", "miterLimit", 
+				"pixelHinting", "scaleMode", "weight"];
+			
+			public function update():void {
+				var strokedElement:StrokedElement 	= target as StrokedElement;
+				var stroke:IStroke 					= strokedElement ? strokedElement.stroke : null;
+				var solidColor:SolidColorStroke 	= stroke as SolidColorStroke;
+				
+				if (stroke==null) {
+					//enabled = false;
+					//return;
+				}
+				else {
+					//enabled = true;
+				}
+				
+				if (solidColor) {
+					strokeList.selectedItem = com.flexcapacitor.utils.ArrayUtils.getItem(strokeTypes, MXMLDocumentConstants.SOLID_COLOR_STROKE, "name");
+					updateSolidColorStroke(solidColor);
+				}
+				else if (stroke==null) {
+					strokeList.selectedIndex = 0;
+					updateNoStroke();
+				}
+			}
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var numberOfComponents:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<numberOfComponents;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				numberOfComponents = hgroups.length;
+				
+				for (var j:int;j<numberOfComponents;j++) {
+					hgroups[j].gap = gap;
+				}
+			}
+			
+			
+			private function updateSolidColorStroke(stroke:SolidColorStroke):void {
+				if (currentState!=MXMLDocumentConstants.SOLID_COLOR_STROKE) {
+					setCurrentState(MXMLDocumentConstants.SOLID_COLOR_STROKE, false);
+					validateNow();
+				}
+				
+				var colorStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(stroke, "color");
+				var alphaStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(stroke, "alpha");
+				var capsStyle:AccessorMetaData 			= ClassUtils.getMetaDataOfProperty(stroke, "caps");
+				var jointsStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(stroke, "joints");
+				var miterLimitStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(stroke, "miterLimit");
+				var pixelHintingStyle:AccessorMetaData  = ClassUtils.getMetaDataOfProperty(stroke, "pixelHinting");
+				var scaleModeStyle:AccessorMetaData  = ClassUtils.getMetaDataOfProperty(stroke, "scaleMode");
+				var weightStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(stroke, "weight");
+				
+				
+				colorRenderer.data = colorStyle;
+				alphaRenderer.data = alphaStyle;
+				capsRenderer.data = capsStyle;
+				jointsRenderer.data = jointsStyle;
+				miterLimitRenderer.data = miterLimitStyle;
+				pixelHintingRenderer.data = pixelHintingStyle;
+				scaleModeRenderer.data = scaleModeStyle;
+				weightRenderer.data = weightStyle;
+				
+			}
+			
+			private function updateNoStroke():void {
+				if (currentState!=MXMLDocumentConstants.NONE) {
+					setCurrentState(MXMLDocumentConstants.NONE, false);
+					validateNow();
+				}
+			}
+		
+			protected function strokeList_changeHandler(event:IndexChangeEvent):void {
+				var strokedElement:StrokedElement 	= target as StrokedElement;
+				var stroke:IStroke 					= strokedElement ? strokedElement.stroke : null;
+				var strokeType:Object 				= strokeList.selectedItem;
+				
+				if (strokeType==null || strokeType.name == MXMLDocumentConstants.NONE) {
+					if (stroke!=null) {
+						Radiate.clearProperty(strokedElement, MXMLDocumentConstants.STROKE, null, "Removed fill");
+					}
+				}
+				else if (strokeType.name == MXMLDocumentConstants.SOLID_COLOR_STROKE) {
+					
+					if (!(stroke is SolidColorStroke)) {
+						stroke = new SolidColorStroke();
+						Radiate.setProperty(strokedElement, MXMLDocumentConstants.STROKE, stroke, "Set fill");
+					}
+				}
+				
+				update();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:states>
+		<s:State name="none"/>
+		<s:State name="SolidColorStroke"/>
+	</s:states>
+	
+	<s:layout>
+		<s:VerticalLayout />
+	</s:layout>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Stroke Type" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<s:DropDownList id="strokeList" height="24" minWidth="100" change="strokeList_changeHandler(event)"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+		<s:Label text="Stroke Color" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:ColorPickerRenderer id="colorRenderer" height="24" includeCopyIcon="false"
+									   returnType="hexidecimalPrefix"
+									   subPropertyName="stroke"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+		<s:Label text="Weight" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="weightRenderer" 
+								  height="24" 
+								  stepSize="1" 
+								  snapInterval="0"
+								  defaultValue="1"
+								  subPropertyName="stroke"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+		<s:Label text="Alpha" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="alphaRenderer" 
+								  snapInterval="0" 
+								  height="24" width="80" 
+								  showClearButton="true"
+								  toolTip="Alpha"
+								  focusAlpha="0"
+								  defaultValue="1"
+								  subPropertyName="stroke"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+		<s:Label text="Caps" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:DropDownListRenderer id="capsRenderer" height="24" 
+									minWidth="180" width="100%"
+									defaultValue="round"
+									subPropertyName="stroke"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+		<s:Label text="Joints" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:DropDownListRenderer id="jointsRenderer" height="24"
+										defaultValue="round"
+										subPropertyName="stroke"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+		<s:Label text="Miter Limit" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="miterLimitRenderer" 
+								  height="24"
+								  stepSize="1" 
+								  snapInterval="0" 
+								  defaultValue="3"
+								  subPropertyName="stroke"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+		<s:Label text="Pixel Hinting" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:BooleanRenderer id="pixelHintingRenderer" height="24"
+								   subPropertyName="stroke"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+		<s:Label text="Scale Mode" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:DropDownListRenderer id="scaleModeRenderer" height="24"
+										defaultValue="normal"
+										subPropertyName="stroke"/>
+	</s:HGroup>
+</s:Group>
