@@ -5775,7 +5775,7 @@ package com.flexcapacitor.controller {
 			
 			addAssetToDocument(imageData, iDocument);
 			
-			info("An image from the clipboard was added to the library");
+			//info("An image from the clipboard was added to the library");
 		}
 		
 		/**

@@ -740,6 +740,8 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (newBitmapData && componentInstance) {
+				
+				Radiate.instance.addBitmapDataToDocument(Radiate.instance.selectedDocument, newBitmapData, null);
 				Radiate.setProperty(componentInstance, "source", newBitmapData, "Source loaded");
 			}
 			
