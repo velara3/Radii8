@@ -11,6 +11,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
+	import com.flexcapacitor.utils.LayoutDebugHelper;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
@@ -209,6 +210,26 @@ package com.flexcapacitor.tools {
 		public var highlightLockedItems:Boolean = true;
 		
 		/**
+		 * Highlights items that are not a group when select groups option is true
+		 * */
+		public var highlightWhenSelectingOnlyGroups:Boolean = true;
+		
+		/**
+		 * Highlights color
+		 * */
+		public var highlightColor:Number = 0x990000;
+		
+		/**
+		 * Highlights delay
+		 * */
+		public var highlightDelay:int = 500;
+		
+		/**
+		 * Helps highlights items that are locked
+		 * */
+		public var layoutDebugHelper:LayoutDebugHelper;
+		
+		/**
 		 * Reference to the current or last target.
 		 * */
 		public var lastTarget:Object;
@@ -355,6 +376,8 @@ package com.flexcapacitor.tools {
 			setupObjectHandles();
 			
 			Mouse.cursor = MouseCursor.AUTO;
+			
+			updateSelectionLater();
 		}
 		
 		/**
@@ -891,6 +914,9 @@ package com.flexcapacitor.tools {
 				if (target.length) {
 					target = target[0];
 				}
+				else {
+					target = null;
+				}
 			}
 			
 			removeTargetListeners();
@@ -968,11 +994,18 @@ package com.flexcapacitor.tools {
 				targetsUnderPoint.push(target);
 			}
 			
+			if (highlightLockedItems || highlightWhenSelectingOnlyGroups) {
+				layoutDebugHelper = LayoutDebugHelper.getInstance();
+				LayoutDebugHelper.highlightColor = highlightColor;
+				LayoutDebugHelper.highlightDelay = highlightDelay;
+			}
+			
 			targetsLength = targetsUnderPoint.length;
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
 			// loop through items under point until we find one on the *component* tree
 			componentTree = radiate.selectedDocument.componentDescription;
+			
 			
 			componentTreeLoop:
 			for (var i:int;i<targetsLength;i++) {
@@ -1001,6 +1034,8 @@ package com.flexcapacitor.tools {
 						if (target is ILayoutElement) {
 							
 							if (highlightLockedItems) {
+								//layoutDebugHelper.enable();
+								Radiate.callLater(layoutDebugHelper.addElement, target);
 								//layoutDebugHelper.addElement(ILayoutElement(target));
 								//layoutDebugHelper.render();
 							}
@@ -1025,6 +1060,14 @@ package com.flexcapacitor.tools {
 					// it's a group so we're good
 				}
 				else {
+					
+					if (highlightWhenSelectingOnlyGroups) {
+						//layoutDebugHelper.enable();
+						Radiate.callLater(layoutDebugHelper.addElement, componentDescription.instance);
+						//layoutDebugHelper.addElement(ILayoutElement(target));
+						//layoutDebugHelper.render();
+					}
+					
 					// select group container
 					componentDescription = componentDescription.parent;
 					target = componentDescription.instance;
@@ -2801,7 +2844,11 @@ package com.flexcapacitor.tools {
 				event.currentTarget.removeEventListener(Event.COMPLETE, setSelectionLaterHandler);
 			}*/
 		}
-		public function updateSelectionLater(target:Object):void {
+		public function updateSelectionLater(target:Object = null):void {
+			if (target==null) {
+				target = radiate.target;
+			}
+			
 			Radiate.callAfter(5, updateSelectionAroundTarget, target);
 			Radiate.callAfter(5, updateTransformRectangle, target);
 		}

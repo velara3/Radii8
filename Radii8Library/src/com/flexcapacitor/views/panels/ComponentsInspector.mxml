@@ -2,8 +2,7 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
-		 xmlns:handlers="com.flexcapacitor.handlers.*" 
-		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:flexcapacitor="flexcapacitor.*" 
 		 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 width="400" 

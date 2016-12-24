@@ -4,8 +4,7 @@
 			   xmlns:mx="library://ns.adobe.com/flex/mx" 
 			   xmlns:handlers="com.flexcapacitor.handlers.*" 
 			   xmlns:fc="com.flexcapacitor.effects.popup.*"
-			   xmlns:views="com.flexcapacitor.views.*"
-			   xmlns:c="com.flexcapacitor.views.*"
+			   xmlns:flexcapacitor="flexcapacitor.*"
 			   xmlns:windows="com.flexcapacitor.views.windows.*"
 			   
 			   title="Print"

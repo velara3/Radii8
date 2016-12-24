@@ -6,7 +6,7 @@
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
 		 xmlns:core="com.flexcapacitor.effects.core.*" 
-		 xmlns:status="com.flexcapacitor.effects.status.*" 
+		 xmlns:flexcapacitor="flexcapacitor.*" 
 		 xmlns:flexiframe="com.google.code.flexiframe.*"
 		 xmlns:controls="com.riaspace.controls.*"
 		 xmlns:ns="http://www.flexcapacitor.com/flex/2015" 
@@ -48,6 +48,9 @@
 			
 			public static const HTML_RENDER:String = "htmlRender";
 			public static const HTML_COMPLETE:String = "complete";
+			
+			public static const DESKTOP:String = "desktop";
+			public static const BROWSER:String = "browser";
 			
 			/**
 			 * Reference to Radiate
@@ -539,6 +542,7 @@
 					updateCodeEditors(true);
 					language = getSelectedLanguage();
 					radiate.dispatchCodeUpdatedEvent(sourceData, language);
+					
 					if (language==CodeManager.MXML && aceEditor) {
 						importSource(aceEditor.text);
 					}
@@ -556,10 +560,10 @@
 			
 			public function getTextAreaCode():String {
 				
-				if (currentState=="desktop") {
+				if (currentState==DESKTOP) {
 					return aceEditor.text;
 				}
-				else if (currentState=="editor") {
+				else if (currentState==BROWSER) {
 					var result:String = ExternalInterface.call("getEditorText");
 					return result;
 				}
@@ -574,9 +578,10 @@
 				var createEditor:String = "createEditor";
 				var result:Object;
 				
-				if (currentState=="desktop") {
+				if (currentState==DESKTOP) {
 					
 					settingEditorText = true;
+					
 					if (aceEditor) {
 						
 						if (sourceData==null) {
@@ -599,7 +604,7 @@
 					settingEditorText = false;
 					
 				}
-				else if (currentState=="editor") {
+				else if (currentState==BROWSER) {
 					
 					if (!aceEditorCreated) {
 						//editor.content = "<div id='editor' style='display:block;position:absolute;top:0px;left:0px;right:0px;bottom:0px;height:100%;width:100%'></div>";
@@ -1402,7 +1407,7 @@ IFRAME_ID {
 	
 	<s:states>
 		<s:State name="normal"/>
-		<s:State name="editor"/>
+		<s:State name="browser"/>
 		<s:State name="desktop"/>
 	</s:states>
 	
@@ -1413,7 +1418,7 @@ IFRAME_ID {
 		<flexiframe:IFrame id="editor" 
 						   top="50" left="0"
 						   width="100%" height="100%" 
-						   includeIn="editor"
+						   includeIn="browser"
 						   overlayDetection="true"
 						   >
 		</flexiframe:IFrame>

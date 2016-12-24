@@ -22,6 +22,21 @@ package com.flexcapacitor.model
 		public var styles:Array = [];
 		
 		/**
+		 * List of child node properties 
+		 * */
+		public var childProperties:Array = [];
+		
+		/**
+		 * List of child node events 
+		 * */
+		public var childEvents:Array = [];
+		
+		/**
+		 * List of child node styles 
+		 * */
+		public var childStyles:Array = [];
+		
+		/**
 		 * Object containing values of styles and properties
 		 * */
 		public var values:Object = {};
@@ -106,5 +121,41 @@ package com.flexcapacitor.model
 		 * to the importer. 
 		 * */
 		public var nonNsAttributesNotFound:Array;
+		
+		/**
+		 * Object that contains the default property value if default property is not 
+		 * explictly defined as an attribute or a child node
+		 * */
+		public var defaultPropertyObject:Object;
+		
+		/**
+		 * An array of other errors encountered during import
+		 * */
+		public var errors:Array;
+		
+		/**
+		 * 
+		 * */
+		public var attributePropertiesStylesEvents:Array;
+		
+		/**
+		 * 
+		 * */
+		public var childNodePropertiesStylesEvents:Array;
+		
+		/**
+		 * 
+		 * */
+		public var childNodesNotFound:Array;
+		
+		/**
+		 * Child nodes that are part of the element that do not need to be processed
+		 * */
+		public var handledChildNodeNames:Array;
+		
+		/**
+		 * If true do not process child nodes
+		 * */
+		public var skipChildNodes:Boolean;
 	}
 }

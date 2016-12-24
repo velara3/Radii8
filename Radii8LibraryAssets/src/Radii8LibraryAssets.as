@@ -85,6 +85,9 @@ package {
 		[Embed(source="assets/icons/general/error.png")]
 		public static const error:Class;
 		
+		[Embed(source="assets/icons/general/errorLight.png")]
+		public static const errorLight:Class;
+		
 		[Embed(source="assets/icons/general/event.png")]
 		public static const event:Class;
 		

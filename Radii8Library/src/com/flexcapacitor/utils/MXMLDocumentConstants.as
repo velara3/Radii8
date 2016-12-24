@@ -25,6 +25,8 @@ package com.flexcapacitor.utils {
 		public static var xlinkNamespaceURI:String 		= "http://www.w3.org/1999/xlink";
 		public static var tlfNamespaceURI:String 		= "http://ns.adobe.com/textLayout/2008";
 		
+		public static const LAYOUT:String 				= "layout";
+		public static const CONTENT:String 				= "content";
 		public static const TEXT_FLOW:String 			= "textFlow";
 		public static const FILL:String 				= "fill";
 		public static const STROKE:String 				= "stroke";
@@ -49,8 +51,10 @@ package com.flexcapacitor.utils {
 		public static var FILL_NS:String 				= sparkNamespaceURI + "::" + FILL;
 		public static var STROKE_NS:String 				= sparkNamespaceURI + "::" + STROKE;
 		public static var FILTERS_NS:String 			= sparkNamespaceURI + "::" + FILTERS;
+		public static var CONTENT_NS:String 			= sparkNamespaceURI + "::" + CONTENT;
 		public static var TEXT_FLOW_NS:String 			= sparkNamespaceURI + "::" + TEXT_FLOW;
 		public static var DATA_PROVIDER_NS:String 		= sparkNamespaceURI + "::" + DATA_PROVIDER;
+		public static var LAYOUT_NS:String 				= sparkNamespaceURI + "::" + LAYOUT;
 		
 		public static var HTML_OVERRIDE_NS:String 		= htmlNamespaceURI + "::" + HTML_OVERRIDE;
 		public static var HTML_ATTRIBUTES_NS:String 	= htmlNamespaceURI + "::" + HTML_ATTRIBUTES;
@@ -103,7 +107,14 @@ package com.flexcapacitor.utils {
 		 * */
 		public static var xmlDeclaration:String 	= '<?xml version="1.0" encoding="utf-8"?>';
 		
-		public static var ROOT_NODE_NAME:String 	= "RootWrapperNode";
+		public static var ROOT_NODE_NAME:String 		= "RootWrapperNode";
+		public static var DEFAULT_PROPERTY:String 		= "DefaultProperty";
+		public static var MXML_CONTENT:String 			= "mxmlContent";
+		public static var MXML_CONTENT_FACTORY:String 	= "mxmlContentFactory";
+		
+		public static var STYLE:String 				= "style";
+		public static var EVENT:String 				= "event";
+		public static var PROPERTY:String 			= "property";
 		
 		private static var _defaultNamespaceDeclarations:String;
 		
@@ -143,6 +154,10 @@ package com.flexcapacitor.utils {
 		public static var RADIAL_GRADIENT:String 	= "RadialGradient";
 		public static var GRADIENT_ENTRY:String 	= "GradientEntry";
 		public static var SOLID_COLOR_STROKE:String = "SolidColorStroke";
+		public static var BASIC_LAYOUT:String		= "BasicLayout";
+		public static var HORIZONTAL_LAYOUT:String	= "HorizontalLayout";
+		public static var VERTICAL_LAYOUT:String	= "VerticalLayout";
+		public static var TILE_LAYOUT:String		= "TileLayout";
 		
 		/**
 		 * A dictionary containing the namespace prefixes and their URI's. 

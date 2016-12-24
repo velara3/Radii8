@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <actionScriptProperties analytics="false" mainApplicationPath="Radii8Desktop.mxml" projectUUID="6e8953bb-98cf-444a-b498-216049903f56" version="11">
-  <compiler additionalCompilerArguments="-locale en_US &#10;-includes=mx.managers.systemClasses.MarshallingSupport &#10;-keep-all-type-selectors=true &#10;-link-report linkreport.txt &#10;-size-report=sizereport.txt&#10;-keep-as3-metadata+=Alternative&#10;-keep-as3-metadata+=ArrayElementType&#10;-keep-as3-metadata+=DefaultProperty&#10;-keep-as3-metadata+=Deprecated&#10;-keep-as3-metadata+=Effect&#10;-keep-as3-metadata+=Event&#10;-keep-as3-metadata+=HostComponent&#10;-keep-as3-metadata+=IconFile&#10;-keep-as3-metadata+=Inspectable&#10;-keep-as3-metadata+=InstanceType&#10;-keep-as3-metadata+=RemoteClass&#10;-keep-as3-metadata+=RichTextContent&#10;-keep-as3-metadata+=SkinPart&#10;-keep-as3-metadata+=SkinState&#10;-keep-as3-metadata+=Style&#10;-keep-as3-metadata+=SWF" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="true" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="false" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="true" useDebugRSLSwfs="true" useFlashSDK="false" verifyDigests="true" warn="true">
+  <compiler additionalCompilerArguments="-locale en_US &#10;-includes=mx.managers.systemClasses.MarshallingSupport &#10;-keep-all-type-selectors=true &#10;-keep-as3-metadata+=Alternative&#10;-keep-as3-metadata+=ArrayElementType&#10;-keep-as3-metadata+=DefaultProperty&#10;-keep-as3-metadata+=Deprecated&#10;-keep-as3-metadata+=Effect&#10;-keep-as3-metadata+=Event&#10;-keep-as3-metadata+=HostComponent&#10;-keep-as3-metadata+=IconFile&#10;-keep-as3-metadata+=Inspectable&#10;-keep-as3-metadata+=InstanceType&#10;-keep-as3-metadata+=RemoteClass&#10;-keep-as3-metadata+=RichTextContent&#10;-keep-as3-metadata+=SkinPart&#10;-keep-as3-metadata+=SkinState&#10;-keep-as3-metadata+=Style&#10;-keep-as3-metadata+=SWF" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="true" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="false" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderPath="bin-debug" removeUnusedRSL="true" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="true" useDebugRSLSwfs="true" useFlashSDK="false" verifyDigests="true" warn="true">
     <compilerSourcePath/>
     <libraryPath defaultLinkType="0">
       <libraryPathEntry kind="4" path="">
@@ -53,10 +53,10 @@
     <buildTarget buildTargetName="default" platformId="default">
       <airSettings airCertificatePath="/Users/monkeypunch/Documents/Adobe Flash Builder 45/InternalLibrary/preferences/android711/androidcert.p12" airTimestamp="false" anePathSet="true" version="1">
         <airExcludes>
-          <pathEntry path="assets/.DS_Store"/>
           <pathEntry path="assets/images/.DS_Store"/>
-          <pathEntry path="assets/editor/.DS_Store"/>
           <pathEntry path="assets/icons/.DS_Store"/>
+          <pathEntry path="assets/editor/.DS_Store"/>
+          <pathEntry path="assets/.DS_Store"/>
         </airExcludes>
         <anePaths/>
         <newLaunchParams/>

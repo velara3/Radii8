@@ -16,7 +16,7 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:filters="com.flexcapacitor.filters.*" 
 		 xmlns:c="com.flexcapacitor.controls.*"
-		 xmlns:inspectors="com.flexcapacitor.inspectors.*"
+		 xmlns:flexcapacitor="flexcapacitor.*"
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
 		 xmlns:status="com.flexcapacitor.effects.status.*" 

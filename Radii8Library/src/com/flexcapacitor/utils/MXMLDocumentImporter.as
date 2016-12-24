@@ -20,7 +20,6 @@ package com.flexcapacitor.utils {
 	import flash.events.Event;
 	import flash.geom.Rectangle;
 	import flash.system.ApplicationDomain;
-	import flash.text.engine.ContentElement;
 	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
@@ -32,8 +31,16 @@ package com.flexcapacitor.utils {
 	import mx.graphics.LinearGradient;
 	import mx.graphics.SolidColor;
 	import mx.graphics.SolidColorStroke;
+	import mx.managers.ILayoutManagerClient;
+	import mx.managers.LayoutManager;
 	
 	import spark.components.Application;
+	import spark.components.Label;
+	import spark.layouts.BasicLayout;
+	import spark.layouts.HorizontalLayout;
+	import spark.layouts.TileLayout;
+	import spark.layouts.VerticalLayout;
+	import spark.layouts.supportClasses.LayoutBase;
 	
 	import flashx.textLayout.conversion.ITextImporter;
 	import flashx.textLayout.conversion.TextConverter;
@@ -252,6 +259,9 @@ package com.flexcapacitor.utils {
 			var attributesNotFound:Array;
 			var childNodeNames:Array;
 			var qualifiedChildNodeNames:Array;
+			var handledChildNodeNames:Array;
+			var bitmapDataFound:Boolean;
+			var instance:Object;
 			
 			includeChildNodes = true;
 			fixTextFlowNamespaceBug = true;
@@ -276,7 +286,7 @@ package com.flexcapacitor.utils {
 			classType = componentDefinition ? componentDefinition.classType as Class :null;
 			
 			
-			if (componentDefinition==null && elementName!="RootWrapperNode") {
+			if (componentDefinition==null && elementName!=MXMLDocumentConstants.ROOT_NODE_NAME) {
 				//message += " Add this class to Radii8LibrarySparkAssets.sparkManifestDefaults or add the library to the project that contains it.";
 				
 				errorData = ErrorData.getIssue("Element not found", message);
@@ -345,9 +355,13 @@ package com.flexcapacitor.utils {
 				attributesNotFound = ArrayUtils.removeAllItems(valuesObject.attributesNotFound, valuesObject.qualifiedAttributes);
 				childNodeNames = valuesObject.childNodeNames;
 				qualifiedChildNodeNames = valuesObject.qualifiedChildNodeNames;
+				handledChildNodeNames = valuesObject.handledChildNodeNames;
+				
+				// skip child nodes that are part of the component but defined as child nodes
+				handledChildNodes = handledChildNodes.concat(handledChildNodeNames);
 				//var typedValueObject:Object = Radiate.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
 				
-				var bitmapDataFound:Boolean;
+
 				// when copying images that do not have a URL then we use a internal reference id
 				// used when copying and pasting MXML
 				if (attributes.indexOf(MXMLDocumentConstants.BITMAP_DATA_ID_NS)!=-1) {
@@ -358,12 +372,23 @@ package com.flexcapacitor.utils {
 					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.BITMAP_DATA_NS)!=-1) {
 					parseBase64BitmapData(componentInstance, valuesObject, MXMLDocumentConstants.BITMAP_DATA_NS);
 					handledChildNodes.push(MXMLDocumentConstants.BITMAP_DATA_NS);
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.BITMAP_DATA];
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.BITMAP_DATA_NS];
+				}
+				
+				if (childNodeNames.indexOf(MXMLDocumentConstants.LAYOUT)!=-1 || 
+					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.LAYOUT_NS)!=-1) {
+					setLayout(componentDescription, valuesObject);
+					handledChildNodes.push(MXMLDocumentConstants.LAYOUT);
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.LAYOUT];
+					//handledChildNodes.push(MXMLDocumentConstants.FILL_NS);
 				}
 				
 				if (childNodeNames.indexOf(MXMLDocumentConstants.FILL)!=-1 || 
 					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.FILL_NS)!=-1) {
 					setFillData(componentDescription, valuesObject);
 					handledChildNodes.push(MXMLDocumentConstants.FILL);
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.FILL];
 					//handledChildNodes.push(MXMLDocumentConstants.FILL_NS);
 				}
 				
@@ -371,7 +396,17 @@ package com.flexcapacitor.utils {
 					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.STROKE_NS)!=-1) {
 					setStrokeData(componentDescription, valuesObject);
 					handledChildNodes.push(MXMLDocumentConstants.STROKE);
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.STROKE];
 					//handledChildNodes.push(MXMLDocumentConstants.STROKE_NS);
+				}
+				
+				// import TextFlow content
+				if (childNodeNames.indexOf(MXMLDocumentConstants.CONTENT)!=-1 || 
+					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.CONTENT_NS)!=-1) {
+					tlfErrors = setTextFlow(componentDescription, valuesObject, fixTextFlowNamespaceBug);
+					handledChildNodes.push(MXMLDocumentConstants.TEXT_FLOW);
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.TEXT_FLOW];
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.TEXT_FLOW_NS];
 				}
 				
 				// import TextFlow
@@ -379,10 +414,32 @@ package com.flexcapacitor.utils {
 					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.TEXT_FLOW_NS)!=-1) {
 					tlfErrors = setTextFlow(componentDescription, valuesObject, fixTextFlowNamespaceBug);
 					handledChildNodes.push(MXMLDocumentConstants.TEXT_FLOW_NS);
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.TEXT_FLOW];
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.TEXT_FLOW_NS];
 				}
 				
 				if (!componentAlreadyAdded) {
-					Radiate.addElement(componentInstance, parent, valuesObject.properties, valuesObject.styles, valuesObject.events, valuesObject.values, null, AddItems.LAST, null, parentPosition);
+					
+					// catch errors in TextFlow by setting Property.errorHandler to your own error handler
+					// public static var errorHandler:Function = defaultErrorHandler;
+					// also parser.
+					if (componentInstance is Label) {
+						try {
+							Radiate.addElement(componentInstance, parent, valuesObject.properties.concat(valuesObject.childProperties), valuesObject.styles.concat(valuesObject.childStyles), valuesObject.events.concat(valuesObject.childEvents), valuesObject.values, null, AddItems.LAST, null, parentPosition);
+							LayoutManager.getInstance().validateClient(componentInstance as ILayoutManagerClient, true);
+							//LayoutManager.getInstance().validateClient(componentInstance as ILayoutManagerClient);
+						}
+						catch (error:Error) {
+							errorData = ErrorData.getIssue("Invalid property value", error.message);
+							errorData.errorID = String(error.errorID);
+							errorData.message = error.message;
+							errorData.name = error.name;
+							errors.push(errorData);
+						}
+					}
+					else {
+						Radiate.addElement(componentInstance, parent, valuesObject.properties.concat(valuesObject.childProperties), valuesObject.styles.concat(valuesObject.childStyles), valuesObject.events.concat(valuesObject.childEvents), valuesObject.values, null, AddItems.LAST, null, parentPosition);
+					}
 				}
 				else if (valuesObject.propertiesStylesEvents && valuesObject.propertiesStylesEvents.length) {
 					Radiate.setPropertiesStylesEvents(componentInstance, valuesObject.propertiesStylesEvents, valuesObject.values, null, false, dispatchEvents);
@@ -439,88 +496,6 @@ package com.flexcapacitor.utils {
 					}
 				}
 				
-				// original code
-				/*
-				var lockedName:String = fcNamespaceURI + "::locked";
-				
-				if (attributes.indexOf(lockedName)!=-1) {
-					componentDescription.locked = valuesObject.values[lockedName];
-				}
-				
-				var userStylesName:String = htmlNamespaceURI + "::style";
-				
-				if (attributes.indexOf(userStylesName)!=-1) {
-					componentDescription.userStyles = valuesObject.values[userStylesName];
-				}
-				
-				var convertToImage:String = fcNamespaceURI + "::convertToImage";
-				
-				if (attributes.indexOf(convertToImage)!=-1) {
-					componentDescription.convertElementToImage = valuesObject.values[convertToImage];
-				}
-				
-				var createBackgroundSnapshot:String = fcNamespaceURI + "::createBackgroundSnapshot";
-				
-				if (attributes.indexOf(createBackgroundSnapshot)!=-1) {
-					componentDescription.createBackgroundSnapshot = valuesObject.values[createBackgroundSnapshot];
-				}
-				
-				var wrapWithAnchor:String = fcNamespaceURI + "::wrapWithAnchor";
-				
-				if (attributes.indexOf(wrapWithAnchor)!=-1) {
-					componentDescription.wrapWithAnchor = valuesObject.values[wrapWithAnchor];
-					
-					var anchorURL:String = fcNamespaceURI + "::anchorURL";
-					var anchorTarget:String = fcNamespaceURI + "::anchorTarget";
-					
-					if (attributes.indexOf(anchorURL)!=-1) {
-						componentDescription.anchorURL = valuesObject.values[anchorURL];
-					}
-					
-					if (attributes.indexOf(anchorTarget)!=-1) {
-						componentDescription.anchorTarget = valuesObject.values[anchorTarget];
-					}
-				}
-				
-				var layerName:String = fcNamespaceURI + "::name";
-				
-				if (attributes.indexOf(layerName)!=-1) {
-					componentDescription.name = valuesObject.values[layerName];
-				}
-				
-				var htmlTagName:String = fcNamespaceURI + "::htmlTagName";
-				
-				if (attributes.indexOf(htmlTagName)!=-1) {
-					componentDescription.htmlTagName = valuesObject.values[htmlTagName];
-				}
-				
-				var htmlOverride:String;
-				var htmlAttributes:String;
-				var tabCount:int;
-				
-				htmlOverrideName = htmlNamespaceURI + "::" + MXMLDocumentConstants.HTML_OVERRIDE;
-				
-				if (childNodeNames.indexOf(MXMLDocumentConstants.HTML_OVERRIDE)!=-1) {
-					htmlOverride = valuesObject.values[MXMLDocumentConstants.HTML_OVERRIDE];// should be htmlOverrideName?
-					htmlOverride = htmlOverride.indexOf("\n")==0 ? htmlOverride.substr(1) : htmlOverride.substr();
-					tabCount = StringUtils.getTabCountBeforeContent(htmlOverride);
-					htmlOverride = StringUtils.outdent(htmlOverride, tabCount);
-					componentDescription.htmlOverride = htmlOverride;
-					handledChildNodes.push(MXMLDocumentConstants.HTML_OVERRIDE);
-				}
-				
-				htmlAttributesName = htmlNamespaceURI + "::" + MXMLDocumentConstants.HTML_ATTRIBUTES;
-				
-				if (childNodeNames.indexOf(MXMLDocumentConstants.HTML_ATTRIBUTES)!=-1) {
-					htmlAttributes = valuesObject.values[MXMLDocumentConstants.HTML_ATTRIBUTES]; // should be htmlAttributesName?
-					htmlAttributes = htmlAttributes.indexOf("\n")==0 ? htmlAttributes.substr(1) : htmlAttributes.substr();
-					tabCount = StringUtils.getTabCountBeforeContent(htmlAttributes);
-					htmlAttributes = StringUtils.outdent(htmlAttributes, tabCount);
-					componentDescription.htmlAttributes = htmlAttributes;
-					handledChildNodes.push(MXMLDocumentConstants.HTML_ATTRIBUTES);
-				}
-				*/
-				
 				
 				if (childNodeNames.indexOf(MXMLDocumentConstants.HTML_OVERRIDE_NS)!=-1) {
 					handledChildNodes.push(MXMLDocumentConstants.HTML_OVERRIDE_NS);
@@ -553,9 +528,9 @@ package com.flexcapacitor.utils {
 				
 				for (event in valuesObject.eventsErrorsObject) {
 					errorData = ErrorData.getIssue("Invalid event value", "Value for event '" + event + "' was not applied to " + elementName);
-					errorData.errorID = valuesObject.stylesErrorsObject[event].errorID;
-					errorData.message = valuesObject.stylesErrorsObject[event].message;
-					errorData.name = valuesObject.stylesErrorsObject[event].name;
+					errorData.errorID = valuesObject.eventsErrorsObject[event].errorID;
+					errorData.message = valuesObject.eventsErrorsObject[event].message;
+					errorData.name = valuesObject.eventsErrorsObject[event].name;
 					errors.push(errorData);
 				}
 				
@@ -577,8 +552,6 @@ package com.flexcapacitor.utils {
 				//HistoryManager.mergeLastHistoryEvent(document);
 			}
 			
-			
-			var instance:Object;
 			
 			if (includeChildNodes) {
 				
@@ -834,6 +807,23 @@ package com.flexcapacitor.utils {
 		
 		/**
 		 * Convert TextFlow XML into actual text flow instance and set the value object to it
+		 * 
+		 * Catch errors with: 
+		 * 
+<pre>
+textFlowParser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT, null);
+textFlowParser.throwOnError = false;
+textFlow = textFlowParser.importToFlow(textFlowXML);
+textFlowParser.errors;
+</pre>
+		 * And 
+<pre>
+Property.errorHandler = myErrorHandler;
+public static function myErrorHandler(p:Property, value:Object):void
+{
+	throw(new RangeError(Property.createErrorString(p, value)));
+}
+</pre>
 		 * */
 		public function setTextFlow(componentDescription:ComponentDescription, valuesObject:ValuesObject, fixTextFlowNamespaceBug:Boolean):Vector.<String> {
 			var textFlowString:String;
@@ -860,6 +850,10 @@ package com.flexcapacitor.utils {
 				// if not found it may be using an alternate namespace
 				if (textFlowString==null) {
 					textFlowString = valuesObject.childNodeValues[MXMLDocumentConstants.TEXT_FLOW_NS];
+					
+					if (textFlowString==null) {
+						textFlowString = valuesObject.childNodeValues[MXMLDocumentConstants.CONTENT];
+					}
 				}
 				
 				originalXMLSettings = XML.settings();
@@ -868,7 +862,20 @@ package com.flexcapacitor.utils {
 				XML.ignoreWhitespace = false;
 				XML.prettyPrinting = false;
 				
-				textFlowXML = new XML(textFlowString);
+				try {
+					if (textFlowString.indexOf("TextFlow") == -1) {
+						//textFlowString =  "<TextFlow xmlns=\"" + MXMLDocumentConstants.tlfNamespaceURI+ "\">" +
+						textFlowString =  "<TextFlow>" +
+							textFlowString + "</TextFlow>";
+					}
+					
+					textFlowXML = new XML(textFlowString);
+				}
+				catch(error:Error) {
+					
+				}
+				
+				//textFlow = TextFlowUtil.importFromString(textFlowString);
 				
 				XML.setSettings(originalXMLSettings);
 				
@@ -887,6 +894,305 @@ package com.flexcapacitor.utils {
 			valuesObject.values[MXMLDocumentConstants.TEXT_FLOW] = textFlow;
 			
 			return textFlowParser.errors;
+		}
+		
+		/**
+		 * Convert layout XML into actual layout instance and set the value object to it
+		 * */
+		public function setLayout(componentDescription:ComponentDescription, valuesObject:ValuesObject):void {
+			var layoutString:String;
+			var layoutXML:XML;
+			var layoutType:String;
+			var layout:LayoutBase;
+			var basicLayout:BasicLayout;
+			var horizontalLayout:HorizontalLayout;
+			var verticalLayout:VerticalLayout;
+			var tileLayout:TileLayout;
+			
+			if (layout==null) {
+				layoutString = valuesObject.childNodeValues[MXMLDocumentConstants.LAYOUT];
+				
+				// if not found it may be using an alternate namespace
+				if (layoutString==null) {
+					layoutString = valuesObject.childNodeValues[MXMLDocumentConstants.LAYOUT_NS];
+				}
+				
+				layoutXML = new XML(layoutString);
+				
+				layoutType = layoutXML.localName();
+				
+				if (layoutType==MXMLDocumentConstants.BASIC_LAYOUT) {
+					basicLayout = getBasicLayout(layoutXML);
+					layout = basicLayout;
+				}
+				else if (layoutType==MXMLDocumentConstants.HORIZONTAL_LAYOUT) {
+					horizontalLayout = getHorizontalLayout(layoutXML);
+					layout = horizontalLayout;
+				}
+				else if (layoutType==MXMLDocumentConstants.VERTICAL_LAYOUT) {
+					verticalLayout = getVerticalLayout(layoutXML);
+					layout = verticalLayout;
+				}
+				else if (layoutType==MXMLDocumentConstants.TILE_LAYOUT) {
+					tileLayout = getTileLayout(layoutXML);
+					layout = tileLayout;
+				}
+			}
+			
+			valuesObject.values[MXMLDocumentConstants.LAYOUT] = layout;
+			
+		}
+		
+		public function getBasicLayout(layoutXML:XML):BasicLayout {
+			var basicLayout:BasicLayout = new BasicLayout();
+			
+			if (XMLUtils.hasAttribute(layoutXML, "clipAndEnableScrolling")) {
+				basicLayout.clipAndEnableScrolling = Boolean(layoutXML.@clipAndEnableScrolling); 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "id")) {
+				//basicLayout.id = layoutXML.@id; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "useVirtualLayout")) {
+				basicLayout.useVirtualLayout = layoutXML.@useVirtualLayout; 
+			}
+			
+			return basicLayout;
+		}
+		
+		public function getHorizontalLayout(layoutXML:XML):HorizontalLayout {
+			var horizontalLayout:HorizontalLayout = new HorizontalLayout();
+			
+			if (XMLUtils.hasAttribute(layoutXML, "clipAndEnableScrolling")) {
+				horizontalLayout.clipAndEnableScrolling = Boolean(layoutXML.@clipAndEnableScrolling); 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "id")) {
+				//horizontalLayout.id = layoutXML.@id; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "columnWidth")) {
+				horizontalLayout.columnWidth = layoutXML.@columnWidth; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "gap")) {
+				horizontalLayout.gap = layoutXML.@gap; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "horizontalAlign")) {
+				horizontalLayout.horizontalAlign = layoutXML.@horizontalAlign; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "padding")) {
+				horizontalLayout.padding = layoutXML.@padding; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingBottom")) {
+				horizontalLayout.paddingBottom = layoutXML.@paddingBottom; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingLeft")) {
+				horizontalLayout.paddingLeft = layoutXML.@paddingLeft; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingRight")) {
+				horizontalLayout.paddingRight = layoutXML.@paddingRight; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingTop")) {
+				horizontalLayout.paddingTop = layoutXML.@paddingTop; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "requestedColumnCount")) {
+				horizontalLayout.requestedColumnCount = layoutXML.@requestedColumnCount; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "requestedMaxColumnCount")) {
+				horizontalLayout.requestedMaxColumnCount = layoutXML.@requestedMaxColumnCount; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "requestedMinColumnCount")) {
+				horizontalLayout.requestedMinColumnCount = layoutXML.@requestedMinColumnCount; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "typicalLayoutElement")) {
+				//horizontalLayout.typicalLayoutElement = layoutXML.@typicalLayoutElement; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "verticalAlign")) {
+				horizontalLayout.verticalAlign = layoutXML.@verticalAlign; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "variableColumnWidth")) {
+				horizontalLayout.variableColumnWidth = layoutXML.@variableColumnWidth; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "useVirtualLayout")) {
+				horizontalLayout.useVirtualLayout = layoutXML.@useVirtualLayout; 
+			}
+			
+			return horizontalLayout;
+		}
+		
+		public function getVerticalLayout(layoutXML:XML):VerticalLayout {
+			var verticalLayout:VerticalLayout = new VerticalLayout();
+			
+			if (XMLUtils.hasAttribute(layoutXML, "clipAndEnableScrolling")) {
+				verticalLayout.clipAndEnableScrolling = Boolean(layoutXML.@clipAndEnableScrolling); 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "id")) {
+				//verticalLayout.id = layoutXML.@id; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "gap")) {
+				verticalLayout.gap = layoutXML.@gap; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "horizontalAlign")) {
+				verticalLayout.horizontalAlign = layoutXML.@horizontalAlign; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "padding")) {
+				verticalLayout.padding = layoutXML.@padding; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingBottom")) {
+				verticalLayout.paddingBottom = layoutXML.@paddingBottom; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingLeft")) {
+				verticalLayout.paddingLeft = layoutXML.@paddingLeft; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingRight")) {
+				verticalLayout.paddingRight = layoutXML.@paddingRight; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingTop")) {
+				verticalLayout.paddingTop = layoutXML.@paddingTop; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "requestedRowCount")) {
+				verticalLayout.requestedRowCount = layoutXML.@requestedRowCount; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "requestedMaxRowCount")) {
+				verticalLayout.requestedMaxRowCount = layoutXML.@requestedMaxRowCount; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "requestedMinRowCount")) {
+				verticalLayout.requestedMinRowCount = layoutXML.@requestedMinRowCount; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "typicalLayoutElement")) {
+				//horizontalLayout.typicalLayoutElement = layoutXML.@typicalLayoutElement; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "rowHeight")) {
+				verticalLayout.rowHeight = layoutXML.@rowHeight; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "verticalAlign")) {
+				verticalLayout.verticalAlign = layoutXML.@verticalAlign; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "variableRowHeight")) {
+				verticalLayout.variableRowHeight = layoutXML.@variableRowHeight; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "useVirtualLayout")) {
+				verticalLayout.useVirtualLayout = layoutXML.@useVirtualLayout; 
+			}
+			
+			return verticalLayout;
+		}
+		
+		public function getTileLayout(layoutXML:XML):TileLayout {
+			var tileLayout:TileLayout = new TileLayout();
+			
+			if (XMLUtils.hasAttribute(layoutXML, "clipAndEnableScrolling")) {
+				tileLayout.clipAndEnableScrolling = Boolean(layoutXML.@clipAndEnableScrolling); 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "id")) {
+				//tileLayout.id = layoutXML.@id; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "columnAlign")) {
+				tileLayout.columnAlign = layoutXML.@columnAlign; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "columnWidth")) {
+				tileLayout.columnWidth = layoutXML.@columnWidth; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "horizontalAlign")) {
+				tileLayout.horizontalAlign = layoutXML.@horizontalAlign; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "horizontalGap")) {
+				tileLayout.horizontalGap = layoutXML.@horizontalGap; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "orientation")) {
+				tileLayout.orientation = layoutXML.@orientation; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "padding")) {
+				tileLayout.padding = layoutXML.@padding; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingBottom")) {
+				tileLayout.paddingBottom = layoutXML.@paddingBottom; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingLeft")) {
+				tileLayout.paddingLeft = layoutXML.@paddingLeft; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingRight")) {
+				tileLayout.paddingRight = layoutXML.@paddingRight; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "paddingTop")) {
+				tileLayout.paddingTop = layoutXML.@paddingTop; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "requestedColumnCount")) {
+				tileLayout.requestedColumnCount = layoutXML.@requestedColumnCount; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "requestedRowCount")) {
+				tileLayout.requestedRowCount = layoutXML.@requestedRowCount; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "rowAlign")) {
+				tileLayout.rowAlign = layoutXML.@rowAlign; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "rowHeight")) {
+				tileLayout.rowHeight = layoutXML.@rowHeight; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "typicalLayoutElement")) {
+				//horizontalLayout.typicalLayoutElement = layoutXML.@typicalLayoutElement; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "verticalAlign")) {
+				tileLayout.verticalAlign = layoutXML.@verticalAlign; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "verticalGap")) {
+				tileLayout.verticalGap = layoutXML.@verticalGap; 
+			}
+			
+			if (XMLUtils.hasAttribute(layoutXML, "useVirtualLayout")) {
+				tileLayout.useVirtualLayout = layoutXML.@useVirtualLayout; 
+			}
+			
+			return tileLayout;
 		}
 		
 		/**

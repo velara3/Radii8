@@ -6,8 +6,7 @@
 			   xmlns:fc="com.flexcapacitor.effects.popup.*"
 			   xmlns:fce="com.flexcapacitor.effects.file.*"
 			   xmlns:fcb="com.flexcapacitor.effects.core.*"
-			   xmlns:views="com.flexcapacitor.views.*"
-			   xmlns:panels="com.flexcapacitor.views.panels.*"
+			   xmlns:flexcapacitor="flexcapacitor.*"
 			   xmlns:windows="com.flexcapacitor.views.windows.*" 
 			   xmlns:controls="com.flexcapacitor.controls.*" 
 

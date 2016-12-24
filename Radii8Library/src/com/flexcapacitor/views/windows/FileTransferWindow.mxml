@@ -6,8 +6,7 @@
 							 xmlns:fc="com.flexcapacitor.effects.popup.*"
 							 xmlns:fce="com.flexcapacitor.effects.file.*"
 							 xmlns:fcb="com.flexcapacitor.effects.core.*"
-							 xmlns:views="com.flexcapacitor.views.*"
-							 xmlns:panels="com.flexcapacitor.views.panels.*"
+							 xmlns:flexcapacitor="flexcapacitor.*"
 							 xmlns:windows="com.flexcapacitor.views.windows.*" 
 							 xmlns:controls="com.flexcapacitor.controls.*" 
 							 xmlns:form="com.flexcapacitor.form.*" 
@@ -17,6 +16,38 @@
 							 title="Transfer to Server..."
 							 creationComplete="creationCompleteHandler(event)" 
 							 >
+	
+	<!--
+	
+	Main Thread (Suspended: VerifyError: Error #1014: Class mx.controls::FileSystemDataGrid could not be found.)	
+	mx.binding::Binding/execute	
+	mx.binding::BindingManager$/executeBindings	
+	com.flexcapacitor.views::MainView/_MainView_OpenPopUp7_i	
+	com.flexcapacitor.views::MainView/_MainView_EventHandler9_i	
+	com.flexcapacitor.views::MainView	
+	RadiateBrowser/_RadiateBrowser_MainView1_c [no source]	
+	RadiateBrowser/_RadiateBrowser_Array1_c [no source]	
+	mx.core::DeferredInstanceFromFunction/getInstance	
+	spark.components::SkinnableContainer/createDeferredContent	
+	spark.components::SkinnableContainer/createContentIfNeeded	
+	spark.components::SkinnableContainer/createChildren	
+	spark.components::Application/createChildren	
+	mx.core::UIComponent/initialize	
+	spark.components::Application/initialize	
+	RadiateBrowser/initialize [no source]	
+	mx.managers.systemClasses::ChildManager/childAdded	
+	mx.managers.systemClasses::ChildManager/initializeTopLevelWindow	
+	mx.managers::SystemManager/initializeTopLevelWindow	
+	mx.managers::SystemManager/http://www.adobe.com/2006/flex/mx/internal::kickOff	
+	mx.managers::SystemManager/http://www.adobe.com/2006/flex/mx/internal::preloader_completeHandler	
+	flash.events::EventDispatcher/dispatchEventFunction [no source]	
+	flash.events::EventDispatcher/dispatchEvent [no source]	
+	mx.preloaders::Preloader/timerHandler	
+	flash.utils::Timer/_timerDispatch [no source]	
+	flash.utils::Timer/tick [no source]	
+
+	
+	-->
 	
 	<fx:Script>
 		<![CDATA[

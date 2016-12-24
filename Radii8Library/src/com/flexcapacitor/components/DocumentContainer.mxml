@@ -20,8 +20,7 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
-		 xmlns:components="com.flexcapacitor.components.*"
-		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:flexcapacitor="flexcapacitor.*"
 		 xmlns:local="*"
 		 
 		 width="400" height="300"

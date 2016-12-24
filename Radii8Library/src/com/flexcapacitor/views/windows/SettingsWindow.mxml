@@ -2,11 +2,10 @@
 <windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
 			   xmlns:s="library://ns.adobe.com/flex/spark" 
 			   xmlns:mx="library://ns.adobe.com/flex/mx" 
-			   xmlns:c="com.flexcapacitor.views.*"
+			   xmlns:flexcapacitor="flexcapacitor.*"
 			   xmlns:handlers="com.flexcapacitor.handlers.*"
 			   xmlns:fc="com.flexcapacitor.effects.popup.*"
 			   xmlns:windows="com.flexcapacitor.views.windows.*"
-			   xmlns:renderers="com.flexcapacitor.views.renderers.*"
 			   xmlns:controls="com.flexcapacitor.controls.*"
 
 			   title="Settings" 

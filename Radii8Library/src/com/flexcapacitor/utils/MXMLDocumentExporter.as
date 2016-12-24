@@ -541,8 +541,8 @@ package com.flexcapacitor.utils {
 						base64ImageData = DisplayObjectUtils.getBase64ImageDataString(componentDescription.instance.source, DisplayObjectUtils.PNG, null, true);
 						
 						// we may need to change this so it doesn't conflict with "bitmapData" in the spark namespace
-						childNodeNames.push(MXMLDocumentConstants.BITMAP_DATA);
-						childNodesValues[MXMLDocumentConstants.BITMAP_DATA] = base64ImageData;
+						childNodeNames.push(MXMLDocumentConstants.BITMAP_DATA_NS);
+						childNodesValues[MXMLDocumentConstants.BITMAP_DATA_NS] = base64ImageData;
 					}
 					
 					warningData = IssueData.getIssue("Image data was not uploaded", "If you don't upload the image it will not be visible online.");

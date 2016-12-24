@@ -7,8 +7,8 @@
 					   xmlns:controls="com.flexcapacitor.controls.*"
 					   xmlns:components="components.*"
 					   
-					   width="1000"
-					   height="500"
+					   width="1200"
+					   height="800"
 					   minWidth="800"
 					   minHeight="400"
 					   applicationComplete="applicationCompleteHandler(event)"
@@ -18,8 +18,10 @@
 					   invoke="windowedapplication1_invokeHandler(event)"
 					   dragOver="mainView_dragOverHandler(event)"
 					   dragDrop="mainView_dragDropHandler(event)"
-					   dragExit="mainView_dragExitHandler(event)"
+					   dragExit="mainView_dragExitHandler(event)" xmlns:handlers="com.flexcapacitor.handlers.*" xmlns:window="com.flexcapacitor.effects.window.*"
 					   >
+	
+	<fx:Style source="styles.css"/>
 	
 	<fx:Script>
 		<![CDATA[
@@ -191,9 +193,13 @@
 					
 					if (!updateOnSave) {
 						invalidateDesignView();
-						checkForDifferences();
+						if (renderDeltaChanges) {
+							checkForDifferences();
+						}
 					}
 				}
+				
+				var token:Object = aceEditor.getSelectionAnchor();
 				
 			}
 			
@@ -209,6 +215,7 @@
 					errorGroup.includeInLayout = true;
 					lineError.text = firstMessage;
 					warningLabel.text = secondMessage;
+					warningLabel.toolTip = secondMessage;
 				}
 				 
 				aceEditor.clearAnnotations();
@@ -230,6 +237,7 @@
 					errorGroup.includeInLayout = false;
 					lineError.text = "";
 					warningLabel.text = "";
+					warningLabel.toolTip = "";
 				}
 				
 				aceEditor.clearAnnotations();
@@ -445,7 +453,13 @@
 				var defaultCode:XML = transcoder.getDefaultMXMLDocumentXML();
 				var comment:XML = <!--\n\n-->;
 				var code:String = defaultCode.appendChild(comment).toXMLString();
-				code = code.replace("</s:Application>", "\n\t\n</s:Application>");
+				var xml:XML = <s:Label xmlns:s="library://ns.adobe.com/flex/spark"><s:color>red</s:color>
+						test level</s:Label>;
+				/*var elements:XMLList = xml.elements();
+				trace(elements.toXMLString());
+				var copy:XMLList = elements.copy();
+				trace(copy.toXMLString());*/
+				code = code.replace("</s:Application>", "\n" + xml.toXMLString() + "\n</s:Application>");
 				aceEditor.text = code;
 			}
 			
@@ -470,7 +484,14 @@
 			
 			protected function issuesInspector_changeHandler(event:IssueDataEvent):void
 			{
-				showMessage(event.label, event.description, 0, 0, false);
+				var errorData:ErrorData = event.issueData as ErrorData;
+				
+				if (errorData) {
+					showMessage(event.label, event.description, errorData.line, errorData.column, false);
+				}
+				else {
+					showMessage(event.label, event.description, -1, -1, false);
+				}
 			}
 			
 			protected function windowedapplication1_uncaughtErrorHandler(event:UncaughtErrorEvent):void {
@@ -481,6 +502,18 @@
 				// so we catch that and other errors here
 				// note: I say shouldn't because other Flex components style values do not throw
 				// errors by design.
+				
+				/*
+				
+				textFlowParser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT, null);
+				textFlowParser.throwOnError = false;
+				textFlow = textFlowParser.importToFlow(textFlowXML);
+				textFlowParser.errors;
+				
+				
+				
+				*/
+				
 				var errorData:ErrorData;
 				var message:String;
 				
@@ -776,16 +809,29 @@
 				"http://ns.adobe.com/mxml/2009::Declarations": 1,
 				"http://ns.adobe.com/mxml/2009::Style": 1
 			}
+			
+			protected function addDemoMXMLButton_clickHandler(event:MouseEvent):void
+			{
+				aceEditor.text = embeddedRichTextMXML.value;
+				aceEditor.validateNow();
+				invalidateDesignView();
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
+		<handlers:EventHandler eventName="initialize">
+			<window:CenterWindow target="{this}"/>
+		</handlers:EventHandler>
+		
 		<model:EmbeddedFile id="embeddedMXML" file='@Embed("./examples/mxml.txt",mimeType="application/octet-stream")'/>
 		<model:EmbeddedFile id="embeddedMXML2" file='@Embed("./examples/mxml2.txt",mimeType="application/octet-stream")'/>
 		<model:EmbeddedFile id="embeddedSimpleMXML" file='@Embed("./examples/mxmlSimple.txt",mimeType="application/octet-stream")'/>
+		<model:EmbeddedFile id="embeddedRichTextMXML" file='@Embed("./examples/mxmlRichText.txt",mimeType="application/octet-stream")'/>
+		
 		<utils:MiniInspector/>
 	</fx:Declarations>
-	
 	
 	<s:states>
 		<s:State name="normal"/>
@@ -871,8 +917,7 @@
 								 color="red"
 								 width="100%"/>
 					</s:HGroup>
-					<s:Spacer width="100%"/>
-					<s:Label id="renderTimeLabel" color="#898989" />
+					<s:Spacer width="15%"/>
 					
 				</s:HGroup>
 				
@@ -888,22 +933,25 @@
 					<s:Button id="showIssuesButton" label.normal="Show Issues"
 							  label.sidebar="Hide Issues"
 							  click="showIssuesButton_clickHandler(event)"/>
-					<s:Button id="addDemoMXMLButton2" label="Add Simple MXML"
+					<s:Button id="addDemoMXMLButton2" label="Simple"
 							  click="addDemoMXMLButton2_clickHandler(event)"/>
-					<s:Button id="addDemoMXMLButton" label="Add Complex MXML"
+					<s:Button id="addDemoMXMLButton" label="Complex"
 							  click="addDemoDataButton_clickHandler(event)"/>
-					<s:Button id="clearDocumentButton" label="Clear Document"
+					<s:Button id="addRichTextMXMLButton" label="RichText"
+							  click="addDemoMXMLButton_clickHandler(event)"/>
+					<s:Button id="clearDocumentButton" label="Clear"
 							  click="clearDocumentButton_clickHandler(event)"/>
-					<s:Button id="updateDocumentButton" label="Update Document"
+					<s:Button id="updateDocumentButton" label="Update"
 							  click="updateDocumentButton_clickHandler(event)"/>
 					<s:Label text="Update on:" />
 					<s:RadioButton id="updateOnChangeButton" label="change"
 								   click="updateOnChangeButton_clickHandler(event)"/>
 					<s:RadioButton id="updateOnSaveButton" label="save" 
 								   click="updateOnChangeButton_clickHandler(event)"/>
+					<s:Label id="renderTimeLabel" color="#898989" />
 					<s:Spacer width="100%"/>
 					
-					<controls:AceSearchTextInput id="findInput" aceEditor="{aceEditor}"
+					<controls:AceSearchTextInput id="findInput" width="125" aceEditor="{aceEditor}"
 												 focusThickness="0"/>
 					<s:Button id="closeButton" label="Close" click="closeButton_clickHandler(event)"/>
 				</s:HGroup>

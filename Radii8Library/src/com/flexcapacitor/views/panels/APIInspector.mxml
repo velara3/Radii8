@@ -3,9 +3,7 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:c="com.flexcapacitor.controls.*"
-		 xmlns:handlers="com.flexcapacitor.handlers.*" 
-		 xmlns:collections="com.flexcapacitor.effects.collections.*"
-		 xmlns:components="com.flexcapacitor.components.*" 
+		 xmlns:flexcapacitor="flexcapacitor.*" 
 		 xmlns:flexiframe="com.google.code.flexiframe.*" 
 		 
 		 minWidth="200" 

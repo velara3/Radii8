@@ -5,17 +5,15 @@
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:popup="com.flexcapacitor.effects.popup.*" 
-		 xmlns:navigation="com.flexcapacitor.effects.navigation.*"
+		 xmlns:flexcapacitor="flexcapacitor.*"
 		 xmlns:utils="com.flexcapacitor.utils.*" 
 		 xmlns:model="com.flexcapacitor.model.*" 
 		 xmlns:fc="com.flexcapacitor.effects.popup.*"
 		 xmlns:flexiframe="com.google.code.flexiframe.*"
-		 xmlns:services="com.flexcapacitor.effects.services.*"
 		 xmlns:core="com.flexcapacitor.effects.core.*"
 		 xmlns:views="com.flexcapacitor.views.*"
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
 		 xmlns:filters="com.flexcapacitor.filters.*"
-		 xmlns:windows="com.flexcapacitor.views.windows.*" 
 		 xmlns:application="com.flexcapacitor.effects.application.*"
 		 xmlns:file="com.flexcapacitor.effects.file.*" 
 		 xmlns:local="*" 
@@ -47,6 +45,7 @@
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			import com.flexcapacitor.utils.supportClasses.log;
 			import com.flexcapacitor.views.windows.ContactWindow;
 			import com.flexcapacitor.views.windows.CreditsWindow;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
@@ -109,9 +108,10 @@
 		i added all other projects except the radiate projects as swc instead of as projects
 		
 		i also added reference to PNGEncoderOptions encoder to RadiateReferences.as
-	 * 
-	 */
+		 * 
+		 */
 			
+			public var fileTransferWindowClass:String = "com.flexcapacitor.views.FileTransferWindow";
 			private var remoteTestURL:String = "";
 			private var testURL:String = "";
 			
@@ -121,6 +121,7 @@
 			public static const DESIGN_STATE:String = "design";
 			public static const DESCRIPTION_STATE:String = "description";
 			
+			public static var debug:Boolean;
 			
 			/**
 			 * 
@@ -158,6 +159,7 @@
 				
 				serviceManager.addEventListener(RadiateEvent.BLOG_POSTS_RECEIVED, blogPostsReceivedHandler, false, 0, true);
 				serviceManager.addEventListener(RadiateEvent.LOGGED_IN_STATUS, loggedInStatusHandler, false, 0, true);
+				serviceManager.addEventListener(RadiateEvent.LOGIN_RESULTS, loggedInStatusHandler, false, 0, true);
 				serviceManager.addEventListener(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED, receivedExampleProjectsHandler, false, 0, true);
 				serviceManager.addEventListener(RadiateEvent.PROJECTS_LIST_RECEIVED, receivedProjectsHandler, false, 0, true);
 				serviceManager.addEventListener(RadiateEvent.PROJECT_SET_HOME_PAGE, clearHomePageHandler, false, 0, true);
@@ -379,9 +381,11 @@
 					updateCheckLoginStatus(1);
 					updateCheckProjects(-1);
 					serviceManager.getProjectsByUser(radiate.userID);
+					userIcon.source = radiate.userAvatar;
 				}
 				else {
 					updateCheckLoginStatus(0);
+					userIcon.source = radiate.defaultUserAvatarPath;
 				}
 				
 				isConnectedCheckbox.selected = radiate.isUserConnected;
@@ -709,6 +713,9 @@
 			 * Handle if user icon is not available
 			 * */
 			protected function userIcon_securityErrorHandler(event:SecurityErrorEvent):void {
+				if (debug) {
+					log("User icon security error: ", event);
+				}
 				//trace("security error ");
 			}
 			
@@ -716,9 +723,16 @@
 			 * Handle if user icon is not available
 			 * */
 			protected function userIcon_ioErrorHandler(event:IOErrorEvent):void {
+				if (debug) {
+					log("User icon io error: ", event);
+				}
 				//trace("ioerror ");
 				userIcon.source = null;
-				userIcon.source = radiate.defaultUserAvatarPath;
+				
+				// keeps looping when icon can't be found
+				if (userIcon.source!=radiate.defaultUserAvatarPath) {
+					userIcon.source = radiate.defaultUserAvatarPath;
+				}
 			}
 			
 			protected function fadeOutStatus_effectEndHandler(event:EffectEvent):void {
@@ -1317,7 +1331,6 @@
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void
 			{
-				// TODO Auto-generated method stub
 				
 			}
 			
@@ -1445,7 +1458,7 @@
 		
 		<handlers:EventHandler eventName="itemClick" target="{uploadMenuItem}">
 			<fc:OpenPopUp id="openFileTransferPopUp" 
-						  popUpType="{FileTransferWindow}" 
+						  popUpType="{fileTransferWindowClass}" 
 						  modalDuration="150" 
 						  percentWidth="75"
 						  percentHeight="90"
@@ -2151,7 +2164,7 @@
 				 top="3"
 				 useHandCursor="true"
 				 buttonMode="true"
-				 source="{radiate.userAvatar}"
+				 source="{radiate.defaultUserAvatarPath}"
 				 showErrorSkin="false"
 				 smooth="true"
 				 clearOnLoad="false"

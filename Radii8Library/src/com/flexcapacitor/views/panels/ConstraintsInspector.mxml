@@ -4,9 +4,8 @@
 		 xmlns:local="*"
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
-		 xmlns:utils="com.flexcapacitor.utils.*" 
+		 xmlns:flexcapacitor="flexcapacitor.*" 
 		 xmlns:handlers="com.flexcapacitor.handlers.*"
-		 xmlns:supportClasses="com.flexcapacitor.effects.supportClasses.*"
 		 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 styleName="constraintStyles"

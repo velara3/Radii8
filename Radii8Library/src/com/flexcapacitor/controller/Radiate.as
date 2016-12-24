@@ -70,6 +70,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.services.WPAttachmentService;
 	import com.flexcapacitor.services.WPService;
+	import com.flexcapacitor.services.WPServiceEvent;
 	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.tools.ITool;
 	import com.flexcapacitor.tools.Selection;
@@ -90,6 +91,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.XMLUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+	import com.flexcapacitor.utils.supportClasses.log;
 	import com.flexcapacitor.views.IInspector;
 	import com.flexcapacitor.views.MainView;
 	import com.flexcapacitor.views.Remote;
@@ -463,18 +465,18 @@ package com.flexcapacitor.controller {
 		public function Radiate(s:SINGLEDOUBLE) {
 			super(target as IEventDispatcher);
 			
-			// Create a target
-			setLoggingTarget(defaultLogTarget);
-			
-			
 			// initialize - maybe call on startup() instead
-			initialize();
+			if (!initialized) {
+				initialize();
+			}
 		}
 		
 		//----------------------------------
 		//  instance
 		//----------------------------------
 		private static var _instance:Radiate;
+
+		private static var initialized:Boolean;
 		
 		/**
 		 * Attempt to support a console part 2
@@ -1935,6 +1937,8 @@ package com.flexcapacitor.controller {
 			var exportersXML:XML	= new XML(new Radii8LibraryTranscodersAssets.transcodersManifestDefaults());
 			//var documentsXML:XML	= new XML(new Radii8LibraryTranscodersAssets.transcodersManifestDefaults());
 			
+			setLoggingTarget(defaultLogTarget);
+			
 			createSettingsData();
 
 			createSavedData();
@@ -1956,6 +1960,8 @@ package com.flexcapacitor.controller {
 			createFontsList();
 			
 			documentStatuses.source = [WPService.STATUS_NONE, WPService.STATUS_DRAFT, WPService.STATUS_PUBLISH];
+			
+			initialized = true;
 		}
 		
 		/**
@@ -1986,7 +1992,7 @@ package com.flexcapacitor.controller {
 			var path:String;
 			var screenshotPath:String;
 			
-			if (!firstRun) {
+			if (!firstRun && PersistentStorage.isSupported) {
 				host = PersistentStorage.read(Radiate.WP_HOST_NAME);
 				path = PersistentStorage.read(Radiate.WP_PATH_NAME);
 				screenshotPath = PersistentStorage.read(Radiate.SCREENSHOT_PATH_NAME);
@@ -2037,6 +2043,20 @@ package com.flexcapacitor.controller {
 			
 			//radiate.openInitialProjects();
 			//LayoutManager.getInstance().usePhasedInstantiation = false;
+			
+		}
+		
+		protected function loginStatusChange(event:WPServiceEvent):void {
+			var data:Object = event.data;
+			
+			if (event.hasError) {
+				isUserConnected = false;
+			}
+			else {
+				isUserConnected = true;
+			}
+			
+			updateUserInfo(data);
 			
 		}
 		
@@ -2161,7 +2181,8 @@ package com.flexcapacitor.controller {
 			var propertyName:String;
 			var descendents:XMLList;
 			var name:String;
-			
+			var defaultProperty:String;
+			var metaData:Object;
 			
 			// get list of component classes 
 			items = XML(xml).component;
@@ -2192,7 +2213,8 @@ package com.flexcapacitor.controller {
 					
 					if (hasDefinition) {
 						classType = ClassUtils.getDefinition(className);
-						
+						metaData = ClassUtils.getMetaDataOfMember(classType, "DefaultProperty");
+						defaultProperty = metaData ? metaData.value : null;
 						// need to check if we have the skin as well
 						
 						//hasDefinition = ClassUtils.hasDefinition(skinClassName);
@@ -2228,7 +2250,7 @@ package com.flexcapacitor.controller {
 								}
 							}
 							
-							addComponentDefinition(item.@id, className, classType, inspectors, null, defaults, null, includeItem, childNodes, false);
+							addComponentDefinition(item.@id, className, classType, inspectors, null, defaultProperty, defaults, null, includeItem, childNodes, false);
 						}
 						else {
 							error("Component skin class, '" + skinClassName + "' not found for '" + className + "'.");
@@ -3754,9 +3776,17 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add the named component class to the list of available components
 		 * */
-		public static function addComponentDefinition(name:String, className:String, classType:Object, inspectors:Array = null, 
-													  icon:Object = null, defaultProperties:Object=null, defaultStyles:Object=null, 
-													  enabled:Boolean = true, childNodes:Array = null, dispatchEvents:Boolean = true):Boolean {
+		public static function addComponentDefinition(name:String, 
+													  className:String, 
+													  classType:Object, 
+													  inspectors:Array = null, 
+													  icon:Object = null, 
+													  defaultProperty:String = null,
+													  defaultProperties:Object=null, 
+													  defaultStyles:Object=null, 
+													  enabled:Boolean = true, 
+													  childNodes:Array = null, 
+													  dispatchEvents:Boolean = true):Boolean {
 			var componentDefinition:ComponentDefinition;
 			var numberOfDefinitions:uint = componentDefinitions.length;
 			var item:ComponentDefinition;
@@ -6041,57 +6071,172 @@ package com.flexcapacitor.controller {
 		/**
 		 * Get values object from attributes and child tags on a component from XML node
 		 * */
-		public static function getPropertiesStylesEventsFromNode(elementInstance:Object, node:XML, item:ComponentDefinition = null):ValuesObject {
-			var elementName:String = node.localName();
+		public static function getPropertiesStylesEventsFromNode(elementInstance:Object, 
+																 node:XML, 
+																 item:ComponentDefinition = null):ValuesObject {
 			var attributeName:String;
 			var attributes:Array;
 			var childNodeNames:Array;
 			var qualifiedChildNodeNames:Array;
 			var childNodeNamespaces:Array;
 			var propertiesStylesEvents:Array;
+			var attributePropertiesStylesEvents:Array;
+			var childNodePropertiesStylesEvents:Array;
 			var properties:Array;
 			var styles:Array;
 			var events:Array;
+			var childProperties:Array;
+			var childStyles:Array;
+			var childEvents:Array;
 			var attributesValueObject:Object;
-			var childNodeValueObject:Object;
-			var values:Object;
+			var childNodeValueObject:Object = {};
+			var defaultPropertyObject:Object;
+			var values:Object = {};
 			var valuesObject:ValuesObject;
 			var failedToImportStyles:Object = {};
 			var failedToImportProperties:Object = {};
 			var qualifiedAttributes:Array;
+			var defaultPropertyMetaData:MetaData;
+			var defaultPropertyName:String;
+			var styleClient:IStyleClient;
+			var errors:Array = [];
+			var handledChildNodeNames:Array = [];
+			var elementName:String;
+			var skipChildNodes:Boolean;
+			var includeQualifiedNames:Boolean = true;
+			var ignoreWhitespace:Boolean = true;
 			
+			styleClient = elementInstance as IStyleClient;
+			elementName = node.localName();
+			
+			
+			// Step 1. Get applicable attributes
+			
+			// get properties from attributes first
 			attributes 				= XMLUtils.getAttributeNames(node);
 			qualifiedAttributes 	= XMLUtils.getQualifiedAttributeNames(node);
+			
+			attributePropertiesStylesEvents = attributes.slice();
+			
+			properties 				= ClassUtils.getObjectsPropertiesFromArray(elementInstance, attributePropertiesStylesEvents, true);
+			styles 					= ClassUtils.getObjectsStylesFromArray(elementInstance, attributePropertiesStylesEvents);
+			events 					= ClassUtils.getObjectsEventsFromArray(elementInstance, attributePropertiesStylesEvents);
+			
+			attributePropertiesStylesEvents = properties.concat(styles).concat(events);
+			
+			// get concrete values from attribute string values
+			if (attributePropertiesStylesEvents.length) {
+				attributesValueObject 	= XMLUtils.getAttributesValueObject(node);
+				attributesValueObject	= ClassUtils.getTypedStyleValueObject(styleClient, attributesValueObject, styles, failedToImportStyles);
+				attributesValueObject	= ClassUtils.getTypedPropertyValueObject(elementInstance, attributesValueObject, properties, failedToImportProperties);
+				
+				values					= attributesValueObject;
+			}
+			
+			
+			// Step 2. Get applicable child nodes
+			
+			// next get properties from child nodes 
 			childNodeNames 			= XMLUtils.getChildNodeNames(node);
 			childNodeNamespaces		= XMLUtils.getChildNodeNamesNamespace(node, true);
 			qualifiedChildNodeNames	= XMLUtils.getQualifiedChildNodeNames(node);
-			propertiesStylesEvents 	= attributes.concat(childNodeNames);
-			properties 				= ClassUtils.getPropertiesFromArray(elementInstance, propertiesStylesEvents, true);
-			styles 					= ClassUtils.getStylesFromArray(elementInstance, propertiesStylesEvents);
-			events 					= ClassUtils.getEventsFromArray(elementInstance, propertiesStylesEvents);
 			
-			attributesValueObject 	= XMLUtils.getAttributesValueObject(node);
-			attributesValueObject	= ClassUtils.getTypedStyleValueObject(elementInstance as IStyleClient, attributesValueObject, styles, failedToImportStyles);
-			attributesValueObject	= ClassUtils.getTypedPropertyValueObject(elementInstance, attributesValueObject, properties, failedToImportProperties);
+			childProperties 		= ClassUtils.getObjectsPropertiesFromArray(elementInstance, childNodeNames, true);
+			childStyles 			= ClassUtils.getObjectsStylesFromArray(elementInstance, childNodeNames);
+			childEvents 			= ClassUtils.getObjectsEventsFromArray(elementInstance, childNodeNames);
 			
-			childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node, true, true, false);
-			values 					= ObjectUtils.merge(attributesValueObject, childNodeValueObject);
+			childNodePropertiesStylesEvents = childProperties.concat(childStyles).concat(childEvents);
 			
+			if (childNodePropertiesStylesEvents.length) {
+				childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node, true, true, false);
+				
+				// get concrete values from child node string values
+				childNodeValueObject	= ClassUtils.getTypedStyleValueObject(styleClient, childNodeValueObject, childStyles, failedToImportStyles);
+				childNodeValueObject	= ClassUtils.getTypedPropertyValueObject(elementInstance, childNodeValueObject, childProperties, failedToImportProperties);
+				//childNodeValueObject	= ClassUtils.getTypedEventValueObject(elementInstance, childNodeValueObject, childProperties, failedToImportProperties);
+				
+				values 					= ObjectUtils.merge(values, childNodeValueObject);
+			}
+			
+			
+			// Step 3. Get default property from child nodes
+			
+			// get default property if one is set
+			defaultPropertyMetaData = ClassUtils.getMetaDataOfMetaData(elementInstance, MXMLDocumentConstants.DEFAULT_PROPERTY);
+			
+			defaultPropertyMetaData = null;
+   			if (defaultPropertyMetaData!=null) {
+				defaultPropertyName = defaultPropertyMetaData.value;
+				defaultPropertyObject 	= XMLUtils.getDefaultPropertyValueObject(elementInstance, node, defaultPropertyName, includeQualifiedNames, ignoreWhitespace, [MXMLDocumentConstants.MXML_CONTENT_FACTORY, MXMLDocumentConstants.MXML_CONTENT]);
+			
+				if (defaultPropertyObject is Error) {
+					errors.push(defaultPropertyObject);
+				}
+				else if (!ClassUtils.isEmptyObject(defaultPropertyObject)) {
+					
+					// get concrete values from default property string values
+					defaultPropertyObject	= ClassUtils.getTypedPropertyValueObject(elementInstance, defaultPropertyObject, [defaultPropertyName], failedToImportProperties);
+					
+					if (childProperties.indexOf(defaultPropertyName)==-1) {
+						childProperties.push(defaultPropertyName);
+					}
+					
+					if (childNodePropertiesStylesEvents.indexOf(defaultPropertyName)==-1) {
+						childNodePropertiesStylesEvents.push(defaultPropertyName);
+					}
+					
+					childNodeValueObject = ObjectUtils.merge(childNodeValueObject, defaultPropertyObject);
+					
+					childNodeNames.push(defaultPropertyMetaData.value);
+					
+					values = ObjectUtils.merge(values, defaultPropertyObject);
+					
+					skipChildNodes = true;
+				}
+			}
+			
+			propertiesStylesEvents = attributePropertiesStylesEvents.concat(childNodePropertiesStylesEvents);
+			
+			for (var property:String in values) {
+				if (childNodeNames.indexOf(property)!=-1) {
+					if (childNodePropertiesStylesEvents.indexOf(property)!=-1) {
+						handledChildNodeNames.push(property);
+					}
+				}
+			}
 			
 			valuesObject 							= new ValuesObject();
 			valuesObject.values 					= values;
-			valuesObject.events		 				= events;
+
 			valuesObject.styles 					= styles;
 			valuesObject.properties 				= properties;
+			valuesObject.events		 				= events;
 			valuesObject.attributes 				= attributes;
 			valuesObject.qualifiedAttributes		= qualifiedAttributes;
+			
+			valuesObject.childStyles	 			= childStyles;
+			valuesObject.childProperties 			= childProperties;
+			valuesObject.childEvents		 		= childEvents;
 			valuesObject.childNodeNames 			= childNodeNames;
 			valuesObject.qualifiedChildNodeNames 	= qualifiedChildNodeNames;
 			valuesObject.childNodeValues 			= childNodeValueObject;
+			
+			valuesObject.defaultPropertyObject		= defaultPropertyObject;
+			
+			valuesObject.errors						= errors;
 			valuesObject.stylesErrorsObject 		= failedToImportStyles;
 			valuesObject.propertiesErrorsObject 	= failedToImportProperties;
-			valuesObject.propertiesStylesEvents		= properties.concat(styles).concat(events);
-			valuesObject.attributesNotFound			= ArrayUtils.removeAllItems(attributes, valuesObject.propertiesStylesEvents);
+			
+			valuesObject.attributesNotFound			= ArrayUtils.removeAllItems(attributes, attributePropertiesStylesEvents);
+			valuesObject.childNodesNotFound			= ArrayUtils.removeAllItems(childNodeNames, childNodePropertiesStylesEvents);
+			
+			valuesObject.attributePropertiesStylesEvents	= attributePropertiesStylesEvents;
+			valuesObject.childNodePropertiesStylesEvents	= childNodePropertiesStylesEvents;
+			valuesObject.propertiesStylesEvents				= propertiesStylesEvents;
+			
+			valuesObject.handledChildNodeNames				= handledChildNodeNames;
+			valuesObject.skipChildNodes						= skipChildNodes;
+			
 			//valuesObject.nonNsAttributesNotFound	= ArrayUtils.removeAllItems(qualifiedAttributes, valuesObject.propertiesStylesEvents);
 			
 			/*
@@ -6688,9 +6833,9 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 			propertiesStylesEvents = ArrayUtil.toArray(propertiesStylesEvents);
 			
 			// TODO: Add support for multiple targets
-			styles = ClassUtils.getStylesFromArray(target, propertiesStylesEvents);
-			properties = ClassUtils.getPropertiesFromArray(target, propertiesStylesEvents, true);
-			events = ClassUtils.getEventsFromArray(target, propertiesStylesEvents);
+			styles = ClassUtils.getObjectsStylesFromArray(target, propertiesStylesEvents);
+			properties = ClassUtils.getObjectsPropertiesFromArray(target, propertiesStylesEvents, true);
+			events = ClassUtils.getObjectsEventsFromArray(target, propertiesStylesEvents);
 			
 			propertyChanges = createPropertyChanges(targets, properties, styles, events, value, description, false);
 			
@@ -7415,9 +7560,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				item = items[i];
 				
 				if (item) {
-					styles = ClassUtils.getStylesFromArray(item, propertiesStylesEvents);
-					properties = ClassUtils.getPropertiesFromArray(item, propertiesStylesEvents, true);
-					events = ClassUtils.getEventsFromArray(item, propertiesStylesEvents);
+					styles = ClassUtils.getObjectsStylesFromArray(item, propertiesStylesEvents);
+					properties = ClassUtils.getObjectsPropertiesFromArray(item, propertiesStylesEvents, true);
+					events = ClassUtils.getObjectsEventsFromArray(item, propertiesStylesEvents);
 				}
 			}
 			
@@ -7646,9 +7791,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					item = items[i];
 					
 					if (item) {
-						styles = ClassUtils.getStylesFromArray(properties, propertiesStylesEvents);
-						properties = ClassUtils.getPropertiesFromArray(item, propertiesStylesEvents, true);
-						events = ClassUtils.getEventsFromArray(item, propertiesStylesEvents);
+						styles = ClassUtils.getObjectsStylesFromArray(properties, propertiesStylesEvents);
+						properties = ClassUtils.getObjectsPropertiesFromArray(item, propertiesStylesEvents, true);
+						events = ClassUtils.getObjectsEventsFromArray(item, propertiesStylesEvents);
 					}
 				}
 			}
@@ -7957,7 +8102,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Handles double click on text to show text editor. 
 		 * To support more components add the elements in the addElement method
 		 * */
-		public static function showTextEditor(textField:Object):void {
+		public static function showTextEditor(textField:Object, selectText:Boolean = false, setFocus:Boolean = true):void {
 			var textTarget:TextBase = textField as TextBase;
 			var isRichEditor:Boolean;
 			var rectangle:Rectangle;
@@ -7972,6 +8117,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var targetComponentDescription:ComponentDescription;
 			var parentComponentDescription:ComponentDescription;
 			var basicFonts:Boolean = false;
+			var focusAlpha:Number = .15
 			
 			const MIN_WIDTH:int = 22;
 			
@@ -8019,7 +8165,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					rectangle = DisplayObjectUtils.getRectangleBounds(textTarget, iDocument.instance);
 				}
 				
-				
+				focusAlpha = 0.25;
 				valuesObject.x = rectangle.x;
 				valuesObject.y = rectangle.y;
 				valuesObject.minWidth = MIN_WIDTH;
@@ -8086,7 +8232,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					//editableRichTextEditor.styleName = currentEditableComponent;
 					editableRichTextField.styleName = currentEditableComponent;
 					editableRichTextField.focusRect = null;
-					editableRichTextField.setStyle("focusAlpha", 0.25);
+					editableRichTextField.setStyle("focusAlpha", focusAlpha);
 					editableRichTextField.validateNow();
 				}
 				else {
@@ -8095,7 +8241,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					
 					editableRichTextField.styleName = currentEditableComponent;
 					editableRichTextField.focusRect = null;
-					editableRichTextField.setStyle("focusAlpha", 0.25);
+					editableRichTextField.setStyle("focusAlpha", focusAlpha);
 					editableRichTextField.validateNow();
 				}
 				
@@ -8168,6 +8314,15 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					editableRichTextEditorBarCallout.scaleY = 1;
 					editableRichTextEditorBarCallout.addEventListener(PopUpEvent.CLOSE, richTextCallOut_closeHandler, false, 0, true);
 					
+					
+					if (setFocus) {
+						callAfter(1, editableRichTextField.setFocus);
+					}
+					
+					if (selectText) {
+						callAfter(1, editableRichTextField.selectAll);
+					}
+					
 					/*
 					editableRichTextField.addEventListener(TextOperationEvent.CHANGE, richTextEditor_changeHandler, false, 0, true);
 					editableRichTextField.addEventListener(FlexEvent.UPDATE_COMPLETE, richTextEditor_updateCompleteHandler, false, 0, true);
@@ -8182,6 +8337,14 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				else {
 					editableRichTextField.selectAll();
 					editableRichTextField.setFocus();
+					
+					if (setFocus) {
+						callAfter(1, editableRichTextField.setFocus);
+					}
+					
+					if (selectText) {
+						callAfter(1, editableRichTextField.selectAll);
+					}
 					
 					editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
 					editableRichTextField.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
@@ -8476,6 +8639,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			
 			instance.enableTool();
+			
+			setTarget(currentEditableComponent);
 			
 			currentEditableComponent = null;
 			
@@ -13657,15 +13822,34 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public static function callAfter(time:int, method:Function, ...Arguments):void {
 			var sprite:Sprite = new Sprite();
-			var startTime:int = getTimer() + time;
+			var callTime:int = getTimer() + time;
 			
 			// todo: find out if this causes memory leaks
 			sprite.addEventListener(Event.ENTER_FRAME, function(e:Event):void {
-				if (getTimer()>startTime) {
+				var difference:int = getTimer()-callTime-time;
+				if (getTimer()>=callTime) {
+					//trace("callAfter: time difference:" + difference);
 					sprite.removeEventListener(Event.ENTER_FRAME, arguments.callee);
 					method.apply(this, Arguments);
 					method = null;
 				}
+			});
+		}
+		
+		/**
+		 * Calls a function after a frame 
+		 * */
+		public static function callLater(method:Function, ...Arguments):void {
+			var sprite:Sprite = new Sprite();
+			var startTime:int = getTimer();
+			
+			// todo: find out if this causes memory leaks
+			sprite.addEventListener(Event.ENTER_FRAME, function(e:Event):void {
+				var difference:int = getTimer()-startTime;
+				//trace("callLater: time difference:" + difference);
+				sprite.removeEventListener(Event.ENTER_FRAME, arguments.callee);
+				method.apply(this, Arguments);
+				method = null;
 			});
 		}
 		

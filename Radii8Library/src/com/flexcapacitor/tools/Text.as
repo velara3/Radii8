@@ -93,6 +93,8 @@ package com.flexcapacitor.tools {
 	import spark.components.supportClasses.TextBase;
 	import spark.core.IEditableText;
 	import spark.core.IGraphicElement;
+	import spark.layouts.BasicLayout;
+	import spark.layouts.supportClasses.LayoutBase;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.ListDropIndicator;
 		
@@ -206,7 +208,7 @@ package com.flexcapacitor.tools {
 		/**
 		 * Enable this tool. 
 		 * */
-		public function enable():void {debug = true;
+		public function enable():void {
 			if (debug) {
 				log();
 			}
@@ -465,9 +467,11 @@ package com.flexcapacitor.tools {
 			var target:Object = event.target;
 			var originalTarget:Object = event.target;
 			var items:Array = [];
-			var targetsLength:int;
+			var numberOfTargets:int;
 			var targetIsTextfield:Boolean;
-			
+			var component:Object;
+			var componentDefinition:ComponentDefinition;
+			var possibleTarget:Object;
 			
 			/*radiate = Radiate.getInstance();
 			targetApplication = radiate.document;*/
@@ -503,14 +507,14 @@ package com.flexcapacitor.tools {
 				targetsUnderPoint.push(target);
 			}
 			
-			targetsLength = targetsUnderPoint.length;
+			numberOfTargets = targetsUnderPoint.length;
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
 			// loop through items under point until we find one on the *component* tree
 			componentTree = radiate.selectedDocument.componentDescription;
 			
 			componentTreeLoop:
-			for (var i:int;i<targetsLength;i++) {
+			for (var i:int;i<numberOfTargets;i++) {
 				target = targetsUnderPoint[i];
 				
 				// check for window application
@@ -522,105 +526,98 @@ package com.flexcapacitor.tools {
 				if (target is DocumentContainer) {
 					return;
 				}
-				//spark.components.supportClasses.InvalidatingSprite - clicked on graphic element
+				
 				componentDescription = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
-				if (componentDescription && componentDescription.isGraphicElement) {
+				
+				
+				// check if target is a text field
+				if (componentDescription.instance) {
+					possibleTarget = componentDescription.instance;
 					
-				}
-				if (componentDescription) {
-					if (componentDescription.locked==false) {
-						target = componentDescription.instance;
+					if (possibleTarget is RichEditableText ||
+						possibleTarget is IEditableText ||
+						possibleTarget is SkinnableTextBase || 
+						possibleTarget is TextBase) {
+						
+						targetIsTextfield = true;
 						break;
 					}
-					else if (componentDescription.locked==true) {
-						if (target is ILayoutElement) {
-							
-							if (highlightLockedItems) {
-								//layoutDebugHelper.addElement(ILayoutElement(target));
-								//layoutDebugHelper.render();
-							}
-							//layoutDebugHelper.enable();
-						}
-						
-						if (target==targetApplication) {
-							return;
-						}
-					}
 				}
-			}
-			
-			var selectGroup:Boolean = true;
-			// select only groups or items on the application
-			if (selectGroup) {
 				
-				// if parent is application let user select it
-				if (componentDescription.parent==componentTree) {
-					// it's on the root so we're good
-				}
-				else if (componentDescription.instance is IVisualElementContainer) {
-					// it's a group so we're good
-				}
-				else {
-					// select group container
-					componentDescription = componentDescription.parent;
-					target = componentDescription.instance;
-				}
+				// check if over basic layout if not add to application
+				componentDescription = componentDescription.getFirstAncestorWithLayout(BasicLayout);
+				
+				// later we can support other layout types like hgroup or vgroup 
+				// we could use layout.calculateDropLocation(mouseEvent) except 
+				// we would need to externalize it? (no) to get the drop index position
+				// or we could start a drag operation when we enter the target application
+				// and cancel the drag if over existing text field
+				// check NATIVEDRAGMANAGERimpl for creating a DragEvent() line 700
+				break;
+					
 			}
 			
 			if (componentDescription) {
-				currentComponentDescription = componentDescription;
+				target = componentDescription.instance;
 			}
 			else {
-				currentComponentDescription = null;
+				
+				// if application is not basic layout we can't absolutely position it
+				// so we should try and use layout.calculatDropLocation() to get drop index
+				// if we can't do that then we should add it to the top or bottom position whichever
+				// is mostly in view
+				target = targetApplication;
 			}
 			
 			if (debug) {
 				logTarget(target);
 			}
+			
 			if (target==null) {
 				return;
 			}
 			
-			// would like to take out textfield and ftetextfield check
-			if (target is RichEditableText ||
-				target is IEditableText ||
-				target is SkinnableTextBase || 
-				target is TextBase) {
-				targetIsTextfield = true;
-			}
-			
+			// if we are over text field show editor
 			if (targetIsTextfield) {
 				if (debug) {
-					log("Target is textfield");
+					logTarget(target, "Showing editor");
 				}
 				
-				Radiate.callAfter(10, Radiate.showTextEditor,target);
-				//Radiate.showTextEditor(target);
+				Radiate.callAfter(10, Radiate.showTextEditor, target);
 			}
 			else {
 				
+				// otherwise add a text field to the stage
 				if (debug) {
 					log("Creating text field");
 				}
-				var component:Object;
-				var componentDefinition:ComponentDefinition;
 				
+				// create rich text component
 				componentDefinition = Radiate.getComponentType("RichText");
 				component = Radiate.createComponentToAdd(document, componentDefinition, false);
 				currentComponentDescription = document.getItemDescription(component);
 				
-				currentComponentDescription.defaultProperties = componentDefinition.defaultProperties;
-				currentComponentDescription.defaultStyles = componentDefinition.defaultStyles;
+				//currentComponentDescription.defaultProperties = componentDefinition.defaultProperties;
+				//currentComponentDescription.defaultStyles = componentDefinition.defaultStyles;
+				
+				
+				// get mouse location
+				var stagePoint:Point = new Point(event.stageX, event.stageY);
+				var dropLocationOnTarget:Point = target.localToGlobal(new Point());
+				dropLocationOnTarget = stagePoint.subtract(dropLocationOnTarget);
+				var values:Object = {x:dropLocationOnTarget.x, y:dropLocationOnTarget.y, text:"Text"};
+				var properties:Array = [MXMLDocumentConstants.X, MXMLDocumentConstants.Y, "text"];
+				
+				/*
 				var point1:Point = new Point(event.localX, event.localY);
 				
 				var distanceFromLeftEdge:Number = targetApplication.localToGlobal(new Point()).x;
 				var distanceFromTopEdge:Number = targetApplication.localToGlobal(new Point()).y;
 				
-				var values:Object = {x:event.localX, y:event.localY};
-				var properties:Array = [MXMLDocumentConstants.X, MXMLDocumentConstants.Y];
+				
 				var location:Point = DisplayObjectContainer(target).localToGlobal(new Point());
 				var dropPoint:Point = location.subtract(new Point(event.stageX, event.stageY));
-				var dropPoint2:Point = location.add(new Point(event.stageX, event.stageY));
+				var dropPoint2:Point = location.add(new Point(event.stageX, event.stageY));*/
 				//DisplayObjectUtils.getDistanceBetweenDisplayObjects();
 				
 				Radiate.addElement(component, target, properties, null, null, values, null);
@@ -647,10 +644,6 @@ package com.flexcapacitor.tools {
 				logTarget(component);
 			}
 			
-			// there is a bug where event listener for drag and drop
-			// is not removed. possibly when switching tools
-			// so until at some point we find it we'll return for now
-			// CHECK OUT LIBRARYINSPECTOR.mxml for comparison and possible answers there
 			if (currentComponentDescription==null) return;
 			
 			// if new component then need to add defaults
@@ -667,7 +660,7 @@ package com.flexcapacitor.tools {
 				LayoutManager.getInstance().validateClient(component as ILayoutManagerClient);
 			}
 			
-			Radiate.callAfter(10, Radiate.showTextEditor, component);
+			Radiate.callAfter(10, Radiate.showTextEditor, component, true);
 		}
 		
 		/**

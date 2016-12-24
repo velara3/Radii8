@@ -3,9 +3,7 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:c="com.flexcapacitor.controls.*"
-		 xmlns:handlers="com.flexcapacitor.handlers.*" 
-		 xmlns:collections="com.flexcapacitor.effects.collections.*"
-		 xmlns:components="com.flexcapacitor.components.*" 
+		 xmlns:flexcapacitor="flexcapacitor.*" 
 		 xmlns:views="com.flexcapacitor.views.*" 
 		 
 		 minWidth="200" 
@@ -21,7 +19,6 @@
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.ClassUtils;
-			//import com.flexcapacitor.utils.SyntaxHighlighter;
 			
 			import mx.core.UIComponent;
 			
@@ -175,6 +172,14 @@
 			}
 			
 			
+			protected function superClass_clickHandler(event:MouseEvent):void
+			{
+				if (lastTarget) {
+					var object:Object = ClassUtils.getSuperClassDefinition(lastTarget);
+					updateObject(object);
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -185,8 +190,17 @@
 	</s:states>
 	
 	<mx:HDividedBox id="groupContent" width="100%" height="100%">
-		<s:Scroller >
-			<views:Description id="descriptionBox" showDescriptionLabel="false" left="10" top="10" width="350" minWidth="350"/>
+		<s:Scroller height="100%" >
+			<s:VGroup width="100%" height="100%">
+				<views:Description id="descriptionBox" showDescriptionLabel="false" left="10" top="10" width="350" minWidth="350"/>
+				<s:Form >
+					<s:layout>
+						<s:FormLayout paddingBottom="0" paddingTop="0" gap="-4"/>
+					</s:layout>
+					<s:FormItem label="Get super class:"><s:Button label="Super class" click="superClass_clickHandler(event)"/></s:FormItem>
+					<s:FormItem label="Search metadata:"><c:AceSearchTextInput id="findInput" top="0" right="20" /></s:FormItem>
+				</s:Form>
+			</s:VGroup>
 		</s:Scroller>
 	</mx:HDividedBox>
 	
@@ -246,6 +260,5 @@
 	</s:Label>
 	
 	
-	<c:AceSearchTextInput id="findInput" top="0" right="20" />
 	
 </s:Group>

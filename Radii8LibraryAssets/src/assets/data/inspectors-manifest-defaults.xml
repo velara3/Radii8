@@ -161,6 +161,15 @@
     		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
     </item>
     
+    <item name="RichEditableText" className="spark.components.RichEditableText" 
+    		include="true">
+    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+    		<inspector name="Style Name" className="com.flexcapacitor.views.inspectors.StyleNameInspector" propertyName="styleName"/>
+    		<inspector name="Text" className="com.flexcapacitor.views.inspectors.TextInspector"/>
+    		<inspector name="Font Styles" className="com.flexcapacitor.views.inspectors.FontStyles"/>
+    		<inspector name="Basic Background" className="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
+    </item>
+    
     <item name="TextInput" className="spark.components.TextInput" 
     		include="true">
     		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>

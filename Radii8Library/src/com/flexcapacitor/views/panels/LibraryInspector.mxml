@@ -5,12 +5,11 @@
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:collections="com.flexcapacitor.effects.collections.*"
-		 xmlns:status="com.flexcapacitor.effects.status.*"
+		 xmlns:flexcapacitor="flexcapacitor.*"
 		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*"
 		 xmlns:file="com.flexcapacitor.effects.file.*"
 		 xmlns:fc="com.flexcapacitor.effects.popup.*"
 		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*"
-		 xmlns:supportClasses="com.flexcapacitor.effects.collections.supportClasses.*" 
 		 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 width="400" 

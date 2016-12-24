@@ -157,7 +157,7 @@
 	<s:Scroller id="scroller" 
 				width="100%" 
 				height="100%"
-				top="0"
+				top="0" 
 				bottom="0" includeIn="tree">
 		<s:Group width="100%" height="100%">
 			<mx:Tree id="tree" 
@@ -207,10 +207,10 @@
 								super.data = value;
 								
 								if (value is ErrorData) {
-									icon.source = Radii8LibraryAssets.error;
+									icon.source = Radii8LibraryAssets.errorLight;
 								}
 								else if (value is WarningData) {
-									icon.source = Radii8LibraryAssets.warning;
+									icon.source = Radii8LibraryAssets.warningLight;
 								}
 								else if (value is IssueData) {
 									icon.source = Radii8LibraryAssets.info;

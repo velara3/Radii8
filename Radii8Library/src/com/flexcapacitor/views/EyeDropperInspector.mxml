@@ -6,7 +6,7 @@
 		 xmlns:c="com.flexcapacitor.controls.*" 
 		 xmlns:handlers="com.flexcapacitor.handlers.*" 
 		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
-		 xmlns:status="com.flexcapacitor.effects.status.*" 
+		 xmlns:flexcapacitor="flexcapacitor.*" 
 		 
 		 creationComplete="group1_creationCompleteHandler(event)" 
 		 fontSize="11"

@@ -12,9 +12,9 @@ update the application descriptor version number 1.5,1.6,1.7, etc (it might be a
 
 CREATE A BUILD
 --------------------------------------
-create a new air build (signed AIR package)
-create a new dmg build (signed native installer)
-compress the dmg with the readme.txt to make a ZIP file
+1. create a new air build (signed AIR package)
+2. create a new dmg build (signed native installer)
+3. compress the dmg with the readme.txt to make a ZIP file
 
 
 UPLOAD BINARY
@@ -35,24 +35,21 @@ update the file name in the badge_installer.html at bottom of page
 login to the wordpress blog (https://www.radii8.com/blog/wp-login.php)
 open the wordpress download page for editing (https://www.radii8.com/blog/wp-admin/post.php?post=799&action=edit)
 in the wordpress download page edit and update the version number, the air file location and the ZIP (not dmg) file location (3 places)
-update the all releases list
+update the all releases list by adding the new version there
 on the iframe tag for the badge_installer.html page update the query string to prevent caching (1 location)
 
 example iframe embed code is as follows:
-<iframe style="width: 220px; height: 160px;" src="https://www.radii8.com/updates/badge_installer.html?date=0505"></iframe>
+<iframe style="width: 220px; height: 160px;" src="https://www.radii8.com/updates/badge_installer.html?date=05052016"></iframe>
 update the post
 
 
 CONFIRM DOWNLOAD LINKS AND APP WORKS
 --------------------------------------
-check the download works
+check the download works 
 
-go to https://www.radii8.com/blog/?page_id=799
-click on the badge installer icon (sometimes is cached)
-check the app sees a new update. 
-cancel the install
-open the app locally and see if a new version notification is shown
-use either version to check install works
+1. go to https://www.radii8.com/blog/?page_id=799
+2. click on the badge installer icon (sometimes is cached). click open on prompt but cancel install
+3. check the app sees a new update by opening the current version and see if a new version notification is shown
 
 
 POST BLOG AND NOTIFY

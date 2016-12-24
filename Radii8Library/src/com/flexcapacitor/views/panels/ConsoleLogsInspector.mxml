@@ -3,7 +3,7 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:controls="com.flexcapacitor.controls.*" 
-		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:flexcapacitor="flexcapacitor.*" 
 		 xmlns:popup="com.flexcapacitor.effects.popup.*" 
 		 
 		 width="100%" 

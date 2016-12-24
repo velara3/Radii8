@@ -4,7 +4,7 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 minWidth="200" 
 		 minHeight="100"
-		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:flexcapacitor="flexcapacitor.*"
 		 creationComplete="group1_creationCompleteHandler(event)">
 	
 	

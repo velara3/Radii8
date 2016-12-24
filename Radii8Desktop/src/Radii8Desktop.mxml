@@ -31,6 +31,16 @@
 
 					   <!---
 	
+	// took out link reports to save build time
+	-link-report linkreport.txt 
+	-size-report=sizereport.txt
+	
+	// get the swf version
+	// LoaderConfig.swfVersion
+	
+	// check if xml attribute is declared 
+	//         if (definition.attribute("ref").length() == 1)
+	
 	WHEN THE USER IS NOT ONLINE THE LAYOUT IS NOT VALIDATED (So components are not sized) 
 	POSSIBLY BECAUSE SUSPEND BACKGROUND PROCESSING??
 	
@@ -81,6 +91,7 @@
 				import com.flexcapacitor.tools.Selection;
 				import com.flexcapacitor.tools.Text;
 				import com.flexcapacitor.utils.DragManagerUtil;
+				import com.flexcapacitor.utils.LayoutDebugHelper;
 				import com.flexcapacitor.utils.NativeMenuManager;
 				import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 				
@@ -104,6 +115,7 @@
 				import mx.events.FlexNativeWindowBoundsEvent;
 				import mx.managers.ILayoutManager;
 				import mx.managers.LayoutManager;
+				import mx.utils.Platform;
 				
 				import spark.components.Application;
 				import spark.components.ComboBox;
@@ -154,6 +166,7 @@
 				 * */
 				protected function applicationCompleteHandler(event:FlexEvent):void {
 					radiate = Radiate.getInstance();
+					isMac = Platform.isMac;
 
 				    var applicationDescriptor:XML;
 				    var appNamespace:Namespace;
@@ -166,7 +179,10 @@
 					DragManagerUtil.debug 	= false;
 					Text.debug 				= false;
 					Selection.debug			= false;
+					LayoutDebugHelper.debug	= true;
+					MainView.debug 			= true;
 					
+					// testing for why layout is invalid when disconnected from network
 					UIComponentGlobals.catchCallLaterExceptions = true;
 					layoutManager = UIComponentGlobals.layoutManager;
 					layoutManager.usePhasedInstantiation;

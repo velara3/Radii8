@@ -2,7 +2,7 @@
 <s:Group xmlns:graphics="be.nascom.flash.graphics.*"
 		 xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
-		 xmlns:filters="com.flexcapacitor.filters.*"
+		 xmlns:flexcapacitor="flexcapacitor.*"
 		 xmlns:controls1="com.flexcapacitor.controls.*"
 		 
 		 implements="com.flexcapacitor.tools.IToolInspector, com.flexcapacitor.views.IInspector" 
@@ -216,7 +216,7 @@
 					if (warnIcon.toolTip!=warningMessage) {
 						warnIcon.toolTip = warningMessage;
 					}
-					
+					warnIcon.source = Radii8LibraryAssets.warningLight;
 					warnIcon.enabled = true;
 					/*
 					warnIcon.visible = true;
@@ -225,6 +225,7 @@
 					warnDragStrip.includeInLayout = true;*/
 				}
 				else {
+					warnIcon.source = Radii8LibraryAssets.warning;
 					warnIcon.toolTip = "";
 					warnIcon.enabled = false;
 					/*
@@ -321,7 +322,7 @@
 					   />
 		<s:Image id="warnIcon" 
 				 buttonMode="true"
-				 source="{Radii8LibraryAssets.warningLight}" 
+				 source="{Radii8LibraryAssets.warning}" 
 				 click="warnIcon_clickHandler(event)"
 				 height="18"
 				 enabled="false"

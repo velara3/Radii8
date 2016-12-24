@@ -6,7 +6,7 @@
 			   xmlns:fc="com.flexcapacitor.effects.popup.*"
 			   xmlns:controls="com.flexcapacitor.controls.*"
 			   xmlns:c="com.flexcapacitor.views.windows.*"
-			   xmlns:core="com.flexcapacitor.effects.core.*"
+			   xmlns:flexcapacitor="flexcapacitor.*"
 			   xmlns:windows="com.flexcapacitor.views.windows.*"
 			   
 			   title.login="Login"

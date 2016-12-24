@@ -8,9 +8,7 @@
 				  xmlns:form="com.flexcapacitor.effects.form.*" 
 				  xmlns:form1="com.flexcapacitor.form.*" 
 				  xmlns:vo="com.flexcapacitor.form.vo.*"
-				  xmlns:view="com.flexcapacitor.effects.view.*" 
-				  xmlns:states="com.flexcapacitor.effects.states.*" 
-				  xmlns:debugging="com.flexcapacitor.effects.debugging.*" 
+				  xmlns:flexcapacitor="flexcapacitor.*" 
 				  xmlns:components="components.*"
 				  creationComplete="group1_creationCompleteHandler(event)">
 	
