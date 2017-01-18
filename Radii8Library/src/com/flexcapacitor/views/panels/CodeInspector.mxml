@@ -286,7 +286,6 @@
 					htmlOptions.useExternalStylesheet = false;
 					htmlOptions.exportChildDescriptors = showChildDescriptors.selected;
 					htmlOptions.reverseInitialCSS = true;
-					htmlOptions.embedImages = embedImagesButton.selected;
 					
 					if (updateCodeLive.selected && isCodeModifiedByUser) {
 						htmlOptions.useCustomMarkup = true;
@@ -1537,7 +1536,7 @@ IFRAME_ID {
 		
 		<c:BeveledImageToggleButton id="embedImagesButton"
 							  source="{Radii8LibraryAssets.image}"
-							  toolTip="Embed image bitmap data"
+							  toolTip="Embed local images"
 							  width="20"
 							  height="16"
 							  scaleMode="letterbox"

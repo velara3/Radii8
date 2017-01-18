@@ -82,15 +82,10 @@
 			<![CDATA[
 				import com.flexcapacitor.controller.Radiate;
 				import com.flexcapacitor.events.RadiateEvent;
-				import com.flexcapacitor.managers.CreationManager;
 				import com.flexcapacitor.managers.HistoryManager;
 				import com.flexcapacitor.model.MenuItem;
 				import com.flexcapacitor.tools.Hand;
 				import com.flexcapacitor.tools.ITool;
-				import com.flexcapacitor.tools.Selection;
-				import com.flexcapacitor.tools.Text;
-				import com.flexcapacitor.utils.DragManagerUtil;
-				import com.flexcapacitor.utils.LayoutDebugHelper;
 				import com.flexcapacitor.utils.NativeMenuManager;
 				import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 				
@@ -99,22 +94,15 @@
 				import flash.display.Screen;
 				import flash.display.Stage;
 				
-				import mx.accessibility.UIComponentAccProps;
 				import mx.collections.ArrayCollection;
+				import mx.controls.HTML;
 				import mx.core.FTETextField;
 				import mx.core.FlexHTMLLoader;
-				import mx.controls.HTML;HTML
-				import mx.core.UIComponent;
-				import mx.core.UIComponentCachePolicy;
-				import mx.core.UIComponentDescriptor;
-				import mx.core.UIComponentGlobals;
 				import mx.core.mx_internal;
 				import mx.events.AIREvent;
 				import mx.events.FlexEvent;
 				import mx.events.FlexNativeMenuEvent;
 				import mx.events.FlexNativeWindowBoundsEvent;
-				import mx.managers.ILayoutManager;
-				import mx.managers.LayoutManager;
 				import mx.utils.Platform;
 				
 				import spark.components.Application;
@@ -124,7 +112,9 @@
 				import spark.components.supportClasses.SkinnableTextBase;
 				import spark.core.IEditableText;
 				
-				import air.net.URLMonitor;
+				import air.net.URLMonitor;HTML
+				
+				
 				
 				use namespace mx_internal;
 				//include "build.as";

@@ -325,7 +325,7 @@
 	</fx:Declarations>
 	
 	<s:layout>
-		<s:VerticalLayout paddingLeft="5" paddingRight="5" paddingBottom="5"/>
+		<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingBottom="5"/>
 	</s:layout>
 	
 	<s:ButtonBar id="projectFilters" 

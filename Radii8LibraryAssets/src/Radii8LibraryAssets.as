@@ -97,6 +97,9 @@ package {
 		[Embed(source="assets/icons/general/grid.png")]
 		public static const grid:Class;
 		
+		[Embed(source="assets/icons/general/group_selection.png")]
+		public static const groupSelection:Class;
+		
 		[Embed(source="assets/icons/general/home.png")]
 		public static const home:Class;
 		
@@ -120,6 +123,9 @@ package {
 		
 		[Embed(source="assets/icons/general/item_renderer.png")]
 		public static const itemRenderer:Class;
+		
+		[Embed(source="assets/icons/general/label.png")]
+		public static const label:Class;
 		
 		[Embed(source="assets/icons/general/Landscape_mode.png")]
 		public static const landscapeMode:Class;
@@ -147,6 +153,9 @@ package {
 		
 		[Embed(source="assets/icons/general/open_folder.png")]
 		public static const openFolder:Class;
+		
+		[Embed(source="assets/icons/general/outline.png")]
+		public static const outline:Class;
 		
 		[Embed(source="assets/icons/general/package.png")]
 		public static const packageIcon:Class;

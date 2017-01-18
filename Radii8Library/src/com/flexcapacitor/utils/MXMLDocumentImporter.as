@@ -661,7 +661,7 @@ package com.flexcapacitor.utils {
 			var successful:Boolean;
 			var removeLineBreaks:Boolean = true;
 			var removeHeader:Boolean = true;
-			var contentLoader:LoaderInfo;
+			var contentLoaderInfo:LoaderInfo;
 			
 			bitmapDataString = valuesObject.childNodeValues[MXMLDocumentConstants.BITMAP_DATA];
 			
@@ -689,12 +689,12 @@ package com.flexcapacitor.utils {
 					valuesObject.properties.push("source");
 				}
 				
-				contentLoader = DisplayObjectUtils.loader.contentLoaderInfo;
+				contentLoaderInfo = DisplayObjectUtils.loader.contentLoaderInfo;
 				
 				// save a reference to the loader info so it doesn't get garbage collected
-				bitmapDictionary[contentLoader] = componentDescription;
+				bitmapDictionary[contentLoaderInfo] = componentDescription;
 				
-				contentLoader.addEventListener(Event.INIT, handleLoadingImages, false, 0, true);
+				contentLoaderInfo.addEventListener(Event.INIT, handleLoadingImages, false, 0, true);
 				successful = true;
 			}
 			
@@ -705,12 +705,12 @@ package com.flexcapacitor.utils {
 			var newBitmapData:BitmapData;
 			var bitmap:Bitmap;
 			var rectangle:Rectangle;
-			var contentLoader:LoaderInfo = event.currentTarget as LoaderInfo;
-			var componentDescription:Object = bitmapDictionary[contentLoader];
+			var contentLoaderInfo:LoaderInfo = event.currentTarget as LoaderInfo;
+			var componentDescription:Object = bitmapDictionary[contentLoaderInfo];
 			var componentInstance:Object;
 			
-			if (contentLoader.loader.content) {
-				bitmap = contentLoader.loader.content as Bitmap;
+			if (contentLoaderInfo.loader.content) {
+				bitmap = contentLoaderInfo.loader.content as Bitmap;
 				newBitmapData = bitmap ? bitmap.bitmapData : null;
 			}
 			
@@ -727,12 +727,12 @@ package com.flexcapacitor.utils {
 				Radiate.setProperty(componentInstance, "source", newBitmapData, "Source loaded");
 			}
 			
-			if (contentLoader) {
-				contentLoader.removeEventListener(Event.INIT, handleLoadingImages);
+			if (contentLoaderInfo) {
+				contentLoaderInfo.removeEventListener(Event.INIT, handleLoadingImages);
 			}
 			
-			bitmapDictionary[contentLoader] = null;
-			delete bitmapDictionary[contentLoader];
+			bitmapDictionary[contentLoaderInfo] = null;
+			delete bitmapDictionary[contentLoaderInfo];
 		}
 		
 		public static var bitmapDictionary:Dictionary = new Dictionary(true);

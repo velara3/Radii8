@@ -181,7 +181,7 @@
 			protected function consoleValueChange(event:RadiateEvent):void {
 				
 				if (aceEditor) {
-					if (aceEditor.session==null || !editorReady) {
+					if (!editorReady) {
 						someDelayedValues += event.data;
 					}
 					else {
@@ -216,7 +216,7 @@
 	<c:AceEditor id="aceEditor" 
 				 width="100%" 
 				 height="100%"
-				 top="20" left="2"
+				 top="0" left="2"
 				 isReadOnly="false" 
 				 showGutter="false"
 				 mode="ace/mode/text" 
@@ -250,7 +250,7 @@
 				valueCommit="consoleTextArea_valueCommitHandler(event)"
 				/>-->
 	
-	<s:HGroup right="8">
+	<s:HGroup right="8" visible="false" includeInLayout="false">
 		<c:BeveledImageToggleButton id="enableWordWrapButton"
 									source="{Radii8LibraryAssets.wordWrap}"
 									toolTip="Word wrap"

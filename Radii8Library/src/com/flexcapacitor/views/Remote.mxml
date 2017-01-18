@@ -483,12 +483,15 @@
 		</s:HGroup>
 	
 		<mx:HDividedBox width="100%" height="100%" 
-						top="32">
+						top="32" 
+						liveDragging="false">
 			
 			
-			<mx:VDividedBox id="leftColumn" width="350" height="100%" 
-							includeIn="design,develop">
-				
+			<mx:VDividedBox id="leftColumn" 
+							width="360" 
+							height="100%" 
+							includeIn="design,develop" 
+							liveDragging="true">
 				
 				<c:TabNavigator id="firstViewStack" 
 								 width="100%"

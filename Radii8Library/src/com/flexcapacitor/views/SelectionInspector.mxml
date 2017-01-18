@@ -136,22 +136,6 @@
 			}
 			
 			/**
-			 * Show selection checkbox change handler
-			 * */
-			protected function showSelectionOutline_changeHandler(event:Event):void {
-				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
-				var selectedTool:ITool = tool;
-				var selectionTool:Selection;
-				
-				
-				if (toolDescription.instance) {
-					selectionTool = Selection(toolDescription.instance);
-					selectionTool.showSelection = showSelectionOutline.selected;
-				}
-				
-			}
-			
-			/**
 			 * Show label change handler
 			 * */
 			protected function showLabel_changeHandler(event:Event):void {
@@ -177,6 +161,29 @@
 				if (toolDescription.instance) {
 					selectionTool = Selection(toolDescription.instance);
 					selectionTool.selectGroup = selectGroup.selected;
+					
+				}
+				
+			}
+			
+			/**
+			 * Show selection checkbox change handler
+			 * */
+			protected function showSelectionOutline_changeHandler(event:Event):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var selectedTool:ITool = tool;
+				var selectionTool:Selection;
+				
+				
+				if (toolDescription.instance) {
+					selectionTool = Selection(toolDescription.instance);
+					selectionTool.showSelection = showSelectionOutline.selected;
+					
+					// right now resize needs outline to work
+					if (showSelectionOutline.selected==false) {
+						showTransform.selected = false;
+						selectionTool.showTransformControls = false;
+					}
 				}
 				
 			}
@@ -192,6 +199,12 @@
 				if (toolDescription.instance) {
 					selectionTool = Selection(toolDescription.instance);
 					selectionTool.showTransformControls = showTransform.selected;
+					
+					// right now resize needs outline to work
+					if (showTransform.selected) {
+						showSelectionOutline.selected = true;
+						selectionTool.showSelection = true;
+					}
 				}
 				
 			}
@@ -299,33 +312,43 @@
 	-->
 	
 	<s:HGroup width="100%" verticalAlign="top" height="100%" paddingTop="2">
-		<!--<s:CheckBox id="showSelectionOutline" label="Outline" change="showSelectionOutline_changeHandler(event)"
-					toolTip="Show an outline around the selected component(s)"/>-->
-		<s:ToggleButton id="showSelectionOutline" 
-						skinClass="com.flexcapacitor.skins.SmallToggleButtonSkin" 
-						label="O" 
-						change="showSelectionOutline_changeHandler(event)"
-						toolTip="Show an outline around the selected component(s)"/>
-		<!--<s:CheckBox id="showLabel" label="Label" change="showLabel_changeHandler(event)"
-					toolTip="Show a label above the selected component(s)"/>-->
-		<s:ToggleButton id="showLabel" 
-						skinClass="com.flexcapacitor.skins.SmallToggleButtonSkin" 
-						label="L" 
-						change="showLabel_changeHandler(event)"
-						toolTip="Show a label above the selected component(s)"/>
-		<!--<s:CheckBox id="selectGroup" label="Group" change="selectGroup_changeHandler(event)"
-					toolTip="Select only group elements or components on the document"/>-->
-		<s:ToggleButton id="selectGroup" 
-						skinClass="com.flexcapacitor.skins.SmallToggleButtonSkin" 
-						label="G" 
-						change="selectGroup_changeHandler(event)"
-						toolTip="Select only group elements or components on the document"/>
+		
+		
+		<controls1:BeveledImageToggleButton id="showSelectionOutline"
+											width="19"
+											height="19"
+											scaleMode="letterbox"
+											showBackgroundWhenSelected="true"
+											source="{Radii8LibraryAssets.outline}"
+											toolTip="Show an outline around the selected component(s)"
+											click="showSelectionOutline_changeHandler(event)"
+											/>
+		
+		<controls1:BeveledImageToggleButton id="showLabel"
+											width="19"
+											height="19"
+											scaleMode="letterbox"
+											showBackgroundWhenSelected="true"
+											source="{Radii8LibraryAssets.label}"
+											toolTip="Show a label above the selected component(s)"
+											click="showLabel_changeHandler(event)"
+											/>
+		
+		<controls1:BeveledImageToggleButton id="selectGroup"
+											source="{Radii8LibraryAssets.groupSelection}"
+											toolTip="Select only group elements or components on the document"
+											width="19"
+											height="19"
+											scaleMode="letterbox"
+											click="selectGroup_changeHandler(event)"
+											showBackgroundWhenSelected="true"
+											/>
 		
 		<controls1:BeveledImageToggleButton id="showTransform"
 									source="{Radii8LibraryAssets.transform}"
 									toolTip="Shows resizable transform handles"
-									width="20"
-									height="18"
+									width="19"
+									height="19"
 									scaleMode="letterbox"
 									click="showTransform_changeHandler(event)"
 									showBackgroundWhenSelected="true"

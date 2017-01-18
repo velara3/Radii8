@@ -1029,7 +1029,7 @@
 		
 	</mx:VDividedBox>
 	
-	<s:BorderContainer width="100%" borderWeight="0" borderVisible="false">
+	<s:BorderContainer width="100%" borderWeight="0" borderVisible="false" height="100">
 		<s:layout>
 			<s:VerticalLayout />
 		</s:layout>

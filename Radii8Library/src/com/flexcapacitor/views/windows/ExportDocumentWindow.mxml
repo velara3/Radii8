@@ -126,7 +126,7 @@
 					
 					options.template = template;
 					options.fileExtension = extension;
-					options.createFiles = true;
+					options.createFiles = true;//options.embedImages = embed;
 				}
 				else if (language == CodeManager.ANDROID) {
 					options = CodeManager.getExportOptions(language);
@@ -349,10 +349,6 @@
 					
 					output = new Radii8LibraryTranscodersAssets.basicHTMLDocumentReusable();
 				}
-				else if (templateName=="html5boilerplate_v5.2.0") {
-					
-					output = new Radii8LibraryTranscodersAssets.boilerplateHTMLDocument_v5_2_0();
-				}
 				else if (templateName=="none") {
 					output = "";
 				}
@@ -429,7 +425,6 @@
 			<fx:String>auto</fx:String>
 			<fx:String>html</fx:String>
 			<fx:String>html2</fx:String>
-			<fx:String>html5boilerplate_v5.2.0</fx:String>
 			<fx:String>external</fx:String>
 			<fx:String>custom</fx:String>
 			<fx:String>none</fx:String>

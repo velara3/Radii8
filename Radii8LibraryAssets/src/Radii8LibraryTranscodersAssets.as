@@ -48,12 +48,6 @@ package {
 		[Embed(source="/assets/templates/html/template_reusable.html", mimeType="application/octet-stream")]
 		public static const basicHTMLDocumentReusable:Class;
 		
-		/**
-		 * Boilerplate HTML document 
-		 * */
-		[Embed(source="/assets/templates/html5-boilerplate_v5.2.0/template.html", mimeType="application/octet-stream")]
-		public static const boilerplateHTMLDocument_v5_2_0:Class;
-		
 		
 	}
 }

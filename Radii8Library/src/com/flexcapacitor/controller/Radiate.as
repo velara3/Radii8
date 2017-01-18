@@ -108,6 +108,7 @@ package com.flexcapacitor.controller {
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display.IBitmapDrawable;
+	import flash.display.LoaderInfo;
 	import flash.display.Sprite;
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
@@ -2004,8 +2005,8 @@ package com.flexcapacitor.controller {
 			DragManagerUtil.debug 	= false;
 			Text.debug 				= false;
 			Selection.debug			= false;
-			LayoutDebugHelper.debug	= true;
-			MainView.debug 			= true;
+			LayoutDebugHelper.debug	= false;
+			MainView.debug 			= false;
 			
 			// testing for why layout is invalid when disconnected from network
 			var layoutManager:ILayoutManager;
@@ -4663,6 +4664,8 @@ package com.flexcapacitor.controller {
 			dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
 		}
 		
+		public var bitmapDictionary:Dictionary = new Dictionary(true);
+		
 		/**
 		 * Adds bitmap data to the document
 		 * */
@@ -4670,6 +4673,62 @@ package com.flexcapacitor.controller {
 			var bitmapData:BitmapData = DisplayObjectUtils.getBitmapDataFromBase64(fileData.dataURI, null, true, fileData.type);
 			if (destination==null) destination = getDestinationForExternalFileDrop();
 			var imageData:ImageData = addBitmapDataToDocument(iDocument, bitmapData, destination, fileData.name, addComponent);
+			
+			// it's possible we weren't able to determine the dimensions of the image
+			// so we add a listener to check after loading it with a loader
+			var contentLoaderInfo:LoaderInfo = DisplayObjectUtils.loader.contentLoaderInfo;
+			// save a reference to the loader info so it doesn't get garbage collected
+			bitmapDictionary[contentLoaderInfo] = lastCreatedComponent;
+			contentLoaderInfo.addEventListener(Event.INIT, handleLoadingImages, false, 0, true);
+		}
+		
+		public function handleLoadingImages(event:Event):void {
+			var newBitmapData:BitmapData;
+			var bitmap:Bitmap;
+			var contentLoaderInfo:LoaderInfo = event.currentTarget as LoaderInfo;
+			var componentInstance:Object = bitmapDictionary[contentLoaderInfo];
+			var constrainImageToDocument:Boolean = true;
+			
+			if (contentLoaderInfo.loader.content) {
+				bitmap = contentLoaderInfo.loader.content as Bitmap;
+				newBitmapData = bitmap ? bitmap.bitmapData : null;
+			}
+			
+			if (newBitmapData && componentInstance) {
+				
+				if (newBitmapData.compare(componentInstance.bitmapData)!=0) {
+					
+					const WIDTH:String = "width";
+					const HEIGHT:String = "height";
+					
+					var properties:Array = [];
+					var propertiesObject:Object;
+					
+					if (constrainImageToDocument) {
+						propertiesObject = getConstrainedImageSizeObject(selectedDocument, newBitmapData);
+					}
+					
+					if (propertiesObject==null) {
+						setProperty(componentInstance, "source", newBitmapData, "Source loaded");
+					}
+					else {
+						propertiesObject.source = newBitmapData;
+						properties.push(WIDTH);
+						properties.push(HEIGHT);
+						properties.push("source");
+				
+						setProperties(componentInstance, properties, propertiesObject, "Source loaded");
+					}
+					
+				}
+			}
+			
+			if (contentLoaderInfo) {
+				contentLoaderInfo.removeEventListener(Event.INIT, handleLoadingImages);
+			}
+			
+			bitmapDictionary[contentLoaderInfo] = null;
+			delete bitmapDictionary[contentLoaderInfo];
 		}
 		
 		/**

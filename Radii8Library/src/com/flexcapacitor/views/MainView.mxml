@@ -1123,9 +1123,22 @@
 				}
 			}
 			
-			protected function clearProjectHomePage_itemClickHandler(event:MenuEvent):void
-			{
-				serviceManager.setProjectHomePage(0);
+			protected function clearProjectHomePage_itemClickHandler(event:MenuEvent):void {
+				var project:IProject = projectsList.selectedItem;
+				
+				if (radiate.isUserLoggedIn==false) {
+					Radiate.info("You must be logged in");
+					return;
+				}
+				
+				if (project==null) {
+					project = examplesList.selectedItem;
+				}
+				
+				Radiate.info("Clearing home page for '" + project.name + "'");
+				
+				Radiate.callAfter(250, serviceManager.setProjectHomePage, 0);
+				//serviceManager.setProjectHomePage(0);
 			}
 			
 			protected function clearHomePageHandler(event:RadiateEvent):void

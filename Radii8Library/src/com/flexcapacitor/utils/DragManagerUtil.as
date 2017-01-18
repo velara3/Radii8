@@ -426,7 +426,9 @@ package com.flexcapacitor.utils {
 				snapshot = null;
 			}
 			else {
-				// this is causing some resizing of images problems when zoomed out 
+				// i think this is causing some resizing of images problems when zoomed out during drag and drop 
+				// update: may have been caused by embedding image - that converts bitmap to base64 
+				// which may update source bitmapData
 				if (scale!=1 && false) {
 					var tempScale:Number = dragInitiator.scaleX;
 					dragInitiator.scaleX = scale;

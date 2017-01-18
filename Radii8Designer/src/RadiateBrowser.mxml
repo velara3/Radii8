@@ -2,27 +2,14 @@
 <s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
 			   xmlns:s="library://ns.adobe.com/flex/spark"
 			   xmlns:mx="library://ns.adobe.com/flex/mx"
-			   xmlns:c="com.flexcapacitor.controls.*"
-			   xmlns:handlers="com.flexcapacitor.handlers.*"
-			   xmlns:popup="com.flexcapacitor.effects.popup.*"
-			   xmlns:navigation="com.flexcapacitor.effects.navigation.*"
-			   xmlns:utils="com.flexcapacitor.utils.*"
-			   xmlns:model="com.flexcapacitor.model.*"
-			   xmlns:fc="com.flexcapacitor.effects.popup.*"
-			   xmlns:flexiframe="com.google.code.flexiframe.*"
-			   xmlns:services="com.flexcapacitor.effects.services.*"
-			   xmlns:core="com.flexcapacitor.effects.core.*"
 			   xmlns:views="com.flexcapacitor.views.*"
-			   xmlns:renderers="com.flexcapacitor.views.renderers.*"
-			   xmlns:filters="com.flexcapacitor.filters.*"
-			   xmlns:windows="com.flexcapacitor.views.windows.*"
 			   xmlns:local="*"
 			   
 			   width="100%" height="100%" 
 			   minWidth="800" minHeight="400"
 			   applicationComplete="applicationCompleteHandler(event)" 
 			   initialize="application1_initializeHandler(event)"
-			   frameRate="60"
+			   frameRate="40"
 			   pageTitle="Radiate">
 	
 	<!--
@@ -39,9 +26,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.HTMLDragEvent;
 			import com.flexcapacitor.model.IDocument;
-			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.HTMLDragManager;
-			import com.flexcapacitor.utils.supportClasses.FileData;
 			
 			import mx.events.FlexEvent;
 			
@@ -69,7 +54,9 @@
 				
 				startupBrowser();
 				
-				path = "http://www.radii8.com"; // when running locally
+				if (url.indexOf("http://localhost:8888")==0) {
+					path = "http://www.radii8.com"; // when running locally
+				}
 				
 				Radiate.startup(this, mainView, path);
 				
@@ -77,23 +64,23 @@
 				
 			}
 			
-			protected function application1_initializeHandler(event:FlexEvent):void
-			{
+			protected function application1_initializeHandler(event:FlexEvent):void {
+				//var version:String = LoaderConfig.swfVersion;
+				// get pixels of images for drag and drop in 
+				JPEGLoaderContext;
 				var sandboxType:String = Security.sandboxType;
 				Security.allowDomain("*");
 				Security.allowInsecureDomain("*");
 				Security.disableAVM1Loading = true;
 			}
 			
-			private function startupBrowser():void
-			{
+			private function startupBrowser():void {
 				radiate.applicationMenu = mainView.mainMenuBar;
 			}
 			
 			public var htmlDragAndDrop:HTMLDragManager;
 			
-			private function listenForDragAndDrop():void
-			{
+			private function listenForDragAndDrop():void {
 				HTMLDragManager.debug=false;
 				htmlDragAndDrop = new HTMLDragManager();
 				
@@ -117,7 +104,7 @@
 				
 				mainView.dropImagesLocation.visible = false;
 				Radiate.info("Opening image. Hold on...");
-				Radiate.callAfter(500, openDraggedItem, event);
+				Radiate.callAfter(250, openDraggedItem, event);
 			}
 			
 			public function openDraggedItem(event:HTMLDragEvent):void {

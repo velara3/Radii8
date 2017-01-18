@@ -37,7 +37,7 @@ Radiate.prototype.initialize = function () {
 Radiate.prototype.setFlashInstance = function (flashID) {
 	var flash = document.getElementById(flashID);
 	this.flashInstance = flash;
-	console.log ("Flash instance: " + flash);
+	//console.log ("Flash instance: " + flash);
 } 
 
 ///////////////////////////////////
@@ -191,88 +191,6 @@ Radiate.prototype.showHidePostFrame = function () {
 }
 
 
-
-///////////////////////////////////
-// ACE EDITOR CODE
-///////////////////////////////////
- 
-Radiate.prototype.createEditor = function (editorName, flashID) {
-    ace_editor = ace.edit(editorName);
-    ace_editor.setTheme("ace/theme/crimson_editor");
-    ace_editor.getSession().setMode("ace/mode/html");
-    ace_editor.setShowFoldWidgets(false);
-    ace_editor.setShowPrintMargin(false);
-    ace_editor.renderer.setShowGutter(false);
-    ace_editor.getSession().setUseWrapMode(true);
-    
-    // in firefox on mac editor stops working after placing cursor 
-    // in different location with mouse (second time)
-    // clicking on flash object then clicking back into editor 
-    // allows typing again until placing cursor in another location
-    // and you must click the flash object again. works in safari.
-    //ace_editor.onFocus = function() { ace_editor.setReadOnly(false);};
-    
-    /*
-	ace_editor.__defineGetter__("$readOnly", function(){return false})
-	ace_editor.__defineSetter__("$readOnly", function(val){
-	    console.log("read only changed!!!");
-	})
-    ace_editor.setReadOnly(false);
-    ace_editor.setReadOnly(true);*/
-    
-    ace_editor.setReadOnly(false);
-    
-    ace_editor.getSession().on('change', function(e) {
-	    editorChange(flashID);
-	});
-	
-	//ace_editor.getSession().selection.on('changeCursor', function(e) {
-	//	cursorChange(flashID);
-	//});
-	
-    //ace_editor.renderer.$keepTextAreaAtCursor = false;
-    
-    return "created";
-}
-	
-Radiate.prototype.setEditorText = function (value) {
-    ace_editor.setValue(value);
-    ace_editor.selection.clearSelection();
-    ace_editor.navigateFileStart();
-    ace_editor.setReadOnly(false);
-    return value;
-}
-	
-Radiate.prototype.getEditorText = function () {
-    return ace_editor.getValue();
-}
-	
-Radiate.prototype.editorChange = function (flashID) {
-	console.log("text changed");
-	var value = ace_editor.getValue();
-	var flash = document.getElementById(flashID);
-	ace_editor.setReadOnly(false);
-	flash.editorChange(value);
-}
-	
-Radiate.prototype.cursorChange = function (flashID) {
-	console.log("cursor changed");
-	ace_editor.setReadOnly(false);
-	var flash = document.getElementById(flashID);
-	flash.cursorChange();
-}
-	
-Radiate.prototype.wordWrapChange = function (flashID, enabled) {
-	console.log("word wrap changed");
-    ace_editor.getSession().setUseWrapMode(enabled);
-	//var flash = document.getElementById(flashID);
-	//flash.wordWrapChange();
-}
-	
-Radiate.prototype.resizeEditor = function () {
-	console.log("editor resized");
-	ace_editor.resize();
-}
 
 ///////////////////////////////////
 // ASK BEFORE NAVIGATION
