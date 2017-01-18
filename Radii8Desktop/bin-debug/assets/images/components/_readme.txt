@@ -1,1 +1,0 @@
-These are copied from Radii8LibraryAssets/src/assets/icons/
