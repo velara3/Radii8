@@ -224,7 +224,7 @@
 				if (iDocument) {
 					
 					Radiate.callAfter(250, saveDocument, iDocument);
-					Radiate.info("Saving document " + iDocument.name + "'");
+					Radiate.info("Saving document '" + iDocument.name + "'");
 				}
 				else {
 					Radiate.warn("No document selected");

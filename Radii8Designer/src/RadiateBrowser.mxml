@@ -21,7 +21,8 @@
 			   width="100%" height="100%" 
 			   minWidth="800" minHeight="400"
 			   applicationComplete="applicationCompleteHandler(event)" 
-			   frameRate="40"
+			   initialize="application1_initializeHandler(event)"
+			   frameRate="60"
 			   pageTitle="Radiate">
 	
 	<!--
@@ -36,6 +37,11 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.HTMLDragEvent;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.HTMLDragManager;
+			import com.flexcapacitor.utils.supportClasses.FileData;
 			
 			import mx.events.FlexEvent;
 			
@@ -53,13 +59,69 @@
 			 * we will need to change the message
 			 * */
 			protected function applicationCompleteHandler(event:FlexEvent):void {
+				var path:String;
+				
 				radiate = Radiate.getInstance();
+				
 				radiate.buildNumber = BUILD_NUMBER;
 				radiate.buildDate = BUILD_DATE;
 				radiate.buildTime = BUILD_TIME;
-				Radiate.application = this;
 				
-				Radiate.startup();
+				startupBrowser();
+				
+				path = "http://www.radii8.com"; // when running locally
+				
+				Radiate.startup(this, mainView, path);
+				
+				listenForDragAndDrop();
+				
+			}
+			
+			protected function application1_initializeHandler(event:FlexEvent):void
+			{
+				var sandboxType:String = Security.sandboxType;
+				Security.allowDomain("*");
+				Security.allowInsecureDomain("*");
+				Security.disableAVM1Loading = true;
+			}
+			
+			private function startupBrowser():void
+			{
+				radiate.applicationMenu = mainView.mainMenuBar;
+			}
+			
+			public var htmlDragAndDrop:HTMLDragManager;
+			
+			private function listenForDragAndDrop():void
+			{
+				HTMLDragManager.debug=false;
+				htmlDragAndDrop = new HTMLDragManager();
+				
+				htmlDragAndDrop.addEventListener(HTMLDragManager.DRAG_ENTER, dragHandler);
+				htmlDragAndDrop.addEventListener(HTMLDragManager.DRAG_EXIT, dragHandler);
+				htmlDragAndDrop.addEventListener(HTMLDragManager.DRAG_DROP, dragDropHandler);
+			}
+			
+			public function dragHandler(event:HTMLDragEvent):void {
+				var type:String = event.type;
+				if (type==HTMLDragManager.DRAG_ENTER) {
+					mainView.dropImagesLocation.visible = true;
+				}
+				else if (type==HTMLDragManager.DRAG_EXIT) {
+					mainView.dropImagesLocation.visible = false;
+				}
+			}
+			
+			public function dragDropHandler(event:HTMLDragEvent):void {
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				
+				mainView.dropImagesLocation.visible = false;
+				Radiate.info("Opening image. Hold on...");
+				Radiate.callAfter(500, openDraggedItem, event);
+			}
+			
+			public function openDraggedItem(event:HTMLDragEvent):void {
+				radiate.dropItemWeb(event);
 			}
 		]]>
 	</fx:Script>
@@ -82,11 +144,37 @@
 	at flash.display::Graphics/drawRect()
 	at spark.components.supportClasses::TextBase/updateDisplayList()[/Users/aharui/release4.13.0/frameworks/projects/spark/src/spark/components/supportClasses/TextBase.as:734]
 	at mx.core::UIComponent/validateDisplayList()[/Users/aharui/release4.13.0/frameworks/projects/framework/src/mx/core/UIComponent.as:9531]
+	
+	
+	When testing locally I'm getting this error: 
+	
+	
+	Warning: Domain www.radii8.com does not specify a meta-policy.  
+	Applying default meta-policy 'master-only'.  This configuration is deprecated.  
+	See http://www.adobe.com/go/strict_policy_files to fix this problem.
+	
+	Error: Request for resource at https://www.radii8.com/r8m/?json=user/get_logged_in_user 
+	by requestor from http://localhost:8888/Radii8-debug/RadiateBrowser.swf is denied due 
+	to lack of policy file permissions.
+	
+	*** Security Sandbox Violation ***
+	Connection to https://www.radii8.com/r8m/?json=user/get_logged_in_user halted - not permitted from http://localhost:8888/Radii8-debug/RadiateBrowser.swf
+	Error: Request for resource at https://www.radii8.com/r8m/?json=core/get_category_posts&count=100&slug=Tutorial by requestor from http://localhost:8888/Radii8-debug/RadiateBrowser.swf is denied due to lack of policy file permissions.
+
+	
+	Changed to https and now go this error in the browser: 
+	
+	Secure Connection Failed
+	
+	An error occurred during a connection to localhost:8888. SSL received a record that exceeded the maximum permissible length. Error code: SSL_ERROR_RX_RECORD_TOO_LONG
+	
+	The page you are trying to view cannot be shown because the authenticity of the received data could not be verified.
+	Please contact the website owners to inform them of this problem.
 =-->
 	
 	<fx:Style source="fonts.css" />
 	<fx:Style source="styles.css" />
 	
-	<views:MainView width="100%" height="100%"/>
+	<views:MainView id="mainView" width="100%" height="100%"/>
 	
 </s:Application>

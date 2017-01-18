@@ -19,10 +19,12 @@
 			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.utils.PersistentStorage;
+			import com.flexcapacitor.utils.StoreLogin;
 			
 			import flash.utils.setTimeout;
 			
 			import mx.events.FlexEvent;
+			import mx.utils.Platform;
 			
 			public var NONE:String = "none";
 			public var CONNECTED:String = "connected";
@@ -43,6 +45,7 @@
 				
 				autoSaveCheckbox.selected = settings.enableAutoSave;
 				wordWrapCheckbox.selected = settings.enableWordWrap;
+				embedImagesCheckbox.selected = settings.embedImages;
 				
 				hostInput.text = Radiate.WP_HOST;
 				pathInput.text = Radiate.WP_PATH;
@@ -56,7 +59,15 @@
 				screenshotPathInput.text = screenshotPath
 				siteScannerPathInput.text = siteScannerPath;
 				
-				object = PersistentStorage.read(Radiate.USER_STORE);
+				if (PersistentStorage.isSupported) {
+					object = PersistentStorage.read(Radiate.USER_STORE);
+				}
+				else if (Platform.isBrowser) {
+					savePassword = new StoreLogin();
+					savePasswordCreated = savePassword.initialize(); // places our javascript onto the page
+					//savePassword.getFormValues();
+					//savePassword.clearFormValues();
+				}
 				
 				// login saved
 				if (object!=null) {
@@ -66,6 +77,9 @@
 					saveLoginCheckbox.selected = false;
 				}
 			}
+			
+			public var savePassword:StoreLogin;
+			public var savePasswordCreated:Boolean;
 			
 			protected function applyButton_clickHandler(event:MouseEvent):void {
 				var changed:Boolean;
@@ -78,10 +92,16 @@
 				Radiate.instance.enableAutoSave = autoSaveCheckbox.selected;
 				settings.enableAutoSave = autoSaveCheckbox.selected;
 				settings.enableWordWrap = wordWrapCheckbox.selected;
+				settings.embedImages = embedImagesCheckbox.selected;
 				
-				// set autosave
+				// clear logins
 				if (!saveLoginCheckbox.selected) {
-					PersistentStorage.remove(Radiate.USER_STORE);
+					if (PersistentStorage.isSupported) {
+						PersistentStorage.remove(Radiate.USER_STORE);
+					}
+					else if (savePassword) {
+						savePassword.clearFormValues();
+					}
 				}
 				
 				Radiate.instance.saveSettings();
@@ -302,6 +322,9 @@
 			
 			<s:Label text="Automatically upload media" />
 			<s:CheckBox id="uploadLibraryItemsCheckbox" />
+			
+			<s:Label text="Embed images" toolTip="Embeds the image into the MXML document using Base64 data"/>
+			<s:CheckBox id="embedImagesCheckbox" />
 			
 			<s:Label text="Auto-Save" />
 			<s:CheckBox id="autoSaveCheckbox" toolTip="If you enable auto save do NOT edit the document in the browser and RADIATE at the same time" />

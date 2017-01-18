@@ -19,7 +19,6 @@
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
-			import com.flexcapacitor.utils.HTMLUtils;
 			
 			import flash.net.navigateToURL;
 			
@@ -49,7 +48,8 @@
 					currentState = "desktop";
 					
 					if (documentationViewer==null) {
-						documentationViewer = HTMLUtils.createInstance();
+						var htmlClass:Object = ApplicationDomain.currentDomain.getDefinition(radiate.desktopHTMLClassName);
+						documentationViewer = new htmlClass();
 						UIComponent(documentationViewer).percentWidth = 100;
 						UIComponent(documentationViewer).percentHeight = 100;
 						IVisualElement(documentationViewer).top = 28;

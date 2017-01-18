@@ -42,6 +42,7 @@
 			import mx.managers.PopUpData;
 			import mx.managers.PopUpManager;
 			import mx.managers.PopUpManagerImpl;
+			import mx.utils.Platform;
 			
 			import spark.events.IndexChangeEvent;
 			
@@ -60,6 +61,9 @@
 			public static const LOGIN_AFTER_REGISTRATION:String = "loginAfterRegistration";
 			public static const REGISTRATION_WITH_SITE:String = "registrationWithSite";
 			
+			public var savePassword:StoreLogin;
+			public var savePasswordCreated:Boolean;
+			
 			// There should be a form on our HTML page. 
 			// The browser will fill the form with values if the user logged in before
 			// If there are multiple users it will fill it with the last user
@@ -71,14 +75,9 @@
 			// 2. check for existing form values set by the browser
 			// 3. fill in our Flash form with those values
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				var savePassword:StoreLogin;
 				var savePasswordCreated:Boolean;
 				
-				if (!Radiate.isDesktop) {
-					savePassword = new StoreLogin();
-					savePasswordCreated = savePassword.initialize(); // places our javascript onto the page
-				}
-				
+				createLoginForm();
 				// todo: Check if user has remember login checked
 				
 				checkForLoginValues();
@@ -96,10 +95,10 @@
 			 * Gets form values 
 			 * */
 			protected function checkForLoginValues():void {
-				var savePassword:StoreLogin = new StoreLogin();
 				var loginItems:Array = [];
 				var value:Object;
 				var host:String;
+				
 				
 				if (!Radiate.isDesktop && currentState=="login") {
 					loginItems = savePassword.getFormValues(); // gets existing form values
@@ -111,7 +110,7 @@
 				}
 				else {
 					if (currentState=="login") {
-						if (usernameTextInput) {
+						if (usernameTextInput && PersistentStorage.isSupported) {
 							host = Radiate.getWPHostURL();
 							value = PersistentStorage.readFromDomain(Radiate.USER_STORE, host);
 							
@@ -133,7 +132,6 @@
 			 * you normally would. IE Continue to use HTTPService, URLRequest, etc
 			 **/
 			protected function login():void {
-				var savePassword:StoreLogin = new StoreLogin();
 				var setValues:Boolean;
 				var results:Boolean;
 				var host:String;
@@ -241,10 +239,17 @@
 			
 			private function logout():void {
 				if (rememberLoginCheckbox && !rememberLoginCheckbox.selected) {
-					if (radiate.username!=null) {
-						PersistentStorage.removeFromDomain(Radiate.USER_STORE, radiate.username, Radiate.getWPHostURL());
+					
+					if (Radiate.isDesktop) {
+						if (radiate.username!=null && PersistentStorage.isSupported) {
+							PersistentStorage.removeFromDomain(Radiate.USER_STORE, radiate.username, Radiate.getWPHostURL());
+						}
+					}
+					else if (savePassword) {
+						savePassword.clearFormValues();
 					}
 				}
+				
 				logoutWarningsLabel.text = "";
 				serviceManager.addEventListener(RadiateEvent.LOGOUT_RESULTS, logoutResultsHandler, false, 0, true);
 				serviceManager.logout();
@@ -449,7 +454,9 @@
 				var message:String = "";
 				var successful:Boolean = event.successful;
 				var errors:Array;
-				var newRegistrationMessage:String = "Wait! Check your email. You must activate your account through your email and then login here.";
+				var newRegistrationMessage:String;
+				
+				newRegistrationMessage = "Wait! Check your email. You must activate your account through your email and then login here.";
 				
 				serviceManager.removeEventListener(RadiateEvent.REGISTER_RESULTS, registerResultsHandler);
 				
@@ -695,6 +702,7 @@
 				addMoveEffect();
 				PopUpManager.centerPopUp(this);
 				
+				createLoginForm();
 				checkForLoginValues();
 			}
 			
@@ -770,7 +778,14 @@
 				}
 				
 				if (username!=null && username!="") {
-					var removed:Boolean = PersistentStorage.removeFromDomain(Radiate.USER_STORE, username, Radiate.getWPHostURL());
+					var removed:Boolean;
+					
+					if (Radiate.isDesktop && PersistentStorage.isSupported) {
+						removed = PersistentStorage.removeFromDomain(Radiate.USER_STORE, username, Radiate.getWPHostURL());
+					}
+					else if (Platform.isBrowser) {
+						savePassword.clearFormValues();
+					}
 					
 					if (usernameTextInput.visible) {
 						usernameTextInput.text = "";
@@ -783,6 +798,14 @@
 					passwordTextInput.text = "";
 					
 					checkForLoginValues();
+				}
+			}
+			
+			private function createLoginForm():void {
+				
+				if (Platform.isBrowser) {
+					savePassword = new StoreLogin();
+					savePasswordCreated = savePassword.initialize(); // places our javascript onto the page
 				}
 			}
 			

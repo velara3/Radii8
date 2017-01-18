@@ -49,7 +49,10 @@
 		<link rel="stylesheet" href="css/normalize/2.1.2/normalize.css"/>
 
         <!-- ACE editor -->
-        <script src="../src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="src-min-noconflict/ext-language_tools.js" type="text/javascript" charset="utf-8"></script>
+        <script src="src-min-noconflict/ext-beautify.js" type="text/javascript" charset="utf-8"></script>
+        <script src="src-min-noconflict/ext-searchbox.js" type="text/javascript" charset="utf-8"></script>
         
         <!-- RADII8 -->
 		<script src="js/Radiate.js" type="text/javascript" charset="utf-8"></script>
@@ -88,7 +91,7 @@
             attributes.id = "${application}";
             attributes.name = "${application}";
             attributes.align = "middle";
-            attributes.wmode = "opaque";
+            attributes.wmode = "gpu";
             swfobject.embedSWF(
                 "${swf}.swf", "flashContent", 
                 "${width}", "${height}", 

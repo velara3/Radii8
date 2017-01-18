@@ -22,16 +22,13 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.controls.IAceEditor;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.views.IInspector;
 			
 			import mx.events.FlexEvent;
 			import mx.logging.AbstractTarget;
+			import mx.utils.Platform;
 			
-			import spark.components.TextArea;
-			import spark.components.VScrollBar;
 			import spark.events.TextOperationEvent;
 			
 			private var radiate:Radiate;
@@ -52,82 +49,62 @@
 			public var maxLines:int = 300;
 			public var defaultMaxLines:int = 300;
 			public var previousConsoleValue:String;
-			public var aceEditor:Object;
 			public var editorReady:Boolean;
 			public var someDelayedValues:String = "";
 			
 			public function activate():void {
 				
-				if (logTarget==null && !Radiate.isDesktop) {
+				/*if (logTarget==null && !Radiate.isDesktop) {
 					logTarget = Radiate.logTarget;
 					Radiate.setLoggingTarget(logTarget, null, consoleTextArea);
-				}
+				}*/
 				
-				if (Radiate.isDesktop) {
-					consoleTextArea.visible = false;
-					consoleTextArea.includeInLayout = false;
-					
-					if (aceEditor && aceEditor.editor) {
-						Radiate.setLoggingTarget(logTarget, null, aceEditor);
-					}
-					
+				
+				if (aceEditor && aceEditor.aceEditorFound) {
+					logTarget = Radiate.logTarget;
+					Radiate.setLoggingTarget(logTarget, null, aceEditor);
 				}
+					
 				
 				radiate = Radiate.instance;
 				radiate.addEventListener(RadiateEvent.CONSOLE_VALUE_CHANGE, consoleValueChange, false, 0, true);
 				
+				if (aceEditor) {
+					aceEditor.visible = true;
+				}
 			}
 			
 			public function deactivate():void {
 				// do we want to keep logging?
 				// radiate.removeEventListener(RadiateEvent.CONSOLE_VALUE_CHANGE, consoleValueChange);
+				
+				aceEditor.visible = false;
 			}
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				
 				logTarget = Radiate.logTarget;
-				
-				if (!aceEditor) {
-					aceEditor = AceEditorUtils.createCommonEditor(null, this);
-					aceEditor.showGutter = false;
-					aceEditor.top = -10;
 
-					aceEditor.addEventListener("editorReady", editorReadyHandler);
-					aceEditor.validateNow();
-					//aceEditor.margin = "";
-				}
+				aceEditor.showGutter = false;
 				
-				if (Radiate.isDesktop) {
-					if (aceEditor.editor) {
-						Radiate.setLoggingTarget(logTarget, null, aceEditor);
-					}
-				}
-				else {
-					Radiate.setLoggingTarget(logTarget, null, consoleTextArea);
+				if (aceEditor.aceEditorFound) {
+					Radiate.setLoggingTarget(logTarget, null, aceEditor);
 				}
 				
 			}
 			
 			protected function editorReadyHandler(event:Event):void {
 				
-				if (Radiate.isDesktop && aceEditor.editor) {
-					Radiate.setLoggingTarget(logTarget, null, aceEditor);
-					editorReady = true;
-					
-					if (someDelayedValues) {
-						aceEditor.appendText(someDelayedValues);
-					}
+				Radiate.setLoggingTarget(logTarget, null, aceEditor);
+				editorReady = true;
+				
+				if (someDelayedValues) {
+					aceEditor.appendText(someDelayedValues);
 				}
 			}
 			
 			protected function clearTextAreaHandler(event:MouseEvent):void {
-				
-				if (Radiate.isDesktop) {
-					aceEditor.text = "";
-				}
-				else {
-					consoleTextArea.text = "";
-				}
+				aceEditor.text = "";
 			}
 			
 			protected function consoleTextArea_valueCommitHandler(event:FlexEvent):void {
@@ -154,6 +131,7 @@
 			public function scrollToEnd():void {
 				
 				// SPARK TEXT AREA
+				/*
 				if (consoleTextArea is spark.components.TextArea) {
 					var scrollBar:VScrollBar = spark.components.TextArea(consoleTextArea).scroller.verticalScrollBar;
 					
@@ -195,6 +173,9 @@
 					}
 					
 				}
+				*/
+				aceEditor.scrollToEnd();
+				aceEditor.navigateFileEnd();
 			}
 			
 			protected function consoleValueChange(event:RadiateEvent):void {
@@ -204,14 +185,13 @@
 						someDelayedValues += event.data;
 					}
 					else {
-						aceEditor.appendText(event.data);
+						aceEditor.appendText(event.data as String);
 					}
 				}
 			}
 			
 			
-			protected function wordwrapButton_clickHandler(event:MouseEvent):void
-			{
+			protected function wordwrapButton_clickHandler(event:MouseEvent):void {
 				if (aceEditor) {
 					aceEditor.useWordWrap = enableWordWrapButton.selected;
 				}
@@ -219,8 +199,7 @@
 		]]>
 	</fx:Script>
 	
-	<s:Label text="" 
-			 height="14"
+	<s:Label height="14"
 			 right="4"
 			 fontSize="10"
 			 typographicCase="uppercase" 
@@ -233,6 +212,19 @@
 			 buttonMode="true"
 			 click="clearTextAreaHandler(event)"
 			 />
+	
+	<c:AceEditor id="aceEditor" 
+				 width="100%" 
+				 height="100%"
+				 top="20" left="2"
+				 isReadOnly="false" 
+				 showGutter="false"
+				 mode="ace/mode/text" 
+				 showFoldWidgets="true" 
+				 useWordWrap="true"
+				 scrollSpeed=".5"
+				 editorReady="editorReadyHandler(event)"
+				 />
 	<!--<s:TextArea id="consoleTextArea" 
 				top="12"
 				width="100%" height="100%"
@@ -245,7 +237,7 @@
 				change="consoleTextArea_changeHandler(event)"
 				valueCommit="consoleTextArea_valueCommitHandler(event)"
 				/>-->
-	<mx:TextArea id="consoleTextArea" 
+	<!--<mx:TextArea id="consoleTextArea" 
 				top="20"
 				width="100%" height="100%"
 				tabFocusEnabled="false"
@@ -256,7 +248,7 @@
 				borderVisible="false"
 				change="consoleTextAreaMX_changeHandler(event)"
 				valueCommit="consoleTextArea_valueCommitHandler(event)"
-				/>
+				/>-->
 	
 	<s:HGroup right="8">
 		<c:BeveledImageToggleButton id="enableWordWrapButton"

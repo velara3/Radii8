@@ -9,7 +9,11 @@
 
 			   title="Import MXML"
 			   title.revisions="Select Revision"
+			   initialize="animatedpanelwindow1_initializeHandler(event)"
 			   creationComplete="animatedpanelwindow1_creationCompleteHandler(event)" 
+			   openAnimationEnd="openAnimationEffectEndHandler(event)"
+			   resize="animatedpanelwindow1_resizeHandler(event)"
+			   updateComplete="animatedpanelwindow1_updateCompleteHandler(event)"
 			   >
 	
 	<fx:Script>
@@ -22,7 +26,6 @@
 			import com.flexcapacitor.model.IProject;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.model.TranscoderDescription;
-			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.DocumentTranscoder;
 			import com.flexcapacitor.utils.MXMLDocumentConstants;
 			import com.flexcapacitor.utils.MXMLDocumentImporter;
@@ -32,8 +35,10 @@
 			
 			import mx.collections.ArrayCollection;
 			import mx.core.IVisualElement;
-			import mx.core.UIComponent;
+			import mx.events.EffectEvent;
 			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			import mx.utils.Platform;
 			
 			public static const NEW_DOCUMENT:String = "newDocument";
 			public static const CURRENT_DOCUMENT:String = "currentDocument";
@@ -66,32 +71,13 @@
 
 			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
 			
-			public var aceEditor:*;
-			public var aceCSSEditor:*;
-			public var templateEditor:*;
-			
+			[Bindable]
 			public var editorMargin:String = "4px 0 8px 0px";
-			public var aceEditorCreated:Boolean;
 			
 			public var showRevisions:Boolean = false;
 			
 			private function createEditors():void {
 				// 1067: Implicit coercion of a value of type com.flexcapacitor.controls:AceEditor to an unrelated type Object
-				
-				aceEditor = AceEditorUtils.createInstance();
-				UIComponent(aceEditor).percentWidth = 100;
-				UIComponent(aceEditor).percentHeight = 100;
-				aceEditor.top = 0;
-				aceEditor.left = 0;
-				editorGroup.addElementAt(aceEditor, 1);
-				aceEditor.mode = "ace/mode/xml";
-				aceEditor.showFoldWidgets = true;
-				aceEditor.margin = editorMargin;
-				aceEditor.useWordWrap = true;
-				aceEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
-				aceEditor.addEventListener(Event.CHANGE, changeHandler, false, 0, true);
-				aceEditorCreated = true;
-				aceEditor.scrollSpeed = .5;
 				
 			}
 			
@@ -309,6 +295,7 @@
 					if (aceEditor.text!=_code) {
 						aceEditor.text = _code;
 						changeHandler();
+						aceEditor.invalidateDisplayList();
 					}
 				}
 			}
@@ -367,12 +354,14 @@
 					Radiate.warn("No source to show. No document is selected.");
 				}
 			}
-			
+			public var magicNumber:int = 250;
 			protected function cancelButton_clickHandler(event:MouseEvent):void {
 				action = null;
 				code = null;
 				
-				closePopUp.startDelay = 500;
+				aceEditor.visible = false;
+				aceEditor.validateNow();
+				closePopUp.startDelay = magicNumber;
 				closePopUp.play();
 			}
 			
@@ -380,7 +369,9 @@
 				action = updatedAction;
 				code = updatedCode;
 				
-				closePopUp.startDelay = 500;
+				aceEditor.visible = false;
+				aceEditor.validateNow();
+				closePopUp.startDelay = magicNumber;
 				closePopUp.play();
 			}
 			
@@ -434,6 +425,45 @@
 				radiate.removeEventListener(RadiateEvent.DOCUMENT_OPEN, newDocumentOpened);
 			}
 			
+			protected function animatedpanelwindow1_initializeHandler(event:FlexEvent):void
+			{
+				if (Platform.isBrowser==true) {
+					editorMargin = "0";
+				}
+			}
+			
+			protected function openAnimationEffectEndHandler(event:Event):void
+			{
+				//trace("open animation finished");
+				aceEditor.visible = true;
+				callLater(updateAceEditor);
+			}
+			
+			protected function animatedpanelwindow1_resizeHandler(event:ResizeEvent):void
+			{
+				//trace("resizing complete");
+				callLater(updateAceEditor);
+			}
+			
+			protected function animatedpanelwindow1_updateCompleteHandler(event:FlexEvent):void
+			{
+				//trace("Update complete");
+				updateAceEditor();
+			}
+			
+			public function updateAceEditor():void {
+				// we are creating multiple instances everytime the window is opened
+				// at this time we aren't reusing ace editors instances
+				// hopefully this will be fixed in the future
+				// we could also defer creating the editor until the pop up has finished
+				// animating
+				if (aceEditor.visible) {
+					aceEditor.invalidateDisplayList();
+					aceEditor.invalidateSize();
+					aceEditor.validateNow();
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -450,10 +480,11 @@
 	
 	<w:states>
 		<s:State name="normal"/>
+		<s:State name="editor"/>
 		<s:State name="revisions"/>
 	</w:states>
 	
-	<mx:HDividedBox left="15" 
+	<mx:HDividedBox left="15" liveDragging="true"
 			  top="20" 
 			  right="20"
 			  bottom="20">
@@ -478,6 +509,18 @@
 				  height="100%">
 			
 			<s:Label x="15" y="65" text="MXML code:" fontWeight="bold"/>
+			
+			<controls:AceEditor id="aceEditor" width="100%" height="100%"
+								top="0" left="0"
+								mode="ace/mode/xml"
+								showFoldWidgets="true"
+								useWordWrap="true"
+								scrollSpeed=".5"
+								margin="{editorMargin}"
+								focusIn="editorFocusInHandler(event)"
+								change="changeHandler(event)"
+								visible="false"
+								/>
 			
 			<s:HGroup x="14" y="31" width="100%" height="22" 
 					  horizontalAlign="right" 

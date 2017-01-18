@@ -372,6 +372,10 @@ package com.flexcapacitor.utils {
 					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.BITMAP_DATA_NS)!=-1) {
 					parseBase64BitmapData(componentInstance, valuesObject, MXMLDocumentConstants.BITMAP_DATA_NS);
 					handledChildNodes.push(MXMLDocumentConstants.BITMAP_DATA_NS);
+					var bitmapDataIndex:int = valuesObject.childProperties.indexOf(MXMLDocumentConstants.BITMAP_DATA);
+					if (bitmapDataIndex!=-1) {
+						valuesObject.childProperties.splice(bitmapDataIndex, 1);
+					}
 					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.BITMAP_DATA];
 					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.BITMAP_DATA_NS];
 				}
@@ -667,19 +671,24 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (removeLineBreaks) {
-				bitmapDataString = bitmapDataString.replace(/\n/g, "");
+				//bitmapDataString = bitmapDataString.replace(/\n/g, "");
 			}
 			
 			//A partial block (3 of 4 bytes) was dropped. Decoded data is probably truncated!
 			//Error: A partial block (3 of 4 bytes) was dropped. Decoded data is probably truncated!
 			if (removeHeader) {
-				bitmapDataString = bitmapDataString.replace(/.*base64,/si, "");
+				//bitmapDataString = bitmapDataString.replace(/.*base64,/si, "");
 			}
 			
 			bitmapData = DisplayObjectUtils.getBitmapDataFromBase64(bitmapDataString);
 			
+			
 			if (bitmapData) {
 				valuesObject.values["source"] = bitmapData;
+				if (valuesObject.properties.indexOf("source")==-1) {
+					valuesObject.properties.push("source");
+				}
+				
 				contentLoader = DisplayObjectUtils.loader.contentLoaderInfo;
 				
 				// save a reference to the loader info so it doesn't get garbage collected
@@ -718,6 +727,11 @@ package com.flexcapacitor.utils {
 				Radiate.setProperty(componentInstance, "source", newBitmapData, "Source loaded");
 			}
 			
+			if (contentLoader) {
+				contentLoader.removeEventListener(Event.INIT, handleLoadingImages);
+			}
+			
+			bitmapDictionary[contentLoader] = null;
 			delete bitmapDictionary[contentLoader];
 		}
 		

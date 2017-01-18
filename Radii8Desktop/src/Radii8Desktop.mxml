@@ -20,7 +20,6 @@
 					   keyUp="windowedapplication1_keyUpHandler(event)"
 					   keyDown="windowedapplication1_keyDownHandler(event)"
 					   networkChange="windowedapplication1_networkChangeHandler(event)"
-					   uncaughtError="windowedapplication1_uncaughtErrorHandler(event)"
 					   applicationComplete="applicationCompleteHandler(event)" 
 					   initialize="initializeHandler(event)" 
 					   invoke="windowedapplication1_invokeHandler(event)"
@@ -104,6 +103,7 @@
 				import mx.collections.ArrayCollection;
 				import mx.core.FTETextField;
 				import mx.core.FlexHTMLLoader;
+				import mx.controls.HTML;HTML
 				import mx.core.UIComponent;
 				import mx.core.UIComponentCachePolicy;
 				import mx.core.UIComponentDescriptor;
@@ -135,10 +135,14 @@
 				[Bindable]
 				public var radiate:Radiate;
 				
+				public static var NATIVE_MENU_CHANGE:String = "nativeMenuChange";
+				public static var MODIFIER_CHANGED:String = "keyEquivalentModifiersFunctionChanged";
+				public static var MNEMONIC_INDEX_FUNCTION_CHANGED:String = "mnemonicIndexFunctionChanged";
+				
 				protected function initializeHandler(event:FlexEvent):void {
-					isWin = (Capabilities.os.indexOf("Windows") >= 0);
-					isMac = (Capabilities.os.indexOf("Mac OS") >= 0);
-					isLinux = (Capabilities.os.indexOf("Linux") >= 0);
+					isWin = Platform.isWindows;
+					isMac = Platform.isMac;
+					isLinux = Platform.isLinux;
 					
 					width = Capabilities.screenResolutionX * .96;
 					height = Capabilities.screenResolutionY * .9;
@@ -146,15 +150,10 @@
 					nativeWindow.x = (Screen.mainScreen.bounds.width - width)/2;
 					nativeWindow.y = (Screen.mainScreen.bounds.height - height)/2;
 					
-					//var jpegXREncoder:JPEGXREncoderOptions = new JPEGXREncoderOptions();
+					mainViewMenu.addEventListener(NATIVE_MENU_CHANGE, mainViewMenuChanged, false, 0, true);
+					mainViewMenu.addEventListener(MODIFIER_CHANGED, keyEquivalentModifiersFunctionChanged, false, 0, true);
+					mainViewMenu.addEventListener(MNEMONIC_INDEX_FUNCTION_CHANGED, mnemonicIndexFunctionChanged, false, 0, true);
 					
-					mainViewMenu.addEventListener("nativeMenuChange", mainViewMenuChanged, false, 0, true);
-					mainViewMenu.addEventListener("keyEquivalentModifiersFunctionChanged", keyEquivalentModifiersFunctionChanged, false, 0, true);
-					mainViewMenu.addEventListener("mnemonicIndexFunctionChanged", mnemonicIndexFunctionChanged, false, 0, true);
-					
-					// add support to enable this and send error reports
-					CreationManager.showMeWhatsActivatedSoFar = false;
-					CreationManager.showMeWhatsCreatedSoFar = false;
 					//Monaco, Menlo, 'Ubuntu Mono', Consolas, source-code-pro, monospace;
 					
 					// .ace_editor {position: relative;overflow: hidden;font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;font-size: 12px;line-height: normal;color: black;}
@@ -165,46 +164,15 @@
 				 * Setup the environment.  
 				 * */
 				protected function applicationCompleteHandler(event:FlexEvent):void {
-					radiate = Radiate.getInstance();
-					isMac = Platform.isMac;
-
-				    var applicationDescriptor:XML;
-				    var appNamespace:Namespace;
-				    var version:String;
-					var showInlineMenus:Boolean = false;
-					var layoutManager:ILayoutManager;
+					startupDesktop();
 					
-					// set debugging options here
-					HistoryManager.debug 	= false;
-					DragManagerUtil.debug 	= false;
-					Text.debug 				= false;
-					Selection.debug			= false;
-					LayoutDebugHelper.debug	= true;
-					MainView.debug 			= true;
+					Radiate.startup(this, mainView);
 					
-					// testing for why layout is invalid when disconnected from network
-					UIComponentGlobals.catchCallLaterExceptions = true;
-					layoutManager = UIComponentGlobals.layoutManager;
-					layoutManager.usePhasedInstantiation;
-					
-					applicationDescriptor 	= NativeApplication.nativeApplication.applicationDescriptor;
-					appNamespace 			= applicationDescriptor.namespace();
-					version 				= applicationDescriptor.versionNumber;
-				    version 				= applicationDescriptor.appNamespace::versionNumber;
-					
-					radiate.versionNumber 	= version;
-					Radiate.mainView 		= mainView;
-					Radiate.application 	= this;
-					radiate.updater			= updateApplication;
-					
-					//Radiate.isDesktop = true;
-					Radiate.startup();
-					mainView.startup();
+					//setupNativeMenus();
 					
 					// set title bar icon (doesn't seem to work in debug build)
 					titleIcon = Radii8LibraryAssets.logo;
 					
-					setupNativeMenus(showInlineMenus);
 					
 					nativeApplication.addEventListener(Event.NETWORK_CHANGE, dispatchEvent);
 					radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeEventHandler, false, 0, true);
@@ -214,7 +182,7 @@
 					//trace(loader.userAgent);
 				}
 				
-				protected function resizeToShowUpdate():void {
+				protected function orderUpdateWindowToFront():void {
 					//height = Capabilities.screenResolutionY * .5;
 					//nativeWindow.y = 240;
 					var windows:Array = nativeApplication.openedWindows;
@@ -222,30 +190,23 @@
 					
 					for (var i:int;i<windows.length;i++) {
 						window = windows[i];
+						
+						// if application then skip
 						if (window==nativeWindow) {
 							//trace(NativeWindow.supportsNotification);
 							window.notifyUser(NotificationType.INFORMATIONAL);
 							window.notifyUser(NotificationType.CRITICAL);
 							continue;
 						}
+						
 						window.orderToFront();
 						Radiate.callAfter(100, window.orderToFront);
 						Radiate.callAfter(1000, window.orderToFront);
 						Radiate.callAfter(2000, window.orderToFront);
+						//break;
 					}
 					
 					//Radiate.info("An update is available: " + "Current version: " + updateApplication.currentVersion + ". Remote version: " + updateApplication.remoteVersion);
-				}
-				
-				protected function windowedapplication1_uncaughtErrorHandler(event:UncaughtErrorEvent):void
-				{
-					//trace("Uncaught error: " + event);
-					if ("text" in event && event.text!="") {
-						Radiate.error(event.text, event);
-					}
-					else if ("error" in event && event.error && "message" in event.error) {
-						Radiate.error(event.error.message, event);
-					}
 				}
 				
 				private function nativeMenuHandler(menuEvent:Event):void{
@@ -621,14 +582,14 @@
 					customMenuItemsCollection 	= mainViewMenu.dataProvider as ArrayCollection;
 					customMenu 					= customMenuItemsCollection.getItemAt(0) as MenuItem;
 					customMenuItems 			= customMenu.children;
-					
+					// get native menu items
 					if (defaultMenuItems.length) {
 						nativeAboutMenu 	= defaultMenuItems[0];
 						nativeFileMenu 		= defaultMenuItems[1];
 						nativeEditMenu 		= defaultMenuItems[2];
 						nativeWindowMenu 	= defaultMenuItems[3];
 					}
-					
+					// get custom menu items from main view menu bar
 					if (customMenu.children && customMenu.children.length) {
 						customFileMenu 			= customMenuItems[0];
 						customEditMenu 			= customMenuItems[1];
@@ -712,7 +673,8 @@
 						mainView.showMenuBar(false);
 					}
 					else {
-						// add the native menu items About, Edit to our custom menu items
+						
+						// add the native menu items About and Edit to our custom menu items
 						// has many issues - don't use
 						if (false && nativeAboutMenu) {
 							var aboutMenuSubmenu:Object = nativeAboutMenu.submenu;
@@ -900,6 +862,28 @@
 					//trace("Window resize");
 				}
 				
+				private function startupDesktop():void {
+					var applicationDescriptor:XML;
+					var appNamespace:Namespace;
+					var version:String;
+					var showInlineMenus:Boolean;
+					
+					showInlineMenus = false;
+					
+					radiate = Radiate.getInstance();
+					isMac = Platform.isMac;
+					
+					applicationDescriptor 	= NativeApplication.nativeApplication.applicationDescriptor;
+					appNamespace 			= applicationDescriptor.namespace();
+					version 				= applicationDescriptor.versionNumber;
+					version 				= applicationDescriptor.appNamespace::versionNumber;
+					
+					radiate.versionNumber 	= version;
+					radiate.updater			= updateApplication;
+					
+					setupNativeMenus();
+				}
+				
 			]]>
 		</fx:Script>
 	
@@ -961,7 +945,7 @@
 												  location="top" 
 												  matchDurationToTextContent="true"
 												  data="{'Current version: ' + updateApplication.currentVersion + '. Remote version: ' + updateApplication.remoteVersion}"/>-->
-						<core:CallMethod method="resizeToShowUpdate"/>
+						<core:CallMethod method="orderUpdateWindowToFront"/>
 					</s:Parallel>
 				</local:updateAvailableEffect>
 			</local:UpdateApplication>

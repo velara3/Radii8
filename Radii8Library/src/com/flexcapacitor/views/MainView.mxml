@@ -50,7 +50,6 @@
 			import com.flexcapacitor.views.windows.CreditsWindow;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			import com.flexcapacitor.views.windows.ExportDocumentWindow;
-			import com.flexcapacitor.views.windows.FileTransferWindow;
 			import com.flexcapacitor.views.windows.HelpWindow;
 			import com.flexcapacitor.views.windows.LoginWindow;
 			import com.flexcapacitor.views.windows.NewDocumentWindow;
@@ -70,6 +69,7 @@
 			import mx.events.MenuEvent;
 			import mx.managers.DragManager;
 			import mx.managers.LayoutManager;
+			import mx.utils.Platform;
 			
 			import spark.collections.Sort;
 			import spark.collections.SortField;
@@ -110,7 +110,7 @@
 		i also added reference to PNGEncoderOptions encoder to RadiateReferences.as
 		 * 
 		 */
-			
+			[Bindable]
 			public var fileTransferWindowClass:String = "com.flexcapacitor.views.FileTransferWindow";
 			private var remoteTestURL:String = "";
 			private var testURL:String = "";
@@ -726,12 +726,13 @@
 				if (debug) {
 					log("User icon io error: ", event);
 				}
-				//trace("ioerror ");
-				userIcon.source = null;
 				
 				// keeps looping when icon can't be found
 				if (userIcon.source!=radiate.defaultUserAvatarPath) {
 					userIcon.source = radiate.defaultUserAvatarPath;
+				}
+				else {
+					userIcon.source = null;
 				}
 			}
 			
@@ -1026,7 +1027,12 @@
 			
 			protected function userIcon_clickHandler(event:MouseEvent):void
 			{
-				Radiate.openUsersProfile();
+				if (radiate.isUserLoggedIn) {
+					Radiate.openUsersProfile();
+				}
+				else {
+					Radiate.info("You must be logged into to view your profile website");
+				}
 			}
 			
 			protected function visitSiteLabel_clickHandler(event:MouseEvent):void
@@ -1038,8 +1044,8 @@
 			private var isMac:Boolean; 
 			
 			private function init():void { 
-				isWin = (Capabilities.os.indexOf("Windows") >= 0); 
-				isMac = (Capabilities.os.indexOf("Mac OS") >= 0); 
+				isWin = Platform.isWindows; 
+				isMac = Platform.isMac; 
 			} 
 			
 			private function keyEquivalentModifiers(item:Object):Array { 
@@ -1098,6 +1104,12 @@
 			protected function saveMenuItem_itemClickHandler(event:MenuEvent):void
 			{
 				//Radiate.info("Saved");
+				
+				if (radiate.isUserLoggedIn==false) {
+					Radiate.info("You must be logged in to save");
+					return;
+				}
+				
 				if (radiate.selectedDocument) {
 					radiate.saveDocument(radiate.selectedDocument);
 				}
@@ -1334,6 +1346,28 @@
 				
 			}
 			
+			protected function uploadToServer_eventStartHandler(event:Event):void
+			{
+				if (Platform.isBrowser==true) {
+					event.preventDefault();
+					Radiate.info("This feature is only available in the desktop version");
+				}
+			}
+			
+			protected function dropImagesLocation_clickHandler(event:MouseEvent):void
+			{
+				dropImagesLocation.visible = false;
+				Radiate.info("Drag and drop did not finish apparently.");
+			}
+			
+			protected function closeApplication_eventStartHandler(event:Event):void
+			{
+				if (Platform.isBrowser) {
+					event.preventDefault();
+					Radiate.info("The feature is only available in the desktop version");
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1456,7 +1490,7 @@
 						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
-		<handlers:EventHandler eventName="itemClick" target="{uploadMenuItem}">
+		<handlers:EventHandler eventName="itemClick" target="{uploadMenuItem}" eventStart="uploadToServer_eventStartHandler(event)">
 			<fc:OpenPopUp id="openFileTransferPopUp" 
 						  popUpType="{fileTransferWindowClass}" 
 						  modalDuration="150" 
@@ -1539,7 +1573,7 @@
 						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
-		<handlers:EventHandler eventName="itemClick" target="{quitApplication}">
+		<handlers:EventHandler eventName="itemClick" target="{quitApplication}" eventStart="closeApplication_eventStartHandler(event)">
 			<application:CloseApplication />
 		</handlers:EventHandler>
 		
@@ -2288,7 +2322,12 @@
 	</s:HGroup>
 	
 	<s:BorderContainer id="dropImagesLocation" width="100%" height="100%" backgroundColor="#04527b" backgroundAlpha=".75" 
-					   visible="false" >
-		<s:Label text="Drop files here" verticalCenter="0" horizontalCenter="0" fontSize="58" color="#ffffff"/>
+					   visible="false" click="dropImagesLocation_clickHandler(event)">
+		<s:Label text="Drop files here" 
+				 verticalCenter="0" 
+				 horizontalCenter="0" 
+				 fontSize="42"
+				 fontWeight="bold"
+				 color="#ffffff"/>
 	</s:BorderContainer>
 </s:Group>

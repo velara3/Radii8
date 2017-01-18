@@ -244,3 +244,6 @@ controls|ColorPicker {
 controls|RichTextEditorBar {
 	fontSize: 10;
 }
+s|List#tools {
+	contentBackgroundAlpha: 0;
+}

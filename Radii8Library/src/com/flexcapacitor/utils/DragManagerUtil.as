@@ -426,8 +426,8 @@ package com.flexcapacitor.utils {
 				snapshot = null;
 			}
 			else {
-				
-				if (scale!=1) {
+				// this is causing some resizing of images problems when zoomed out 
+				if (scale!=1 && false) {
 					var tempScale:Number = dragInitiator.scaleX;
 					dragInitiator.scaleX = scale;
 					dragInitiator.scaleY = scale;

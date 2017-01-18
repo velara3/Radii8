@@ -470,6 +470,11 @@
 				var projectOrDocumentID:String = radiate.selectedDocument ? radiate.selectedDocument.id : null;
 				var searchID:int;
 				
+				if (radiate.isUserLoggedIn==false) {
+					Radiate.info("You must be logged in");
+					return;
+				}
+				
 				// if not project id then get document id
 				if (projectOrDocumentID==null) {
 					projectOrDocumentID = radiate.selectedProject ? radiate.selectedProject.id : null;
@@ -777,6 +782,11 @@
 				var attachmentData:AttachmentData;
 				var attachmentsToUpload:Array = radiate.getAssetsAvailableToUpload();
 				
+				if (radiate.isUserLoggedIn==false) {
+					Radiate.info("You must be logged in.");
+					return;
+				}
+				
 				if (iDocument==null) {
 					Radiate.info("No document available to upload to.");
 				}
@@ -841,6 +851,7 @@
 				if (imageData) {
 					if (imageData.bitmapData) {
 						copyImageDataToClipboard.data = imageData.bitmapData;
+						copyImageDataToClipboard.triggerEvent = event;
 						copyImageDataToClipboard.play();
 					}
 					else if (imageData.url) {
@@ -871,15 +882,18 @@
 			<collections:SortCollection target="{libraryCollection}" fields="{['name']}" />
 		</handlers:EventHandler>
 		
-		<clipboard:CopyToClipboard id="copyImageDataToClipboard" 
-								   targetAncestor="{this}" 
-								   format="{ClipboardFormats.BITMAP_FORMAT}"
-								   allowNullData="true"
-								   success="Radiate.info('The image was copied to the clipboard');"
-								   noData="Radiate.info('Nothing was available to be copied to the clipboard');"
-								   error="Radiate.info('An error occurred while attempting to copy to the clipboard');"
-								   >
-		</clipboard:CopyToClipboard>
+		<!--
+		<handlers:EventHandler eventName="click" target="{copyImageDataIcon}" >
+		</handlers:EventHandler>-->
+			<clipboard:CopyToClipboard id="copyImageDataToClipboard" 
+									   targetAncestor="{this}" 
+									   format="{ClipboardFormats.BITMAP_FORMAT}"
+									   allowNullData="true"
+									   success="Radiate.info('The image was copied to the clipboard');"
+									   noData="Radiate.info('Nothing was available to be copied to the clipboard');"
+									   error="Radiate.info('An error occurred while attempting to copy to the clipboard');"
+									   >
+			</clipboard:CopyToClipboard>
 		
 		<!-- SHOW DELETE ATTACHMENTS POP UP -->
 		<fc:OpenPopUp id="openDeleteDocumentsPopUp" 
@@ -960,14 +974,17 @@
 					bottom="4"
 					>
 		
-		<inspectors:SearchCollection id="searchCollection" 
-									 minHeight="24"
-									 maxHeight="60"
-									 dataProvider="{libraryCollection}" 
-									 filterFunction="libraryFilterFunction"
-									 >
-		</inspectors:SearchCollection>
-		
+		<s:Group height="24" 
+				 minHeight="24"
+				 maxHeight="60"
+				 width="100%" 
+				 >
+			
+			<inspectors:SearchCollection id="searchCollection" 
+										 dataProvider="{libraryCollection}" 
+										 filterFunction="libraryFilterFunction"
+										 />
+		</s:Group>
 		
 		
 		<s:List id="list" 
@@ -1021,16 +1038,13 @@
 		
 		<c:LabelButton id="addImageLabel" 
 					   text="Drag and drop or click here to add items"
-					   color="#888888"
-					   paddingTop="50"
-					   paddingBottom="120"
-					   paddingLeft="10"
-					   paddingRight="10"
-					   horizontalCenter="0" verticalCenter="0"
+					   color="#888888" 
+					   verticalAlign="middle" textAlign="center"
+					   backgroundAlpha="0.1"
 					   visible="{libraryCollection.length==0}" 
 					   includeInLayout="{libraryCollection.length==0}"
 					   width="100%"
-					   textAlign="center"
+					   height="100%"
 					   />
 		
 		<s:Spacer height="100%"/>

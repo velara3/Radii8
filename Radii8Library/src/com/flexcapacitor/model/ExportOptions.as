@@ -41,5 +41,10 @@ package com.flexcapacitor.model
 		 * Default file template
 		 * */
 		public var template:String;
+		
+		/**
+		 * Embed local images inline
+		 * */
+		public var embedImages:Boolean;
 	}
 }

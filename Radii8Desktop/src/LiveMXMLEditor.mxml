@@ -6,6 +6,8 @@
 					   xmlns:model="com.flexcapacitor.model.*" 
 					   xmlns:controls="com.flexcapacitor.controls.*"
 					   xmlns:components="components.*"
+					   xmlns:handlers="com.flexcapacitor.handlers.*" 
+					   xmlns:window="com.flexcapacitor.effects.window.*"
 					   
 					   width="1200"
 					   height="800"
@@ -18,7 +20,7 @@
 					   invoke="windowedapplication1_invokeHandler(event)"
 					   dragOver="mainView_dragOverHandler(event)"
 					   dragDrop="mainView_dragDropHandler(event)"
-					   dragExit="mainView_dragExitHandler(event)" xmlns:handlers="com.flexcapacitor.handlers.*" xmlns:window="com.flexcapacitor.effects.window.*"
+					   dragExit="mainView_dragExitHandler(event)" 
 					   >
 	
 	<fx:Style source="styles.css"/>
@@ -26,6 +28,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.AceEvent;
 			import com.flexcapacitor.events.IssueDataEvent;
 			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.managers.HistoryManager;
@@ -36,7 +39,6 @@
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.model.TranscoderDescription;
-			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DocumentTranscoder;
 			import com.flexcapacitor.utils.MXMLDocumentImporter;
@@ -47,7 +49,6 @@
 			
 			import mx.core.DragSource;
 			import mx.core.IUIComponent;
-			import mx.core.UIComponent;
 			import mx.events.DragEvent;
 			import mx.events.FlexEvent;
 			import mx.managers.DragManager;
@@ -60,11 +61,11 @@
 			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
 			
 			[Bindable]
-			public var aceEditor:*;
 			public var aceCSSEditor:*;
 			public var templateEditor:*;
 			
-			public var editorMargin:String = "4px 0 8px 0px";
+			[Bindable]
+			public var editorMargin:String = "10px 0 8px 0px";
 			public var aceEditorCreated:Boolean;
 			public var mxmlDocumentImporter:MXMLDocumentImporter;
 			
@@ -124,6 +125,7 @@
 				
 				setDefaultXML();
 				
+				
 				var textFlowString:String = TextConverter.export(richText59.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
 				// var textFlow:TextFlow = TextConverter.importToFlow(textFlowString, TextConverter.TEXT_LAYOUT_FORMAT);
 				var xml:XML = <s:TextFlow xmlns:s="library://ns.adobe.com/flex/spark" >
@@ -137,20 +139,6 @@
 			private function createEditors():void {
 				// 1067: Implicit coercion of a value of type com.flexcapacitor.controls:AceEditor to an unrelated type Object
 				
-				aceEditor = AceEditorUtils.createInstance();
-				UIComponent(aceEditor).percentWidth = 100;
-				UIComponent(aceEditor).percentHeight = 100;
-				aceEditor.top = 0;
-				aceEditor.left = 0;
-				editorGroup.addElementAt(aceEditor, 1);
-				aceEditor.mode = "ace/mode/xml";
-				aceEditor.showFoldWidgets = true;
-				aceEditor.margin = editorMargin;
-				aceEditor.useWordWrap = true;
-				aceEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
-				aceEditor.addEventListener(Event.CHANGE, editorChangeHandler, false, 0, true);
-				aceEditor.addEventListener("save", saveHandler, false, 0, true);
-				aceEditor.scrollSpeed = .5;
 				aceEditorCreated = true;
 				
 			}
@@ -165,7 +153,7 @@
 				invalidateDesignView();
 			}
 			
-			protected function editorChangeHandler(event:Event = null):void {
+			protected function editorChangeHandler(event:AceEvent = null):void {
 				var validationInfo:XMLValidationInfo;
 				var errorLocation:String;
 				var isValid:Boolean;
@@ -186,7 +174,7 @@
 					message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
 					errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
 					showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);
-					renderTimeLabel.text = time + "ms";
+					renderTimeLabel.text = "Validation time "+ time + "ms";
 				}
 				else {
 					hideMessage();
@@ -921,6 +909,19 @@
 					
 				</s:HGroup>
 				
+				<controls:AceEditor id="aceEditor" 
+									 width="100%" 
+									 height="100%"
+									 mode="ace/mode/xml" 
+									 showFoldWidgets="true" 
+									 margin="{editorMargin}"
+									 focusIn="editorFocusInHandler(event)"
+									 change="editorChangeHandler(event)"
+									 save="saveHandler(event)"
+									 scrollSpeed=".5"
+									 useWordWrap="false"
+									 />
+				
 				<s:HGroup id="notesGroup" width="100%" verticalAlign="middle" 
 						  includeInLayout="false" visible="false">
 					<s:Label id="messageLabel"
@@ -982,4 +983,6 @@
 				 fontSize="28" 
 				 color="#ffffff"/>
 	</s:BorderContainer>
+	
+	
 </s:WindowedApplication>

@@ -26,11 +26,13 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.effects.core.PlayerType;
 	import com.flexcapacitor.effects.file.LoadFile;
 	import com.flexcapacitor.effects.popup.OpenPopUp;
+	import com.flexcapacitor.events.HTMLDragEvent;
 	import com.flexcapacitor.events.HistoryEvent;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.formatters.HTMLFormatterTLF;
 	import com.flexcapacitor.logging.RadiateLogTarget;
 	import com.flexcapacitor.managers.CodeManager;
+	import com.flexcapacitor.managers.CreationManager;
 	import com.flexcapacitor.managers.HistoryEffect;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.managers.ServicesManager;
@@ -80,8 +82,9 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DocumentTranscoder;
+	import com.flexcapacitor.utils.DragManagerUtil;
 	import com.flexcapacitor.utils.FontUtils;
-	import com.flexcapacitor.utils.HTMLUtils;
+	import com.flexcapacitor.utils.LayoutDebugHelper;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
 	import com.flexcapacitor.utils.MXMLDocumentImporter;
 	import com.flexcapacitor.utils.PersistentStorage;
@@ -91,6 +94,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.XMLUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+	import com.flexcapacitor.utils.supportClasses.FileData;
 	import com.flexcapacitor.utils.supportClasses.log;
 	import com.flexcapacitor.views.IInspector;
 	import com.flexcapacitor.views.MainView;
@@ -136,6 +140,8 @@ package com.flexcapacitor.controller {
 	
 	import mx.collections.ArrayCollection;
 	import mx.collections.ArrayList;
+	import mx.collections.ICollectionView;
+	import mx.collections.ListCollectionView;
 	import mx.containers.Canvas;
 	import mx.containers.Grid;
 	import mx.containers.GridItem;
@@ -144,7 +150,6 @@ package com.flexcapacitor.controller {
 	import mx.controls.Alert;
 	import mx.controls.ColorPicker;
 	import mx.controls.LinkButton;
-	import mx.controls.Text;
 	import mx.core.ClassFactory;
 	import mx.core.Container;
 	import mx.core.DeferredInstanceFromFunction;
@@ -155,6 +160,7 @@ package com.flexcapacitor.controller {
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
+	import mx.core.UIComponentGlobals;
 	import mx.core.mx_internal;
 	import mx.effects.IEffect;
 	import mx.effects.Sequence;
@@ -168,6 +174,7 @@ package com.flexcapacitor.controller {
 	import mx.logging.ILogger;
 	import mx.logging.Log;
 	import mx.logging.LogEventLevel;
+	import mx.managers.ILayoutManager;
 	import mx.managers.ISystemManager;
 	import mx.managers.LayoutManager;
 	import mx.managers.SystemManagerGlobals;
@@ -1974,22 +1981,46 @@ package com.flexcapacitor.controller {
 		/**
 		 * Startup 
 		 * */
-		public static function startup():void {
+		public static function startup(applicationReference:Application, 
+									   mainViewReference:MainView, 
+									   host:String = null, 
+									   path:String = null):void {
+			
+			application 		= applicationReference;
+			mainView 			= mainViewReference;
+			
+			// add support to enable this and send error reports
+			CreationManager.showMeWhatsActivatedSoFar = false;
+			CreationManager.showMeWhatsCreatedSoFar = false;
+			
 			serviceManager 			= ServicesManager.getInstance();
 			historyManager 			= HistoryManager.getInstance();
 			
 			serviceManager.radiate 	= instance;
 			HistoryManager.radiate 	= instance;
 			
+			// set debugging options here
+			HistoryManager.debug 	= false;
+			DragManagerUtil.debug 	= false;
+			Text.debug 				= false;
+			Selection.debug			= false;
+			LayoutDebugHelper.debug	= true;
+			MainView.debug 			= true;
+			
+			// testing for why layout is invalid when disconnected from network
+			var layoutManager:ILayoutManager;
+			UIComponentGlobals.catchCallLaterExceptions = true;
+			layoutManager = UIComponentGlobals.layoutManager;
+			layoutManager.usePhasedInstantiation;
+			
 			application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler, false, 0, true);
+			application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler2, false, 0, true);
 			
 			//ExternalInterface.call("Radiate.getInstance");
 			if (ExternalInterface.available) {
 				ExternalInterface.call("Radiate.instance.setFlashInstance", ExternalInterface.objectID);
 			}
 			
-			var host:String;
-			var path:String;
 			var screenshotPath:String;
 			
 			if (!firstRun && PersistentStorage.isSupported) {
@@ -2022,18 +2053,15 @@ package com.flexcapacitor.controller {
 			CodeManager.setTranscodersVersion(instance.versionNumber);
 			CodeManager.setComponentDefinitions(componentDefinitions.source);
 			
-			var importer:ITextImporter = TextConverter.getImporter(TextConverter.TEXT_FIELD_HTML_FORMAT);
-			var config:IConfiguration = importer.configuration;
-			TextConverter.removeFormat(TextConverter.TEXT_FIELD_HTML_FORMAT);
-			TextConverter.addFormat(TextConverter.TEXT_FIELD_HTML_FORMAT, flashx.textLayout.conversion.TextFieldHtmlImporter, TextFieldHTMLExporter2, null);
-			importer = TextConverter.getImporter(TextConverter.TEXT_FIELD_HTML_FORMAT);
-			importer.configuration = config;
+			setUpdatedHTMLImporterAndExporter();
 			
 			DisplayObjectUtils.Base64Encoder2 = Base64;
 			
 			XMLUtils.initialize();
 			
 			instance.createOpenImportPopUp();
+			
+			mainView.startup();
 			
 			// we use this to prevent hyperlinks from opening web pages when in design mode
 			// we don't know what changes this causes with other components 
@@ -2045,6 +2073,35 @@ package com.flexcapacitor.controller {
 			//LayoutManager.getInstance().usePhasedInstantiation = false;
 			
 		}
+		
+		
+		protected function uncaughtErrorHandler2(event:UncaughtErrorEvent):void
+		{
+			//trace("Uncaught error: " + event);
+			if ("text" in event && event.text!="") {
+				Radiate.error(event.text, event);
+			}
+			else if ("error" in event && event.error && "message" in event.error) {
+				Radiate.error(event.error.message, event);
+			}
+		}
+		
+		/**
+		 * Configure updated HTML exporter from TLF text flow
+		 * */
+		protected static function setUpdatedHTMLImporterAndExporter():void {
+			textFieldHTMLFormatImporter = TextConverter.getImporter(TextConverter.TEXT_FIELD_HTML_FORMAT);
+			textfieldHTMLFormatConfiguration = textFieldHTMLFormatImporter.configuration;
+			
+			TextConverter.removeFormat(TextConverter.TEXT_FIELD_HTML_FORMAT);
+			TextConverter.addFormat(TextConverter.TEXT_FIELD_HTML_FORMAT, flashx.textLayout.conversion.TextFieldHtmlImporter, TextFieldHTMLExporter2, null);
+			
+			textFieldHTMLFormatImporter = TextConverter.getImporter(TextConverter.TEXT_FIELD_HTML_FORMAT);
+			textFieldHTMLFormatImporter.configuration = textfieldHTMLFormatConfiguration;			
+		}
+		
+		public static var textFieldHTMLFormatImporter:ITextImporter;
+		public static var textfieldHTMLFormatConfiguration:IConfiguration;
 		
 		protected function loginStatusChange(event:WPServiceEvent):void {
 			var data:Object = event.data;
@@ -2941,7 +2998,7 @@ package com.flexcapacitor.controller {
 		public static var WP_PROFILE_PATH:String = "/wp-admin/profile.php";
 		public static var WP_EDIT_POST_PATH:String = "/wp-admin/post.php";
 		public static var DEFAULT_DOCUMENT_WIDTH:int = 800;
-		public static var DEFAULT_DOCUMENT_HEIGHT:int = 792;
+		public static var DEFAULT_DOCUMENT_HEIGHT:int = 500;//792;
 		public static var DEFAULT_NAVIGATION_WINDOW:String = "userNavigation";
 		public static var SCREENSHOT_PATH:String = "https://dev.windows.com/en-us/microsoft-edge/tools/screenshots/?url=";
 		public static var SCREENSHOT_PATH_NAME:String = "screenshotPathName";
@@ -4607,9 +4664,18 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Adds bitmap data to the document
+		 * */
+		public function addBase64ImageDataToDocument(iDocument:IDocument, fileData:FileData, destination:Object = null, name:String = null, addComponent:Boolean = true):void {
+			var bitmapData:BitmapData = DisplayObjectUtils.getBitmapDataFromBase64(fileData.dataURI, null, true, fileData.type);
+			if (destination==null) destination = getDestinationForExternalFileDrop();
+			var imageData:ImageData = addBitmapDataToDocument(iDocument, bitmapData, destination, fileData.name, addComponent);
+		}
+		
+		/**
 		 * Adds an asset to the document
 		 * */
-		public function addImageDataToDocument(assetData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true):Boolean {
+		public function addImageDataToDocument(imageData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true):Boolean {
 			var item:ComponentDefinition;
 			var application:Application;
 			var componentInstance:Object;
@@ -4629,7 +4695,7 @@ package com.flexcapacitor.controller {
 			
 			// set to true so if we undo it has defaults to start with
 			componentInstance = createComponentToAdd(iDocument, item, true);
-			bitmapData = assetData.bitmapData;
+			bitmapData = imageData.bitmapData;
 			
 			
 			const WIDTH:String = "width";
@@ -4651,8 +4717,8 @@ package com.flexcapacitor.controller {
 				properties.push(HEIGHT);
 			}
 			
-			if (assetData is ImageData) {
-				path = assetData.url;
+			if (imageData is ImageData) {
+				path = imageData.url;
 				
 				if (path) {
 					propertiesObject.width = undefined;
@@ -4661,8 +4727,8 @@ package com.flexcapacitor.controller {
 					properties.push(WIDTH);
 					properties.push(HEIGHT);
 				}
-				else if (assetData.bitmapData) {
-					propertiesObject.source = assetData.bitmapData;
+				else if (imageData.bitmapData) {
+					propertiesObject.source = imageData.bitmapData;
 				}
 				
 				properties.push("source");
@@ -5347,6 +5413,23 @@ package com.flexcapacitor.controller {
 			}
 		}
 		
+		public function dropItemWeb(event:HTMLDragEvent, createNewDocument:Boolean = false):void {
+			var fileData:FileData;
+			var bitmapData:BitmapData;
+			var destination:Object;
+			
+			fileData = new FileData(event.data);
+			
+			mainView.dropImagesLocation.visible = false;
+			
+			if (selectedDocument==null || createNewDocument) {
+				createNewDocumentAndSwitchToDesignView(fileData, selectedProject);
+			}
+			else {
+				addBase64ImageDataToDocument(selectedDocument, fileData, destination, fileData.name);
+			}
+		}
+		
 		public function dropItem(event:DragEvent, createNewDocument:Boolean = false):void {
 			var dragSource:DragSource;
 			var hasFileListFormat:Boolean;
@@ -5553,10 +5636,17 @@ package com.flexcapacitor.controller {
 			var fileSafeList:Array = [];
 			var hasPSD:Boolean;
 			var hasMXML:Boolean;
+			var extensionIndex:int;
 			
 			// only accepting image files at this time
 			for each (var file:FileReference in fileList) {
-				extension = file.extension.toLowerCase();
+				if ("extension" in file) {
+					extension = file.extension.toLowerCase();
+				}
+				else {
+					extensionIndex = file.name.lastIndexOf(".");
+					extension = extensionIndex!=-1 ? file.name.substring(extensionIndex+1) : null;
+				}
 				
 				if (extension=="png" || 
 					extension=="jpg" || 
@@ -5774,7 +5864,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add bitmap data to a document
 		 * */
-		public function addBitmapDataToDocument(iDocument:IDocument, bitmapData:BitmapData, destination:Object = null):void {
+		public function addBitmapDataToDocument(iDocument:IDocument, bitmapData:BitmapData, destination:Object = null, name:String = null, addComponent:Boolean = false):ImageData {
 			if (bitmapData==null) {
 				error("Not valid bitmap data");
 			}
@@ -5783,28 +5873,48 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (bitmapData==null || iDocument==null) {
-				return;
+				return null;
 			}
 			
 			var imageData:ImageData = new ImageData();
-			var name:String;
+			var resized:Boolean;
 			
 			imageData.bitmapData = bitmapData;
 			imageData.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(bitmapData);
 			
-			if (destination) {
-				name = ClassUtils.getIdentifierNameOrClass(destination) + ".png";
-			}
-			else {
-				name = ClassUtils.getIdentifierNameOrClass(bitmapData) + ".png";
+			if (name==null) {
+				if (destination) {
+					name = ClassUtils.getIdentifierNameOrClass(destination) + ".png";
+				}
+				else {
+					name = ClassUtils.getIdentifierNameOrClass(bitmapData) + ".png";
+				}
 			}
 			
 			imageData.name = name;
 			imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
 			imageData.file = null;
 			
+			
+			if (addComponent) {
+				resized = addImageDataToDocument(imageData, iDocument);
+				
+				//uploadAttachment(fileLoader.fileReference);
+				if (resized) {
+					info("Image was added to the library and the document and resized to fit");
+				}
+				else {
+					info("Image was added to the library and the document");
+				}
+				
+				setTarget(lastCreatedComponent);
+				
+				//dispatchAssetLoadedEvent(imageData, iDocument, resized, true);
+			}
+			
 			addAssetToDocument(imageData, iDocument);
 			
+			return imageData;
 			//info("An image from the clipboard was added to the library");
 		}
 		
@@ -5990,6 +6100,7 @@ package com.flexcapacitor.controller {
 		public function documentOpenedHandler(event:RadiateEvent):void {
 			var iDocument:IDocument = event.selectedItem as IDocument;
 			var newFile:Object = fileToBeLoaded;
+			var fileData:FileData;
 			var destination:Object;
 			
 			if (newFile is FileReference) {
@@ -6000,6 +6111,10 @@ package com.flexcapacitor.controller {
 			}
 			else if (newFile is DragEvent) {
 				dropItem(newFile as DragEvent);
+			}
+			else if (newFile is FileData) {
+				fileData = newFile as FileData;
+				addBase64ImageDataToDocument(selectedDocument, fileData, null, fileData.name);
 			}
 			else if (newFile is Array && newFile.length) {
 				//destination = getDestinationForExternalFileDrop();
@@ -10090,7 +10205,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				// internal webkit browser
 				
 				// show HTML page
-				html = HTMLUtils.createInstance();
+				var htmlClass:Object = ApplicationDomain.currentDomain.getDefinition(desktopHTMLClassName);
+				html = new htmlClass();
 				html.id = iDocument.name ? iDocument.name : html.name; // should we be setting id like this?
 				html.percentWidth = 100;
 				html.percentHeight = 100;
@@ -14145,6 +14261,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		public var windowMenuDictionary:Dictionary = new Dictionary(true);
+		public var desktopHTMLClassName:String = "mx.controls.HTML";
+		
 		/**
 		 * Update the window menu item
 		 * */
@@ -14155,7 +14273,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var numberOfDocuments:int;
 			var iDocumentData:IDocumentData;
 			var menuFound:Boolean;
-			var applicationMenusCollection:ArrayCollection;
+			var applicationMenusCollection:ListCollectionView;
 			var items:Array;
 			var numberOfMenus:int;
 			var isNativeMenu:Boolean;
@@ -14185,7 +14303,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			else {
 				windowItem.removeAllChildren();
 				isNativeMenu = false;
-				applicationMenusCollection = applicationMenu.dataProvider;
+				applicationMenusCollection = applicationMenu ? applicationMenu.dataProvider : mainView.mainMenuBar.dataProvider as ListCollectionView;
 				numberOfMenus = applicationMenusCollection ? applicationMenusCollection.length : 0;
 				
 				for (j; j < numberOfDocuments; j++) {

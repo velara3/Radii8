@@ -299,12 +299,27 @@
 	-->
 	
 	<s:HGroup width="100%" verticalAlign="top" height="100%" paddingTop="2">
-		<s:CheckBox id="showSelectionOutline" label="Outline" change="showSelectionOutline_changeHandler(event)"
-					toolTip="Show an outline around the selected component(s)"/>
-		<s:CheckBox id="showLabel" label="Label" change="showLabel_changeHandler(event)"
-					toolTip="Show a label above the selected component(s)"/>
-		<s:CheckBox id="selectGroup" label="Group" change="selectGroup_changeHandler(event)"
-					toolTip="Select only group elements or components on the document"/>
+		<!--<s:CheckBox id="showSelectionOutline" label="Outline" change="showSelectionOutline_changeHandler(event)"
+					toolTip="Show an outline around the selected component(s)"/>-->
+		<s:ToggleButton id="showSelectionOutline" 
+						skinClass="com.flexcapacitor.skins.SmallToggleButtonSkin" 
+						label="O" 
+						change="showSelectionOutline_changeHandler(event)"
+						toolTip="Show an outline around the selected component(s)"/>
+		<!--<s:CheckBox id="showLabel" label="Label" change="showLabel_changeHandler(event)"
+					toolTip="Show a label above the selected component(s)"/>-->
+		<s:ToggleButton id="showLabel" 
+						skinClass="com.flexcapacitor.skins.SmallToggleButtonSkin" 
+						label="L" 
+						change="showLabel_changeHandler(event)"
+						toolTip="Show a label above the selected component(s)"/>
+		<!--<s:CheckBox id="selectGroup" label="Group" change="selectGroup_changeHandler(event)"
+					toolTip="Select only group elements or components on the document"/>-->
+		<s:ToggleButton id="selectGroup" 
+						skinClass="com.flexcapacitor.skins.SmallToggleButtonSkin" 
+						label="G" 
+						change="selectGroup_changeHandler(event)"
+						toolTip="Select only group elements or components on the document"/>
 		
 		<controls1:BeveledImageToggleButton id="showTransform"
 									source="{Radii8LibraryAssets.transform}"

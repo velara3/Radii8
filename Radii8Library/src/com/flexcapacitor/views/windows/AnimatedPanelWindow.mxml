@@ -7,6 +7,9 @@
 			   removedEffect="{removedEffect}"
 			   >
 	
+	<fx:Metadata>
+		[Event(name="openAnimationEnd", type="flash.events.Event")]
+	</fx:Metadata>
 	
 	<fx:Script>
 		<![CDATA[
@@ -14,6 +17,7 @@
 			import com.flexcapacitor.managers.ServicesManager;
 			
 			import mx.core.mx_internal;
+			import mx.events.EffectEvent;
 			
 			use namespace mx_internal;
 			
@@ -36,6 +40,13 @@
 					moveAdded = true;
 				}
 			}
+			
+			protected function addedEffect_effectEndHandler(event:EffectEvent):void
+			{
+				var newEvent:Event = new Event("openAnimationEnd");
+				dispatchEvent(newEvent);
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -47,7 +58,7 @@
 			<s:Fade alphaFrom="1" alphaTo="0" duration="250" startDelay="50"/>
 		</s:Parallel>
 		
-		<s:Parallel id="addedEffect" target="{this}" suspendBackgroundProcessing="false">
+		<s:Parallel id="addedEffect" target="{this}" suspendBackgroundProcessing="false" effectEnd="addedEffect_effectEndHandler(event)">
 			<s:Scale3D scaleYFrom="0" scaleYTo="1" duration="250" disableLayout="false"
 					   autoCenterProjection="true" autoCenterTransform="true" applyChangesPostLayout="true"/>
 			<s:Fade alphaFrom="0" alphaTo="1" duration="200"/>

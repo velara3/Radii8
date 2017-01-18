@@ -20,6 +20,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controls.AceEditor;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.managers.HistoryManager;
@@ -29,7 +30,7 @@
 			import com.flexcapacitor.model.IProject;
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.model.SourceData;
-			import com.flexcapacitor.utils.AceEditorUtils;
+			import com.flexcapacitor.model.TranscoderDescription;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.MXMLDocumentConstants;
 			import com.flexcapacitor.utils.XMLUtils;
@@ -41,6 +42,7 @@
 			import mx.core.IVisualElementContainer;
 			import mx.core.UIComponent;
 			import mx.events.ItemClickEvent;
+			import mx.utils.Platform;
 			import mx.validators.IValidator;
 			
 			import spark.events.IndexChangeEvent;
@@ -103,10 +105,7 @@
 			 * */
 			public var isValid:Boolean;
 			
-			public var aceEditor:*;
-			public var aceCSSEditor:*;
-			public var templateEditor:*;
-
+			[Bindable]
 			public var editorMargin:String = "28px 0 8px 0px";
 			
 			public var settingEditorText:Boolean;
@@ -139,6 +138,13 @@
 			public var aceCSSEditorCreated:Boolean;
 			public var aceTemplateEditorCreated:Boolean;
 			
+			[Bindable]
+			public var enableWordWrap:Boolean;
+			
+			[Bindable]
+			public var embedImages:Boolean;
+			public var activatedOnce:Boolean;
+			
 			public function activate():void {
 				radiate = Radiate.getInstance();
 				
@@ -169,13 +175,43 @@
 				
 				isMXML = languageTypeButtons.selectedItem==CodeManager.MXML;
 				
+				var settings:Settings = Radiate.settings;
+				
+				if (activatedOnce==false) {
+					enableWordWrap = settings.enableWordWrap;
+					embedImages = settings.embedImages;
+					activatedOnce = true;
+				}
+				
 				if (radiate.target) {
 					updateCodeEditors();
+				}
+				
+				if (Platform.isBrowser) {
+					editorMargin = "0";
+				}
+				if (aceEditor) {
+					aceEditor.visible = true;
+				}
+				if (aceCSSEditor) {
+					aceCSSEditor.visible = true;
+				}
+				if (templateEditor) {
+					templateEditor.visible = true;
 				}
 			}
 			
 			public function deactivate():void {
 				removeListeners();
+				if (aceEditor) {
+					aceEditor.visible = false;
+				}
+				if (aceCSSEditor) {
+					aceCSSEditor.visible = false;
+				}
+				if (templateEditor) {
+					templateEditor.visible = false;
+				}
 			}
 			
 			public function addListeners():void {
@@ -250,6 +286,7 @@
 					htmlOptions.useExternalStylesheet = false;
 					htmlOptions.exportChildDescriptors = showChildDescriptors.selected;
 					htmlOptions.reverseInitialCSS = true;
+					htmlOptions.embedImages = embedImagesButton.selected;
 					
 					if (updateCodeLive.selected && isCodeModifiedByUser) {
 						htmlOptions.useCustomMarkup = true;
@@ -268,11 +305,13 @@
 					options = CodeManager.getExportOptions(language) as ExportOptions;
 					options.template = "";
 					options.exportChildDescriptors = showChildDescriptors.selected;
+					options.embedImages = embedImagesButton.selected;
 					//options = null;
 				}
 				else if (language == CodeManager.ANDROID) {
 					options = CodeManager.getExportOptions(language) as ExportOptions;
 					options.template = "";
+					options.embedImages = embedImagesButton.selected;
 					//options = null;
 				}
 				
@@ -560,15 +599,8 @@
 			
 			public function getTextAreaCode():String {
 				
-				if (currentState==DESKTOP) {
-					return aceEditor.text;
-				}
-				else if (currentState==BROWSER) {
-					var result:String = ExternalInterface.call("getEditorText");
-					return result;
-				}
+				return aceEditor.text;	
 				
-				return null;
 			}
 			
 			/**
@@ -577,50 +609,36 @@
 			public function setEditorText(sourceData:SourceData):void {
 				var createEditor:String = "createEditor";
 				var result:Object;
+			
+				settingEditorText = true;
 				
-				if (currentState==DESKTOP) {
+				if (aceEditor) {
 					
-					settingEditorText = true;
-					
-					if (aceEditor) {
-						
-						if (sourceData==null) {
-							aceEditor.text = "";
-							aceCSSEditor.text = "";
-						}
-						
-						if (setStylesInline.selected) {
-							aceEditor.text = sourceData ? sourceData.markup : "";
-							aceCSSEditor.text = "";
-						}
-						else {
-							aceEditor.text = sourceData ? sourceData.markup : "";
-							aceCSSEditor.text = sourceData ? sourceData.styles : "";
-						}
-						
-						aceEditor.validateNow();
-						aceCSSEditor.validateNow();
-					}
-					settingEditorText = false;
-					
-				}
-				else if (currentState==BROWSER) {
-					
-					if (!aceEditorCreated) {
-						//editor.content = "<div id='editor' style='display:block;position:absolute;top:0px;left:0px;right:0px;bottom:0px;height:100%;width:100%'></div>";
-						//editor.content = " ";
-						editor.validateNow();
-						result = ExternalInterface.call(createEditor, "editor", ExternalInterface.objectID);
-						ExternalInterface.addCallback("editorChange", editorChange);
-						ExternalInterface.addCallback("cursorChange", cursorChange);
-	                	aceEditorCreated = true;
+					if (sourceData==null) {
+						aceEditor.text = "";
+						aceCSSEditor.text = "";
 					}
 					
-					settingEditorText = true;
-					result = ExternalInterface.call("setEditorText", sourceData);
-					settingEditorText = false;
+					if (setStylesInline.selected) {
+						aceEditor.text = sourceData ? sourceData.markup : "";
+						aceCSSEditor.text = "";
+					}
+					else {
+						aceEditor.text = sourceData ? sourceData.markup : "";
+						aceCSSEditor.text = sourceData ? sourceData.styles : "";
+					}
 					
+					if (templateEditor) {
+						templateEditor.validateNow();
+						templateEditor.resetUndoHistory();
+					}
+					
+					aceEditor.validateNow();
+					aceCSSEditor.validateNow();
+					aceEditor.resetUndoHistory();
+					aceCSSEditor.resetUndoHistory();
 				}
+				settingEditorText = false;
 				
 			}
 			
@@ -987,59 +1005,14 @@
 			public var FIND:String = "find";
 			
 			private function createEditors():void {
-				var settings:Settings = Radiate.settings;
-				var enableWordWrap:Boolean = settings.enableWordWrap;
 				enableWordWrapButton.selected = enableWordWrap;
+				embedImagesButton.selected = embedImages;
 				
 				// 1067: Implicit coercion of a value of type com.flexcapacitor.controls:AceEditor to an unrelated type Object
 				
-				aceEditor = AceEditorUtils.createInstance();
-				UIComponent(aceEditor).percentWidth = 100;
-				UIComponent(aceEditor).percentHeight = 100;
-				aceEditor.top = 0;
-				aceEditor.left = 0;
-				editorGroup.addElementAt(aceEditor, 0);
-				aceEditor.mode = "ace/mode/xml";
-				aceEditor.showFoldWidgets = false;
-				aceEditor.margin = editorMargin;
-				aceEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
-				aceEditor.addEventListener(FIND, editorFindHandler, false, 0, true);
 				aceEditorCreated = true;
-				aceEditor.scrollSpeed = .5;
-				aceEditor.useWordWrap = enableWordWrap;
-				
-				aceCSSEditor = AceEditorUtils.createInstance();
-				UIComponent(aceCSSEditor).percentWidth = 100;
-				UIComponent(aceCSSEditor).percentHeight = 100;
-				aceCSSEditor.top = 0;
-				aceCSSEditor.left = 0;
-				editorGroup.addElementAt(aceCSSEditor, 1);
-				aceCSSEditor.mode = "ace/mode/css";
-				aceCSSEditor.showFoldWidgets = false;
-				aceCSSEditor.margin = editorMargin;
-				aceCSSEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
-				aceCSSEditor.addEventListener(FIND, editorFindHandler, false, 0, true);
 				aceCSSEditorCreated = true;
-				aceCSSEditor.scrollSpeed = .5;
-				aceCSSEditor.useWordWrap = enableWordWrap;
-				
-				templateEditor = AceEditorUtils.createInstance();
-				UIComponent(templateEditor).percentWidth = 100;
-				UIComponent(templateEditor).percentHeight = 100;
-				templateEditor.top = 0;
-				templateEditor.left = 0;
-				editorGroup.addElementAt(templateEditor, 0);
-				templateEditor.mode = "ace/mode/html";
-				templateEditor.showFoldWidgets = false;
 				aceTemplateEditorCreated = true;
-				templateEditor.margin = editorMargin;
-				templateEditor.scrollSpeed = .5;
-				templateEditor.visible = false;
-				templateEditor.includeInLayout = false;
-				templateEditor.addEventListener(FocusEvent.FOCUS_IN, editorFocusInHandler, false, 0, true);
-				templateEditor.addEventListener(FIND, editorFindHandler, false, 0, true);
-				templateEditor.useWordWrap = enableWordWrap;
-				
 				
 			}
 			
@@ -1055,7 +1028,7 @@
 				}
 			}
 			
-			private function editorFindHandler(event:FocusEvent):void
+			private function editorFindHandler(event:Event):void
 			{
 				lastFocusedEditor = event.currentTarget;
 				searchInput.aceEditor = lastFocusedEditor;
@@ -1064,6 +1037,16 @@
 				
 			}
 			
+			
+			protected function embedImageButton_clickHandler(event:MouseEvent):void {
+				var language:String = getSelectedLanguage();
+				var exporter:TranscoderDescription = CodeManager.getExporter(language);
+				
+				if ("embedImages" in exporter.exporter) {
+					// we set it when we generate code
+					//Object(exporter.exporter).embedImages = embedImagesButton.selected;
+				}
+			}
 			
 			protected function wordwrapButton_clickHandler(event:MouseEvent):void
 			{
@@ -1140,13 +1123,15 @@
 				
 				mxmlRenderTime = getTimer();
 				isValid = XMLUtils.isValidXML(code);
+				var browserErrorMessage:String;
 				//error = XMLUtils.validationError;
 				
 				if (!isValid && code!="") {
-					validationInfo = XMLUtils.validateXML(code);
+					validationInfo = XMLUtils.validateXML(code, true);
 					error = validationInfo.error;
+					browserErrorMessage = validationInfo.browserErrorMessage;
 					
-					if (error is TypeError && error.errorID==1083) {
+					if (error is TypeError && error.errorID==1083 || namespaceError==browserErrorMessage) {
 						
 						if (stringMethod) {
 							namespaces = MXMLDocumentConstants.getNamespaces();
@@ -1169,7 +1154,9 @@
 					
 					if (!isValid) {
 						message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
-						
+						if (message==null && validationInfo.browserErrorMessage!==null) {
+							message = validationInfo.browserErrorMessage;
+						}
 						errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
 						showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);
 						
@@ -1284,6 +1271,8 @@
 			
 			
 			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
+
+			public var namespaceError:String = "XML Parsing Error: prefix not bound to a namespace";
 			
 			public function showMessage(firstMessage:String, secondMessage:String = null, row:int = -1, column:int = 0):void {
 				lineError.text = firstMessage;
@@ -1407,21 +1396,54 @@ IFRAME_ID {
 	
 	<s:states>
 		<s:State name="normal"/>
-		<s:State name="browser"/>
-		<s:State name="desktop"/>
 	</s:states>
 	
 	
-	<mx:HDividedBox id="editorGroup" top="0" width="100%" height="100%" >
+	<mx:HDividedBox id="editorGroup" 
+					top="30" 
+					width="100%" 
+					height="100%" 
+					liveDragging="true">
 		
+		<c:AceEditor id="templateEditor" 
+					 width="100%" 
+					 height="100%"
+					 mode="ace/mode/html" 
+					 showFoldWidgets="true" 
+					 margin="{editorMargin}"
+					 focusIn="editorFocusInHandler(event)"
+					 find="editorFindHandler(event)"
+					 scrollSpeed=".5"
+					 useWordWrap="{enableWordWrap}"
+					 visible="false"
+					 includeInLayout="false"
+					 />
 		
-		<flexiframe:IFrame id="editor" 
-						   top="50" left="0"
-						   width="100%" height="100%" 
-						   includeIn="browser"
-						   overlayDetection="true"
-						   >
-		</flexiframe:IFrame>
+		<c:AceEditor id="aceEditor" 
+					 width="100%" 
+					 height="100%"
+					 mode="ace/mode/xml" 
+					 showFoldWidgets="true" 
+					 margin="{editorMargin}"
+					 focusIn="editorFocusInHandler(event)"
+					 find="editorFindHandler(event)"
+					 scrollSpeed=".5"
+					 useWordWrap="{enableWordWrap}"
+					 />
+		
+		<c:AceEditor id="aceCSSEditor" 
+					 width="100%" 
+					 height="100%"
+					 mode="ace/mode/css" 
+					 showFoldWidgets="true" 
+					 margin="{editorMargin}"
+					 focusIn="editorFocusInHandler(event)"
+					 find="editorFindHandler(event)"
+					 scrollSpeed=".5"
+					 useWordWrap="{enableWordWrap}"
+					 visible="false"
+					 includeInLayout="false"
+					 />
 		
 	</mx:HDividedBox>
 	
@@ -1511,6 +1533,18 @@ IFRAME_ID {
 							  scaleMode="letterbox"
 							  click="wordwrapButton_clickHandler(event)"
 							  showBackgroundWhenSelected="true"
+							  />
+		
+		<c:BeveledImageToggleButton id="embedImagesButton"
+							  source="{Radii8LibraryAssets.image}"
+							  toolTip="Embed image bitmap data"
+							  width="20"
+							  height="16"
+							  scaleMode="letterbox"
+							  click="embedImageButton_clickHandler(event)"
+							  showBackgroundWhenSelected="true"
+							  visible="false"
+							  includeInLayout="false"
 							  />
 		
 		
@@ -1618,7 +1652,8 @@ IFRAME_ID {
 				 text="" 
 				 fontWeight="bold" 
 				 color="red"
-				 width="100%"/>
+				 width="100%"
+				 maxDisplayedLines="1"/>
 	</s:HGroup>
 	
 	

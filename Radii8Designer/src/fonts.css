@@ -41,37 +41,6 @@
    unicodeRange: U+0020-007E;
 }
 
-/* Embed as CFF as false */
-/*
-@font-face {
-   src: url("/assets/fonts/Verdana.ttf");
-   fontFamily: GlobalFont;
-   embedAsCFF: false;
-   fontStyle:  normal;
-}
- 
-@font-face {
-   src: url("/assets/fonts/Verdana Italic.ttf");
-   fontFamily: GlobalFont;
-   embedAsCFF: false;
-   fontStyle:  italic;
-}
- 
-@font-face {
-   src: url("/assets/fonts/Verdana Bold.ttf");
-   fontFamily: GlobalFont;
-   embedAsCFF: false;
-   fontWeight: bold;
-   fontStyle:  normal;
-}
- 
-@font-face {
-   src: url("/assets/fonts/Verdana Bold Italic.ttf");
-   fontFamily: GlobalFont;
-   embedAsCFF: false;
-   fontWeight: bold;
-   fontStyle:  italic;
-}*/
 
 /**** Arial ************************************/
 
@@ -110,40 +79,3 @@
    fontWeight: bold;
    unicodeRange: U+0020-007E;
 }
-
-
-
-/**** Verdana ************************************/
-/*
-@font-face {
-   src: url("/assets/fonts/Chalkduster.ttf");
-   fontFamily: Arial;
-   embedAsCFF: true;
-   fontStyle:  normal;
-   fontWeight: normal;
-   unicodeRange: U+0020-007E;
-}*/
-/* 
-@font-face {
-   src: url("/assets/fonts/Chalkduster.ttf");
-   fontFamily: GlobalFont2;
-   embedAsCFF: true;
-   fontStyle:  italic;
-   fontWeight: normal;
-}
- 
-@font-face {
-   src: url("/assets/fonts/Chalkduster.ttf");
-   fontFamily: GlobalFont2;
-   embedAsCFF: true;
-   fontWeight: bold;
-   fontStyle:  normal;
-}
- 
-@font-face {
-   src: url("/assets/fonts/Chalkduster.ttf");
-   fontFamily: GlobalFont2;
-   embedAsCFF: true;
-   fontWeight: bold;
-   fontStyle:  italic;
-}*/

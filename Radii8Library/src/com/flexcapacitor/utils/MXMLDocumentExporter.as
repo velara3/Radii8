@@ -25,9 +25,6 @@ package com.flexcapacitor.utils {
 	import spark.primitives.supportClasses.StrokedElement;
 	import spark.utils.TextFlowUtil;
 	
-	import flashx.textLayout.conversion.ConversionType;
-	import flashx.textLayout.conversion.TextConverter;
-	
 	/**
 	 * Exports a document to MXML
 	 * */
@@ -62,7 +59,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Embed image data when image source is not a string or url
 		 * */
-		public var embedImageData:Boolean = true;
+		public var embedImage:Boolean = false;
 		
 		/**
 		 * Default file extension. Default is mxml. 
@@ -537,7 +534,7 @@ package com.flexcapacitor.utils {
 					}
 					
 					// if the image hasn't been uploaded we can save it as an attribute or node
-					if (embedImageData && imageData) {
+					if (embedImage && imageData) {
 						base64ImageData = DisplayObjectUtils.getBase64ImageDataString(componentDescription.instance.source, DisplayObjectUtils.PNG, null, true);
 						
 						// we may need to change this so it doesn't conflict with "bitmapData" in the spark namespace
@@ -590,6 +587,11 @@ package com.flexcapacitor.utils {
 						}
 						else if (propertyName==MXMLDocumentConstants.BITMAP_DATA) {
 							childNodeNamespace = MXMLDocumentConstants.fcNamespacePrefix;
+							useCDATA = false;
+						}
+						else if (propertyName==MXMLDocumentConstants.BITMAP_DATA_NS) {
+							childNodeNamespace = MXMLDocumentConstants.fcNamespacePrefix;
+							propertyName = MXMLDocumentConstants.BITMAP_DATA;
 							useCDATA = false;
 						}
 						else {
