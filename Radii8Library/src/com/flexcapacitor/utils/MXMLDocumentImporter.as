@@ -262,7 +262,9 @@ package com.flexcapacitor.utils {
 			var handledChildNodeNames:Array;
 			var bitmapDataFound:Boolean;
 			var instance:Object;
+			var skipDisplayList:Boolean;
 			
+			skipDisplayList = false;
 			includeChildNodes = true;
 			fixTextFlowNamespaceBug = true;
 			
@@ -430,7 +432,16 @@ package com.flexcapacitor.utils {
 					if (componentInstance is Label) {
 						try {
 							Radiate.addElement(componentInstance, parent, valuesObject.properties.concat(valuesObject.childProperties), valuesObject.styles.concat(valuesObject.childStyles), valuesObject.events.concat(valuesObject.childEvents), valuesObject.values, null, AddItems.LAST, null, parentPosition);
-							LayoutManager.getInstance().validateClient(componentInstance as ILayoutManagerClient, true);
+							//LayoutManager.getInstance().validateClient(componentInstance as ILayoutManagerClient, true);
+							
+							//ArgumentError: Error #2008: Parameter fontWeight must be one of the accepted values.
+							// at flash.text.engine::FontDescription/set fontWeight()
+							// 
+							// do not skip the display list because it will attempt to set it later outside 
+							// of our try catch and then we end up with the pop up error in a window
+							// 
+							// solution: validate inside a try catch block and do not skip display list when validating 
+							LayoutManager.getInstance().validateClient(componentInstance as ILayoutManagerClient, skipDisplayList);
 							//LayoutManager.getInstance().validateClient(componentInstance as ILayoutManagerClient);
 						}
 						catch (error:Error) {
@@ -764,11 +775,14 @@ package com.flexcapacitor.utils {
 			componentDescription.htmlTagName = value;
 		}
 		
+		/**
+		 * Sets the contents of the HTML override tag
+		 * */
 		public function setHTMLOverride(componentDescription:ComponentDescription, value:String):void {
 			var htmlOverride:String;
 			var tabCount:int;
 			
-			htmlOverride = value;
+			htmlOverride = value==null ? "" : value;
 			htmlOverride = htmlOverride.indexOf("\n")==0 ? htmlOverride.substr(1) : htmlOverride.substr();
 			tabCount = StringUtils.getTabCountBeforeContent(htmlOverride);
 			htmlOverride = StringUtils.outdent(htmlOverride, tabCount);
@@ -780,7 +794,7 @@ package com.flexcapacitor.utils {
 			var htmlBefore:String;
 			var tabCount:int;
 			
-			htmlBefore = value;
+			htmlBefore = value==null ? "" : value;
 			htmlBefore = htmlBefore.indexOf("\n")==0 ? htmlBefore.substr(1) : htmlBefore.substr();
 			tabCount = StringUtils.getTabCountBeforeContent(htmlBefore);
 			htmlBefore = StringUtils.outdent(htmlBefore, tabCount);
@@ -792,7 +806,7 @@ package com.flexcapacitor.utils {
 			var htmlAfter:String;
 			var tabCount:int;
 			
-			htmlAfter = value;
+			htmlAfter = value==null ? "" : value;
 			htmlAfter = htmlAfter.indexOf("\n")==0 ? htmlAfter.substr(1) : htmlAfter.substr();
 			tabCount = StringUtils.getTabCountBeforeContent(htmlAfter);
 			htmlAfter = StringUtils.outdent(htmlAfter, tabCount);
@@ -804,7 +818,7 @@ package com.flexcapacitor.utils {
 			var htmlAttributes:String;
 			var tabCount:int;
 			
-			htmlAttributes = value; // should be htmlAttributesName?
+			htmlAttributes = value==null ? "" : value; // should be htmlAttributesName?
 			htmlAttributes = htmlAttributes.indexOf("\n")==0 ? htmlAttributes.substr(1) : htmlAttributes.substr();
 			tabCount = StringUtils.getTabCountBeforeContent(htmlAttributes);
 			htmlAttributes = StringUtils.outdent(htmlAttributes, tabCount);

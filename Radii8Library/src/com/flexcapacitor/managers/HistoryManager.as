@@ -1344,7 +1344,7 @@ package com.flexcapacitor.managers
 			document.historyIndex = getHistoryPosition(document);
 			updateUndoRedoBindings(document, document.historyIndex);
 			
-			radiate.dispatchHistoryChangeEvent(document, currentIndex-1, currentIndex);
+			Radiate.instance.dispatchHistoryChangeEvent(document, currentIndex-1, currentIndex);
 		}
 		
 		/**
@@ -1364,7 +1364,7 @@ package com.flexcapacitor.managers
 			collection.removeAll();
 			collection.refresh();
 			
-			radiate.dispatchHistoryChangeEvent(document, -1, currentIndex);
+			Radiate.instance.dispatchHistoryChangeEvent(document, -1, currentIndex);
 		}
 		
 		/**

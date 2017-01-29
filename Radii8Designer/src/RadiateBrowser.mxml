@@ -9,7 +9,7 @@
 			   minWidth="800" minHeight="400"
 			   applicationComplete="applicationCompleteHandler(event)" 
 			   initialize="application1_initializeHandler(event)"
-			   frameRate="40"
+			   frameRate="46"
 			   pageTitle="Radiate">
 	
 	<!--

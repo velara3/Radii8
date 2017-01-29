@@ -47,6 +47,9 @@
 			
 			import flash.utils.getTimer;
 			
+			import mx.controls.HTML;
+			
+			import flashx.textLayout.conversion.ITextImporter;HTML;
 			import mx.core.DragSource;
 			import mx.core.IUIComponent;
 			import mx.events.DragEvent;
@@ -169,9 +172,10 @@
 				
 				if (!isValid && code!="") {
 					time = getTimer();
-					validationInfo = XMLUtils.validateXML(code);
+					validationInfo = XMLUtils.validateXML(code, true, true);
 					time = getTimer()-time;
 					message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
+					if (message==null) message = validationInfo.specificErrorMessage;
 					errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
 					showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);
 					renderTimeLabel.text = "Validation time "+ time + "ms";
@@ -491,6 +495,10 @@
 				// note: I say shouldn't because other Flex components style values do not throw
 				// errors by design.
 				
+				//ArgumentError: Error #2008: Parameter fontWeight must be one of the accepted values.
+				// at flash.text.engine::FontDescription/set fontWeight()
+				
+
 				/*
 				
 				textFlowParser = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT, null);
@@ -498,7 +506,8 @@
 				textFlow = textFlowParser.importToFlow(textFlowXML);
 				textFlowParser.errors;
 				
-				
+				var textFlowParser:ITextImporter = TextConverter.getImporter(TextConverter.TEXT_LAYOUT_FORMAT, null);
+				textFlowParser.throwOnError = false;
 				
 				*/
 				
@@ -804,7 +813,38 @@
 				aceEditor.validateNow();
 				invalidateDesignView();
 			}
+			/*
+			TypeError: Error #1009: Cannot access a property or method of a null object reference.
+				at mx.managers.systemClasses::MarshallingSupport/get swfBridgeGroup()
+			at mx.managers.systemClasses::MarshallingSupport/hasSWFBridges()
+			at mx.managers.systemClasses::MarshallingSupport/addEventListener()
+			at mx.managers.systemClasses::MarshallingSupport/addEventListenerHandler()
+			at flash.events::EventDispatcher/dispatchEventFunction()
+			at flash.events::EventDispatcher/dispatchEvent()
+			at mx.managers::SystemManager/addEventListener()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/framework/src/mx/managers/SystemManager.as:1550]
+				at flash.display::InteractiveObject/set contextMenu()
 			
+			Needed to add compiler args
+			-locale en_US 
+			-includes=mx.managers.systemClasses.MarshallingSupport 
+			-keep-all-type-selectors=true 
+			-keep-as3-metadata+=Alternative
+			-keep-as3-metadata+=ArrayElementType
+			-keep-as3-metadata+=DefaultProperty
+			-keep-as3-metadata+=Deprecated
+			-keep-as3-metadata+=Effect
+			-keep-as3-metadata+=Event
+			-keep-as3-metadata+=HostComponent
+			-keep-as3-metadata+=IconFile
+			-keep-as3-metadata+=Inspectable
+			-keep-as3-metadata+=InstanceType
+			-keep-as3-metadata+=RemoteClass
+			-keep-as3-metadata+=RichTextContent
+			-keep-as3-metadata+=SkinPart
+			-keep-as3-metadata+=SkinState
+			-keep-as3-metadata+=Style
+			-keep-as3-metadata+=SWF
+			*/
 		]]>
 	</fx:Script>
 	
@@ -834,7 +874,7 @@
 			
 			<s:BorderContainer id="canvasBorderInstance" 
 							   top="0"
-							   horizontalCenter="0"
+							   left="10" right="10"
 							   backgroundAlpha="1"
 							   borderVisible="true"
 							   borderColor="gray"

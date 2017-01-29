@@ -8095,6 +8095,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					HistoryManager.removeHistoryEvent(changes);
 					HistoryManager.removeHistoryItem(instance.selectedDocument, changes);
 				}
+				
 				return String(errorEvent.message);
 			}
 			

@@ -151,6 +151,8 @@ package com.flexcapacitor.utils {
 			
 			// wrap CSS with style tags
 			// when not inline and not external
+			// we may want to remember to set font smoothing for safari browsers
+			// -webkit-font-smoothing: subpixel-antialiased;
 			if (!useExternalStylesheet && styles!="") {
 				bodyContent = markup + "\n" + wrapStylesInTags(styles);
 			}
