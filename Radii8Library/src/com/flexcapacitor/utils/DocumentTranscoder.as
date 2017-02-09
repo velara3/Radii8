@@ -1,23 +1,45 @@
 
 package com.flexcapacitor.utils {
-	import com.flexcapacitor.events.HistoryEvent;
-	import com.flexcapacitor.events.HistoryEventItem;
+	import com.flexcapacitor.managers.CodeManager;
 	import com.flexcapacitor.model.ExportOptions;
+	import com.flexcapacitor.model.HistoryEventData;
+	import com.flexcapacitor.model.HistoryEventItem;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImportOptions;
 	import com.flexcapacitor.model.IssueData;
 	import com.flexcapacitor.model.SourceData;
 	import com.flexcapacitor.model.TranscoderOptions;
+	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
+	import flash.events.EventDispatcher;
 	import flash.utils.Dictionary;
 	
+	import mx.collections.ArrayCollection;
 	import mx.collections.ListCollectionView;
+	
+	import spark.components.Application;
+	import spark.core.ContentCache;
+	
+	/**
+	 * Invalid elements in the markup
+	 * */
+	[Event(name="invalidElement", type="flash.events.Event")]
+	
+	/**
+	 * Invalid or malformed XML
+	 * */
+	[Event(name="invalid", type="flash.events.Event")]
+	
+	/**
+	 * Class or element not found
+	 * */
+	[Event(name="elementNotFound", type="flash.events.Event")]
 	
 	/**
 	 * Exports or imports document 
 	 * */
-	public class DocumentTranscoder {
+	public class DocumentTranscoder extends EventDispatcher {
 		
 		/**
 		 * Constructor
@@ -26,7 +48,25 @@ package com.flexcapacitor.utils {
 			
 		}
 		
+		private static var _instance:DocumentTranscoder;
+		public static function get instance():DocumentTranscoder
+		{
+			if (!_instance) {
+				//_instance = new DocumentTranscoder(new SINGLEDOUBLE());
+				_instance = new DocumentTranscoder();
+			}
+			return _instance;
+		}
+		
+		public static function getInstance():DocumentTranscoder {
+			return instance;
+		}
+		
 		public var debug:Boolean;
+		
+		public static const INVALID:String = "invalid";
+		public static const INVALID_ELEMENT:String = "invalidElement";
+		public static const ELEMENT_NOT_FOUND:String = "elementNotFound";
 		
 		/**
 		 * An array of component definitions that can be used to get more information about
@@ -57,6 +97,9 @@ package com.flexcapacitor.utils {
 		public var previousPresets:ExportOptions;
 		
 		public var target:Object;
+		
+		[Bindable]
+		public var importingDocument:Boolean;
 		
 		/**
 		 * If set to true, removes all elements when import is called
@@ -95,6 +138,12 @@ package com.flexcapacitor.utils {
 		 * Export from history
 		 * */
 		public var exportFromHistory:Boolean;
+		
+		/**
+		 * If set to true then it must be valid XML. 
+		 * Does not attempt to add missing namespaces or wrap in root node 
+		 * */
+		public var useStrict:Boolean;
 		
 		
 		private var _version:String = "1.0.0";
@@ -498,88 +547,15 @@ package com.flexcapacitor.utils {
 			var xml:XML;
 			var output:String;
 			
-			xml = <document />;
+			xml = <document />;/*
 			xml.@host = document.host;
 			xml.@id = document.id;
 			xml.@name = document.name;
 			xml.@uid = document.uid;
-			xml.@uri = document.uri;
+			xml.@uri = document.uri;*/
 			output = xml.toXMLString();
 			
 			return output;
-		}
-		
-		/**
-		 * Get an object that contains the properties that have been set on the component.
-		 * This does this by going through the history events and checking the changes.
-		 * 
-		 * WE SHOULD CHANGE THIS: It's changed. now setting values as they are applied
-		 * */
-		public function getAppliedPropertiesFromHistory(document:IDocument, component:ComponentDescription, addToProperties:Boolean = true, removeConstraints:Boolean = true):Object {
-			var historyIndex:int = document.historyIndex+1;
-			var historyEvent:HistoryEventItem;
-			var historyItem:HistoryEvent;
-			var history:ListCollectionView;
-			var historyEvents:Array;
-			var eventsLength:int;
-			var propertiesObject:Object;
-			var stylesObject:Object;
-			var eventsObject:Object;
-			var properties:Array;
-			var styles:Array;
-			
-			history = document.history;
-			propertiesObject = component.properties ? component.properties : {};
-			stylesObject = component.styles ? component.styles : {};
-			eventsObject = component.events ? component.events : {};
-			
-			if (history.length==0) return propertiesObject;
-			
-			// go back through the history of changes and 
-			// add the properties that have been set to an object
-			for (var i:int=historyIndex;i--;) {
-				historyItem = history.getItemAt(i) as HistoryEvent;
-				historyEvents = historyItem.historyEventItems;
-				eventsLength = historyEvents.length;
-				
-				for (var j:int=0;j<eventsLength;j++) {
-					historyEvent = historyEvents[j] as HistoryEventItem;
-					properties = historyEvent.properties;
-					styles = historyEvent.styles;
-		
-					if (historyEvent.targets.indexOf(component.instance)!=-1) {
-						for each (var property:String in properties) {
-							
-							if (property in propertiesObject) {
-								continue;
-							}
-							else {
-								propertiesObject[property] = historyEvent.propertyChanges.end[property];
-							}
-						}
-						
-						for each (var style:String in styles) {
-							
-							if (style in stylesObject) {
-								continue;
-							}
-							else {
-								stylesObject[style] = historyEvent.propertyChanges.end[style];
-							}
-						}
-					}
-					
-				}
-			}
-			
-			if (removeConstraints) {
-				propertiesObject = ClassUtils.removeConstraintsFromObject(propertiesObject);
-			}
-			
-			component.properties = propertiesObject;
-			component.styles = stylesObject;
-			
-			return propertiesObject;
 		}
 		
 		/**
@@ -668,5 +644,267 @@ Default generator string is:
 			
 			return mxmlDocument;
 		}
+		/**
+		 * Collection of visual elements that can be added or removed to 
+		 * */
+		[Bindable]
+		public static var componentDefinitions:ArrayCollection = new ArrayCollection();
+		
+		/**
+		 * Get the component by class name
+		 * */
+		public static function getDynamicComponentType(componentName:Object, fullyQualified:Boolean = false):ComponentDefinition {
+			var definition:ComponentDefinition;
+			var numberOfDefinitions:uint = componentDefinitions.length;
+			var item:ComponentDefinition;
+			var className:String;
+			
+			if (componentName is QName) {
+				className = QName(componentName).localName;
+			}
+			else if (componentName is String) {
+				className = componentName as String;
+			}
+			else if (componentName is Object) {
+				className = ClassUtils.getQualifiedClassName(componentName);
+				
+				if (className=="application" || componentName is Application) {
+					className = ClassUtils.getSuperClassName(componentName, true);
+				}
+			}
+			
+			fullyQualified = className.indexOf("::")!=-1 ? true : fullyQualified;
+			if (fullyQualified) {
+				className = className.replace("::", ".");
+			}
+			
+			for (var i:uint;i<numberOfDefinitions;i++) {
+				item = ComponentDefinition(componentDefinitions.getItemAt(i));
+				
+				if (fullyQualified) {
+					if (item && item.className==className) {
+						return item;
+					}
+				}
+				else {
+					if (item && item.name==className) {
+						return item;
+					}
+				}
+			}
+			
+			
+			var hasDefinition:Boolean = ClassUtils.hasDefinition(className);
+			var classType:Object;
+			var name:String;
+			
+			
+			if (hasDefinition) {
+				if (className.indexOf("::")!=-1) {
+					name = className.split("::")[1];
+				}
+				else {
+					name = className;
+				}
+				classType = ClassUtils.getDefinition(className);
+				addComponentDefinition(name, className, classType, null, null);
+				item = getComponentType(className, fullyQualified);
+				return item;
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Cache for component icons
+		 * */
+		[Bindable]
+		public static var contentCache:ContentCache = new ContentCache();
+		
+		/**
+		 * Add the named component class to the list of available components
+		 * */
+		public static function addComponentDefinition(name:String, 
+													  className:String, 
+													  classType:Object, 
+													  inspectors:Array = null, 
+													  icon:Object = null, 
+													  defaultProperty:String = null,
+													  defaultProperties:Object=null, 
+													  defaultStyles:Object=null, 
+													  enabled:Boolean = true, 
+													  childNodes:Array = null, 
+													  dispatchEvents:Boolean = true):Boolean {
+			var componentDefinition:ComponentDefinition;
+			var numberOfDefinitions:uint = componentDefinitions.length;
+			var item:ComponentDefinition;
+			
+			
+			for (var i:uint;i<numberOfDefinitions;i++) {
+				item = ComponentDefinition(componentDefinitions.getItemAt(i));
+				
+				// check if it exists already
+				if (item && item.classType==classType) {
+					return false;
+				}
+			}
+			
+			
+			componentDefinition = new ComponentDefinition();
+			
+			componentDefinition.name = name;
+			componentDefinition.icon = icon;
+			componentDefinition.className = className;
+			componentDefinition.classType = classType;
+			componentDefinition.defaultStyles = defaultStyles;
+			componentDefinition.defaultProperties = defaultProperties;
+			componentDefinition.inspectors = inspectors;
+			componentDefinition.enabled = enabled;
+			componentDefinition.childNodes = childNodes;
+			
+			componentDefinitions.addItem(componentDefinition);
+			
+			if (dispatchEvents) {
+				instance.dispatchComponentDefinitionAddedEvent(componentDefinition);
+			}
+			
+			CodeManager.setComponentDefinitions(componentDefinitions.source);
+			
+			return true;
+		}
+		
+		/**
+		 * Remove the named component class
+		 * */
+		public static function removeComponentType(className:String):Boolean {
+			var definition:ComponentDefinition;
+			var numberOfDefinitions:uint = componentDefinitions.length;
+			var item:ComponentDefinition;
+			
+			for (var i:uint;i<numberOfDefinitions;i++) {
+				item = ComponentDefinition(componentDefinitions.getItemAt(i));
+				
+				if (item && item.classType==className) {
+					componentDefinitions.removeItemAt(i);
+				}
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Get the component by class name
+		 * */
+		public static function getComponentType(className:String, fullyQualified:Boolean = false):ComponentDefinition {
+			var definition:ComponentDefinition;
+			var numberOfDefinitions:uint = componentDefinitions.length;
+			var item:ComponentDefinition;
+			
+			for (var i:uint;i<numberOfDefinitions;i++) {
+				item = ComponentDefinition(componentDefinitions.getItemAt(i));
+				
+				if (fullyQualified) {
+					if (item && item.className==className) {
+						return item;
+					}
+				}
+				else {
+					if (item && item.name==className) {
+						return item;
+					}
+				}
+			}
+			
+			return null;
+		}
+		
+		
+		/**
+		 * Dispatch component definition added 
+		 * */
+		public function dispatchComponentDefinitionAddedEvent(data:ComponentDefinition):void {
+			/*var assetAddedEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.COMPONENT_DEFINITION_ADDED)) {
+				assetAddedEvent = new RadiateEvent(RadiateEvent.COMPONENT_DEFINITION_ADDED);
+				assetAddedEvent.data = data;
+				dispatchEvent(assetAddedEvent);
+			}
+			*/
+		}
+		
+		/**
+		* Get an object that contains the properties that have been set on the component.
+		* This does this by going through the history events and checking the changes.
+		* */
+		public function getAppliedPropertiesFromHistory(document:IDocument, component:ComponentDescription, addToProperties:Boolean = true, removeConstraints:Boolean = true):Object {
+			var historyIndex:int = document.historyIndex+1;
+			var historyEvent:HistoryEventItem;
+			var historyItem:HistoryEventData;
+			var history:ListCollectionView;
+			var historyEvents:Array;
+			var eventsLength:int;
+			var propertiesObject:Object;
+			var stylesObject:Object;
+			var eventsObject:Object;
+			var properties:Array;
+			var styles:Array;
+			
+			history = document.history;
+			propertiesObject = component.properties ? component.properties : {};
+			stylesObject = component.styles ? component.styles : {};
+			eventsObject = component.events ? component.events : {};
+			
+			if (history.length==0) return propertiesObject;
+			
+			// go back through the history of changes and 
+			// add the properties that have been set to an object
+			for (var i:int=historyIndex;i--;) {
+				historyItem = history.getItemAt(i) as HistoryEventData;
+				historyEvents = historyItem.historyEventItems;
+				eventsLength = historyEvents.length;
+				
+				for (var j:int=0;j<eventsLength;j++) {
+					historyEvent = historyEvents[j] as HistoryEventItem;
+					properties = historyEvent.properties;
+					styles = historyEvent.styles;
+					
+					if (historyEvent.targets.indexOf(component.instance)!=-1) {
+						for each (var property:String in properties) {
+							
+							if (property in propertiesObject) {
+								continue;
+							}
+							else {
+								propertiesObject[property] = historyEvent.propertyChanges.end[property];
+							}
+						}
+						
+						for each (var style:String in styles) {
+							
+							if (style in stylesObject) {
+								continue;
+							}
+							else {
+								stylesObject[style] = historyEvent.propertyChanges.end[style];
+							}
+						}
+					}
+					
+				}
+			}
+			
+			if (removeConstraints) {
+				propertiesObject = ClassUtils.removeConstraintsFromObject(propertiesObject);
+			}
+			
+			component.properties = propertiesObject;
+			component.styles = stylesObject;
+			
+			return propertiesObject;
+		}
+
 	}
 }
+
+class SINGLEDOUBLE{}

@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<fxpProperties abbreviated="false" authoringTool="Flex Builder" compiles="true" parentProject="bffb08cf-9863-49e0-ab71-1e13d08f4ec0" projectUUID="bffb08cf-9863-49e0-ab71-1e13d08f4ec0" pureCatalystProject="false" sdkVersion="4.15.0" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd" version="15">
+<fxpProperties abbreviated="false" authoringTool="Flex Builder" parentProject="de265f54-63b3-4763-83ea-c9899fef7868" projectUUID="bffb08cf-9863-49e0-ab71-1e13d08f4ec0" pureCatalystProject="false" sdkVersion="4.15.0" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd" version="15">
   <projects>
-    <project filename="FTPLibrary.fxpl" position="5" projectUUID="88e89dbb-a9cc-4607-ae68-b80e4f920664" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
-    <project filename="ObjectHandles.fxpl" position="6" projectUUID="9f6c1631-4de0-4c9c-b325-fc0c85eb23de" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
-    <project filename="FCLibrary.fxpl" position="7" projectUUID="7a7b5b7d-5d27-41b3-9aff-c99f02efbbc1" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
-    <project filename="PSDParser.fxpl" position="8" projectUUID="d1ca28d6-64a0-4ee5-8a6d-6a635616e032" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
+    <project filename="ObjectHandles.fxpl" position="5" projectUUID="9f6c1631-4de0-4c9c-b325-fc0c85eb23de" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
+    <project filename="FCLibrary.fxpl" position="6" projectUUID="7a7b5b7d-5d27-41b3-9aff-c99f02efbbc1" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
   </projects>
   <src/>
   <swc>
     <linked location="sdkPlaceHolder" path="sdkPlaceHolder" position="0" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
-    <linked location="/bin" path="\bin" position="1" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
-    <linked location="/swsees/AS3CommonsReflect.swc" path="\swsees\AS3CommonsReflect.swc" position="2" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
-    <linked location="/swsees/Radii8LibraryAssets.swc" path="\swsees\Radii8LibraryAssets.swc" position="3" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
-    <linked location="/swsees/FlexIFrame.swc" path="\swsees\FlexIFrame.swc" position="4" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
+    <linked location="/bin" path="/bin" position="1" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
+    <linked location="/swsees/AS3CommonsReflect.swc" path="/swsees/AS3CommonsReflect.swc" position="2" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
+    <linked location="/swsees/Radii8LibraryAssets.swc" path="/swsees/Radii8LibraryAssets.swc" position="3" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
+    <linked location="/swsees/FlexIFrame.swc" path="/swsees/FlexIFrame.swc" position="4" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
+    <linked location="/swsees/FTPLibrary.swc" path="/swsees/FTPLibrary.swc" position="7" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
+    <linked location="/swsees/PSDParser.swc" path="/swsees/PSDParser.swc" position="8" uuid="ef9e54a3-028f-4e9f-b64b-c1b2a3f86acd"/>
   </swc>
   <misc/>
   <theme/>

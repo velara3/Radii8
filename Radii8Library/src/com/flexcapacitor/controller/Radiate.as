@@ -1756,12 +1756,12 @@ package com.flexcapacitor.controller {
 		 * Dispatch console value change event
 		 * */
 		public function dispatchConsoleValueChangeEvent(value:String):void {
-			var documentationChangeEvent:RadiateEvent;
+			var consoleValueChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.CONSOLE_VALUE_CHANGE)) {
-				documentationChangeEvent = new RadiateEvent(RadiateEvent.CONSOLE_VALUE_CHANGE, false, false);
-				documentationChangeEvent.data = value;
-				dispatchEvent(documentationChangeEvent);
+				consoleValueChangeEvent = new RadiateEvent(RadiateEvent.CONSOLE_VALUE_CHANGE, false, false);
+				consoleValueChangeEvent.data = value;
+				dispatchEvent(consoleValueChangeEvent);
 			}
 		}
 		
@@ -8103,6 +8103,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			return ADD_ERROR;
 			
 		}
+		
+		/**
+		 * Prevent log messages
+		 * */
+		public static var preventDefaultMessages:Boolean;
 			
 		/**
 		 * Adds a component to the display list.
@@ -13794,6 +13799,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var className:String;
 			var stackTrace:String;
 			
+			if (preventDefaultMessages) return;
+			
 			className = sender ? ClassUtils.getClassName(sender) : "";
 			
 			if (message=="") {
@@ -13844,7 +13851,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Traces an warning message
 		 * */
 		public static function warn(message:String, sender:Object = null, ...Arguments):void {
-			var className:String = sender ? ClassUtils.getClassName(sender) : "";
+			var className:String;
+			
+			if (preventDefaultMessages) return;
+			
+			className = sender ? ClassUtils.getClassName(sender) : "";
 			
 			if (className=="") {
 				//var object:Object = warn.arguments.caller;
@@ -13863,7 +13874,12 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Traces an info message
 		 * */
 		public static function info(message:String, sender:Object = null, ...Arguments):void {
-			var className:String = sender ? ClassUtils.getClassName(sender) : "";
+			var className:String;
+			
+			if (preventDefaultMessages) return;
+			
+			className = sender ? ClassUtils.getClassName(sender) : "";
+			
 			log.info(message, Arguments);
 			
 			if (enableDiagnosticLogs) {
@@ -13877,7 +13893,12 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Traces an debug message
 		 * */
 		public static function debug(message:String, sender:Object = null, ...Arguments):void {
-			var className:String = sender ? ClassUtils.getClassName(sender) : "";
+			var className:String;
+			
+			if (preventDefaultMessages) return;
+			
+			className = sender ? ClassUtils.getClassName(sender) : "";
+
 			log.debug(message, Arguments);
 			
 			if (enableDiagnosticLogs) {

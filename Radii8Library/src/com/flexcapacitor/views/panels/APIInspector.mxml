@@ -160,7 +160,7 @@
 				if (showDocsCheckbox.selected) {
 					
 					if (openInSeparateWindow.selected) {
-						request= new URLRequest(lastURL);;
+						request= new URLRequest(lastURL);
 						
 						navigateToURL(request, "asdocs");
 						

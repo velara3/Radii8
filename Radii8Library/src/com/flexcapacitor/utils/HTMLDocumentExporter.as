@@ -45,8 +45,6 @@ package com.flexcapacitor.utils {
 	import flashx.textLayout.conversion.ConversionType;
 	import flashx.textLayout.conversion.TextConverter;
 	
-	import org.as3commons.lang.ObjectUtils;
-	
 	/**
 	 * Exports a document to HTML<br/><br/>
 	 * 
@@ -298,7 +296,7 @@ package com.flexcapacitor.utils {
 				// see the top of this document on how to generate source code
 				
 				if (exportFromHistory) {
-					getAppliedPropertiesFromHistory(iDocument, targetDescription);
+					///getAppliedPropertiesFromHistory(iDocument, targetDescription);
 				}
 				
 				if (!disableTabs) {
@@ -573,7 +571,8 @@ package com.flexcapacitor.utils {
 			var componentInstance:Object = componentDescription.instance;
 			if (componentInstance==null) return "";
 			var propertyList:Object = componentDescription.properties;
-			var propertiesStylesObject:Object = ObjectUtils.merge(componentDescription.properties, componentDescription.styles);
+			///var propertiesStylesObject:Object = ObjectUtils.merge(componentDescription.properties, componentDescription.styles);
+			var propertiesStylesObject:Object = ObjectUtils.merge(componentDescription.styles, componentDescription.properties);
 			var componentName:String = componentDescription.className ? componentDescription.className.toLowerCase() : "";
 			var localName:String = componentName ? componentName : "";
 			var componentChild:ComponentDescription;
@@ -2022,7 +2021,7 @@ package com.flexcapacitor.utils {
 						componentChild = componentDescription.children[i];
 						
 						if (exportFromHistory) {
-							getAppliedPropertiesFromHistory(iDocument, componentChild);
+							///getAppliedPropertiesFromHistory(iDocument, componentChild);
 						}
 						
 						if (i>0) {

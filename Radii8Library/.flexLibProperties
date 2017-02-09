@@ -85,7 +85,6 @@
     <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLStyles"/>
     <classEntry path="com.flexcapacitor.utils.AndroidDocumentExporter"/>
     <classEntry path="com.flexcapacitor.utils.Base64"/>
-    <classEntry path="com.flexcapacitor.utils.DocumentTranscoder"/>
     <classEntry path="com.flexcapacitor.utils.DragManagerUtil"/>
     <classEntry path="com.flexcapacitor.utils.DragManagerUtil2"/>
     <classEntry path="com.flexcapacitor.utils.HTMLDocumentExporter"/>

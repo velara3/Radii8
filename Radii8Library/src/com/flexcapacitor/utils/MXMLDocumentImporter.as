@@ -4,6 +4,7 @@
 package com.flexcapacitor.utils {
 	
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.events.ImportEvent;
 	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImportOptions;
@@ -13,6 +14,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+	import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
 	
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
@@ -73,10 +75,13 @@ package com.flexcapacitor.utils {
 			var mxml:XML;
 			var updatedCode:String;
 			var isValid:Boolean;
+			var validationInfo:XMLValidationInfo;
 			var codeWasWrapped:Boolean;
 			var originalXMLSettings:Object;
 			var ignoreWhitespace:Boolean;
 			var startTime:int;
+			var invalidMessage:String;
+			var invalidEvent:ImportEvent;
 			
 			startTime = getTimer();
 			
@@ -95,7 +100,7 @@ package com.flexcapacitor.utils {
 			
 			rootNodeName = MXMLDocumentConstants.ROOT_NODE_NAME;
 			
-			if (!isValid) {
+			if (!isValid && !useStrict) {
 				
 				// not valid so try adding namespaces and a root node
 				root = "<"+rootNodeName + " " + MXMLDocumentConstants.getDefaultNamespaceDeclarations() + ">";
@@ -105,13 +110,36 @@ package com.flexcapacitor.utils {
 				
 				if (!isValid) {
 					//codeToParse = updatedCode;
-					Radiate.error("Could not parse code source code. " + XMLUtils.validationErrorMessage);
+					invalidMessage = "Could not parse source code. " + XMLUtils.validationErrorMessage;
+					
+					Radiate.error("Could not parse source code. " + XMLUtils.validationErrorMessage);
 					Radiate.editImportingCode(updatedCode); // dispatch event instead or return 
+					
 					sourceData.errors = [IssueData.getIssue(XMLUtils.validationError.name, XMLUtils.validationErrorMessage)];
+					
+					if (hasEventListener(INVALID)) {
+						invalidEvent = new ImportEvent(INVALID);
+						invalidEvent.sourceData = sourceData;
+						dispatchEvent(invalidEvent);
+					}
+					
 					return sourceData;
 				}
 				
 				codeWasWrapped = true;
+			}
+			else if (!isValid) {
+				invalidMessage = "Could not parse source code. " + XMLUtils.validationErrorMessage;
+				var title:String = XMLUtils.validationError ? XMLUtils.validationError.name : "Error";
+				sourceData.errors = [IssueData.getIssue(title, XMLUtils.validationErrorMessage)];
+				
+				if (hasEventListener(INVALID)) {
+					invalidEvent = new ImportEvent(INVALID);
+					invalidEvent.sourceData = sourceData;
+					dispatchEvent(invalidEvent);
+				}
+				
+				return sourceData;
 			}
 			else {
 				updatedCode = source;
@@ -139,6 +167,19 @@ package com.flexcapacitor.utils {
 			}
 			catch (error:Error) {
 				Radiate.error("Could not parse code " + document.name + ". " + error.message);
+				
+				//codeToParse = updatedCode;
+				invalidMessage = "Could not parse code source code. " + error.message;
+				
+				sourceData.errors = [IssueData.getIssue("Parse Error", invalidMessage)];
+				
+				if (hasEventListener(INVALID)) {
+					invalidEvent = new ImportEvent(INVALID);
+					invalidEvent.sourceData = sourceData;
+					invalidEvent.errorMessage = invalidMessage;
+					invalidEvent.error = error;
+					dispatchEvent(invalidEvent);
+				}
 			}
 			
 			if (componentDescription==null) {
@@ -263,6 +304,7 @@ package com.flexcapacitor.utils {
 			var bitmapDataFound:Boolean;
 			var instance:Object;
 			var skipDisplayList:Boolean;
+			var notFoundEvent:ImportEvent;
 			
 			skipDisplayList = false;
 			includeChildNodes = true;
@@ -293,6 +335,12 @@ package com.flexcapacitor.utils {
 				
 				errorData = ErrorData.getIssue("Element not found", message);
 				errors.push(errorData);
+				
+				if (hasEventListener(ELEMENT_NOT_FOUND)) {
+					notFoundEvent = new ImportEvent(ELEMENT_NOT_FOUND);
+					notFoundEvent.errorMessage = "Element not found." + message;
+					dispatchEvent(notFoundEvent);
+				}
 				
 				Radiate.error(message);
 				return null;
