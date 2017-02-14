@@ -1378,6 +1378,16 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
+		 * Goes to the beginning of the undo history and then goes to the end again.
+		 * This helps sometimes when the layout has been damaged in some way. 
+		 * */
+		public static function rebuild(iDocument:IDocument):void {
+			var currentIndex:int = getHistoryPosition(iDocument);
+			goToHistoryIndex(iDocument, -1);
+			goToHistoryIndex(iDocument, currentIndex);
+		}
+		
+		/**
 		 * Selects the targets at the specific history event
 		 * */
 		public static function selectTargetsAtIndex(document:IDocument, index:int, dispatchEvent:Boolean = true):void {

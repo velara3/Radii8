@@ -407,6 +407,21 @@
 				}
 			}
 			
+			protected function revertIcon_clickHandler(event:MouseEvent):void
+			{
+				var success:Boolean = radiate.revertDocument(radiate.selectedDocument);
+				if (success) {
+					Radiate.info("Document reverted");
+				}
+			}
+			
+			protected function refreshIcon_clickHandler(event:MouseEvent):void {
+				var success:Boolean = HistoryManager.rebuild(radiate.selectedDocument);
+				if (success) {
+					Radiate.info("Document rebuilt");
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -479,6 +494,16 @@
 		
 		<s:Spacer width="100%"/>
 		
+		
+		<!--<c:BeveledImageButton id="revertIcon" 
+							  source="{Radii8LibraryAssets.revert}" 
+							  toolTip="Revert"
+							  click="revertIcon_clickHandler(event)"/>-->
+		
+		<c:BeveledImageButton id="refreshIcon" 
+							  source="{Radii8LibraryAssets.refresh}" 
+							  toolTip="Refresh"
+							  click="refreshIcon_clickHandler(event)"/>
 		
 		<c:BeveledImageButton id="backButton" 
 							  source="{Radii8LibraryAssets.undo}" 

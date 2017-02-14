@@ -21,6 +21,10 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.controls.AceEditor;
+			import com.flexcapacitor.controls.supportClasses.AceCommand;
+			import com.flexcapacitor.controls.supportClasses.AutoCompleteObject;
+			import com.flexcapacitor.controls.supportClasses.TokenInformation;
+			import com.flexcapacitor.events.AceEvent;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.managers.HistoryManager;
@@ -31,6 +35,9 @@
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.model.TranscoderDescription;
+			import com.flexcapacitor.utils.AceEditorUtils;
+			import com.flexcapacitor.utils.ClassLoader;
+			import com.flexcapacitor.utils.ClassRegistry;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.MXMLDocumentConstants;
 			import com.flexcapacitor.utils.XMLUtils;
@@ -48,11 +55,15 @@
 			import spark.events.IndexChangeEvent;
 			import spark.layouts.BasicLayout;
 			
+			import flashx.textLayout.conversion.ITextImporter;
+			
 			public static const HTML_RENDER:String = "htmlRender";
 			public static const HTML_COMPLETE:String = "complete";
 			
 			public static const DESKTOP:String = "desktop";
 			public static const BROWSER:String = "browser";
+			
+			public static var debug:Boolean;
 			
 			/**
 			 * Reference to Radiate
@@ -125,6 +136,9 @@
 			public var htmlRenderTime:int;
 			public var htmlStartCompleteTime:int;
 			public var htmlCompleteTime:int;
+			
+			
+			public var loadingClasses:Boolean;
 			
 			/**
 			 * Last source data
@@ -199,6 +213,8 @@
 				if (templateEditor) {
 					templateEditor.visible = true;
 				}
+				
+				setupCodeComplete();
 			}
 			
 			public function deactivate():void {
@@ -239,6 +255,10 @@
 					radiate.removeEventListener(RadiateEvent.UNCAUGHT_EXCEPTION_EVENT, uncaughtExceptionEvent);
 				}
 			}
+			
+			public var classRegistry:ClassRegistry = ClassRegistry.getInstance();
+			
+			public var classLoader:ClassLoader;
 			
 			/**
 			 * Generate the code for the provided target component. 
@@ -1294,6 +1314,236 @@
 				}
 				editorGroup.bottom = 0;
 			}
+			
+			private function setupCodeComplete():void {
+				var renderCommand:AceCommand;
+				var textFlowParser:ITextImporter;
+				
+				ClassLoader.debug = debug;
+				classLoader = new ClassLoader();
+				classLoader.configPath = "assets/manifest/";
+				classLoader.configFileName = "flex-config-template.xml";
+				classLoader.addEventListener(ClassLoader.NAMESPACE_LOADED, namespaceLoaded, false, 0, true);
+				classLoader.addEventListener(ClassLoader.NAMESPACES_LOADED, namespacesLoaded, false, 0, true);
+				classLoader.addEventListener(IOErrorEvent.IO_ERROR, ioErrorEvent, false, 0, true);
+				classLoader.load();
+				
+				aceEditor.setCompleters(null);
+				aceEditor.addCompleter(codeCompleter, getDocTooltip);
+				
+				//aceEditor.addCommand(new AceCommand("find", {win: "Ctrl-B", "mac": "Cmd-B"}, findKeyboardHandler));
+				aceEditor.addCommand(new AceCommand("save", {win: "Ctrl-S", "mac": "Cmd-S"}, saveKeyboardHandler));
+				
+				renderCommand = new AceCommand("render");
+				renderCommand.bindKey =  {win: "Ctrl-Enter", "mac": "Cmd-Enter"};
+				renderCommand.exec =  renderKeyboardHandler;
+				
+				aceEditor.addCommand(renderCommand);
+				
+				aceEditor.blur();				
+			}
+			
+			protected function namespaceLoaded(event:Event):void {
+				var uri:String = classLoader.lastNamespaceURI;
+				appendEditorText("Loaded " + uri);
+				//appendEditorText(classLoader.componentsList.toXMLString());
+				//appendEditorText(classLoader.componentsArray);
+			}
+			
+			protected function namespacesLoaded(event:Event):void {
+				var xml:XML;
+				var namespaces:Object;
+				
+				appendEditorText("Namespaces loaded");
+				
+				/**
+				xml = new XML(embeddedMXML.value);
+				namespaces = xml.namespaceDeclarations();
+				
+				for each (var ns:Namespace in namespaces) {
+					classRegistry.addNamespace(ns);
+					appendEditorText("Registering namespace " + ns.uri + " as " + ns.prefix);
+				}
+				*/
+				
+				//registerNamespaces();
+				
+				loadingClasses = false;
+				//return;
+				
+				aceEditor.mode = "ace/mode/xml";
+				aceEditor.showGutter = true;
+				//setEditorText(embeddedMXML.value);
+				//applicationCompleteHandler(null);
+			}
+			
+			protected function ioErrorEvent(event:Event):void
+			{
+				if (debug) trace(event);
+			}
+			
+			/**
+			 * Appends text to the editor
+			 * */
+			public function appendEditorText(value:String):void {
+				aceEditor.appendText(value);
+			}
+			
+			
+			public var cachedClassValues:Dictionary = new Dictionary(true);
+			public var jumpingToMatching:Boolean;
+			public var tokenInfo:TokenInformation;
+			
+			public var showToken:Boolean = false;
+			public var showEntity:Boolean = false;
+			public var showClassFound:Boolean = false;
+			
+			protected function cursorChangeHandler(event:AceEvent = null):void {
+				var cursorString:String;
+				var cursor:Object;
+				var token:Object;
+				var type:String;
+				var entity:String = "";
+				var output:String;
+				var isMultiline:Boolean;
+				var isMouseDown:Boolean;
+				var tokenText:String = "";
+				var entityText:String = "";
+				var classFoundText:String = "";
+				
+				//PerformanceMeter.mark("Start", true);
+				isMultiline = aceEditor.isSelectionMultiline();
+				isMouseDown = aceEditor.isMouseDown();
+				
+				if (loadingClasses) { return; }
+				if (isMultiline && isMouseDown) { return; }
+				
+				cursor = aceEditor.getCursor();
+				token = aceEditor.getTokenAt(cursor.row, cursor.column);
+				type = token ? token.type : null;
+				//PerformanceMeter.mark("After getTokenAt");
+				
+				tokenInfo = AceEditorUtils.getTokenInformation(aceEditor);
+				suggestions = AceEditorUtils.getSuggestionList(tokenInfo, aceEditor);
+				//PerformanceMeter.mark("After getAutoCompleteList");
+				
+				if (type!=null) {
+					cursorString = aceEditor.getCursorString(cursor);
+					entity = tokenInfo.entity ? tokenInfo.entity : "none";
+					
+					if (showToken) {
+						tokenText = " Token: " + type;
+					}
+					
+					if (showEntity) {
+						entityText = " Entity: " + entity;
+					}
+					
+					if (showClassFound) {
+						classFoundText = " Class found: false" ;
+					}
+					
+					if (tokenInfo.classFound==false) {
+						output = cursorString + entityText + classFoundText + tokenText;
+					}
+					else {
+						output = cursorString + entityText + tokenText;
+					}
+					
+					if ("statusText" in parentApplication) {
+						parentApplication["statusText"].text = output;
+					}
+					else {
+						cursorLocationLabel.text = output;
+					}
+				}
+				else {
+					cursorString = aceEditor.getCursorString(cursor);
+					cursorLocationLabel.text = cursorString;
+				}
+				
+				var updatedQName:QName;
+				var classObject:Object;
+				var tagQName:QName;
+				var attributeQName:QName;
+				var qualifiedClassName:String;
+				
+				//PerformanceMeter.mark("After end of cursorChange");
+				
+			}
+			
+			public static const SNIPPET:String = "snippet";
+			public var mainDocumentSuggestions:Array = [];
+			public var suggestions:Array = [];
+			
+			public function codeCompleter(editor:Object, session:Object, position:Object, prefix:String, callback:Function):void {
+				var row:int = position.row;
+				var column:int = position.column;
+				
+				callback(null, suggestions);
+			}
+			
+			public function getDocTooltip(item:AutoCompleteObject):void {
+				
+				
+				if (item.type==SNIPPET && item.docHTML==null) {
+					//trace("it's a snippet");
+					
+					item.docHTML = ["<b>", 
+						aceEditor.language.escapeHTML(item.caption), 
+						"</b>", 
+						"<hr></hr>",
+						aceEditor.language.escapeHTML(item.value)
+					].join("");
+					//ace.language.escapeHTML(item.snippet)
+				}
+				else if (item.docHTML==null) {
+					item.docHTML = ["<b>", 
+						aceEditor.language.escapeHTML(item.value), 
+						"</b>", 
+						"<hr></hr>",
+						aceEditor.language.escapeHTML(item.caption)
+					].join("");
+					//trace("not a snippet");
+				}
+			}
+			
+			/**
+			 * Handler for find keyboard shortcut
+			 * */
+			public function saveKeyboardHandler(editor:Object=null, event:Object=null):void {
+				//trace("save keyboard event");
+				if (debug) trace("saved");
+				//saveDocumentButton_clickHandler();
+			}
+			
+			/**
+			 * Handler for render view
+			 * */
+			public function renderKeyboardHandler(editor:Object=null, event:Object=null):void {
+				//trace("Keyboard render event");
+				//invalidateDesignView();
+			}
+			
+			protected function cursorLocationLabel_clickHandler(event:MouseEvent):void
+			{
+				if (showEntity==false) {
+					showEntity = true;
+					showToken = false;
+				}
+				else if (showToken && showEntity) {
+					showToken = false;
+					showEntity = false;
+				}
+				else if (showEntity==true) {
+					showToken = true;
+				}
+				else {
+					showToken = true;
+				}
+				
+				cursorChangeHandler();
+			}
 		]]>
 	</fx:Script>
 	
@@ -1656,4 +1906,6 @@ IFRAME_ID {
 	</s:HGroup>
 	
 	
+	<s:Label id="cursorLocationLabel" text="" bottom="0" left="10"
+			 click="cursorLocationLabel_clickHandler(event)"/>
 </s:Group>

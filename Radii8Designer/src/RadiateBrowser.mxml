@@ -10,7 +10,7 @@
 			   applicationComplete="applicationCompleteHandler(event)" 
 			   initialize="application1_initializeHandler(event)"
 			   frameRate="46"
-			   pageTitle="Radiate">
+			   pageTitle="Radiate" xmlns:utils="com.flexcapacitor.utils.*">
 	
 	<!--
 	Description	Resource	Path	Location	Type
@@ -161,6 +161,10 @@
 	
 	<fx:Style source="fonts.css" />
 	<fx:Style source="styles.css" />
+	
+	<fx:Declarations>
+		<utils:SecureRedirect />
+	</fx:Declarations>
 	
 	<views:MainView id="mainView" width="100%" height="100%"/>
 	
