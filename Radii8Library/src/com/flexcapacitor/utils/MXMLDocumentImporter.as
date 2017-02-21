@@ -63,7 +63,8 @@ package com.flexcapacitor.utils {
 			supportsImport = true;
 		}
 		
-		//override public function importare(iDocument:IDocument, id:String, container:IVisualElement) {
+		public var importChildNodes:Boolean = true;
+		
 		override public function importare(source:*, document:IDocument, componentDescription:ComponentDescription = null, parentPosition:int = -1, options:ImportOptions = null, dispatchEvents:Boolean = false):SourceData {
 			var componentDefinition:ComponentDefinition;
 			var sourceData:SourceData;
@@ -82,6 +83,7 @@ package com.flexcapacitor.utils {
 			var startTime:int;
 			var invalidMessage:String;
 			var invalidEvent:ImportEvent;
+			var title:String;
 			
 			startTime = getTimer();
 			
@@ -89,6 +91,20 @@ package com.flexcapacitor.utils {
 			warnings = [];
 			
 			newComponents = [];
+			
+			///////////////////////
+			// SET OPTIONS
+			///////////////////////
+			
+			if (options) {
+				savePresets();
+				applyPresets(options);
+			}
+			
+			///////////////////////
+			// GET SOURCE CODE
+			///////////////////////
+			
 			
 			startTime = getTimer();
 			
@@ -112,8 +128,8 @@ package com.flexcapacitor.utils {
 					//codeToParse = updatedCode;
 					invalidMessage = "Could not parse source code. " + XMLUtils.validationErrorMessage;
 					
-					Radiate.error("Could not parse source code. " + XMLUtils.validationErrorMessage);
-					Radiate.editImportingCode(updatedCode); // dispatch event instead or return 
+					//Radiate.error("Could not parse source code. " + XMLUtils.validationErrorMessage);
+					//Radiate.editImportingCode(updatedCode); // dispatch event instead or return 
 					
 					sourceData.errors = [IssueData.getIssue(XMLUtils.validationError.name, XMLUtils.validationErrorMessage)];
 					
@@ -130,7 +146,7 @@ package com.flexcapacitor.utils {
 			}
 			else if (!isValid) {
 				invalidMessage = "Could not parse source code. " + XMLUtils.validationErrorMessage;
-				var title:String = XMLUtils.validationError ? XMLUtils.validationError.name : "Error";
+				title = XMLUtils.validationError ? XMLUtils.validationError.name : "Error";
 				sourceData.errors = [IssueData.getIssue(title, XMLUtils.validationErrorMessage)];
 				
 				if (hasEventListener(INVALID)) {
@@ -259,6 +275,9 @@ package com.flexcapacitor.utils {
 				newComponents = null;
 			}
 			
+			if (options) {
+				restorePreviousPresets();
+			}
 			
 			return sourceData;
 		}
@@ -272,7 +291,6 @@ package com.flexcapacitor.utils {
 			var kind:String;
 			var domain:ApplicationDomain;
 			var componentDefinition:ComponentDefinition;
-			var includeChildNodes:Boolean;
 			var className:String;
 			var classType:Class;
 			var componentDescription:ComponentDescription;
@@ -307,7 +325,6 @@ package com.flexcapacitor.utils {
 			var notFoundEvent:ImportEvent;
 			
 			skipDisplayList = false;
-			includeChildNodes = true;
 			fixTextFlowNamespaceBug = true;
 			
 			elementName = node.localName();
@@ -616,12 +633,13 @@ package com.flexcapacitor.utils {
 			}
 			
 			
-			if (includeChildNodes) {
+			if (importChildNodes) {
 				
 				for each (var childNode:XML in node.children()) {
 					localName = childNode.localName();
 					fullNodeName = childNode.name();
 					
+					// there is a difference between node.children() and node.elements()
 					if (fullNodeName==null) {
 						continue;
 					}

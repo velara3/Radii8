@@ -21,8 +21,10 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
 		 xmlns:flexcapacitor="flexcapacitor.*"
+		 xmlns:controls="com.flexcapacitor.controls.*" 
 		 xmlns:local="*"
 		 
+		 top="-10"
 		 width="400" height="300"
 		 show="group1_showHandler(event)"
 		 creationComplete="creationComplete()"
@@ -49,6 +51,7 @@
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.utils.supportClasses.log;
 			
+			import mx.controls.SWFLoader;
 			import mx.core.IVisualElement;
 			import mx.core.IVisualElementContainer;
 			import mx.events.FlexEvent;
@@ -63,6 +66,7 @@
 			import org.as3commons.lang.ArrayUtils;
 			
 			public var debug:Boolean;
+			public var projectLoader:SWFLoader;
 			
 			/**
 			 * STEP 1. 
@@ -106,6 +110,12 @@
 				if (Capabilities.playerType!="Desktop") {
 					systemManager.allowDomain("*");
 				}
+				
+				
+				
+				return;
+				
+				// old code
 				
 				var context:LoaderContext = new LoaderContext();
 				
@@ -224,7 +234,7 @@
 				if (iDocument.source) {
 					parsingSourceCode = true;
 					validateNow();
-					sourceData = Radiate.parseSource(iDocument, null, null, containerIndex, false);
+					sourceData = Radiate.parseSource(iDocument, null, null, containerIndex, null, false);
 					parsingSourceCode = false;
 					iDocument.sourceData = sourceData;
 					iDocument.resetSaveStatus();
@@ -258,6 +268,76 @@
 				//Radiate.info("Application Complete");
 				
 			}
+			
+			protected function applicationLoader_applicationCompleteHandler(event:FlexEvent):void {
+				var radiate:Radiate = Radiate.instance;
+				var sourceData:SourceData;
+				var documentName:String = iDocument.name;
+				var containerIndex:int = -1;
+				
+				if (debug) {
+					log("Opening " + documentName);
+				}
+				
+				if (parsingSourceCode) return;
+				
+				targetSystemManager = applicationLoader.targetSystemManager;
+				targetApplication = applicationLoader.targetApplication;
+				
+				
+				// 8.5 x 11 at 72dpi is 612x792
+				targetApplication.width = Radiate.DEFAULT_DOCUMENT_WIDTH;
+				targetApplication.height = Radiate.DEFAULT_DOCUMENT_HEIGHT;
+				
+				
+				drawBackgroundGrid();
+				updateBackgroundSize();
+				
+				iDocument.instance = targetApplication;
+				Radiate.createComponentToAdd(iDocument, null, false, targetApplication);
+				iDocument.addComponentDescription(targetApplication);
+				
+				//radiate.setDocument(iDocument);
+				//radiate.setTarget(targetApplication);
+				
+				//codeAvailable = true;
+				//Radiate.info("Document container app complete");
+				if (iDocument.source) {
+					parsingSourceCode = true;
+					validateNow();
+					sourceData = Radiate.parseSource(iDocument, null, null, containerIndex, null, false);
+					parsingSourceCode = false;
+					iDocument.sourceData = sourceData;
+					iDocument.resetSaveStatus();
+					updateBackgroundSize();
+					//parseDocument(codeToLoad);
+					//codeAvailable = false;
+					
+					// we should dispatch an event when parsing is complete
+				}
+				
+				
+				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, sizeChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChange, false, 0, true);
+				
+				radiate.selectDocument(iDocument);
+				radiate.setTarget(targetApplication);
+				//updateAppScrollPosition();
+				
+				//setTimeout(updateAppScrollPosition, 10);
+				//setTimeout(updateAppScrollPosition, 100);
+				//setTimeout(updateAppScrollPosition, 500);
+				
+				hideBusyIndicators();
+				
+				applicationReady = true;
+				
+				radiate.centerApplication(true, true, true);
+				
+				radiate.dispatchDocumentOpenEvent(iDocument);
+			}
+			
 			
 			public var parsingSourceCode:Boolean;
 			
@@ -730,8 +810,13 @@
 				canvasBorderInstance.width = scaledDocumentWidth;
 				canvasBorderInstance.height = scaledDocumentHeight;
 				
-				projectLoader.width = scaledDocumentWidth;
-				projectLoader.height = scaledDocumentHeight;
+				if (projectLoader) {
+					projectLoader.width = scaledDocumentWidth;
+					projectLoader.height = scaledDocumentHeight;
+				}
+				
+				applicationLoader.width = scaledDocumentWidth;
+				applicationLoader.height = scaledDocumentHeight;
 				
 				// we do this because when we scale the application the 
 				// system manager mask is not updated and the content gets clipped
@@ -953,7 +1038,6 @@
                     y = y + 20;
                 }
             }
-			
 		]]>
 	</fx:Script>
 	
@@ -986,7 +1070,7 @@
 		</s:fill>
 	</s:Rect>
 	
-	<s:Rect width="20" height="20">
+	<s:Rect width="20" height="20" visible="false">
 		<s:fill>
 			<s:SolidColor color="#FFFFFF"/>
 		</s:fill>
@@ -994,9 +1078,9 @@
 	
 	
 	<s:Scroller id="canvasScrollerInstance" 
-				left="20" 
+				left="0" 
 				right="0" 
-				top="20" 
+				top="0" 
 				bottom="0" 
 				width="100%"
 				height="100%"
@@ -1031,7 +1115,7 @@
 			It may also be used for skinning with different devices. 
 			-->
 			<s:BorderContainer id="canvasBackgroundInstance"
-							   borderVisible="true"
+							   borderVisible="false"
 							   backgroundAlpha="0"
 							   >
 				
@@ -1061,7 +1145,7 @@
 					<!--- 
 					This group contains the system manager and the blank application
 					-->
-					<s:SWFLoader id="projectLoader" 
+					<!--<s:SWFLoader id="projectLoader" visible="false" includeInLayout="false"
 								 resize="projectLoader_resizeHandler(event)"
 								 complete="project_completeHandler(event)"
 								 httpStatus="project_httpStatusHandler(event)"
@@ -1070,11 +1154,21 @@
 								 open="project_openHandler(event)"
 								 progress="project_progressHandler(event)"
 								 securityError="project_securityErrorHandler(event)"
-								 unload="project_unloadHandler(event)"/>
+								 unload="project_unloadHandler(event)"/>-->
 				
+					
+					<!--- 
+					This is a new class to handle loading an application as an embedded byte array.
+					This should help resize issues when not connected online. 
+					-->
+					<controls:ApplicationLoader id="applicationLoader"
+												applicationComplete="applicationLoader_applicationCompleteHandler(event)"
+												/>
 					<!--- 
 					This group is used to add visual elements above the application.
 					For example, selection and resizing borders. 
+					NOTE: When this layer is scaled the tools are in the incorrect location
+					Maybe move this outside of the scaled area. 
 					-->
 					<s:Group id="toolLayerInstance" 
 							 mouseChildren="true" 
@@ -1107,13 +1201,13 @@
 	
 	
 	<!-- alternatives to ruler component -->
-	<s:Rect left="20" width="100%" height="20">
+	<s:Rect id="rulerTopRect" left="20" width="100%" height="20" visible="false">
 		<s:fill>
 			<s:SolidColor color="#FFFFFF"/>
 		</s:fill>
 	</s:Rect>
 	
-	<s:Rect top="20" width="20" height="100%">
+	<s:Rect id="rulerLeftRect" top="20" width="20" height="100%" visible="false">
 		<s:fill>
 			<s:SolidColor color="#FFFFFF"/>
 		</s:fill>

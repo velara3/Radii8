@@ -17,22 +17,10 @@
     <sourceAttachmentPath/>
   </compiler>
   <applications>
-    <application path="DesignViewTextTest.mxml">
-      <airExcludes/>
-    </application>
-    <application path="ApplicationDesign.mxml">
-      <airExcludes/>
-    </application>
-    <application path="LiveMXMLEditor.mxml">
-      <airExcludes/>
-    </application>
-    <application path="SetStateValueTest.mxml">
-      <airExcludes/>
-    </application>
-    <application path="RichTextEditorCallOutTest.mxml">
-      <airExcludes/>
-    </application>
     <application path="TransformTests.mxml">
+      <airExcludes/>
+    </application>
+    <application path="PositioningTest.mxml">
       <airExcludes/>
     </application>
     <application path="Radii8Desktop.mxml">
@@ -41,7 +29,16 @@
     <application path="InsertImageTest.mxml">
       <airExcludes/>
     </application>
-    <application path="PositioningTest.mxml">
+    <application path="DesignViewTextTest.mxml">
+      <airExcludes/>
+    </application>
+    <application path="SetStateValueTest.mxml">
+      <airExcludes/>
+    </application>
+    <application path="RichTextEditorCallOutTest.mxml">
+      <airExcludes/>
+    </application>
+    <application path="LiveMXMLEditor.mxml">
       <airExcludes/>
     </application>
   </applications>

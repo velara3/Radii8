@@ -416,9 +416,11 @@
 			}
 			
 			protected function refreshIcon_clickHandler(event:MouseEvent):void {
-				var success:Boolean = HistoryManager.rebuild(radiate.selectedDocument);
-				if (success) {
-					Radiate.info("Document rebuilt");
+				//var success:Boolean = HistoryManager.rebuild(radiate.selectedDocument);
+				
+				if (radiate.selectedDocument) {
+					Radiate.info("Rebuilding document");
+					Radiate.callAfter(250, HistoryManager.rebuild, radiate.selectedDocument);
 				}
 			}
 			

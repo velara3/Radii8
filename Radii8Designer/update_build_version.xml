@@ -57,5 +57,20 @@
 				<include name="build.as"/>
 			</fileset>
 		</replaceregexp>
+		
+		<replaceregexp byline="true">
+			<regexp pattern='public static const VERSION_NUMBER:String = "([0-9\.]+)"'/>
+			<substitution expression='public static const VERSION_NUMBER:String = "${build.number}"'/>
+			<fileset dir="src">
+				<include name="build.as"/>
+			</fileset>
+		</replaceregexp>
+		
+		<copy todir="src" overwrite="true">
+		  <fileset dir="../Radii8Desktop/src/">
+		     <include name="Radii8Desktop-app.xml"/>
+		     <type type="file"/>
+		  </fileset>
+		</copy>
 	</target>
 </project>

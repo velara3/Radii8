@@ -334,6 +334,16 @@
 											click="showLabel_changeHandler(event)"
 											/>
 		
+		<controls1:BeveledImageToggleButton id="showTransform"
+											source="{Radii8LibraryAssets.transform}"
+											toolTip="Shows resizable transform handles"
+											width="19"
+											height="19"
+											scaleMode="letterbox"
+											click="showTransform_changeHandler(event)"
+											showBackgroundWhenSelected="true"
+											/>
+		
 		<controls1:BeveledImageToggleButton id="selectGroup"
 											source="{Radii8LibraryAssets.groupSelection}"
 											toolTip="Select only group elements or components on the document"
@@ -343,16 +353,6 @@
 											click="selectGroup_changeHandler(event)"
 											showBackgroundWhenSelected="true"
 											/>
-		
-		<controls1:BeveledImageToggleButton id="showTransform"
-									source="{Radii8LibraryAssets.transform}"
-									toolTip="Shows resizable transform handles"
-									width="19"
-									height="19"
-									scaleMode="letterbox"
-									click="showTransform_changeHandler(event)"
-									showBackgroundWhenSelected="true"
-									/>
 		
 		<s:BitmapImage id="warnDragStrip" 
 					   source="{Radii8LibraryToolAssets.DragStrip}" 

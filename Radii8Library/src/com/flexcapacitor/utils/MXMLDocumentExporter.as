@@ -107,6 +107,10 @@ package com.flexcapacitor.utils {
 			identifiers = [];
 			duplicateIdentifiers = [];
 			
+			if (classRegistry==null) {
+				classRegistry = ClassRegistry.getInstance();
+			}
+			
 			///////////////////////
 			// SET OPTIONS
 			///////////////////////
@@ -268,6 +272,12 @@ package com.flexcapacitor.utils {
 			var qname:QName;
 			var value:*;
 			var xmlValue:XML;
+			var prefixedName:String;
+			var childNode:String;
+			var childNodeNamespace:String;
+			var useCDATA:Boolean;
+			var originalXMLSettings:Object;
+			var useXMLFormatting:Boolean;
 			
 			if (exportFromHistory) {
 				getAppliedPropertiesFromHistory(iDocument, componentDescription);
@@ -344,11 +354,9 @@ package com.flexcapacitor.utils {
 					childNodesValues[propertyName] = value;
 					childNodeNames.push(propertyName);
 					
-					var originalSettings:Object;
-					var useXMLFormatting:Boolean;
 					
 					if (propertyName==MXMLDocumentConstants.TEXT_FLOW) {
-						originalSettings = XML.settings();
+						originalXMLSettings = XML.settings();
 						useXMLFormatting = true;
 						
 						XML.ignoreProcessingInstructions = false;
@@ -372,7 +380,7 @@ package com.flexcapacitor.utils {
 						
 						childNodesValues[propertyName] = value;
 						
-						XML.setSettings(originalSettings);
+						XML.setSettings(originalXMLSettings);
 					}
 					
 					
@@ -550,24 +558,31 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (className) {
+				
 				if (componentDescription.instance is Application) {
+					//className = classRegistry.getClassNameForType(componentDescription.instance);
+					prefixedName = classRegistry.getPrefixedNameForType(componentDescription.instance);
 					className = "Application";
+					prefixedName = MXMLDocumentConstants.sparkNamespacePrefix + ":" + className;
 					namespaces = MXMLDocumentConstants.getDefaultNamespaceDeclarations();
 					output = output + " " + MXMLDocumentConstants.fcNamespacePrefix + ":version=\"" + version + "\"";
 					output = namespaces + output;
-					
+				}
+				else if (useClassRegistry) {
+					prefixedName = classRegistry.getPrefixedNameForType(componentDescription.instance);
+				}
+				
+				if  (prefixedName==null) {
+					prefixedName = MXMLDocumentConstants.sparkNamespacePrefix + ":" + className;
 				}
 				
 				if (output.indexOf(" ")==0) {
 					output = output.substr(1);
 				}
 				
-				var childNode:String;
-				var childNodeNamespace:String;
-				var useCDATA:Boolean;
 				
 				// we are not handling namespaces here - we could use component descriptor / component definitions
-				output = tabs + "<" + MXMLDocumentConstants.sparkNamespacePrefix + ":" + className + " " + output;
+				output = tabs + "<" + prefixedName + " " + output;
 				
 				if ((exportChildDescriptors && 
 					componentDescription.children && 
@@ -635,18 +650,23 @@ package com.flexcapacitor.utils {
 					
 					for (var i:int;i<numberOfChildren;i++) {
 						componentChild = componentDescription.children[i];
-						// we should get the properties and styles from the 
-						// the component description
+						
 						if (exportFromHistory) {
 							getAppliedPropertiesFromHistory(iDocument, componentChild);
 						}
+						
 						output += getMXMLOutputString(iDocument, componentChild, false, tabs + "\t");
 					}
 					
-					output += tabs + "</" + MXMLDocumentConstants.sparkNamespacePrefix + ":" + className + ">\n";
+					output += tabs + "</" + prefixedName + ">\n";
 				}
 				else {
-					 output += "/>\n";
+					if (componentDescription.instance is Application) {
+						output += tabs + ">\n</" + prefixedName + ">\n";
+					}
+					else {
+						output += "/>\n";
+					}
 				}
 			}
 			else {

@@ -15,25 +15,21 @@
 
 	<!-- A universally unique application identifier. Must be unique across all AIR applications.
 	Using a reverse DNS-style name as the id is recommended. (Eg. com.example.ExampleApplication.) Required. -->
-	<id>Application</id>
+	<id>com.velara3.Radiate</id>
 
 	<!-- Used as the filename for the application. Required. -->
-	<filename>Application</filename>
+	<filename>Radiate</filename>
 
 	<!-- The name that is displayed in the AIR application installer. 
 	May have multiple values for each language. See samples or xsd schema file. Optional. -->
-	<name>Application</name>
+	<name>Radiate</name>
 	
 	<!-- A string value of the format <0-999>.<0-999>.<0-999> that represents application version which can be used to check for application upgrade. 
 	Values can also be 1-part or 2-part. It is not necessary to have a 3-part value.
-	An updated version of application must have a versionNumber value higher than the previous version. Required for namespace >= 2.5 .
-    For iOS Apps, this represents build number. -->
-	<versionNumber>0.0.0</versionNumber>
-		         
-	<!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents the version of the application, as it should be shown to users. 
-     For iOS Apps, this represents application version number and format should be (<0-999>.<0-999>.<0-999>).
-     If this tag is not specified or the value is not according to the format, then this tag will be ignored 
-     and <versionNumber> will be used for application version number. Optional. -->
+	An updated version of application must have a versionNumber value higher than the previous version. Required for namespace >= 2.5 . -->
+	<versionNumber>4.2.0</versionNumber>
+
+	<!-- A string value (such as "v1", "2.5", or "Alpha 1") that represents the version of the application, as it should be shown to users. Optional. -->
 	<!-- <versionLabel></versionLabel> -->
 
 	<!-- Description, displayed in the AIR application installer.
@@ -115,10 +111,10 @@
 
 		<!-- Display Resolution for the app (either "standard" or "high"). Optional, OSX-only. Default "standard" -->
 		<!-- <requestedDisplayResolution></requestedDisplayResolution> -->
-	<autoOrients>true</autoOrients>
-        <fullScreen>false</fullScreen>
-        <visible>false</visible>
-        <softKeyboardBehavior>none</softKeyboardBehavior>
+		<autoOrients>false</autoOrients>
+		<fullScreen>false</fullScreen>
+		<visible>false</visible>
+		<requestedDisplayResolution>high</requestedDisplayResolution>
     </initialWindow>
 
 	<!-- We recommend omitting the supportedProfiles element, -->
@@ -145,34 +141,75 @@
 		<image29x29></image29x29>
 		<image32x32></image32x32>
 		<image36x36></image36x36>
-		<image40x40></image40x40>
-		<image44x44></image44x44>
 		<image48x48></image48x48>
 		<image50x50></image50x50>
 		<image57x57></image57x57>
 		<image58x58></image58x58>
-		<image60x60></image60x60>
-		<image66x66></image66x66>
 		<image72x72></image72x72>
-		<image75x75></image75x75>
-		<image76x76></image76x76>
-		<image80x80></image80x80>
-		<image87x87></image87x87>
-		<image96x96></image96x96>
 		<image100x100></image100x100>
 		<image114x114></image114x114>
-		<image120x120></image120x120>
 		<image128x128></image128x128>
 		<image144x144></image144x144>
-		<image152x152></image152x152>
-        <image167x167></image167x167>
-		<image180x180></image180x180>
-		<image192x192></image192x192>
 		<image512x512></image512x512>
-		<image732x412></image732x412>
 		<image1024x1024></image1024x1024>
 	</icon> -->
 
+	<icon>
+		<image128x128>logo128.png</image128x128>
+		<image57x57>logo57.png</image57x57>
+		<image72x72>logo72.png</image72x72>
+	</icon>
+	
+	
+	<fileTypes>
+
+		<fileType>
+			<!--  name cannot contain a space -->
+			<name>MXMLDocument</name>
+			<!--  extension cannot be * -->
+			<extension>mxml</extension>
+			<description>MXML file</description>
+			<!--  content type is required -->
+			<contentType>text/plain</contentType>
+		</fileType>
+		<fileType>
+			<name>PhotoshopImage</name>
+			<extension>psd</extension>
+			<description>Adobe Photoshop Image</description>
+			<contentType>application/octet-stream</contentType>
+		</fileType>
+		<fileType>
+			<name>JPEGImage</name>
+			<extension>jpg</extension>
+			<description>JPEG Image</description>
+			<contentType>image/jpeg</contentType>
+		</fileType>
+		<fileType>
+			<name>JPEGImage</name>
+			<extension>jpeg</extension>
+			<description>JPEG Image</description>
+			<contentType>image/jpeg</contentType>
+		</fileType>
+		<fileType>
+			<name>PNGImage</name>
+			<extension>png</extension>
+			<description>PNG Image</description>
+			<contentType>image/png</contentType>
+		</fileType>
+		<fileType>
+			<name>GIFImage</name>
+			<extension>gif</extension>
+			<description>GIF Image</description>
+			<contentType>image/gif</contentType>
+		</fileType>
+		<fileType>
+			<name>SVGContent</name>
+			<extension>svg</extension>
+			<description>Scalable Vector Graphics</description>
+			<contentType>image/svg+xml</contentType>
+		</fileType>
+		
+	</fileTypes>
 	<!-- Whether the application handles the update when a user double-clicks an update version
 	of the AIR file (true), or the default AIR application installer handles the update (false).
 	Optional. Default false. -->
@@ -239,12 +276,6 @@
         </Entitlements> -->
 	<!-- Display Resolution for the app (either "standard" or "high"). Optional. Default "standard" -->
 	<!-- <requestedDisplayResolution></requestedDisplayResolution> -->
-	<!-- Forcing Render Mode CPU for the devices mentioned. Optional  -->
-	<!-- <forceCPURenderModeForDevices></forceCPURenderModeForDevices> -->
-	<!-- File containing line separated list of external swf paths. These swfs won't be 
-	packaged inside the application and corresponding stripped swfs will be output in 
-	externalStrippedSwfs folder. -->
-	<!-- <externalSwfs></externalSwfs> -->
 	<!-- </iPhone> -->
 
 	<!-- Specify Android specific tags that get passed to AndroidManifest.xml file. -->

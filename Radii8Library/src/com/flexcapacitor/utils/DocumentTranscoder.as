@@ -70,9 +70,20 @@ package com.flexcapacitor.utils {
 		
 		/**
 		 * An array of component definitions that can be used to get more information about
-		 * a class or object. You must manually set this.  
+		 * a class or object. You must manually set this.
+		 * Deprecated. Use classRegistry
 		 * */
 		public var definitions:Array = [];
+		
+		/**
+		 * Contains references to classes and namespaces
+		 * */
+		public var classRegistry:ClassRegistry;
+		
+		/**
+		 * Set to true to use class registry
+		 * */
+		public var useClassRegistry:Boolean = true;
 
 		/**
 		 * Set this in the constructor in sub classes
@@ -292,7 +303,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Apply presets
 		 * */
-		public function applyPresets(options:ExportOptions, enforceAllValues:Boolean = false):void {
+		public function applyPresets(options:TranscoderOptions, enforceAllValues:Boolean = false):void {
 			var properties:Array = ClassUtils.getPropertyNames(options);
 			var value:*;
 			
@@ -339,6 +350,8 @@ package com.flexcapacitor.utils {
 			}
 			
 			applyPresets(previousPresets);
+			
+			previousPresets = null;
 			
 			return true;
 		}

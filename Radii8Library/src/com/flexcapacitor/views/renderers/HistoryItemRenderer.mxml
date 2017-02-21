@@ -48,6 +48,7 @@
 				var historyEventItems:Array;
 				var message:String = "";
 				var change:PropertyChanges;
+				var excludes:Array = ["password", "credentials", "textFlow", "dataProvider"];
 				
 				if (data) {
 					historyItem = data as HistoryEvent;
@@ -61,8 +62,8 @@
 							
 							change = historyEventItem.propertyChanges;
 							if (change) {
-								message += "Start: " + ObjectUtil.toString(change.start) + "\n";
-								message += "End: " + ObjectUtil.toString(change.end);
+								message += "Start: " + ObjectUtil.toString(change.start, null, excludes) + "\n";
+								message += "End: " + ObjectUtil.toString(change.end, null, excludes);
 							}
 						}
 					}

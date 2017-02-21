@@ -981,6 +981,11 @@
 				Radiate.sizeSelectionToDocument();
 			}
 			
+			protected function resizeDocumentToContent_itemClickHandler(event:MenuEvent):void
+			{
+				Radiate.expandDocumentToContents();
+			}
+			
 			protected function restoreImageToOriginalSize_itemClickHandler(event:MenuEvent):void
 			{
 				var iDocument:IDocument = radiate.selectedDocument;
@@ -1648,11 +1653,12 @@
 				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToImage_itemClickHandler(event)" />
 				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
 				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
+				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to show all content" itemClick="resizeDocumentToContent_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="sizeSelectionToContent_itemClickHandler(event)" />
 				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />
 				<model:MenuItem id="removeExplicitWidth" label="Remove explicit width" itemClick="removeExplicitWidth_itemClickHandler(event)" />
-				<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />
+				<!--<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />-->
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="showProjectSource_itemClickHandler(event)" />
 				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="showDocumentSource_itemClickHandler(event)"/>

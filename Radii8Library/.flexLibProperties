@@ -30,10 +30,7 @@
     <classEntry path="com.flexcapacitor.model.DocumentMetaData"/>
     <classEntry path="com.flexcapacitor.model.DocumentRevision"/>
     <classEntry path="com.flexcapacitor.model.EventMetaData"/>
-    <classEntry path="com.flexcapacitor.model.ExportOptions"/>
-    <classEntry path="com.flexcapacitor.model.FileInfo"/>
     <classEntry path="com.flexcapacitor.model.GroupOptions"/>
-    <classEntry path="com.flexcapacitor.model.HTMLExportOptions"/>
     <classEntry path="com.flexcapacitor.model.IDocument"/>
     <classEntry path="com.flexcapacitor.model.IDocumentData"/>
     <classEntry path="com.flexcapacitor.model.IDocumentExporter"/>
@@ -46,7 +43,6 @@
     <classEntry path="com.flexcapacitor.model.ISavedData"/>
     <classEntry path="com.flexcapacitor.model.ISettings"/>
     <classEntry path="com.flexcapacitor.model.ImageData"/>
-    <classEntry path="com.flexcapacitor.model.ImportOptions"/>
     <classEntry path="com.flexcapacitor.model.InspectableClass"/>
     <classEntry path="com.flexcapacitor.model.InspectorData"/>
     <classEntry path="com.flexcapacitor.model.LoadResultsEvent"/>
@@ -62,7 +58,6 @@
     <classEntry path="com.flexcapacitor.model.Size"/>
     <classEntry path="com.flexcapacitor.model.SourceData"/>
     <classEntry path="com.flexcapacitor.model.TranscoderDescription"/>
-    <classEntry path="com.flexcapacitor.model.TranscoderOptions"/>
     <classEntry path="com.flexcapacitor.model.ValuesObject"/>
     <classEntry path="com.flexcapacitor.skins.DeviceImage"/>
     <classEntry path="com.flexcapacitor.skins.DeviceSkin"/>

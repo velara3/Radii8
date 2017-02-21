@@ -260,6 +260,9 @@
 			dragStart="list_dragStartHandler(event)"
 			itemRenderer="com.flexcapacitor.views.renderers.ComponentsRenderer"
 			>
+		<!--<s:layout>
+			<s:TileLayout requestedColumnCount="2" />
+		</s:layout>-->
 	</s:List>
 	
 	<s:Label id="dropTargetLabel" width="100%" paddingLeft="4" paddingTop="4" visible="false" includeInLayout="false"/>

@@ -32,6 +32,8 @@
 			import com.flexcapacitor.model.HTMLExportOptions;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
+			import com.flexcapacitor.model.ImportOptions;
+			import com.flexcapacitor.model.MXMLImportOptions;
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.model.TranscoderDescription;
@@ -52,6 +54,7 @@
 			import mx.utils.Platform;
 			import mx.validators.IValidator;
 			
+			import spark.components.Application;
 			import spark.events.IndexChangeEvent;
 			import spark.layouts.BasicLayout;
 			
@@ -120,6 +123,7 @@
 			public var editorMargin:String = "28px 0 8px 0px";
 			
 			public var settingEditorText:Boolean;
+			public var settingTargets:Boolean;
 			public var editingTemplate:Boolean;
 			
 			
@@ -136,9 +140,6 @@
 			public var htmlRenderTime:int;
 			public var htmlStartCompleteTime:int;
 			public var htmlCompleteTime:int;
-			
-			
-			public var loadingClasses:Boolean;
 			
 			/**
 			 * Last source data
@@ -164,15 +165,9 @@
 				
 				addListeners();
 				
-				if (Radiate.isDesktop) {
-					currentState = "desktop";
-					
-					if (aceEditor==null) {
-						createEditors();
-						
-						updateEditorOptions();
-					}
-				}
+				createEditors();
+				
+				updateEditorOptions();
 				
 				if (basicTemplate==null) {
 					basicTemplate = new Radii8LibraryTranscodersAssets.basicHTMLDocumentReusable();
@@ -204,6 +199,8 @@
 				if (Platform.isBrowser) {
 					editorMargin = "0";
 				}
+				editorMargin = "0";
+				
 				if (aceEditor) {
 					aceEditor.visible = true;
 				}
@@ -362,20 +359,33 @@
 			 * Handle target change
 			 * */
 			protected function handleTargetChange(event:RadiateEvent):void {
+				var language:String;
+				
+				if (settingTargets) return;
+				
+				language = getSelectedLanguage();
 
 				// if code is not modified by the user 
 				// and show selection 
 				// we only want to update the view on selection change when we are 
 				// paying attention when we have show selected component code option enabled
-				if (!isCodeModifiedByUser) {
-					updateCodeEditors();
-				}
-				else if (updateCodeLive.selected && radiate.isPreviewDocumentVisible()) {
-					updateCodeEditors(true);
-					updateHTMLPreview();
+				if (language==CodeManager.HTML) {
+					if (!isCodeModifiedByUser) {
+						updateCodeEditors();
+					}
+					else if (updateCodeLive.selected && radiate.isPreviewDocumentVisible()) {
+						updateCodeEditors(true);
+						updateHTMLPreview();
+					}
 				}
 				
-				if (updateCodeLive.selected) {var language:String = getSelectedLanguage();
+				if (language==CodeManager.MXML) {
+					//if (isCodeModifiedByUser) {
+						updateCodeEditors();
+					//}
+				}
+				
+				if (updateCodeLive.selected) {
 					radiate.dispatchCodeUpdatedEvent(sourceData, language);
 				}
 			}
@@ -476,7 +486,7 @@
 				else if (selectedLanguage == CodeManager.MXML) {
 					code = aceEditor.text;
 					isCodeModifiedByUser = true;
-					importSource(code);
+					importMXMLSource(code);
 				}
 				else {
 					isCodeModifiedByUser = false;
@@ -591,6 +601,8 @@
 			protected function updateCodeLive_changeHandler(event:Event = null):void {
 				clearTimeLabel();
 				var language:String;
+				
+				language = getSelectedLanguage();
 			
 				if (updateCodeLive.selected) {
 					aceEditor.addEventListener(Event.CHANGE, editorChangeHandler);
@@ -598,11 +610,10 @@
 					templateEditor.addEventListener(Event.CHANGE, templateEditorChangeHandler);
 					isCodeModifiedByUser = true;
 					updateCodeEditors(true);
-					language = getSelectedLanguage();
 					radiate.dispatchCodeUpdatedEvent(sourceData, language);
 					
 					if (language==CodeManager.MXML && aceEditor) {
-						importSource(aceEditor.text);
+						importMXMLSource(aceEditor.text);
 					}
 				}
 				else {
@@ -611,7 +622,6 @@
 					templateEditor.addEventListener(Event.CHANGE, templateEditorChangeHandler);
 					isCodeModifiedByUser = false;
 					updateCodeEditors(true);
-					language = getSelectedLanguage();
 					radiate.dispatchCodeUpdatedEvent(sourceData, language);
 				}
 			}
@@ -626,7 +636,7 @@
 			 * Put the generated code into a text area
 			 * */
 			public function setEditorText(sourceData:SourceData):void {
-				var createEditor:String = "createEditor";
+				//var createEditor:String = "createEditor";
 				var result:Object;
 			
 				settingEditorText = true;
@@ -657,6 +667,14 @@
 					aceEditor.resetUndoHistory();
 					aceCSSEditor.resetUndoHistory();
 				}
+				
+				var object:Object = XMLUtils.getValidationXML(aceEditor.text);
+				
+				if (object.isValid) {
+					//var namespaces:Array = object.xml.namespaceDeclarations();
+					classRegistry.addNamespaces(object.xml);
+				}
+				
 				settingEditorText = false;
 				
 			}
@@ -1086,13 +1104,20 @@
 			{
 				
 			}
+			
 			protected function importButton_clickHandler(event:MouseEvent):void {
-				var code:String = aceEditor.text;
+				var code:String;
+				var language:String;
 				
-				importSource(code);
+				language = getSelectedLanguage();
+				
+				if (language==CodeManager.MXML) {
+					code = aceEditor.text;
+					importMXMLSource(code);
+				}
 			}
 			
-			protected function importSource(code:String):void {
+			protected function importMXMLSource(code:String):void {
 				var sourceData:SourceData;
 				var validationInfo:XMLValidationInfo;
 				var selectedDocument:IDocument = radiate.selectedDocument;
@@ -1117,6 +1142,8 @@
 				var error:Object;
 				var stringMethod:Boolean = true;
 				var mxmlRenderTime:int;
+				var preventDefaultMessages:Boolean;
+				var mxmlOptions:MXMLImportOptions;
 				
 				// NOTE: 
 				// this is importing on the fly and then removing a reference to the last target
@@ -1144,6 +1171,8 @@
 				isValid = XMLUtils.isValidXML(code);
 				var browserErrorMessage:String;
 				//error = XMLUtils.validationError;
+				preventDefaultMessages = Radiate.preventDefaultMessages;
+				Radiate.preventDefaultMessages = true;
 				
 				if (!isValid && code!="") {
 					validationInfo = XMLUtils.validateXML(code, true);
@@ -1210,12 +1239,21 @@
 					//currentIndex = Math.max(0, currentIndex-1);
 				}
 				
-				if (lastTarget) {
+				if (lastTarget is Application) {
+					mxmlOptions = new MXMLImportOptions();
+					//mxmlOptions.importChildNodes = false;
+					mxmlOptions.removeAllOnImport = true;
+					
+					// not very efficient if setting an attribute - we need to refactor
+					//Application(lastTarget).removeAllElements();
+					//Radiate.removeElement(lastTarget);
+				}
+				else {
 					Radiate.removeElement(lastTarget);
 				}
 				
 				try {
-					sourceData = radiate.importMXMLDocument(selectedProject, selectedDocument, code, parentInstance as IVisualElement, currentIndex);
+					sourceData = radiate.importMXMLDocument(selectedProject, selectedDocument, code, parentInstance as IVisualElement, currentIndex, null, mxmlOptions, true, false);
 				}
 				catch (importError:Error) {
 					HistoryManager.undo(selectedDocument);
@@ -1240,7 +1278,11 @@
 					lastTarget = null;
 					
 					HistoryManager.mergeLastHistoryEvent(selectedDocument, "Updated source");
-					Radiate.setTargets(sourceData.targets);
+					if (sourceData.errors.length==0) {
+						settingTargets = true;
+						Radiate.setTargets(sourceData.targets);
+						settingTargets = false;
+					}
 					hideMessage();
 				}
 				else {
@@ -1286,6 +1328,8 @@
 					renderTime.text = "";
 					renderTime.toolTip = "";
 				}
+				
+				Radiate.preventDefaultMessages = preventDefaultMessages;
 			}
 			
 			
@@ -1312,74 +1356,33 @@
 				if (aceEditor.aceFound) {
 					aceEditor.clearAnnotations();
 				}
+				
 				editorGroup.bottom = 0;
 			}
 			
 			private function setupCodeComplete():void {
 				var renderCommand:AceCommand;
+				var saveCommand:AceCommand;
 				var textFlowParser:ITextImporter;
 				
-				ClassLoader.debug = debug;
-				classLoader = new ClassLoader();
-				classLoader.configPath = "assets/manifest/";
-				classLoader.configFileName = "flex-config-template.xml";
-				classLoader.addEventListener(ClassLoader.NAMESPACE_LOADED, namespaceLoaded, false, 0, true);
-				classLoader.addEventListener(ClassLoader.NAMESPACES_LOADED, namespacesLoaded, false, 0, true);
-				classLoader.addEventListener(IOErrorEvent.IO_ERROR, ioErrorEvent, false, 0, true);
-				classLoader.load();
-				
-				aceEditor.setCompleters(null);
+				aceEditor.setCompleters([]);//aceEditor.setCompleters(null);
 				aceEditor.addCompleter(codeCompleter, getDocTooltip);
 				
 				//aceEditor.addCommand(new AceCommand("find", {win: "Ctrl-B", "mac": "Cmd-B"}, findKeyboardHandler));
-				aceEditor.addCommand(new AceCommand("save", {win: "Ctrl-S", "mac": "Cmd-S"}, saveKeyboardHandler));
+				
+				saveCommand = new AceCommand("save");
+				saveCommand.bindKey = {win: "Ctrl-S", "mac": "Cmd-S"};
+				saveCommand.exec = saveKeyboardHandler;
+				
+				aceEditor.addCommand(saveCommand);
 				
 				renderCommand = new AceCommand("render");
-				renderCommand.bindKey =  {win: "Ctrl-Enter", "mac": "Cmd-Enter"};
-				renderCommand.exec =  renderKeyboardHandler;
+				renderCommand.bindKey = {win: "Ctrl-Enter", "mac": "Cmd-Enter"};
+				renderCommand.exec = renderKeyboardHandler;
 				
 				aceEditor.addCommand(renderCommand);
 				
-				aceEditor.blur();				
-			}
-			
-			protected function namespaceLoaded(event:Event):void {
-				var uri:String = classLoader.lastNamespaceURI;
-				appendEditorText("Loaded " + uri);
-				//appendEditorText(classLoader.componentsList.toXMLString());
-				//appendEditorText(classLoader.componentsArray);
-			}
-			
-			protected function namespacesLoaded(event:Event):void {
-				var xml:XML;
-				var namespaces:Object;
-				
-				appendEditorText("Namespaces loaded");
-				
-				/**
-				xml = new XML(embeddedMXML.value);
-				namespaces = xml.namespaceDeclarations();
-				
-				for each (var ns:Namespace in namespaces) {
-					classRegistry.addNamespace(ns);
-					appendEditorText("Registering namespace " + ns.uri + " as " + ns.prefix);
-				}
-				*/
-				
-				//registerNamespaces();
-				
-				loadingClasses = false;
-				//return;
-				
-				aceEditor.mode = "ace/mode/xml";
-				aceEditor.showGutter = true;
-				//setEditorText(embeddedMXML.value);
-				//applicationCompleteHandler(null);
-			}
-			
-			protected function ioErrorEvent(event:Event):void
-			{
-				if (debug) trace(event);
+				aceEditor.blur();
 			}
 			
 			/**
@@ -1410,22 +1413,27 @@
 				var tokenText:String = "";
 				var entityText:String = "";
 				var classFoundText:String = "";
-				
+				var count:int;
 				//PerformanceMeter.mark("Start", true);
 				isMultiline = aceEditor.isSelectionMultiline();
 				isMouseDown = aceEditor.isMouseDown();
 				
-				if (loadingClasses) { return; }
 				if (isMultiline && isMouseDown) { return; }
 				
 				cursor = aceEditor.getCursor();
 				token = aceEditor.getTokenAt(cursor.row, cursor.column);
-				type = token ? token.type : null;
 				//PerformanceMeter.mark("After getTokenAt");
+				type = token ? token.type : null;
 				
-				tokenInfo = AceEditorUtils.getTokenInformation(aceEditor);
-				suggestions = AceEditorUtils.getSuggestionList(tokenInfo, aceEditor);
-				//PerformanceMeter.mark("After getAutoCompleteList");
+				if (cursor.row<0 || cursor.column<0) {
+					type = null;
+					suggestions = [];
+				}
+				else {
+					tokenInfo = AceEditorUtils.getTokenInformation(aceEditor);
+					suggestions = AceEditorUtils.getSuggestionList(tokenInfo, aceEditor);
+					count = suggestions.length; //PerformanceMeter.mark("After getAutoCompleteList");
+				}
 				
 				if (type!=null) {
 					cursorString = aceEditor.getCursorString(cursor);
@@ -1462,11 +1470,6 @@
 					cursorLocationLabel.text = cursorString;
 				}
 				
-				var updatedQName:QName;
-				var classObject:Object;
-				var tagQName:QName;
-				var attributeQName:QName;
-				var qualifiedClassName:String;
 				
 				//PerformanceMeter.mark("After end of cursorChange");
 				
@@ -1514,7 +1517,19 @@
 			public function saveKeyboardHandler(editor:Object=null, event:Object=null):void {
 				//trace("save keyboard event");
 				if (debug) trace("saved");
-				//saveDocumentButton_clickHandler();
+				
+				/*
+				var iDocument:IDocument = radiate.selectedItem as IDocument;
+				
+				if (iDocument) {
+					
+					Radiate.callAfter(250, saveDocument, iDocument);
+					Radiate.info("Saving document '" + iDocument.name + "'");
+				}
+				else {
+					Radiate.warn("No document selected");
+				}
+				*/
 			}
 			
 			/**
@@ -1523,6 +1538,9 @@
 			public function renderKeyboardHandler(editor:Object=null, event:Object=null):void {
 				//trace("Keyboard render event");
 				//invalidateDesignView();
+				var code:String = aceEditor.text;
+				
+				importMXMLSource(code);
 			}
 			
 			protected function cursorLocationLabel_clickHandler(event:MouseEvent):void
@@ -1652,6 +1670,7 @@ IFRAME_ID {
 					top="30" 
 					width="100%" 
 					height="100%" 
+					minHeight="10"
 					liveDragging="true">
 		
 		<c:AceEditor id="templateEditor" 
@@ -1678,6 +1697,7 @@ IFRAME_ID {
 					 find="editorFindHandler(event)"
 					 scrollSpeed=".5"
 					 useWordWrap="{enableWordWrap}"
+					 changeCursor="cursorChangeHandler(event)"
 					 />
 		
 		<c:AceEditor id="aceCSSEditor" 
@@ -1906,6 +1926,6 @@ IFRAME_ID {
 	</s:HGroup>
 	
 	
-	<s:Label id="cursorLocationLabel" text="" bottom="0" left="10"
+	<s:Label id="cursorLocationLabel" text="" bottom="0" right="10"
 			 click="cursorLocationLabel_clickHandler(event)"/>
 </s:Group>

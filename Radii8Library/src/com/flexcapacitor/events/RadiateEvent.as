@@ -365,6 +365,11 @@ package com.flexcapacitor.events {
 		 * */
 		public static const PRINT_COMPLETE:String = "printComplete";
 		
+		/**
+		 * Dispatched when namespaces have loaded
+		 * */
+		public static const NAMESPACES_LOADED:String = "namespacesLoaded";
+		
 		
 		public var data:Object;
 		public var selectedItem:Object;

@@ -79,6 +79,8 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.tools.Text;
 	import com.flexcapacitor.utils.ArrayUtils;
 	import com.flexcapacitor.utils.Base64;
+	import com.flexcapacitor.utils.ClassLoader;
+	import com.flexcapacitor.utils.ClassRegistry;
 	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DocumentTranscoder;
@@ -206,6 +208,7 @@ package com.flexcapacitor.controller {
 	import spark.components.TextSelectionHighlighting;
 	import spark.components.supportClasses.DropDownListBase;
 	import spark.components.supportClasses.GroupBase;
+	import spark.components.supportClasses.SkinnableComponent;
 	import spark.components.supportClasses.SkinnableTextBase;
 	import spark.components.supportClasses.SliderBase;
 	import spark.components.supportClasses.TextBase;
@@ -255,6 +258,11 @@ package com.flexcapacitor.controller {
 	 * Dispatched on end of undo history
 	 * */
 	[Event(name=RadiateEvent.END_OF_UNDO_HISTORY, type="com.flexcapacitor.events.RadiateEvent")]
+	
+	/**
+	 * Dispatched when namespaces have loaded
+	 * */
+	[Event(name=RadiateEvent.NAMESPACES_LOADED, type="com.flexcapacitor.events.RadiateEvent")]
 	
 	/**
 	 * Dispatched when register results are received
@@ -1292,6 +1300,19 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Dispatch namespaces loaded event
+		 * */
+		public function dispatchNamespacesLoadedEvent(successful:Boolean = true):void {
+			var assetLoadedEvent:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.NAMESPACES_LOADED)) {
+				assetLoadedEvent = new RadiateEvent(RadiateEvent.NAMESPACES_LOADED);
+				assetLoadedEvent.successful = successful;
+				dispatchEvent(assetLoadedEvent);
+			}
+		}
+		
+		/**
 		 * Dispatch a history change event
 		 * */
 		public function dispatchHistoryChangeEvent(document:IDocument, newIndex:int, oldIndex:int, historyEvent:HistoryEvent = null):void {
@@ -2007,6 +2028,7 @@ package com.flexcapacitor.controller {
 			Selection.debug			= false;
 			LayoutDebugHelper.debug	= false;
 			MainView.debug 			= false;
+			ClassLoader.debug 		= false;
 			
 			// testing for why layout is invalid when disconnected from network
 			var layoutManager:ILayoutManager;
@@ -2073,17 +2095,46 @@ package com.flexcapacitor.controller {
 			//radiate.openInitialProjects();
 			//LayoutManager.getInstance().usePhasedInstantiation = false;
 			
+			registerClasses();
 		}
 		
+		protected static function registerClasses():void {
+			classRegistry = ClassRegistry.getInstance();
+			
+			classLoader = new ClassLoader();
+			classLoader.configPath = "assets/manifest/";
+			classLoader.configFileName = "flex-config-template.xml";
+			classLoader.addEventListener(ClassLoader.NAMESPACE_LOADED, namespaceLoaded, false, 0, true);
+			classLoader.addEventListener(ClassLoader.NAMESPACES_LOADED, namespacesLoaded, false, 0, true);
+			classLoader.addEventListener(IOErrorEvent.IO_ERROR, namespacesIOErrorEvent, false, 0, true);
+			classLoader.load();
+		}
+		
+		protected static function namespaceLoaded(event:Event):void {
+			var uri:String = classLoader.lastNamespaceURI;
+		}
+		
+		protected static function namespacesLoaded(event:Event):void {
+			loadingClasses = false;
+			classesLoaded = true;
+			
+			instance.dispatchNamespacesLoadedEvent();
+		}
+		
+		protected static function namespacesIOErrorEvent(event:Event):void {
+			//if (debug) {
+				error("Namespace files were not loaded", event);
+			//}
+		}
 		
 		protected function uncaughtErrorHandler2(event:UncaughtErrorEvent):void
 		{
 			//trace("Uncaught error: " + event);
 			if ("text" in event && event.text!="") {
-				Radiate.error(event.text, event);
+				error(event.text, event);
 			}
 			else if ("error" in event && event.error && "message" in event.error) {
-				Radiate.error(event.error.message, event);
+				error(event.error.message, event);
 			}
 		}
 		
@@ -3085,6 +3136,26 @@ package com.flexcapacitor.controller {
 		public static var savedData:SavedData;
 		
 		/**
+		 * Registers and maps classes with namespaces 
+		 * */
+		public static var classRegistry:ClassRegistry;
+		
+		/**
+		 * Loads flex config and component manifests
+		 * */
+		public static var classLoader:ClassLoader;
+		
+		/**
+		 * Indicates classes are loading
+		 * */
+		public static var loadingClasses:Boolean;
+		
+		/**
+		 * Indicates all classes have loaded
+		 * */
+		public static var classesLoaded:Boolean;
+		
+		/**
 		 * Collection of mouse cursors that can be added or removed to 
 		 * */
 		[Bindable]
@@ -3523,9 +3594,11 @@ package com.flexcapacitor.controller {
 			if (value>maxScale) {
 				value = maxScale;
 			}
+			
 			if (value<minScale) {
 				value = minScale;
 			}
+			
 			if (selectedDocument && !isNaN(value) && value>0) {
 				//DisplayObject(selectedDocument.instance).scaleX = value;
 				//DisplayObject(selectedDocument.instance).scaleY = value;
@@ -3753,10 +3826,10 @@ package com.flexcapacitor.controller {
 		// 
 		//----------------------------------
 		
-		public static var docsURL:String = "http://flex.apache.org/asdoc/";
-		public static var docsURL2:String = "http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/";
-		
+		public static var docsURL:String = "https://flex.apache.org/asdoc/";
+		public static var docsURL2:String = "https://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/";
 		public static var w3URL:String = "https://www.w3.org/TR/DOM-Level-3-Events/events.html#event-DOMSubtreeModified";
+		public static var mozillaURL:String = "https://developer.mozilla.org/en-US/";
 		
 		/**
 		 * Returns the URL to the help document online based on MetaData passed to it. 
@@ -8345,7 +8418,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					rectangle = DisplayObjectUtils.getRectangleBounds(textTarget, iDocument.instance);
 				}
 				
-				focusAlpha = 0.25;
+				focusAlpha = 0;
 				valuesObject.x = rectangle.x;
 				valuesObject.y = rectangle.y;
 				valuesObject.minWidth = MIN_WIDTH;
@@ -10068,7 +10141,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		/**
 		 * Import MXML code
 		 * */
-		public function importMXMLDocument(project:IProject, iDocument:IDocument, code:String, container:Object = null, containerIndex:int = -1, name:String = null, dispatchEvents:Boolean = true):SourceData {
+		public function importMXMLDocument(project:IProject, iDocument:IDocument, code:String, container:Object = null, containerIndex:int = -1, name:String = null, options:ImportOptions = null, dispatchEvents:Boolean = true, reportErrors:Boolean = true):SourceData {
 			var result:Object;
 			var newDocument:Boolean;
 			var sourceData:SourceData;
@@ -10083,7 +10156,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 			
 			if (!newDocument) {
-				sourceData = parseSource(iDocument, code, container, containerIndex);
+				sourceData = parseSource(iDocument, code, container, containerIndex, options, dispatchEvents, reportErrors);
 				
 				return sourceData;
 			}
@@ -10740,29 +10813,34 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * If code is null and source is set then parses source.
 		 * If parent is set then imports code to the parent
 		 * */
-		public static function parseSource(document:IDocument, code:String = null, parent:Object = null, containerIndex:int = -1, dispatchEvents:Boolean = true):SourceData {
-			var codeToParse:String = code ? code : document.source;
+		public static function parseSource(document:IDocument, code:String = null, parent:Object = null, containerIndex:int = -1, options:ImportOptions = null, dispatchEvents:Boolean = true, reportErrors:Boolean = false):SourceData {
+			var codeToParse:String;
 			var currentChildren:XMLList;
 			var nodeName:String;
 			var child:XML;
 			var xml:XML;
 			var root:String;
 			var isValid:Boolean;
-			var rootNodeName:String = MXMLDocumentConstants.ROOT_NODE_NAME;
+			var rootNodeName:String;
 			var updatedCode:String;
 			var mxmlDocumentImporter:MXMLDocumentImporter;
 			var componentDescription:ComponentDescription;
 			var sourceDataLocal:SourceData;
+			var transcoder:TranscoderDescription;
+			var importer:DocumentTranscoder;
 			var message:String;
 			var openPopUpOnError:Boolean;
 			
+			rootNodeName = MXMLDocumentConstants.ROOT_NODE_NAME;
+			codeToParse = code ? code : document.source;
+			
 			// I don't like this here - should move or dispatch events to handle import
-			var transcoder:TranscoderDescription = CodeManager.getImporter(CodeManager.MXML);
-			var importer:DocumentTranscoder = transcoder.importer;
+			transcoder = CodeManager.getImporter(CodeManager.MXML);
+			importer = transcoder.importer;
 			
 			if (codeToParse=="" || codeToParse=="null") {
 				message = "No code to parse for document, \"" + document.name + "";
-				Radiate.error(message);
+				error(message);
 				return null;
 			}
 			
@@ -10783,9 +10861,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			try {
 				xml = new XML(codeToParse);
 			}
-			catch (error:Error) {
+			catch (errorError:Error) {
 				message = "Could not parse code for document, \"" + document.name + "\". Fix the code before you import.";
-				Radiate.error("Could not parse code for document, \"" + document.name + "\". \n" + error.message + " \nCode: \n" + codeToParse);
+				error("Could not parse code for document, \"" + document.name + "\". \n" + errorError.message + " \nCode: \n" + codeToParse);
 				
 				if (openImportPopUp && openPopUpOnError) {
 					openImportPopUp.popUpOptions = {title:message, code:codeToParse};
@@ -10823,13 +10901,13 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					componentDescription = document.componentDescription;
 				}
 				
-				sourceDataLocal = importer.importare(codeToParse, document, componentDescription, containerIndex, null, dispatchEvents);
+				sourceDataLocal = importer.importare(codeToParse, document, componentDescription, containerIndex, options, dispatchEvents);
 				
 				if (container) {
-					Radiate.instance.setTarget(container);
+					instance.setTarget(container);
 				}
 				
-				if (sourceDataLocal.errors && sourceDataLocal.errors.length) {
+				if (sourceDataLocal.errors && sourceDataLocal.errors.length && reportErrors) {
 					outputMXMLErrors("", sourceDataLocal.errors);
 				}
 			}
@@ -14150,10 +14228,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			if (documentInstance) {
 				rectangle = new Rectangle(0, 0, bitmapData.width, bitmapData.height);
 				
-				if (rectangle.width>0 && 
-					rectangle.height>0 &&
-					documentInstance.width!=rectangle.width && 
-					documentInstance.height!=rectangle.height) {
+				if (rectangle.width>0 && rectangle.height>0) {
 					setProperties(documentInstance, ["width","height"], rectangle, "Size document to image");
 					resized = true;
 				}
@@ -14180,6 +14255,38 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					setProperties(targetToResize, ["width","height"], rectangle, "Size selection to document");
 					resized = true;
 				}
+			}
+			
+			return resized;
+		}
+		
+		/**
+		 * Resizes the current document to show all of it's content
+		 * */
+		public static function expandDocumentToContents():Boolean {
+			var iDocument:IDocument = instance.selectedDocument;
+			var targetObject:Object = iDocument.instance;
+			var rectangle:Rectangle;
+			var fitRectangle:Rectangle;
+			var resized:Boolean;
+			var width:Number;
+			var height:Number;
+			
+			fitRectangle = new Rectangle();
+			rectangle = new Rectangle();
+			
+			width = targetObject.contentGroup.contentWidth;
+			height = targetObject.contentGroup.contentHeight;
+			
+			fitRectangle.width = width;
+			fitRectangle.height = height;
+			
+			rectangle.width = targetObject.width;
+			rectangle.height = targetObject.height;
+			
+			if (fitRectangle.width>rectangle.width>0 || fitRectangle.height>rectangle.height) {
+				setProperties(targetObject, ["width","height"], fitRectangle, "Expand document");
+				resized = true;
 			}
 			
 			return resized;

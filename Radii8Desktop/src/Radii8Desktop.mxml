@@ -14,7 +14,7 @@
 					   height="100%" 
 					   minWidth="900" 
 					   minHeight="600"
-					   frameRate="30"
+					   frameRate="42"
 					   pageTitle="Radiate"
 					   
 					   keyUp="windowedapplication1_keyUpHandler(event)"
@@ -70,6 +70,21 @@
 	
 	using hand tool in a release build and the application hung
 	got error 2094
+	
+	Process terminated without establishing connection to debugger.
+	
+	application descriptor not found
+	
+	
+	Launch command details:  "/Applications/Adobe Flash Builder 4.7/sdks/4.15 AIR 23/bin/adl" 
+	-runtime "/Applications/Adobe Flash Builder 4.7/sdks/4.15 AIR 23/runtimes/air/mac" 
+	/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Desktop/bin-debug/ApplicationDesign-app.xml 
+	/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Desktop/bin-debug
+	
+	
+	ReferenceError: Error #1069: Property commandKey not found on flash.events.KeyboardEvent and there is no default value.
+	Error #1069: Property commandKey not found on flash.events.KeyboardEvent and there is no default value.
+	Occurred in Safari. Not sure of cause
 	
 					   -->
 	

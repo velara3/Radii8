@@ -3,6 +3,7 @@
 			   xmlns:s="library://ns.adobe.com/flex/spark"
 			   xmlns:mx="library://ns.adobe.com/flex/mx"
 			   xmlns:views="com.flexcapacitor.views.*"
+			   xmlns:utils="com.flexcapacitor.utils.*"
 			   xmlns:local="*"
 			   
 			   width="100%" height="100%" 
@@ -10,7 +11,8 @@
 			   applicationComplete="applicationCompleteHandler(event)" 
 			   initialize="application1_initializeHandler(event)"
 			   frameRate="46"
-			   pageTitle="Radiate" xmlns:utils="com.flexcapacitor.utils.*">
+			   pageTitle="Radiate" 
+			   >
 	
 	<!--
 	Description	Resource	Path	Location	Type
@@ -32,6 +34,10 @@
 			
 			include "build.as";
 			
+			[Embed(source="Radii8Desktop-app.xml", mimeType="application/octet-stream")]
+			public var appInfo:Class;
+			public var applicationDescriptor:XML;
+			
 			/**
 			 * 
 			 * */
@@ -45,6 +51,7 @@
 			 * */
 			protected function applicationCompleteHandler(event:FlexEvent):void {
 				var path:String;
+				var appNamespace:Namespace;
 				
 				radiate = Radiate.getInstance();
 				
@@ -52,9 +59,14 @@
 				radiate.buildDate = BUILD_DATE;
 				radiate.buildTime = BUILD_TIME;
 				
+				applicationDescriptor = new XML(new appInfo());
+				appNamespace = applicationDescriptor.namespace();
+				var versionNumber:String = applicationDescriptor.appNamespace::versionNumber;
+				radiate.versionNumber = versionNumber;
+				
 				startupBrowser();
 				
-				if (url.indexOf("http://localhost:8888")==0) {
+				if (url.indexOf("http://localhost")==0) {
 					path = "http://www.radii8.com"; // when running locally
 				}
 				
@@ -82,11 +94,6 @@
 			
 			private function listenForDragAndDrop():void {
 				HTMLDragManager.debug=false;
-				htmlDragAndDrop = new HTMLDragManager();
-				
-				htmlDragAndDrop.addEventListener(HTMLDragManager.DRAG_ENTER, dragHandler);
-				htmlDragAndDrop.addEventListener(HTMLDragManager.DRAG_EXIT, dragHandler);
-				htmlDragAndDrop.addEventListener(HTMLDragManager.DRAG_DROP, dragDropHandler);
 			}
 			
 			public function dragHandler(event:HTMLDragEvent):void {
@@ -164,6 +171,9 @@
 	
 	<fx:Declarations>
 		<utils:SecureRedirect />
+		<utils:HTMLDragManager dragDrop="dragDropHandler(event)"
+							   dragEnter="dragHandler(event)"
+							   dragExit="dragHandler(event)"/>
 	</fx:Declarations>
 	
 	<views:MainView id="mainView" width="100%" height="100%"/>

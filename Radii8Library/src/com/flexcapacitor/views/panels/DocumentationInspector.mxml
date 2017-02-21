@@ -290,7 +290,8 @@
 			</s:HGroup>
 		</s:VGroup>
 		<!-- Desktop webview goes here at runtime -->
-		<flexiframe:IFrame includeIn="web" id="docsFrame" top="28" width="100%" height="100%" />
+		<flexiframe:IFrame includeIn="web" id="docsFrame" top="28" width="100%" height="100%" 
+						   minHeight="0"/>
 	</mx:HDividedBox>
 	
 	
