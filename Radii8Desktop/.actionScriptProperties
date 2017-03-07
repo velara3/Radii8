@@ -17,28 +17,7 @@
     <sourceAttachmentPath/>
   </compiler>
   <applications>
-    <application path="TransformTests.mxml">
-      <airExcludes/>
-    </application>
-    <application path="PositioningTest.mxml">
-      <airExcludes/>
-    </application>
     <application path="Radii8Desktop.mxml">
-      <airExcludes/>
-    </application>
-    <application path="InsertImageTest.mxml">
-      <airExcludes/>
-    </application>
-    <application path="DesignViewTextTest.mxml">
-      <airExcludes/>
-    </application>
-    <application path="SetStateValueTest.mxml">
-      <airExcludes/>
-    </application>
-    <application path="RichTextEditorCallOutTest.mxml">
-      <airExcludes/>
-    </application>
-    <application path="LiveMXMLEditor.mxml">
       <airExcludes/>
     </application>
   </applications>
@@ -50,10 +29,10 @@
     <buildTarget buildTargetName="default" platformId="default">
       <airSettings airCertificatePath="/Users/monkeypunch/Documents/Adobe Flash Builder 45/InternalLibrary/preferences/android711/androidcert.p12" airTimestamp="false" anePathSet="true" version="1">
         <airExcludes>
-          <pathEntry path="assets/images/.DS_Store"/>
-          <pathEntry path="assets/icons/.DS_Store"/>
-          <pathEntry path="assets/editor/.DS_Store"/>
           <pathEntry path="assets/.DS_Store"/>
+          <pathEntry path="assets/images/.DS_Store"/>
+          <pathEntry path="assets/editor/.DS_Store"/>
+          <pathEntry path="assets/icons/.DS_Store"/>
         </airExcludes>
         <anePaths/>
         <newLaunchParams/>

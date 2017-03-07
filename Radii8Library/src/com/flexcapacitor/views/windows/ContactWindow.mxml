@@ -217,6 +217,8 @@
 				}
 				
 				if (result && result.indexOf("Mail sent")!=-1) {
+					//callLater(PopUpManager.removePopUp, [this]);
+					
 					playSentSuccessfulMessage();
 				}
 				else {

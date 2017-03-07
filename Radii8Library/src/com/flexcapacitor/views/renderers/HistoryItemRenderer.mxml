@@ -14,8 +14,8 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.events.HistoryEvent;
-			import com.flexcapacitor.events.HistoryEventItem;
+			import com.flexcapacitor.model.HistoryEventData;
+			import com.flexcapacitor.model.HistoryEventItem;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.core.IToolTip;
@@ -24,14 +24,14 @@
 			import mx.managers.ToolTipManager;
 			import mx.utils.ObjectUtil;
 			
-			public var historyItem:HistoryEvent;
+			public var historyItem:HistoryEventData;
 			public var myToolTip:IToolTip;
 			
 			override public function set data(value:Object):void {
 				super.data = value;
 				
 				if (value) {
-					historyItem = value as HistoryEvent;
+					historyItem = value as HistoryEventData;
 					
 					//rowGroup.enabled = !historyItem.reversed;
 					//Radiate.info("updating row "  + itemIndex + " :" + label + " . Enabled " + rowGroup.enabled);
@@ -51,7 +51,7 @@
 				var excludes:Array = ["password", "credentials", "textFlow", "dataProvider"];
 				
 				if (data) {
-					historyItem = data as HistoryEvent;
+					historyItem = data as HistoryEventData;
 					
 					if (historyItem) {
 						historyEventItems = historyItem.historyEventItems;

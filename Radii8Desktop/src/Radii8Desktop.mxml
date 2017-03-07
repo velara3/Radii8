@@ -12,9 +12,9 @@
 					   
 					   width="100%" 
 					   height="100%" 
-					   minWidth="900" 
+					   minWidth="800" 
 					   minHeight="600"
-					   frameRate="42"
+					   frameRate="46"
 					   pageTitle="Radiate"
 					   
 					   keyUp="windowedapplication1_keyUpHandler(event)"
@@ -86,7 +86,9 @@
 	Error #1069: Property commandKey not found on flash.events.KeyboardEvent and there is no default value.
 	Occurred in Safari. Not sure of cause
 	
-					   -->
+	There was an error downloading the update. Error# 16824
+	
+	-->
 	
 	<!-- LOOK IN TODO or CHANGES.txt for what to work on -->
 	
@@ -391,6 +393,7 @@
 						keyCode==Keyboard.I || 
 						keyCode==Keyboard.H ||
 						keyCode==Keyboard.T ||
+						keyCode==Keyboard.M ||
 						keyCode==Keyboard.SPACE) {
 						
 						if (!event.controlKey && !event.commandKey) {
@@ -445,6 +448,13 @@
 						}
 						else if (keyCode==Keyboard.I) {
 							componentDescription = radiate.getToolByName("EyeDropper");
+							
+							if (componentDescription) {
+								radiate.setTool(componentDescription.instance as ITool);
+							}
+						}
+						else if (keyCode==Keyboard.M) {
+							componentDescription = radiate.getToolByName("Marquee");
 							
 							if (componentDescription) {
 								radiate.setTool(componentDescription.instance as ITool);

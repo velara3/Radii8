@@ -48,6 +48,7 @@
 			import mx.core.IVisualElement;
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
+			import mx.managers.LayoutManager;
 			
 			import spark.components.Image;
 			import spark.components.supportClasses.GroupBase;
@@ -355,8 +356,7 @@
 							//UIComponent(target.parent).validateNow(); // this causes infinite loop when x or y is NaN...
 						}
 						else {
-							UIComponent(target.parent).validateNow(); // this causes infinite loop when x or y is NaN...
-							
+							//UIComponent(target.parent).validateNow(); // this causes infinite loop when x or y is NaN...
 						}
 					}
 				}
@@ -367,7 +367,9 @@
 						target.y = 0;
 					}
 					else {
-						UIComponent(target).validateNow();
+						// this causes infinite loop sometimes 
+						//or if target is Application
+						//UIComponent(target).validateNow();
 					}
 				}
 				

@@ -97,7 +97,7 @@ package com.flexcapacitor.utils {
 			///////////////////////
 			
 			if (options) {
-				savePresets();
+				savePresets(options);
 				applyPresets(options);
 			}
 			

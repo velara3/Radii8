@@ -19,6 +19,12 @@ package {
 		[Embed(source="assets/icons/general/actual_size.png")]
 		public static const actualSize:Class;
 		
+		[Embed(source="assets/icons/general/android.png")]
+		public static const android:Class;
+		
+		[Embed(source="assets/icons/general/androidDocument.png")]
+		public static const androidDocument:Class;
+		
 		[Embed(source="assets/icons/general/application.png")]
 		public static const application:Class;
 		
@@ -106,6 +112,12 @@ package {
 		[Embed(source="assets/icons/general/home_play.png")]
 		public static const homePlayIcon:Class;
 		
+		[Embed(source="assets/icons/general/html.png")]
+		public static const html:Class;
+		
+		[Embed(source="assets/icons/general/htmlDocument.png")]
+		public static const htmlDocument:Class;
+		
 		[Embed(source="assets/icons/general/import.png")]
 		public static const importIcon:Class;
 		
@@ -133,6 +145,9 @@ package {
 		[Embed(source="assets/icons/general/list.png")]
 		public static const list:Class;
 		
+		[Embed(source="assets/icons/general/linkeditor.png")]
+		public static const linkeditor:Class;
+		
 		[Embed(source="assets/icons/general/locked.png")]
 		public static const locked:Class;
 		
@@ -144,6 +159,12 @@ package {
 		
 		[Embed(source="assets/icons/general/logo256.png")]
 		public static const logo256:Class;
+		
+		[Embed(source="assets/icons/general/markup.png")]
+		public static const markup:Class;
+		
+		[Embed(source="assets/icons/general/mxmlDocument.png")]
+		public static const mxmlDocument:Class;
 		
 		[Embed(source="assets/icons/general/module.png")]
 		public static const module:Class;
@@ -204,6 +225,9 @@ package {
 		
 		[Embed(source="assets/icons/general/style.png")]
 		public static const style:Class;
+		
+		[Embed(source="assets/icons/general/styles.png")]
+		public static const styles:Class;
 		
 		[Embed(source="assets/icons/general/trash_can.png")]
 		public static const trashCan:Class;

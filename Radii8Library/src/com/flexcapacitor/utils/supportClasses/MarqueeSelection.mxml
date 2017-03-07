@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				
+				mouseChildren="false"
+				mouseEnabled="true"
+				mouseEnabledWhereTransparent="true"
+				width="20" height="20"
+				creationComplete="group1_creationCompleteHandler(event)"
+				>
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.events.FlexEvent;
+			import mx.graphics.BitmapFillMode;
+			
+			protected function group1_creationCompleteHandler(event:FlexEvent):void {
+				var width:int = 4;
+				var height:int = 4;
+				var alpha:int = 0;
+				
+				var fillSprite:Sprite = new Sprite();
+				fillSprite.graphics.beginFill(0xCCCCCC, 1);
+				fillSprite.graphics.drawRect(0, 0, width, height);
+				fillSprite.graphics.beginFill(0xFFFFFF, alpha);
+				fillSprite.graphics.drawRect(width, 0, width, height);
+				fillSprite.graphics.beginFill(0xFFFFFF, 1);
+				fillSprite.graphics.drawRect(0, height, width, height);
+				fillSprite.graphics.beginFill(0xCCCCCC, 1);
+				fillSprite.graphics.drawRect(width, height, width, height);
+				
+				var bitmapFill:BitmapFill = new BitmapFill();
+				bitmapFill.fillMode = BitmapFillMode.REPEAT;
+				bitmapFill.source = fillSprite;
+			}
+			
+			[Bindable]
+			public var backgroundImage:Class = Radii8LibraryToolAssets.CheckerPixelsBWT;
+		]]>
+	</fx:Script>
+	
+	<s:Rect id="hitAreaRect" width="100%" height="100%" >
+		<s:fill>
+			<s:SolidColor color="0" alpha="0"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:Group id="mainGroup" top="0" left="0" right="0" bottom="0">
+		
+		<s:Rect id="topEdge" top="0" left="0" right="0" height="1">
+			<s:fill>
+				<s:BitmapFill source="{backgroundImage}" fillMode="repeat" />
+			</s:fill>
+		</s:Rect>
+		
+		<s:Rect id="leftEdge" top="0" width="1" left="0" bottom="0">
+			<s:fill>
+				<s:BitmapFill source="{backgroundImage}" fillMode="repeat" />
+			</s:fill>
+		</s:Rect>
+		
+		<s:Rect id="rightEdge" top="0" width="1" right="0" bottom="0">
+			<s:fill>
+				<s:BitmapFill source="{backgroundImage}" fillMode="repeat" />
+			</s:fill>
+		</s:Rect>
+		
+		<s:Rect id="bottomEdge" height="1" left="0" right="1" bottom="0">
+			<s:fill>
+				<s:BitmapFill source="{backgroundImage}" fillMode="repeat" />
+			</s:fill>
+		</s:Rect>
+	</s:Group>
+	
+	<!--<s:Group id="mainGroup" maskType="alpha" mask="{rectMask}" top="0" left="0" right="0" bottom="0">
+		
+		<s:Rect id="mainGroupRect" top="0" left="0" right="0" bottom="0">
+			<s:fill>
+				<s:BitmapFill source="{Radii8LibraryToolAssets.CheckerPixelsBWT}"
+							  fillMode="repeat" />
+			</s:fill>
+		</s:Rect>
+		
+		<s:Group id="rectMask" top="0" left="0" right="1" bottom="1">
+			<s:Rect top="0" left="0" right="0" bottom="0">
+				<s:stroke>
+					<s:SolidColorStroke color="0xFF0000"/>
+				</s:stroke>
+			</s:Rect>
+		</s:Group>
+		
+		<s:Rect id="rightEdge" top="0" width="1" right="1" bottom="1">
+			<s:fill>
+				<s:BitmapFill source="{Radii8LibraryToolAssets.CheckerPixels}" fillMode="repeat" />
+			</s:fill>
+		</s:Rect>
+		
+		<s:Rect id="bottomEdge" height="1" left="0" right="1" bottom="1">
+			<s:fill>
+				<s:BitmapFill source="{Radii8LibraryToolAssets.CheckerPixelsBWT}" fillMode="repeat" />
+			</s:fill>
+		</s:Rect>
+	</s:Group>-->
+</s:Group>

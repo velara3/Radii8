@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:graphics="be.nascom.flash.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:flexcapacitor="flexcapacitor.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 
+		 implements="com.flexcapacitor.tools.IToolInspector, com.flexcapacitor.views.IInspector" 
+		 creationComplete="creationCompleteHandler(event)" 
+		 fontSize="11"
+		 >
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.tools.Marquee;
+			import com.flexcapacitor.tools.Selection;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.events.FlexEvent;
+			
+			public var radiate:Radiate;
+			public var tool:ITool;
+
+			[Bindable]
+			public var selectionTool:Marquee;
+			
+			public function get target():Object {
+				return _target;
+			}
+			
+			[Bindable]
+			public function set target(value:Object):void {
+				_target = value;
+			}
+			
+			private var _target:Object;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				tool = radiate.selectedTool;
+				
+				selectionTool = tool as Marquee;
+				
+				updateTool(tool);
+			}
+			
+			public function activate():void {
+				radiate = Radiate.getInstance();
+				
+				addListeners();
+				
+				if (selectionTool==null) {
+					selectionTool = radiate.selectedTool as Marquee;
+				}
+				
+				if (radiate.target) {
+					target = radiate.target;
+					updateTarget();
+				}
+			}
+			
+			public function deactivate():void {
+				removeListeners();
+				updateTarget();
+			}
+			
+			protected function addListeners():void {
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChangeHandler, false, 0, true);
+			}
+			
+			protected function removeListeners():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.SCALE_CHANGE, scaleChangeHandler);
+				}
+			}
+			
+			/**
+			 * Get current target
+			 * */
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem;
+				updateTarget();
+			}
+			
+			/**
+			 * Updates the view when a property is changed externally
+			 * */
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				updateTarget();
+			}
+			
+			protected function historyChangeHandler(event:RadiateEvent):void {
+				if (event.newIndex==-1 || !event.historyEventItem) return;
+				var properties:Array = event.historyEventItem.properties;
+				var numberOfProperties:int = properties ? properties.length : 0;
+				
+				if (!target) {
+					return;
+				}
+				
+				updateTarget();
+			}
+			
+			protected function scaleChangeHandler(event:RadiateEvent):void
+			{
+				updateTarget();
+				var scaled:Boolean = event.scaleX!=1 || event.scaleY!=1;
+			}
+			
+			/**
+			 * Update UI components to tool value
+			 * */
+			public function updateTool(tool:ITool):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				
+				if (toolDescription && 
+					toolDescription.instance && 
+					toolDescription.instance is Selection) {
+					
+					selectionTool = Marquee(toolDescription.instance);
+				}
+			}
+			
+			private function updateTarget():void {
+				var rectangle:Rectangle;
+				
+				rectangle = selectionTool.getMarqueeBounds();
+				
+				if (rectangle) {
+					selectionSizeLocation.text = rectangle.x + "x" + rectangle.y;
+				}
+				else {
+					selectionSizeLocation.text = "";
+				}
+				
+				var warningMessage:String = getWarningMessages(target);
+
+				if (warningMessage!=null && warningMessage!="") {
+					if (warnIcon.toolTip!=warningMessage) {
+						warnIcon.toolTip = warningMessage;
+					}
+					warnIcon.source = Radii8LibraryAssets.warningLight;
+					warnIcon.enabled = true;
+				}
+				else {
+					warnIcon.source = Radii8LibraryAssets.warning;
+					warnIcon.toolTip = "";
+					warnIcon.enabled = false;
+				}
+			}
+			
+			protected function warnIcon_clickHandler(event:MouseEvent):void
+			{
+				var warningMessage:String = getWarningMessages(target);
+				Radiate.warn(warningMessage);
+			}
+			
+			public function getWarningMessages(target:Object):String {
+				var warningMessage:String = "";
+				var warningNeeded:Boolean;
+				
+				if (radiate.selectedDocument && radiate.selectedDocument.scale!=1) {
+					if (warningMessage!="") warningMessage += "\n";
+					warningMessage += "Marquee is not supported when the document is scaled at this time.";
+					warningMessage += "\n";
+					warningNeeded = true;
+				}
+				
+				if (warningNeeded) {
+					warningMessage = warningMessage.replace(/\n$/, '');
+					return warningMessage;
+				}
+				
+				return "";
+			}
+			
+			protected function cropSelection_clickHandler(event:MouseEvent):void
+			{
+				selectionTool.cropSelection();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:HGroup width="100%" verticalAlign="top" height="100%" paddingTop="2">
+		
+		<s:Button id="cropSelection" label="Crop" toolTip="Crop selection"
+				  click="cropSelection_clickHandler(event)"/>
+		
+		<s:BitmapImage id="warnDragStrip" 
+					   source="{Radii8LibraryToolAssets.DragStrip}" 
+					   verticalAlign="top" 
+					   />
+		<s:Image id="warnIcon" 
+				 buttonMode="true"
+				 source="{Radii8LibraryAssets.warning}" 
+				 click="warnIcon_clickHandler(event)"
+				 height="18"
+				 enabled="false"
+				 />
+		
+		<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}" verticalAlign="top"/>
+		<!--<s:Label text="Drop Location: " paddingLeft="4" visible="false" includeInLayout="false"/>-->
+		<s:Label id="selectionSizeLocation" 
+				 minWidth="65" maxWidth="65" paddingTop="8" textAlign="center"
+				 fontSize="10" 
+				 maxDisplayedLines="1"
+				 toolTip="The X and Y position of the selected element"/>
+		
+	</s:HGroup>
+	
+</s:Group>

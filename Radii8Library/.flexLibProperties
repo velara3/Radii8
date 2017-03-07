@@ -9,8 +9,6 @@
     <classEntry path="com.flexcapacitor.controller.RadiateReferences"/>
     <classEntry path="com.flexcapacitor.controller.RadiateTest"/>
     <classEntry path="com.flexcapacitor.events.DragDropEvent"/>
-    <classEntry path="com.flexcapacitor.events.HistoryEvent"/>
-    <classEntry path="com.flexcapacitor.events.HistoryEventItem"/>
     <classEntry path="com.flexcapacitor.events.RadiateEvent"/>
     <classEntry path="com.flexcapacitor.logging.RadiateLogTarget"/>
     <classEntry path="com.flexcapacitor.managers.CodeManager"/>
@@ -222,6 +220,7 @@
     <classEntry path="com.flexcapacitor.views.windows.PublishWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.SaveBeforeCloseWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.SettingsWindow"/>
+    <classEntry path="com.flexcapacitor.tools.Marquee"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

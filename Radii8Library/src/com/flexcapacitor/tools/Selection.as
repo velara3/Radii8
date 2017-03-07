@@ -205,6 +205,11 @@ package com.flexcapacitor.tools {
 		public var canvasScroller:Scroller;
 		
 		/**
+		 * Indicates if the mouse is down
+		 * */
+		public var isMouseDown:Boolean;
+		
+		/**
 		 * Highlights items that are locked
 		 * */
 		public var highlightLockedItems:Boolean = true;
@@ -958,6 +963,7 @@ package com.flexcapacitor.tools {
 			var items:Array = [];
 			var targetsLength:int;
 			
+			isMouseDown = true;
 			
 			
 			/*radiate = Radiate.getInstance();

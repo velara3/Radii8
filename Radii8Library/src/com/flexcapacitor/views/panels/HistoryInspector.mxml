@@ -15,10 +15,10 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.events.HistoryEvent;
-			import com.flexcapacitor.events.HistoryEventItem;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.HistoryManager;
+			import com.flexcapacitor.model.HistoryEventData;
+			import com.flexcapacitor.model.HistoryEventItem;
 			
 			import flash.utils.getTimer;
 			
@@ -141,7 +141,7 @@
 			 * Label for the history item
 			 * */
 			public function labelFunction(item:Object):String {
-				var historyEvent:HistoryEvent = item as HistoryEvent;
+				var historyEvent:HistoryEventData = item as HistoryEventData;
 				var historyEventItems:Array = historyEvent.historyEventItems;
 				var historyEventItem:HistoryEventItem = historyEventItems && historyEventItems.length ? historyEventItems[0] : null;
 				var label:String;

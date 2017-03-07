@@ -116,7 +116,7 @@ package com.flexcapacitor.utils {
 			///////////////////////
 			
 			if (parameterOptions) {
-				savePresets();
+				savePresets(parameterOptions);
 				applyPresets(parameterOptions);
 			}
 			

@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   xmlns:utils="com.flexcapacitor.utils.*"
+					   xmlns:fl="flash.events.*"
+					   applicationComplete="windowedapplication1_applicationCompleteHandler(event)">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
+			import com.flexcapacitor.tools.supportClasses.VisualElementRotationHandle;
+			import com.flexcapacitor.utils.MXMLDocumentConstants;
+			import com.flexcapacitor.utils.MiniInspector;
+			import com.flexcapacitor.utils.XMLUtils;
+			import com.flexcapacitor.utils.supportClasses.getCurrentClassName;
+			import com.flexcapacitor.utils.supportClasses.getCurrentFunctionName;
+			import com.flexcapacitor.utils.supportClasses.getCurrentLocation;
+			import com.flexcapacitor.utils.supportClasses.getStackArray;
+			import com.flexcapacitor.utils.supportClasses.log;
+			import com.roguedevelopment.DisplayModel;
+			import com.roguedevelopment.Flex4ChildManager;
+			import com.roguedevelopment.Flex4HandleFactory;
+			import com.roguedevelopment.ObjectChangedEvent;
+			import com.roguedevelopment.ObjectHandles;
+			import com.roguedevelopment.ObjectHandlesSelectionManager;
+			import com.roguedevelopment.constraints.MaintainProportionConstraint;
+			import com.roguedevelopment.constraints.SizeConstraint;
+			import com.roguedevelopment.constraints.SnapToGridConstraint;
+			import com.roguedevelopment.decorators.AlignmentDecorator;
+			import com.roguedevelopment.decorators.DecoratorManager;
+			import com.roguedevelopment.decorators.ObjectLinesDecorator;
+			import com.roguedevelopment.decorators.OutlineDecorator;
+			import com.roguedevelopment.decorators.WebDecorator;
+			
+			import flash.utils.describeType;
+			
+			import mx.events.FlexEvent;
+			import mx.graphics.LinearGradient;
+			
+			import avmplus.getQualifiedClassName;
+			
+			private var objectHandles:ObjectHandles;
+			
+			protected function applicationCompleteHandler(event:Event):void {
+				var manager:Flex4ChildManager;
+				var selectionManager:ObjectHandlesSelectionManager;
+				var decoratorManager:DecoratorManager;
+				var alignmentDecorator:AlignmentDecorator;
+				var webDecorator:WebDecorator;
+				var outlineDecorator:OutlineDecorator;
+				var objectLinesDecorator:ObjectLinesDecorator;
+				var sizeConstraint:SizeConstraint;
+				var snapToGridConstraint:SnapToGridConstraint;
+				var handleFactory:Flex4HandleFactory;
+				
+				if (objectHandles==null) {
+					manager = new Flex4ChildManager();
+					handleFactory = new Flex4HandleFactory();
+					selectionManager = new ObjectHandlesSelectionManager();
+					
+					//selectionManager.unselectedModelState();
+					
+					// CREATE OBJECT HANDLES
+					ObjectHandles.defaultHandleClass = VisualElementHandle;
+					ObjectHandles.defaultRotationHandleClass = VisualElementRotationHandle;
+					objectHandles = new ObjectHandles(this, null, null, manager);
+					objectHandles.enableMultiSelect = true;
+					objectHandles.snapGrid = true;
+					objectHandles.snapNumber = 8;
+					objectHandles.snapAngle = false;
+					objectHandles.moveEnabled = true;
+					
+					
+					decoratorManager = new DecoratorManager(objectHandles, drawLayer);
+					
+					
+					// SHOW LINES FOR ALL OBJECTS
+					objectLinesDecorator = new ObjectLinesDecorator();
+					objectLinesDecorator.lineColor = 0xFF0000;
+					objectLinesDecorator.lineWeight = 1;
+					//decoratorManager.addDecorator(objectLinesDecorator);
+					
+					// SHOW ALIGNMENTS
+					alignmentDecorator = new AlignmentDecorator();
+					alignmentDecorator.lineColor = 0xFF0000;
+					alignmentDecorator.lineWeight = 1;
+					//decoratorManager.addDecorator(alignmentDecorator);
+					
+					// CONSTRAINTS 
+					// SIZE CONSTRAINTS
+					sizeConstraint = new SizeConstraint();
+					sizeConstraint.minWidth = 1;
+					sizeConstraint.minHeight = 1;
+					objectHandles.addDefaultConstraint(sizeConstraint);
+					
+					// SNAP TO GRID
+					snapToGridConstraint = new SnapToGridConstraint();
+					snapToGridConstraint.gridSpaceX = 8;
+					snapToGridConstraint.gridSpaceY = 8;
+					objectHandles.addDefaultConstraint(snapToGridConstraint);
+					
+					//webDecorator = new WebDecorator();
+					//decoratorManager.addDecorator(webDecorator);
+					
+					outlineDecorator = new OutlineDecorator();
+					
+					decoratorManager.addDecorator(outlineDecorator);
+					
+					//objectHandles.nudgeFactor = 10;
+					objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVED, objectMoved);
+					objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVING, objectMoving);
+					objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZING, objectResizing);
+					objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZED, objectResized);
+					objectHandles.addEventListener(ObjectChangedEvent.OBJECT_ROTATING, objectRotating);
+					objectHandles.addEventListener(ObjectChangedEvent.OBJECT_ROTATED, objectRotated);
+				}
+				
+				var constraintArray:Array = [];
+				
+				var shapeModel:DisplayModel = new DisplayModel();
+				shapeModel.width 	= sparkButton.getLayoutBoundsWidth();
+				shapeModel.height 	= sparkButton.getLayoutBoundsHeight();
+				shapeModel.x 		= sparkButton.getLayoutBoundsX();
+				shapeModel.y 		= sparkButton.getLayoutBoundsY();
+				shapeModel.x 		= sparkButton.x;
+				shapeModel.y 		= sparkButton.y;
+				shapeModel.rotation = 0;
+				
+				//var shapeModel2:DisplayModel = new DisplayModel();
+				var shapeModel2:Object = new Object();
+				shapeModel2.width 	= nestedButton.getLayoutBoundsWidth();
+				shapeModel2.height 	= nestedButton.getLayoutBoundsHeight();
+				shapeModel2.x 		= nestedButton.getLayoutBoundsX();
+				shapeModel2.y 		= nestedButton.getLayoutBoundsY();
+				shapeModel2.rotation = 0;
+				
+				var haloShapeModel:DisplayModel = new DisplayModel();
+				haloShapeModel.width 	= haloButton.getLayoutBoundsWidth();
+				haloShapeModel.height 	= haloButton.getLayoutBoundsHeight();
+				haloShapeModel.x 		= haloButton.getLayoutBoundsX();
+				haloShapeModel.y 		= haloButton.getLayoutBoundsY();
+				haloShapeModel.rotation = 0;
+				haloShapeModel.isLocked  = true;
+				
+				var groupModel:DisplayModel = new DisplayModel();
+				groupModel.width 	= sparkGroup.getLayoutBoundsWidth();
+				groupModel.height 	= sparkGroup.getLayoutBoundsHeight();
+				groupModel.x 		= sparkGroup.getLayoutBoundsX();
+				groupModel.y 		= sparkGroup.getLayoutBoundsY();
+				groupModel.rotation = 0;
+				
+				var aspectRatioConstraint:MaintainProportionConstraint = new MaintainProportionConstraint();
+				
+				objectHandles.registerComponent(shapeModel, sparkButton, null, true, [aspectRatioConstraint]);
+				objectHandles.registerComponent(shapeModel2, nestedButton, null, true, constraintArray);
+				objectHandles.registerComponent(haloShapeModel, haloButton, null, true, constraintArray);
+				objectHandles.registerComponent(groupModel, sparkGroup, null, true, constraintArray);
+				
+				var currentlySelected:Array = objectHandles.selectionManager.currentlySelected;
+				var modelList:Array = objectHandles.modelList.slice(1);
+			}
+			
+			protected function objectMoved(event:ObjectChangedEvent):void
+			{
+				trace("moved");
+				var model:Object = event.relatedObjects[0];
+				var component:Object = objectHandles.getDisplayForModel(model);
+				component.x = model.x;
+				component.y = model.y;
+			}
+			
+			protected function objectResizing(event:ObjectChangedEvent):void
+			{
+				trace("sizing");
+				var elements:Array = event.relatedObjects;
+				for (var i:int = 0; i < elements.length; i++) 
+				{
+					var model:Object = elements[i];
+					var component:Object = objectHandles.getDisplayForModel(model);
+					component.x = model.x;
+					component.y = model.y;
+					component.width = model.width;
+					component.height = model.height;
+				}
+			}
+			
+			protected function objectResized(event:ObjectChangedEvent):void {
+				trace("resized");
+				var elements:Array = event.relatedObjects;
+				
+				for (var i:int = 0; i < elements.length; i++) 
+				{
+					var model:Object = elements[i];
+					var component:Object = objectHandles.getDisplayForModel(model);
+					component.x = model.x;
+					component.y = model.y;
+					component.width = model.width;
+					component.height = model.height;
+				}
+			}
+			
+			protected function objectMoving(event:ObjectChangedEvent):void
+			{
+				var elements:Array = event.relatedObjects;
+				for (var i:int = 0; i < elements.length; i++) 
+				{
+					var model:Object = elements[i];
+					var component:Object = objectHandles.getDisplayForModel(model);
+					component.x = model.x;
+					component.y = model.y;
+				}
+				
+			}
+			
+			protected function oh_clickHandler(event:MouseEvent):void {
+				if (objectHandles) {
+					objectHandles.selectionManager.clearSelection();
+				}
+			}
+			
+			protected function objectRotating(event:ObjectChangedEvent):void
+			{
+				var elements:Array = event.relatedObjects;
+				for (var i:int = 0; i < elements.length; i++) 
+				{
+					var model:Object = elements[i];
+					var component:Object = objectHandles.getDisplayForModel(model);
+					component.rotation = model.rotation;
+				}
+				
+				
+			}
+			
+			protected function objectRotated(event:ObjectChangedEvent):void
+			{
+				trace("rotated");
+				var elements:Array = event.relatedObjects;
+				
+				for (var i:int = 0; i < elements.length; i++) 
+				{
+					var model:Object = elements[i];
+					var component:Object = objectHandles.getDisplayForModel(model);
+					component.rotation = model.rotation;
+				}
+				
+			}
+			
+			
+			protected function drawLayer_clickHandler(event:MouseEvent):void
+			{
+				var stack:Array = getStackArray();
+				var object:Object = getCurrentLocation();
+				var className:Object = getCurrentClassName();
+				var functionName:Object = getCurrentFunctionName();
+				log("Where am I?");
+				log("Where am I now?");
+				log();
+			}
+			
+			/*public const GET_STACK_TRACE:String = "getStackTrace";*/
+			
+			/**
+			 * Gets an array of objects containing the class and functions in the stack trace
+			 * */
+			public function getStackTrace(removeLines:Boolean = true):String {
+				var error:Error = new Error();
+				var value:String;
+				var stackTrace:Array;
+				
+				if ("getStackTrace" in error) {
+					value = error.getStackTrace();
+					value = value.replace(/\t/g, "");
+					if (removeLines) {
+						value = value.replace(/\[.*\]/g, "");
+						value = value.replace(/.*?::/g, "");
+					}
+					stackTrace = value.split("\n");
+					stackTrace.shift();
+					stackTrace.shift();
+					return stackTrace.join("\n");
+				}
+				
+				return null;
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				log("Here's something");
+			}
+			
+			protected function windowedapplication1_applicationCompleteHandler(event:FlexEvent):void
+			{
+				/*
+				simplexmlencoder can't delete nodes on this xml
+				<LinearGradient interpolationMethod="rgb" rotation="90" spreadMethod="pad" xmlns="library://ns.adobe.com/flex/spark">
+				<entries>
+				<GradientEntry alpha="0.8" color="#000000"/>
+				<GradientEntry alpha="0.8" color="#FFFFFF"/>
+				</entries>
+				<interpolationMethod/>
+				<rotation/>
+				<spreadMethod/>
+				</LinearGradient>
+				*/
+				var fillXML:XML = <s:LinearGradient rotation="90" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:flow="http://ns.adobe.com/textLayout/2008" xmlns:fc="library://ns.flexcapacitor.com/flex" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:mx="library://ns.adobe.com/flex" xmlns:html="http://www.w3.org/1999/xhtml" xmlns:svg="http://www.w3.org/2000/svg">
+					  <s:GradientEntry color="0x000000" alpha="0.8"/>
+					  <s:GradientEntry color="0xFFFFFF" alpha="0.8"/>
+					</s:LinearGradient>;
+				
+				var entriesXML:XMLList;
+				var GRADIENT_ENTRY:String = "GradientEntry";
+				var qname:QName = new QName("library://ns.adobe.com/flex/spark", GRADIENT_ENTRY);
+				entriesXML = fillXML..entries;
+				
+				if (entriesXML.length()==0) {
+					entriesXML = fillXML.descendants(GRADIENT_ENTRY);
+					
+					if (entriesXML.length()==0) {
+						entriesXML = fillXML.elements(GRADIENT_ENTRY);
+					}
+					if (entriesXML.length()==0) {
+						entriesXML = fillXML.descendants(qname);
+						entriesXML = fillXML.elements(qname);
+					}
+				}
+				
+				//var code:String = '<?xml version="1.0" encoding="utf-8"?><s:node something></s:something>';
+				//var code:String = '<?xml version="1.0" encoding="utf-8"?><s:node something xmlns:s = "library://ns.adobe.com/flex/spark" xmlns:b=\'testnamespace.com\' xmlns="noprefix.com"></s:something>';
+				
+				var code:String = '<?xml version="1.0" encoding="utf-8"?><node something xmlns:s = "library://ns.adobe.com/flex/spark" xmlns:b=\'testnamespace.com\' xmlns="noprefix.com"></node>';
+				
+				var namespaces:Dictionary = MXMLDocumentConstants.getNamespaces();
+				var namespacesString:String;
+				var time:int;
+				var rootNodeName:String = "root";
+				var updatedCode:String;
+				var isValid:Boolean;
+				var rootNode:String;
+				var repetition:int = 1000;
+				
+				namespaces = MXMLDocumentConstants.getNamespaces();
+				namespacesString = MXMLDocumentConstants.getDefaultNamespaceDeclarations();
+				time = getTimer();
+				
+				for (var i:int = 0; i < repetition; i++) {
+					updatedCode = XMLUtils.addNamespacesToXMLString(code, namespaces);
+					isValid = XMLUtils.isValidXML(updatedCode);
+				}
+				
+				trace("Method 1: " + (getTimer()-time));
+				
+				time = getTimer();
+				
+				for (i = 0; i < repetition; i++) {
+					rootNode = '<'+rootNodeName + " " + namespacesString +'>';
+					updatedCode = rootNode + code + "</"+rootNodeName+">";
+					isValid = XMLUtils.isValidXML(updatedCode);
+				}
+				
+				trace("Method 2: " + (getTimer()-time));
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:LinearGradient rotation="90">
+			<s:GradientEntry color="0x000000" alpha="0.8"/>
+			<s:GradientEntry color="0xFFFFFF" alpha="0.8"/>
+		</s:LinearGradient>
+		
+		<utils:MiniInspector/>
+	</fx:Declarations>
+	
+	
+	
+	<mx:Canvas id="mainCanvas" 
+			   top="30" 
+			   left="30" 
+			   right="30" 
+			   bottom="30" 
+			   clipContent="false"
+			   borderColor="0x00FF00" 
+			   borderStyle="solid" 
+			   borderAlpha=".5" 
+			   click="drawLayer_clickHandler(event)"
+			   >
+		<s:Group id="oh" >
+			<s:Button id="sparkButton" label="spark button" />
+			<s:Group id="sparkGroup" 
+					 y="50"
+					 x="50" 
+					 width="50"
+					 height="50"
+					 mouseEnabledWhereTransparent="true"
+					 mouseDown="sparkGroup" ></s:Group>
+			<mx:Button id="haloButton" label="halo button" y="100"/>
+			<s:BorderContainer id="randomGroup" 
+							   x="200" y="50" borderColor="green">
+				<s:backgroundFill>
+					<s:SolidColor color="blue" alpha=".5"/>
+				</s:backgroundFill>
+				<s:Button id="nestedButton" label="Nested Button" x="10" y="100"/>
+			</s:BorderContainer>
+		</s:Group>
+		
+		
+		<mx:UIComponent id="drawLayer" 
+						top="0" 
+						left="0" 
+						right="0" 
+						bottom="0" 
+						mouseChildren="false" 
+						mouseEnabled="false"
+						visible="true" />
+	</mx:Canvas>
+	
+	<s:Button click="button1_clickHandler(event)" label="click"/>
+</s:Application>

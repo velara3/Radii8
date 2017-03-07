@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   creationComplete="windowedapplication1_creationCompleteHandler(event)" 
+					   xmlns:controls="com.flexcapacitor.controls.*">
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.skins.MinimalScrollerSkin;
+			import com.flexcapacitor.utils.StateUtils;
+			
+			import mx.core.UIComponent;
+			import mx.events.FlexEvent;
+			
+			import spark.skins.spark.ScrollerSkin;
+			
+			protected function windowedapplication1_creationCompleteHandler(event:FlexEvent):void
+			{
+				//var object:Object = ClassUtils.getMemberDataByType(buttonbar, CSSStyleDeclaration);
+				//var styles:Array = ClassUtils.getStylesFromArray(aButton, ["verticalCenter","click","width","label","color"]);
+				//var properties:Array = ClassUtils.getPropertiesFromArray(aButton, ["verticalCenter","click","width","label","color"]);
+				//trace(styles);
+				//trace(properties);
+			}
+			
+			public function setStyleInState(styleName:String, value:*, state:*, target:UIComponent = null):void {
+				var stateName:String = state is String ? state as String : "name" in state ? state.name : null;
+				var state:State;
+				
+				if (!StateUtils.hasState(target, state)) {
+					state = StateUtils.createState(stateName, null, target);
+				}
+				else {
+					
+				}
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				if (myScroller.getStyle("interactionMode")=="mouse") {
+					myScroller.setStyle("interactionMode", "touch");
+				}
+				else {
+					/*myScroller.setStyle("verticalScrollPolicy", "on");
+					myScroller.setStyle("horizontalScrollPolicy", "on");
+					myScroller.validateNow();*/
+					myScroller.setStyle("interactionMode", "mouse");
+					/*myScroller.setStyle("verticalScrollPolicy", "off");
+					myScroller.setStyle("horizontalScrollPolicy", "off");
+					myScroller.validateNow();
+					myScroller.setStyle("verticalScrollPolicy", "on");
+					myScroller.setStyle("horizontalScrollPolicy", "on");*/
+					myScroller.setStyle("skinClass", com.flexcapacitor.skins.MinimalScrollerSkin);
+					myScroller.validateNow();
+					myScroller.setStyle("skinClass", spark.skins.spark.ScrollerSkin);
+					/*myScroller.validateNow();
+					trace(myScroller.verticalScrollBar.includeInLayout);
+					myScroller.verticalScrollBar.visible = true;
+					myScroller.verticalScrollBar.includeInLayout = true;
+					trace(myScroller.verticalScrollBar.scaleX);
+					myScroller.verticalScrollBar.scaleX = 1;
+					myScroller.verticalScrollBar.scaleY = 1;*/
+					
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+		<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		#buttonbar s|ButtonBarButton {
+			/*cornerRadius:8;
+			borderAlpha:0;
+			chromeColor:#ff0000;*/
+		}
+		s|Button {
+			/*cornerRadius:8;
+			borderAlpha:0;
+			chromeColor:#ff0000;*/
+		}
+	</fx:Style>
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="withColor"/>
+	</s:states>
+	
+	<s:Button skinClass="com.flexcapacitor.skins.SolidFillButtonSkin" 
+			  label="Change modes" top="10" left="10" click="button1_clickHandler(event)"/>
+	
+	<s:Scroller id="myScroller" top="20" right="40">
+		<s:Group height="100" width="100">
+			<s:Rect width="100" height="400">
+				<s:fill>
+					<s:SolidColor color="red"/>
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke color="blue" weight="2"/>
+				</s:stroke>
+			</s:Rect>
+		</s:Group>
+	</s:Scroller>
+	<!--<s:TabBar skinClass="skins.tabbar.tabbarskin1" />
+	<controls:SolidFillButton label="Test" top="10" right="10"/>
+	<s:ToggleButton skinClass="com.flexcapacitor.skins.SolidFillToggleButtonSkin" label="Test" top="60" left="10" />
+	<controls:SolidFillButtonBar 
+	requireSelection="true" 
+	top="60" right="10" borderAlpha="0" fillAlpha=".2">
+	
+	<s:ArrayCollection>
+	<fx:String>Lorem</fx:String>
+	<fx:String>Ipsum</fx:String>
+	<fx:String>Dolor</fx:String>
+	</s:ArrayCollection>
+	</controls:SolidFillButtonBar>-->
+	<!--	
+	<s:ButtonBar id="buttonbar" 
+	color.withColor="#ff0000"
+	requireSelection="true" 
+	skinClass="com.flexcapacitor.skins.SolidFillButtonBarSkin" 
+	top="10" left="10" >
+	
+	<s:ArrayCollection>
+	<fx:String>Lorem</fx:String>
+	<fx:String>Ipsum</fx:String>
+	<fx:String>Dolor</fx:String>
+	<fx:String>Sit</fx:String>
+	<fx:String>Amet</fx:String>
+	<fx:String>set</fx:String>
+	</s:ArrayCollection>
+	</s:ButtonBar>-->
+	
+</s:Application>

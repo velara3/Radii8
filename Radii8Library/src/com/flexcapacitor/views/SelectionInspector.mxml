@@ -3,7 +3,7 @@
 		 xmlns:fx="http://ns.adobe.com/mxml/2009"
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:flexcapacitor="flexcapacitor.*"
-		 xmlns:controls1="com.flexcapacitor.controls.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
 		 
 		 implements="com.flexcapacitor.tools.IToolInspector, com.flexcapacitor.views.IInspector" 
 		 creationComplete="creationCompleteHandler(event)" 
@@ -314,7 +314,7 @@
 	<s:HGroup width="100%" verticalAlign="top" height="100%" paddingTop="2">
 		
 		
-		<controls1:BeveledImageToggleButton id="showSelectionOutline"
+		<c:BeveledImageToggleButton id="showSelectionOutline"
 											width="19"
 											height="19"
 											scaleMode="letterbox"
@@ -324,7 +324,7 @@
 											click="showSelectionOutline_changeHandler(event)"
 											/>
 		
-		<controls1:BeveledImageToggleButton id="showLabel"
+		<c:BeveledImageToggleButton id="showLabel"
 											width="19"
 											height="19"
 											scaleMode="letterbox"
@@ -334,7 +334,7 @@
 											click="showLabel_changeHandler(event)"
 											/>
 		
-		<controls1:BeveledImageToggleButton id="showTransform"
+		<c:BeveledImageToggleButton id="showTransform"
 											source="{Radii8LibraryAssets.transform}"
 											toolTip="Shows resizable transform handles"
 											width="19"
@@ -344,7 +344,7 @@
 											showBackgroundWhenSelected="true"
 											/>
 		
-		<controls1:BeveledImageToggleButton id="selectGroup"
+		<c:BeveledImageToggleButton id="selectGroup"
 											source="{Radii8LibraryAssets.groupSelection}"
 											toolTip="Select only group elements or components on the document"
 											width="19"

@@ -104,7 +104,7 @@
 	<s:List id="tools" 
 			height="24"
 			minHeight="24"
-			minWidth="130"
+			minWidth="155"
 			labelField="name" 
 			dragEnabled="false"
 			borderVisible="false"

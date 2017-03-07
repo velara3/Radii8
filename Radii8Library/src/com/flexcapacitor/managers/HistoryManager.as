@@ -2,9 +2,9 @@ package com.flexcapacitor.managers
 {
 	
 	import com.flexcapacitor.controller.Radiate;
-	import com.flexcapacitor.events.HistoryEvent;
-	import com.flexcapacitor.events.HistoryEventItem;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.model.HistoryEventData;
+	import com.flexcapacitor.model.HistoryEventItem;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.utils.ClassUtils;
@@ -229,10 +229,10 @@ package com.flexcapacitor.managers
 			var currentIndex:int = getHistoryPosition(document);
 			var numberOfHistoryEvents:int = getHistoryCount(document);
 			var historyEventItem:HistoryEventItem;
-			var previousHistoryEvent:HistoryEvent;
+			var previousHistoryEvent:HistoryEventData;
 			var currentTargetDocument:Application;
 			var setStartValues:Boolean = true;
-			var historyEvent:HistoryEvent;
+			var historyEvent:HistoryEventData;
 			var affectsDocument:Boolean;
 			var historyEventItems:Array;
 			var dictionary:Dictionary;
@@ -266,7 +266,7 @@ package com.flexcapacitor.managers
 			}
 			
 			// get current change to be redone
-			historyEvent = documentHistory.length ? documentHistory.getItemAt(changeIndex) as HistoryEvent : null;
+			historyEvent = documentHistory.length ? documentHistory.getItemAt(changeIndex) as HistoryEventData : null;
 			historyEventItems = historyEvent.historyEventItems;
 			numberOfEvents = historyEventItems.length;
 			
@@ -418,7 +418,7 @@ package com.flexcapacitor.managers
 			
 			// select the target
 			if (selectTargetOnHistoryChange) {
-				var currentHistoryEvent:HistoryEvent = currentIndex>0 ? documentHistory.getItemAt(currentIndex-1) as HistoryEvent : null;
+				var currentHistoryEvent:HistoryEventData = currentIndex>0 ? documentHistory.getItemAt(currentIndex-1) as HistoryEventData : null;
 				
 				if (currentHistoryEvent) {
 					radiate.setTargets(currentHistoryEvent.targets, dispatchSetTargets);
@@ -489,7 +489,7 @@ package com.flexcapacitor.managers
 			var changeIndex:int = getNextHistoryIndex(document);
 			var currentIndex:int = getHistoryPosition(document);
 			var historyEventItem:HistoryEventItem;
-			var historyEvent:HistoryEvent;
+			var historyEvent:HistoryEventData;
 			var affectsDocument:Boolean;
 			var setStartValues:Boolean;
 			var historyEventItems:Array;
@@ -521,7 +521,7 @@ package com.flexcapacitor.managers
 			}
 			
 			// get current change to be redone
-			historyEvent = historyCollection.length ? historyCollection.getItemAt(changeIndex) as HistoryEvent : null;
+			historyEvent = historyCollection.length ? historyCollection.getItemAt(changeIndex) as HistoryEventData : null;
 			
 			historyEventItems = historyEvent.historyEventItems;
 			numberOfEvents = historyEventItems.length;
@@ -703,11 +703,11 @@ package com.flexcapacitor.managers
 		 * the first one is on the stage
 		 * */
 		public static function getNextPreviousTargets(document:IDocument, index:int):Array {
-			var previousHistoryEvent:HistoryEvent;
+			var previousHistoryEvent:HistoryEventData;
 			
 			while (index>0) {
 				index--;
-				previousHistoryEvent = document.history.getItemAt(index) as HistoryEvent;
+				previousHistoryEvent = document.history.getItemAt(index) as HistoryEventData;
 				if (previousHistoryEvent.targets && previousHistoryEvent.targets.length
 					&& previousHistoryEvent.targets[0].stage) {
 					return previousHistoryEvent.targets;
@@ -791,11 +791,11 @@ package com.flexcapacitor.managers
 		 * */
 		public static function getPreviousHistoryIndex(document:IDocument):int {
 			var numberOfEvents:int = getHistoryCount(document);var listCollectionView:ListCollectionView = document.history;
-			var historyEvent:HistoryEvent;
+			var historyEvent:HistoryEventData;
 			var index:int;
 			
 			for (var i:int;i<numberOfEvents;i++) {
-				historyEvent = listCollectionView.getItemAt(i) as HistoryEvent;
+				historyEvent = listCollectionView.getItemAt(i) as HistoryEventData;
 				
 				if (historyEvent.reversed) {
 					return i-1;
@@ -813,12 +813,12 @@ package com.flexcapacitor.managers
 		 * */
 		public static function getNextHistoryIndex(document:IDocument):int {
 			var numberOfEvents:int = getHistoryCount(document);
-			var historyItem:HistoryEvent;
+			var historyItem:HistoryEventData;
 			var index:int;
 			
 			// start at the beginning and find the next item to redo
 			for (var i:int;i<numberOfEvents;i++) {
-				historyItem = document.history.getItemAt(i) as HistoryEvent;
+				historyItem = document.history.getItemAt(i) as HistoryEventData;
 				
 				if (historyItem.reversed) {
 					return i;
@@ -834,12 +834,12 @@ package com.flexcapacitor.managers
 		 * */
 		public static function getHistoryPosition(document:IDocument):int {
 			var numberOfEvents:int = getHistoryCount(document);
-			var historyEvent:HistoryEvent;
+			var historyEvent:HistoryEventData;
 			var events:IList = document ? document.history as IList : null;
 			
 			// go through and find last item that is reversed
 			for (var i:int;i<numberOfEvents;i++) {
-				historyEvent = events.getItemAt(i) as HistoryEvent;
+				historyEvent = events.getItemAt(i) as HistoryEventData;
 				
 				if (historyEvent.reversed) {
 					return i-1;
@@ -853,9 +853,9 @@ package com.flexcapacitor.managers
 		 * Returns the current history event. Think about adding an "Open"
 		 * event so we always have something to work with.
 		 * */
-		public static function getCurrentHistoryEvent(document:IDocument):HistoryEvent {
+		public static function getCurrentHistoryEvent(document:IDocument):HistoryEventData {
 			var index:int = getHistoryPosition(document);
-			var historyEvent:HistoryEvent = getHistoryEventAtIndex(document, index) as HistoryEvent;
+			var historyEvent:HistoryEventData = getHistoryEventAtIndex(document, index) as HistoryEventData;
 			
 			return historyEvent;
 		}
@@ -863,9 +863,9 @@ package com.flexcapacitor.managers
 		/**
 		 * Returns the history event by index
 		 * */
-		public static function getHistoryEventAtIndex(document:IDocument, index:int):HistoryEvent {
+		public static function getHistoryEventAtIndex(document:IDocument, index:int):HistoryEventData {
 			var numberOfEvents:int = getHistoryCount(document);
-			var historyEvent:HistoryEvent;
+			var historyEvent:HistoryEventData;
 			
 			// no changes
 			if (numberOfEvents < 1) {
@@ -878,7 +878,7 @@ package com.flexcapacitor.managers
 			}
 			
 			// get history event 
-			historyEvent = document.history.length ? document.history.getItemAt(index) as HistoryEvent : null;
+			historyEvent = document.history.length ? document.history.getItemAt(index) as HistoryEventData : null;
 			
 			return historyEvent;
 		}
@@ -886,9 +886,9 @@ package com.flexcapacitor.managers
 		/**
 		 * Returns the history event by index
 		 * */
-		public static function removeHistoryItemAtIndex(document:IDocument, index:int, purge:Boolean = true):HistoryEvent {
+		public static function removeHistoryItemAtIndex(document:IDocument, index:int, purge:Boolean = true):HistoryEventData {
 			var numberOfEvents:int = getHistoryCount(document);
-			var historyEvent:HistoryEvent;
+			var historyEvent:HistoryEventData;
 			
 			// no changes
 			if (numberOfEvents < 1) {
@@ -901,7 +901,7 @@ package com.flexcapacitor.managers
 			}
 			
 			// get removed history 
-			historyEvent = numberOfEvents ? document.history.removeItemAt(index) as HistoryEvent : null;
+			historyEvent = numberOfEvents ? document.history.removeItemAt(index) as HistoryEventData : null;
 			
 			if (purge) {
 				historyEvent.purge();
@@ -1120,7 +1120,7 @@ package com.flexcapacitor.managers
 			var numberOfHistoryEvents:int = getHistoryCount(document);
 			var numberOfHistoryEventItems:int;
 			var historyEventItem:HistoryEventItem;
-			var historyEvent:HistoryEvent;
+			var historyEvent:HistoryEventData;
 			var numberOfTargets:int;
 			var historyTargets:Array;
 			var historyTarget:Object;
@@ -1133,13 +1133,13 @@ package com.flexcapacitor.managers
 			// trim history 
 			if (currentIndex!=numberOfHistoryEvents-1) {
 				for (var i:int = numberOfHistoryEvents-1;i>currentIndex;i--) {
-					historyEvent = document.history.removeItemAt(i) as HistoryEvent;
+					historyEvent = document.history.removeItemAt(i) as HistoryEventData;
 					historyEvent.purge();
 				}
 			}
 			
 			if (!mergeWithPrevious || noPreviousChanges) {
-				historyEvent = new HistoryEvent();
+				historyEvent = new HistoryEventData();
 				historyEvent.description = description ? description : HistoryEventItem(historyEventItems[0]).description;
 				historyEvent.historyEventItems = historyEventItems;
 			}
@@ -1226,11 +1226,11 @@ package com.flexcapacitor.managers
 		 * The description of the oldest event is used unless you pass one in. 
 		 * Returns HistoryEvent with merged changes or null if no merges available
 		 * */
-		public static function mergeLastHistoryEvent(document:IDocument, description:String = null):HistoryEvent {
+		public static function mergeLastHistoryEvent(document:IDocument, description:String = null):HistoryEventData {
 			var currentPosition:int = getHistoryPosition(document);
 			var numberOfEvents:int = getHistoryCount(document);
-			var currentHistoryEvent:HistoryEvent;
-			var previousHistoryEvent:HistoryEvent;
+			var currentHistoryEvent:HistoryEventData;
+			var previousHistoryEvent:HistoryEventData;
 			var numberOfHistoryEventItems:int;
 			var historyEventItems:Array;
 			var historyEventItem:HistoryEventItem;
@@ -1355,10 +1355,10 @@ package com.flexcapacitor.managers
 			var currentIndex:int = getHistoryPosition(document);
 			var collection:ListCollectionView = document.history;
 			var numberOfHistoryEvents:int = collection.length;
-			var historyEvent:HistoryEvent;
+			var historyEvent:HistoryEventData;
 			
 			for (var i:int = numberOfHistoryEvents-1;i>currentIndex;i--) {
-				historyEvent = collection.getItemAt(i) as HistoryEvent;
+				historyEvent = collection.getItemAt(i) as HistoryEventData;
 				historyEvent.purge();
 			}
 			collection.removeAll();
@@ -1381,17 +1381,21 @@ package com.flexcapacitor.managers
 		 * Goes to the beginning of the undo history and then goes to the end again.
 		 * This helps sometimes when the layout has been damaged in some way. 
 		 * */
-		public static function rebuild(iDocument:IDocument):void {
+		public static function rebuild(iDocument:IDocument, dispatchEvent:Boolean = true):void {
 			var currentIndex:int = getHistoryPosition(iDocument);
 			goToHistoryIndex(iDocument, -1);
 			goToHistoryIndex(iDocument, currentIndex);
+			
+			if (dispatchEvent) {
+				Radiate.instance.dispatchDocumentRebuiltEvent(iDocument);
+			}
 		}
 		
 		/**
 		 * Selects the targets at the specific history event
 		 * */
 		public static function selectTargetsAtIndex(document:IDocument, index:int, dispatchEvent:Boolean = true):void {
-			var historyEvent:HistoryEvent = getHistoryEventAtIndex(document, index);
+			var historyEvent:HistoryEventData = getHistoryEventAtIndex(document, index);
 			
 			if (historyEvent) {
 				Radiate.setTargets(historyEvent.targets, dispatchEvent);
@@ -1403,7 +1407,7 @@ package com.flexcapacitor.managers
 		 * Selects the targets of the current history event
 		 * */
 		public static function selectCurrentEventTargets(document:IDocument, dispatchEvent:Boolean = true):void {
-			var historyEvent:HistoryEvent = getCurrentHistoryEvent(document);
+			var historyEvent:HistoryEventData = getCurrentHistoryEvent(document);
 			
 			if (historyEvent) {
 				Radiate.setTargets(historyEvent.targets, dispatchEvent);
@@ -1415,13 +1419,13 @@ package com.flexcapacitor.managers
 		 * */
 		public static function swapLastHistoryEvents(document:IDocument, offset:int = 1, dispatchEvent:Boolean = true):void {
 			var history:ListCollectionView = document.history;
-			var lastItem:HistoryEvent;
-			var previousItem:HistoryEvent;
+			var lastItem:HistoryEventData;
+			var previousItem:HistoryEventData;
 			
 			history.disableAutoUpdate();
 			
-			lastItem = history.removeItemAt(history.length-1) as HistoryEvent;
-			previousItem = history.removeItemAt(history.length-1) as HistoryEvent;
+			lastItem = history.removeItemAt(history.length-1) as HistoryEventData;
+			previousItem = history.removeItemAt(history.length-1) as HistoryEventData;
 			
 			history.addItem(lastItem);
 			history.addItem(previousItem);

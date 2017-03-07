@@ -41,6 +41,15 @@ package {
 		[Embed(source="assets/icons/tools/BlackArrow.png")]
 		public static const BlackArrow:Class;
 		
+		[Embed(source="assets/icons/tools/Checker.png")]
+		public static const CheckerPixels:Class;
+		
+		[Embed(source="assets/icons/tools/CheckerBW.png")]
+		public static const CheckerPixelsBW:Class;
+		
+		[Embed(source="assets/icons/tools/CheckerBWT.png")]
+		public static const CheckerPixelsBWT:Class;
+		
 		[Embed(source="assets/icons/tools/DragStripIcon.png")]
 		public static const DragStrip:Class;
 		
@@ -67,6 +76,9 @@ package {
 		
 		[Embed(source="assets/icons/tools/Launch.png")]
 		public static const Launch:Class;
+		
+		[Embed(source="assets/icons/tools/Marquee.png")]
+		public static const Marquee:Class;
 		
 		[Embed(source="assets/icons/tools/Selection.png")]
 		public static const Selection:Class;

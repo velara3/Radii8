@@ -27,8 +27,6 @@
 		 width="400" height="300"
 		 >
 
-			
-
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
@@ -946,6 +944,7 @@
 			protected function instantMessengerContainer_clickHandler(event:MouseEvent):void
 			{
 				if (notificationMessenger.isPlaying) {
+					notificationMessenger.end();
 					notificationMessenger.stop();
 					notificationMessenger.play(null, true);
 				}
@@ -1011,6 +1010,16 @@
 			protected function removeExplicitWidth_itemClickHandler(event:MenuEvent):void {
 				
 				Radiate.removeExplicitWidthFromSelection(radiate.target);
+			}
+			
+			protected function refreshView_itemClickHandler(event:MenuEvent):void {
+				
+				if (radiate.selectedDocument) {
+					Radiate.refreshDocument(radiate.selectedDocument);
+				}
+				else {
+					Radiate.info("There is no document selected.");
+				}
 			}
 			
 			protected function copySelectionIntoLibrary_itemClickHandler(event:MenuEvent):void
@@ -1386,6 +1395,16 @@
 				}
 			}
 			
+			protected function cropDocument_itemClickHandler(event:MenuEvent):void
+			{
+				
+			}
+			
+			protected function cropSelection_itemClickHandler(event:MenuEvent):void
+			{
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1660,6 +1679,11 @@
 				<model:MenuItem id="removeExplicitWidth" label="Remove explicit width" itemClick="removeExplicitWidth_itemClickHandler(event)" />
 				<!--<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />-->
 				<model:MenuItem type="separator"/>
+				<!--<model:MenuItem id="cropSelection" label="Crop Selection" itemClick="cropSelection_itemClickHandler(event)" />
+				<model:MenuItem id="cropDocument" label="Crop Document" itemClick="cropDocument_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>-->
+				<model:MenuItem id="refreshView" label="Refresh View" itemClick="refreshView_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
 				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="showProjectSource_itemClickHandler(event)" />
 				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="showDocumentSource_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
@@ -1742,21 +1766,10 @@
 		
 		<s:Sequence id="notificationMessenger" target="{instantMessengerContainer}" >
 			<mx:AnimateProperty duration="250" fromValue="-2" toValue="28" property="top"/>
-			<mx:AnimateProperty startDelay="5000" duration="250" toValue="-2" fromValue="28" property="top"/>
+			<mx:AnimateProperty startDelay="4000" duration="250" toValue="-2" fromValue="28" property="top"/>
 		</s:Sequence>
 		
-		<!--
-		Enable CMD click on a display object and get information in the console about it 
-		Should be turned off in release build. 
-		-->
-		<utils:MiniInspector showDisplayObjectOutlines="true"
-							 showRuler="false"
-							 showStyleInheritanceInformation="false"
-							 showAllStyleDeclarations="false"
-							 showColorUnderMouse="false"
-							 change="miniinspector1_changeHandler(event)"
-							 enabled="true"
-							 />
+
 		
 	</fx:Declarations>
 	
@@ -1816,10 +1829,12 @@
 						   right="0" borderVisible="false" backgroundColor="#CCCCCC"/>-->
 		<s:Image id="mainLogo" x="0" y="0" width="128" height="128" 
 				 source="{Radii8LibraryAssets.logo256}"
+				 smooth="true"
 				 rollOver="{fadeInLogo.play()}" 
 				 rollOut="{fadeInLogo.play(null, true)}"
 				 alpha="0"/>
 		<s:BitmapImage id="logo4" x="32" y="32" 
+					   smooth="true"
 					   source="{Radii8LibraryAssets.logo64}"/>
 		<s:Label x="130" y="44" text="Radiate" fontSize="45" fontWeight="bold">
 			<s:filters> 
@@ -2110,6 +2125,7 @@
 		
 		<s:Group >
 			<s:Image id="cornerLogo" 
+					 smooth="true"
 					 source="{Radii8LibraryAssets.logo}" 
 					 width="20" height="20"
 					 verticalAlign="middle" 

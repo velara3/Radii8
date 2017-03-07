@@ -35,6 +35,11 @@
 			
 			private var radiate:Radiate;
 			
+			public var lastAction:String;
+			public var OPEN_DOCUMENT_IN_BROWSER:String = "openDocumentInBrowser";
+			public var OPEN_DOCUMENT_IN_BROWSER_SCREENSHOT:String = "openDocumentInBrowserScreenshot";
+			public var OPEN_DOCUMENT_IN_BROWSER_SITE_SCANNER:String = "openDocumentInBrowserSiteScanner";
+			
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				
@@ -74,13 +79,14 @@
 				}
 			}
 			
-			public var lastAction:String;
-			public var OPEN_DOCUMENT_IN_BROWSER:String = "openDocumentInBrowser";
-			public var OPEN_DOCUMENT_IN_BROWSER_SCREENSHOT:String = "openDocumentInBrowserScreenshot";
-			public var OPEN_DOCUMENT_IN_BROWSER_SITE_SCANNER:String = "openDocumentInBrowserSiteScanner";
-			
 			protected function openDocumentInBrowserButton_clickHandler(event:MouseEvent):void {
 				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
+				
+				if (!usersSignedIn) {
+					Radiate.warn("You must be signed into your account before previewing in the system browser");
+					return;
+				}
 				
 				if (iDocument) {
 					if (iDocument.isChanged && iDocument is Document) {
@@ -109,6 +115,12 @@
 			
 			protected function openDocumentInBrowserScreenshotButton_clickHandler(event:MouseEvent):void {
 				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
+				
+				if (!usersSignedIn) {
+					Radiate.warn("You must be signed into your account before previewing in the browser screenshots");
+					return;
+				}
 				
 				if (iDocument) {
 					if (iDocument.isChanged && iDocument is Document) {

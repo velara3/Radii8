@@ -161,6 +161,11 @@ package com.flexcapacitor.utils {
 		public var useBorderBox:Boolean = true;
 		
 		/**
+		 * Encoding to use when using data URI
+		 * */
+		public var encodingType:String = DisplayObjectUtils.PNG;
+		
+		/**
 		 * Places common CSS after element CSS when true.
 		 * This is so in the editor you see the element css at the top
 		 * */
@@ -232,11 +237,6 @@ package com.flexcapacitor.utils {
 		/**
 		 * 
 		 * */
-		public var showDocumentCode:Boolean;
-		
-		/**
-		 * 
-		 * */
 		public var document:IDocument;
 		
 		/**
@@ -284,7 +284,7 @@ package com.flexcapacitor.utils {
 			// GET SOURCE CODE
 			///////////////////////
 			
-			if (showDocumentCode) {
+			if (exportFullDocument) {
 				targetDescription = document.componentDescription;
 			}
 			
@@ -319,7 +319,7 @@ package com.flexcapacitor.utils {
 				// background-image didn't work in FF on mac. didn't test on other browsers
 				if (showScreenshotBackground) {
 					var backgroundImageID:String = "backgroundComparisonImage";
-					var imageDataFormat:String = "png";//"jpeg";
+					var imageDataFormat:String = encodingType;//"jpeg";
 					var imageData:String = DisplayObjectUtils.getBase64ImageDataString(document.instance, imageDataFormat, null, true);
 					var backgroundSnapshot:String = "\n" + tabDepth + "\t" + "<img ";
 					var backgroundImageAlpha:String = ".5";
@@ -343,21 +343,23 @@ package com.flexcapacitor.utils {
 					styles = "";
 				}
 				
-				if (useBorderBox) {
-					if (reverseInitialCSS) {
-						styles = styles + "\n\n" + borderBoxCSS;
+				if (!useCustomMarkup) {
+					if (useBorderBox) {
+						if (reverseInitialCSS) {
+							styles = styles + "\n\n" + borderBoxCSS;
+						}
+						else {
+							styles = borderBoxCSS + "\n\n" + styles;
+						}
 					}
-					else {
-						styles = borderBoxCSS + "\n\n" + styles;
-					}
-				}
-				
-				if (useBetterHTML) {
-					if (reverseInitialCSS) {
-						styles = styles + "\n\n" + betterHTML;
-					}
-					else {
-						styles = betterHTML + "\n\n" + styles;
+					
+					if (useBetterHTML) {
+						if (reverseInitialCSS) {
+							styles = styles + "\n\n" + betterHTML;
+						}
+						else {
+							styles = betterHTML + "\n\n" + styles;
+						}
 					}
 				}
 				
@@ -622,7 +624,7 @@ package com.flexcapacitor.utils {
 			var snapshotBackground:Boolean;
 			var convertElementToImage:Boolean;
 			var imageDataStyle:String;
-			var imageDataFormat:String = "png";
+			var imageDataFormat:String = encodingType;
 			var isHorizontalCenterSet:Boolean;
 			var isVerticalCenterSet:Boolean;
 			var anchor:XML;
@@ -1005,7 +1007,7 @@ package com.flexcapacitor.utils {
 						
 						if (showScreenshotBackground) {
 							backgroundImageID = "backgroundComparisonImage";
-							imageDataFormat = "png";//"jpeg";
+							imageDataFormat = encodingType;//"jpeg";
 							imageData = DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat);
 							backgroundSnapshot = "\n" + tabs + "\t" + "<img ";
 							backgroundSnapshot += "id=\"" + backgroundImageID +"\""; 
@@ -1094,7 +1096,6 @@ package com.flexcapacitor.utils {
 					layoutOutput += properties ? " " : "";
 					
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
-					styleValue = getCornerRadius(componentInstance as BorderContainer, styleValue);
 					styleValue = getFontFamily(componentInstance, styleValue);
 					styleValue = getFontWeight(componentInstance, styleValue);
 					styleValue = getFontSize(componentInstance, styleValue);
@@ -1246,6 +1247,7 @@ package com.flexcapacitor.utils {
 					styleValue = getAlpha(componentInstance, styleValue);
 					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
+					styleValue = getBorderString(componentInstance, styleValue);
 					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -1379,6 +1381,7 @@ package com.flexcapacitor.utils {
 						styleValue = getAlpha(componentInstance, styleValue);
 						styleValue = getTextAlign(componentInstance, styleValue);
 						styleValue = getPadding(componentInstance, styleValue);
+						styleValue = getBorderString(componentInstance, styleValue);
 						
 						styleValue += userInstanceStyles;
 						stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -1399,6 +1402,7 @@ package com.flexcapacitor.utils {
 						styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
 						styleValue = getAlpha(componentInstance, styleValue);
 						styleValue = getPadding(componentInstance, styleValue);
+						styleValue = getBorderString(componentInstance, styleValue);
 						styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 						
 						styleValue += userInstanceStyles;
@@ -1732,7 +1736,7 @@ package com.flexcapacitor.utils {
 					layoutOutput += properties ? " " : "";
 					
 					if (componentInstance.source is BitmapData && createImageDataForGraphics) {
-						layoutOutput += " src=\"" + DisplayObjectUtils.getBase64ImageDataString(componentInstance.source, "jpeg") + "\"";
+						layoutOutput += " src=\"" + DisplayObjectUtils.getBase64ImageDataString(componentInstance.source, encodingType) + "\"";
 					}
 					else if (componentInstance.source is String) {
 						layoutOutput += " src=\"" + componentInstance.source + "\"";
@@ -2631,8 +2635,6 @@ package com.flexcapacitor.utils {
 					borderSides = "";
 				}
 				
-				styleValue += "border-style:solid;";
-				
 				if (borderSides!="left top right bottom") {
 					borderValues = "";
 					
@@ -2651,21 +2653,18 @@ package com.flexcapacitor.utils {
 					styleValue += "border-color:" + DisplayObjectUtils.getColorInHex(styleClient.getStyle("borderColor"), true) + ";";
 				}
 				
+				borderVisible = styleClient.getStyle("borderVisible") as Boolean;
 				
-			}
-			
-			return styleValue;
-		}
-		
-		/**
-		 * Get corner radius styles of a border container
-		 * */
-		public function getCornerRadius(componentInstance:Object, styleValue:String, getInherited:Boolean = false):String {
-			var styleClient:IStyleClient = componentInstance as IStyleClient;
-			if (styleClient==null) return styleValue;
-			
-			if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "cornerRadius")) {
-				styleValue += "border-radius:" + styleClient.getStyle("cornerRadius") + "px;";
+				if (StyleUtils.hasStyle(styleClient, "borderVisible")==true && borderVisible==false) {
+					styleValue += "border-style:" + "none" + ";";
+				}
+				else {
+					styleValue += "border-style:solid;";
+				}
+				
+				if (getInherited || StyleUtils.isStyleDeclaredInline(styleClient, "cornerRadius")) {
+					styleValue += "border-radius:" + styleClient.getStyle("cornerRadius") + "px;";
+				}
 			}
 			
 			return styleValue;

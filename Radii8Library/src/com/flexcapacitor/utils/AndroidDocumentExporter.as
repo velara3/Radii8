@@ -20,6 +20,7 @@ package com.flexcapacitor.utils {
 		public function AndroidDocumentExporter() {
 			supportsExport = true;
 			language = "Android";
+			exportFromHistory = true;
 		}
 		
 		/**
@@ -343,7 +344,10 @@ package com.flexcapacitor.utils {
 					
 					for (var i:int;i<component.children.length;i++) {
 						componentChild = component.children[i];
-						getAppliedPropertiesFromHistory(iDocument, componentChild);
+						
+						if (exportFromHistory) {
+							getAppliedPropertiesFromHistory(iDocument, componentChild);
+						}
 						
 						if (i>0) {
 							childContent += "\n";

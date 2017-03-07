@@ -7,6 +7,16 @@
     
     IF you change the name or class it may break calls made to look for "Selection", etc
     Be sure to search through the code or check radiate.getToolByName();
+    
+    The cursor is the name(s) of a static property of the embedded icon on the tool class
+    
+    You can embed the menu icon in the class: 
+	
+	private var _icon:Class = Radii8LibraryToolAssets.Text;
+	
+	public function get icon():Class {
+		return _icon;
+	}
 -->
 <toolsPackage>
 
@@ -51,6 +61,13 @@
     			<cursor name="HandOverCursor" x="0" y="0" />
     			<cursor name="HandGrabCursor" x="0" y="0" />
     		</cursors>
+    </tool>
+    
+    <tool id="Marquee" 
+    		class="com.flexcapacitor.tools.Marquee" 
+    		inspector="com.flexcapacitor.views.MarqueeInspector" 
+    		include="true"
+    		key="m">
     </tool>
 
 </toolsPackage>

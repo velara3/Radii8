@@ -27,7 +27,6 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.effects.file.LoadFile;
 	import com.flexcapacitor.effects.popup.OpenPopUp;
 	import com.flexcapacitor.events.HTMLDragEvent;
-	import com.flexcapacitor.events.HistoryEvent;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.formatters.HTMLFormatterTLF;
 	import com.flexcapacitor.logging.RadiateLogTarget;
@@ -45,7 +44,9 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.model.EventMetaData;
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.FileInfo;
+	import com.flexcapacitor.model.HTMLDragData;
 	import com.flexcapacitor.model.HTMLExportOptions;
+	import com.flexcapacitor.model.HistoryEventData;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.IDocumentData;
 	import com.flexcapacitor.model.IDocumentMetaData;
@@ -86,10 +87,12 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.DocumentTranscoder;
 	import com.flexcapacitor.utils.DragManagerUtil;
 	import com.flexcapacitor.utils.FontUtils;
+	import com.flexcapacitor.utils.HTMLDragManager;
 	import com.flexcapacitor.utils.LayoutDebugHelper;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
 	import com.flexcapacitor.utils.MXMLDocumentImporter;
 	import com.flexcapacitor.utils.PersistentStorage;
+	import com.flexcapacitor.utils.PopUpOverlayManager;
 	import com.flexcapacitor.utils.SharedObjectUtils;
 	import com.flexcapacitor.utils.TextFieldHTMLExporter2;
 	import com.flexcapacitor.utils.TypeUtils;
@@ -185,6 +188,7 @@ package com.flexcapacitor.controller {
 	import mx.printing.FlexPrintJobScaleType;
 	import mx.styles.IStyleClient;
 	import mx.utils.ArrayUtil;
+	import mx.utils.NameUtil;
 	import mx.utils.ObjectUtil;
 	import mx.utils.UIDUtil;
 	
@@ -546,7 +550,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		private static var historyManager:HistoryManager;
-		
+		private static var popUpOverlayManager:PopUpOverlayManager;
 		private static var serviceManager:ServicesManager;
 		
 		[Bindable]
@@ -1315,7 +1319,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch a history change event
 		 * */
-		public function dispatchHistoryChangeEvent(document:IDocument, newIndex:int, oldIndex:int, historyEvent:HistoryEvent = null):void {
+		public function dispatchHistoryChangeEvent(document:IDocument, newIndex:int, oldIndex:int, historyEvent:HistoryEventData = null):void {
 			var event:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.HISTORY_CHANGE)) {
@@ -1324,6 +1328,19 @@ package com.flexcapacitor.controller {
 				event.oldIndex = oldIndex;
 				event.historyEvent = historyEvent ? historyEvent : null;
 				event.targets = historyEvent ? historyEvent.targets : [];
+				dispatchEvent(event);
+			}
+		}
+		
+		/**
+		 * Dispatch a history change event
+		 * */
+		public function dispatchDocumentRebuiltEvent(document:IDocument):void {
+			var event:RadiateEvent;
+			
+			if (hasEventListener(RadiateEvent.DOCUMENT_REBUILT)) {
+				event = new RadiateEvent(RadiateEvent.DOCUMENT_REBUILT);
+				//event.target = document;
 				dispatchEvent(event);
 			}
 		}
@@ -2017,6 +2034,7 @@ package com.flexcapacitor.controller {
 			
 			serviceManager 			= ServicesManager.getInstance();
 			historyManager 			= HistoryManager.getInstance();
+			popUpOverlayManager 	= PopUpOverlayManager.getInstance();
 			
 			serviceManager.radiate 	= instance;
 			HistoryManager.radiate 	= instance;
@@ -2100,6 +2118,7 @@ package com.flexcapacitor.controller {
 		
 		protected static function registerClasses():void {
 			classRegistry = ClassRegistry.getInstance();
+			classRegistry.targetNamespace = new Namespace("s", "library://ns.adobe.com/flex/spark");
 			
 			classLoader = new ClassLoader();
 			classLoader.configPath = "assets/manifest/";
@@ -2621,7 +2640,10 @@ package com.flexcapacitor.controller {
 						
 						if (cursorClass==null) {
 							error("Tool cursor not found: " + cursorName);
+							break;
 						}
+						// TypeError: Error #1007: Instantiation attempted on a non-constructor.
+						// reason: class did not have the static property as described in the xml  
 						cursorBitmap = new cursorClass();
 						
 						// Pass the value to the bitmapDatas vector 
@@ -2648,7 +2670,7 @@ package com.flexcapacitor.controller {
 				}
 				else {
 					//trace("Tool class not found: " + classDefinition);
-					error("Tool class not found: " + toolClassDefinition);
+					error("Tool class not found: " + className);
 				}
 				
 			}
@@ -5549,9 +5571,16 @@ package com.flexcapacitor.controller {
 			var fileData:FileData;
 			var bitmapData:BitmapData;
 			var destination:Object;
+			var htmlDragData:HTMLDragData;
 			
-			fileData = new FileData(event.data);
+			htmlDragData = event.data as HTMLDragData;
 			
+			if (htmlDragData.mimeType==HTMLDragManager.INVALID) {
+				Radiate.warn("The dropped file was not valid.");
+				return;
+			}
+			
+			fileData = new FileData(htmlDragData);
 			mainView.dropImagesLocation.visible = false;
 			
 			if (selectedDocument==null || createNewDocument) {
@@ -8370,7 +8399,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var targetComponentDescription:ComponentDescription;
 			var parentComponentDescription:ComponentDescription;
 			var basicFonts:Boolean = false;
-			var focusAlpha:Number = .15
+			var focusAlpha:Number = 0;
 			
 			const MIN_WIDTH:int = 22;
 			
@@ -10293,6 +10322,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var openingEventDispatched:Boolean;
 			var documentIndex:int;
 			var previewName:String;
+			var elementId:String;
 			
 			isAlreadyOpen = isDocumentPreviewOpen(iDocument);
 			
@@ -10328,9 +10358,13 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			previewName = iDocument.name + " HTML";
 			navigatorContent.label = previewName;
 			
+			// should we be setting id like this?
+			elementId = iDocument.name ? iDocument.name : NameUtil.createUniqueName(iDocument);
+			elementId = elementId.replace(/ /g, "");
+			
 			if (iDocument.containerType) {
 				containerTypeInstance = new iDocument.containerType();
-				containerTypeInstance.id = iDocument.name ? iDocument.name : iframe.name; // should we be setting id like this?
+				containerTypeInstance.id = elementId;
 				containerTypeInstance.percentWidth = 100;
 				containerTypeInstance.percentHeight = 100;
 				
@@ -10345,10 +10379,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				// show HTML page
 				var htmlClass:Object = ApplicationDomain.currentDomain.getDefinition(desktopHTMLClassName);
 				html = new htmlClass();
-				html.id = iDocument.name ? iDocument.name : html.name; // should we be setting id like this?
+				html.id = elementId;
 				html.percentWidth = 100;
 				html.percentHeight = 100;
-				html.top = -10;
+				html.top = -10; // get rid of spacing navigator adds
 				html.left = 0;
 				//html.setStyle("backgroundColor", "#666666");
 				
@@ -10365,12 +10399,15 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			else {
 				// show HTML page
 				iframe = new IFrame();
-				iframe.id = iDocument.name ? iDocument.name : iframe.name; // should we be setting id like this?
+				iframe.id = elementId;
 				iframe.percentWidth = 100;
 				iframe.percentHeight = 100;
-				iframe.top = 20;
-				iframe.left = 20;
+				iframe.top = -10;
+				iframe.left = 0;
 				iframe.setStyle("backgroundColor", "#666666");
+				
+				popUpOverlayManager = PopUpOverlayManager.getInstance();
+				popUpOverlayManager.addPopUpOverlay(iframe);
 				
 				navigatorContent.addElement(iframe);
 				documentsPreviewDictionary[iDocument] = iframe;
@@ -10477,15 +10514,17 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var tabCount:int = openTabs.length;
 			var navigatorContent:NavigatorContent;
 			var navigatorContentDocumentContainer:Object;
-			var documentContainer:Object = isPreview ? documentsPreviewDictionary[iDocument] : documentsContainerDictionary[iDocument];
+			var documentContainer:Object;
 			var wasDocumentClosed:Boolean;
 			var wasPreviewClosed:Boolean;
 			var index:int;
+			var isIFrame:Boolean;
 			
-			// third attempt
+			documentContainer = isPreview ? documentsPreviewDictionary[iDocument] : documentsContainerDictionary[iDocument];
 			
-			
-			// second attempt
+			if (documentContainer is IFrame) {
+				popUpOverlayManager.removePopUpOverlay(documentContainer as DisplayObject);
+			}
 			
 			if (documentContainer && documentContainer.owner) {
 				// ArgumentError: Error #2025: The supplied DisplayObject must be a child of the caller.
@@ -10903,7 +10942,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				
 				sourceDataLocal = importer.importare(codeToParse, document, componentDescription, containerIndex, options, dispatchEvents);
 				
-				if (container) {
+				if (container && dispatchEvents) {
 					instance.setTarget(container);
 				}
 				
@@ -14235,6 +14274,33 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 			
 			return resized;
+		}
+		
+		/**
+		 * Refreshes the document by closing and opening
+		 * */
+		public static function refreshDocument(iDocument:IDocument, rebuildFromHistory:Boolean = false):Boolean {
+			var documentInstance:Object = iDocument.instance;
+			
+			if (rebuildFromHistory) {
+				info("Rebuilding document");
+				setTarget(null);
+				callAfter(250, HistoryManager.rebuild, iDocument);
+			}
+			else if (iDocument.isOpen) {
+				instance.closeDocument(iDocument);
+				instance.openDocument(iDocument, DocumentData.REMOTE_LOCATION, true);
+				Radiate.info("Document rebuilt");
+			}
+			
+			return true;
+		}
+		
+		/**
+		 * Show message when document has been rebuilt
+		 * */
+		public function refreshDocumentHandler(event:RadiateEvent):void {
+			Radiate.info("Document rebuilt");
 		}
 		
 		/**

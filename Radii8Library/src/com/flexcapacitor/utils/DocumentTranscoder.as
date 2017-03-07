@@ -14,12 +14,15 @@ package com.flexcapacitor.utils {
 	
 	import flash.events.EventDispatcher;
 	import flash.utils.Dictionary;
+	import flash.utils.getDefinitionByName;
 	
 	import mx.collections.ArrayCollection;
 	import mx.collections.ListCollectionView;
 	
 	import spark.components.Application;
 	import spark.core.ContentCache;
+	
+	import avmplus.getQualifiedClassName;
 	
 	/**
 	 * Invalid elements in the markup
@@ -105,7 +108,8 @@ package com.flexcapacitor.utils {
 		public var importOptions:ImportOptions;
 		public var exportOptions:ExportOptions;
 		
-		public var previousPresets:ExportOptions;
+		public var previousPresets:TranscoderOptions;
+		public var optionsClass:Object;
 		
 		public var target:Object;
 		
@@ -129,6 +133,11 @@ package com.flexcapacitor.utils {
 		 * for a single selected component.  
 		 * */
 		public var exportChildDescriptors:Boolean = true;
+		
+		/**
+		 * Export full document
+		 * */
+		public var exportFullDocument:Boolean;
 		
 		/**
 		 * Components created during import
@@ -324,9 +333,16 @@ package com.flexcapacitor.utils {
 		 * Save current presets. Sub classes should override this or set the options to their
 		 * own class options type
 		 * */
-		public function savePresets():void {
+		public function savePresets(options:Object = null):void {
 			if (previousPresets==null) {
-				previousPresets = new ExportOptions();
+				if (options) {
+					var optionsClassName:String = getQualifiedClassName(options);
+					optionsClass = getDefinitionByName(optionsClassName);
+					previousPresets = new optionsClass();
+				}
+				else {
+					previousPresets = new ExportOptions();
+				}
 			}
 			
 			var properties:Array = ClassUtils.getPropertyNames(previousPresets);

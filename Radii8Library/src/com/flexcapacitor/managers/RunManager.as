@@ -265,7 +265,7 @@ package com.flexcapacitor.managers {
 			else {
 				// allow to swap between preview and non preview
 				if (!radiate.isPreviewDocumentVisible()) {
-					radiate.openDocumentPreview(radiate.selectedDocument, true);
+					radiate.openDocumentPreview(radiate.selectedDocument, true, false);
 					previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
 					
 					if (previewDocument is IFrame) {

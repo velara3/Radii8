@@ -1,5 +1,7 @@
 
 package com.flexcapacitor.events {
+	import com.flexcapacitor.model.HistoryEventData;
+	import com.flexcapacitor.model.HistoryEventItem;
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.states.AddItems;
 	import com.flexcapacitor.tools.ITool;
@@ -336,6 +338,11 @@ package com.flexcapacitor.events {
 		public static const HISTORY_CHANGE:String = "historyChange";
 		
 		/**
+		 * Dispatched when document is rebuilt
+		 * */
+		public static const DOCUMENT_REBUILT:String = "documentRebuit";
+		
+		/**
 		 * Dispatched when document scale is changed.
 		 * */
 		public static const SCALE_CHANGE:String = "scaleChange";
@@ -385,7 +392,7 @@ package com.flexcapacitor.events {
 		public var moveItemsInstance:AddItems;
 		public var newIndex:int;
 		public var oldIndex:int;
-		public var historyEvent:HistoryEvent;
+		public var historyEvent:HistoryEventData;
 		public var historyEventItem:HistoryEventItem;
 		public var historyEventItems:Array;
 		public var targets:Array;

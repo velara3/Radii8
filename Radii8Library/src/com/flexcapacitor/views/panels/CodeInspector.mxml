@@ -12,7 +12,7 @@
 		 xmlns:ns="http://www.flexcapacitor.com/flex/2015" 
 		 
 		 minWidth="200" 
-		 minHeight="100"
+		 minHeight="0"
 		 implements="com.flexcapacitor.views.IInspector" 
 		 >
 	
@@ -20,7 +20,6 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.controls.AceEditor;
 			import com.flexcapacitor.controls.supportClasses.AceCommand;
 			import com.flexcapacitor.controls.supportClasses.AutoCompleteObject;
 			import com.flexcapacitor.controls.supportClasses.TokenInformation;
@@ -28,11 +27,11 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.managers.HistoryManager;
+			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.model.ExportOptions;
 			import com.flexcapacitor.model.HTMLExportOptions;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
-			import com.flexcapacitor.model.ImportOptions;
 			import com.flexcapacitor.model.MXMLImportOptions;
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.model.SourceData;
@@ -51,6 +50,7 @@
 			import mx.core.IVisualElementContainer;
 			import mx.core.UIComponent;
 			import mx.events.ItemClickEvent;
+			import mx.events.ToolTipEvent;
 			import mx.utils.Platform;
 			import mx.validators.IValidator;
 			
@@ -126,7 +126,7 @@
 			public var settingTargets:Boolean;
 			public var editingTemplate:Boolean;
 			
-			
+			public var languageTypesArrayList:ArrayList;
 			private var options:ExportOptions;
 			
 			[Bindable]
@@ -177,12 +177,22 @@
 					showChildDescriptors.selected = true;
 				}
 				
+				if (languageTypesArrayList==null) {
+					var languageTypesArray:Array = [];
+					languageTypesArray.push({label:"", value:CodeManager.MXML, icon:Radii8LibraryAssets.mxmlDocument});
+					languageTypesArray.push({label:"", value:CodeManager.HTML, icon:Radii8LibraryAssets.htmlDocument});
+					languageTypesArray.push({label:"", value:CodeManager.ANDROID, icon:Radii8LibraryAssets.androidDocument});
+					languageTypesArrayList = new ArrayList(languageTypesArray);
+					languageTypeButtons.dataProvider = languageTypesArrayList;
+					languageTypeButtons.selectedIndex = 0;
+				}
+				
 				if (radiate.isDocumentPreviewOpen(radiate.selectedDocument)) {
-					languageTypeButtons.selectedItem = CodeManager.HTML;
+					setSelectedLanguage(CodeManager.HTML);
 					isHTML = true;
 				}
 				
-				isMXML = languageTypeButtons.selectedItem==CodeManager.MXML;
+				isMXML = isSelectedLanguage(CodeManager.MXML);
 				
 				var settings:Settings = Radiate.settings;
 				
@@ -211,7 +221,13 @@
 					templateEditor.visible = true;
 				}
 				
-				setupCodeComplete();
+				if (aceEditor.aceFound==false) {
+					callLater(setupCodeComplete);
+				}
+				else {
+					setupCodeComplete();
+				}
+				
 			}
 			
 			public function deactivate():void {
@@ -315,6 +331,10 @@
 						htmlOptions.styles = "";
 					}
 					
+					if (radiate.isPreviewDocumentVisible()) {
+						htmlOptions.exportFullDocument = true;
+					}
+					
 					options = htmlOptions;
 				}
 				else if (language == CodeManager.MXML) {
@@ -380,9 +400,9 @@
 				}
 				
 				if (language==CodeManager.MXML) {
-					//if (isCodeModifiedByUser) {
+					if (!isCodeModifiedByUser) {
 						updateCodeEditors();
-					//}
+					}
 				}
 				
 				if (updateCodeLive.selected) {
@@ -434,9 +454,13 @@
 				
 				isCodeModifiedByUser = false;
 				updateCodeLive.selected = false;
-				updateCodeEditors(true);
 				
 				selectedLanguage = getSelectedLanguage();
+				
+				isHTML = selectedLanguage==CodeManager.HTML;
+				isMXML = selectedLanguage==CodeManager.MXML;
+				
+				updateCodeEditors(true);
 				
 				// if HTML preview is visible then dispatch an event to 
 				// so that preview can be changed else where
@@ -447,8 +471,10 @@
 					radiate.closeDocument(radiate.selectedDocument, true);
 				}
 				
-				isHTML = selectedLanguage==CodeManager.HTML;
-				isMXML = selectedLanguage==CodeManager.MXML;
+				if (!isHTML && editTemplateButton.visible && editTemplateButton.selected) {
+					editTemplateButton.selected = false;
+					editTemplateButton_clickHandler();
+				}
 			}
 			
 			/**
@@ -524,8 +550,10 @@
 						if (radiate.isPreviewDocumentVisible()) {
 							previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
 							
+							updateTarget(radiate.selectedDocument.instance);
+							
 							if (previewDocument is IFrame) {
-								previewDocument.content = sourceData;
+								previewDocument.content = sourceData.source;
 							}
 							
 							//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
@@ -572,8 +600,8 @@
 					//if (radiate.isPreviewDocumentVisible()) {
 					previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
 					
-					if (previewDocument is IFrame) {
-						previewDocument.content = sourceData;
+					if (previewDocument is IFrame && sourceData) {
+						previewDocument.content = sourceData.source;
 					}
 					
 					else if (previewDocument is UIComponent) {
@@ -619,7 +647,7 @@
 				else {
 					aceEditor.removeEventListener(Event.CHANGE, editorChangeHandler);
 					aceCSSEditor.removeEventListener(Event.CHANGE, editorChangeHandler);
-					templateEditor.addEventListener(Event.CHANGE, templateEditorChangeHandler);
+					templateEditor.removeEventListener(Event.CHANGE, templateEditorChangeHandler);
 					isCodeModifiedByUser = false;
 					updateCodeEditors(true);
 					radiate.dispatchCodeUpdatedEvent(sourceData, language);
@@ -664,8 +692,12 @@
 					
 					aceEditor.validateNow();
 					aceCSSEditor.validateNow();
+					
 					aceEditor.resetUndoHistory();
 					aceCSSEditor.resetUndoHistory();
+					
+					aceEditor.clearAnnotations();
+					aceCSSEditor.clearAnnotations();
 				}
 				
 				var object:Object = XMLUtils.getValidationXML(aceEditor.text);
@@ -689,42 +721,67 @@
 				updatePreviewDocument();
 			}
 			
-			public function cursorChange(value:String = ""):void {
-				//trace("cursor change:" + getTimer());
-			}
-			
 			protected function showBorders_clickHandler(event:MouseEvent):void {
-				showBorders = showBordersButton.selected;
-				updateCodeEditors(true);
-				return;
+				//showBorders = showBordersButton.selected;
+				//updateCodeEditors(true);
+				//return;
 				
-				if (showBorders) {
-					showBorderOutline(1);
+				if (showBordersButton.selected) {
+					showBorderOutline(true, 1);
 				}
 				else {
-					showBorderOutline(0);
+					showBorderOutline(false);
 				}
 			}
 			
-			public function showBorderOutline(outlineWidth:int):void {
+			public var outlineStyleSheet:Object;
+			
+			public function showBorderOutline(enabled:Boolean, outlineWidth:int = 1):void {
 				var previewDocument:Object;
 				var borderStyleNode:Object;
-				var domWindow:Object;
+				var window:Object;
+				var elementID:String;
+				var rule:String;
+				var outlineStyleNode:Object;
+				var results:Object;
 				
-				if (Radiate.isDesktop && radiate.isPreviewDocumentVisible()) {
+				if (radiate.isPreviewDocumentVisible()) {
 					previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+					rule = "{ outline:" + outlineWidth + "px dotted red; }";
 					
-					if (previewDocument && "domWindow" in previewDocument) {
-						domWindow = previewDocument.domWindow;
-						borderStyleNode = domWindow.document.borderStyleNode;
+					if (ExternalInterface.available) {
+						elementID = "#" + Object(previewDocument).frameId;
+						rule = elementID + " *, " + elementID + " *:before, " + elementID + " *:after " + rule;
+						
+						results = ExternalInterface.call(borderString, Object(previewDocument).frameId, rule, enabled);
 					}
-					
-					if (!borderStyleNode) {
-						borderStyleNode = domWindow.document.createElement("style");
-						domWindow.document.body.appendChild(borderStyleNode);
+					else if (Radiate.isDesktop) {
+						
+						if (previewDocument && "domWindow" in previewDocument) {
+							window = previewDocument.domWindow;
+						}
+						
+						if (outlineStyleSheet==null) {
+							outlineStyleSheet = new Dictionary(true);
+						}
+						
+						rule = "*, *:before, *:after " + rule;
+						
+						outlineStyleSheet = outlineStyleSheet[previewDocument];
+						
+						if (outlineStyleSheet==null) {
+							outlineStyleNode = window.document.createElement("style");
+							window.document.body.appendChild(outlineStyleNode);
+							outlineStyleSheet = outlineStyleNode.sheet;
+							outlineStyleSheet[previewDocument] = outlineStyleSheet;
+							outlineStyleSheet.insertRule(rule, 0);
+						}
+						
+						outlineStyleSheet.disabled = !enabled;
 					}
-					
-					borderStyleNode.innerHTML = "*, *:before, *:after { outline:" + outlineWidth + "px dotted red; }";
+					else {
+						
+					}
 				}
 			}
 			
@@ -780,24 +837,19 @@
 			
 			/**
 			 * Get the document code and dispatch a preview event.
-			 * 
-			 * Got this error: 
-			 * WARNING: For content targeting Flash Player version 14 or higher, 
-			 * ExternalInterface escapes strings using JSON conventions. To maintain compatibility, 
-			 * content published to earlier Flash Player versions continues to use the legacy escaping behavior.
-			 * 
-			 * Don't know what to do with it but gonna leave it for now. 
 			 * */
 			protected function previewButton_clickHandler(event:MouseEvent):void {
-				var previewDocument:Object;
+				var iDocument:IDocument = Radiate.instance.selectedDocument;
 				
-				if (!radiate.selectedDocument) return;
-				/*
-				if (!isCodeModifiedByUser) {
-					var code:String = getDocumentCode(); // puts document code into text area
-				}*/
+				if (iDocument) {
+					settingTargets = true;
+					RunManager.openDocumentInInternalWeb(radiate.selectedDocument);
+					settingTargets = false;
+				}
+				else {
+					Radiate.info("Please select a document before previewing in the internal browser");
+				}
 				
-				updateHTMLPreview();
 			}
 			
 			public var lastVerticalScrollPosition:int;
@@ -863,7 +915,7 @@
 				else {
 					// allow to swap between preview and non preview
 					if (!radiate.isPreviewDocumentVisible()) {
-						radiate.openDocumentPreview(radiate.selectedDocument, true);
+						radiate.openDocumentPreview(radiate.selectedDocument, true, false);
 						previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
 						
 						if (previewDocument is IFrame) {
@@ -873,7 +925,7 @@
 						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 					}
 					else {
-						radiate.openDocument(radiate.selectedDocument);
+						//radiate.openDocument(radiate.selectedDocument);
 						//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
 					}
 				}
@@ -983,10 +1035,38 @@
 				}
 			}
 			
-			private function getSelectedLanguage():String
-			{
-				return languageTypeButtons.selectedItem;
+			private function getSelectedLanguage():String {
+				var object:Object = languageTypeButtons.selectedItem;
+				if (object) {
+					return object.value;
+				}
+				return null;
 			}
+			
+			private function setSelectedLanguage(language:String):void {
+				var languageObject:Object;
+				
+				for (var i:int = 0; i < languageTypesArrayList.length; i++)  {
+					languageObject = languageTypesArrayList.getItemAt(i);
+					
+					if (languageObject.value==language) {
+						languageTypeButtons.selectedItem = languageObject;
+						break;
+					}
+				}
+			}
+			
+			private function isSelectedLanguage(language:String):Boolean {
+				var languageObject:Object;
+				languageObject = languageTypeButtons.selectedItem;
+					
+				if (languageObject && languageObject.value==language) {
+					return true;
+				}
+				
+				return false;
+			}
+			
 			/*
 			private function languageTypeLinkBar_changeHandler():void {
 				var tempSelectedIndex:Number = languageTypeButtons.selectedIndex;
@@ -1012,7 +1092,7 @@
 				}
 			}
 			
-			protected function editTemplateButton_clickHandler(event:MouseEvent):void {
+			protected function editTemplateButton_clickHandler(event:MouseEvent = null):void {
 				var iDocument:IDocument = radiate.selectedDocument;
 				var showTemplate:Boolean = editTemplateButton.selected;
 				
@@ -1117,7 +1197,7 @@
 				}
 			}
 			
-			protected function importMXMLSource(code:String):void {
+			protected function importMXMLSource(code:String, dispatchEvents:Boolean = true):void {
 				var sourceData:SourceData;
 				var validationInfo:XMLValidationInfo;
 				var selectedDocument:IDocument = radiate.selectedDocument;
@@ -1249,11 +1329,13 @@
 					//Radiate.removeElement(lastTarget);
 				}
 				else {
-					Radiate.removeElement(lastTarget);
+					if (lastTarget) {
+						Radiate.removeElement(lastTarget);
+					}
 				}
 				
 				try {
-					sourceData = radiate.importMXMLDocument(selectedProject, selectedDocument, code, parentInstance as IVisualElement, currentIndex, null, mxmlOptions, true, false);
+					sourceData = radiate.importMXMLDocument(selectedProject, selectedDocument, code, parentInstance as IVisualElement, currentIndex, null, mxmlOptions, dispatchEvents, false);
 				}
 				catch (importError:Error) {
 					HistoryManager.undo(selectedDocument);
@@ -1280,7 +1362,12 @@
 					HistoryManager.mergeLastHistoryEvent(selectedDocument, "Updated source");
 					if (sourceData.errors.length==0) {
 						settingTargets = true;
-						Radiate.setTargets(sourceData.targets);
+						if (Radiate.lastCreatedComponent) {
+							Radiate.setTargets(Radiate.lastCreatedComponent);
+						}
+						else {
+							Radiate.setTargets(sourceData.targets);
+						}
 						settingTargets = false;
 					}
 					hideMessage();
@@ -1366,7 +1453,8 @@
 				var textFlowParser:ITextImporter;
 				
 				aceEditor.setCompleters([]);//aceEditor.setCompleters(null);
-				aceEditor.addCompleter(codeCompleter, getDocTooltip);
+				//aceEditor.addCompleter(codeCompleter, getDocTooltip);
+				aceEditor.addCompleter(codeCompleter);
 				
 				//aceEditor.addCommand(new AceCommand("find", {win: "Ctrl-B", "mac": "Cmd-B"}, findKeyboardHandler));
 				
@@ -1383,6 +1471,11 @@
 				aceEditor.addCommand(renderCommand);
 				
 				aceEditor.blur();
+				
+				if (Platform.isDesktop) {
+					cursorLocationLabel.visible = false;
+					cursorLocationLabel.includeInLayout = false;
+				}
 			}
 			
 			/**
@@ -1414,6 +1507,10 @@
 				var entityText:String = "";
 				var classFoundText:String = "";
 				var count:int;
+				var elementID:String;
+				var idToken:TokenInformation;
+				var searchResults:Object;
+				
 				//PerformanceMeter.mark("Start", true);
 				isMultiline = aceEditor.isSelectionMultiline();
 				isMouseDown = aceEditor.isMouseDown();
@@ -1470,6 +1567,20 @@
 					cursorLocationLabel.text = cursorString;
 				}
 				
+				if (linkButton.selected && aceCSSEditor.visible) {
+					idToken = tokenInfo.idToken;
+					elementID = idToken ? idToken.innerValue : null;
+					
+					if (elementID) {
+						aceCSSEditor.moveCursorTo(0, 0);
+						searchResults = aceCSSEditor.find("#" + elementID);
+						
+						if (searchResults) {
+							aceCSSEditor.scrollToLine(searchResults.start.row);
+							aceCSSEditor.clearSelection();
+						}
+					}
+				}
 				
 				//PerformanceMeter.mark("After end of cursorChange");
 				
@@ -1539,8 +1650,15 @@
 				//trace("Keyboard render event");
 				//invalidateDesignView();
 				var code:String = aceEditor.text;
+				var language:String = getSelectedLanguage();
 				
-				importMXMLSource(code);
+				if (language==CodeManager.MXML) {
+					isCodeModifiedByUser = true;
+					importMXMLSource(code);
+					if (!updateCodeLive.selected) {
+						isCodeModifiedByUser = false;
+					}
+				}
 			}
 			
 			protected function cursorLocationLabel_clickHandler(event:MouseEvent):void
@@ -1562,6 +1680,36 @@
 				
 				cursorChangeHandler();
 			}
+			
+			protected function markupButton_clickHandler(event:MouseEvent):void {
+				var showEditor:Boolean = markupButton.selected;
+				
+				if (aceEditor) {
+					aceEditor.visible = showEditor;
+					aceEditor.includeInLayout = showEditor;
+				}
+			}
+			
+			protected function stylesButton_clickHandler(event:MouseEvent):void {
+				var showEditor:Boolean = stylesButton.selected;
+				
+				if (aceCSSEditor) {
+					aceCSSEditor.visible = showEditor;
+					aceCSSEditor.includeInLayout = showEditor;
+				}
+			}
+			
+			protected function linkButton_clickHandler(event:MouseEvent):void {
+				if (linkButton.selected) {
+					cursorChangeHandler();
+				}
+			}
+			
+			protected function languageTypeButtons_toolTipShowHandler(event:ToolTipEvent):void
+			{
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1580,6 +1728,32 @@
 			</clipboard:CopyToClipboard>
 			
 		</handlers:EventHandler>
+		
+		<fx:String id="borderString">
+		<![CDATA[
+		function (id, rule, enabled) {
+			var outlineStyleNode;
+			var outlineStyleSheet;
+			
+			if (window.outlineStyleSheet==null) {
+				window.outlineStyleSheet = {};
+			}
+			
+			outlineStyleSheet = window.outlineStyleSheet[id];
+			
+			if (outlineStyleSheet==null) {
+				outlineStyleNode = document.createElement("style");
+				document.body.appendChild(outlineStyleNode);
+				outlineStyleSheet = outlineStyleNode.sheet;
+				window.outlineStyleSheet[id] = outlineStyleSheet;
+				outlineStyleSheet.insertRule(rule, 0);
+			}
+			
+			outlineStyleSheet.disabled = !enabled;
+			return true;
+		}
+		]]>
+		</fx:String>
 		
 		<!--- 
 		adds zoom css for replicating preview
@@ -1654,11 +1828,6 @@ IFRAME_ID {
 			</fx:Array>
 		</s:ArrayList>
 		
-		<s:ArrayList id="languageTypes">
-			<fx:String>{CodeManager.MXML}</fx:String>
-			<fx:String>{CodeManager.HTML}</fx:String>
-			<fx:String>{CodeManager.ANDROID}</fx:String>
-		</s:ArrayList>
 	</fx:Declarations>
 	
 	<s:states>
@@ -1670,22 +1839,8 @@ IFRAME_ID {
 					top="30" 
 					width="100%" 
 					height="100%" 
-					minHeight="10"
+					minHeight="0"
 					liveDragging="true">
-		
-		<c:AceEditor id="templateEditor" 
-					 width="100%" 
-					 height="100%"
-					 mode="ace/mode/html" 
-					 showFoldWidgets="true" 
-					 margin="{editorMargin}"
-					 focusIn="editorFocusInHandler(event)"
-					 find="editorFindHandler(event)"
-					 scrollSpeed=".5"
-					 useWordWrap="{enableWordWrap}"
-					 visible="false"
-					 includeInLayout="false"
-					 />
 		
 		<c:AceEditor id="aceEditor" 
 					 width="100%" 
@@ -1714,6 +1869,20 @@ IFRAME_ID {
 					 includeInLayout="false"
 					 />
 		
+		<c:AceEditor id="templateEditor" 
+					 width="100%" 
+					 height="100%"
+					 mode="ace/mode/html" 
+					 showFoldWidgets="true" 
+					 margin="{editorMargin}"
+					 focusIn="editorFocusInHandler(event)"
+					 find="editorFindHandler(event)"
+					 scrollSpeed=".5"
+					 useWordWrap="{enableWordWrap}"
+					 visible="false"
+					 includeInLayout="false"
+					 />
+		
 	</mx:HDividedBox>
 	
 	
@@ -1727,35 +1896,58 @@ IFRAME_ID {
 			  fontSize="9"
 			  >
 		
+		<c:SolidFillButtonBar id="editorViewOptionButtons" 
+							  requireSelection="true"
+							  labelField="label"
+							  toolTip="Select the code editors to view"
+							  dataProvider="{editorViewOptions}"
+							  click="editorViewOptionButtons_clickHandler(event)"
+							  includeInLayout="false"
+							  visible="false">
+		</c:SolidFillButtonBar>
+		
+		<c:SolidFillButtonBar id="languageTypeButtons" 
+							  selectedIndex="0"
+							  toolTip="Select the language to generate"
+							  toolTipShow="languageTypeButtons_toolTipShowHandler(event)"
+							  click="languageType_changeHandler(null)">
+		</c:SolidFillButtonBar>
+		
+		<c:BeveledImageToggleButton id="markupButton" 
+									toolTip="Show markup editor" 
+									selected="true"
+									icon="{Radii8LibraryAssets.markup}"
+									click="markupButton_clickHandler(event)"
+									showBackgroundWhenSelected="true"/>
+		
+		<c:BeveledImageToggleButton id="stylesButton" 
+									toolTip="Show styles editor" 
+									icon="{Radii8LibraryAssets.styles}"
+									click="stylesButton_clickHandler(event)"
+									showBackgroundWhenSelected="true"/>
+		
+		<c:BeveledImageToggleButton id="editTemplateButton" 
+									icon="{Radii8LibraryAssets.document}"
+									toolTip="Show web page template"
+									showBackgroundWhenSelected="true"
+									visible="{isHTML}"
+									includeInLayout="{isHTML}"
+									click="editTemplateButton_clickHandler(event)"/>
+		
 		<c:BeveledImageButton id="resetTemplateButton"
 							  source="{Radii8LibraryAssets.refresh}"
 							  toolTip="Reset template code"
 							  click="resetTemplateButton_clickHandler(event)"
-							  visible="{editTemplateButton.selected}"
-							  includeInLayout="{editTemplateButton.selected}"
+							  visible="{editTemplateButton.selected &amp;&amp; isHTML}"
+							  includeInLayout="{editTemplateButton.selected &amp;&amp; isHTML}"
 							  />
 		
-		<c:SolidFillButtonBar id="editorViewOptionButtons" 
-					 requireSelection="true"
-					 labelField="label"
-					 toolTip="Select the code editors to view"
-					 dataProvider="{editorViewOptions}"
-					 click="editorViewOptionButtons_clickHandler(event)">
-		</c:SolidFillButtonBar>
 		
-		<c:SolidFillButtonBar id="languageTypeButtons" 
-					 selectedIndex="0"
-					 toolTip="Select the language to generate"
-					 click="languageType_changeHandler(null)"
-					 dataProvider="{languageTypes}">
-		</c:SolidFillButtonBar>
-		
-		<c:SolidFillToggleButton id="editTemplateButton" 
-								 label="Edit Template" 
-								 toolTip="Edit the webpage template"
-								 visible="{isHTML}"
-								 includeInLayout="{isHTML}"
-								 click="editTemplateButton_clickHandler(event)"/>
+		<c:BeveledImageToggleButton id="linkButton" 
+									toolTip="Scroll style into view when cursor is placed in component" 
+									icon="{Radii8LibraryAssets.linkeditor}"
+									click="linkButton_clickHandler(event)"
+									showBackgroundWhenSelected="true"/>
 		
 		<!--<mx:LinkBar id="languageTypeLinkButtons"
 					itemClick="languageTypeLinkBar_changeHandler()"
@@ -1780,19 +1972,9 @@ IFRAME_ID {
 							  smooth="true"
 							  width="18"
 							  height="10"
-							  visible="{isHTML}"
-							  includeInLayout="{isHTML}"
 							  click="previewButton_clickHandler(event)" 
 							  />
 		
-		<!--<c:BeveledImageButton id="previewButton"
-							  source="{Radii8LibraryToolAssets.Launch}"
-							  toolTip="Preview in a browser"
-							  enabled="{isHTML}" 
-							  visible="{isHTML}"
-							  includeInLayout="{isHTML}"
-							  click="previewButton_clickHandler(event)"
-							  />-->
 		
 		<c:BeveledImageToggleButton id="enableWordWrapButton"
 							  source="{Radii8LibraryAssets.wordWrap}"

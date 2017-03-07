@@ -25,8 +25,6 @@
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
 			import mx.events.FlexEvent;
-			
-			import spark.primitives.Ellipse;
 
 			public var radiate:Radiate;
 			public var target:Object;
@@ -64,6 +62,7 @@
 				borderWeightRenderer.data = ClassUtils.getMetaDataOfStyle(target, "borderWeight");
 				borderColorRenderer.data = ClassUtils.getMetaDataOfStyle(target, "borderColor");
 				borderAlphaRenderer.data = ClassUtils.getMetaDataOfStyle(target, "borderAlpha");
+				borderVisibleRenderer.data = ClassUtils.getMetaDataOfStyle(target, "borderVisible");
 				
 					
 				if (cornerRadius) {
@@ -103,6 +102,11 @@
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Corner Radius" styleName="inspectablePanelLabel" />
 		<renderers:NumberRenderer id="cornerRadiusRenderer" height="24" stepSize="1" snapInterval="0"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Border Visible" styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="borderVisibleRenderer" />
 	</s:HGroup>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >

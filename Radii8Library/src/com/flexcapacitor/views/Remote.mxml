@@ -68,7 +68,7 @@
 				event.preventDefault();*/
 			}
 			
-			protected function closeDocumentIcon_clickHandler():void {
+			protected function closeDocumentIcon_clickHandler(event:MouseEvent):void {
 				var iDocument:IDocument = radiate.selectedDocument;
 				var documentsOpen:int = documentsTagNavigator.numElements;
 				
@@ -79,6 +79,9 @@
 				
 				if (iDocument && documentsOpen>0) {
 					if (iDocument && radiate.isDocumentPreviewOpen(iDocument)) {
+						radiate.closeVisibleDocument();
+					}
+					else if (event.shiftKey) {
 						radiate.closeVisibleDocument();
 					}
 					else {
@@ -782,7 +785,7 @@
 							  height="16"
 							  horizontalAlign="center"
 							  verticalAlign="middle"
-							  click="closeDocumentIcon_clickHandler()"
+							  click="closeDocumentIcon_clickHandler(event)"
 							  />
 	</s:Group>
 

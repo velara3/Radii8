@@ -195,6 +195,8 @@
 					   toolTip="Scroll to top and center"
 					   click="scrollToTopButton_clickHandler(event)"
 					   label="top"
+					   includeInLayout="false"
+					   visible="false"
 					   />
 	
 	<c:SolidFillButton id="zoomOutButton" 

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:flexiframe="com.google.code.flexiframe.*"
+			   
+			   minWidth="955" minHeight="600"
+			   creationComplete="application1_creationCompleteHandler(event)"
+			   >
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			
+			private var aceEditorCreated:Boolean;
+			private var aceEditorVisible:Boolean;
+			public var settingEditorText:Boolean;
+			
+			protected function editor_resizeHandler(event:ResizeEvent):void {
+				//trace("resize from : " + event.currentTarget);
+				ExternalInterface.call("resizeEditor");
+			}
+			
+			protected function createEditor():void {
+				var createEditor:String = "createEditor";
+				var result:Object;
+				currentState = "editor";
+				
+				if (true || !aceEditorCreated) {
+					editor.content = "<div id='editor1' style='display:block;position:absolute;top:0px;left:0px;right:0px;bottom:0px;height:100%;width:100%'></div>";
+					editor.validateNow();
+					result = ExternalInterface.call(createEditor, "editor0", ExternalInterface.objectID);
+					ExternalInterface.addCallback("editorChange", editorChange);
+					ExternalInterface.addCallback("cursorChange", cursorChange);
+					aceEditorCreated = true;
+				}
+				
+				updateContent();
+			}
+			
+			public function editorChange(value:String = ""):void {
+				//if (settingEditorText || value==sourceCode) return;
+				updatePreviewDocument();
+			}
+			
+			public function cursorChange(value:String = ""):void {
+				//trace("cursor change:" + getTimer());
+			}
+			
+			/**
+			 * Handle updating preview and set if code is modified by user
+			 * */
+			public function updatePreviewDocument():void {
+				
+				var preview:Object;
+				
+				if (preview is IFrame) {
+					preview.content = template;
+				}
+				
+			}
+			
+			public function updateContent():void {
+				
+				settingEditorText = true;
+				var result:String = ExternalInterface.call("setEditorText", template);
+				settingEditorText = false;
+			}
+			
+			protected function switchStates(event:MouseEvent):void {
+				if (currentState=="normal") {
+					currentState = "editor";
+					createEditor();
+				}
+				else {
+					currentState = "normal";
+				}
+			}
+			
+			protected function application1_creationCompleteHandler(event:FlexEvent):void {
+				//createEditor();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<fx:String id="template">
+			<![CDATA[<!DOCTYPE html>
+			<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+			<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+			<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+			<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+			<head>
+			<meta charset="utf-8">
+			<meta http-equiv="X-UA-Compatible" content="IE=edge">
+			<title></title>
+			<meta name="description" content="">
+			<meta name="viewport" content="width=device-width, initial-scale=1">
+			
+			<!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+			
+			<link rel="stylesheet" href="css/normalize.css">
+			<link rel="stylesheet" href="css/main.css">
+			<script src="js/vendor/modernizr-2.6.2.min.js"></script>
+			</head>
+			<body>
+			<!--[if lt IE 7]>
+			<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+			<![endif]-->
+			
+			<!--template_content-->
+			
+			<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+			<script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.2.min.js"><\/script>')</script>
+			<script src="js/plugins.js"></script>
+			<script src="js/main.js"></script>
+			
+			<!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+			<script>
+			(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+			function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+			e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+			e.src='//www.google-analytics.com/analytics.js';
+			r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+			ga('create','UA-XXXXX-X');ga('send','pageview');
+			</script>
+			</body>
+			</html>
+			]]>
+		</fx:String>
+	</fx:Declarations>
+	
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="editor"/>
+	</s:states>
+	
+	<s:Label id="label" 
+			 top="50" left="0"
+			 width="100%" 
+			 text="Press the set content button"
+			 includeIn="normal"
+			 >
+	</s:Label>
+	
+	<flexiframe:IFrame id="editor" 
+					   top="50" left="0"
+					   width="100%" height="100%" 
+					   resize="editor_resizeHandler(event)"
+					   overlayDetection="true"
+					   includeIn="editor"
+					   >
+	</flexiframe:IFrame>
+	
+	<s:HGroup>
+		<s:Button label="Set contents" click="createEditor()"/>
+		<s:Button label="Switch States" click="switchStates(event)"/>
+	</s:HGroup>
+</s:Application>

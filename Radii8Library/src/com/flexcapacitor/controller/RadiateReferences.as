@@ -2,6 +2,7 @@
 package com.flexcapacitor.controller {
 	import com.flexcapacitor.tools.EyeDropper;
 	import com.flexcapacitor.tools.Hand;
+	import com.flexcapacitor.tools.Marquee;
 	import com.flexcapacitor.tools.Selection;
 	import com.flexcapacitor.tools.Text;
 	import com.flexcapacitor.tools.Zoom;
@@ -69,6 +70,9 @@ package com.flexcapacitor.controller {
 		public static var handInspector:com.flexcapacitor.views.HandInspector;
 		
 		public static var textTool:com.flexcapacitor.tools.Text;
+		
+		public static var marqueeTool:com.flexcapacitor.tools.Marquee;
+		public static var marqueeInspector:com.flexcapacitor.views.MarqueeInspector;
 		//public static var textInspector:com.flexcapacitor.views.TextInspector;
 		
 		///////////////////////////////////////////////////////

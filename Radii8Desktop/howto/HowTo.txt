@@ -143,6 +143,7 @@ How to add a new tool
     		</cursors>
     </tool>
     
+- Add reference to your class in RadiateReferences
     
 - Create a new tool icons (like pointer, magnifying glass, etc) 
 - Go to Radii8LibraryAssets/src/assets/icons/tools and add the file there
@@ -154,7 +155,6 @@ How to add a new tool
 - Look at the classes to see what to do after that :P
 - Go to Radii8Desktop/src/assets/images/tools and add the icon from earlier
 
-- Add reference to your class in RadiateReferences
 - Copy Radii8LibraryAssets.SWC to main library project swsees folder
     
 - Select the new classes in the Radii8Library project properties in Classes 

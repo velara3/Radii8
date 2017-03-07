@@ -8,7 +8,6 @@ package com.flexcapacitor.tools {
 	
 	import flash.display.DisplayObject;
 	import flash.display.Stage;
-	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.MouseEvent;
 	import flash.ui.Mouse;
