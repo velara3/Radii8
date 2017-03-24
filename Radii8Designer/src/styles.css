@@ -244,3 +244,7 @@ controls|ColorPicker {
 controls|RichTextEditorBar {
 	fontSize: 10;
 }
+
+skins|CallOutSkin {
+	contentBackgroundAppearance: "none";
+}

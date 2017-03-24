@@ -1,5 +1,8 @@
 
 package com.flexcapacitor.controller {
+	import com.flexcapacitor.filters.BlackAndWhiteFilter;
+	import com.flexcapacitor.filters.BorderStrokeFilter;
+	import com.flexcapacitor.filters.TextShadowFilter;
 	import com.flexcapacitor.tools.EyeDropper;
 	import com.flexcapacitor.tools.Hand;
 	import com.flexcapacitor.tools.Marquee;
@@ -16,6 +19,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.BorderStyles;
 	import com.flexcapacitor.views.inspectors.ButtonProperties;
 	import com.flexcapacitor.views.inspectors.ColorPickerProperties;
+	import com.flexcapacitor.views.inspectors.DropShadowFilterInspector;
 	import com.flexcapacitor.views.inspectors.FillStyles;
 	import com.flexcapacitor.views.inspectors.FontStyles;
 	import com.flexcapacitor.views.inspectors.Gap;
@@ -31,9 +35,22 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.StyleNameInspector;
 	import com.flexcapacitor.views.inspectors.TextInspector;
 	import com.flexcapacitor.views.inspectors.VideoPlayerProperties;
+	import com.flexcapacitor.views.panels.FiltersInspector;
 	
 	import flash.display.JPEGEncoderOptions;
 	import flash.display.PNGEncoderOptions;
+	
+	import spark.filters.BevelFilter;
+	import spark.filters.BlurFilter;
+	import spark.filters.ColorMatrixFilter;
+	import spark.filters.ConvolutionFilter;
+	import spark.filters.DisplacementMapFilter;
+	import spark.filters.DropShadowFilter;
+	import spark.filters.GlowFilter;
+	import spark.filters.GradientBevelFilter;
+	import spark.filters.GradientFilter;
+	import spark.filters.GradientGlowFilter;
+	import spark.filters.ShaderFilter;
 	
 	/**
 	 * Create references so classes are included. 
@@ -108,6 +125,36 @@ package com.flexcapacitor.controller {
 		public static var pathInspector:com.flexcapacitor.views.inspectors.PathProperties;
 		public static var fillInspector:com.flexcapacitor.views.inspectors.FillStyles;
 		public static var strokeInspector:com.flexcapacitor.views.inspectors.StrokeStyles;
+		
+		// FILTERS
+		public static var filterInspector:com.flexcapacitor.views.panels.FiltersInspector;
+		public static var filterCallout:com.flexcapacitor.views.panels.FiltersCallout;
+		
+		public static var bevelFilterInspector:com.flexcapacitor.views.inspectors.BevelFilterInspector;
+		public static var borderStrokeFilterInspector:com.flexcapacitor.views.inspectors.BorderStrokeFilterInspector;
+		public static var blackAndWhiteFilterInspector:com.flexcapacitor.views.inspectors.BlackAndWhiteFilterInspector;
+		public static var blurFilterInspector:com.flexcapacitor.views.inspectors.BlurFilterInspector;
+		public static var colorMatrixFilterInspector:com.flexcapacitor.views.inspectors.ColorMatrixFilterInspector;
+		public static var convolutionFilterInspector:com.flexcapacitor.views.inspectors.ConvolutionFilterInspector;
+		public static var displacementFilterInspector:com.flexcapacitor.views.inspectors.DisplacementMapFilterInspector;
+		public static var dropShadowFilterInspector:com.flexcapacitor.views.inspectors.DropShadowFilterInspector;
+		public static var glowFilterInspector:com.flexcapacitor.views.inspectors.GlowFilterInspector;
+		public static var baseDimensionsFilterInspector:com.flexcapacitor.views.inspectors.BaseDimensionFilterInspector;
+		
+		public static var bevelFilter:BevelFilter;
+		public static var blurFilter:BlurFilter;
+		public static var colorMatrixFilter:ColorMatrixFilter;
+		public static var convolutionFilter:ConvolutionFilter;
+		public static var displacementFilter:DisplacementMapFilter;
+		public static var dropShadowFilter:DropShadowFilter;
+		public static var glowFilter:GlowFilter;
+		public static var gradientBevelFilter:GradientBevelFilter;
+		public static var gradientFilter:GradientFilter;
+		public static var gradientGlowFilter:GradientGlowFilter;
+		public static var shaderFilter:ShaderFilter;
+		public static var blackAndWhiteFilter:BlackAndWhiteFilter;
+		public static var borderStrokeFilter:BorderStrokeFilter;
+		public static var textShadowFilter:TextShadowFilter;
 		
 		///////////////////////////////////////////////////////
 		// TRANSCODER CLASSES

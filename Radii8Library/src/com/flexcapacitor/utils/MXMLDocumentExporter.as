@@ -389,9 +389,25 @@ package com.flexcapacitor.utils {
 						//xmlNode = xmlEncoder.encodeValue(value, null, xmlParentNode);
 						//output += xmlNode.toString();
 						
-						xmlValue = xmlEncoder.encodeValue(componentInstance.filters, null);
+						xmlEncoder.skipNaNValues = true;
+						xmlEncoder.skipEmptyArrays = true;
+						xmlEncoder.encodePrimitivesAsAttributes = true;
 						
-						childNodesValues[propertyName] = xmlValue;
+						if (componentInstance.filters && componentInstance.filters.length) {
+							var filters:Array = (componentInstance.filters as Array).slice();
+							var filterNode:XML;
+							var filter:Object;
+							xmlValue = <filters></filters>;
+							
+							for (var j:int = 0; j < filters.length; j++) {
+								filter = filters[j];
+								filterNode = xmlEncoder.encodeValue(filter, null, null, 2, ["blackWhiteMatrix"]);
+								xmlValue.appendChild(filterNode);
+							}
+							
+							//xmlValue = XMLUtils.addNamespace(xmlValue, MXMLDocumentConstants.sparkNamespacePrefix, MXMLDocumentConstants.sparkNamespaceURI);
+							childNodesValues[propertyName] = xmlValue.elements();
+						}
 					}
 					
 					else if (propertyName==MXMLDocumentConstants.FILL) {
@@ -628,6 +644,9 @@ package com.flexcapacitor.utils {
 						//output += xmlNode.toString();
 						if (value is XML) {
 							value = StringUtils.indent(XML(value).toXMLString(), tabs + "\t\t");
+						}
+						else if (value is XMLList) {
+							value = StringUtils.indent(XMLList(value).toXMLString(), tabs + "\t\t");
 						}
 						else {
 							value = StringUtils.indent(value.toString(), tabs + "\t\t");

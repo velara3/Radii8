@@ -52,7 +52,7 @@
 			public var editorReady:Boolean;
 			public var someDelayedValues:String = "";
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				
 				/*if (logTarget==null && !Radiate.isDesktop) {
 					logTarget = Radiate.logTarget;

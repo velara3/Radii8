@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:controls="com.flexcapacitor.controls.*" 
+		 creationComplete="callout1_creationCompleteHandler(event)"
+		 horizontalPosition="middle"
+		 verticalPosition="before">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.events.FlexMouseEvent;
+			import mx.events.ResizeEvent;
+			
+			/**
+			 * Hides the callout when the mouse clicked outside of the editor 
+			 * and outside of the rich editable text component.
+			 * */
+			public var hideOnMouseDownOutside:Boolean = true;
+
+			[Bindable]
+			public var filtersCollection:ArrayCollection = new ArrayCollection();
+			
+			/**
+			 * This component shows the List in a call out.
+			 * 
+			 * To Use 
+			 * 1. Create an instance of this component in MXML declarations or in AS3
+			 * 2. Call the open method  
+			 * 3. Call the close method to hide the callout
+			 * */
+			override public function open(owner:DisplayObjectContainer, modal:Boolean = false):void {
+				super.open(owner, modal);
+				
+				
+				if (hideOnMouseDownOutside && !hasEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE)) {
+					addEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE, mouseDownOutsideHandler, false, 0, true);
+				}
+				else if (!hideOnMouseDownOutside) {
+					removeEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE, mouseDownOutsideHandler);
+				}
+				
+				owner.addEventListener(Event.RESIZE, list_resizeHandler, false, 0, true);
+				
+			}
+			
+			public function mouseDownOutsideHandler(event:MouseEvent):void {
+				var focusedComponent:Object = focusManager.getFocus();
+				var relatedObject:Object = event.relatedObject;
+				var isRelatedObjectRelated:Boolean;
+				
+				isRelatedObjectRelated = owner.contains(relatedObject as DisplayObject);
+				
+				//trace(' focusedComponent: ' + focusedComponent);
+				//trace(' relatedObject: ' + relatedObject);
+				//trace(' is related: ' + isRelatedObjectRelated);
+				
+				if (focusedComponent!=owner || 
+					(relatedObject!=owner && !isRelatedObjectRelated)) {
+					close(false);
+				}
+				
+			}
+			
+			
+			protected function list_resizeHandler(event:ResizeEvent):void {
+				updatePopUpPosition();
+			}
+			
+			protected function callout1_creationCompleteHandler(event:FlexEvent):void {
+				var filtersArray:Array = [];
+				filtersArray.push({name:"Bevel", classe:"spark.filters.BevelFilter"});
+				filtersArray.push({name:"Blur", classe:"spark.filters.BlurFilter"});
+				filtersArray.push({name:"Black and White", classe:"com.flexcapacitor.filters.BlackAndWhiteFilter"});
+				filtersArray.push({name:"Border", classe:"com.flexcapacitor.filters.BorderStrokeFilter"});
+				//filtersArray.push({name:"Text Shadow", classe:"com.flexcapacitor.filters.TextShadowFilter"});
+				//filtersArray.push({name:"Color Matrix", classe:"spark.filters.ColorMatrixFilter"});
+				//filtersArray.push({name:"Convolution", classe:"spark.filters.ConvolutionFilter"});
+				//filtersArray.push({name:"Displacement Map", classe:"spark.filters.DisplacementMapFilter"});
+				filtersArray.push({name:"Drop Shadow", classe:"spark.filters.DropShadowFilter"});
+				filtersArray.push({name:"Glow", classe:"spark.filters.GlowFilter"});
+				filtersCollection.source = filtersArray;
+				filtersList.dataProvider = filtersCollection;
+			}
+			
+			protected function filtersList_clickHandler(event:MouseEvent):void {
+				var selectedItem:Object = filtersList.selectedItem;
+				
+			}
+			
+			protected function filtersList_doubleClickHandler(event:MouseEvent):void
+			{
+				close(false, filtersList.selectedItem);
+			}
+			
+			/**
+			 *  @private
+			 */
+			override public function close(commit:Boolean=false, data:*=null):void {
+				var selectedItem:Object = filtersList.selectedItem;
+				
+				if (hideOnMouseDownOutside) {
+					removeEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE, mouseDownOutsideHandler);
+				}
+				
+				super.close(commit, selectedItem);
+			}
+			
+			protected function cancelButton_clickHandler(event:MouseEvent):void
+			{
+				close(false);
+			}
+			
+			protected function okButton_clickHandler(event:MouseEvent):void
+			{
+				close(false, filtersList.selectedItem);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:List id="filtersList" 
+			width="100%" 
+			height="100%"
+			top="0"
+			bottom="30"
+			labelField="name" 
+			click="filtersList_clickHandler(event)"
+			doubleClickEnabled="true"
+			doubleClick="filtersList_doubleClickHandler(event)"
+			resize="list_resizeHandler(event)" />
+	
+	
+	<s:HGroup bottom="0" paddingLeft="8" paddingRight="8" paddingBottom="4">
+		<s:Button label="Cancel" click="cancelButton_clickHandler(event)"/>
+		<s:Spacer width="100%"/>
+		<s:Button label="OK" click="okButton_clickHandler(event)"/>
+	</s:HGroup>
+</s:Callout>

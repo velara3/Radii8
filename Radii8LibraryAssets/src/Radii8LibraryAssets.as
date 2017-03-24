@@ -100,6 +100,9 @@ package {
 		[Embed(source="assets/icons/general/export.png")]
 		public static const export:Class;
 		
+		[Embed(source="assets/icons/general/filters.png")]
+		public static const filters:Class;
+		
 		[Embed(source="assets/icons/general/grid.png")]
 		public static const grid:Class;
 		
@@ -276,6 +279,21 @@ package {
 		
 		[Embed(source="assets/icons/general/unlocked.png")]
 		public static const unlocked:Class;
+		
+		/**
+		 * VIEWS
+		 * */
+		[Embed(source="assets/icons/general/BottomView.png")]
+		public static const bottomView:Class;
+		
+		[Embed(source="assets/icons/general/DesignView.png")]
+		public static const designView:Class;
+		
+		[Embed(source="assets/icons/general/LeftView.png")]
+		public static const leftView:Class;
+		
+		[Embed(source="assets/icons/general/LeftBottomView.png")]
+		public static const leftBottomView:Class;
 		
 	}
 }

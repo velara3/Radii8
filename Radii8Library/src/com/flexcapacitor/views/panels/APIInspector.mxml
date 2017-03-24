@@ -37,7 +37,7 @@
 			public var declaredBy:String;
 			public var documentationViewer:IUIComponent;
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler, false, 0, true);

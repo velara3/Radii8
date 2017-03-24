@@ -20,7 +20,7 @@
 			public var data:Object;
 			
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);

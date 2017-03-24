@@ -5,12 +5,14 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.DragData;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.log;
 	import com.flexcapacitor.utils.supportClasses.logTarget;
 	
+	import flash.display.BitmapData;
 	import flash.display.BlendMode;
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
@@ -58,6 +60,7 @@ package com.flexcapacitor.utils {
 	import spark.layouts.supportClasses.LayoutBase;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.ApplicationSkin;
+	import spark.skins.spark.ImageSkin;
 	import spark.skins.spark.ListDropIndicator;
 
 	/**
@@ -95,6 +98,9 @@ package com.flexcapacitor.utils {
 	 * I don't know if this has a drag cancel event. 
 	 * That is, if you don't find a place to drop then what happens? 
 	 * Could listen for stage mouse up or mouse up outside. 
+	 * This class is ancient. We could clean it up. We might want to use 
+	 * displayObject.startDrag(), or objecthandles class
+	 * instead or a combination of drag methods.
 	 * */
 	public class DragManagerUtil extends EventDispatcher {
 		
@@ -586,126 +592,7 @@ package com.flexcapacitor.utils {
 			var isBasic:Boolean;
 			var isTile:Boolean;
 			var target:Object;
-			var length:int;
-			
-			
-			/*
-			// get targets under mouse pointer
-			if (adjustMouseOffset) {
-				topLeftEdgePoint = new Point(event.stageX-offset.x, event.stageY-offset.y);
-			}
-			else {
-				topLeftEdgePoint = new Point(event.stageX, event.stageY);
-			}
-			
-			// get items under point
-			targetsUnderPoint = topLevelApplication.getObjectsUnderPoint(topLeftEdgePoint);
-			length = targetsUnderPoint.length;
-
-			// start from highest component and go back to application
-			targetsUnderPoint = targetsUnderPoint.reverse();
-			
-			// update location properties
-			updateDropTargetLocation(event.stageX, event.stageY);
-			
-			if (target is mx.containers.GridItem) {
-				trace("break");
-			}
-			
-			////////////////////////////////////////////////////////////
-			// find drop target
-			////////////////////////////////////////////////////////////
-			
-			componentTreeLoop:
-			
-			// loop through items under point until we find one on the *component* tree
-			for (var i:int;i<length;i++) {
-				target = targetsUnderPoint[i];
-				
-				if (!parentApplication.contains(DisplayObject(target))) {
-					continue;
-				}
-				
-				// check if target is self
-				if (target==draggedItem) {
-					continue;
-				}
-				
-				// check if target is child of self
-				if ("contains" in draggedItem && draggedItem.contains(target)) {
-					continue;
-				}
-				
-				// as soon as we find a visual element we can find the owner
-				if (target is IVisualElement) {
-					description = DisplayObjectUtils.getVisualElementContainerFromElement(IVisualElement(target), componentTree);
-					
-					if (description) {
-						target = description.instance;
-						break;
-					}
-				}
-			}
-			
-			
-			// check if target is self
-			if (target==draggedItem) {
-				target = parentApplication;
-				Radiate.info("Cannot drag onto self");
-				return;
-				//continue;
-			}
-			
-			// check if target is child of self
-			if ("contains" in draggedItem && target && 
-				draggedItem.contains(target)) {
-				Radiate.info("Cannot drag into child of self");
-				return;
-			}
-			
-			// this shouldn't be here but if document is not set then we get all sorts of targets
-			if (target && target != parentApplication && !parentApplication.contains(DisplayObject(target))) {
-				return;
-			}
-			
-			// check if target is a group
-			if (target is GroupBase) {
-				targetGroup = target as GroupBase;
-				
-				// skip skins
-				if (target is Skin && !includeSkins) {
-					//throw new Error("target cannot be a skin");
-					target = parentApplication;
-				}
-					
-				// skip skins (for groups in checkbox skin for example)
-				if ("owner" in target && target.owner is Skin && !includeSkins) {
-					//continue;
-					target = parentApplication;
-				}
-				
-				// we found a group
-				dropTarget = target;
-				
-				// check the type
-				if (targetGroup) {
-					targetGroupLayout = targetGroup.layout;
-					
-					// reset group layout values
-					isTile = isVertical = isHorizontal = false;
-					
-					if (targetGroupLayout is HorizontalLayout) {
-						isHorizontal = true;
-					}
-					else if (targetGroupLayout is VerticalLayout) {
-						isVertical = true;
-					}
-					else if (targetGroupLayout is TileLayout) {
-						isTile = true;
-					}
-				}
-			}
-			*/
+			var replaceTarget:Boolean;
 			
 			dragData = findDropTarget(event, true, targetApplication.scaleX);
 			
@@ -725,6 +612,7 @@ package com.flexcapacitor.utils {
 			isHorizontal = dragData.isHorizontal;
 			dropLocation = dragData.dropLocation;
 			dropLayout = dragData.layout;
+			replaceTarget = dragData.replaceTarget;
 			
 			////////////////////////////////////////////////////////////
 			// show selection box
@@ -919,211 +807,6 @@ package com.flexcapacitor.utils {
 			event.updateAfterEvent();*/
 		}
 		
-		
-		/**
-		 * Find the target under mouse pointer
-		 * */
-		public function findDropTarget(event:DragEvent, draggingOver:Boolean = true, applicationScale:Number = 1):DragData {
-			/*var eventTarget:FlexSprite = FlexSprite(event.target); */
-			var visualElementContainer:IVisualElementContainer;
-			var skinnableContainer:SkinnableContainer;
-			var description:ComponentDescription;
-			var isSkinnableContainer:Boolean;
-			var topLeftEdgePoint:Point;
-			var isApplication:Boolean;
-			var isBasicLayout:Boolean;
-			var isHorizontal:Boolean;
-			var isVertical:Boolean;
-			var isGroup:Boolean;
-			var isBasic:Boolean;
-			var isTile:Boolean;
-			var layout:LayoutBase;
-			var targetsLength:int;
-			var target:Object;
-			var debug:Boolean;
-			var dropIndex:int;
-			var location:DropLocation;
-			var offscreen:Boolean;
-			
-			dragData = new DragData();
-			
-			// get targets under mouse pointer
-			if (adjustMouseOffset) {
-				var adjustedX:Number = event.stageX-(offset.x * applicationScale);
-				var adjustedY:Number = event.stageY-(offset.y * applicationScale);
-				topLeftEdgePoint = new Point(adjustedX, adjustedY);
-			}
-			else {
-				topLeftEdgePoint = new Point(event.stageX, event.stageY);
-			}
-			
-			// get items under point
-			targetsUnderPoint = topLevelApplication.getObjectsUnderPoint(topLeftEdgePoint);
-			targetsLength = targetsUnderPoint.length;
-
-			// start from highest component and go back to application
-			targetsUnderPoint = targetsUnderPoint.reverse();
-			
-			// update location properties
-			updateDropTargetLocation(targetApplication, event);
-			
-			/*if (target is mx.containers.GridItem) {
-				trace("break");
-			}*/
-			
-			////////////////////////////////////////////////////////////
-			// find drop target
-			////////////////////////////////////////////////////////////
-			
-			componentTreeLoop:
-			
-			// loop through items under point until we find one on the *component* tree
-			for (var i:int;i<targetsLength;i++) {
-				target = targetsUnderPoint[i];
-				// if parent application does not contain the target
-				if (!targetApplication.contains(DisplayObject(target))) {
-					continue;
-				}
-				
-				// check if target is self
-				if (target==draggedItem) {
-					continue;
-				}
-				
-				// check if target is child of self
-				if ("contains" in draggedItem && draggedItem.contains(target)) {
-					continue;
-				}
-				
-				// as soon as we find a visual element we can find the owner
-				if (target is IVisualElement) {
-					description = DisplayObjectUtils.getVisualElementContainerFromElement(IVisualElement(target), componentTree);
-					
-					if (description) {
-						target = description.instance;
-						break;
-					}
-				}
-			}
-			
-			
-			// check if target is self
-			if (target==draggedItem) {
-				target = targetApplication;
-				if (debug) Radiate.info("Cannot drag onto self");
-				if (draggingOver) return null;
-				//continue;
-			}
-			
-			// check if target is child of self
-			if (target && "contains" in draggedItem && 
-				draggedItem.contains(target)) {
-				if (debug) Radiate.info("Cannot drag into child of self");
-				if (draggingOver) return null;
-				//return null;
-			}
-			
-			// this shouldn't be here but if document is not set then we get all sorts of targets
-			if (target && 
-				target != targetApplication && 
-				!targetApplication.contains(DisplayObject(target))) {
-				if (debug) Radiate.info("Target application doesn't contain drop target");
-				if (draggingOver) return null;
-				//return null;
-			}
-			
-			// still no target then we are on the application (most likely)
-			if (!target) {
-				target = targetApplication;
-			}
-			
-			if (target==targetApplication) {
-				isApplication = true;
-			}
-			
-			// check if target is a group
-			if (target is IVisualElementContainer) {
-				
-				dropIndex = -1;
-				
-				// skip skins
-				if (target is Skin && !includeSkins) {
-					//throw new Error("target cannot be a skin");
-					target = targetApplication;
-				}
-				
-				// skip skins (for groups in checkbox skin for example)
-				if ("owner" in target && target.owner is Skin && !includeSkins) {
-					target = targetApplication;
-				}
-				
-				visualElementContainer = target as IVisualElementContainer;
-				groupBase = target as GroupBase;
-				skinnableContainer = target as SkinnableContainer;
-				
-				//isGroup = groupBase!=null;
-				//isSkinnableContainer = skinnableContainer!=null;
-				
-				// ReferenceError: Error #1069: Property layout not found on mx.containers.TabNavigator and there is no default value.
-				layout = "layout" in target ? target.layout : null;
-				
-				
-				if (!layout) return null;
-				// we found a group
-				//dropTarget = target;
-		
-				// TypeError: Error #1009: Cannot access a property or method of a null object reference.
-				// get drop indicator location
-				location = layout.calculateDropLocation(event);
-				
-				var stagePoint:Point = new Point(event.stageX, event.stageY);
-				offscreen = location.dropPoint.equals(stagePoint);
-				
-				if (location) {
-					dropIndex = location.dropIndex;
-				}
-				
-				// reset group layout values
-				isBasic = isTile = isVertical = isHorizontal = false;
-				
-				// check the type
-				//if (targetGroup) {
-				//	targetGroupLayout = targetGroup.layout;
-				
-				if (layout is BasicLayout) {
-					isBasic = true;
-				}
-				else if (layout is HorizontalLayout) {
-					isHorizontal = true;
-				}
-				else if (layout is VerticalLayout) {
-					isVertical = true;
-				}
-				else if (layout is TileLayout) {
-					isTile = true;
-				}
-				//}
-			}
-			
-			dragData.target = target;
-			dragData.offscreen = offscreen;
-			dragData.dropLocation = location;
-			dragData.dropIndex = dropIndex;
-			dragData.description = description;
-			dragData.isApplication = isApplication;
-			dragData.isHorizontal = isHorizontal;
-			dragData.isVertical = isVertical;
-			dragData.isTile = isTile;
-			dragData.isBasicLayout = isBasic;
-			dragData.layout = layout;
-			dragData.isGroup = groupBase!=null;
-			dragData.isSkinnableContainer = skinnableContainer!=null;
-			dragData.isVisualElementContainer = visualElementContainer!=null;
-			
-			return dragData;
-		}
-		
-		
 		/**
 		 * Drag drop event
 		 * */
@@ -1145,6 +828,7 @@ package com.flexcapacitor.utils {
 			var target:Object;
 			var point:Point;
 			var length:int;
+			var replaceTarget:Boolean;
 			
 			
 			dragData = findDropTarget(event, false);
@@ -1162,6 +846,7 @@ package com.flexcapacitor.utils {
 			isSkinnableContainer= dragData.isSkinnableContainer;
 			isVisualElementContainer= dragData.isVisualElementContainer;
 			offscreen			= dragData.offscreen;
+			replaceTarget		= dragData.replaceTarget;
 			
 			if (debug) {
 				logTarget(dropTarget);
@@ -1188,6 +873,8 @@ package com.flexcapacitor.utils {
 			// Destroy the dropIndicator instance
 			destroyDropIndicator();
 			
+			restoreHiddenItems();
+			
 			// store the last target
 			lastTargetCandidate = dropTarget;
 			
@@ -1213,6 +900,7 @@ package com.flexcapacitor.utils {
 			dragEvent.isSkinnableContainer	= isSkinnableContainer;
 			dragEvent.isDropTargetParent 	= (dropTarget == draggedItem.parent);
 			dragEvent.isDropTargetOwner 	= (dropTarget == draggedItem.owner);
+			dragEvent.replaceTarget 		= replaceTarget;
 			
 			dispatchEvent(dragEvent);
 			
@@ -1264,17 +952,50 @@ package com.flexcapacitor.utils {
 				}
 			}
 			
-			var eventDescription:String = HistoryManager.getMoveDescription(draggedItem);
+			var eventDescription:String;
 			
 			if (draggedItem.parent==null) {
 				eventDescription = HistoryManager.getAddDescription(draggedItem);
+			}
+			else {
+				eventDescription = HistoryManager.getMoveDescription(draggedItem);
+			}
+			
+			if (replaceTarget) {
+				eventDescription = HistoryManager.getReplaceDescription(draggedItem);
+				
+				//imageLocalPoint = new Point();
+				var propertiesObject:Object = {};
+				var imageSource:Image = event.dragInitiator as Image;
+				var imageTarget:Image = dropTarget as Image;
+				properties = ["source"];
+				
+				propertiesObject.source = imageSource.source;
+				
+				Radiate.setProperties(imageTarget, properties, propertiesObject, eventDescription, true);
+				
+				if (targetApplication.contains(imageSource)) {
+					Radiate.removeElement(imageSource);
+					HistoryManager.mergeLastHistoryEvent(Radiate.instance.selectedDocument, eventDescription);
+				}
+				
+				dragCompleteEvent 						= new DragDropEvent(DragDropEvent.DRAG_DROP_COMPLETE, false, true);
+				dragCompleteEvent.dragEvent				= event;
+				dragCompleteEvent.dropTarget 			= dropTarget;
+				dragCompleteEvent.dragInitiator 		= event.dragInitiator;
+				dragCompleteEvent.dragSource 			= event.dragSource;
+				dragCompleteEvent.draggedItem 			= draggedItem;
+				dragCompleteEvent.isDropTargetParent 	= (dropTarget == draggedItem.parent);
+				dragCompleteEvent.isDropTargetOwner 	= (dropTarget == draggedItem.owner);
+				dragCompleteEvent.replaceTarget 		= replaceTarget;
+				
+				dispatchEvent(dragCompleteEvent);
+				return;
 			}
 			
 			// attempt to add or move
 			//addResult = Radiate.requestAddDisplayItems(draggedItem, dropTarget, null, eventDescription, null, index);
 			
-			
-			restoreHiddenItems();
 			
 			// setPositionFromXY(target, startPoint, endPoint);
 			if (isBasicLayout) {
@@ -1435,6 +1156,7 @@ package com.flexcapacitor.utils {
 			dragCompleteEvent.isSkinnableContainer	= isSkinnableContainer;
 			dragCompleteEvent.isDropTargetParent 	= (dropTarget == draggedItem.parent);
 			dragCompleteEvent.isDropTargetOwner 	= (dropTarget == draggedItem.owner);
+			dragCompleteEvent.replaceTarget 		= replaceTarget;
 			
 			dispatchEvent(dragCompleteEvent);
 			
@@ -1446,12 +1168,12 @@ package com.flexcapacitor.utils {
 			if (debug) {
 				logTarget(draggedItem);
 			}
+			restoreHiddenItems();
 			removeDragInitiatorProxy();
 			removeDragListeners(dragListener);
 			removeDragDisplayObjects();
 			//removeGroupListeners(targetApplication);
 			removeMouseHandlers(dragInitiator as IVisualElement);
-			restoreHiddenItems();
 			dragging = false;
 			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_END));
 			Radiate.instance.dispatchDocumentUpdatedEvent(Radiate.instance.selectedDocument);
@@ -1618,6 +1340,221 @@ package com.flexcapacitor.utils {
 			return dropIndicatorInstance;
 		}
 		
+		/**
+		 * Find the target under mouse pointer
+		 * */
+		public function findDropTarget(event:DragEvent, draggingOver:Boolean = true, applicationScale:Number = 1):DragData {
+			/*var eventTarget:FlexSprite = FlexSprite(event.target); */
+			var visualElementContainer:IVisualElementContainer;
+			var skinnableContainer:SkinnableContainer;
+			var description:ComponentDescription;
+			var isSkinnableContainer:Boolean;
+			var topLeftEdgePoint:Point;
+			var isApplication:Boolean;
+			var isBasicLayout:Boolean;
+			var isHorizontal:Boolean;
+			var isVertical:Boolean;
+			var isGroup:Boolean;
+			var isBasic:Boolean;
+			var isTile:Boolean;
+			var layout:LayoutBase;
+			var targetsLength:int;
+			var target:Object;
+			var debug:Boolean;
+			var dropIndex:int;
+			var location:DropLocation;
+			var offscreen:Boolean;
+			var replaceTarget:Boolean;
+			var targetToReplace:Object;
+			
+			dragData = new DragData();
+			
+			// get targets under mouse pointer
+			if (adjustMouseOffset) {
+				var adjustedX:Number = event.stageX-(offset.x * applicationScale);
+				var adjustedY:Number = event.stageY-(offset.y * applicationScale);
+				topLeftEdgePoint = new Point(adjustedX, adjustedY);
+			}
+			else {
+				topLeftEdgePoint = new Point(event.stageX, event.stageY);
+			}
+			
+			// get items under point
+			targetsUnderPoint = topLevelApplication.getObjectsUnderPoint(topLeftEdgePoint);
+			targetsLength = targetsUnderPoint.length;
+			
+			// start from highest component and go back to application
+			targetsUnderPoint = targetsUnderPoint.reverse();
+			
+			// update location properties
+			updateDropTargetLocation(targetApplication, event);
+			
+			/*if (target is mx.containers.GridItem) {
+			trace("break");
+			}*/
+			
+			////////////////////////////////////////////////////////////
+			// find drop target
+			////////////////////////////////////////////////////////////
+			
+			componentTreeLoop:
+			
+			// loop through items under point until we find one on the *component* tree
+			for (var i:int;i<targetsLength;i++) {
+				target = targetsUnderPoint[i];
+				// if parent application does not contain the target
+				if (!targetApplication.contains(DisplayObject(target))) {
+					continue;
+				}
+				
+				// check if target is self
+				if (target==draggedItem) {
+					continue;
+				}
+				
+				// check if target is child of self
+				if ("contains" in draggedItem && draggedItem.contains(target)) {
+					continue;
+				}
+				
+				// as soon as we find a visual element we can find the owner
+				if (target is IVisualElement) {
+					if (event.shiftKey && (target is Image || target is ImageSkin)) {
+						replaceTarget = true;
+						if (target is ImageSkin) {
+							target = target.hostComponent;
+						}
+						targetToReplace = target;
+						break;
+					}
+					else {
+						description = DisplayObjectUtils.getVisualElementContainerFromElement(IVisualElement(target), componentTree);
+					}
+					
+					if (description) {
+						target = description.instance;
+						break;
+					}
+				}
+			}
+			
+			
+			// check if target is self
+			if (target==draggedItem) {
+				target = targetApplication;
+				if (debug) Radiate.info("Cannot drag onto self");
+				if (draggingOver) return null;
+				//continue;
+			}
+			
+			// check if target is child of self
+			if (target && "contains" in draggedItem && 
+				draggedItem.contains(target)) {
+				if (debug) Radiate.info("Cannot drag into child of self");
+				if (draggingOver) return null;
+				//return null;
+			}
+			
+			// this shouldn't be here but if document is not set then we get all sorts of targets
+			if (target && 
+				target != targetApplication && 
+				!targetApplication.contains(DisplayObject(target))) {
+				if (debug) Radiate.info("Target application doesn't contain drop target");
+				if (draggingOver) return null;
+				//return null;
+			}
+			
+			// still no target then we are on the application (most likely)
+			if (!target) {
+				target = targetApplication;
+			}
+			
+			if (target==targetApplication) {
+				isApplication = true;
+			}
+			
+			// check if target is a group
+			if (target is IVisualElementContainer) {
+				
+				dropIndex = -1;
+				
+				// skip skins
+				if (target is Skin && !includeSkins) {
+					//throw new Error("target cannot be a skin");
+					target = targetApplication;
+				}
+				
+				// skip skins (for groups in checkbox skin for example)
+				if ("owner" in target && target.owner is Skin && !includeSkins) {
+					target = targetApplication;
+				}
+				
+				visualElementContainer = target as IVisualElementContainer;
+				groupBase = target as GroupBase;
+				skinnableContainer = target as SkinnableContainer;
+				
+				//isGroup = groupBase!=null;
+				//isSkinnableContainer = skinnableContainer!=null;
+				
+				// ReferenceError: Error #1069: Property layout not found on mx.containers.TabNavigator and there is no default value.
+				layout = "layout" in target ? target.layout : null;
+				
+				
+				if (!layout) return null;
+				// we found a group
+				//dropTarget = target;
+				
+				// TypeError: Error #1009: Cannot access a property or method of a null object reference.
+				// get drop indicator location
+				location = layout.calculateDropLocation(event);
+				
+				var stagePoint:Point = new Point(event.stageX, event.stageY);
+				offscreen = location.dropPoint.equals(stagePoint);
+				
+				if (location) {
+					dropIndex = location.dropIndex;
+				}
+				
+				// reset group layout values
+				isBasic = isTile = isVertical = isHorizontal = false;
+				
+				// check the type
+				//if (targetGroup) {
+				//	targetGroupLayout = targetGroup.layout;
+				
+				if (layout is BasicLayout) {
+					isBasic = true;
+				}
+				else if (layout is HorizontalLayout) {
+					isHorizontal = true;
+				}
+				else if (layout is VerticalLayout) {
+					isVertical = true;
+				}
+				else if (layout is TileLayout) {
+					isTile = true;
+				}
+				//}
+			}
+			
+			dragData.target = target;
+			dragData.offscreen = offscreen;
+			dragData.dropLocation = location;
+			dragData.dropIndex = dropIndex;
+			dragData.description = description;
+			dragData.isApplication = isApplication;
+			dragData.isHorizontal = isHorizontal;
+			dragData.isVertical = isVertical;
+			dragData.isTile = isTile;
+			dragData.isBasicLayout = isBasic;
+			dragData.layout = layout;
+			dragData.isGroup = groupBase!=null;
+			dragData.isSkinnableContainer = skinnableContainer!=null;
+			dragData.isVisualElementContainer = visualElementContainer!=null;
+			dragData.replaceTarget = replaceTarget;
+			
+			return dragData;
+		}
 		
 		/**
 		 * Finds the first visual element container
@@ -1639,7 +1576,7 @@ package com.flexcapacitor.utils {
 			var includeSkins:Boolean;
 			var dropIndex:int = -1;
 			var target:Object;
-			var length:int;
+			var numberOfTargets:int;
 			
 			
 			// get targets under point
@@ -1654,7 +1591,7 @@ package com.flexcapacitor.utils {
 			//targetsUnderPoint = topLevelApplication.getObjectsUnderPoint(topLeftEdgePoint);
 			targetsUnderPoint = topLevelContainer.getObjectsUnderPoint(topLeftEdgePoint);
 			
-			length = targetsUnderPoint.length;
+			numberOfTargets = targetsUnderPoint.length;
 			
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
@@ -1664,7 +1601,7 @@ package com.flexcapacitor.utils {
 			////////////////////////////////////////////////////////////
 			// find first available group
 			////////////////////////////////////////////////////////////
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfTargets;i++) {
 				target = targetsUnderPoint[i];
 				
 				if (DisplayObjectContainer(topLevelContainer).contains(DisplayObject(target))) {
@@ -1760,7 +1697,7 @@ package com.flexcapacitor.utils {
 			var isVertical:Boolean;
 			var isTile:Boolean;
 			var target:Object;
-			var length:int;
+			var numberOfTargets:int;
 			
 			// get targets under point
 			if (adjustMouseOffset) {
@@ -1773,7 +1710,7 @@ package com.flexcapacitor.utils {
 			// get items under point
 			targetsUnderPoint = topLevelApplication.getObjectsUnderPoint(topLeftEdgePoint);
 			
-			length = targetsUnderPoint.length;
+			numberOfTargets = targetsUnderPoint.length;
 			
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
@@ -1783,7 +1720,7 @@ package com.flexcapacitor.utils {
 			////////////////////////////////////////////////////////////
 			// find first available group
 			////////////////////////////////////////////////////////////
-			for (var i:int;i<length;i++) {
+			for (var i:int;i<numberOfTargets;i++) {
 				target = targetsUnderPoint[i];
 				//trace(i + " of " + length+ " target:"+NameUtil.getUnqualifiedClassName(target));
 				

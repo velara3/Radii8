@@ -11,11 +11,11 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.views.IInspector;
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.InspectorData;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			import com.flexcapacitor.views.IInspector;
 			
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
@@ -28,6 +28,10 @@
 			public var componentDescription:ComponentDescription;
 
 			public var target:Object;
+			public var subTarget:Object;
+			
+			public var property:String;
+			public var propertyIndex:int;
 			
 			private var _inspectors:Array;
 			
@@ -62,30 +66,37 @@
 				if (radiate.target) {
 					target = radiate.target;
 				}
+				if (radiate.subTarget) {
+					target = radiate.subTarget;
+				}
 				
 				inspectors = radiate.getInspectors(target);
 				
-				updateInspectors(inspectors);
+				updateInspectors(inspectors, target);
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
 				//var sameType:Boolean = radiate.isSameClassType(target, radiate.target);
 				
-				if (target!=radiate.target) {
-					target = radiate.target;
+				if (event.subSelectedItem) {
+					target = event.subSelectedItem;
+				}
+				else if (target!=event.selectedItem || property!=event.property || propertyIndex!=event.propertyIndex) {
+					target = event.selectedItem;
+					property = event.property;
+					propertyIndex = event.propertyIndex;
 				}
 				else {
 					return;
 				}
-				//if (!sameType) {
-					inspectors = radiate.getInspectors(target);
-					
-					updateInspectors(inspectors);
-				//}
+				
+				inspectors = radiate.getInspectors(target);
+				
+				updateInspectors(inspectors, target, property, propertyIndex);
 			}
 			
 			
-			public function updateInspectors(inspectors:Array):void {
+			public function updateInspectors(inspectors:Array, selectedTarget:Object = null, property:String = null, index:int = -1):void {
 				var inspectorInstance:UIComponent;
 				var inspectorData:InspectorData;
 				var numberOfDynamicInspectors:int = contentGroup.numElements;
@@ -108,7 +119,8 @@
 					
 					if (inspectorInstance) {
 						contentGroup.addElement(inspectorInstance);
-						IInspector(inspectorInstance).activate();
+						//IInspector(inspectorInstance).activate(selectedTarget, property, propertyIndex);
+						IInspector(inspectorInstance).activate(selectedTarget);
 					}
 				}
 				
@@ -137,6 +149,6 @@
 			 width="100%"
 			 paddingLeft="10" paddingRight="10"
 			 color="#666666"
-			 text="The property list is not available for this component yet. Please switch to the all properties view."
+			 text="The property inspector is not available for this component yet. Please switch to the all properties view."
 			 />
 </s:Group>

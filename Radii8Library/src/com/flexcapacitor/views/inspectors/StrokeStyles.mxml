@@ -44,7 +44,7 @@
 			public var strokeTypes:Array = [{name:"none", label:"None"},
 											{name:MXMLDocumentConstants.SOLID_COLOR_STROKE, label:"Solid Color"}];
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);

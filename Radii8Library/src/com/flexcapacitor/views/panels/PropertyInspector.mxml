@@ -153,6 +153,8 @@
 			 * */
 			public var hiddenHeaderHeight:uint = 0;
 			
+			private var subTarget:Object;
+			
 			private var _target:Object;
 			
 			public function get target():Object {
@@ -174,7 +176,7 @@
 				}
 			}
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				if (!showHeader) {
@@ -203,7 +205,13 @@
 			
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
-				target = event.selectedItem;
+				
+				if (event.subSelectedItem) {
+					target = event.subSelectedItem;
+				}
+				else {
+					target = event.selectedItem;
+				}
 			}
 			
 			public function get dataProviderProperties():XMLListCollection {

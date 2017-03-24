@@ -34,6 +34,7 @@ package com.flexcapacitor.events {
 		public var isBasicLayout:Boolean;
 		public var isDropTargetParent:Boolean;
 		public var isDropTargetOwner:Boolean;
+		public var replaceTarget:Boolean;
 		
 		public function DragDropEvent(type:String, bubbles:Boolean=false, cancelable:Boolean=false)
 		{
@@ -59,6 +60,7 @@ package com.flexcapacitor.events {
 			event.isSkinnableContainer = isSkinnableContainer;
 			event.isDropTargetOwner = isDropTargetOwner;
 			event.isDropTargetParent = isDropTargetParent;
+			event.replaceTarget = replaceTarget;
 			return event;
 		}
 		

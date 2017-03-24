@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 xmlns:local="*"
+		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
+		 implements="com.flexcapacitor.views.IInspector" 
+		 styleName="inspectablePanel"
+		 >
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
+			
+			import org.as3commons.lang.ArrayUtils;
+
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			public function activate(selectedTarget:Object = null):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (selectedTarget) {
+					target = selectedTarget;
+				}
+				else if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				
+				if (event.subSelectedItem) {
+					target = event.subSelectedItem;
+				}
+				else if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			public function update():void {
+				alphaRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"alpha"		);
+				weightRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(	target, 	"weight"	);
+				colorRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"color"		);
+				hideObjectRenderer.data 	= 	ClassUtils.getMetaDataOfProperty(	target, 	"hideObject");
+				innerRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"inner"		);
+				
+			}
+			
+			public var relevantProperties:Array = ["alpha", "weight", "color", "distance", "hideObject", "inner"];
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				var relevant:Boolean;
+				
+				if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+					relevant = true;
+				}
+				
+				if (relevant) {
+					//trace("property changed");
+					callLater(update);
+				}
+			}
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var length:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<length;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				length = hgroups.length;
+				
+				for (var j:int;j<length;j++) {
+					hgroups[j].gap = gap;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+
+	</fx:Declarations>
+
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Alpha" toolTip="The alpha transparency value for the color. Valid values are 0 to 1." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="alphaRenderer" height="24" defaultValue="1"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Weight" toolTip="The weight of the border." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="weightRenderer" height="24" defaultValue="1" 
+								  maximum="36" minimum="0" stepSize="1"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Color" toolTip="The color of the border." styleName="inspectablePanelLabel" />
+		<renderers:ColorPickerRenderer id="colorRenderer" height="24" defaultValue="0" 
+									   includeCopyIcon="false" returnType="uint"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Hide Object" toolTip="Indicates whether or not the object is hidden." styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="hideObjectRenderer" defaultValue="false"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Inner" toolTip="Specifies whether the border is an inner border." styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="innerRenderer" defaultValue="false"/>
+	</s:HGroup>
+	
+</s:VGroup>

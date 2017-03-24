@@ -29,7 +29,7 @@
 			public var data:Object;
 			
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
@@ -69,15 +69,15 @@
 				// item was deleted or wrong type
 				if (target==null || componentDescription==null) return;
 				
-				sourceData = ClassUtils.getMetaDataOfProperty(target, "source");
-				sourceRenderer.data = sourceData;
-				alphaRenderer.data = ClassUtils.getMetaDataOfProperty(target, "alpha");
-				smoothRenderer.data = ClassUtils.getMetaDataOfProperty(target, "smooth");
-				smoothingQualityRenderer.data = ClassUtils.getMetaDataOfStyle(target, "smoothingQuality");
-				scaleModeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "scaleMode");
-				fillModeRenderer.data = ClassUtils.getMetaDataOfProperty(target, "fillMode");
+				sourceData 					= ClassUtils.getMetaDataOfProperty(target, 	"source");
+				sourceRenderer.data 		= sourceData;
+				alphaRenderer.data 			= ClassUtils.getMetaDataOfProperty(target, 	"alpha");
+				smoothRenderer.data 		= ClassUtils.getMetaDataOfProperty(target, 	"smooth");
+				smoothingQualityRenderer.data = ClassUtils.getMetaDataOfStyle(target, 	"smoothingQuality");
+				scaleModeRenderer.data 		= ClassUtils.getMetaDataOfProperty(target, 	"scaleMode");
+				fillModeRenderer.data 		= ClassUtils.getMetaDataOfProperty(target, 	"fillMode");
 				contentLoaderGroupRenderer.data = ClassUtils.getMetaDataOfProperty(target, "contentLoaderGrouping");
-				clearOnLoadRenderer.data = ClassUtils.getMetaDataOfProperty(target, "clearOnLoad");
+				clearOnLoadRenderer.data 	= ClassUtils.getMetaDataOfProperty(target, 	"clearOnLoad");
 				
 			}
 			
@@ -140,18 +140,18 @@
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline">
 		<s:Label text="Scale Mode" styleName="inspectablePanelLabel" />
-		<renderers:DropDownListRenderer id="scaleModeRenderer" height="24"/>
+		<renderers:DropDownListRenderer id="scaleModeRenderer" height="24" defaultValue="stretch"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline">
 		<s:Label text="Fill Mode" styleName="inspectablePanelLabel" />
-		<renderers:DropDownListRenderer id="fillModeRenderer" height="24"/>
+		<renderers:DropDownListRenderer id="fillModeRenderer" height="24" defaultValue="scale"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline">
 		<s:Label text="Content Grouping" styleName="inspectablePanelLabel" />
-		<renderers:TextRenderer id="contentLoaderGroupRenderer" height="24"/>
+		<renderers:TextRenderer id="contentLoaderGroupRenderer" height="24" />
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline">
 		<s:Label text="Clear on Load" styleName="inspectablePanelLabel" />
-		<renderers:BooleanRenderer id="clearOnLoadRenderer" height="24"/>
+		<renderers:BooleanRenderer id="clearOnLoadRenderer" height="24" />
 	</s:HGroup>
 </s:Group>

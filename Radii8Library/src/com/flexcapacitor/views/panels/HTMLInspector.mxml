@@ -41,7 +41,7 @@
 			public var anchorTargetsCollection:ArrayCollection;
 			public var anchorTargets:Array = ["_blank", "_parent", "_self", "_top"];
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				
 				if (!anchorTargetsCollection) {
 					anchorTargetsCollection = new ArrayCollection(anchorTargets);

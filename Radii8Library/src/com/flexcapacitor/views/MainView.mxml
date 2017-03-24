@@ -38,6 +38,7 @@
 			import com.flexcapacitor.model.DocumentMetaData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
+			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.model.MenuItem;
 			import com.flexcapacitor.model.MenuItemDataDescriptor;
 			import com.flexcapacitor.model.Settings;
@@ -1129,11 +1130,28 @@
 				}
 			}
 			
-			protected function saveAsImageMenuItem_itemClickHandler(event:MenuEvent):void
-			{
-				//Radiate.info("Saved");
+			protected function saveAsImageMenuItem_itemClickHandler(event:MenuEvent):void {
+				
 				if (radiate.selectedDocument) {
-					radiate.saveAsImage(radiate.target);
+					radiate.saveAsImage(radiate.selectedDocument);
+				}
+				else {
+					Radiate.info("No document is open");
+				}
+			}
+			
+			protected function saveSelectionAsImageMenuItem_itemClickHandler(event:MenuEvent):void {
+				
+				if (radiate.selectedDocument) {
+					if (radiate.target) {
+						radiate.saveAsImage(radiate.target);
+					}
+					else {
+						Radiate.info("Nothing is selected");
+					}
+				}
+				else {
+					Radiate.info("No document is open");
 				}
 			}
 			
@@ -1405,6 +1423,107 @@
 				
 			}
 			
+			public static const DEG_TO_RAD:Number = 0.017453292519943294444444444444444;
+			
+			protected function rotateImage_itemClickHandler(event:MenuEvent):void{
+				var matrix:Matrix;
+				var newBitmapData:BitmapData;
+				var image:Image = radiate.target as Image;
+				var degree:int;
+				var bitmapData:BitmapData;
+				var eventTarget:Object = event.currentTarget;
+				var angle:int;
+				var bitmapWidth:int;
+				var bitmapHeight:int;
+				var propertiesObject:Object;
+				var properties:Array;
+				var imageData:ImageData;
+				var imageName:String;
+				
+				bitmapData = image && image.source ? image.source as BitmapData : null;
+				
+				if (image && bitmapData) {
+					bitmapHeight = bitmapData.height;
+					bitmapWidth = bitmapData.width;
+					
+					if (eventTarget==rotateImage90) {
+						angle = 90;
+					}
+					else if (eventTarget==rotateImage180) {
+						angle = 180;
+					}
+					else if (eventTarget==rotateImage270) {
+						angle = 270;
+					}
+					
+					matrix = new Matrix();
+					matrix.rotate(angle * DEG_TO_RAD);
+					
+					propertiesObject = {};
+					properties = ["source"];
+					
+					if (angle==90) {
+						newBitmapData = new BitmapData(bitmapHeight, bitmapWidth, true);
+						matrix.translate(bitmapHeight, 0);
+						
+						if (!isNaN(image.explicitWidth)) {
+							properties.push("height");
+							propertiesObject.height = image.explicitWidth;
+						}
+						if (!isNaN(image.explicitHeight)) {
+							properties.push("width");
+							propertiesObject.width = image.explicitHeight;
+						}
+					}
+					else if (angle==-90 || angle==270) {
+						newBitmapData = new BitmapData(bitmapHeight, bitmapWidth, true);
+						matrix.translate(0, bitmapWidth);
+						
+						if (!isNaN(image.explicitWidth)) {
+							properties.push("height");
+							propertiesObject.height = image.explicitWidth;
+						}
+						if (!isNaN(image.explicitHeight)) {
+							properties.push("width");
+							propertiesObject.width = image.explicitHeight;
+						}
+					}
+					else if (angle==180) {
+						newBitmapData = new BitmapData(bitmapWidth, bitmapHeight, true);
+						matrix.translate(bitmapWidth, bitmapHeight);
+						
+					}
+					
+					newBitmapData.drawWithQuality(bitmapData, matrix, null, null, null, true, StageQuality.HIGH_16X16_LINEAR);
+					
+					propertiesObject.source = newBitmapData;
+					
+					Radiate.setProperties(image, properties, propertiesObject, "Rotate " + angle, true);
+					
+					// force redraw
+					updateScreenEvent = new MouseEvent(MouseEvent.MOUSE_UP);
+					updateScreenEvent.updateAfterEvent();
+					
+					// add image data to our library
+					if (image.source is BitmapData) {
+						imageData = Radiate.getImageDataFromBitmapData(image.source as BitmapData);
+					}
+					
+					imageName = "Rotated"; // should get name from component description
+					
+					if (imageData) {
+						imageName = imageData.name;
+					}
+					
+					radiate.addBitmapDataToDocument(radiate.selectedDocument, newBitmapData, null, imageName, false);
+				}
+				else {
+					Radiate.info("You must select an image to apply rotation"); 
+				}
+			}
+			
+			public var updateScreenEvent:MouseEvent;
+			
 		]]>
 	</fx:Script>
 	
@@ -1631,6 +1750,7 @@
 				<model:MenuItem id="saveMenuItem" label="Save" itemClick="saveMenuItem_itemClickHandler(event)"
 								keyEquivalent="s" commandKey="true"/>
 				<model:MenuItem id="saveAsImageMenuItem" label="Save as Image" itemClick="saveAsImageMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveSelectionAsImageMenuItem" label="Save Selection as Image" itemClick="saveSelectionAsImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem label="Save Project" itemClick="{radiate.saveProject(radiate.selectedProject)}"/>
 				<model:MenuItem label="Save All Documents" itemClick="{radiate.saveAllDocuments()}"/>
 				<model:MenuItem id="saveDocumentAs" label="Export release..." />
@@ -1678,6 +1798,15 @@
 				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />
 				<model:MenuItem id="removeExplicitWidth" label="Remove explicit width" itemClick="removeExplicitWidth_itemClickHandler(event)" />
 				<!--<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />-->
+				<model:MenuItem type="separator"/>
+				<!--<model:MenuItem id="cropSelection" label="Crop Selection" itemClick="cropSelection_itemClickHandler(event)" />
+				<model:MenuItem id="cropDocument" label="Crop Document" itemClick="cropDocument_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>-->
+				<model:MenuItem id="rotateImage" label="Rotate Image" >
+					<model:MenuItem id="rotateImage90" label="Rotate 90" itemClick="rotateImage_itemClickHandler(event)"/>
+					<model:MenuItem id="rotateImage180" label="Rotate 180" itemClick="rotateImage_itemClickHandler(event)"/>
+					<model:MenuItem id="rotateImage270" label="Rotate 270" itemClick="rotateImage_itemClickHandler(event)"/>
+				</model:MenuItem>
 				<model:MenuItem type="separator"/>
 				<!--<model:MenuItem id="cropSelection" label="Crop Selection" itemClick="cropSelection_itemClickHandler(event)" />
 				<model:MenuItem id="cropDocument" label="Crop Document" itemClick="cropDocument_itemClickHandler(event)" />

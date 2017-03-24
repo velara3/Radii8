@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 xmlns:local="*"
+		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
+		 implements="com.flexcapacitor.views.IInspector" 
+		 styleName="inspectablePanel"
+		 >
+	<!--
+	
+		ArgumentError: Error #2004: One of the parameters is invalid.
+		be sure to add the style styleName="inspectablePanel"
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
+			
+			import org.as3commons.lang.ArrayUtils;
+
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			public function activate(selectedTarget:Object = null):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (selectedTarget) {
+					target = selectedTarget;
+				}
+				else if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (event.subSelectedItem) {
+					target = event.subSelectedItem;
+					update();
+				}
+				else if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			public function update():void {
+				blurXRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"blurX"			);
+				blurYRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"blurY"			);
+				qualityRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(	target, 	"quality"		);
+				
+			}
+			
+			public var relevantProperties:Array = ["blurX", "blurY", "quality"];
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				var relevant:Boolean;
+				
+				if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+					relevant = true;
+				}
+				
+				if (relevant) {
+					//trace("property changed");
+					callLater(update);
+				}
+			}
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var length:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<length;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				length = hgroups.length;
+				
+				for (var j:int;j<length;j++) {
+					hgroups[j].gap = gap;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+
+	</fx:Declarations>
+
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Blur X" toolTip="The amount of horizontal blur. Valid values are 0 to 255." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="blurXRenderer" height="24" stepSize="1" defaultValue="4"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Blur Y" toolTip="The amount of vertical blur. Valid values are 0 to 255." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="blurYRenderer" height="24" stepSize="1" defaultValue="4"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Quality" toolTip="The number of times to apply the filter. The default value is 1 or BitmapFilterQuality.LOW," styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="qualityRenderer" height="24" stepSize="1" defaultValue="1"/>
+	</s:HGroup>
+	
+</s:VGroup>

@@ -100,7 +100,6 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.FileData;
-	import com.flexcapacitor.utils.supportClasses.log;
 	import com.flexcapacitor.views.IInspector;
 	import com.flexcapacitor.views.MainView;
 	import com.flexcapacitor.views.Remote;
@@ -115,6 +114,7 @@ package com.flexcapacitor.controller {
 	import flash.display.IBitmapDrawable;
 	import flash.display.LoaderInfo;
 	import flash.display.Sprite;
+	import flash.display.StageQuality;
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -133,7 +133,6 @@ package com.flexcapacitor.controller {
 	import flash.net.SharedObject;
 	import flash.net.URLRequest;
 	import flash.net.navigateToURL;
-	import flash.net.dns.AAAARecord;
 	import flash.system.ApplicationDomain;
 	import flash.system.Capabilities;
 	import flash.ui.Mouse;
@@ -146,7 +145,6 @@ package com.flexcapacitor.controller {
 	
 	import mx.collections.ArrayCollection;
 	import mx.collections.ArrayList;
-	import mx.collections.ICollectionView;
 	import mx.collections.ListCollectionView;
 	import mx.containers.Canvas;
 	import mx.containers.Grid;
@@ -212,7 +210,6 @@ package com.flexcapacitor.controller {
 	import spark.components.TextSelectionHighlighting;
 	import spark.components.supportClasses.DropDownListBase;
 	import spark.components.supportClasses.GroupBase;
-	import spark.components.supportClasses.SkinnableComponent;
 	import spark.components.supportClasses.SkinnableTextBase;
 	import spark.components.supportClasses.SliderBase;
 	import spark.components.supportClasses.TextBase;
@@ -226,14 +223,11 @@ package com.flexcapacitor.controller {
 	import spark.layouts.BasicLayout;
 	import spark.primitives.BitmapImage;
 	import spark.primitives.Path;
-	import spark.primitives.Rect;
 	import spark.primitives.supportClasses.FilledElement;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.primitives.supportClasses.StrokedElement;
 	import spark.skins.spark.DefaultGridItemRenderer;
-	import spark.utils.TextFlowUtil;
 	
-	import flashx.textLayout.container.ContainerController;
 	import flashx.textLayout.conversion.ConversionType;
 	import flashx.textLayout.conversion.ITextImporter;
 	import flashx.textLayout.conversion.TextConverter;
@@ -1289,14 +1283,17 @@ package com.flexcapacitor.controller {
 		/**
 		 * Dispatch target change event
 		 * */
-		public function dispatchTargetChangeEvent(target:*, multipleSelection:Boolean = false):void {
+		public function dispatchTargetChangeEvent(target:*, multipleSelection:Boolean = false, propertyName:String = null, propertyIndex:int = -1, subTarget:Object = null):void {
 			if (importingDocument) return;
 			var targetChangeEvent:RadiateEvent;
 			
 			if (hasEventListener(RadiateEvent.TARGET_CHANGE)) {
 				targetChangeEvent = new RadiateEvent(RadiateEvent.TARGET_CHANGE, false, false, target);
 				targetChangeEvent.selectedItem = target && target is Array ? target[0] : target;
+				targetChangeEvent.subSelectedItem = subTarget;
 				targetChangeEvent.targets = ArrayUtil.toArray(target);
+				targetChangeEvent.property = propertyName;
+				targetChangeEvent.propertyIndex = propertyIndex;
 				PerformanceMeter.start(SET_TARGET_TEST, true, false);
 				dispatchEvent(targetChangeEvent);
 				PerformanceMeter.stop(SET_TARGET_TEST, false);
@@ -2127,6 +2124,12 @@ package com.flexcapacitor.controller {
 			classLoader.addEventListener(ClassLoader.NAMESPACES_LOADED, namespacesLoaded, false, 0, true);
 			classLoader.addEventListener(IOErrorEvent.IO_ERROR, namespacesIOErrorEvent, false, 0, true);
 			classLoader.load();
+			
+			
+			var transcoder:DocumentTranscoder = new DocumentTranscoder();
+			var defaultMXMLApplication:XML = transcoder.getDefaultMXMLDocumentXML();
+			
+			classRegistry.addNamespaces(defaultMXMLApplication);
 		}
 		
 		protected static function namespaceLoaded(event:Event):void {
@@ -2761,11 +2764,40 @@ package com.flexcapacitor.controller {
 		 * Use setTarget() or setTargets() method to set the target. 
 		 * */
 		public function get target():Object {
-			if (_targets.length > 0)
+			if (_targets.length > 0) {
 				return _targets[0];
-			else
+			}
+			else {
 				return null;
+			}
 		}
+		
+		/**
+		 * When the target is set we sometimes want to work with a property on that target.
+		 * If that property is an array we must also set the property index
+		 * 
+		 * @see target
+		 * @see setTarget
+		 * @see setTargetProperties
+		 * @see propertyIndex
+		 * */
+		public var property:String;
+		
+		/**
+		 * When the target is set we sometimes want to work with a property on that target.
+		 * If that property is an array we must also set the property index
+		 * 
+		 * @see target
+		 * @see setTarget
+		 * @see setTargetProperties
+		 * @see propertyIndex
+		 * */
+		public var propertyIndex:int;
+		
+		/**
+		 * When working with an object related to the target
+		 * */
+		public var subTarget:Object;
 		
 		/**
 		 *  @private
@@ -4026,11 +4058,14 @@ package com.flexcapacitor.controller {
 		/**
 		 * Get the component by class name
 		 * */
-		public static function getDynamicComponentType(componentName:Object, fullyQualified:Boolean = false):ComponentDefinition {
+		public static function getDynamicComponentType(componentName:Object, fullyQualified:Boolean = false, createInstance:Boolean = false):ComponentDefinition {
 			var definition:ComponentDefinition;
-			var numberOfDefinitions:uint = componentDefinitions.length;
+			var numberOfDefinitions:uint;
 			var item:ComponentDefinition;
 			var className:String;
+			var hasDefinition:Boolean;
+			var classType:Object;
+			var name:String;
 			
 			if (componentName is QName) {
 				className = QName(componentName).localName;
@@ -4047,30 +4082,36 @@ package com.flexcapacitor.controller {
 			}
 			
 			fullyQualified = className.indexOf("::")!=-1 ? true : fullyQualified;
+			
 			if (fullyQualified) {
 				className = className.replace("::", ".");
 			}
+			
+			numberOfDefinitions = componentDefinitions.length;
 			
 			for (var i:uint;i<numberOfDefinitions;i++) {
 				item = ComponentDefinition(componentDefinitions.getItemAt(i));
 				
 				if (fullyQualified) {
 					if (item && item.className==className) {
+						if (item.classType && createInstance) {
+							item.instance = new item.classType();
+						}
 						return item;
 					}
 				}
 				else {
 					if (item && item.name==className) {
+						if (item.classType && createInstance) {
+							item.instance = new item.classType();
+						}
 						return item;
 					}
 				}
 			}
 			
 			
-			var hasDefinition:Boolean = ClassUtils.hasDefinition(className);
-			var classType:Object;
-			var name:String;
-			
+			hasDefinition = ClassUtils.hasDefinition(className);
 			
 			if (hasDefinition) {
 				if (className.indexOf("::")!=-1) {
@@ -4080,8 +4121,14 @@ package com.flexcapacitor.controller {
 					name = className;
 				}
 				classType = ClassUtils.getDefinition(className);
-				addComponentDefinition(name, className, classType, null, null);
+				addComponentDefinition(name, className, classType, null, null, null, null, null, false);
 				item = getComponentType(className, fullyQualified);
+				
+				if (classType && createInstance) {
+					item.instance = new classType();
+				}
+				
+				
 				return item;
 			}
 			
@@ -4798,6 +4845,12 @@ package com.flexcapacitor.controller {
 					
 					var properties:Array = [];
 					var propertiesObject:Object;
+					var imageData:ImageData;
+					var originalBitmapData:BitmapData;
+					
+					//originalBitmapData = componentInstance.bitmapData; returns a clone use image.source 
+					originalBitmapData = componentInstance.source;
+					imageData = getImageDataFromBitmapData(originalBitmapData);
 					
 					if (constrainImageToDocument) {
 						propertiesObject = getConstrainedImageSizeObject(selectedDocument, newBitmapData);
@@ -4815,6 +4868,9 @@ package com.flexcapacitor.controller {
 						setProperties(componentInstance, properties, propertiesObject, "Source loaded");
 					}
 					
+					if (imageData) {
+						imageData.bitmapData = newBitmapData;
+					}
 				}
 			}
 			
@@ -4871,6 +4927,9 @@ package com.flexcapacitor.controller {
 				properties.push(HEIGHT);
 			}
 			
+			propertiesObject.scaleMode = "stretch";
+			properties.push("scaleMode");
+			
 			if (imageData is ImageData) {
 				path = imageData.url;
 				
@@ -4895,6 +4954,11 @@ package com.flexcapacitor.controller {
 			return resized;
 		}
 		
+		/**
+		 * Get the image data object that is contains this bitmap data.
+		 * Note: Getting image.bitmapData returns a clone, bitmapdata.clone(). 
+		 * Use image.source if it is bitmapData. 
+		 * */ 
 		public static function getImageDataFromBitmapData(bitmapData:BitmapData):ImageData {
 			var assets:ArrayCollection = instance.assets;
 			var numberOfAssets:int = assets.length;
@@ -5155,8 +5219,79 @@ package com.flexcapacitor.controller {
 				_targets[0] = value;
 			}
 			
+			subTarget = null;
+			property = null;
+			propertyIndex = -1;
+			
 			if (dispatchEvent) {
 				instance.dispatchTargetChangeEvent(target);
+			}
+			
+		}
+		
+		/**
+		 * Selects the target
+		 * @see setTargets
+		 * @see target
+		 * @see targets
+		 * */
+		public function setSubTarget(target:*, subTarget:*, dispatchEvent:Boolean = true, cause:String = "", reselect:Boolean = false):void {
+			var _tempTarget:* = target && target is Array && target.length ? target[0] : target;
+			
+			if (_targets.length == 1 && target==_tempTarget && reselect==false) {
+				//return;
+			}
+			
+			_targets = null;// without this, the contents of the array would change across all instances
+			_targets = [];
+			
+			if (target is Array) {
+				//_targets = (value as Array).slice();
+				_targets[0] = _tempTarget;
+			}
+			else {
+				_targets[0] = target;
+			}
+			
+			this.subTarget = subTarget;
+			property = null;
+			propertyIndex = -1;
+			
+			if (dispatchEvent) {
+				instance.dispatchTargetChangeEvent(target, false, null, -1, subTarget);
+			}
+			
+		}
+		
+		/**
+		 * Selects the target
+		 * @see setTargets
+		 * @see target
+		 * @see targets
+		 * */
+		public function setTargetProperties(target:*, propertyName:*, propertyIndex:int = -1, dispatchEvent:Boolean = true, cause:String = "", reselect:Boolean = false):void {
+			var _tempTarget:* = target && target is Array && target.length ? target[0] : target;
+			
+			if (_targets.length == 1 && target==_tempTarget && reselect==false) {
+				//return;
+			}
+			
+			_targets = null;// without this, the contents of the array would change across all instances
+			_targets = [];
+			
+			if (target is Array) {
+				//_targets = (value as Array).slice();
+				_targets[0] = _tempTarget;
+			}
+			else {
+				_targets[0] = target;
+			}
+			
+			property = propertyName;
+			propertyIndex = propertyName;
+			
+			if (dispatchEvent) {
+				instance.dispatchTargetChangeEvent(target, false, propertyName, propertyIndex);
 			}
 			
 		}
@@ -5197,6 +5332,9 @@ package com.flexcapacitor.controller {
 			
 			_targets = value;
 			
+			subTarget = null;
+			property = null;
+			propertyIndex = -1;
 			
 			if (dispatchEvent) {
 				instance.dispatchTargetChangeEvent(_targets, true);
@@ -6955,13 +7093,14 @@ package com.flexcapacitor.controller {
 				//LayoutManager.getInstance().validateNow(); // applyChanges calls this
 				//addHistoryItem(propertyChanges, description);
 				
+				updateComponentProperties(targets, propertyChanges, [property]);
+				
 				historyEventItems = HistoryManager.createHistoryEventItems(targets, propertyChanges, property, null, null, value, description);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
-					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEventItems, description);
+					HistoryManager.addHistoryEvents(instance.selectedDocument, historyEventItems, description, false, dispatchEvents);
 				}
 				
-				updateComponentProperties(targets, propertyChanges, [property]);
 				
 				if (dispatchEvents) {
 					instance.dispatchPropertyChangeEvent(target, propertyChanges, ArrayUtil.toArray(property), null, null);
@@ -7760,6 +7899,15 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 			return TypeUtils.getTypedValue(value, valueType);
 		}
 		
+		/**
+		 * Gets the value translated into a type. 
+		 * */
+		public static function getTypedPropertyValue(target:Object, property:String, value:*):* {
+			var propertyType:String;
+			propertyType = ClassUtils.getTypeOfProperty(target, property) as String;
+			
+			return TypeUtils.getTypedValue(value, propertyType);
+		}
 		
 		/**
 		 * Gets the value translated into a type from the styles object. 
@@ -12101,6 +12249,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var bitmapData:BitmapData;
 			var fileName:String;
 			var componentDescription:ComponentDescription;
+			var result:Object;
 			
 			if (target==null) {
 				error("No document to save");
@@ -12123,8 +12272,18 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 			
 			if (target) {
-				if (target is IDocument) {
-					target = DisplayObjectUtils.getAnyTypeBitmapData(IDocument(target).instance);
+				if (target is IDocument || target is Application) {
+					if (target is IDocument) {
+						target = IDocument(target).instance;
+					}
+					//target = DisplayObjectUtils.getAnyTypeBitmapData(IDocument(target).instance);
+					result = DisplayObjectUtils.getSnapshot(target as UIComponent, null, false, true, StageQuality.HIGH_16X16_LINEAR);
+					if (result is Error) {
+						Radiate.warn("An error occurred. " + (result as SecurityError));
+					}
+					else {
+						bitmapData = result as BitmapData;
+					}
 				}
 				else {
 					try {
@@ -14332,26 +14491,28 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		public static function expandDocumentToContents():Boolean {
 			var iDocument:IDocument = instance.selectedDocument;
 			var targetObject:Object = iDocument.instance;
-			var rectangle:Rectangle;
-			var fitRectangle:Rectangle;
+			var documentRectangle:Rectangle;
+			var contentRectangle:Rectangle;
 			var resized:Boolean;
 			var width:Number;
 			var height:Number;
 			
-			fitRectangle = new Rectangle();
-			rectangle = new Rectangle();
+			contentRectangle = new Rectangle();
+			documentRectangle = new Rectangle();
 			
 			width = targetObject.contentGroup.contentWidth;
 			height = targetObject.contentGroup.contentHeight;
 			
-			fitRectangle.width = width;
-			fitRectangle.height = height;
+			contentRectangle.width = width;
+			contentRectangle.height = height;
 			
-			rectangle.width = targetObject.width;
-			rectangle.height = targetObject.height;
+			documentRectangle.width = targetObject.width;
+			documentRectangle.height = targetObject.height;
 			
-			if (fitRectangle.width>rectangle.width>0 || fitRectangle.height>rectangle.height) {
-				setProperties(targetObject, ["width","height"], fitRectangle, "Expand document");
+			if (contentRectangle.width>documentRectangle.width || contentRectangle.height>documentRectangle.height) {
+				contentRectangle.width = Math.max(contentRectangle.width, documentRectangle.width);
+				contentRectangle.height = Math.max(contentRectangle.height, documentRectangle.height);
+				setProperties(targetObject, ["width","height"], contentRectangle, "Expand document");
 				resized = true;
 			}
 			
@@ -14717,6 +14878,32 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					if (value) {
 						instance.dispatchConsoleValueChangeEvent(value);
 					}
+				}
+			}
+		}
+		
+		/**
+		 * Opens and displays the properties panel
+		 * */
+		public static function showPropertiesPanel(showFirstPage:Boolean = false):void {
+			if (mainView) {
+				mainView.currentState = MainView.DESIGN_STATE;
+				
+				if (remoteView) {
+					remoteView.showPropertiesPanel(showFirstPage);
+				}
+			}
+		}
+		
+		/**
+		 * Opens and displays the filters panel
+		 * */
+		public static function showFiltersPanel():void {
+			if (mainView) {
+				mainView.currentState = MainView.DESIGN_STATE;
+				
+				if (remoteView) {
+					remoteView.showFiltersPanel();
 				}
 			}
 		}

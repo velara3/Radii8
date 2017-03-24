@@ -44,7 +44,7 @@
 			public var editorMargin:String = "4px 0 8px 0px";
 			
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				if (!radiate) {
 					radiate = Radiate.getInstance();
 				}

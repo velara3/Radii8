@@ -82,6 +82,7 @@ package com.flexcapacitor.managers
 		public static var REMOVE_ITEM_DESCRIPTION:String = "Remove";
 		public static var ADD_ITEM_DESCRIPTION:String = "Add";
 		public static var MOVE_ITEM_DESCRIPTION:String = "Move";
+		public static var REPLACE_DESCRIPTION:String = "Replace";
 		private static var BEGINNING_OF_HISTORY:String = "Reverted";
 		public static var debug:Boolean;
 		
@@ -143,6 +144,16 @@ package com.flexcapacitor.managers
 				return REMOVE_ITEM_DESCRIPTION;
 			}
 			return REMOVE_ITEM_DESCRIPTION + " " + ClassUtils.getClassName(element);
+		}
+		
+		/**
+		 * Get generic replace description 
+		 * */
+		public static function getReplaceDescription(element:Object = null):String {
+			if (element==null) {
+				return REPLACE_DESCRIPTION;
+			}
+			return REPLACE_DESCRIPTION + " " + ClassUtils.getClassName(element);
 		}
 		
 		/**
@@ -1237,7 +1248,9 @@ package com.flexcapacitor.managers
 			var numberOfHistoryTargets:int;
 			var historyTargets:Array;
 			var historyTarget:Object;
-			var historyCollection:ListCollectionView;var prev:String;var current:String;
+			var historyCollection:ListCollectionView;
+			var previousDescription:String;
+			var currentDescription:String;
 			
 			// more than one thing has happened
 			if (!hasPreviousEvents(document)) {
@@ -1247,8 +1260,8 @@ package com.flexcapacitor.managers
 			currentHistoryEvent = getHistoryEventAtIndex(document, currentPosition);
 			previousHistoryEvent = getHistoryEventAtIndex(document, currentPosition-1);
 			
-			prev = previousHistoryEvent.description;
-			current = currentHistoryEvent.description;
+			previousDescription = previousHistoryEvent.description;
+			currentDescription = currentHistoryEvent.description;
 			
 			// the order seems to matter - if you are removing something then adding something else
 			// the position in non basic layout changes when an object is removed 
@@ -1257,6 +1270,7 @@ package com.flexcapacitor.managers
 			
 			if (description!=null) {
 				previousHistoryEvent.description = description;
+				currentHistoryEvent.description = description;
 			}
 			
 			if (disableHistoryManagement) return null;

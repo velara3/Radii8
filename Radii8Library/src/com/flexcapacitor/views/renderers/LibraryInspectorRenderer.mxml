@@ -140,10 +140,12 @@
 			{
 				var verticalLayout:Boolean = owner ? ListBase(owner).layout is VerticalLayout : true;
 				if (!verticalLayout) {
-					preview.includeInLayout = false;
-					uploadFileIcon.includeInLayout = false;
 					preview.visible = false;
+					preview.includeInLayout = false;
 					uploadFileIcon.visible = false;
+					uploadFileIcon.includeInLayout = false;
+					labelDisplay.visible = false;
+					labelDisplay.includeInLayout = false;
 				}
 				else {
 					preview.includeInLayout = true;
@@ -164,6 +166,8 @@
 					}
 					
 					preview.visible = true;
+					labelDisplay.visible = true;
+					labelDisplay.includeInLayout = true;
 				}
 			}
 			
@@ -204,6 +208,7 @@
 				 scaleMode="zoom"/>
 		<s:Label id="labelDisplay" 
 				 visible.dragging="false"
+				 includeInLayout.dragging="false"
 				 fontSize="11" 
 				 width="100%" 
 				 maxDisplayedLines="1"

@@ -99,7 +99,7 @@
 				_target = value;
 			}
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.instance;
 				
 				if (!isBranchDescriptor) {
@@ -582,9 +582,9 @@
 				var draggedElementParent:Object = draggedElement.parent;
 				var canDragOutOfParent:Boolean = !componentListTree.showRoot;
 				var currentIndex:int;
+				var isSameParent:Boolean = dropParent && dropParent == draggedElementParent;
 				
-	            if (!canDragOutOfParent && 
-					draggedElementParent != dropParent) {
+	            if (!canDragOutOfParent && !isSameParent) {
 					
 	                // element is an item and parent is different => can not drop                                        
 	                event.preventDefault();
@@ -605,9 +605,27 @@
 				
 				// some reason there is a bug when on the application
 				// we have to subtract one from the drop index if it's lower than it's current index
-				if (dropParent && 
-					draggedElement.parent == dropParent && 
-					dropParent.instance is Application) {
+				if (dropParent && isSameParent) {
+					currentIndex = ComponentDescription(dropParent).children.getItemIndex(draggedElement);
+					
+					if (dropParent.instance is Application) {
+						
+						// when dragging to an index after our index we have to subtract one
+						if (currentIndex<dropIndex) {
+							dropIndex--;
+							//Radiate.info("Lowering index");
+						}
+					}
+					else if (currentIndex==0 && (dropIndex==0 || dropIndex==1)) {
+						// if same parent and first index
+						// and drop is first or second index we don't need to move
+						event.preventDefault();
+						componentListTree.hideDropFeedback(event);
+						return;
+					}
+				}
+				
+				if (dropParent && isSameParent) {
 					currentIndex = ComponentDescription(dropParent).children.getItemIndex(draggedElement);
 					
 					// when dragging to an index after our index we have to subtract one
@@ -646,6 +664,7 @@
 										RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 					
 					radiate.setTarget(draggedElement.instance);
+					componentListTree.hideDropFeedback(event);
 				}
 				else {
 					
@@ -834,6 +853,7 @@
 				if (selectedDocument) {
 					selectedDocument.updateComponentTree();
 					updateComponentDisplayList();
+					Radiate.info("Layers view updated");
 				}
 			}
 			
@@ -889,6 +909,11 @@
 				updateComponentDisplayList(true);
 			}
 			
+			protected function filtersButton_clickHandler(event:MouseEvent):void
+			{
+				Radiate.showFiltersPanel();
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -897,10 +922,27 @@
 	</fx:Declarations>
 	
 	
-	<renderers:LayersRenderer id="documentItemRenderer" 
-							  click="documentItemRenderer_clickHandler(event)" 
-							  autoDrawBackground="true"
-							  height="20"/>
+	<s:HGroup width="100%" height="20" paddingRight="10" verticalAlign="bottom">
+		
+		<renderers:LayersRenderer id="documentItemRenderer" 
+								  click="documentItemRenderer_clickHandler(event)" 
+								  autoDrawBackground="true"
+								  height="20"
+								  width="100%"/>
+		
+		<s:Spacer width="10"/>
+		
+		<c:BeveledImageButton id="closeAllNodes" 
+							  source="{Radii8LibraryAssets.treeViewClosed}" 
+							  toolTip="Close All Layers"
+							  click="closeAllNodes_clickHandler(event)"
+							  />
+		<c:BeveledImageButton id="expandAllNodes" 
+							  source="{Radii8LibraryAssets.treeViewOpen}" 
+							  toolTip="Expand All Layers"
+							  click="expandAllNodes_clickHandler(event)"
+							  />
+	</s:HGroup>  
 	
 	<c:HorizontalLine  />
 	
@@ -949,6 +991,7 @@
 			 paddingLeft="2"
 			 paddingBottom="8"
 			 paddingTop="8"
+			 fontSize="10"
 			 >
 		<views:BlendMode id="blendModeGroup" minWidth="100" toolTip="Blend mode"/>
 		<renderers:NumberRenderer id="alphaRenderer" 
@@ -983,15 +1026,10 @@
 					   toolTip="Bring Forward"
 					   click="moveAboveButton_clickHandler(event)"
 					   />
-		<c:BeveledImageButton id="closeAllNodes" 
-					   source="{Radii8LibraryAssets.treeViewClosed}" 
-					   toolTip="Close All Layers"
-					   click="closeAllNodes_clickHandler(event)"
-					   />
-		<c:BeveledImageButton id="expandAllNodes" 
-					   source="{Radii8LibraryAssets.treeViewOpen}" 
-					   toolTip="Expand All Layers"
-					   click="expandAllNodes_clickHandler(event)"
+		<c:BeveledImageButton id="filtersButton" 
+					   source="{Radii8LibraryAssets.filters}" 
+					   toolTip="Show Filters for layers"
+					   click="filtersButton_clickHandler(event)"
 					   />
 		<c:BeveledImageButton id="duplicateItem" 
 							  source="{Radii8LibraryAssets.duplicate}" 

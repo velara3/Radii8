@@ -5,6 +5,8 @@
 		 implements="com.flexcapacitor.views.IInspector" 
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
 		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
 		 styleName="inspectablePanel"
 		 width="100%">
 	
@@ -14,6 +16,11 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.components.HGroup;
 			
 			import org.as3commons.lang.ArrayUtils;
 			
@@ -23,7 +30,7 @@
 			
 			public var fonts:Array;
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
@@ -72,14 +79,38 @@
 			}
 			
 			public var relevantProperties:Array = ["styleName"];
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var length:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<length;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				length = hgroups.length;
+				
+				for (var j:int;j<length;j++) {
+					hgroups[j].gap = gap;
+				}
+			}
 		]]>
 	</fx:Script>
 	
-	
+	<!--
 	<s:TileGroup width="100%" columnAlign="left" columnWidth="120" verticalAlign="middle" requestedColumnCount="2">
 		
 		<s:Label text="Style Name" styleName="inspectablePanelLabel" />
 		<renderers:TextRenderer id="textRenderer" width="100%" minWidth="220" />
 		
-	</s:TileGroup>
+	</s:TileGroup>-->
+	
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Style Name" styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="textRenderer" width="100%" minWidth="220" />
+	</s:HGroup>
 </s:Group>

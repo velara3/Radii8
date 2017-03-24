@@ -380,7 +380,9 @@ package com.flexcapacitor.events {
 		
 		public var data:Object;
 		public var selectedItem:Object;
+		public var subSelectedItem:Object;
 		public var property:String;
+		public var propertyIndex:int;
 		public var properties:Array;
 		public var propertiesAndStyles:Array;
 		public var propertiesStylesEvents:Array;

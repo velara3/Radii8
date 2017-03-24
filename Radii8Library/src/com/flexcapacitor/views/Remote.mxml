@@ -14,7 +14,7 @@
 		 
 		 width="400" 
 		 height="100%" 
-		 creationComplete="creationCompleteHandler(event)" 
+		 creationComplete="creationCompleteHandler(event)"
 		 >
 		
 
@@ -32,6 +32,7 @@
 			import mx.core.INavigatorContent;
 			import mx.core.UIComponent;
 			import mx.events.ChildExistenceChangedEvent;
+			import mx.events.DividerEvent;
 			import mx.events.FlexEvent;
 			import mx.events.IndexChangedEvent;
 			
@@ -44,6 +45,7 @@
 			public static const DESIGN:String = "design";
 			public static const DEVELOP:String = "develop";
 			public static const CODE:String = "code";
+			public static const DESIGNVIEW:String = "designview";
 			
 			protected function panelsLabelFunction(item:Object):String {
 				var name:String = item is Label ? Label(item).text : " • ";
@@ -79,7 +81,7 @@
 				
 				if (iDocument && documentsOpen>0) {
 					if (iDocument && radiate.isDocumentPreviewOpen(iDocument)) {
-						radiate.closeVisibleDocument();
+						radiate.closeDocument(iDocument, true, true);
 					}
 					else if (event.shiftKey) {
 						radiate.closeVisibleDocument();
@@ -172,6 +174,27 @@
 					}
 				}
 				
+				deactivateViewstack(viewstack);
+				
+				// activate the current inspector
+				if (selectedNavigatorContent) {
+					UIComponent(selectedNavigatorContent).validateNow();// make sure everythings created
+					selectedNavigatorContent.activate();
+				}
+				
+				updateSelectedTargetIcon();
+			}
+			
+			/**
+			 * Deactivate viewstack 
+			 * */
+			public function deactivateViewstack(viewstack:ViewStack):void {
+				var navigatorItem:NavigatorContent;
+				var selectedNavigatorContent:IInspector;
+				var navigatorInspector:IInspector;
+				var item:Object;
+				
+				
 				var numberOfElements:int = viewstack.numElements;
 				
 				// deactivate hidden inspectors
@@ -192,13 +215,6 @@
 					}
 				}
 				
-				// activate the current inspector
-				if (selectedNavigatorContent) {
-					UIComponent(selectedNavigatorContent).validateNow();// make sure everythings created
-					selectedNavigatorContent.activate();
-				}
-				
-				updateSelectedTargetIcon();
 			}
 
 			/**
@@ -365,6 +381,36 @@
 				}
 			}
 			
+			public function showPropertiesPanel(showFirstPage:Boolean = false):void
+			{
+				if (secondViewStack==null) {
+					currentState = DEVELOP;
+					validateNow();
+				}
+				
+				if (secondViewStack) {
+					secondViewStack.selectedChild = propertiesTab;
+					validateNow();
+					
+					if (showFirstPage) {
+						forthViewStack.selectedIndex = 0;
+					}
+				}
+			}
+			
+			public function showFiltersPanel():void
+			{
+				if (firstViewStack==null) {
+					currentState = DEVELOP;
+					validateNow();
+				}
+				
+				if (firstViewStack) {
+					firstViewStack.selectedChild = filtersTab;
+					validateNow();
+				}
+			}
+			
 			public function showDocumentationPanel():void
 			{
 				if (thirdViewStack==null) {
@@ -397,6 +443,72 @@
 				//var numChildren:int = documentsTagNavigator.numChildren-1;
 				var numOfDocumentsOpen:int = documentsTagNavigator.numChildren;
 				closeDocumentButton.visible = numOfDocumentsOpen>0;
+			}
+			
+			protected function codeState_exitStateHandler(event:FlexEvent):void
+			{
+				deactivateViewstack(thirdViewStack);
+			}
+			
+			protected function codeState_enterStateHandler(event:FlexEvent):void
+			{
+				if (thirdViewStack) {
+					activateInspector(thirdViewStack, thirdViewStack.selectedChild as NavigatorContent);
+				}
+				
+				var secondChild:UIComponent = documentFooterArea;
+				if (secondRowHeight>=minimumCloseGroupSize && documentFooterArea) {
+					secondChild.height = secondRowHeight;
+					secondRowHeight = -1;
+				}
+			}
+			
+			protected function mainHorizontalBox_dividerReleaseHandler(event:DividerEvent):void {
+				var firstChild:UIComponent = mainHorizontalBox.getChildAt(0) as UIComponent;
+				
+				if (firstChild.width<minimumCloseGroupSize) {
+					if (currentState==DESIGN) {
+						currentState = DESIGNVIEW;
+					}
+					else if (currentState==DEVELOP) {
+						currentState = CODE;
+					}
+				}
+			}
+			
+			private var minimumCloseGroupSize:int = 10;
+			protected function documentsGroup_releaseDividerHandler(event:DividerEvent):void {
+				var secondChild:UIComponent = documentFooterArea;
+				
+				if (secondChild.height<minimumCloseGroupSize) {
+					if (currentState==DEVELOP) {
+						currentState = DESIGN;
+					}
+					else if (currentState==CODE) {
+						currentState = DESIGNVIEW;
+					}
+				}
+				
+			}
+			
+			protected function mainHorizontalBox_dividerPressHandler(event:DividerEvent):void {
+				firstColumnWidth = leftColumn ? leftColumn.width : -1;
+			}
+			
+			protected function documentsGroup_dividerPressHandler(event:DividerEvent):void {
+				secondRowHeight = documentFooterArea ? documentFooterArea.height : -1;
+			}
+			
+			private var firstColumnWidth:int;
+			private var secondRowHeight:int;
+			
+			protected function design_enterStateHandler(event:FlexEvent):void {
+				var firstChild:UIComponent = leftColumn;
+				
+				if (firstColumnWidth>=minimumCloseGroupSize && leftColumn) {
+					firstChild.width = firstColumnWidth;
+					firstColumnWidth = -1;
+				}
 			}
 			
 		]]>
@@ -449,9 +561,14 @@
 	
 	
 	<s:states>
-		<s:State name="design"/>
-		<s:State name="develop"/>
-		<s:State name="code"/>
+		<s:State name="design" enterState="design_enterStateHandler(event)"/>
+		<s:State name="develop" 
+				 enterState="codeState_enterStateHandler(event)" 
+				 exitState="codeState_exitStateHandler(event)"/>
+		<s:State name="code"
+				 enterState="codeState_enterStateHandler(event)" 
+				 exitState="codeState_exitStateHandler(event)"/>
+		<s:State name="designview"/>
 	</s:states>
 	
 	
@@ -482,13 +599,15 @@
 			<s:Spacer width="100%"/>
 			<!--<views:SizesInspector showRestoreSize="true" height="100%"/>-->
 			<views:ZoomInspector showActualSize="false" height="100%"/>
-			<views:PerspectivesInspector height="100%" view="{this}"/>
+			<views:PerspectivesInspector id="perspectivesInspector" height="100%" view="{this}"/>
 		</s:HGroup>
 	
 		<mx:HDividedBox id="mainHorizontalBox" 
 						width="100%" height="100%" 
 						top="32" 
-						liveDragging="true">
+						liveDragging="true"
+						dividerPress="mainHorizontalBox_dividerPressHandler(event)"
+						dividerRelease="mainHorizontalBox_dividerReleaseHandler(event)">
 			
 			
 			<mx:VDividedBox id="leftColumn" 
@@ -517,6 +636,11 @@
 					<!-- LAYERS -->
 					<s:NavigatorContent label="LAYERS"  >
 						<views:LayersInspector width="100%" minHeight="180"/>
+					</s:NavigatorContent>
+					
+					<!-- FILTERS -->
+					<s:NavigatorContent id="filtersTab" label="FILTERS"  >
+						<panels:FiltersInspector width="100%" minHeight="180"/>
 					</s:NavigatorContent>
 					
 					<!-- HISTORY -->
@@ -594,9 +718,9 @@
 					</s:NavigatorContent>
 					
 					<!-- PROPERTIES -->
-					<s:NavigatorContent label="PROPERTIES">
+					<s:NavigatorContent id="propertiesTab" label="PROPERTIES">
 						<!-- TODO Convert this into a composite component -->
-						<s:HGroup width="100%" verticalAlign="baseline" paddingRight="8" paddingLeft="8">
+						<s:HGroup width="100%" verticalAlign="baseline" paddingTop="4" paddingRight="8" paddingLeft="8">
 							<c:BeveledImageButton id="selectedTargetIcon"
 												  minWidth="18"
 												  ioError="iconImage_ioErrorHandler(event)"
@@ -621,7 +745,7 @@
 							
 							<!-- DYNAMIC INSPECTOR -->
 							<s:NavigatorContent label="COMMON">
-								<panels:DynamicComponentInspector width="100%" height="100%"/>
+								<panels:DynamicComponentInspector y="8" width="100%" height="100%"/>
 							</s:NavigatorContent>
 							
 							<!-- PROPERTY INSPECTOR -->
@@ -706,7 +830,11 @@
 			</s:Scroller>-->
 			
 			<!-- EXAMPLE APPLICATION -->
-			<mx:VDividedBox id="documentsGroup" width="100%" height="100%" liveDragging="true">
+			<mx:VDividedBox id="documentsGroup" 
+							width="100%" height="100%" 
+							liveDragging="true"
+							dividerPress="documentsGroup_dividerPressHandler(event)"
+							dividerRelease="documentsGroup_releaseDividerHandler(event)">
 		
 				
 				<!-- DOCUMENTS TAB BAR-->
@@ -725,7 +853,7 @@
 				
 				
 				<!-- DOCUMENT FOOTER AREA -->
-				<s:VGroup width="100%" height="45%" minHeight="0" includeIn="develop,code">
+				<s:VGroup id="documentFooterArea" width="100%" height="45%" minHeight="0" includeIn="develop,code">
 				
 					<c:TabNavigator id="thirdViewStack" 
 									 borderStyle="solid"

@@ -66,6 +66,7 @@
     <classEntry path="com.flexcapacitor.tools.Hand"/>
     <classEntry path="com.flexcapacitor.tools.ITool"/>
     <classEntry path="com.flexcapacitor.tools.IToolInspector"/>
+    <classEntry path="com.flexcapacitor.tools.Marquee"/>
     <classEntry path="com.flexcapacitor.tools.Selection"/>
     <classEntry path="com.flexcapacitor.tools.Text"/>
     <classEntry path="com.flexcapacitor.tools.Zoom"/>
@@ -78,6 +79,7 @@
     <classEntry path="com.flexcapacitor.transcoders.supportClasses.HTMLStyles"/>
     <classEntry path="com.flexcapacitor.utils.AndroidDocumentExporter"/>
     <classEntry path="com.flexcapacitor.utils.Base64"/>
+    <classEntry path="com.flexcapacitor.utils.DocumentTranscoder"/>
     <classEntry path="com.flexcapacitor.utils.DragManagerUtil"/>
     <classEntry path="com.flexcapacitor.utils.DragManagerUtil2"/>
     <classEntry path="com.flexcapacitor.utils.HTMLDocumentExporter"/>
@@ -88,13 +90,13 @@
     <classEntry path="com.flexcapacitor.utils.TextFieldHTMLExporter2"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.DragData"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.ISelectionGroup"/>
+    <classEntry path="com.flexcapacitor.utils.supportClasses.MarqueeSelection"/>
     <classEntry path="com.flexcapacitor.utils.supportClasses.TargetSelectionGroup"/>
     <classEntry path="com.flexcapacitor.view.renderers.ConsoleLogItemRenderer"/>
     <classEntry path="com.flexcapacitor.views.BlendMode"/>
     <classEntry path="com.flexcapacitor.views.Breadcrumbs"/>
     <classEntry path="com.flexcapacitor.views.ChangeHistory"/>
     <classEntry path="com.flexcapacitor.views.Description"/>
-    <classEntry path="com.flexcapacitor.views.DropShadowFilter"/>
     <classEntry path="com.flexcapacitor.views.ElementInspector"/>
     <classEntry path="com.flexcapacitor.views.ElementInspectorGroup"/>
     <classEntry path="com.flexcapacitor.views.Example"/>
@@ -110,6 +112,7 @@
     <classEntry path="com.flexcapacitor.views.Launch"/>
     <classEntry path="com.flexcapacitor.views.LayersInspector"/>
     <classEntry path="com.flexcapacitor.views.MainView"/>
+    <classEntry path="com.flexcapacitor.views.MarqueeInspector"/>
     <classEntry path="com.flexcapacitor.views.MeasureBox"/>
     <classEntry path="com.flexcapacitor.views.Memory"/>
     <classEntry path="com.flexcapacitor.views.OperationsInspector"/>
@@ -131,12 +134,14 @@
     <classEntry path="com.flexcapacitor.views.ZoomInspector"/>
     <classEntry path="com.flexcapacitor.views.editors.PropertyGridEditor"/>
     <classEntry path="com.flexcapacitor.views.inspectors.BasicBackgroundStyles"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.BlurFilterInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.BorderStyles"/>
     <classEntry path="com.flexcapacitor.views.inspectors.ButtonProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.CheckBoxProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.ColorPickerProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.ComboBoxProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.DropDownListProperties"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.DropShadowFilterInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.FillStyles"/>
     <classEntry path="com.flexcapacitor.views.inspectors.FontStyles"/>
     <classEntry path="com.flexcapacitor.views.inspectors.Gap"/>
@@ -171,6 +176,8 @@
     <classEntry path="com.flexcapacitor.views.panels.EffectsInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.EventListeners"/>
     <classEntry path="com.flexcapacitor.views.panels.Events"/>
+    <classEntry path="com.flexcapacitor.views.panels.FiltersCallout"/>
+    <classEntry path="com.flexcapacitor.views.panels.FiltersInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.HTMLInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.HistoryInspector"/>
     <classEntry path="com.flexcapacitor.views.panels.LibraryInspector"/>
@@ -220,7 +227,6 @@
     <classEntry path="com.flexcapacitor.views.windows.PublishWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.SaveBeforeCloseWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.SettingsWindow"/>
-    <classEntry path="com.flexcapacitor.tools.Marquee"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

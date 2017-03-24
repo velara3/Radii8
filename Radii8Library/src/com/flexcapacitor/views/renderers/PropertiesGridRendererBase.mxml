@@ -38,6 +38,16 @@
 			public var subPropertyName:String;
 			
 			/**
+			 * Set this to a property index if the sub property name is set
+			 * */
+			public var subPropertyIndex:String;
+			
+			/**
+			 * This is for things like a filter which is in a property in an array on the target 
+			 * */
+			public var subTarget:String;
+			
+			/**
 			 * Indicates if property selected events should be dispatched
 			 * */
 			public var dispatchProperySelectedEvents:Boolean;
@@ -175,9 +185,13 @@
 			 * Set the property on the target to the new value
 			 * */
 			public function setTargetValue(clearStyle:Boolean = false):void {
-				var item:XML = data as XML;
-				var target:Object = Radiate.instance.target; // does not support multiple targets yet
+				var item:XML;
+				var target:Object;
+				var subTarget:Object;
+				var targetProperty:String;
+				var targetPropertyIndex:int;
 				var actualValue:*;
+				var textInputValue:String;
 				var isStyle:int;
 				var styleIsColor:Boolean;
 				var valueSuccessfullyApplied:Boolean;
@@ -192,6 +206,26 @@
 				var access:String;
 				var textValue:String;
 				var moduleFactory:IFlexModuleFactory;
+				
+				// does not support multiple targets yet
+				target = Radiate.instance.target;
+				targetProperty = Radiate.instance.property;
+				targetPropertyIndex = Radiate.instance.propertyIndex;
+				subTarget = Radiate.instance.subTarget;
+				
+				item = data as XML;
+				
+				if (targetProperty) {
+					if (targetPropertyIndex!=-1) {
+						target = target[targetProperty][targetPropertyIndex];
+					}
+					else {
+						target = target[targetProperty];
+					}
+				}
+				else if (subTarget) {
+					target = subTarget;
+				}
 				
 				if (item) {
 					nodename = item.name();
@@ -257,7 +291,7 @@
 					}
 				}
 				// let SetAction convert 0xFF, #ff and red, ReD
-				else if (format=="Color") {
+				else if (format=="Color" || colorChooser) {
 					var secondValue:Array;
 					
 					if (includeSecondColor) {
@@ -327,6 +361,18 @@
 						}
 					}
 				}
+				else if (type=="Array") {
+					if (targetValueText) {
+						textInputValue = targetValueText.text;
+						
+						if (textInputValue=="" || textInputValue==null) {
+							actualValue = [];
+						}
+						else {
+							actualValue = String(textInputValue).split(",");
+						}
+					}
+				}
 				else {
 					actualValue = Radiate.getTypedValue(targetValueText.text, type);
 				}
@@ -371,8 +417,9 @@
 			 * Depricated. Use non-XML data objects
 			 * */
 			public function updateSubComponentsValueXML():void {
-				var item:XML = data as XML;
-				var target:Object = Radiate.getInstance().target;
+				var item:XML;
+				var target:Object;
+				var subTarget:Object;
 				var actualValue:*;
 				var isStyle:Boolean;
 				var type:String;
@@ -383,9 +430,14 @@
 				var value:String;
 				var nodename:String;
 				
-				if (!target) return;
-				
 				if (settingProperties) return;
+				
+				item = data as XML;
+				target = Radiate.instance.target;
+				subTarget = Radiate.instance.subTarget;
+				target = subTarget ? subTarget : target;
+				
+				if (!target) return;
 				
 				if (item) {
 					nodename = item.name();
@@ -497,9 +549,10 @@
 			 * show the correct inspector with the correct target value.
 			 * */
 			public function updateSubComponentsValue():void {
-				var target:Object = Radiate.getInstance().target;
-				var propertyObject:MetaData = data as MetaData;
-				var isStyle:Boolean = propertyObject is StyleMetaData;
+				var target:Object;
+				var subTarget:Object;
+				var propertyObject:MetaData;
+				var isStyle:Boolean;
 				var actualValue:*;
 				var type:String;
 				var enumeration:Array;
@@ -511,6 +564,12 @@
 				//if (!target) return;
 				
 				if (settingProperties) return;
+				
+				target = Radiate.instance.target;
+				subTarget = Radiate.instance.subTarget;
+				target = subTarget ? subTarget : target;
+				propertyObject = data as MetaData;
+				isStyle = propertyObject is StyleMetaData;
 				
 				if (data) {
 					
@@ -540,7 +599,7 @@
 						}
 						
 					}
-					else if (format=="Color") {
+					else if (format=="Color" || colorChooser) {
 						var secondValue:Array;
 						
 						if (includeSecondColor) {

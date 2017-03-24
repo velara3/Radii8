@@ -1305,7 +1305,7 @@ package com.flexcapacitor.utils {
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="checkbox") {
-					htmlName = tagName ? tagName : "checkbox";
+					htmlName = tagName ? tagName : "input";
 					
 					if (componentInstance.label!="") {
 						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
@@ -1363,7 +1363,8 @@ package com.flexcapacitor.utils {
 					layoutOutput += getWrapperTag(wrapperTag, true);
 				}
 				else if (localName=="radiobutton") {
-					htmlName = tagName ? tagName : "radio";
+					//htmlName = tagName ? tagName : "radio";
+					htmlName = tagName ? tagName : "input";
 					
 					if (componentInstance.label!="") {
 						layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);

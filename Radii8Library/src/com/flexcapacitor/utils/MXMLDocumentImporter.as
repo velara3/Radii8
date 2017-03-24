@@ -7,6 +7,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.events.ImportEvent;
 	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.model.ImportOptions;
 	import com.flexcapacitor.model.IssueData;
 	import com.flexcapacitor.model.SourceData;
@@ -25,6 +26,7 @@ package com.flexcapacitor.utils {
 	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
 	
+	import mx.collections.XMLListCollection;
 	import mx.core.IVisualElementContainer;
 	import mx.graphics.BitmapFill;
 	import mx.graphics.GradientEntry;
@@ -91,6 +93,10 @@ package com.flexcapacitor.utils {
 			warnings = [];
 			
 			newComponents = [];
+			
+			if (classRegistry==null) {
+				classRegistry = ClassRegistry.getInstance();
+			}
 			
 			///////////////////////
 			// SET OPTIONS
@@ -489,6 +495,15 @@ package com.flexcapacitor.utils {
 					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.TEXT_FLOW_NS];
 				}
 				
+				// import filters
+				if (childNodeNames.indexOf(MXMLDocumentConstants.FILTERS)!=-1 || 
+					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.FILTERS_NS)!=-1) {
+					setFilterData(componentDescription, valuesObject);
+					handledChildNodes.push(MXMLDocumentConstants.FILTERS);
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.FILTERS];
+					//handledChildNodes.push(MXMLDocumentConstants.FILL_NS);
+				}
+				
 				if (!componentAlreadyAdded) {
 					
 					// catch errors in TextFlow by setting Property.errorHandler to your own error handler
@@ -785,6 +800,12 @@ package com.flexcapacitor.utils {
 			var contentLoaderInfo:LoaderInfo = event.currentTarget as LoaderInfo;
 			var componentDescription:Object = bitmapDictionary[contentLoaderInfo];
 			var componentInstance:Object;
+			var imageData:ImageData;
+			var originalBitmapData:BitmapData;
+			
+			//originalBitmapData = componentInstance.bitmapData; returns a clone use image.source 
+			originalBitmapData = componentInstance.source;
+			imageData = Radiate.getImageDataFromBitmapData(originalBitmapData);
 			
 			if (contentLoaderInfo.loader.content) {
 				bitmap = contentLoaderInfo.loader.content as Bitmap;
@@ -802,6 +823,11 @@ package com.flexcapacitor.utils {
 				
 				Radiate.instance.addBitmapDataToDocument(Radiate.instance.selectedDocument, newBitmapData, null);
 				Radiate.setProperty(componentInstance, "source", newBitmapData, "Source loaded");
+				
+				
+				if (imageData) {
+					imageData.bitmapData = newBitmapData;
+				}
 			}
 			
 			if (contentLoaderInfo) {
@@ -1318,6 +1344,88 @@ public static function myErrorHandler(p:Property, value:Object):void
 			}
 			
 			valuesObject.values[MXMLDocumentConstants.STROKE] = stroke;
+			
+		}
+		
+		/**
+		 * Set filter data
+		 * */
+		public function setFilterData(componentDescription:ComponentDescription, valuesObject:ValuesObject):void {
+			var filtersString:String;
+			var filtersXML:XML;
+			var filtersXMLList:XMLList;
+			var filtersArray:Array;
+			var filterNode:XML;
+			var filtersCollection:XMLListCollection;
+			var numberOfFilters:int;
+			var classObject:Object;
+			var classInstance:Object;
+			var attributes:Array;
+			var attributeName:String;
+			var numberOfAttributes:int;
+			var value:Object;
+			var propertyType:String;
+			var isValid:Boolean;
+			
+			filtersString = valuesObject.childNodeValues[MXMLDocumentConstants.FILTERS];
+			
+			// if not found it may be using an alternate namespace
+			if (filtersString==null) {
+				filtersString = valuesObject.childNodeValues[MXMLDocumentConstants.FILTERS_NS];
+			}
+			
+			
+			filtersXML = new XML("<n>"+filtersString+"</n>");
+			filtersXMLList = filtersXML.elements();
+			
+			if (filtersXMLList.length() && filtersXMLList[0].localName()=="Array") {
+				filtersXMLList = filtersXML[0].elements();
+			}
+			
+			if (filtersXMLList.length()) {
+				
+				filtersCollection = new XMLListCollection(filtersXMLList);
+				
+				numberOfFilters = filtersCollection.length;
+				filtersArray = [];
+				
+				for (var i:int = 0; i < numberOfFilters; i++) {
+					filterNode = filtersCollection.getItemAt(i) as XML;
+					
+					classObject = classRegistry.getClass(filterNode);
+					
+					if (classObject == null) {
+						filterNode = XMLUtils.addNamespace(filterNode, MXMLDocumentConstants.fcNamespacePrefix, MXMLDocumentConstants.fcNamespaceURI);
+						classObject = classRegistry.getClass(filterNode);
+					}
+					
+					if (classObject) {
+						classInstance = new classObject();
+						attributes = XMLUtils.getAttributeNames(filterNode);
+						numberOfAttributes = attributes.length;
+						
+						for (var j:int = 0; j < numberOfAttributes; j++)  {
+							attributeName = attributes[j];
+							
+							if (attributeName in classInstance) {
+								value = filterNode.attribute(attributeName).toString();
+								
+								if (attributeName.indexOf("olor")!=-1 && (value as String).indexOf("#")==0) {
+									value = DisplayObjectUtils.getColorAsUInt(value as String);
+								}
+								
+								classInstance[attributeName] = Radiate.getTypedPropertyValue(classInstance, attributeName, value);
+							}
+						}
+						
+						filtersArray.push(classInstance);
+					}
+					
+				}
+				
+			}
+			
+			valuesObject.values[MXMLDocumentConstants.FILTERS] = filtersArray;
 			
 		}
 		

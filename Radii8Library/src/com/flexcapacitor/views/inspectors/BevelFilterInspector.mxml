@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 xmlns:local="*"
+		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
+		 implements="com.flexcapacitor.views.IInspector" 
+		 styleName="inspectablePanel"
+		 >
+	<!--
+	
+		ArgumentError: Error #2004: One of the parameters is invalid.
+		be sure to add the style styleName="inspectablePanel"
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import flash.filters.BitmapFilterType;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import spark.filters.BevelFilter;
+			
+			import org.as3commons.lang.ArrayUtils;
+
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			public var types:Array;
+			
+			public function activate(selectedTarget:Object = null):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (selectedTarget) {
+					target = selectedTarget;
+				}
+				else if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				
+				if (event.subSelectedItem) {
+					target = event.subSelectedItem;
+				}
+				else if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			public function update():void {
+				
+				if (types==null) {
+					types = new Array();
+					types.push(BitmapFilterType.OUTER);
+					types.push(BitmapFilterType.INNER);
+					types.push(BitmapFilterType.FULL);
+					typeRenderer.formatsCollection = new ArrayCollection(types);
+				}
+				
+				highlightAlphaRenderer.data = 	ClassUtils.getMetaDataOfProperty(	target, 	"highlightAlpha");
+				highlightColorRenderer.data = 	ClassUtils.getMetaDataOfProperty(	target, 	"highlightColor");
+				shadowAlphaRenderer.data 	= 	ClassUtils.getMetaDataOfProperty(	target, 	"shadowAlpha"	);
+				shadowColorRenderer.data 	= 	ClassUtils.getMetaDataOfProperty(	target, 	"shadowColor"	);
+				angleRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"angle"			);
+				distanceRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(	target, 	"distance"		);
+				typeRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"type"			);
+			}
+			
+			public var relevantProperties:Array = ["highlightAlpha", "angle", "highlightColor", "distance", "shadowAlpha", 
+				"shadowColor"];
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				var relevant:Boolean;
+				
+				if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+					relevant = true;
+				}
+				
+				if (relevant) {
+					//trace("property changed");
+					callLater(update);
+				}
+			}
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var length:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<length;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				length = hgroups.length;
+				
+				for (var j:int;j<length;j++) {
+					hgroups[j].gap = gap;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+
+	</fx:Declarations>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Angle" toolTip="The angle of the bevel. Valid values are from 0 to 360°" styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="angleRenderer" height="24" maximum="360" minimum="0" stepSize="1" defaultValue="45"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Distance" toolTip="The offset distance of the bevel" styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="distanceRenderer" stepSize="1" defaultValue="4"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Highlight Alpha" toolTip="The alpha transparency value of the highlight color. Valid values are 0 to 1." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="highlightAlphaRenderer" height="24" defaultValue="1"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Highlight Color" toolTip="The highlight color of the bevel." styleName="inspectablePanelLabel" />
+		<renderers:ColorPickerRenderer id="highlightColorRenderer" height="24" defaultValue="0xFFFFFF"
+									   includeCopyIcon="false" returnType="uint"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Shadow Alpha" toolTip="The alpha transparency value of the shadow color. Valid values are 0 to 1." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="shadowAlphaRenderer" height="24" defaultValue="1"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Shadow Color" toolTip="The shadow color of the bevel." styleName="inspectablePanelLabel" />
+		<renderers:ColorPickerRenderer id="shadowColorRenderer" height="24" defaultValue="0" 
+									   includeCopyIcon="false" returnType="uint"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Type" toolTip="The placement of the filter effect." styleName="inspectablePanelLabel" />
+		<renderers:DropDownListRenderer id="typeRenderer" defaultValue="inner"/>
+	</s:HGroup>
+	
+</s:VGroup>

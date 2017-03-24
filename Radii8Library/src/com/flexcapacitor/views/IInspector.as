@@ -7,7 +7,7 @@ package com.flexcapacitor.views {
 	public interface IInspector {
 		
 		
-		function activate():void;
+		function activate(target:Object = null):void;
 		
 		function deactivate():void;
 	}

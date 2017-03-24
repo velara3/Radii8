@@ -59,7 +59,7 @@
 			
 			public var radiate:Radiate;
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				addListeners();
 			}
 			

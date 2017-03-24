@@ -160,7 +160,7 @@
 			public var embedImages:Boolean;
 			public var activatedOnce:Boolean;
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				addListeners();

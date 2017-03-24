@@ -46,7 +46,7 @@
 			private var currentSavingDocument:IDocument;
 			
 
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.instance;
 				services = ServicesManager.instance;
 				

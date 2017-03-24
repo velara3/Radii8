@@ -28,7 +28,7 @@
 			public var logsCollection:ArrayCollection = new ArrayCollection();
 			
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				
 				logsCollection = Radiate.logsCollection;
 			}

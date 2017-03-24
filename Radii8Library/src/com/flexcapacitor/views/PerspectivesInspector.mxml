@@ -12,35 +12,102 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			
+			import mx.collections.ArrayList;
 			import mx.core.IStateClient2;
+			import mx.core.IToolTip;
 			import mx.events.FlexEvent;
+			import mx.events.ToolTipEvent;
+			import mx.managers.ToolTipManager;
 			
 			import spark.events.IndexChangeEvent;
 			
 			
 			public var radiate:Radiate;
 			
-			public var view:IStateClient2;
+			private var _view:IStateClient2;
+
+			public function get view():IStateClient2
+			{
+				return _view;
+			}
+
+			public function set view(value:IStateClient2):void
+			{
+				_view = value;
+			}
+
 			
+			public const DESIGN:String = "design";
+			public const DEVELOP:String = "develop";
+			public const CODE:String = "code";
+			public const DESIGN_VIEW:String = "designview";
+			
+			public var perspectivesArray:Array = [];
+			public var perspectivesArrayList:ArrayList;
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
+				
+				perspectivesArray.push({label:"", value: DESIGN, 	toolTip:"Show left panel", icon:Radii8LibraryAssets.leftView});
+				perspectivesArray.push({label:"", value: DEVELOP, 	toolTip:"Show left and bottom panels", icon:Radii8LibraryAssets.leftBottomView});
+				perspectivesArray.push({label:"", value: CODE, 		toolTip:"Show bottom panel", icon:Radii8LibraryAssets.bottomView});
+				perspectivesArray.push({label:"", value: DESIGN_VIEW, toolTip:"Show design view", icon:Radii8LibraryAssets.designView});
+				
+				perspectivesArrayList = new ArrayList(perspectivesArray);
+				perspectivesButtonBar.dataProvider = perspectivesArrayList;
+				perspectivesButtonBar.selectedIndex = 0;
+				
+				if (view) {
+					view.addEventListener(FlexEvent.STATE_CHANGE_COMPLETE, stateChangeHandler);
+				}
 			}
 			
 			
-			protected function buttonbar_changeHandler(event:IndexChangeEvent):void
+			protected function buttonbar_changeHandler(event:IndexChangeEvent):void {
+				var selectedItem:Object = perspectivesButtonBar.selectedItem;
+				
+				if (selectedItem.value==DESIGN) {
+					view.currentState = DESIGN;
+				}
+				else if (selectedItem.value==DEVELOP) {
+					view.currentState = DEVELOP;
+				}
+				else if (selectedItem.value==CODE) {
+					view.currentState = CODE;
+				}
+				else if (selectedItem.value==DESIGN_VIEW) {
+					view.currentState = DESIGN_VIEW;
+				}
+			}
+			
+			protected function perspectives_toolTipShowHandler(event:ToolTipEvent):void {
+				var selectedItem:Object = perspectivesButtonBar.selectedItem;
+				
+				myToolTip = ToolTipManager.currentToolTip;
+				myToolTip.text = selectedItem.toolTip;
+			}
+			
+			public var myToolTip:IToolTip;
+			
+			private function stateChangeHandler(event:FlexEvent):void
 			{
-				if (buttonbar.selectedItem=="Design") {
-					view.currentState = "design";
-				}
-				else if (buttonbar.selectedItem=="Develop") {
-					view.currentState = "develop";
-				}
-				else if (buttonbar.selectedItem=="Code") {
-					view.currentState = "code";
-				}
+				var state:String = view.currentState;
+				setSelectedState(state);
 			}
 			
+			
+			private function setSelectedState(state:String):void {
+				var stateObject:Object;
+				
+				for (var i:int = 0; i < perspectivesArrayList.length; i++)  {
+					stateObject = perspectivesArrayList.getItemAt(i);
+					
+					if (stateObject.value==state) {
+						perspectivesButtonBar.selectedItem = stateObject;
+						break;
+					}
+				}
+			}
 		]]>
 	</fx:Script>
 	
@@ -48,15 +115,11 @@
 		<s:HorizontalLayout paddingLeft="4" />
 	</s:layout>
 	
-	<s:ButtonBar id="buttonbar" 
+	<s:ButtonBar id="perspectivesButtonBar" 
 				  requireSelection="true"
 				  change="buttonbar_changeHandler(event)"
+				  toolTip=" "
+				  toolTipShow="perspectives_toolTipShowHandler(event)"
 				  >
-		
-		<s:ArrayCollection>
-			<fx:String>Design</fx:String>
-			<fx:String>Develop</fx:String>
-			<fx:String>Code</fx:String>
-		</s:ArrayCollection>
 	</s:ButtonBar>
 </s:Group>

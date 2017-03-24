@@ -36,5 +36,6 @@ package com.flexcapacitor.utils.supportClasses {
 		public var dropIndex:int;
 		public var dropPoint:Point;
 		public var layout:LayoutBase;
+		public var replaceTarget:Boolean;
 	}
 }

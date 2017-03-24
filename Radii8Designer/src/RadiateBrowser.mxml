@@ -14,6 +14,9 @@
 			   frameRate="46"
 			   pageTitle="Radiate" 
 			   >
+			   <!--preloader="RadiatePreloader"
+			   preloader="mx.preloaders.SparkDownloadProgressBar"
+	-->
 	
 	<!--
 	Description	Resource	Path	Location	Type
@@ -22,6 +25,12 @@
 	fix: 
 	removed references in compiler build path to old libraries and applied the properties. 
 
+	sometimes parent is null in DragProxy
+	line 648:
+	m.xTo = parent.mouseX;
+	m.yTo = parent.mouseY;
+	
+	maybe monkey patch with a null check
 	-->
 	
 	<fx:Script>
@@ -30,7 +39,11 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.HTMLDragEvent;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.skins.CallOutSkin;
+			import com.flexcapacitor.utils.ClassRegistry;
+			import com.flexcapacitor.utils.DocumentTranscoder;
 			import com.flexcapacitor.utils.HTMLDragManager;
+			import com.flexcapacitor.utils.PopUpOverlayManager;
 			
 			import mx.events.FlexEvent;
 			
@@ -39,6 +52,7 @@
 			[Embed(source="Radii8Desktop-app.xml", mimeType="application/octet-stream")]
 			public var appInfo:Class;
 			public var applicationDescriptor:XML;
+			private var calloutSkin:CallOutSkin;
 			
 			/**
 			 * 
@@ -77,6 +91,20 @@
 				
 				listenForDragAndDrop();
 				
+				var classRegistry:ClassRegistry = ClassRegistry.getInstance();
+				var transcoder:DocumentTranscoder = new DocumentTranscoder();
+				var application:XML = transcoder.getDefaultMXMLDocumentXML();
+				
+				var walker:Walker = new Walker(startupBrowser);
+				
+				classRegistry.addNamespaces(application);
+				//componentName = component.@id;
+				//componentClass = component.attribute(CLASS);
+				//Walker;
+				//var className:String = "BlackAndWhiteFilter";
+				//var componentClass:String = "com.flexcapacitor.filters.BlackAndWhiteFilter";
+				//var componentQName:QName = new QName(MXMLDocumentConstants.fcNamespaceURI, className);
+				//classRegistry.registerClass(componentQName, componentClass);
 			}
 			
 			protected function application1_initializeHandler(event:FlexEvent):void {
@@ -88,6 +116,7 @@
 				Security.allowInsecureDomain("*");
 				Security.disableAVM1Loading = true;
 				MacMouseWheelHandler.init(systemManager.stage);
+				//stage.quality = StageQuality.HIGH_16X16_LINEAR;
 			}
 			
 			private function startupBrowser():void {
@@ -104,6 +133,7 @@
 				var type:String = event.type;
 				if (type==HTMLDragManager.DRAG_ENTER) {
 					mainView.dropImagesLocation.visible = true;
+					PopUpOverlayManager.getInstance().hideAllOverlays();
 				}
 				else if (type==HTMLDragManager.DRAG_EXIT) {
 					mainView.dropImagesLocation.visible = false;
@@ -112,10 +142,10 @@
 			
 			public function dragDropHandler(event:HTMLDragEvent):void {
 				var selectedDocument:IDocument = radiate.selectedDocument;
-				
+				PopUpOverlayManager.getInstance().showAllOverlays();
 				mainView.dropImagesLocation.visible = false;
 				Radiate.info("Opening image. Hold on...");
-				Radiate.callAfter(250, openDraggedItem, event);
+				Radiate.callAfter(500, openDraggedItem, event);
 			}
 			
 			public function openDraggedItem(event:HTMLDragEvent):void {
@@ -186,10 +216,10 @@
 							 showStyleInheritanceInformation="false"
 							 showAllStyleDeclarations="false"
 							 showColorUnderMouse="false"
-							 enabled="false"
+							 enabled="true"
 							 />
 	</fx:Declarations>
-	
+
 	<views:MainView id="mainView" width="100%" height="100%"/>
 	
 </s:Application>

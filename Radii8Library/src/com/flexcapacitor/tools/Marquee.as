@@ -3,6 +3,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
 	import com.flexcapacitor.tools.supportClasses.VisualElementRotationHandle;
 	import com.flexcapacitor.utils.ClassUtils;
@@ -30,9 +31,7 @@ package com.flexcapacitor.tools {
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Graphics;
 	import flash.display.Sprite;
-	import flash.display.Stage;
 	import flash.display.StageQuality;
-	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Matrix;
@@ -53,11 +52,11 @@ package com.flexcapacitor.tools {
 	import mx.core.UIComponent;
 	import mx.events.SandboxMouseEvent;
 	import mx.managers.SystemManager;
-	import mx.managers.SystemManagerGlobals;
 	
 	import spark.components.Application;
 	import spark.components.Image;
 	import spark.components.supportClasses.InvalidatingSprite;
+	import spark.core.IGraphicElement;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.utils.BitmapUtil;
 	
@@ -581,6 +580,9 @@ package com.flexcapacitor.tools {
 			var eventTarget:Object;
 			var eventCurrentTarget:Object;
 			var tabNav:TabNavigator;
+			var element:IVisualElement;
+			var properties:Array = [];
+			var propertiesObject:Object = {};
 			
 			
 			if (radiate==null) {
@@ -602,6 +604,7 @@ package com.flexcapacitor.tools {
 			// down = 40 
 			// backspace = 8
 			// delete = 46
+			// enter = 
 			//Radiate.info("Key up: " + event.keyCode);
 			
 			constant = event.shiftKey ? 10 : 1;
@@ -640,10 +643,6 @@ package com.flexcapacitor.tools {
 			else {
 				return;
 			}
-			
-			var element:IVisualElement;
-			var properties:Array = [];
-			var propertiesObject:Object = {};
 			
 			if (event.keyCode==Keyboard.LEFT) {
 				if (event.altKey) {
@@ -703,6 +702,10 @@ package com.flexcapacitor.tools {
 			}
 			else if (event.keyCode==Keyboard.Y && event.ctrlKey) {
 				HistoryManager.redo(radiate.selectedDocument, true);
+				actionOccured = true;
+			}
+			else if (event.keyCode==Keyboard.ENTER) {
+				cropSelection();
 				actionOccured = true;
 			}
 			
@@ -942,6 +945,13 @@ package com.flexcapacitor.tools {
 			else if (displayObject is IUIComponent) {
 				imageBitmapData = BitmapUtil.getSnapshot(displayObject as IUIComponent);
 			}
+			else if (object is GraphicElement) {
+				imageBitmapData = DisplayObjectUtils.getGraphicElementBitmapData(object as IGraphicElement);
+				return null;
+			}
+			else {
+				return null;
+			}
 			
 			bitmapDataSpaceRectangle = imageBitmapData.rect;
 			bitmapDataSpaceRectangle.x = imageSpacePoint.x;
@@ -1017,33 +1027,47 @@ package com.flexcapacitor.tools {
 		
 		public function cropSelection():void {
 			var container:DisplayObject;
-			var bitmapData:BitmapData;
+			var croppedBitmapData:BitmapData;
 			var image:Image;
 			var imageLocalPoint:Point;
 			
 			container = getSystemManager();
-			bitmapData = getBitmapDataOfSelection(radiate.target, container);
+			croppedBitmapData = getBitmapDataOfSelection(radiate.target, container);
 			image = radiate.target as Image;
 			
-			if (bitmapData && image) {
+			if (croppedBitmapData && image) {
 				//imageLocalPoint = new Point();
 				imageLocalPoint = DisplayObjectUtils.getDisplayObjectPosition(image, image.parent);
 				var propertiesObject:Object = {};
 				var properties:Array = ["x", "y", "source"];
+				var imageData:ImageData;
+				var imageName:String = "Cropped"; // should get name from component description
+				
+				if (image.source is BitmapData) {
+					imageData = Radiate.getImageDataFromBitmapData(image.source as BitmapData);
+				}
 				
 				propertiesObject.x = imageLocalPoint.x + clipIntersectionRectangle.x;
 				propertiesObject.y = imageLocalPoint.y + clipIntersectionRectangle.y;
-				propertiesObject.source = bitmapData;
+				propertiesObject.source = croppedBitmapData;
 				
 				Radiate.setProperties(image, properties, propertiesObject, "Crop", true);
+				
+				// force redraw
+				updateScreenEvent = new MouseEvent(MouseEvent.MOUSE_UP);
+				updateScreenEvent.updateAfterEvent();
+				
+				if (imageData) {
+					imageName = imageData.name;
+				}
+				
+				radiate.addBitmapDataToDocument(radiate.selectedDocument, croppedBitmapData, null, imageName, false);
 			}
 			else {
 				Radiate.warn("The selection does not intersect any image bitmap data in the uni matrix. Make sure the selection is over an unscaled image."); 
 			}
-			
-			// force redraw
-			var update:MouseEvent = new MouseEvent(MouseEvent.MOUSE_UP);
-			update.updateAfterEvent();
 		}
+		
+		public var updateScreenEvent:MouseEvent;
 	}
 }

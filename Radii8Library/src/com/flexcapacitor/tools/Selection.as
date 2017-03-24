@@ -1327,7 +1327,7 @@ package com.flexcapacitor.tools {
 			
 			if (hideSelectionOnDrag) {
 				clearSelection();
-				_selectionWasShownBeforeDrag = true;
+				_selectionWasShownBeforeDrag = _showSelection;
 			}
 			
 		}
@@ -1338,7 +1338,7 @@ package com.flexcapacitor.tools {
 		protected function handleDragEnd(event:DragDropEvent):void {
 			
 			if (hideSelectionOnDrag && _selectionWasShownBeforeDrag) {
-				showSelection = true;
+				showSelection = _selectionWasShownBeforeDrag;
 				_selectionWasShownBeforeDrag = false;
 			}
 			
@@ -1428,6 +1428,7 @@ package com.flexcapacitor.tools {
 				log("mouseUpHandler");
 			}
 			var target:Object = event.currentTarget;
+			//var target:Object = event.target;
 			var componentTree:ComponentDescription;
 			var componentDescription:ComponentDescription;
 			
@@ -1437,6 +1438,10 @@ package com.flexcapacitor.tools {
 			
 			if (target is List) {
 				//target.dragEnabled = true; // restore drag and drop if it was enabled
+			}
+			if (componentDescription && componentDescription.instance!=target) {
+				removeTargetListeners(target);
+				target = componentDescription.instance;
 			}
 			
 			target.visible = true;
@@ -1666,11 +1671,12 @@ package com.flexcapacitor.tools {
 				case Keyboard.MINUS:
 				case Keyboard.EQUAL:
 				{
-					
-					if (event.keyCode==Keyboard.MINUS && (event.ctrlKey || event.commandKey)) {
+					// ReferenceError: Error #1069: Property commandKey not found on flash.events.KeyboardEvent and there is no default value.
+					// added check for property in event
+					if (event.keyCode==Keyboard.MINUS && (event.ctrlKey || ("commandKey" in event && event.commandKey))) {
 						Radiate.instance.decreaseScale()
 					}
-					else if (event.keyCode==Keyboard.EQUAL && (event.ctrlKey || event.commandKey)) {
+					else if (event.keyCode==Keyboard.EQUAL && (event.ctrlKey || ("commandKey" in event && event.commandKey))) {
 						Radiate.instance.increaseScale()
 					}
 				}

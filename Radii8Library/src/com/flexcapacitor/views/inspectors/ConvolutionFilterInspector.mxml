@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 xmlns:local="*"
+		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
+		 implements="com.flexcapacitor.views.IInspector" 
+		 styleName="inspectablePanel"
+		 >
+	<!--
+	
+		ArgumentError: Error #2004: One of the parameters is invalid.
+		be sure to add the style styleName="inspectablePanel"
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
+			
+			import org.as3commons.lang.ArrayUtils;
+
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			public function activate(selectedTarget:Object = null):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (selectedTarget) {
+					target = selectedTarget;
+				}
+				else if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				
+				if (event.subSelectedItem) {
+					target = event.subSelectedItem;
+				}
+				else if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			public function update():void {
+				alphaRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"alpha"		);
+				biasRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"bias"		);
+				colorRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"color"		);
+				clampRenderer.data 			= 	ClassUtils.getMetaDataOfProperty(	target, 	"clamp"		);
+				divisorRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(	target, 	"divisor"	);
+				preserveAlphaRenderer.data 	= 	ClassUtils.getMetaDataOfProperty(	target, 	"preserveAlpha"	);
+				matrixXRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(	target, 	"matrixX"		);
+				matrixYRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(	target, 	"matrixY"		);
+				matrixRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(	target, 	"matrix"	);
+			}
+			
+			public var relevantProperties:Array = ["alpha", "bias", "clamp", "color", "divisor", 
+				"preserveAlpha", "matrixX", "matrixY", "matrix"];
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				var relevant:Boolean;
+				
+				if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+					relevant = true;
+				}
+				
+				if (relevant) {
+					//trace("property changed");
+					callLater(update);
+				}
+			}
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var length:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<length;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				length = hgroups.length;
+				
+				for (var j:int;j<length;j++) {
+					hgroups[j].gap = gap;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+
+	</fx:Declarations>
+
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Alpha" toolTip="The alpha transparency value for the color. Valid values are 0 to 1." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="alphaRenderer" height="24" defaultValue="0"/>
+	</s:HGroup>
+
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Bias" toolTip="The amount of bias to add to the result of the matrix transformation. The bias increases the color value of each channel, so that dark colors appear brighter. " styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="biasRenderer" height="24" defaultValue="0"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Clamp" toolTip="Indicates whether the image should be clamped." styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="clampRenderer" defaultValue="true"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Color" toolTip="The color of the shadow." styleName="inspectablePanelLabel" />
+		<renderers:ColorPickerRenderer id="colorRenderer" height="24" defaultValue="0"
+									   includeCopyIcon="false" returnType="uint"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Divisor" toolTip="The divisor used during matrix transformation." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="divisorRenderer" height="24" defaultValue="1"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Matrix" toolTip="The amount of horizontal blur. Valid values are 0 to 255. A blur of 1 or less means that the original image is copied as is." styleName="inspectablePanelLabel" />
+		<renderers:TextRenderer id="matrixRenderer" defaultValue="0"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Matrix X" toolTip="The x dimension of the matrix (the number of rows in the matrix)." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="matrixXRenderer" stepSize="1" defaultValue="0"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Matrix Y" toolTip="The y dimension of the matrix (the number of columns in the matrix)." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="matrixYRenderer" stepSize="1" defaultValue="0"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Preserve Alpha" toolTip="Indicates if the alpha channel is preserved without the filter effect or if the convolution filter is applied to the alpha channel as well as the color channels." styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="preserveAlphaRenderer" defaultValue="true"/>
+	</s:HGroup>
+	
+	
+	
+</s:VGroup>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:c="com.flexcapacitor.controls.*"
@@ -14,9 +14,6 @@
 		 implements="com.flexcapacitor.views.IInspector" 
 		 width="400" 
 		 height="100%" 
-		 paddingLeft="8" 
-		 paddingRight="8" 
-		 paddingBottom="8" 
 		 
 		 dragEnter="library_dragEnterHandler(event)"
 		 dragDrop="library_dragDropHandler(event)"
@@ -54,6 +51,7 @@
 			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 			import com.flexcapacitor.views.IInspector;
 			import com.flexcapacitor.views.ImageView;
+			import com.flexcapacitor.views.renderers.LibraryInspectorRenderer;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			
 			import mx.core.ClassFactory;
@@ -94,7 +92,7 @@
 			private var documentID:int;
 			private var projectID:int;
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				radiate.addEventListener(RadiateEvent.ATTACHMENT_UPLOADED, uploadAttachmentResult, false, 0, true);
@@ -164,9 +162,9 @@
 					dragManagerInstance = DragManagerUtil.getInstance();
 				}
 				
-				addMouseTargetListeners(rowGroup);
+				addMouseTargetListeners(LibraryInspectorRenderer(rowGroup).iconImage);
 				
-				dragManagerInstance.listenForDragBehavior(rowGroup, iDocument, event, component);
+				dragManagerInstance.listenForDragBehavior(LibraryInspectorRenderer(rowGroup).iconImage, iDocument, event, component);
 				
 				removeDragManagerListeners(dragManagerInstance);
 				addDragManagerListeners(dragManagerInstance);
@@ -799,10 +797,17 @@
 				}
 			}
 			
+			public var inProgress:Boolean;
+			
 			protected function deleteAttachmentIcon_clickHandler(event:MouseEvent):void {
 				var selectedItems:Array = ArrayUtils.getArrayFromVector(list.selectedItems);
 				var options:Object;
 				var iDocument:IDocument = radiate.selectedDocument;
+				var attachments:Array;
+				var isRemote:Boolean;
+				var localRemoveSuccessful:Boolean;
+				var attachmentData:AttachmentData;
+				var attachmentIDs:Array;
 				
 				if (iDocument==null) {
 					Radiate.info("No document selected.");
@@ -812,12 +817,114 @@
 				if (selectedItems.length) {
 					options = {};
 					options.currentState = DeleteDocumentWindow.RESOURCES;
-					options.attachments = selectedItems
-					openDeleteDocumentsPopUp.popUpOptions = options;
-					openDeleteDocumentsPopUp.play();
+					options.attachments = selectedItems;
+					attachments = selectedItems;
+					
+					if (event.shiftKey) {
+						
+						if (attachments && attachments.length) {
+							radiate.addEventListener(RadiateEvent.ATTACHMENTS_DELETED, deleteResultsHandler, false, 0, true);
+							isRemote = true;
+							attachmentIDs = [];
+							
+							for (var j:int = 0; j < attachments.length; j++) {
+								attachmentData = attachments[j];
+								
+								if (attachmentData.id!=null) {
+									attachmentIDs.push(attachmentData.id);
+								}
+							}
+							
+							if (attachmentIDs.length) {
+								//radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, deleteResultsHandler, false, 0, true);
+								localRemoveSuccessful = radiate.removeAssetsFromDocument(attachments);
+							}
+							else {
+								isRemote = false;
+								localRemoveSuccessful = radiate.removeAssetsFromDocument(attachments, DocumentData.LOCAL_LOCATION);
+							}
+						}
+						else {
+							//infoLabel.text = "No items to delete";
+							isRemote = false;
+							return;
+						}
+					}
+					else {
+						
+						openDeleteDocumentsPopUp.popUpOptions = options;
+						openDeleteDocumentsPopUp.play();
+					}
 				}
 				else {
 					Radiate.info("No items selected.");
+				}
+			}
+			
+			protected function deleteResultsHandler(event:RadiateEvent):void {
+				var data:Object = event.data || event.selectedItem;
+				var status:String = event.status;
+				var successful:Boolean = event.successful;
+				var error:String;
+				var message:String = "";
+				var iDocument:IDocument;
+				var numberOfProjects:int;
+				var eventType:String = event.type;
+				var numberOfDocuments:int;
+				
+				iDocument = event.selectedItem as IDocument;
+				inProgress = false;
+				
+				if (eventType==RadiateEvent.ATTACHMENTS_DELETED) {
+					radiate.removeEventListener(RadiateEvent.ATTACHMENTS_DELETED, deleteResultsHandler);
+				}
+				
+				// there was no remote attachments to delete
+				if (data && "localDeleted" in data && data.localDeleted==true) {
+					
+					Radiate.info("Items deleted");
+					return;
+				}
+				
+				// TODO Loop through and replace with missing images
+				if (status=="error") {
+					
+					if (data && "error" in data) {
+						message += "Error. The item was not deleted. " + data.error + " ";
+					}
+					else {
+						message += "Error. The item was not deleted. It may have been deleted already or was never saved. Save the project. ";
+					}
+				}
+				else {
+					if (data==null && iDocument!=null && iDocument.id!=null) {
+						message += "Error. The item may have been deleted already. Reload or resave the project. ";
+					}
+				}
+				
+				if (event.faultEvent) {
+					message += "Are you connected to the internet? ";
+					
+					if (event.faultEvent is IOErrorEvent) {
+						message += IOErrorEvent(event.faultEvent).text;
+					}
+					else if (event.faultEvent is SecurityErrorEvent) {
+						
+						if (SecurityErrorEvent(event.faultEvent).errorID==2048) {
+							
+						}
+						
+						message += SecurityErrorEvent(event.faultEvent).text;
+					}
+				}
+				
+				//deleteWarningsLabel.text = message;
+				if (successful) {
+					Radiate.info("Items deleted");
+					//playDeleteSuccessfulMessage();
+				}
+				else {
+					//infoLabel.text = "";
 				}
 			}
 			
@@ -971,7 +1078,7 @@
 					top="0"
 					left="8" 
 					right="8" 
-					bottom="4"
+					bottom="40"
 					>
 		
 		<s:Group height="24" 
@@ -1029,25 +1136,10 @@
 		
 	</mx:VDividedBox>
 	
-	<s:BorderContainer width="100%" borderWeight="0" borderVisible="false" height="100">
+	<s:BorderContainer width="100%" borderWeight="0" borderVisible="false" bottom="0">
 		<s:layout>
-			<s:VerticalLayout />
+			<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingBottom="6" paddingTop="4"/>
 		</s:layout>
-		
-
-		
-		<c:LabelButton id="addImageLabel" 
-					   text="Drag and drop or click here to add items"
-					   color="#888888" 
-					   verticalAlign="middle" textAlign="center"
-					   backgroundAlpha="0.1"
-					   visible="{libraryCollection.length==0}" 
-					   includeInLayout="{libraryCollection.length==0}"
-					   width="100%"
-					   height="100%"
-					   />
-		
-		<s:Spacer height="100%"/>
 		
 		<s:HGroup width="100%"
 				 height="24"
@@ -1170,4 +1262,16 @@
 		</s:HGroup>
 	</s:BorderContainer>
 	
-</s:VGroup>
+	
+	<c:LabelButton id="addImageLabel" 
+				   text="Drag and drop or click here to add items"
+				   color="#888888" 
+				   verticalAlign="middle" 
+				   textAlign="center"
+				   backgroundAlpha="0.1"
+				   visible="{libraryCollection.length==0}" 
+				   includeInLayout="{libraryCollection.length==0}"
+				   width="100%"
+				   height="100%"
+				   />
+</s:Group>

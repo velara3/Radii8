@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:collections="com.flexcapacitor.effects.collections.*"
+		 xmlns:flexcapacitor="flexcapacitor.*"
+		 xmlns:clipboard="com.flexcapacitor.effects.clipboard.*"
+		 xmlns:file="com.flexcapacitor.effects.file.*"
+		 xmlns:fc="com.flexcapacitor.effects.popup.*"
+		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*"
+		 xmlns:panels="com.flexcapacitor.views.panels.*" 
+		 
+		 implements="com.flexcapacitor.views.IInspector" 
+		 width="400" 
+		 height="100%" 
+		 >
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
+			import com.flexcapacitor.views.IInspector;
+			
+			import mx.events.DragEvent;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.PopUpEvent;
+			import spark.filters.DisplacementMapFilter;
+			
+			[Bindable]
+			private var radiate:Radiate;
+			
+			private var target:Object;
+			
+			public var FILTERS:String = "filters";
+			
+			public function activate(selectedTarget:Object = null):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				target = radiate.target;
+				updateFiltersCollection();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+			}
+			
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				if (target==event.selectedItem) {
+					return;
+				}
+				
+				target = event.selectedItem;
+				updateFiltersCollection();
+			}
+			
+			protected function list_changeHandler(event:IndexChangeEvent):void {
+				var selectedItem:BaseFilter = filtersList.selectedItem as BaseFilter;
+				
+			}
+			
+			protected function refreshIcon_clickHandler(event:MouseEvent):void {
+				updateFiltersCollection();
+			}
+			
+			public function list_keyUpHandler(event:KeyboardEvent):void {
+				
+			}
+			
+			protected function propertyChangeHandler(event:Event):void
+			{
+				
+			}
+			
+			private function updateFiltersCollection(select:Boolean = false):void {
+				if (target && FILTERS in target) {
+					appliedFiltersCollection.source = target.filters;
+				}
+				else {
+					appliedFiltersCollection.removeAll();
+				}
+				
+				appliedFiltersCollection.refresh();
+				
+				if (select && appliedFiltersCollection && appliedFiltersCollection.length) {
+					filtersList.selectedIndex = appliedFiltersCollection.length-1;
+				}
+			}
+			
+			protected function list_dragCompleteHandler(event:DragEvent):void {
+				var newSortedFilters:Array;
+				
+				if (target && FILTERS in target) {
+					newSortedFilters = appliedFiltersCollection.source.slice();
+					//target.filters = newSortedFilters;
+					Radiate.setProperty(target, FILTERS, newSortedFilters);
+					//updateFiltersCollection(true);
+					//radiate.setSubTarget(target, filter);
+				}
+			}
+			
+			protected function addFilter_clickHandler(event:MouseEvent):void
+			{
+				filtersCallout.open(addFilterIcon);
+			}
+			
+			protected function removeFilter_clickHandler(event:MouseEvent):void
+			{
+				var selectedItem:Object;
+				var selectedIndex:int;
+				var existingFilters:Array;
+				
+				selectedItem = filtersList.selectedItem;
+				selectedIndex = appliedFiltersCollection.getItemIndex(selectedItem);
+				
+				if (selectedIndex!=-1) {
+					appliedFiltersCollection.removeItem(selectedItem);
+					existingFilters = appliedFiltersCollection.source.slice();
+					
+					
+					if (existingFilters.length==0) {
+						Radiate.clearProperty(target, FILTERS);
+					}
+					else {
+						Radiate.setProperty(target, FILTERS, existingFilters);
+					}
+					updateFiltersCollection(true);
+				}
+			}
+			
+			protected function editFilter_clickHandler(event:MouseEvent):void {
+				var selectedItem:Object;
+				var selectedIndex:int;
+				
+				selectedItem = filtersList.selectedItem;
+				selectedIndex = filtersList.selectedIndex;
+				
+				//radiate.setTargetProperties(target, FILTERS, selectedIndex);
+				radiate.setSubTarget(target, selectedItem);
+				
+				Radiate.showPropertiesPanel(true);
+				
+			}
+			
+			protected function filtersCallout_closeHandler(event:PopUpEvent):void {
+				var filterObject:Object = event.data;
+				var classe:String;
+				var filter:Object;
+				var baseFilter:BaseFilter;
+				var existingFilters:Array;
+				var componentDefinition:ComponentDefinition;
+				
+				if (filterObject) {
+					classe = filterObject.classe;
+					componentDefinition = Radiate.getDynamicComponentType(classe, true, true);
+					
+					if (componentDefinition) {
+						filter = componentDefinition.instance;
+						baseFilter = componentDefinition.instance as BaseFilter;
+					}
+					
+					if (filter is DisplacementMapFilter) {
+						var displacementMap:DisplacementMapFilter = filter as DisplacementMapFilter;
+						displacementMap.mapBitmap = new BitmapData(100, 100, true, 0xFFFFFFFF);
+						displacementMap.mapPoint = new Point();
+						displacementMap.mapBitmap.noise(100);
+					}
+					
+					if (filter && target && FILTERS in target) {
+						existingFilters = target.filters;
+						
+						if (existingFilters==null) {
+							existingFilters = [];
+						}
+						
+						existingFilters.push(filter);
+						existingFilters = existingFilters.slice();
+						Radiate.setProperty(target, FILTERS, existingFilters);
+						updateFiltersCollection(true);
+						radiate.setSubTarget(target, filter);
+					}
+				}
+			}
+			
+			public function labelFunction(item:Object):String {
+				var className:String = "";
+				
+				if (item) {
+					className = ClassUtils.getClassName(item);
+				}
+				
+				return className;
+				
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:ArrayCollection id="appliedFiltersCollection"/>
+	  
+		<panels:FiltersCallout id="filtersCallout" close="filtersCallout_closeHandler(event)"/>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="list"/>
+	</s:states>
+	
+	
+	<s:VGroup id="mainContainer" 
+					width="100%" height="100%"
+					top="0"
+					left="8" 
+					right="8" 
+					bottom="36"
+					>
+		<!--
+		<s:Group height="24" 
+				 minHeight="24"
+				 maxHeight="60"
+				 width="100%" 
+				 >
+			
+			<inspectors:SearchCollection id="searchCollection" 
+										 dataProvider="{filtersCollection}" 
+										 filterFunction="libraryFilterFunction"
+										 />
+		</s:Group>-->
+		
+		
+		<s:List id="filtersList" 
+				width="100%" 
+				height="100%"
+				labelField="name"
+				labelFunction="labelFunction"
+				dragEnabled="true"
+				dragMoveEnabled="true"
+				dropEnabled="true"
+				borderVisible="true" 
+				borderAlpha=".2"
+				interactionMode="mouse"
+				requireSelection="true"
+				allowMultipleSelection="false"
+				doubleClickEnabled="true"
+				doubleClick="editFilter_clickHandler(event)"
+				dataProvider="{appliedFiltersCollection}"
+				change="list_changeHandler(event)"
+				keyUp="list_keyUpHandler(event)"
+				dragComplete="list_dragCompleteHandler(event)"
+				horizontalScrollPolicy="off"
+				>
+		</s:List>
+	</s:VGroup>
+	
+	<s:BorderContainer width="100%" borderWeight="0" borderVisible="false" bottom="0">
+		<s:layout>
+			<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingBottom="6" paddingTop="4"/>
+		</s:layout>
+		
+		<s:HGroup width="100%"
+				 height="24"
+				 minHeight="24"
+				 verticalAlign="middle"
+				 >
+			
+			<c:BeveledImageButton id="refreshIcon" 
+					 source="{Radii8LibraryAssets.refresh}" 
+					 toolTip="Refresh"
+					 click="refreshIcon_clickHandler(event)"/>
+			
+			<s:Spacer width="100%"/>
+			
+			<c:BeveledImageButton id="editFilterIcon" 
+								  source="{Radii8LibraryAssets.edit}"
+								  toolTip="Edit Filter"
+								  click="editFilter_clickHandler(event)"
+								  />
+			
+			<s:Button id="removeFilterIcon" 
+						   label="-" 
+						   toolTip="Remove Filter"
+						   click="removeFilter_clickHandler(event)"
+						   />
+			
+			<s:Button id="addFilterIcon" 
+						   label="+" 
+						   toolTip="Add Filter"
+						   click="addFilter_clickHandler(event)"
+						   />
+		</s:HGroup>
+	</s:BorderContainer>
+	
+	
+	<c:LabelButton id="addFilterLabel" 
+				   text="No filters applied"
+				   color="#888888" 
+				   verticalAlign="middle" 
+				   textAlign="center"
+				   backgroundAlpha="0.1"
+				   visible="{appliedFiltersCollection.length==0}" 
+				   includeInLayout="{appliedFiltersCollection.length==0}"
+				   width="100%"
+				   height="100%"
+				   top="0"
+				   bottom="40"
+				   />
+</s:Group>

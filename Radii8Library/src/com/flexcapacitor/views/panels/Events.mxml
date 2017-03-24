@@ -48,7 +48,7 @@
 			public var describedTypeXML:XML;
 			
 			
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				if (!showHeader) {

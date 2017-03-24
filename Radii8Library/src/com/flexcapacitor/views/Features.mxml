@@ -62,7 +62,7 @@
 			private var radiate:Radiate = Radiate.instance;
 			
 
-			public function activate():void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.instance;
 				
 				if (radiate.isUserLoggedIn) {
