@@ -477,6 +477,14 @@ package com.flexcapacitor.utils {
 					//handledChildNodes.push(MXMLDocumentConstants.STROKE_NS);
 				}
 				
+				if (childNodeNames.indexOf(MXMLDocumentConstants.MASK)!=-1 || 
+					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.MASK_NS)!=-1) {
+					setMaskData(componentInstance, valuesObject, iDocument);
+					handledChildNodes.push(MXMLDocumentConstants.MASK);
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.MASK];
+					//handledChildNodes.push(MXMLDocumentConstants.STROKE_NS);
+				}
+				
 				// import TextFlow content
 				if (childNodeNames.indexOf(MXMLDocumentConstants.CONTENT)!=-1 || 
 					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.CONTENT_NS)!=-1) {
@@ -533,7 +541,22 @@ package com.flexcapacitor.utils {
 						}
 					}
 					else {
-						Radiate.addElement(componentInstance, parent, valuesObject.properties.concat(valuesObject.childProperties), valuesObject.styles.concat(valuesObject.childStyles), valuesObject.events.concat(valuesObject.childEvents), valuesObject.values, null, AddItems.LAST, null, parentPosition);
+						Radiate.addElement(componentInstance, 
+											parent, 
+											valuesObject.properties.concat(valuesObject.childProperties), 
+											valuesObject.styles.concat(valuesObject.childStyles), 
+											valuesObject.events.concat(valuesObject.childEvents), 
+											valuesObject.values, 
+											null, 
+											AddItems.LAST, 
+											null, 
+											parentPosition,
+											null,
+											false,
+											false,
+											null,
+											true,
+											setPrimitivesDefaults);
 					}
 				}
 				else if (valuesObject.propertiesStylesEvents && valuesObject.propertiesStylesEvents.length) {
@@ -542,7 +565,7 @@ package com.flexcapacitor.utils {
 				
 				Radiate.removeExplictSizeOnComponent(componentInstance, node, componentDefinition, false);
 				
-				Radiate.updateComponentAfterAdd(iDocument, componentInstance, false, makeInteractive);
+				Radiate.updateComponentAfterAdd(iDocument, componentInstance, false, makeInteractive, setPrimitivesDefaults);
 				
 				//Radiate.makeInteractive(componentInstance, makeInteractive);
 				
@@ -1485,8 +1508,13 @@ public static function myErrorHandler(p:Property, value:Object):void
 				fillString = valuesObject.childNodeValues[MXMLDocumentConstants.FILL];
 				
 				// if not found it may be using an alternate namespace
-				if (fillString==null) {
+				if (fillString==null || fillString=="") {
 					fillString = valuesObject.childNodeValues[MXMLDocumentConstants.FILL_NS];
+				}
+				
+				// if not found it may be bc xml quirks
+				if (fillString==null || fillString=="") {
+					fillString = valuesObject.qualifiedChildNodeValues[MXMLDocumentConstants.FILL];
 				}
 				
 				fillXML = new XML(fillString);
@@ -1531,15 +1559,25 @@ public static function myErrorHandler(p:Property, value:Object):void
 			var entriesXML:XMLList;
 			var entryXML:XML;
 			var entry:GradientEntry;
-			var qname:QName = new QName(MXMLDocumentConstants.sparkNamespaceURI, MXMLDocumentConstants.GRADIENT_ENTRY);
+			var sparkQName:QName;
+			var fxgQName:QName;
+			var numberOfEntries:int;
+			
+			sparkQName = new QName(MXMLDocumentConstants.sparkNamespaceURI, MXMLDocumentConstants.GRADIENT_ENTRY);
+			fxgQName = new QName(MXMLDocumentConstants.fxgNamespaceURI, MXMLDocumentConstants.GRADIENT_ENTRY);
 			
 			linearGradient = new LinearGradient();
 			entriesXML = fillXML.descendants(MXMLDocumentConstants.GRADIENT_ENTRY);
 			
 			if (entriesXML.length()==0) {
-				entriesXML = fillXML.descendants(qname);
+				entriesXML = fillXML.descendants(sparkQName);
+				
+				if (entriesXML.length()==0) {
+					entriesXML = fillXML.descendants(fxgQName);
+				}
 			}
 			
+			numberOfEntries = entriesXML.length();
 			entries = [];
 			
 			if (XMLUtils.hasAttribute(fillXML, "interpolationMethod")) {
@@ -1566,7 +1604,7 @@ public static function myErrorHandler(p:Property, value:Object):void
 				linearGradient.y = fillXML.@y; 
 			}
 			
-			for (var i:int = 0; i < entriesXML.length(); i++)  {
+			for (var i:int = 0; i < numberOfEntries; i++)  {
 				entryXML = entriesXML[i];
 				
 				entry = getGradientEntry(entryXML);
@@ -1655,6 +1693,20 @@ public static function myErrorHandler(p:Property, value:Object):void
 			}
 			
 			return bitmapFill;
+		}
+		
+		/**
+		 * Convert mask XML into actual instance and set the value object to it
+		 * */
+		public function setMaskData(componentInstance:Object, valuesObject:ValuesObject, document:IDocument):void {
+			var childNodeString:String = valuesObject.childNodeValues[MXMLDocumentConstants.MASK];
+			var childNode:XML = new XML(childNodeString);
+			var mask:Object;
+			
+			mask = createChildFromNode(childNode, componentInstance, document, 0, null, -1, false);
+			
+			valuesObject.values[MXMLDocumentConstants.MASK] = mask;
+			
 		}
 		
 	}

@@ -55,7 +55,7 @@
 				}
 				
 				if (fillList.dataProvider==null) {
-					fillList.dataProvider = new ArrayCollection(fillTypes.slice(0,2));
+					fillList.dataProvider = new ArrayCollection(fillTypes.slice(0, 3));
 				}
 				
 				update();
@@ -118,17 +118,18 @@
 			protected function group1_showHandler(event:FlexEvent):void {
 				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
 				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
-				var length:int = labels.length;
+				var numberOfLabels:int = labels.length;
+				var numberOfGroups:int = hgroups.length;
 				var gap:int = getStyle("gap");
 				var labelWidth:int = getStyle("labelWidth");
 				
-				for (var i:int;i<length;i++) {
+				for (var i:int;i<numberOfLabels;i++) {
 					labels[i].minWidth = labelWidth;
 				}
 				
-				length = hgroups.length;
+				numberOfGroups = hgroups.length;
 				
-				for (var j:int;j<length;j++) {
+				for (var j:int;j<numberOfGroups;j++) {
 					hgroups[j].gap = gap;
 				}
 			}
@@ -155,7 +156,7 @@
 				}
 				
 				// linear gradient fill
-				var colorStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(linearGradient, "color");
+				//var colorStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(linearGradient, "color");
 				var alphaStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(linearGradient, "alpha");
 				var interpolationStyle:AccessorMetaData = ClassUtils.getMetaDataOfProperty(linearGradient, "interpolationMethod");
 				var matrixStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(linearGradient, "matrix");
@@ -164,8 +165,8 @@
 				var xStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(linearGradient, "x");
 				var yStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(linearGradient, "y");
 				
-				colorRenderer.data 			= colorStyle;
-				alphaRenderer.data 			= alphaStyle;
+				//colorRenderer.data 			= colorStyle;
+				//alphaRenderer.data 			= alphaStyle;
 				interpolationRenderer.data 	= interpolationStyle;
 				matrixRenderer.data 		= matrixStyle;
 				rotationRenderer.data 		= rotationStyle;
@@ -262,10 +263,10 @@
 	
 	<s:states>
 		<s:State name="none"/>
-		<s:State name="SolidColor"/>
-		<s:State name="LinearGradient"/>
-		<s:State name="RadialGradient"/>
-		<s:State name="BitmapFill"/>
+		<s:State name="SolidColor" enterState="group1_showHandler(event)"/>
+		<s:State name="LinearGradient" enterState="group1_showHandler(event)"/>
+		<s:State name="RadialGradient" enterState="group1_showHandler(event)"/>
+		<s:State name="BitmapFill" enterState="group1_showHandler(event)"/>
 	</s:states>
 	
 	<s:layout>
@@ -280,14 +281,14 @@
 	</s:HGroup>
 	
 	<!-- SOLID COLOR -->
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColor">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColor" itemCreationPolicy="immediate">
 		<s:Label text="Fill Color" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:ColorPickerRenderer id="colorRenderer" height="24" includeCopyIcon="false"
 									   returnType="hexidecimalPrefix"
 									   subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColor">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColor" itemCreationPolicy="immediate">
 		<s:Label text="Alpha" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="alphaRenderer" 
 								  snapInterval="0" 
@@ -299,54 +300,56 @@
 	</s:HGroup>
 	
 	<!-- Linear gradient -->
-	
-	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient" itemCreationPolicy="immediate">
 		<s:Label text="Interpolation" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="interpolationRenderer" height="24" 
 									minWidth="180" width="100%"
+									defaultValue="rgb"
 									subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient" itemCreationPolicy="immediate">
 		<s:Label text="Rotation" styleName="inspectablePanelLabel" showTruncationTip="true"/>
-		<renderers:NumberRenderer id="rotationRenderer" height="24"
-										subPropertyName="fill"/>
+		<renderers:NumberRenderer id="rotationRenderer" height="24" defaultValue="0"
+								  stepSize="1" 
+								  snapInterval="0" 
+								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient" itemCreationPolicy="immediate">
 		<s:Label text="Spread Method" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="spreadMethodRenderer" height="24" 
-										subPropertyName="fill"/>
+										subPropertyName="fill" defaultValue="pad"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Matrix" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:TextRenderer id="matrixRenderer" height="24"
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Fill Mode" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="fillModeRenderer" height="24" 
 										minWidth="180" width="100%"
 										subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+	<!-- BITMAP FILL -->
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Smooth" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:BooleanRenderer id="smoothRenderer" height="24"
 								   subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Source" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:TextRenderer id="sourceRenderer" height="24" width="100%"
 								subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill">
-		<s:Label text="X" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill" itemCreationPolicy="immediate">
+		<s:Label text="X" toolTip="The distance by which to translate each point along the x axis" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="xRenderer" 
 								  height="24" 
 								  stepSize="1" 
@@ -354,8 +357,8 @@
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill">
-		<s:Label text="Y" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill" itemCreationPolicy="immediate">
+		<s:Label text="Y" toolTip="The distance by which to translate each point along the y axis" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="yRenderer" 
 								  height="24" 
 								  stepSize="1" 
@@ -363,25 +366,29 @@
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
-		<s:Label text="Scale X" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill" itemCreationPolicy="immediate">
+		<s:Label text="Scale X" 
+				 toolTip.LinearGradient="The horizontal scale of the gradient transform, which defines the width of the (unrotated) gradient" 
+				 styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="scaleXRenderer" 
 								  height="24" 
 								  stepSize="1" 
 								  snapInterval="0"
+								  defaultValue="1"
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
-		<s:Label text="Scale Y" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill" itemCreationPolicy="immediate">
+		<s:Label text="Scale Y" toolTip="" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="scaleYRenderer" 
 								  height="24" 
 								  stepSize="1" 
 								  snapInterval="0"
+								  defaultValue="1"
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Transform X" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="transformXRenderer" 
 								  height="24" 
@@ -390,7 +397,7 @@
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Transform Y" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="transformYRenderer" 
 								  height="24" 

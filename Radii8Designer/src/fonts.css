@@ -52,7 +52,7 @@
    fontWeight: normal;
    unicodeRange: U+0020-007E;
 }
- 
+
 @font-face {
    src: url("/assets/fonts/Arial Italic.ttf");
    fontFamily: Arial;
@@ -61,7 +61,7 @@
    fontWeight: normal;
    unicodeRange: U+0020-007E;
 }
- 
+
 @font-face {
    src: url("/assets/fonts/Arial Bold.ttf");
    fontFamily: Arial;
@@ -70,7 +70,7 @@
    fontWeight: bold;
    unicodeRange: U+0020-007E;
 }
- 
+
 @font-face {
    src: url("/assets/fonts/Arial Bold Italic.ttf");
    fontFamily: Arial;

@@ -48,7 +48,9 @@
 				var historyEventItems:Array;
 				var message:String = "";
 				var change:PropertyChanges;
-				var excludes:Array = ["password", "credentials", "textFlow", "dataProvider"];
+				var excludes:Array = ["password", "credentials", "textFlow", "dataProvider","mask"];
+				
+				return;
 				
 				if (data) {
 					historyItem = data as HistoryEventData;

@@ -9,7 +9,7 @@
 		 
 		 width="220" 
 		 height="100%"
-		 implements="com.flexcapacitor.views.IInspector" 
+		 implements="com.flexcapacitor.views.IInspector" xmlns:panels="com.flexcapacitor.views.panels.*" 
 		 >
 	
 	<!-- 
@@ -60,14 +60,15 @@
 			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.ClassUtils;
-			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.supportClasses.LayersDataDescriptor;
 			
 			import mx.collections.ArrayCollection;
-			import mx.collections.ArrayList;
 			import mx.core.DragSource;
 			import mx.core.IUIComponent;
+			import mx.core.IVisualElement;
+			import mx.core.IVisualElementContainer;
 			import mx.core.mx_internal;
 			import mx.events.DragEvent;
 			import mx.events.ListEvent;
@@ -76,6 +77,8 @@
 			import mx.states.AddItems;
 			
 			import spark.components.Application;
+			import spark.components.supportClasses.DisplayLayer;
+			import spark.events.PopUpEvent;
 			import spark.layouts.BasicLayout;
 			
 			private var rootDisplayObject:DisplayObject;
@@ -254,6 +257,7 @@
 				// update alpha
 				updateAlphaProperty();
 				updateLockedProperty();
+				updateMaskedProperty();
 				
 			}
 			
@@ -690,7 +694,11 @@
 					}
 				}
 				
-				doThingsLater.play();
+				var refreshesTreeLater:Boolean;
+				
+				if (refreshesTreeLater) {
+					Radiate.callAfter(30, activate);
+				}
 				
 			}
 			
@@ -755,6 +763,12 @@
 				var iDocument:IDocument = radiate.selectedDocument;
 				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 				lockedItem.selected = componentDescription ? componentDescription.locked : false;
+			}
+			
+			public function updateMaskedProperty():void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
+				maskItem.selected = componentDescription ? componentDescription.getIsMask() : null;
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
@@ -914,11 +928,99 @@
 				Radiate.showFiltersPanel();
 			}
 			
+			protected function maskItem_clickHandler(event:MouseEvent):void {
+				var iDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
+				if (componentDescription==null) return;
+				var parentComponentDescription:ComponentDescription = componentDescription.parent;
+				var parentInstance:Object = parentComponentDescription ? parentComponentDescription.instance : null;
+				var mask:Object;
+				var elementContainer:IVisualElementContainer;
+				
+				if (target == iDocument.instance) {
+					maskItem.selected = false;
+					return;
+				}
+				
+				if (target && target.owner == iDocument.instance) {
+					maskItem.selected = false;
+					return;
+				}
+				
+				if (parentInstance && "mask" in parentInstance) {
+					mask = parentInstance.mask;
+					
+					// if target is currently a mask then turn it off
+					if (mask==target) {
+						var selectedIndex:int = componentListTree.selectedIndex;
+						var index:int = componentListTree.selectedIndex;
+						// could be a better way to do this
+						elementContainer = mask.parent as IVisualElementContainer;
+						
+						if (elementContainer==null) {
+							maskItem.selected = false;
+							return;
+						}
+						
+						index = elementContainer.getElementIndex(mask as IVisualElement);
+						elementContainer.removeElement(mask as IVisualElement);
+						
+						if ("overlay" in parentInstance && parentInstance.overlay && DisplayLayer(parentInstance.overlay).numDisplayObjects==0) {
+							// add it to get past a bug when _objects is null
+							//DisplayLayer(parentInstance.overlay).addDisplayObject(mask as DisplayObject);
+						}
+						
+						Radiate.clearProperty(parentInstance, "mask");
+						
+						elementContainer.addElementAt(mask as IVisualElement, index);
+						//ArrayCollection(componentListTree.dataProvider).itemUpdated(parentComponentDescription);
+						//ArrayCollection(componentListTree.dataProvider).refresh();
+						iDocument.updateComponentTree();
+						updateComponentDisplayList();
+						componentListTree.selectedIndex = selectedIndex;
+						componentDescription = iDocument ? iDocument.getItemDescription(target) : null;
+					}
+					else if (mask==null) {
+						Radiate.setProperty(parentInstance, "mask", target);
+					}
+					
+					componentDescription.isMask = componentDescription.getIsMask();
+				}
+				
+			}
+			
+			
+			public const MASK:String = "mask";
+			protected function maskTypesCallout_closeHandler(event:PopUpEvent):void {
+				var maskTypeObject:Object = event.data;
+				var componentDefinition:ComponentDefinition;
+				var target:Object = radiate.target;
+				var currentMaskType:String;
+				var selectedMaskType:String;
+				var componentTreeCollection:ArrayCollection;
+				var selectedItem:ComponentDescription;
+				
+				selectedItem = componentListTree.selectedItem as ComponentDescription;
+				
+				if (maskTypeObject && target && MASK in target) {
+					selectedMaskType = String(maskTypeObject.name).toLowerCase();
+					currentMaskType = target.maskType;
+					
+					if (currentMaskType!=selectedMaskType) {
+						Radiate.setProperty(target, "maskType", selectedMaskType);
+						
+						componentTreeCollection = componentListTree.dataProvider as ArrayCollection;
+						componentTreeCollection.itemUpdated(selectedItem);
+					}
+				}
+			}
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
 		<core:CallMethod id="doThingsLater" method="activate" startDelay="50"/>
+		
+		<panels:MaskTypeCallout id="maskTypesCallout" close="maskTypesCallout_closeHandler(event)"/>
 	</fx:Declarations>
 	
 	
@@ -942,7 +1044,7 @@
 							  toolTip="Expand All Layers"
 							  click="expandAllNodes_clickHandler(event)"
 							  />
-	</s:HGroup>  
+	</s:HGroup>
 	
 	<c:HorizontalLine  />
 	
@@ -983,17 +1085,19 @@
 	</s:Scroller>
 	
 	
+	<c:HorizontalLine  />
+	
 	<s:HGroup id="controlsGroup" width="100%"
 			 height="32"
 			 minHeight="28"
 			 verticalAlign="middle"
 			 paddingRight="8"
 			 paddingLeft="2"
-			 paddingBottom="8"
+			 paddingBottom="10"
 			 paddingTop="8"
 			 fontSize="10"
 			 >
-		<views:BlendMode id="blendModeGroup" minWidth="100" toolTip="Blend mode"/>
+		<views:BlendMode id="blendModeGroup" minWidth="78" toolTip="Blend mode"/>
 		<renderers:NumberRenderer id="alphaRenderer" 
 								  width="54" 
 								  showClearButton="false" 
@@ -1009,6 +1113,15 @@
 							  includeInLayout="true"
 							  visible="true"
 							  />
+		<c:BeveledImageToggleButton id="maskItem" 
+									source="{Radii8LibraryAssets.mask}"
+									toolTip="Mask selection"
+									click="maskItem_clickHandler(event)"
+									label="Mask"
+									width="20"
+									height="15"
+									showBackgroundWhenSelected="true"
+									/>
 		<c:BeveledImageToggleButton id="lockedItem" 
 									source="{Radii8LibraryAssets.locked}"
 									toolTip="Lock position and prevent selection"

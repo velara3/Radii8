@@ -357,6 +357,10 @@ package com.flexcapacitor.utils {
 		}
 		
 		public static var testSomething:Boolean;
+		/**
+		 * Helps highlights items that are locked
+		 * */
+		public var layoutDebugHelper:LayoutDebugHelper;
 		
 		/**
 		 * Start dragging
@@ -411,6 +415,13 @@ package com.flexcapacitor.utils {
 				selectionGroup.mouseEnabled = false;
 				selectionGroup.mouseChildren = false;
 			}
+			
+			// hide any locked outline 
+			if (layoutDebugHelper==null) {
+				layoutDebugHelper = LayoutDebugHelper.getInstance();
+			}
+			
+			layoutDebugHelper.clear();
 			
 			// show selection / bounding box 
 			if (showSelectionBox) {

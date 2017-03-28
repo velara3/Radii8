@@ -194,7 +194,7 @@
 	
 	<s:states>
 		<s:State name="none"/>
-		<s:State name="SolidColorStroke"/>
+		<s:State name="SolidColorStroke" enterState="group1_showHandler(event)"/>
 	</s:states>
 	
 	<s:layout>
@@ -206,14 +206,14 @@
 		<s:DropDownList id="strokeList" height="24" minWidth="100" change="strokeList_changeHandler(event)"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke" itemCreationPolicy="immediate">
 		<s:Label text="Stroke Color" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:ColorPickerRenderer id="colorRenderer" height="24" includeCopyIcon="false"
 									   returnType="hexidecimalPrefix"
 									   subPropertyName="stroke"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke" itemCreationPolicy="immediate">
 		<s:Label text="Weight" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="weightRenderer" 
 								  height="24" 
@@ -223,7 +223,7 @@
 								  subPropertyName="stroke"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke" itemCreationPolicy="immediate">
 		<s:Label text="Alpha" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="alphaRenderer" 
 								  snapInterval="0" 
@@ -235,7 +235,7 @@
 								  subPropertyName="stroke"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke" itemCreationPolicy="immediate">
 		<s:Label text="Caps" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="capsRenderer" height="24" 
 									minWidth="180" width="100%"
@@ -243,14 +243,14 @@
 									subPropertyName="stroke"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke" itemCreationPolicy="immediate">
 		<s:Label text="Joints" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="jointsRenderer" height="24"
 										defaultValue="round"
 										subPropertyName="stroke"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke" itemCreationPolicy="immediate">
 		<s:Label text="Miter Limit" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="miterLimitRenderer" 
 								  height="24"
@@ -260,13 +260,13 @@
 								  subPropertyName="stroke"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke" itemCreationPolicy="immediate">
 		<s:Label text="Pixel Hinting" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:BooleanRenderer id="pixelHintingRenderer" height="24"
 								   subPropertyName="stroke"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="SolidColorStroke" itemCreationPolicy="immediate">
 		<s:Label text="Scale Mode" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="scaleModeRenderer" height="24"
 										defaultValue="normal"

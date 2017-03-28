@@ -28,6 +28,7 @@ package {
 	import spark.components.ToggleButton;
 	import spark.primitives.BitmapImage;
 	import spark.primitives.Ellipse;
+	import spark.primitives.Graphic;
 	import spark.primitives.Line;
 	import spark.primitives.Path;
 	import spark.primitives.Rect;
@@ -357,5 +358,6 @@ package {
 		public static var radialGradientFill:RadialGradient;
 		public static var solidColorStroke:SolidColorStroke;
 		public static var radialGradientStroke:RadialGradientStroke;
+		public static var graphic:Graphic;
 	}
 }

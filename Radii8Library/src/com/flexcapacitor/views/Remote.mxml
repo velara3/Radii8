@@ -723,6 +723,7 @@
 						<s:HGroup width="100%" verticalAlign="baseline" paddingTop="4" paddingRight="8" paddingLeft="8">
 							<c:BeveledImageButton id="selectedTargetIcon"
 												  minWidth="18"
+												  clearOnLoad="false"
 												  ioError="iconImage_ioErrorHandler(event)"
 												  click="selectedTargetIcon_clickHandler(event)"/>
 							<s:ButtonBar id="propertiesOptionsButtonBar" 

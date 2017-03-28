@@ -3,12 +3,13 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*"
 		 xmlns:local="*"
 		 
 		 show="group1_showHandler(event)"
 		 creationComplete="group1_showHandler(event)"
+		 styleName="inspectablePanel" 
 		 implements="com.flexcapacitor.views.IInspector" 
-		 styleName="inspectablePanel"
 		 >
 
 	<fx:Script>
@@ -99,7 +100,64 @@
 				for (var j:int;j<length;j++) {
 					hgroups[j].gap = gap;
 				}
+				
+				blurSelectedRenderer.booleanEnabledRadioButton.selected = true;
 			}
+			
+			protected function blurSelectedRenderer_changeHandler(event:Event):void {
+				var blurX:Number;
+				var blurY:Number;
+				var selected:Boolean;
+				var value:Number;
+				
+				selected = getBlurSelected();
+				
+				if (selected) {
+					blurX = blurXRenderer.numericStepper.value;
+					blurY = blurYRenderer.numericStepper.value;
+					value = Math.max(blurX, blurY);
+					
+					if (value>0) {
+						blurXRenderer.numericStepper.value = value;
+						blurYRenderer.numericStepper.value = value;
+						blurXRenderer.setTargetValue();
+						blurYRenderer.setTargetValue();
+					}
+				}
+			}
+			
+			protected function blurXRenderer_changeHandler(event:Event):void {
+				var blurX:Number;
+				var selected:Boolean;
+				var value:Number;
+				
+				selected = getBlurSelected();
+				
+				if (selected) {
+					blurX = blurXRenderer.numericStepper.value;
+					blurYRenderer.numericStepper.value = blurX;
+					blurYRenderer.setTargetValue();
+				}
+			}
+			
+			protected function blurYRenderer_changeHandler(event:Event):void {
+				var blurY:Number;
+				var selected:Boolean;
+				var value:Number;
+				
+				selected = getBlurSelected();
+				
+				if (selected) {
+					blurY = blurYRenderer.numericStepper.value;
+					blurXRenderer.numericStepper.value = blurY;
+					blurXRenderer.setTargetValue();
+				}
+			}
+			
+			private function getBlurSelected():Boolean {
+				return blurSelectedRenderer.booleanGroup.selectedValue=="True";
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -108,13 +166,18 @@
 	</fx:Declarations>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Blur" toolTip="Update the horizontal and vertical blur at the same time. " styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="blurSelectedRenderer" height="24" change="blurSelectedRenderer_changeHandler(event)"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Blur X" toolTip="The amount of horizontal blur. Valid values are 0 to 255." styleName="inspectablePanelLabel" />
-		<renderers:NumberRenderer id="blurXRenderer" height="24" stepSize="1" defaultValue="4"/>
+		<renderers:NumberRenderer id="blurXRenderer" height="24" stepSize="1" defaultValue="4" change="blurXRenderer_changeHandler(event)"/>
 	</s:HGroup>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Blur Y" toolTip="The amount of vertical blur. Valid values are 0 to 255." styleName="inspectablePanelLabel" />
-		<renderers:NumberRenderer id="blurYRenderer" height="24" stepSize="1" defaultValue="4"/>
+		<renderers:NumberRenderer id="blurYRenderer" height="24" stepSize="1" defaultValue="4" change="blurYRenderer_changeHandler(event)"/>
 	</s:HGroup>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >
@@ -129,7 +192,7 @@
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Strength" toolTip="The strength of the imprint or spread. " styleName="inspectablePanelLabel" />
-		<renderers:NumberRenderer id="strengthRenderer" height="24" stepSize="1" defaultValue="1"/>
+		<renderers:NumberRenderer id="strengthRenderer" height="24" stepSize=".1" defaultValue="1"/>
 	</s:HGroup>
 	
 </s:VGroup>

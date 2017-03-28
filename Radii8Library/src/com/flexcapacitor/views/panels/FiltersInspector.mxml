@@ -84,7 +84,7 @@
 			}
 			
 			private function updateFiltersCollection(select:Boolean = false):void {
-				if (target && FILTERS in target) {
+				if (target && FILTERS in target && target.filters!=null) {
 					appliedFiltersCollection.source = target.filters;
 				}
 				else {
@@ -130,7 +130,8 @@
 					
 					
 					if (existingFilters.length==0) {
-						Radiate.clearProperty(target, FILTERS);
+						// we need an empty array for graphic elements
+						Radiate.clearProperty(target, FILTERS, []);
 					}
 					else {
 						Radiate.setProperty(target, FILTERS, existingFilters);

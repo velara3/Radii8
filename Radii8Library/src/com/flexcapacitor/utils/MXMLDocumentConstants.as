@@ -15,6 +15,7 @@ package com.flexcapacitor.utils {
 		public static var svgNamespacePrefix:String 	= "svg";
 		public static var xlinkNamespacePrefix:String 	= "xlink";
 		public static var tlfNamespacePrefix:String 	= "flow";
+		public static var fxgNamespacePrefix:String 	= "fxg";
 		
 		public static var fcNamespaceURI:String 		= "library://ns.flexcapacitor.com/flex";
 		public static var fxNamespaceURI:String 		= "http://ns.adobe.com/mxml/2009";
@@ -24,12 +25,14 @@ package com.flexcapacitor.utils {
 		public static var svgNamespaceURI:String 		= "http://www.w3.org/2000/svg";
 		public static var xlinkNamespaceURI:String 		= "http://www.w3.org/1999/xlink";
 		public static var tlfNamespaceURI:String 		= "http://ns.adobe.com/textLayout/2008";
+		public static var fxgNamespaceURI:String 		= "http://ns.adobe.com/fxg/2008";
 		
 		public static const LAYOUT:String 				= "layout";
 		public static const CONTENT:String 				= "content";
 		public static const TEXT_FLOW:String 			= "textFlow";
 		public static const FILL:String 				= "fill";
 		public static const STROKE:String 				= "stroke";
+		public static const MASK:String 				= "mask";
 		public static const DATA_PROVIDER:String 		= "dataProvider";
 		public static const FILTERS:String 				= "filters";
 		public static const BITMAP_DATA:String 			= "bitmapData";
@@ -73,6 +76,8 @@ package com.flexcapacitor.utils {
 		public static var CONVERT_TO_IMAGE_NS:String 	= fcNamespaceURI + "::" + CONVERT_TO_IMAGE;
 		public static var CREATE_BACKGROUND_SNAPSHOT_NS:String = fcNamespaceURI + "::" + CREATE_BACKGROUND_SNAPSHOT;
 		
+		public static var MASK_NS:String 				= fxgNamespaceURI + "::" + MASK;
+		
 		public static const X:String 				= "x";
 		public static const Y:String 				= "y";
 		public static const WIDTH:String 			= "width";
@@ -101,6 +106,8 @@ package com.flexcapacitor.utils {
 		
 		public static var tlfNamespace:Namespace 	= new Namespace(tlfNamespacePrefix, tlfNamespaceURI);
 		public static var sparkNamespace:Namespace 	= new Namespace(sparkNamespacePrefix, sparkNamespaceURI);
+		public static var fxgNamespace:Namespace 	= new Namespace(fxgNamespacePrefix, fxgNamespaceURI);
+		public static var fcNamespace:Namespace 	= new Namespace(sparkNamespacePrefix, sparkNamespaceURI);
 		
 		/**
 		 * This is the standard XML declaration at the beginning of every XML document
@@ -174,6 +181,7 @@ package com.flexcapacitor.utils {
 				_namespaces[svgNamespacePrefix] 	= svgNamespaceURI;
 				_namespaces[xlinkNamespacePrefix] 	= xlinkNamespaceURI;
 				_namespaces[tlfNamespacePrefix] 	= tlfNamespaceURI;
+				_namespaces[fxgNamespacePrefix] 	= fxgNamespaceURI;
 			}
 			
 			return _namespaces;

@@ -37,6 +37,7 @@
 		<![CDATA[
 			import com.earthbrowser.ebutils.MacMouseWheelHandler;
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controls.AceEditor;
 			import com.flexcapacitor.events.HTMLDragEvent;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.skins.CallOutSkin;
@@ -44,6 +45,7 @@
 			import com.flexcapacitor.utils.DocumentTranscoder;
 			import com.flexcapacitor.utils.HTMLDragManager;
 			import com.flexcapacitor.utils.PopUpOverlayManager;
+			import com.google.code.flexiframe.IFrame;
 			
 			import mx.events.FlexEvent;
 			
@@ -115,6 +117,8 @@
 				Security.allowDomain("*");
 				Security.allowInsecureDomain("*");
 				Security.disableAVM1Loading = true;
+				var overlayTypes:Array = [IFrame, AceEditor];
+				new PopUpOverlayManager(null, overlayTypes);
 				MacMouseWheelHandler.init(systemManager.stage);
 				//stage.quality = StageQuality.HIGH_16X16_LINEAR;
 			}
@@ -133,7 +137,7 @@
 				var type:String = event.type;
 				if (type==HTMLDragManager.DRAG_ENTER) {
 					mainView.dropImagesLocation.visible = true;
-					PopUpOverlayManager.getInstance().hideAllOverlays();
+					PopUpOverlayManager.instance.hideAllOverlays();
 				}
 				else if (type==HTMLDragManager.DRAG_EXIT) {
 					mainView.dropImagesLocation.visible = false;
@@ -142,15 +146,17 @@
 			
 			public function dragDropHandler(event:HTMLDragEvent):void {
 				var selectedDocument:IDocument = radiate.selectedDocument;
-				PopUpOverlayManager.getInstance().showAllOverlays();
+				PopUpOverlayManager.instance.showAllOverlays();
 				mainView.dropImagesLocation.visible = false;
-				Radiate.info("Opening image. Hold on...");
+				Radiate.info("Opening... Hold on...");
 				Radiate.callAfter(500, openDraggedItem, event);
 			}
 			
 			public function openDraggedItem(event:HTMLDragEvent):void {
 				radiate.dropItemWeb(event);
 			}
+			
+			
 		]]>
 	</fx:Script>
 	
@@ -206,6 +212,7 @@
 	<fx:Declarations>
 		<ebutils:MacMouseWheelHandler />
 		<utils:SecureRedirect />
+		<utils:HTMLKeyboardHandler />
 		<utils:HTMLDragManager dragDrop="dragDropHandler(event)"
 							   dragEnter="dragHandler(event)"
 							   dragExit="dragHandler(event)"/>
@@ -216,7 +223,7 @@
 							 showStyleInheritanceInformation="false"
 							 showAllStyleDeclarations="false"
 							 showColorUnderMouse="false"
-							 enabled="true"
+							 enabled="false"
 							 />
 	</fx:Declarations>
 

@@ -269,7 +269,7 @@
 				var item:XML;
 				var styleNotDefined:Boolean;
 				var styleIsColor:Boolean;
-				
+				var describedType:XML;
 				
 				// TODO: not use xml - use json version
 				if (target != null) {

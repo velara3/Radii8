@@ -1,69 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
+<controls:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:controls="com.flexcapacitor.controls.*" 
+		 
+		 hideOnMouseDownOutside="true"
 		 creationComplete="callout1_creationCompleteHandler(event)"
 		 horizontalPosition="middle"
-		 verticalPosition="before">
+		 verticalPosition="before"
+		 open="callout1_openHandler(event)">
 	
 	<fx:Script>
 		<![CDATA[
 			import mx.collections.ArrayCollection;
 			import mx.events.FlexEvent;
-			import mx.events.FlexMouseEvent;
 			import mx.events.ResizeEvent;
 			
-			/**
-			 * Hides the callout when the mouse clicked outside of the editor 
-			 * and outside of the rich editable text component.
-			 * */
-			public var hideOnMouseDownOutside:Boolean = true;
+			import spark.events.PopUpEvent;
+
 
 			[Bindable]
 			public var filtersCollection:ArrayCollection = new ArrayCollection();
-			
-			/**
-			 * This component shows the List in a call out.
-			 * 
-			 * To Use 
-			 * 1. Create an instance of this component in MXML declarations or in AS3
-			 * 2. Call the open method  
-			 * 3. Call the close method to hide the callout
-			 * */
-			override public function open(owner:DisplayObjectContainer, modal:Boolean = false):void {
-				super.open(owner, modal);
-				
-				
-				if (hideOnMouseDownOutside && !hasEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE)) {
-					addEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE, mouseDownOutsideHandler, false, 0, true);
-				}
-				else if (!hideOnMouseDownOutside) {
-					removeEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE, mouseDownOutsideHandler);
-				}
-				
-				owner.addEventListener(Event.RESIZE, list_resizeHandler, false, 0, true);
-				
-			}
-			
-			public function mouseDownOutsideHandler(event:MouseEvent):void {
-				var focusedComponent:Object = focusManager.getFocus();
-				var relatedObject:Object = event.relatedObject;
-				var isRelatedObjectRelated:Boolean;
-				
-				isRelatedObjectRelated = owner.contains(relatedObject as DisplayObject);
-				
-				//trace(' focusedComponent: ' + focusedComponent);
-				//trace(' relatedObject: ' + relatedObject);
-				//trace(' is related: ' + isRelatedObjectRelated);
-				
-				if (focusedComponent!=owner || 
-					(relatedObject!=owner && !isRelatedObjectRelated)) {
-					close(false);
-				}
-				
-			}
-			
 			
 			protected function list_resizeHandler(event:ResizeEvent):void {
 				updatePopUpPosition();
@@ -87,11 +44,6 @@
 			
 			protected function filtersList_clickHandler(event:MouseEvent):void {
 				var selectedItem:Object = filtersList.selectedItem;
-				
-			}
-			
-			protected function filtersList_doubleClickHandler(event:MouseEvent):void
-			{
 				close(false, filtersList.selectedItem);
 			}
 			
@@ -101,21 +53,12 @@
 			override public function close(commit:Boolean=false, data:*=null):void {
 				var selectedItem:Object = filtersList.selectedItem;
 				
-				if (hideOnMouseDownOutside) {
-					removeEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE, mouseDownOutsideHandler);
-				}
-				
 				super.close(commit, selectedItem);
 			}
 			
-			protected function cancelButton_clickHandler(event:MouseEvent):void
+			protected function callout1_openHandler(event:PopUpEvent):void
 			{
-				close(false);
-			}
-			
-			protected function okButton_clickHandler(event:MouseEvent):void
-			{
-				close(false, filtersList.selectedItem);
+				filtersList.selectedIndex = -1;
 			}
 			
 		]]>
@@ -124,18 +67,9 @@
 	<s:List id="filtersList" 
 			width="100%" 
 			height="100%"
-			top="0"
-			bottom="30"
 			labelField="name" 
+			borderVisible="false"
 			click="filtersList_clickHandler(event)"
-			doubleClickEnabled="true"
-			doubleClick="filtersList_doubleClickHandler(event)"
 			resize="list_resizeHandler(event)" />
 	
-	
-	<s:HGroup bottom="0" paddingLeft="8" paddingRight="8" paddingBottom="4">
-		<s:Button label="Cancel" click="cancelButton_clickHandler(event)"/>
-		<s:Spacer width="100%"/>
-		<s:Button label="OK" click="okButton_clickHandler(event)"/>
-	</s:HGroup>
-</s:Callout>
+</controls:Callout>

@@ -7,7 +7,7 @@
 					  autoDrawBackground="false"
 					  doubleClickEnabled="true"
 					  doubleClick="itemrenderer1_doubleClickHandler(event)"
-					  creationComplete="creationCompleteHandler(event)"
+					  creationComplete="creationCompleteHandler(event)" xmlns:controls="com.flexcapacitor.controls.*"
 					  >
 	<fx:Script>
 		<![CDATA[
@@ -15,6 +15,8 @@
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			import com.flexcapacitor.views.LayersInspector;
+			import com.flexcapacitor.views.panels.MaskTypeCallout;
 			
 			import mx.controls.Tree;
 			import mx.core.IVisualElement;
@@ -41,6 +43,7 @@ changed to
 				
 				var componentDescription:ComponentDescription = value as ComponentDescription;
 				var path:String;
+				var instance:Object = componentDescription ? componentDescription.instance : null;
 				
 				if (componentDescription) {
 					if (componentDescription.icon) {
@@ -91,9 +94,33 @@ changed to
 					// show if item is locked
 					if (componentDescription.locked) {
 						lockedGroup.visible = true;
+						lockedGroup.includeInLayout = true;
 					}
 					else {
 						lockedGroup.visible = false;
+						lockedGroup.includeInLayout = false;
+					}
+					
+					// show if item is masked
+					if (componentDescription.hasMask || 
+						(instance && "mask" in instance && instance.mask)) {
+						hasMaskGroup.visible = true;
+						hasMaskGroup.includeInLayout = true;
+						maskTypeLabel.text = getMaskType(instance);
+					}
+					else {
+						hasMaskGroup.visible = false;
+						hasMaskGroup.includeInLayout = false;
+					}
+					
+					// show if item is mask
+					if (componentDescription.isMask || componentDescription.getIsMask()) {
+						isMaskGroup.visible = true;
+						isMaskGroup.includeInLayout = true;
+					}
+					else {
+						isMaskGroup.visible = false;
+						isMaskGroup.includeInLayout = false;
 					}
 				}
 				
@@ -112,6 +139,24 @@ changed to
 					_visibleButtonGroup.visible = true;
 					hgroup.left = 0;
 				}
+			}
+			
+			protected function getMaskType(object:Object):String {
+				var maskTypeString:String = "";
+				if (object && "maskType" in object) {
+					maskTypeString = object.maskType;
+					
+					if (maskTypeString=="clip") {
+						return "C";
+					}
+					else if (maskTypeString=="alpha") {
+						return "A";
+					}
+					else if (maskTypeString=="luminosity") {
+						return "L";
+					}
+				}
+				return "";
 			}
 			
 			protected function iconImage_ioErrorHandler(event:IOErrorEvent):void {
@@ -251,6 +296,11 @@ changed to
 				return super.getCurrentRendererState();
 			}
 			
+			protected function changeMaskType_clickHandler(event:MouseEvent):void
+			{
+				MaskTypeCallout(Object(owner).document.maskTypesCallout).open(event.currentTarget as DisplayObjectContainer);
+			}
+			
 			private var previousDragEnabled:Boolean;
 			private var previousKeyboardHandlingEnabled:Boolean;
 		]]>
@@ -284,6 +334,7 @@ changed to
 				 buttonMode="true">
 			<!--- visible image -->
 			<s:BitmapImage id="visibleGroup" 
+						   clearOnLoad="false"
 						   contentLoader="{Radiate.contentCache}"
 						   source="{Radii8LibraryAssets.visible}" 
 						   left="0"
@@ -333,6 +384,7 @@ changed to
 						   visible="{treeListData.hasChildren}" />
 		</s:Group>
 		<s:BitmapImage id="iconImage" 
+					   clearOnLoad="false"
 					   source="{treeListData.icon}" 
 					   contentLoader="{Radiate.contentCache}"
 					   ioError="iconImage_ioErrorHandler(event)"
@@ -355,9 +407,27 @@ changed to
 					 width="100%" height="100%"/>
 		
 		<s:Spacer width="100%"/>
+		<!--- has mask -->
+		<s:HGroup id="hasMaskGroup" visible="false" 
+				  toolTip="Has mask applied">
+			<controls:LabelButton id="maskTypeLabel" text="C" 
+					 height="100%"
+					 fontSize="10"
+					 paddingTop="2"
+					 verticalAlign="middle"
+					 toolTip="Mask Type"
+					 click="changeMaskType_clickHandler(event)"/>
+			<s:BitmapImage source="{Radii8LibraryAssets.hasMask}" 
+						   />
+		</s:HGroup>
+		
+		<!--- is mask -->
+		<s:Group id="isMaskGroup" visible="false" toolTip="Is used as mask">
+			<s:BitmapImage source="{Radii8LibraryAssets.isMask}" />
+		</s:Group>
 		
 		<!--- lock -->
-		<s:Group id="lockedGroup" visible="false" >
+		<s:Group id="lockedGroup" visible="false" toolTip="Is locked">
 			<s:BitmapImage source="{Radii8LibraryAssets.locked}" />
 		</s:Group>
 		

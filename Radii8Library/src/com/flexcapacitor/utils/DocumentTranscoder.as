@@ -129,6 +129,11 @@ package com.flexcapacitor.utils {
 		public var makeInteractive:Boolean;
 		
 		/**
+		 * When importing primitives add default fill and stroke
+		 * */
+		public var setPrimitivesDefaults:Boolean;
+		
+		/**
 		 * Export child descriptors. Somewhat temporary global property you would set to false
 		 * for a single selected component.  
 		 * */

@@ -157,5 +157,10 @@ package com.flexcapacitor.model
 		 * If true do not process child nodes
 		 * */
 		public var skipChildNodes:Boolean;
+		
+		/**
+		 * Qualified node values. Used when XML returns simple content on single item nodes
+		 * */
+		public var qualifiedChildNodeValues:Object;
 	}
 }

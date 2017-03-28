@@ -7,6 +7,11 @@
 
 		clipAndEnableScrolling="true">
 	
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+	
+	
 	<fx:Script>
 		<![CDATA[
 			
@@ -86,6 +91,22 @@
 				}
 			}
 
+			protected function numericStepper_changeHandler(event:Event):void {
+				setTargetValue();
+				
+				if (hasEventListener(Event.CHANGE)) {
+					dispatchEvent(event);
+				}
+			}
+			
+			protected function clearStyleButton_clickHandler(event:MouseEvent):void {
+				setTargetValue(true);
+				
+				if (hasEventListener(Event.CHANGE)) {
+					dispatchEvent(event);
+				}				
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -100,10 +121,10 @@
 					  snapInterval="0"
 					  valueFormatFunction="formatNumericStepper"
 					  valueParseFunction="valueParseFunctionNew"
-					  change="setTargetValue()"/>
+					  change="numericStepper_changeHandler(event)"/>
 	<s:Button id="clearStyleButton" 
 			  skinClass="com.flexcapacitor.skins.ClearButtonSkin"
-			  click="setTargetValue(true)"
+			  click="clearStyleButton_clickHandler(event)"
 			  right="0" 
 			  verticalCenter="0"
 			  />

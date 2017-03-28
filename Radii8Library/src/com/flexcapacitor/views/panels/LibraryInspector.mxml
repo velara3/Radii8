@@ -569,6 +569,10 @@
 				var hasFileListFormat:Boolean;
 				var hasFilePromiseListFormat:Boolean;
 				var isSelf:Boolean;
+				var quality:String;
+				var fileName:String;
+				
+				quality = StageQuality.BEST;
 				
 				if (event.dragInitiator) {
 					isSelf = mainLibraryContainer.contains(event.dragInitiator as DisplayObject);
@@ -587,11 +591,11 @@
 					if (initiator) {
 						
 						if (snapshotTest) {
-							snapshot = DisplayObjectUtils.getSnapshotWithQuality(initiator);
+							snapshot = DisplayObjectUtils.getSnapshotWithQuality(initiator, quality);
 						}
 						else {
 							//if (initiator is IUIComponent) {
-								snapshot = DisplayObjectUtils.getUIComponentBitmapData(initiator);
+								snapshot = DisplayObjectUtils.getUIComponentBitmapData(initiator, quality);
 							//}
 							//else if (initiator is GraphicElement) {
 							//	snapshot = DisplayObjectUtils.getGraphicElementBitmapData(initiator as IGraphicElement);
@@ -601,7 +605,8 @@
 						if (snapshot is BitmapData) {
 							imageData.bitmapData = snapshot as BitmapData;
 							imageData.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(snapshot as BitmapData);
-							imageData.name = ClassUtils.getIdentifierNameOrClass(initiator) + ".png";
+							fileName = ClassUtils.getIdentifierNameOrClass(initiator);
+							imageData.name = fileName + ".png";
 							imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
 							imageData.file = null;
 							

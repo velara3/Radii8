@@ -108,7 +108,7 @@
 	
 	<s:HGroup width="100%" verticalAlign="baseline">
 		<s:Label text="Data" styleName="inspectablePanelLabel"/>
-		<renderers:TextRenderer id="pathDataRenderer" height="24" width="100%"/>
+		<renderers:TextRenderer id="pathDataRenderer" height="46" width="100%"/>
 	</s:HGroup>
 	
 	<s:HGroup width="100%" verticalAlign="baseline">

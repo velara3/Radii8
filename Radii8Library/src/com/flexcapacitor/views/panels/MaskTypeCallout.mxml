@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*" 
+		 
+		 hideOnMouseDownOutside="true"
+		 creationComplete="callout1_creationCompleteHandler(event)"
+		 horizontalPosition="middle"
+		 verticalPosition="before"
+		 contentCornerRadius="0"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+
+			[Bindable]
+			public var maskTypesCollection:ArrayCollection = new ArrayCollection();
+			
+			override public function open(owner:DisplayObjectContainer, modal:Boolean = false):void {
+				super.open(owner, modal);
+				
+				maskTypesList.selectedIndex = -1;
+				
+			}
+			
+			protected function list_resizeHandler(event:ResizeEvent):void {
+				updatePopUpPosition();
+			}
+			
+			protected function callout1_creationCompleteHandler(event:FlexEvent):void {
+				var filtersArray:Array = [];
+				filtersArray.push({name:"Alpha"});
+				filtersArray.push({name:"Clip"});
+				filtersArray.push({name:"Luminosity"});
+				maskTypesCollection.source = filtersArray;
+				maskTypesList.dataProvider = maskTypesCollection;
+			}
+			
+			protected function maskTypesList_clickHandler(event:MouseEvent):void {
+				var selectedItem:Object = maskTypesList.selectedItem;
+				
+				close(false, selectedItem);
+			}
+			
+			
+			/**
+			 *  @private
+			 */
+			override public function close(commit:Boolean=false, data:*=null):void {
+				var selectedItem:Object = maskTypesList.selectedItem;
+				
+				super.close(commit, selectedItem);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:List id="maskTypesList" 
+			width="90" 
+			height="70"
+			minHeight="1"
+			labelField="name" 
+			borderVisible="false"
+			click="maskTypesList_clickHandler(event)"
+			resize="list_resizeHandler(event)" />
+	
+</c:Callout>

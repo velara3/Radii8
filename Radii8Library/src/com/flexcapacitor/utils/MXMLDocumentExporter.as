@@ -14,6 +14,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
 	
 	import flash.display.BitmapData;
+	import flash.display.DisplayObject;
 	
 	import mx.graphics.IFill;
 	import mx.graphics.IStroke;
@@ -254,6 +255,7 @@ package com.flexcapacitor.utils {
 			var componentChild:ComponentDescription;
 			var componentDefinition:ComponentDefinition;
 			var componentInstance:Object;
+			var maskComponentDescription:ComponentDescription;
 			var childNodes:Array = [];
 			var className:String;
 			var output:String = "";
@@ -268,6 +270,7 @@ package com.flexcapacitor.utils {
 			var strokedElement:StrokedElement;
 			var filledElement:FilledElement;
 			var stroke:IStroke;
+			var mask:DisplayObject;
 			var fill:IFill;
 			var qname:QName;
 			var value:*;
@@ -426,6 +429,23 @@ package com.flexcapacitor.utils {
 						xmlValue = xmlEncoder.encodeValue(stroke, qname);
 						xmlValue = XMLUtils.addNamespace(xmlValue, MXMLDocumentConstants.sparkNamespacePrefix, MXMLDocumentConstants.sparkNamespaceURI);
 						childNodesValues[propertyName] = xmlValue;
+					}
+					
+					else if (propertyName==MXMLDocumentConstants.MASK) {
+						mask = value as DisplayObject;
+						qname = new QName(MXMLDocumentConstants.sparkNamespace, ClassUtils.getClassName(mask));
+						maskComponentDescription = componentDescription.getTargetInTree(mask, true);
+						if (maskComponentDescription) {
+							var tempSourceData:SourceData = export(iDocument, maskComponentDescription);
+							var tempSource:String = XMLUtils.addNamespacesToXMLString(tempSourceData.source, {s:MXMLDocumentConstants.sparkNamespace, fc:MXMLDocumentConstants.fcNamespace});
+							xmlValue = new XML(tempSource);
+							//xmlValue = xmlEncoder.encodeValue(mask, qname);
+							//xmlValue = XMLUtils.addNamespace(xmlValue, MXMLDocumentConstants.sparkNamespacePrefix, MXMLDocumentConstants.sparkNamespaceURI);
+							childNodesValues[propertyName] = xmlValue;
+						}
+						else {
+							
+						}
 					}
 					
 					continue;

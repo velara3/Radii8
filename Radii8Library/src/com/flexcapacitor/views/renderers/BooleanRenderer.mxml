@@ -9,16 +9,36 @@
 		minWidth="132"
 		clipAndEnableScrolling="true">
 	
+	<fx:Metadata>
+		[Event(name="change", type="flash.events.Event")]
+	</fx:Metadata>
+	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.skins.ClearButtonSkin;
 			
 			
+			protected function booleanGroup_changeHandler(event:Event):void {
+				setTargetValue();
+				
+				if (hasEventListener(Event.CHANGE)) {
+					dispatchEvent(event);
+				}
+			}
+			
+			protected function clearStyleButton_clickHandler(event:MouseEvent):void {
+				setTargetValue(true);
+				
+				if (hasEventListener(Event.CHANGE)) {
+					dispatchEvent(event);
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
-		<s:RadioButtonGroup id="booleanGroup" change="setTargetValue()"/>
+		<s:RadioButtonGroup id="booleanGroup" change="booleanGroup_changeHandler(event)"/>
 	</fx:Declarations>
 	
 	<r:layout>
@@ -38,6 +58,6 @@
 	-->
 	<s:Button id="clearStyleButton" 
 			  skinClass="com.flexcapacitor.skins.ClearButtonSkin"
-			  click="setTargetValue(true)"
+			  click="clearStyleButton_clickHandler(event)"
 			  />
 </r:PropertiesGridRendererBase>

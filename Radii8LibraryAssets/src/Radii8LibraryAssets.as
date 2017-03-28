@@ -109,6 +109,9 @@ package {
 		[Embed(source="assets/icons/general/group_selection.png")]
 		public static const groupSelection:Class;
 		
+		[Embed(source="assets/icons/general/hasMask.png")]
+		public static const hasMask:Class;
+		
 		[Embed(source="assets/icons/general/home.png")]
 		public static const home:Class;
 		
@@ -135,6 +138,9 @@ package {
 		
 		[Embed(source="assets/icons/general/info.png")]
 		public static const info:Class;
+		
+		[Embed(source="assets/icons/general/isMask.png")]
+		public static const isMask:Class;
 		
 		[Embed(source="assets/icons/general/item_renderer.png")]
 		public static const itemRenderer:Class;
@@ -165,6 +171,9 @@ package {
 		
 		[Embed(source="assets/icons/general/markup.png")]
 		public static const markup:Class;
+		
+		[Embed(source="assets/icons/general/mask.png")]
+		public static const mask:Class;
 		
 		[Embed(source="assets/icons/general/mxmlDocument.png")]
 		public static const mxmlDocument:Class;

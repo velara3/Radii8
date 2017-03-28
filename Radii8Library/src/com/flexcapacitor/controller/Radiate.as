@@ -93,6 +93,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.utils.MXMLDocumentImporter;
 	import com.flexcapacitor.utils.PersistentStorage;
 	import com.flexcapacitor.utils.PopUpOverlayManager;
+	import com.flexcapacitor.utils.SVGUtils;
 	import com.flexcapacitor.utils.SharedObjectUtils;
 	import com.flexcapacitor.utils.TextFieldHTMLExporter2;
 	import com.flexcapacitor.utils.TypeUtils;
@@ -2087,6 +2088,8 @@ package com.flexcapacitor.controller {
 			else {
 				SCREENSHOT_PATH = defaultScreenshotPath;
 			}
+			
+			contentCache.maxCacheEntries = 200;
 			
 			CodeManager.setTranscodersVersion(instance.versionNumber);
 			CodeManager.setComponentDefinitions(componentDefinitions.source);
@@ -5705,27 +5708,88 @@ package com.flexcapacitor.controller {
 			}
 		}
 		
-		public function dropItemWeb(event:HTMLDragEvent, createNewDocument:Boolean = false):void {
+		public function dropItemWeb(object:Object, createNewDocument:Boolean = false, createDocumentIfNeeded:Boolean = true):void {
 			var fileData:FileData;
-			var bitmapData:BitmapData;
+			var byteArray:ByteArray;
 			var destination:Object;
 			var htmlDragData:HTMLDragData;
+			var extension:String;
+			var hasPSD:Boolean;
+			var hasMXML:Boolean;
+			var hasFXG:Boolean;
+			var hasSVG:Boolean;
+			var hasImage:Boolean;
+			var fileSafeList:Array;
+			var value:String;
 			
-			htmlDragData = event.data as HTMLDragData;
+			fileSafeList = [];
+			
+			if (object is HTMLDragEvent) {
+				htmlDragData = object.data as HTMLDragData;
+			}
+			else if (object is HTMLDragData) {
+				htmlDragData = object as HTMLDragData;
+			}
 			
 			if (htmlDragData.mimeType==HTMLDragManager.INVALID) {
-				Radiate.warn("The dropped file was not valid.");
+				warn("The dropped file was not valid.");
 				return;
 			}
 			
 			fileData = new FileData(htmlDragData);
 			mainView.dropImagesLocation.visible = false;
+			extension = htmlDragData.getExtension();
 			
-			if (selectedDocument==null || createNewDocument) {
-				createNewDocumentAndSwitchToDesignView(fileData, selectedProject);
+			if (extension=="png" || 
+				extension=="jpg" || 
+				extension=="jpeg" || 
+				extension=="gif") {
+				hasImage = true;
+				fileSafeList.push(fileData);
+			}
+			else if (extension=="psd") {
+				fileSafeList.push(fileData);
+				hasPSD = true;
+			}
+			else if (extension=="mxml") {
+				fileSafeList.push(fileData);
+				hasMXML = true;
+			}
+			else if (extension=="fxg") {
+				fileSafeList.push(fileData);
+				hasFXG = true;
+			}
+			else if (extension=="svg") {
+				fileSafeList.push(fileData);
+				hasSVG = true;
 			}
 			else {
-				addBase64ImageDataToDocument(selectedDocument, fileData, destination, fileData.name);
+				//path_txt = "Not a recognised file format";  
+			}
+			
+			if (createNewDocument || (createDocumentIfNeeded && selectedDocument==null)) {
+				createNewDocumentAndSwitchToDesignView(htmlDragData, selectedProject);
+			}
+			else {
+				if (hasImage) {
+					addBase64ImageDataToDocument(selectedDocument, fileData, destination, fileData.name);
+				}
+				else if (hasPSD) {
+					byteArray = htmlDragData.getByteArray();
+					addPSDToDocument(byteArray, selectedDocument);
+				}
+				else if (hasMXML) {
+					value = htmlDragData.getString();
+					importMXMLDocument(selectedProject, selectedDocument, value, selectedDocument.instance);
+				}
+				else if (hasFXG) {
+					value = htmlDragData.getString();
+					importFXGDocument(selectedProject, selectedDocument, value, selectedDocument.instance);
+				}
+				else if (hasSVG) {
+					value = htmlDragData.getString();
+					importSVGDocument(selectedProject, selectedDocument, value, selectedDocument.instance);
+				}
 			}
 		}
 		
@@ -5932,10 +5996,14 @@ package com.flexcapacitor.controller {
 			var urlFormatData:Object;
 			var path_txt:String;
 			var extension:String;
-			var fileSafeList:Array = [];
+			var fileSafeList:Array;
 			var hasPSD:Boolean;
 			var hasMXML:Boolean;
+			var hasFXG:Boolean;
+			var hasSVG:Boolean;
 			var extensionIndex:int;
+			
+			fileSafeList = [];
 			
 			// only accepting image files at this time
 			for each (var file:FileReference in fileList) {
@@ -5961,6 +6029,14 @@ package com.flexcapacitor.controller {
 					fileSafeList.push(file);
 					hasMXML = true;
 				}
+				else if (extension=="fxg") {
+					fileSafeList.push(file);
+					hasFXG = true;
+				}
+				else if (extension=="svg") {
+					fileSafeList.push(file);
+					hasSVG = true;
+				}
 				else {
 					path_txt = "Not a recognised file format";  
 				}
@@ -5984,7 +6060,7 @@ package com.flexcapacitor.controller {
 			fileLoader.removeReferences(true);
 			
 			
-			if (!hasPSD && !hasMXML) {
+			if (!hasPSD && !hasMXML && !hasSVG && !hasFXG) {
 				fileLoader.loadIntoLoader = true;
 			}
 			else {
@@ -6001,6 +6077,14 @@ package com.flexcapacitor.controller {
 					warn("You cannot load a MXML file and other files at the same time. Select one or the other");
 					return;
 				}
+				else if (fileSafeList.length>1 && hasFXG) {
+					warn("You cannot load a FXG file and other files at the same time. Select one or the other");
+					return;
+				}
+				else if (fileSafeList.length>1 && hasSVG) {
+					warn("You cannot load a SVG file and other files at the same time. Select one or the other");
+					return;
+				}
 				
 				if (hasPSD) {
 					loadingPSD = true;
@@ -6008,6 +6092,14 @@ package com.flexcapacitor.controller {
 				else 
 				if (hasMXML) {
 					loadingMXML = true;
+				}
+				else 
+				if (hasFXG) {
+					loadingFXG = true;
+				}
+				else 
+				if (hasSVG) {
+					loadingSVG = true;
 				}
 				else {
 					loadingPSD = false;
@@ -6028,13 +6120,17 @@ package com.flexcapacitor.controller {
 		public var dropFileLoader:LoadFile;
 		public var documentThatPasteOfFilesToBeLoadedOccured:IDocument;
 		public var loadingMXML:Boolean;
+		public var loadingFXG:Boolean;
+		public var loadingSVG:Boolean;
 		public var loadingPSD:Boolean;
 		
 		protected function setupPasteFileLoader():void {
 			if (pasteFileLoader==null) {
 				pasteFileLoader = new LoadFile();
-				pasteFileLoader.addEventListener(LoadFile.LOADER_COMPLETE, pasteFileCompleteHandler, false, 0, true);
-				pasteFileLoader.addEventListener(LoadFile.COMPLETE, pasteFileCompleteHandler, false, 0, true);
+				//pasteFileLoader.addEventListener(LoadFile.LOADER_COMPLETE, pasteFileCompleteHandler, false, 0, true);
+				//pasteFileLoader.addEventListener(LoadFile.COMPLETE, pasteFileCompleteHandler, false, 0, true);
+				pasteFileLoader.addEventListener(LoadFile.LOADER_COMPLETE, dropFileCompleteHandler, false, 0, true);
+				pasteFileLoader.addEventListener(LoadFile.COMPLETE, dropFileCompleteHandler, false, 0, true);
 			}
 		}
 		
@@ -6048,7 +6144,7 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Occurs after files pasted into the document are fully loaded 
-		 * */
+		 
 		protected function pasteFileCompleteHandler(event:Event):void {
 			var resized:Boolean;
 			var imageData:ImageData;
@@ -6075,7 +6171,6 @@ package com.flexcapacitor.controller {
 				loadingMXML = false;
 				info("Importing MXML");
 				callAfter(250, importMXMLDocument, selectedProject, documentThatPasteOfFilesToBeLoadedOccured, documentThatPasteOfFilesToBeLoadedOccured.instance, pasteFileLoader.dataAsString);
-				//addPSDToDocument(pasteFileLoader.data, documentThatPasteOfFilesToBeLoadedOccured);
 				return;
 			}
 			
@@ -6100,7 +6195,7 @@ package com.flexcapacitor.controller {
 			setTarget(lastCreatedComponent);
 			
 			dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
-		}
+		}* */
 		
 		/**
 		 * Occurs after files are dropped into the document are fully loaded 
@@ -6130,8 +6225,21 @@ package com.flexcapacitor.controller {
 			if (loadingMXML) {
 				loadingMXML = false;
 				info("Importing MXML");
-				callAfter(250, importMXMLDocument, selectedProject, documentThatPasteOfFilesToBeLoadedOccured, documentThatPasteOfFilesToBeLoadedOccured.instance, dropFileLoader.dataAsString);
-				//addPSDToDocument(pasteFileLoader.data, documentThatPasteOfFilesToBeLoadedOccured);
+				callAfter(250, importMXMLDocument, selectedProject, documentThatPasteOfFilesToBeLoadedOccured, dropFileLoader.dataAsString, documentThatPasteOfFilesToBeLoadedOccured.instance);
+				return;
+			}
+			
+			if (loadingFXG) {
+				loadingFXG = false;
+				info("Importing FXG");
+				callAfter(250, importFXGDocument, selectedProject, documentThatPasteOfFilesToBeLoadedOccured, dropFileLoader.dataAsString, documentThatPasteOfFilesToBeLoadedOccured.instance);
+				return;
+			}
+			
+			if (loadingSVG) {
+				loadingSVG = false;
+				info("Importing SVG");
+				callAfter(250, importSVGDocument, selectedProject, documentThatPasteOfFilesToBeLoadedOccured, dropFileLoader.dataAsString, documentThatPasteOfFilesToBeLoadedOccured.instance);
 				return;
 			}
 			
@@ -6398,24 +6506,27 @@ package com.flexcapacitor.controller {
 		
 		public function documentOpenedHandler(event:RadiateEvent):void {
 			var iDocument:IDocument = event.selectedItem as IDocument;
-			var newFile:Object = fileToBeLoaded;
+			var newFileData:Object = fileToBeLoaded;
 			var fileData:FileData;
 			var destination:Object;
 			
-			if (newFile is FileReference) {
-				if (newFile.exists && newFile.isDirectory==false) {
+			if (newFileData is FileReference) {
+				if (newFileData.exists && newFileData.isDirectory==false) {
 					addEventListener(RadiateEvent.ASSET_LOADED, fileLoadedHandler, false, 0, true);
-					addFileListDataToDocument(iDocument, [newFile]);
+					addFileListDataToDocument(iDocument, [newFileData]);
 				}
 			}
-			else if (newFile is DragEvent) {
-				dropItem(newFile as DragEvent);
+			else if (newFileData is DragEvent) {
+				dropItem(newFileData as DragEvent);
 			}
-			else if (newFile is FileData) {
-				fileData = newFile as FileData;
+			else if (newFileData is HTMLDragData) {
+				dropItemWeb(newFileData, false);
+			}
+			else if (newFileData is FileData) {
+				fileData = newFileData as FileData;
 				addBase64ImageDataToDocument(selectedDocument, fileData, null, fileData.name);
 			}
-			else if (newFile is Array && newFile.length) {
+			else if (newFileData is Array && newFileData.length) {
 				//destination = getDestinationForExternalFileDrop();
 				addFileListDataToDocument(selectedDocument, fileToBeLoaded as Array);
 			}
@@ -6504,6 +6615,7 @@ package com.flexcapacitor.controller {
 			var childEvents:Array;
 			var attributesValueObject:Object;
 			var childNodeValueObject:Object = {};
+			var qualifiedChildNodeValueObject:Object = {};
 			var defaultPropertyObject:Object;
 			var values:Object = {};
 			var valuesObject:ValuesObject;
@@ -6517,6 +6629,7 @@ package com.flexcapacitor.controller {
 			var handledChildNodeNames:Array = [];
 			var elementName:String;
 			var skipChildNodes:Boolean;
+			var simpleContent:Boolean = true;
 			var includeQualifiedNames:Boolean = true;
 			var ignoreWhitespace:Boolean = true;
 			
@@ -6562,7 +6675,8 @@ package com.flexcapacitor.controller {
 			childNodePropertiesStylesEvents = childProperties.concat(childStyles).concat(childEvents);
 			
 			if (childNodePropertiesStylesEvents.length) {
-				childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node, true, true, false);
+				childNodeValueObject 	= XMLUtils.getChildNodesValueObject(node, includeQualifiedNames, simpleContent, false);
+				qualifiedChildNodeValueObject 	= XMLUtils.getChildNodesValueObject(node, includeQualifiedNames, !simpleContent, false);
 				
 				// get concrete values from child node string values
 				childNodeValueObject	= ClassUtils.getTypedStyleValueObject(styleClient, childNodeValueObject, childStyles, failedToImportStyles);
@@ -6634,6 +6748,7 @@ package com.flexcapacitor.controller {
 			valuesObject.childNodeNames 			= childNodeNames;
 			valuesObject.qualifiedChildNodeNames 	= qualifiedChildNodeNames;
 			valuesObject.childNodeValues 			= childNodeValueObject;
+			valuesObject.qualifiedChildNodeValues 	= qualifiedChildNodeValueObject;
 			
 			valuesObject.defaultPropertyObject		= defaultPropertyObject;
 			
@@ -8018,7 +8133,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 										   isArray:Boolean		= false, 
 										   isStyle:Boolean		= false, 
 										   vectorClass:Class	= null,
-										   removeUnchangedValues:Boolean = true):String {
+										   removeUnchangedValues:Boolean = true, 
+										   setPrimitiveDefaults:Boolean = false):String {
 			
 			var visualElement:IVisualElement;
 			var moveItems:AddItems;
@@ -8382,7 +8498,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 										  isArray:Boolean		= false, 
 										  isStyle:Boolean		= false, 
 										  vectorClass:Class		= null,
-										  keepUndefinedValues:Boolean = true):String {
+										  keepUndefinedValues:Boolean = true, 
+										  setPrimitiveDefaults:Boolean = false):String {
 			
 			
 			if (!description) {
@@ -8391,7 +8508,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			var results:String = moveElement(items, destination, properties, styles, events, values, 
 								description, position, relativeTo, index, propertyName, 
-								isArray, isStyle, vectorClass, keepUndefinedValues);
+								isArray, isStyle, vectorClass, keepUndefinedValues, setPrimitiveDefaults);
 			
 			var component:Object;
 			
@@ -8401,8 +8518,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			for (var i:int; i < itemsArray.length; i++) {
 				component = itemsArray[0];
-				
-				updateComponentAfterAdd(instance.selectedDocument, component);
+				// should remove this when we can refactor
+				updateComponentAfterAdd(instance.selectedDocument, component, false, false, setPrimitiveDefaults);
 			}
 			
 			return results;
@@ -8630,6 +8747,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				else if (!basicFonts && editableRichTextEditorBarCallout.editorBar.fontDataProvider ==null) {
 					editableRichTextEditorBarCallout.editorBar.fontDataProvider = new ArrayList(fontsArray);
 				}
+				
+				editableRichTextEditorBarCallout.editorBar.focusOnTextAfterFontChange = false;
+				editableRichTextEditorBarCallout.editorBar.focusOnTextAfterFontSizeChange = false;
 				
 				if (isRichEditor && editableRichTextEditorBarCallout.richEditableText != editableRichTextField) {
 					//testTextArea.heightInLines = NaN;
@@ -8959,6 +9079,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			
+			//editableRichTextEditorBarCallout.editorBar.scaleX = 1;
+			//editableRichTextEditorBarCallout.editorBar.scaleY = 1;
 		}
 		
 		/**
@@ -9325,7 +9447,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * 
 		 * @see #createComponentToAdd()
 		 * */
-		public static function updateComponentAfterAdd(iDocument:IDocument, target:Object, setDefaults:Boolean = false, interactive:Boolean = false):void {
+		public static function updateComponentAfterAdd(iDocument:IDocument, target:Object, setDefaults:Boolean = false, interactive:Boolean = false, setPrimitiveDefaults:Boolean = true):void {
 			var componentDescription:ComponentDescription = iDocument.getItemDescription(target);
 			var componentInstance:Object = componentDescription ? componentDescription.instance : null;
 			
@@ -9361,7 +9483,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 			
 			// add fill and stroke to graphic elements
-			if (componentInstance is GraphicElement) {
+			if (componentInstance is GraphicElement && setPrimitiveDefaults) {
 				var fill:SolidColor;
 				var stroke:SolidColorStroke;
 				var object:Object = {};
@@ -10316,6 +10438,64 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		/**
+		 * Import FXG code
+		 * */
+		public function importFXGDocument(project:IProject, iDocument:IDocument, code:String, container:Object = null, containerIndex:int = -1, name:String = null, options:ImportOptions = null, dispatchEvents:Boolean = true, reportErrors:Boolean = true):SourceData {
+			var result:Object;
+			var newDocument:Boolean;
+			var sourceData:SourceData;
+			
+			if (!iDocument) {
+				iDocument = createDocument(name);
+				newDocument = true;
+				
+				if (project) {
+					addDocument(iDocument, project);
+				}
+			}
+			
+			if (!newDocument) {
+				sourceData = parseSource(iDocument, code, container, containerIndex, options, dispatchEvents, reportErrors);
+				
+				return sourceData;
+			}
+			else {
+				iDocument.originalSource = code;
+				iDocument.source = code;
+				// we load a blank application (swf), once it's loaded, 
+				// in DocumentContainer we call Radiate.parseSource(iDocument);
+				result = openDocument(iDocument, DocumentData.INTERNAL_LOCATION, true, dispatchEvents);
+			}
+			
+			return sourceData;
+		}
+		
+		/**
+		 * Import SVG code
+		 * */
+		public function importSVGDocument(project:IProject, iDocument:IDocument, code:String, container:Object = null, containerIndex:int = -1, name:String = null, options:ImportOptions = null, dispatchEvents:Boolean = true, reportErrors:Boolean = true):SourceData {
+			var result:Object;
+			var newDocument:Boolean;
+			var sourceData:SourceData;
+			var fxgCode:String;
+			
+			try {
+				fxgCode = SVGUtils.convert(code);
+			}
+			catch (error:Error) {
+				warn("Could not import SVG");
+				
+			}
+			
+			if (fxgCode) {
+				sourceData = importFXGDocument(project, iDocument, fxgCode, container, containerIndex, name, options, dispatchEvents, reportErrors);
+			}
+			
+			
+			return sourceData;
+		}
+		
+		/**
 		 * Import MXML code
 		 * */
 		public function importMXMLDocument(project:IProject, iDocument:IDocument, code:String, container:Object = null, containerIndex:int = -1, name:String = null, options:ImportOptions = null, dispatchEvents:Boolean = true, reportErrors:Boolean = true):SourceData {
@@ -10555,7 +10735,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				iframe.setStyle("backgroundColor", "#666666");
 				
 				popUpOverlayManager = PopUpOverlayManager.getInstance();
-				popUpOverlayManager.addPopUpOverlay(iframe);
+				popUpOverlayManager.addOverlay(iframe);
 				
 				navigatorContent.addElement(iframe);
 				documentsPreviewDictionary[iDocument] = iframe;
@@ -10671,7 +10851,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			documentContainer = isPreview ? documentsPreviewDictionary[iDocument] : documentsContainerDictionary[iDocument];
 			
 			if (documentContainer is IFrame) {
-				popUpOverlayManager.removePopUpOverlay(documentContainer as DisplayObject);
+				popUpOverlayManager.removeOverlay(documentContainer as DisplayObject);
 			}
 			
 			if (documentContainer && documentContainer.owner) {
@@ -12277,7 +12457,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 						target = IDocument(target).instance;
 					}
 					//target = DisplayObjectUtils.getAnyTypeBitmapData(IDocument(target).instance);
-					result = DisplayObjectUtils.getSnapshot(target as UIComponent, null, false, true, StageQuality.HIGH_16X16_LINEAR);
+					// we are using StageQuality to BEST since using anything higher shrinks the text (.75 / 1.25) if the font is
+					// not embedded (currently found up to FP 25)
+					result = DisplayObjectUtils.getSnapshot(target as UIComponent, null, false, true, StageQuality.BEST);
 					if (result is Error) {
 						Radiate.warn("An error occurred. " + (result as SecurityError));
 					}
@@ -12287,7 +12469,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				}
 				else {
 					try {
-						bitmapData = DisplayObjectUtils.getAnyTypeBitmapData(target);
+						bitmapData = DisplayObjectUtils.getAnyTypeBitmapData(target, StageQuality.BEST);
 					}
 					catch (errorEvent:ErrorEvent) {
 						error(errorEvent.text, errorEvent);
@@ -14780,11 +14962,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		/**
 		 * Gets a snapshot of document and returns bitmap data
 		 * */
-		public static function getDocumentSnapshot(iDocument:IDocument, scale:Number = 1):BitmapData {
+		public static function getDocumentSnapshot(iDocument:IDocument, scale:Number = 1, quality:String = StageQuality.BEST):BitmapData {
 			var bitmapData:BitmapData;
 			
 			if (iDocument && iDocument.instance) {
-				bitmapData = DisplayObjectUtils.getUIComponentWithQuality(iDocument.instance as UIComponent) as BitmapData;
+				bitmapData = DisplayObjectUtils.getUIComponentWithQuality(iDocument.instance as UIComponent, quality) as BitmapData;
 			}
 			
 			return bitmapData;
@@ -14793,11 +14975,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		/**
 		 * Gets a snapshot of target and returns bitmap data
 		 * */
-		public static function getSnapshot(object:Object, scale:Number = 1):BitmapData {
+		public static function getSnapshot(object:Object, scale:Number = 1, quality:String = StageQuality.BEST):BitmapData {
 			var bitmapData:BitmapData;
 			
 			if (object is IUIComponent) {
-				bitmapData = DisplayObjectUtils.getUIComponentBitmapData(object as IUIComponent);
+				bitmapData = DisplayObjectUtils.getUIComponentBitmapData(object as IUIComponent, quality);
 			}
 			else if (object is IGraphicElement) {
 				bitmapData = DisplayObjectUtils.getGraphicElementBitmapData(object as IGraphicElement);

@@ -5,7 +5,6 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark"
 		 xmlns:local="*"
 		 
-		 width="100%" 
 		 creationComplete="group1_creationCompleteHandler(event)"
 		 >
 	
@@ -279,8 +278,9 @@
 
 	<s:DropDownList id="blendModeCombo"
 					interactionMode="mouse"
-					width="100%"
+					width="78"
 					left="4"
+					horizontalScrollPolicy="off"
 					change="applyPropertiesToTargetHandler(event)"
 					focusOut="applyPropertiesToTargetHandler()"
 					dataProvider="{blendModesCollection}">

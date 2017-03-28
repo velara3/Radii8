@@ -958,10 +958,12 @@ package com.flexcapacitor.tools {
 			var targetsUnderPoint:Array = FlexGlobals.topLevelApplication.getObjectsUnderPoint(point);
 			var componentTree:ComponentDescription;
 			var componentDescription:ComponentDescription;
+			var firstUnlockedComponentDescription:ComponentDescription;
 			var target:Object = event.target;
 			var originalTarget:Object = event.target;
 			var items:Array = [];
 			var targetsLength:int;
+			var targetOrAncestorLocked:Boolean;
 			
 			isMouseDown = true;
 			
@@ -1031,21 +1033,31 @@ package com.flexcapacitor.tools {
 				if (componentDescription && componentDescription.isGraphicElement) {
 					
 				}
+				
 				if (componentDescription) {
-					if (componentDescription.locked==false) {
+					firstUnlockedComponentDescription = componentDescription.getFirstUnlockedTarget();
+					
+					if (firstUnlockedComponentDescription!=null && firstUnlockedComponentDescription == componentDescription) {
 						target = componentDescription.instance;
 						break;
 					}
-					else if (componentDescription.locked==true) {
-						if (target is ILayoutElement) {
+					else if (firstUnlockedComponentDescription!=null && firstUnlockedComponentDescription != componentDescription) {
+						
+						if (componentDescription.instance is ILayoutElement) {
 							
 							if (highlightLockedItems) {
 								//layoutDebugHelper.enable();
-								Radiate.callLater(layoutDebugHelper.addElement, target);
+								Radiate.callLater(layoutDebugHelper.addElement, componentDescription.instance);
 								//layoutDebugHelper.addElement(ILayoutElement(target));
 								//layoutDebugHelper.render();
 							}
 							//layoutDebugHelper.enable();
+						}
+						
+						if (firstUnlockedComponentDescription!=null) {
+							componentDescription = firstUnlockedComponentDescription;
+							target = firstUnlockedComponentDescription.instance;
+							break;
 						}
 						
 						if (target==targetApplication) {
@@ -1427,10 +1439,13 @@ package com.flexcapacitor.tools {
 			if (debug) {
 				log("mouseUpHandler");
 			}
+			
 			var target:Object = event.currentTarget;
 			//var target:Object = event.target;
 			var componentTree:ComponentDescription;
 			var componentDescription:ComponentDescription;
+			var firstUnlockedComponentDescription:ComponentDescription;
+			var actualTarget:GraphicElement;
 			
 			componentTree = radiate.selectedDocument.componentDescription;
 			componentDescription = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
@@ -1460,7 +1475,12 @@ package com.flexcapacitor.tools {
 				//Radiate.info("listener removed");
 			}
 			
-			var actualTarget:GraphicElement;
+			//spark.components.supportClasses.InvalidatingSprite - clicked on graphic element
+			//componentDescription = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
+			if (componentDescription && componentDescription.isGraphicElement) {
+				
+			}
+			
 			if (target is InvalidatingSprite) {
 				actualTarget = currentComponentDescription && currentComponentDescription.instance ? currentComponentDescription.instance as GraphicElement : null;
 				componentDescription = document.getItemDescription(target);
@@ -1473,6 +1493,26 @@ package com.flexcapacitor.tools {
 				}
 			}
 			
+			if (componentDescription) {
+				firstUnlockedComponentDescription = componentDescription.getFirstUnlockedTarget();
+				
+				if (firstUnlockedComponentDescription!=null && firstUnlockedComponentDescription == componentDescription) {
+					target = componentDescription.instance;
+					//break;
+				}
+				else if (firstUnlockedComponentDescription!=null && firstUnlockedComponentDescription != componentDescription) {
+					
+					if (firstUnlockedComponentDescription!=null) {
+						componentDescription = firstUnlockedComponentDescription;
+						target = firstUnlockedComponentDescription.instance;
+						//break;
+					}
+					
+					if (target==targetApplication) {
+						//return;
+					}
+				}
+			}
 			
 			// select only groups or items on the application
 			if (selectGroup) {
@@ -1490,6 +1530,10 @@ package com.flexcapacitor.tools {
 					target = componentDescription.instance;
 				}
 			}
+			
+			target.visible = true;
+			
+			removeTargetListeners(target);
 			
 			//Radiate.info("End Selection Mouse Up");
 			
@@ -1714,8 +1758,9 @@ package com.flexcapacitor.tools {
 		 * Up left right down, etc.
 		 * */
 		protected function keyUpHandler(event:KeyboardEvent):void {
+			var keyCode:uint = event.keyCode;
 			if (debug) {
-				log("Key: " + event.keyCode);
+				log("Key: " + keyCode);
 			}
 			var constant:int = event.shiftKey ? 10 : 1;
 			var index:int;
@@ -1794,7 +1839,7 @@ package com.flexcapacitor.tools {
 			var propertiesObject:Object = {};
 			var numberOfTargets:int = targets.length;
 			
-			if (event.keyCode==Keyboard.LEFT) {
+			if (keyCode==Keyboard.LEFT) {
 				
 				for (;index<numberOfTargets;index++) {
 					element = targets[index];
@@ -1841,7 +1886,7 @@ package com.flexcapacitor.tools {
 				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
-			else if (event.keyCode==Keyboard.RIGHT) {
+			else if (keyCode==Keyboard.RIGHT) {
 				
 				for (;index<numberOfTargets;index++) {
 					element = targets[index];
@@ -1880,7 +1925,7 @@ package com.flexcapacitor.tools {
 				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
-			else if (event.keyCode==Keyboard.UP) {
+			else if (keyCode==Keyboard.UP) {
 				
 				for (;index<numberOfTargets;index++) {
 					element = targets[index];
@@ -1920,7 +1965,7 @@ package com.flexcapacitor.tools {
 				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
-			else if (event.keyCode==Keyboard.DOWN) {
+			else if (keyCode==Keyboard.DOWN) {
 				
 				for (;index<numberOfTargets;index++) {
 					element = targets[index];
@@ -1938,7 +1983,7 @@ package com.flexcapacitor.tools {
 						propertiesObject.bottom = Number(element.bottom) - constant;
 						properties.push(MXMLDocumentConstants.TOP, MXMLDocumentConstants.BOTTOM);
 					}
-					else if (leftValue!=null) {
+					else if (topValue!=null) {
 						propertiesObject.top = Number(element.top) + constant;
 						properties.push(MXMLDocumentConstants.TOP);
 					}

@@ -13,6 +13,7 @@
     	<descendents>
     		<property name="layout"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -21,6 +22,7 @@
     	<descendents>
     		<property name="layout"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -29,6 +31,7 @@
     	<descendents>
     		<property name="layout"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -36,6 +39,7 @@
     	<defaults label="Button"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -44,6 +48,7 @@
     	<descendents>
     		<property name="dataProvider"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -54,6 +59,7 @@
     	<defaults width="78" height="20" label="Checkbox"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -64,6 +70,7 @@
     	<descendents>
     		<property name="dataProvider"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -76,6 +83,7 @@
     	<descendents>
     		<property name="dataProvider"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -84,12 +92,14 @@
     	<descendents>
     		<property name="dataProvider"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
     <component id="DataRenderer" class="spark.components.DataRenderer" include="false">
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -98,6 +108,7 @@
     	<descendents>
     		<property name="dataProvider"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -105,6 +116,7 @@
     	<defaults width="240" height="60"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -112,6 +124,7 @@
     	<defaults percentWidth="100%" height="30"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -119,6 +132,7 @@
     	<defaults percentWidth="100%" height="23"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -126,6 +140,7 @@
     	<defaults width="240" height="160" />
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -133,6 +148,15 @@
     	<defaults width="240" height="160" />
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
+    	</descendents>
+    </component>
+    
+    <component id="Graphic" class="spark.primitives.Graphic">
+    	<defaults minWidth="20" minHeight="20"/>
+    	<descendents>
+    		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -140,6 +164,7 @@
     	<defaults minWidth="20" minHeight="20"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -147,12 +172,14 @@
     	<defaults minHeight="20" verticalAlign="middle" minWidth="20"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
     <component id="HScrollBar" class="spark.components.HScrollBar" include="false">
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -160,6 +187,7 @@
     	<defaults width="166" />
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -167,6 +195,7 @@
     	<defaults width="100" />
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -174,6 +203,7 @@
     	<defaults text="Link"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -181,6 +211,7 @@
     	<defaults source="assets/icons/components/Image.png" scaleMode="stretch" />
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
      
@@ -188,6 +219,7 @@
     	<defaults text="Label"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -195,6 +227,7 @@
     	<defaults label="Link"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -203,12 +236,14 @@
     	<descendents>
     		<property name="dataProvider"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
     <component id="NavigatorContent" class="spark.components.NavigatorContent" include="false">
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -216,6 +251,7 @@
     	<defaults />
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -223,17 +259,21 @@
     	<defaults width="240" height="166"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
 	<component id="PopUpAnchor" class="spark.components.PopUpAnchor" include="false">
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
 	</component>
+	
  	<component id="PopUpPosition" class="spark.components.PopUpPosition" include="false">
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
  	</component>
     
@@ -241,12 +281,14 @@
     	<defaults width="96" height="20" label="Radio Button"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
     <component id="RadioButtonGroup" class="spark.components.RadioButtonGroup" include="false">
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -255,6 +297,7 @@
     	<descendents>
     		<property name="textFlow"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -263,6 +306,7 @@
     	<descendents>
     		<property name="textFlow"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -270,6 +314,7 @@
     	<defaults width="166" height="23"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -277,6 +322,7 @@
     	<defaults width="240" height="166"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -285,6 +331,7 @@
     	<descendents>
     		<property name="dataProvider"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -294,6 +341,7 @@
     	<defaults width="16" height="16"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -301,6 +349,7 @@
     	<defaults width="86" height="20"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -309,6 +358,7 @@
     	<descendents>
     		<property name="dataProvider"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -317,6 +367,7 @@
     	<descendents>
     		<property name="textFlow"/>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -324,6 +375,7 @@
     	<defaults width="120" height="22"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -334,6 +386,7 @@
     	<defaults width="240" height="166"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -341,6 +394,7 @@
     	<defaults width="240" height="166"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -348,6 +402,7 @@
     	<defaults width="76" height="20" label="Toggle"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -355,6 +410,7 @@
     	<defaults height="100" />
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -362,6 +418,7 @@
     	<defaults minWidth="20" minHeight="20"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -369,6 +426,7 @@
     	<defaults width="320" height="240"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -376,12 +434,14 @@
     	<defaults width="320" height="240" autoPlay="false" dropShadowVisible="false"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
     <component id="VScrollBar" class="spark.components.VScrollBar" include="false">
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -389,6 +449,7 @@
     	<defaults width="10" height="166"/>
     	<descendents>
     		<property name="filters"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -399,6 +460,7 @@
     	<descendents>
     		<property name="fill"/>
     		<property name="stroke"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
 
@@ -407,6 +469,7 @@
     	<descendents>
     		<property name="fill"/>
     		<property name="stroke"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
 
@@ -415,6 +478,7 @@
     	<descendents>
     		<property name="fill"/>
     		<property name="stroke"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
 
@@ -422,6 +486,7 @@
     	<defaults width="16" height="16" />
     	<descendents>
     		<property name="stroke"/>
+    		<property name="mask"/>
     	</descendents>
     </component>
     
@@ -447,6 +512,13 @@
     <component id="BitmapFill" name="Bitmap Fill" class="mx.graphics.BitmapFill" include="false">
     	<defaults />
     	<descendents>
+    	</descendents>
+    </component>
+    
+    <component id="Graphic" name="Graphic" class="spark.primitives.Graphic" include="false">
+    	<defaults />
+    	<descendents>
+    		<property name="mask"/>
     	</descendents>
     </component>
 </componentPackage>

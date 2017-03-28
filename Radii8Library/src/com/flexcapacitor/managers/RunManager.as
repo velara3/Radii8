@@ -16,6 +16,7 @@ package com.flexcapacitor.managers {
 	import flash.desktop.Clipboard;
 	import flash.desktop.ClipboardFormats;
 	import flash.display.BitmapData;
+	import flash.display.StageQuality;
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -139,6 +140,7 @@ package com.flexcapacitor.managers {
 			//trace("space button pressed");
 			var imageData:ImageData = documentData as ImageData;
 			var bitmapData:BitmapData;
+			var quality:String = StageQuality.BEST;
 			
 			if (openPopUp==null) {
 				openPopUp = new OpenPopUp();
@@ -166,7 +168,7 @@ package com.flexcapacitor.managers {
 			}
 			// take snapshot of document
 			else if (documentData is IDocument) {
-				bitmapData = Radiate.getDocumentSnapshot(IDocument(documentData));
+				bitmapData = Radiate.getDocumentSnapshot(IDocument(documentData), 1, quality);
 				openPopUp.data = bitmapData;
 			}
 			
