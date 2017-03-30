@@ -72,11 +72,11 @@
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Horizontal Align" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:DropDownListRenderer id="horizontalAlignRenderer" height="24"/>
+		<renderers:DropDownListRenderer id="horizontalAlignRenderer" height="24" defaultValue="left"/>
 	</s:HGroup>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Vertical Align" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:DropDownListRenderer id="verticalAlignRenderer" height="24"/>
+		<renderers:DropDownListRenderer id="verticalAlignRenderer" height="24" defaultValue="middle"/>
 	</s:HGroup>
 </s:Group>

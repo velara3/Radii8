@@ -71,7 +71,7 @@
 			
 			
 			public var relevantProperties:Array = ["lineHeight", "fontFamily", "fontSize", "fontWeight", "fontStyle", 
-				"trackingLeft", "trackingRight", "textDecoration", "color", "textAlign"];
+				"trackingLeft", "trackingRight", "textDecoration", "color", "textAlign", "alignmentBaseline"];
 			
 			public function update():void {
 				var lineHeightStyle:StyleMetaData 		= ClassUtils.getMetaDataOfStyle(target, "lineHeight"); // font line height
@@ -84,6 +84,7 @@
 				var textDecorationStyle:StyleMetaData  	= ClassUtils.getMetaDataOfStyle(target, "textDecoration"); // underline 
 				var colorStyle:StyleMetaData 			= ClassUtils.getMetaDataOfStyle(target, "color"); // color
 				var textAlignStyle:StyleMetaData 		= ClassUtils.getMetaDataOfStyle(target, "textAlign"); // textAlign
+				var alignmentBaselineStyle:StyleMetaData = ClassUtils.getMetaDataOfStyle(target, "alignmentBaseline");
 				
 				if (fonts==null) {
 					fonts = FontUtils.getFontInformationDetails(target);
@@ -100,6 +101,7 @@
 				trackingLeftRenderer.data = trackingLeftStyle;
 				trackingRightRenderer.data = trackingRightStyle;
 				textAlignRenderer.data = textAlignStyle;
+				alignmentBaselineRenderer.data = alignmentBaselineStyle;
 			}
 			
 			protected function group1_showHandler(event:FlexEvent):void {
@@ -132,18 +134,22 @@
 									valueIsField="true" fieldIsValue="true"
 									minWidth="180" width="100%"/>
 	</s:HGroup>
+	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Font Size" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="fontSizeRenderer" stepSize="1" snapInterval="0" height="24" width="80" showClearButton="true"/>
 	</s:HGroup>
+	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Font Style" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="fontStyleRenderer" height="24"/>
 	</s:HGroup>
+	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Font Weight" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="fontWeightRenderer" height="24" />
 	</s:HGroup>
+	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Line Height" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="lineHeightRenderer" 
@@ -154,14 +160,17 @@
 								  stepSize="1" 
 								  snapInterval="0"/>
 	</s:HGroup>
+	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Color" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:ColorPickerRenderer id="colorRenderer" height="24" includeCopyIcon="false"/>
 	</s:HGroup>
+	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Text Align" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="textAlignRenderer" height="24" />
 	</s:HGroup>
+	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Tracking Right" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="trackingRightRenderer" height="24" 
@@ -169,10 +178,16 @@
 								  snapInterval="0"
 								  fixedPosition="2"/>
 	</s:HGroup>
+	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Tracking Left" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="trackingLeftRenderer" height="24" 
 								  stepSize=".1" 
 								  snapInterval="0"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Alignment Baseline" styleName="inspectablePanelLabel" showTruncationTip="true" />
+		<renderers:DropDownListRenderer id="alignmentBaselineRenderer" width="175" height="24" defaultValue="useDominantBaseline"/>
 	</s:HGroup>
 </s:Group>

@@ -2099,6 +2099,7 @@ package com.flexcapacitor.controller {
 			DisplayObjectUtils.Base64Encoder2 = Base64;
 			
 			XMLUtils.initialize();
+			SVGUtils.initialize();
 			
 			instance.createOpenImportPopUp();
 			
@@ -10483,7 +10484,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				fxgCode = SVGUtils.convert(code);
 			}
 			catch (error:Error) {
-				warn("Could not import SVG");
+				warn("Could not import SVG. " + error);
 				
 			}
 			

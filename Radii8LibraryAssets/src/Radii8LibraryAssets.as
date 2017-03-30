@@ -64,6 +64,9 @@ package {
 		[Embed(source="assets/icons/general/disconnected.png")]
 		public static const disconnected:Class;
 		
+		[Embed(source="assets/icons/general/dragOutside.png")]
+		public static const dragOutside:Class;
+		
 		[Embed(source="assets/icons/general/document.png")]
 		public static const document:Class;
 		

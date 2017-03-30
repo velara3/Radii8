@@ -8,6 +8,7 @@
 					   xmlns:local="com.flexcapacitor.effects.application.*"
 					   xmlns:status="com.flexcapacitor.effects.status.*"
 					   xmlns:core="com.flexcapacitor.effects.core.*" 
+					   xmlns:utils="com.flexcapacitor.utils.*"
 					   xmlns:local1="*"
 					   
 					   width="100%" 
@@ -23,9 +24,6 @@
 					   applicationComplete="applicationCompleteHandler(event)" 
 					   initialize="initializeHandler(event)" 
 					   invoke="windowedapplication1_invokeHandler(event)"
-					   resizing="windowedapplication1_resizingHandler(event)"
-					   windowResize="windowedapplication1_windowResizeHandler(event)"
-					   enterFrame="windowedapplication1_enterFrameHandler(event)"
 					   >
 
 					   <!---
@@ -859,24 +857,6 @@
 					}
 				}
 				
-				
-				protected function windowedapplication1_resizingHandler(event:NativeWindowBoundsEvent):void
-				{
-					//trace("Resizing");
-				}
-				
-				protected function windowedapplication1_enterFrameHandler(event:Event):void
-				{
-					// TODO Auto-generated method stub
-					//trace(UIComponentGlobals.callLaterSuspendCount);
-					//trace(UIComponentGlobals.callLaterDispatcherCount);
-				}
-				
-				protected function windowedapplication1_windowResizeHandler(event:FlexNativeWindowBoundsEvent):void
-				{
-					//trace("Window resize");
-				}
-				
 				private function startupDesktop():void {
 					var applicationDescriptor:XML;
 					var appNamespace:Namespace;
@@ -950,16 +930,9 @@
 									 error="updateApplication_errorHandler(event)"
 									 firstRun="updateApplication_firstRunHandler(event)"
 									 >
-				<!--<local:firstRunEffect>
-				<status:ShowStatusMessage message="First time run"
-				location="bottom" />
-				</local:firstRunEffect>-->
+
 				<local:updateAvailableEffect>
 					<s:Parallel>
-<!--						<status:ShowStatusMessage message="An update is available" 
-												  location="top" 
-												  matchDurationToTextContent="true"
-												  data="{'Current version: ' + updateApplication.currentVersion + '. Remote version: ' + updateApplication.remoteVersion}"/>-->
 						<core:CallMethod method="orderUpdateWindowToFront"/>
 					</s:Parallel>
 				</local:updateAvailableEffect>
@@ -987,15 +960,14 @@
 				keyEquivalentModifiersFunction="standardOSModifier" 
 				showRoot="false"
 				itemClick="nativeMenuCommand(event)"/>-->
+		<utils:MiniInspector enabled="false"/>
+		
 	</fx:Declarations>
 	
 	<fx:Style source="fonts.css" />
 	<fx:Style source="styles.css" />
 	
-	<!--<mx:HTML width="100%" height="100%" location="app:/"/>-->
-
 	<views:MainView id="mainView" 
 					top="0" right="0" bottom="0" left="0"/>
-	<!--<s:Button label="resize" click="button1_clickHandler(event)"/>-->
 	
 </s:WindowedApplication>

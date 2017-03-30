@@ -184,6 +184,7 @@ package com.flexcapacitor.utils {
 		public var draggedItem:Object;
 		private var topLevelApplication:Application;
 		public var testScaledMovement:Boolean;
+		public var dragOutAllowed:Boolean;
 		
 		public var hiddenItemsDictionary:Dictionary = new Dictionary(true);
 		
@@ -196,7 +197,7 @@ package com.flexcapacitor.utils {
 		 * @param event Mouse event from the mouse down event
 		 * @param draggedItem The item or data to be dragged. If null then this is the dragInitiator.
 		 * */
-		public function listenForDragBehavior(dragInitiator:IVisualElement, document:IDocument, event:MouseEvent, itemToDrag:Object = null):void {
+		public function listenForDragBehavior(dragInitiator:IVisualElement, document:IDocument, event:MouseEvent, itemToDrag:Object = null, dragOutAllowed:Boolean = true):void {
 			this.dragInitiator = dragInitiator;
 			this.targetApplication = Application(document.instance);
 			
@@ -218,6 +219,8 @@ package com.flexcapacitor.utils {
 			else {
 				this.draggedItem = dragInitiator;
 			}
+			
+			this.dragOutAllowed = dragOutAllowed;
 			
 			if (debug) {
 				logTarget(draggedItem, " is dragged item");
@@ -284,6 +287,7 @@ package com.flexcapacitor.utils {
 		 * */
 		private function updateDropTargetLocation(rootDisplayObject:DisplayObject, event:MouseEvent):void {
 			var mousePoint:Point = new Point(event.stageX, event.stageY);
+			//var applicationLocationPoint:Point = DisplayObjectUtils.getDisplayObjectPosition(targetApplication, mousePoint);
 			var applicationLocationPoint:Point = DisplayObject(rootDisplayObject).localToGlobal(new Point());
 			
 			//var point2:Point = new Point(-event.stageX, -event.stageY);
@@ -490,7 +494,7 @@ package com.flexcapacitor.utils {
 			if (testScaledMovement) {
 				snapshot = null;
 			}
-			
+			// check if any component has mask and don't add drop shadow
 			if (addDropShadow && snapshot) {
 				snapshot.filters = [dropShadowFilter];
 			}
@@ -594,7 +598,7 @@ package com.flexcapacitor.utils {
 			}
 			
 			var eventTarget:FlexSprite = FlexSprite(event.target);
-			var description:ComponentDescription;
+			//var description:ComponentDescription;
 			var topLeftEdgePoint:Point;
 			var rectangle:Rectangle;
 			var isHorizontal:Boolean;
@@ -1358,7 +1362,7 @@ package com.flexcapacitor.utils {
 			/*var eventTarget:FlexSprite = FlexSprite(event.target); */
 			var visualElementContainer:IVisualElementContainer;
 			var skinnableContainer:SkinnableContainer;
-			var description:ComponentDescription;
+			var componentDescription:ComponentDescription;
 			var isSkinnableContainer:Boolean;
 			var topLeftEdgePoint:Point;
 			var isApplication:Boolean;
@@ -1377,6 +1381,7 @@ package com.flexcapacitor.utils {
 			var offscreen:Boolean;
 			var replaceTarget:Boolean;
 			var targetToReplace:Object;
+			var allowedParent:Object;
 			
 			dragData = new DragData();
 			
@@ -1400,9 +1405,9 @@ package com.flexcapacitor.utils {
 			// update location properties
 			updateDropTargetLocation(targetApplication, event);
 			
-			/*if (target is mx.containers.GridItem) {
-			trace("break");
-			}*/
+			if (!dragOutAllowed && "owner" in draggedItem && draggedItem.owner) {
+				allowedParent = draggedItem.owner;
+			}
 			
 			////////////////////////////////////////////////////////////
 			// find drop target
@@ -1430,21 +1435,46 @@ package com.flexcapacitor.utils {
 				
 				// as soon as we find a visual element we can find the owner
 				if (target is IVisualElement) {
+					
+					// if dragging over image we can swap out the source if shift key is down
 					if (event.shiftKey && (target is Image || target is ImageSkin)) {
 						replaceTarget = true;
 						if (target is ImageSkin) {
 							target = target.hostComponent;
 						}
-						targetToReplace = target;
-						break;
-					}
-					else {
-						description = DisplayObjectUtils.getVisualElementContainerFromElement(IVisualElement(target), componentTree);
+						
+						// if drag out is not allowed then match only allowed parent
+						if (allowedParent!=null) {
+							if ("owner" in target && target.owner==allowedParent) {
+								targetToReplace = target;
+								break;
+							}
+						}
+						else {
+							targetToReplace = target;
+							break;
+						}
 					}
 					
-					if (description) {
-						target = description.instance;
-						break;
+					componentDescription = DisplayObjectUtils.getVisualElementContainerFromElement(IVisualElement(target), componentTree);
+					
+					
+					if (componentDescription) {
+						target = componentDescription.instance;
+						
+						if (allowedParent!=null) {
+							if ("owner" in target && target.owner==allowedParent) {
+								target = allowedParent;
+								break;
+							}
+							else if (target==targetApplication) {
+								target = allowedParent;
+								break;
+							}
+						}
+						else {
+							break;
+						}
 					}
 				}
 			}
@@ -1470,6 +1500,11 @@ package com.flexcapacitor.utils {
 			if (target && 
 				target != targetApplication && 
 				!targetApplication.contains(DisplayObject(target))) {
+				
+				if (allowedParent!=null) {
+					target = allowedParent;
+				}
+				
 				if (debug) Radiate.info("Target application doesn't contain drop target");
 				if (draggingOver) return null;
 				//return null;
@@ -1552,7 +1587,7 @@ package com.flexcapacitor.utils {
 			dragData.offscreen = offscreen;
 			dragData.dropLocation = location;
 			dragData.dropIndex = dropIndex;
-			dragData.description = description;
+			dragData.description = componentDescription;
 			dragData.isApplication = isApplication;
 			dragData.isHorizontal = isHorizontal;
 			dragData.isVertical = isVertical;

@@ -696,8 +696,10 @@
 					aceEditor.resetUndoHistory();
 					aceCSSEditor.resetUndoHistory();
 					
-					aceEditor.clearAnnotations();
-					aceCSSEditor.clearAnnotations();
+					if (aceEditor.session) {
+						aceEditor.clearAnnotations();
+						aceCSSEditor.clearAnnotations();
+					}
 				}
 				
 				var object:Object = XMLUtils.getValidationXML(aceEditor.text);

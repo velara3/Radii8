@@ -72,6 +72,7 @@
 			
 			import spark.collections.Sort;
 			import spark.collections.SortField;
+			import spark.components.Application;
 			import spark.effects.easing.Linear;
 			import spark.events.IndexChangeEvent;
 	/**
@@ -1524,6 +1525,68 @@
 			
 			public var updateScreenEvent:MouseEvent;
 			
+			protected function lockLayer_itemClickHandler(event:MenuEvent):void {
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription;
+				var collection:ArrayCollection;
+				
+				if (selectedDocument) {
+					componentDescription = selectedDocument.getItemDescription(radiate.target);
+					
+					if (radiate.target is Application) return;
+					
+					if (componentDescription) {
+						componentDescription.locked = true;
+					}
+				}
+				
+			}
+			
+			protected function unlockLayer_itemClickHandler(event:MenuEvent):void {
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription;
+				var collection:ArrayCollection;
+				
+				if (selectedDocument) {
+					componentDescription = selectedDocument.getItemDescription(radiate.target);
+					
+					if (componentDescription) {
+						componentDescription.locked = false;
+					}
+				}
+				
+			}
+			
+			protected function lockDescendantLayers_itemClickHandler(event:MenuEvent):void {
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription;
+				var collection:ArrayCollection;
+				
+				if (selectedDocument) {
+					componentDescription = selectedDocument.getItemDescription(radiate.target);
+					
+					if (componentDescription) {
+						componentDescription.lockChildDescriptors();
+					}
+				}
+				
+			}
+			
+			protected function unlockDescendantLayers_itemClickHandler(event:MenuEvent):void {
+				var selectedDocument:IDocument = radiate.selectedDocument;
+				var componentDescription:ComponentDescription;
+				var collection:ArrayCollection;
+				
+				if (selectedDocument) {
+					componentDescription = selectedDocument.getItemDescription(radiate.target);
+					
+					if (componentDescription) {
+						componentDescription.lockChildDescriptors(false);
+					}
+				}
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1793,6 +1856,13 @@
 				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
 				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
 				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to show all content" itemClick="resizeDocumentToContent_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="lockLayerGroup" label="Lock Layer" >
+					<model:MenuItem id="lockLayer" label="Lock layer" itemClick="lockLayer_itemClickHandler(event)" />
+					<model:MenuItem id="unlockLayer" label="Unlock layer" itemClick="unlockLayer_itemClickHandler(event)" />
+					<model:MenuItem id="lockDescendantLayers" label="Lock descendant layers" itemClick="lockDescendantLayers_itemClickHandler(event)" />
+					<model:MenuItem id="unlockDescendantLayers" label="Unlock descendant layers" itemClick="unlockDescendantLayers_itemClickHandler(event)" />
+				</model:MenuItem>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="sizeSelectionToContent_itemClickHandler(event)" />
 				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />

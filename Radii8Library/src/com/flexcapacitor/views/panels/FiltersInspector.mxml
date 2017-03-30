@@ -15,6 +15,7 @@
 		 implements="com.flexcapacitor.views.IInspector" 
 		 width="400" 
 		 height="100%" 
+		 fontSize="11"
 		 >
 	
 	

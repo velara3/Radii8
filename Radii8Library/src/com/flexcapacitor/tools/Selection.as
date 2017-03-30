@@ -210,6 +210,16 @@ package com.flexcapacitor.tools {
 		public var isMouseDown:Boolean;
 		
 		/**
+		 * Indicates if target was being dragged
+		 * */
+		public var isDragging:Boolean;
+		
+		/**
+		 * If true than items can be dragged out of and into other containers 
+		 * */
+		public var dragAllowedOutside:Boolean;
+		
+		/**
 		 * Highlights items that are locked
 		 * */
 		public var highlightLockedItems:Boolean = true;
@@ -222,12 +232,12 @@ package com.flexcapacitor.tools {
 		/**
 		 * Highlights color
 		 * */
-		public var highlightColor:Number = 0x990000;
+		public var highlightColor:Number = 0xAA0000;
 		
 		/**
 		 * Highlights delay
 		 * */
-		public var highlightDelay:int = 500;
+		public var highlightDelay:int = 250;
 		
 		/**
 		 * Helps highlights items that are locked
@@ -964,8 +974,11 @@ package com.flexcapacitor.tools {
 			var items:Array = [];
 			var targetsLength:int;
 			var targetOrAncestorLocked:Boolean;
+			var dispatchTargetChange:Boolean;
 			
+			dispatchTargetChange = true;
 			isMouseDown = true;
+			isDragging = false;
 			
 			
 			/*radiate = Radiate.getInstance();
@@ -1003,9 +1016,11 @@ package com.flexcapacitor.tools {
 			}
 			
 			if (highlightLockedItems || highlightWhenSelectingOnlyGroups) {
-				layoutDebugHelper = LayoutDebugHelper.getInstance();
+				if (layoutDebugHelper==null) {
+					layoutDebugHelper = LayoutDebugHelper.getInstance();
+				}
 				LayoutDebugHelper.highlightColor = highlightColor;
-				LayoutDebugHelper.highlightDelay = highlightDelay;
+				LayoutDebugHelper.highlightDuration = highlightDelay;
 			}
 			
 			targetsLength = targetsUnderPoint.length;
@@ -1028,6 +1043,7 @@ package com.flexcapacitor.tools {
 				if (target is DocumentContainer) {
 					return;
 				}
+				
 				//spark.components.supportClasses.InvalidatingSprite - clicked on graphic element
 				componentDescription = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
 				if (componentDescription && componentDescription.isGraphicElement) {
@@ -1121,15 +1137,17 @@ package com.flexcapacitor.tools {
 					// for now we can only drag UIComponents bc I don't think drag manager supports
 					// dragging graphic elements
 					if (target is IVisualElement) {
-						dragManagerInstance.listenForDragBehavior(target as IVisualElement, document, event);
+						dragManagerInstance.listenForDragBehavior(target as IVisualElement, document, event, null, dragAllowedOutside);
 						addDragManagerListeners();
 					}
 					
 				}
 				
-				// select target right away
+				// select target right away 
+				// this creates a delay when dragging so we are going to try to 
+				// not dispatch target change until mouse up
 				if (radiate && radiate.target!=target) {
-					radiate.setTarget(target, true);
+					radiate.setTarget(target, dispatchTargetChange);
 				}
 				
 				// draw selection rectangle
@@ -1141,7 +1159,7 @@ package com.flexcapacitor.tools {
 			else if (target && !enableDrag) {
 				// select target right away
 				if (radiate && radiate.target!=target) {
-					radiate.setTarget(target, true);
+					radiate.setTarget(target, dispatchTargetChange);
 				}
 				
 				// draw selection rectangle
@@ -1342,6 +1360,7 @@ package com.flexcapacitor.tools {
 				_selectionWasShownBeforeDrag = _showSelection;
 			}
 			
+			isDragging = true;
 		}
 		
 		/**
@@ -1354,6 +1373,7 @@ package com.flexcapacitor.tools {
 				_selectionWasShownBeforeDrag = false;
 			}
 			
+			isDragging = false;
 			removeDragManagerListeners();
 		}
 		
@@ -1425,9 +1445,10 @@ package com.flexcapacitor.tools {
 			if (debug) {
 				log("drag drop complete");
 			}
+			
 			// drag manager removes these because it doesn't know or care what
-			// the current tool it has to add group mouse handlers. 
-			// it's all like, "whateva, whateva i do what i want"
+			// the current tool is.
+			// but we need to have transparent group listeners to select groups  
 			addTransparentGroupListeners();
 		}
 	
@@ -1454,6 +1475,7 @@ package com.flexcapacitor.tools {
 			if (target is List) {
 				//target.dragEnabled = true; // restore drag and drop if it was enabled
 			}
+			
 			if (componentDescription && componentDescription.instance!=target) {
 				removeTargetListeners(target);
 				target = componentDescription.instance;
@@ -1537,9 +1559,12 @@ package com.flexcapacitor.tools {
 			
 			//Radiate.info("End Selection Mouse Up");
 			
+			var dispatchTargetChange:Boolean = true;
+			
 			// select target
-			if (radiate.target!=target) {
-				radiate.setTarget(target, true);
+			if (isDragging || radiate.target!=target) {
+				radiate.setTarget(target, dispatchTargetChange);
+				isDragging = false;
 			}
 			
 			// draw selection rectangle
