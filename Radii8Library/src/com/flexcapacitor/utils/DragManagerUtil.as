@@ -5,14 +5,12 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
-	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.DragData;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.log;
 	import com.flexcapacitor.utils.supportClasses.logTarget;
 	
-	import flash.display.BitmapData;
 	import flash.display.BlendMode;
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
@@ -494,6 +492,8 @@ package com.flexcapacitor.utils {
 			if (testScaledMovement) {
 				snapshot = null;
 			}
+			
+			addDropShadow = false;
 			// check if any component has mask and don't add drop shadow
 			if (addDropShadow && snapshot) {
 				snapshot.filters = [dropShadowFilter];
@@ -564,11 +564,20 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (dragInitiatorProxy) {
-				if (dragInitiatorProxy.owner is IVisualElementContainer) {
-					IVisualElementContainer(dragInitiatorProxy.owner).removeElement(dragInitiatorProxy);
+				//CallLaterUtil.callLater(removeDragInitiator, dragInitiatorProxy);
+				// called when rasterizing things like graphic elements into temporary images
+				removeDragInitiator(dragInitiatorProxy);
+			}
+		}
+		
+		public function removeDragInitiator(dragInitiatorObject:Object = null):void{
+			
+			if (dragInitiatorObject && dragInitiatorObject.owner) {
+				if (dragInitiatorObject.owner is IVisualElementContainer) {
+					IVisualElementContainer(dragInitiatorObject.owner).removeElement(dragInitiatorObject as IVisualElement);
 				}
-				else if (dragInitiatorProxy.owner is DisplayObjectContainer) {
-					DisplayObjectContainer(dragInitiatorProxy.owner).removeChild(dragInitiatorProxy);
+				else if (dragInitiatorObject.owner is DisplayObjectContainer) {
+					DisplayObjectContainer(dragInitiatorObject.owner).removeChild(dragInitiatorObject as DisplayObject);
 				}
 			}
 		}
@@ -1176,7 +1185,7 @@ package com.flexcapacitor.utils {
 			dispatchEvent(dragCompleteEvent);
 			
 			// try and reduce the delay of the new component showing up after screen updates
-			event.updateAfterEvent();
+			//event.updateAfterEvent();
 		}
 		
 		protected function dragCompleteHandler(event:Event):void {

@@ -353,6 +353,16 @@
 									click="dragAllowedOutside_clickHandler(event)"
 									/>
 		
+		<c:BeveledImageToggleButton id="selectGroup"
+									source="{Radii8LibraryAssets.groupSelection}"
+									toolTip="Select only group elements or components on the document"
+									width="19"
+									height="19"
+									scaleMode="letterbox"
+									click="selectGroup_changeHandler(event)"
+									showBackgroundWhenSelected="true"
+									/>
+		
 		<c:BeveledImageToggleButton id="showTransform"
 											source="{Radii8LibraryAssets.transform}"
 											toolTip="Shows resizable transform handles"
@@ -360,16 +370,6 @@
 											height="19"
 											scaleMode="letterbox"
 											click="showTransform_changeHandler(event)"
-											showBackgroundWhenSelected="true"
-											/>
-		
-		<c:BeveledImageToggleButton id="selectGroup"
-											source="{Radii8LibraryAssets.groupSelection}"
-											toolTip="Select only group elements or components on the document"
-											width="19"
-											height="19"
-											scaleMode="letterbox"
-											click="selectGroup_changeHandler(event)"
 											showBackgroundWhenSelected="true"
 											/>
 		

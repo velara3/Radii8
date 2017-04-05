@@ -217,7 +217,7 @@ package com.flexcapacitor.tools {
 		/**
 		 * If true than items can be dragged out of and into other containers 
 		 * */
-		public var dragAllowedOutside:Boolean;
+		public var dragAllowedOutside:Boolean = true;
 		
 		/**
 		 * Highlights items that are locked

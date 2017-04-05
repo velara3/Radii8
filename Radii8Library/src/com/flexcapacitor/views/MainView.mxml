@@ -43,6 +43,7 @@
 			import com.flexcapacitor.model.MenuItemDataDescriptor;
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.utils.supportClasses.log;
 			import com.flexcapacitor.views.windows.ContactWindow;
@@ -1587,6 +1588,64 @@
 				
 			}
 			
+			protected function trimImage_itemClickHandler(event:MenuEvent):void {
+				var newBitmapData:BitmapData;
+				var image:Image;
+				var bitmapData:BitmapData;
+				var bitmapWidth:int;
+				var bitmapHeight:int;
+				var propertiesObject:Object;
+				var properties:Array;
+				var imageData:ImageData;
+				var imageName:String;
+				
+				image = radiate.target as Image;
+				bitmapData = image && image.source ? image.source as BitmapData : null;
+				
+				if (image && bitmapData) {
+					bitmapHeight = bitmapData.height;
+					bitmapWidth = bitmapData.width;
+					
+					newBitmapData = DisplayObjectUtils.trimTransparentBitmapData(bitmapData);
+					
+					if (newBitmapData==null) {
+						Radiate.info("Nothing was trimmed");
+						return;
+					}
+					
+					if (newBitmapData.width==bitmapData.width && newBitmapData.height==bitmapData.height) {
+						Radiate.info("Nothing was trimmed");
+						return;
+					}
+					
+					propertiesObject = {};
+					properties = ["source"];
+					propertiesObject.source = newBitmapData;
+					
+					Radiate.setProperties(image, properties, propertiesObject, "Trimmed transparent edges", true);
+					
+					// force redraw
+					updateScreenEvent = new MouseEvent(MouseEvent.MOUSE_UP);
+					updateScreenEvent.updateAfterEvent();
+					
+					// add image data to our library
+					if (image.source is BitmapData) {
+						imageData = Radiate.getImageDataFromBitmapData(image.source as BitmapData);
+					}
+					
+					imageName = "Trimmed image"; // should get name from component description
+					
+					if (imageData) {
+						imageName = imageData.name;
+					}
+					
+					radiate.addBitmapDataToDocument(radiate.selectedDocument, newBitmapData, null, imageName, false);
+				}
+				else {
+					Radiate.info("You must select an image to trim"); 
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1851,6 +1910,7 @@
 				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="clearProjectHomePage_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="copySelectionIntoLibrary" label="Create image from selection" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
+				<model:MenuItem id="trimImage" label="Trim transparent edges of image" itemClick="trimImage_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToImage_itemClickHandler(event)" />
 				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />

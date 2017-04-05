@@ -7,7 +7,7 @@
 		 xmlns:flexiframe="com.google.code.flexiframe.*" 
 		 
 		 minWidth="200" 
-		 minHeight="100"
+		 minHeight="0"
 		 implements="com.flexcapacitor.views.IInspector"
 		 >
 	
@@ -303,7 +303,12 @@
 							  />
 	</s:HGroup>
 	
-	<flexiframe:IFrame includeIn="web" id="docsFrame" top="28" width="100%" height="100%" 
+	<flexiframe:IFrame includeIn="web" 
+					   id="docsFrame" 
+					   top="28"
+					   minHeight="0"
+					   width="100%" 
+					   height="100%" 
 					   frameLoad="docsFrame_frameLoadHandler(event)"/>
 	
 </s:Group>

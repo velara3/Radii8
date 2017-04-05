@@ -6,10 +6,11 @@
 		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
 		 xmlns:c="com.flexcapacitor.controls.*"
 		 xmlns:core="com.flexcapacitor.effects.core.*" 
+		 xmlns:panels="com.flexcapacitor.views.panels.*" 
 		 
 		 width="220" 
 		 height="100%"
-		 implements="com.flexcapacitor.views.IInspector" xmlns:panels="com.flexcapacitor.views.panels.*" 
+		 implements="com.flexcapacitor.views.IInspector" 
 		 >
 	
 	<!-- 

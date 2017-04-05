@@ -107,7 +107,7 @@ package com.flexcapacitor.utils {
 		public static var tlfNamespace:Namespace 	= new Namespace(tlfNamespacePrefix, tlfNamespaceURI);
 		public static var sparkNamespace:Namespace 	= new Namespace(sparkNamespacePrefix, sparkNamespaceURI);
 		public static var fxgNamespace:Namespace 	= new Namespace(fxgNamespacePrefix, fxgNamespaceURI);
-		public static var fcNamespace:Namespace 	= new Namespace(sparkNamespacePrefix, sparkNamespaceURI);
+		public static var fcNamespace:Namespace 	= new Namespace(fcNamespacePrefix, fcNamespaceURI);
 		
 		/**
 		 * This is the standard XML declaration at the beginning of every XML document

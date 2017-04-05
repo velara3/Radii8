@@ -91,6 +91,16 @@ changed to
 						visibleGroup.visible = false;
 					}
 					
+					// show if item has filters
+					if (instance && instance.filters && instance.filters.length) {
+						hasFiltersGroup.visible = true;
+						hasFiltersGroup.includeInLayout = true;
+					}
+					else {
+						hasFiltersGroup.visible = false;
+						hasFiltersGroup.includeInLayout = false;
+					}
+					
 					// show if item is locked
 					if (componentDescription.locked) {
 						lockedGroup.visible = true;
@@ -303,6 +313,17 @@ changed to
 			
 			private var previousDragEnabled:Boolean;
 			private var previousKeyboardHandlingEnabled:Boolean;
+			
+			protected function hasFiltersGroup_clickHandler(event:MouseEvent):void {
+				var componentDescription:ComponentDescription = data as ComponentDescription;
+				
+				if (componentDescription && componentDescription.instance) {
+					Radiate.setTarget(componentDescription.instance);
+				}
+				
+				Radiate.showFiltersPanel();
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -429,6 +450,11 @@ changed to
 		<!--- lock -->
 		<s:Group id="lockedGroup" visible="false" toolTip="Is locked">
 			<s:BitmapImage source="{Radii8LibraryAssets.locked}" />
+		</s:Group>
+		
+		<!--- filters -->
+		<s:Group id="hasFiltersGroup" visible="false" toolTip="Has filters" click="hasFiltersGroup_clickHandler(event)">
+			<s:BitmapImage source="{Radii8LibraryAssets.filters}" />
 		</s:Group>
 		
 		<s:Spacer width="4"/>
