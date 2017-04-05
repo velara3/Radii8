@@ -1386,6 +1386,10 @@ package com.flexcapacitor.tools {
 			// trace("Drag over")
 			dragLocation = dragManagerInstance.dropTargetLocation;
 			
+			// sometimes the selection rectangle is not hidden??
+			if (hideSelectionOnDrag && targetSelectionGroup.visible) {
+				clearSelection();
+			}
 		}
 		
 		/**

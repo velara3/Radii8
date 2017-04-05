@@ -14,13 +14,10 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.utils.AceEditorUtils;
 			import com.flexcapacitor.utils.DragManagerUtil;
 			import com.flexcapacitor.utils.StyleUtils;
 			import com.flexcapacitor.views.IInspector;
 			
-			import mx.core.IVisualElement;
-			import mx.core.UIComponent;
 			import mx.utils.Platform;
 			
 			[Bindable]

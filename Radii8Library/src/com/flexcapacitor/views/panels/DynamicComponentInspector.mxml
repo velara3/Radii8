@@ -5,8 +5,8 @@
 		 xmlns:flexcapacitor="flexcapacitor.*"
 		 
 		 width="100%" height="100%"
-		 creationComplete="creationCompleteHandler(event)"
 		 fontSize="11"
+		 implements="com.flexcapacitor.views.IInspector"
 		 >
 	
 	<fx:Script>
@@ -14,11 +14,11 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.InspectorData;
+			import com.flexcapacitor.performance.PerformanceMeter;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.IInspector;
 			
 			import mx.core.UIComponent;
-			import mx.events.FlexEvent;
 			
 			/**
 			 * Reference to Radiate
@@ -27,7 +27,18 @@
 			
 			public var componentDescription:ComponentDescription;
 
-			public var target:Object;
+			private var _target:Object;
+
+			public function get target():Object
+			{
+				return _target;
+			}
+
+			public function set target(value:Object):void
+			{
+				_target = value;
+			}
+
 			public var subTarget:Object;
 			
 			public var property:String;
@@ -52,7 +63,7 @@
 				}
 			}
 			
-			protected function creationCompleteHandler(event:FlexEvent):void {
+			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
 				// listen at a higher priority so we can deactivate before child inspectors hear event 
@@ -75,6 +86,12 @@
 				updateInspectors(inspectors, target);
 			}
 			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+				}
+			}
+			
 			protected function handleTargetChange(event:RadiateEvent):void {
 				//var sameType:Boolean = radiate.isSameClassType(target, radiate.target);
 				
@@ -90,9 +107,13 @@
 					return;
 				}
 				
+				PerformanceMeter.start("Getting inspectors");
 				inspectors = radiate.getInspectors(target);
+				PerformanceMeter.stop("Getting inspectors");
 				
+				PerformanceMeter.start("Updating inspectors");
 				updateInspectors(inspectors, target, property, propertyIndex);
+				PerformanceMeter.stop("Updating inspectors");
 			}
 			
 			

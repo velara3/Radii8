@@ -28,7 +28,6 @@
 			import flashx.textLayout.conversion.ITextImporter;
 			import flashx.textLayout.conversion.TextConverter;
 			import flashx.textLayout.elements.Configuration;
-			import flashx.textLayout.elements.TextFlow;
 			
 			
 			private var radiate:Radiate = Radiate.instance;

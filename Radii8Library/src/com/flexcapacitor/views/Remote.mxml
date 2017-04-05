@@ -161,25 +161,25 @@
 			public function activateInspector(viewstack:ViewStack, selectedNavigator:NavigatorContent):void {
 				var navigatorItem:NavigatorContent;
 				var selectedNavigatorContent:IInspector;
-				var navigatorInspector:IInspector;
+				var inspector:IInspector;
 				var item:Object;
-				
+				var inspectors:Array;
 				
 				if (selectedNavigator && selectedNavigator.numElements>0) {
-					item = selectedNavigator.getElementAt(0);
-					selectedNavigatorContent = item as IInspector;
+					inspectors = ClassUtils.getElementsByType(selectedNavigator, IInspector, null, true);
 					
-					if (selectedNavigatorContent==null && item is Scroller) {
-						selectedNavigatorContent = item.getElementAt(0) as IInspector;
-					}
 				}
 				
 				deactivateViewstack(viewstack);
 				
 				// activate the current inspector
-				if (selectedNavigatorContent) {
-					UIComponent(selectedNavigatorContent).validateNow();// make sure everythings created
-					selectedNavigatorContent.activate();
+				for (var j:int = 0; j < inspectors.length; j++) {
+					inspector = inspectors[j];
+					
+					if (inspector) {
+						UIComponent(inspector).validateNow();// make sure everythings created
+						inspector.activate();
+					}
 				}
 				
 				updateSelectedTargetIcon();
@@ -191,9 +191,9 @@
 			public function deactivateViewstack(viewstack:ViewStack):void {
 				var navigatorItem:NavigatorContent;
 				var selectedNavigatorContent:IInspector;
-				var navigatorInspector:IInspector;
+				var inspector:IInspector;
 				var item:Object;
-				
+				var inspectors:Array;
 				
 				var numberOfElements:int = viewstack.numElements;
 				
@@ -202,15 +202,14 @@
 					navigatorItem = viewstack.getElementAt(i) as NavigatorContent;
 					
 					if (navigatorItem && navigatorItem.numElements>0) {
-						item = navigatorItem.getElementAt(0);
-						navigatorInspector = item as IInspector;
+						inspectors = ClassUtils.getElementsByType(navigatorItem, IInspector, null, true);
 						
-						if (navigatorInspector==null && item is Scroller) {
-							navigatorInspector = item.getElementAt(0) as IInspector;
-						}
-						
-						if (navigatorInspector) {
-							navigatorInspector.deactivate();
+						for (var j:int = 0; j < inspectors.length; j++) {
+							inspector = inspectors[j];
+							
+							if (inspector) {
+								inspector.deactivate();
+							}
 						}
 					}
 				}
