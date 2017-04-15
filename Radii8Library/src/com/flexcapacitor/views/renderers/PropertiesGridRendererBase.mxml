@@ -160,6 +160,9 @@
 			[Bindable]
 			public var snapInterval:Number = 0;
 			
+			
+			public var ignoreEmptyData:Boolean = true;
+			
 			/**
 			 * Set data
 			 * */
@@ -176,10 +179,25 @@
 					updateSubComponentsValueXML();
 				}
 				else if (data==null) {
-					throw Error("Invalid property data");
+					
+					// this error happens when we have something trying to get a property 
+					// or style information and it doesn't exist on the target
+					// so it's empty. 
+					// this happens because the target changes and we have
+					// a property inspector trying to get properties that don't exist
+					// inspectors like this, are supposed to show values based
+					// on their type. 
+					// are specific this happens in a few cases where we haven't 
+					// had a chance to remove the old target 
+					// so we have been throwing an error but in test cases
+					// the target is switched before the user even sees the inspector
+					// so ignoring for now and will see how that goes
+					// look at dynamic property inspector and propertyinspector 
+					if (!ignoreEmptyData) {
+						throw Error("Invalid property data");
+					}
 				}
 			}
-			
 			
 			/**
 			 * Set the property on the target to the new value
@@ -643,56 +661,56 @@
 					else if (type=="Number" || (type=="int" && targetValueText==null) ||
 							(type=="Object" && numericStepper)) { // trackingRight 
 						
-							numericStepper.value = propertyObject.value;
-							
-							if (!isNaN(propertyObject.minValue)) {
-								numericStepper.minimum = propertyObject.minValue;
+						numericStepper.value = propertyObject.value;
+						
+						if (!isNaN(propertyObject.minValue)) {
+							numericStepper.minimum = propertyObject.minValue;
+						}
+						else {
+							numericStepper.minimum = Number(int.MIN_VALUE);
+						}
+						if (!isNaN(propertyObject.maxValue)) {
+							numericStepper.maximum = propertyObject.maxValue;
+						}
+						else {
+							numericStepper.maximum = Number(int.MAX_VALUE);
+						}
+						
+						if (property.indexOf("lpha")!=-1) {
+							if (isNaN(stepSize)) {
+								numericStepper.stepSize = .01;
 							}
 							else {
-								numericStepper.minimum = Number(int.MIN_VALUE);
-							}
-							if (!isNaN(propertyObject.maxValue)) {
-								numericStepper.maximum = propertyObject.maxValue;
-							}
-							else {
-								numericStepper.maximum = Number(int.MAX_VALUE);
+								numericStepper.stepSize = stepSize;
 							}
 							
-							if (property.indexOf("lpha")!=-1) {
-								if (isNaN(stepSize)) {
-									numericStepper.stepSize = .01;
-								}
-								else {
-									numericStepper.stepSize = stepSize;
-								}
-								
-								if (isNaN(propertyObject.minValue)) {
-									numericStepper.minimum = 0;
-								}
-								if (isNaN(propertyObject.maxValue)) {
-									numericStepper.maximum = 1;
-								}
+							if (isNaN(propertyObject.minValue)) {
+								numericStepper.minimum = 0;
 							}
-							else {
-								if (isNaN(stepSize)) {
-									numericStepper.stepSize = 1;
-								}
-								else {
-									numericStepper.stepSize = stepSize;
-								}
-							}
-							
-							if (snapInterval) {
-								numericStepper.snapInterval = snapInterval;
-							}
-							
-							if (isPercent) {
-								if (value is String && value.indexOf("%")!=-1) {
-									numericStepper.value = parseInt(value);
-								}
+							if (isNaN(propertyObject.maxValue)) {
+								numericStepper.maximum = 1;
 							}
 						}
-					else {
+						else {
+							if (isNaN(stepSize)) {
+								numericStepper.stepSize = 1;
+							}
+							else {
+								numericStepper.stepSize = stepSize;
+							}
+						}
+						
+						if (snapInterval) {
+							numericStepper.snapInterval = snapInterval;
+						}
+						
+						if (isPercent) {
+							if (value is String && value.indexOf("%")!=-1) {
+								numericStepper.value = parseInt(value);
+							}
+						}
+					}
+					else if (targetValueText) {
 						actualValue = Radiate.getTypedValue(targetValueText.text, type);
 						targetValueText.text = propertyObject.value;
 					}

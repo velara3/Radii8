@@ -57,6 +57,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ArrangeLayers;
 			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.IDocument;
@@ -79,6 +80,7 @@
 			
 			import spark.components.Application;
 			import spark.components.supportClasses.DisplayLayer;
+			import spark.components.supportClasses.GroupBase;
 			import spark.events.PopUpEvent;
 			import spark.layouts.BasicLayout;
 			
@@ -872,50 +874,26 @@
 				}
 			}
 			
-			protected function moveBelowButton_clickHandler(event:MouseEvent):void {
+			protected function sendBackwardsButton_clickHandler(event:MouseEvent):void {
 				var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
-				var currentIndex:int;
-				var dropIndex:int;
 				
-				if (componentDescription && componentDescription.parent) {
-					currentIndex = ComponentDescription(componentDescription.parent).children.getItemIndex(componentDescription);
-					
-					if (currentIndex>0) {
-						dropIndex = currentIndex - 1;
-						Radiate.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
-											null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
-						radiate.setTarget(componentDescription.instance);
-						componentListTree.selectedItem = componentDescription;
-					}
-					
+				if (componentDescription) {
+					ArrangeLayers.sendBackwards(componentDescription);
+					radiate.setTarget(componentDescription.instance);
+					componentListTree.selectedItem = componentDescription;
 				}
 			}
 			
-			protected function moveAboveButton_clickHandler(event:MouseEvent):void {
+			protected function bringForwardsButton_clickHandler(event:MouseEvent):void {
 				var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
 				var currentIndex:int;
 				var dropIndex:int;
 				var parentInstance:Object;
 				
-				if (componentDescription && componentDescription.parent) {
-					currentIndex = ComponentDescription(componentDescription.parent).children.getItemIndex(componentDescription);
-					
-					if (currentIndex<ComponentDescription(componentDescription.parent).children.length-1) {
-						parentInstance = ComponentDescription(componentDescription.parent).instance;
-						
-						if ("layout" in parentInstance && parentInstance.layout is BasicLayout) { 
-							dropIndex = currentIndex + 1;
-						}
-						else {
-							dropIndex = currentIndex + 2;
-						}
-						
-						Radiate.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
-							null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
-						radiate.setTarget(componentDescription.instance);
-						componentListTree.selectedItem = componentDescription;
-					}
-					
+				if (componentDescription) {
+					ArrangeLayers.bringForwards(componentDescription);
+					radiate.setTarget(componentDescription.instance);
+					componentListTree.selectedItem = componentDescription;
 				}
 			}
 			
@@ -982,6 +960,16 @@
 						componentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 					}
 					else if (mask==null) {
+						// when switching from alpha mask to luminosity mask nothing changes
+						// bc it is cached. turn off cache and it will be turned back on mask change
+						if (parentInstance is GroupBase) {
+							GroupBase(parentInstance).cacheAsBitmap = false;
+							GroupBase(parentInstance).invalidateDisplayList();
+						}
+						if ("cacheAsBitmap" in target) {
+							target.cacheAsBitmap = false;
+						}
+						
 						Radiate.setProperty(parentInstance, "mask", target);
 					}
 					
@@ -1022,6 +1010,7 @@
 		<core:CallMethod id="doThingsLater" method="activate" startDelay="50"/>
 		
 		<panels:MaskTypeCallout id="maskTypesCallout" close="maskTypesCallout_closeHandler(event)"/>
+		<panels:LuminosityCallout id="luminosityCallout" />
 	</fx:Declarations>
 	
 	
@@ -1130,15 +1119,15 @@
 									label="Locked"
 									showBackgroundWhenSelected="true"
 									/>
-		<c:BeveledImageButton id="moveBelowButton" 
+		<c:BeveledImageButton id="sendBackwardsButton" 
 					   source="{Radii8LibraryAssets.sendBackwards}" 
 					   toolTip="Send Backward"
-					   click="moveBelowButton_clickHandler(event)"
+					   click="sendBackwardsButton_clickHandler(event)"
 					   />
-		<c:BeveledImageButton id="moveAboveButton" 
+		<c:BeveledImageButton id="bringForwardsButton" 
 					   source="{Radii8LibraryAssets.bringForwards}" 
 					   toolTip="Bring Forward"
-					   click="moveAboveButton_clickHandler(event)"
+					   click="bringForwardsButton_clickHandler(event)"
 					   />
 		<c:BeveledImageButton id="filtersButton" 
 					   source="{Radii8LibraryAssets.filters}" 

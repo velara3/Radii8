@@ -23,13 +23,14 @@
 			import mx.collections.ArrayCollection;
 			import mx.events.FlexEvent;
 			import mx.graphics.BitmapFill;
+			import mx.graphics.GradientBase;
+			import mx.graphics.GradientEntry;
 			import mx.graphics.IFill;
 			import mx.graphics.LinearGradient;
 			import mx.graphics.RadialGradient;
 			import mx.graphics.SolidColor;
 			
 			import spark.events.IndexChangeEvent;
-			import spark.primitives.Ellipse;
 			import spark.primitives.supportClasses.FilledElement;
 			
 			
@@ -55,7 +56,7 @@
 				}
 				
 				if (fillList.dataProvider==null) {
-					fillList.dataProvider = new ArrayCollection(fillTypes.slice(0, 3));
+					fillList.dataProvider = new ArrayCollection(fillTypes.slice(0, 4));
 				}
 				
 				update();
@@ -71,6 +72,7 @@
 			protected function handleTargetChange(event:RadiateEvent):void {
 				if (target!=event.selectedItem) {
 					target = event.selectedItem;
+					clearFills();
 					update();
 				}
 			}
@@ -93,6 +95,7 @@
 				var fill:IFill 						= filledElement ? filledElement.fill : null;
 				var solidColor:SolidColor 			= fill as SolidColor;
 				var linearGradient:LinearGradient 	= fill as LinearGradient;
+				var radialGradient:RadialGradient 	= fill as RadialGradient;
 				var bitmapFill:BitmapFill 			= fill as BitmapFill;
 				
 				if (solidColor) {
@@ -101,7 +104,11 @@
 				}
 				else if (linearGradient) {
 					fillList.selectedItem = ArrayUtils.getItem(fillTypes, MXMLDocumentConstants.LINEAR_GRADIENT, "name");
-					updateLinearGradient(linearGradient);
+					updateGradientBase(linearGradient);
+				}
+				else if (radialGradient) {
+					fillList.selectedItem = ArrayUtils.getItem(fillTypes, MXMLDocumentConstants.RADIAL_GRADIENT, "name");
+					updateGradientBase(radialGradient);
 				}
 				else if (bitmapFill) {
 					fillList.selectedItem = ArrayUtils.getItem(fillTypes, MXMLDocumentConstants.BITMAP_FILL, "name");
@@ -149,30 +156,52 @@
 				alphaRenderer.data = alphaStyle;
 			}
 			
-			private function updateLinearGradient(linearGradient:LinearGradient):void {
-				if (currentState!=MXMLDocumentConstants.LINEAR_GRADIENT) {
-					setCurrentState(MXMLDocumentConstants.LINEAR_GRADIENT, false);
-					validateNow();
+			private function updateGradientBase(gradient:GradientBase):void {
+				
+				if (gradient is LinearGradient) {
+					
+					if (currentState!=MXMLDocumentConstants.LINEAR_GRADIENT) {
+						setCurrentState(MXMLDocumentConstants.LINEAR_GRADIENT, false);
+						validateNow();
+					}
+				}
+				else if (gradient is RadialGradient) {
+					if (currentState!=MXMLDocumentConstants.RADIAL_GRADIENT) {
+						setCurrentState(MXMLDocumentConstants.RADIAL_GRADIENT, false);
+						validateNow();
+					}
 				}
 				
-				// linear gradient fill
-				//var colorStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(linearGradient, "color");
-				var alphaStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(linearGradient, "alpha");
-				var interpolationStyle:AccessorMetaData = ClassUtils.getMetaDataOfProperty(linearGradient, "interpolationMethod");
-				var matrixStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(linearGradient, "matrix");
-				var rotationStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(linearGradient, "rotation");
-				var spreadMethodStyle:AccessorMetaData  = ClassUtils.getMetaDataOfProperty(linearGradient, "spreadMethod");
-				var xStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(linearGradient, "x");
-				var yStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(linearGradient, "y");
+				// gradient fill
+				var entriesProperty:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(gradient, "entries");
+				var interpolationProperty:AccessorMetaData 	= ClassUtils.getMetaDataOfProperty(gradient, "interpolationMethod");
+				var matrixProperty:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(gradient, "matrix");
+				var rotationProperty:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(gradient, "rotation");
+				var spreadMethodProperty:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(gradient, "spreadMethod");
+				var xProperty:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(gradient, "x");
+				var yProperty:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(gradient, "y");
+				var angleProperty:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(gradient, "angle");
+				var scaleXProperty:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(gradient, "scaleX");
+				var scaleYProperty:AccessorMetaData;
+				var focalPointProperty:AccessorMetaData;
 				
-				//colorRenderer.data 			= colorStyle;
-				//alphaRenderer.data 			= alphaStyle;
-				interpolationRenderer.data 	= interpolationStyle;
-				matrixRenderer.data 		= matrixStyle;
-				rotationRenderer.data 		= rotationStyle;
-				spreadMethodRenderer.data 	= spreadMethodStyle;
-				xRenderer.data 				= xStyle;
-				yRenderer.data 				= yStyle;	
+				entriesRenderer.data 		= entriesProperty;
+				interpolationRenderer.data 	= interpolationProperty;
+				matrixRenderer.data 		= matrixProperty;
+				rotationRenderer.data 		= rotationProperty;
+				spreadMethodRenderer.data 	= spreadMethodProperty;
+				xRenderer.data 				= xProperty;
+				yRenderer.data 				= yProperty;
+				scaleXRenderer.data 		= scaleXProperty;
+				
+				if (gradient is RadialGradient) {
+					scaleYProperty  	= ClassUtils.getMetaDataOfProperty(gradient, "scaleY");
+					focalPointProperty  = ClassUtils.getMetaDataOfProperty(gradient, "focalPointRatio");
+					
+					focalPointRenderer.data = focalPointProperty;
+					angleRenderer.data = angleProperty;
+					scaleYRenderer.data = scaleYProperty;
+				}
 			}
 			
 			// bitmap fill
@@ -182,31 +211,31 @@
 					validateNow();
 				}
 				
-				var alphaStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "alpha");
-				var fillModeStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(bitmapFill, "fillMode");
-				var matrixStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(bitmapFill, "matrix");
-				var rotationStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(bitmapFill, "rotation");
-				var scaleXStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "scaleX");
-				var scaleYStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "scaleY");
-				var smoothStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "smooth");
-				var sourceStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "source");
-				var transformXStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(bitmapFill, "transformX");
-				var transformYStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(bitmapFill, "transformY");
-				var xStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(bitmapFill, "x");
-				var yStyle:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(bitmapFill, "y");
+				var alphaProperty:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "alpha");
+				var fillModeProperty:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(bitmapFill, "fillMode");
+				var matrixProperty:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(bitmapFill, "matrix");
+				var rotationProperty:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "rotation");
+				var scaleXProperty:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "scaleX");
+				var scaleYProperty:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "scaleY");
+				var smoothProperty:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "smooth");
+				var sourceProperty:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(bitmapFill, "source");
+				var transformXProperty:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(bitmapFill, "transformX");
+				var transformYProperty:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(bitmapFill, "transformY");
+				var xProperty:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(bitmapFill, "x");
+				var yProperty:AccessorMetaData  			= ClassUtils.getMetaDataOfProperty(bitmapFill, "y");
 				
-				alphaRenderer.data 		= alphaStyle;
-				fillModeRenderer.data 	= fillModeStyle;
-				matrixRenderer.data 	= matrixStyle;
-				rotationRenderer.data 	= rotationStyle;
-				scaleXRenderer.data 	= scaleXStyle;
-				scaleYRenderer.data 	= scaleYStyle;
-				smoothRenderer.data 	= smoothStyle;
-				sourceRenderer.data 	= sourceStyle;
-				transformXRenderer.data = transformXStyle;
-				transformYRenderer.data = transformYStyle;
-				xRenderer.data 			= xStyle;
-				yRenderer.data 			= yStyle;	
+				alphaRenderer.data 		= alphaProperty;
+				fillModeRenderer.data 	= fillModeProperty;
+				matrixRenderer.data 	= matrixProperty;
+				rotationRenderer.data 	= rotationProperty;
+				scaleXRenderer.data 	= scaleXProperty;
+				scaleYRenderer.data 	= scaleYProperty;
+				smoothRenderer.data 	= smoothProperty;
+				sourceRenderer.data 	= sourceProperty;
+				transformXRenderer.data = transformXProperty;
+				transformYRenderer.data = transformYProperty;
+				xRenderer.data 			= xProperty;
+				yRenderer.data 			= yProperty;	
 			}
 			
 			private function updateNoFill():void {
@@ -221,7 +250,7 @@
 			public var solidColorFillProperties:Array = ["color", "alpha"];
 			
 			public var linearGradientFillProperties:Array = ["interpolationMethod", "matrix", "rotation", 
-				"spreadMethod", "x", "y", "entries"];
+				"spreadMethod", "x", "y", "entries", "angle", "focalPointRatio"];
 			
 			public var bitmapFillProperties:Array = ["alpha", "fillMode", "matrix", "rotation",
 				"scaleX", "scaleY", "smooth", "source", "x", "y", "transformX", "transformY"];
@@ -229,35 +258,122 @@
 			public var gradientEntryProperties:Array = ["color", "alpha", "ratio"];
 			
 			public var relevantProperties:Array = solidColorFillProperties.concat(linearGradientFillProperties).concat(bitmapFillProperties);
+			public var previousLinearFill:LinearGradient;
+			public var previousBitmapFill:BitmapFill;
+			public var previousRadialFill:RadialGradient;
+			public var previousSolidFill:SolidColor;
 			
 			protected function fillList_changeHandler(event:IndexChangeEvent):void {
 				var filledElement:FilledElement = target as FilledElement;
 				var fill:IFill 					= filledElement ? filledElement.fill : null;
 				var fillType:Object 			= fillList.selectedItem;
 				
+				savePreviousFill(fill);
+				
 				if (fillType.name == MXMLDocumentConstants.NONE && fill!=null) {
 					Radiate.clearProperty(filledElement, MXMLDocumentConstants.FILL, null, "Removed fill"); 
 				}
 				else if (fillType.name == MXMLDocumentConstants.SOLID_COLOR && !(fill is SolidColor)) {
-					fill = new SolidColor();
+					fill = getPreviousOrNewFill(SolidColor);
 					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
 				}
 				else if (fillType.name == MXMLDocumentConstants.LINEAR_GRADIENT && !(fill is LinearGradient)) {
-					fill = new LinearGradient();
+					fill = getPreviousOrNewFill(LinearGradient);
 					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
 				}
 				else if (fillType.name == MXMLDocumentConstants.RADIAL_GRADIENT && !(fill is RadialGradient)) {
-					fill = new RadialGradient();
+					fill = getPreviousOrNewFill(RadialGradient);
 					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
 				}
 				else if (fillType.name == MXMLDocumentConstants.BITMAP_FILL && !(fill is BitmapFill)) {
-					fill = new BitmapFill();
+					fill = getPreviousOrNewFill(BitmapFill);
 					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
 				}
 				
 				update();
 			}
 			
+			private function savePreviousFill(fill:IFill):void {
+				if (fill is LinearGradient) {
+					previousLinearFill = fill as LinearGradient;
+				}
+				else if (fill is RadialGradient) {
+					previousRadialFill = fill as RadialGradient;
+				}
+				else if (fill is BitmapFill) {
+					previousBitmapFill = fill as BitmapFill;
+				}
+				else if (fill is RadialGradient) {
+					previousSolidFill = fill as SolidColor;
+				}
+			}
+			
+			private function clearFills():void {
+				previousBitmapFill = null;
+				previousLinearFill = null;
+				previousRadialFill = null;
+				previousSolidFill = null;
+			}
+			
+			private function getPreviousOrNewFill(fill:Class):IFill {
+				var linearGradient:LinearGradient;
+				var radialGradient:RadialGradient;
+				var instance:Object = fill ? new fill() : null;
+				
+				if (instance is SolidColor) {
+					if (previousSolidFill) {
+						return previousSolidFill;
+					}
+					
+					return new SolidColor();
+				}
+				else if (instance is LinearGradient) {
+					if (previousLinearFill) {
+						return previousLinearFill;
+					}
+					
+					linearGradient = new LinearGradient();
+					if (previousRadialFill && previousRadialFill.entries) {
+						linearGradient.entries = previousRadialFill.entries;
+					}
+					else {
+						linearGradient.entries = getDefaultLinearFillEntries();
+					}
+					return linearGradient;
+				}
+				else if (instance is RadialGradient) {
+					if (previousRadialFill) {
+						return previousRadialFill;
+					}
+					
+					radialGradient = new RadialGradient();
+					if (previousLinearFill && previousLinearFill.entries) {
+						radialGradient.entries = previousLinearFill.entries;
+					}
+					else {
+						radialGradient.entries = getDefaultLinearFillEntries();
+					}
+					return radialGradient;
+				}
+				else if (instance is BitmapFill) {
+					if (previousBitmapFill) {
+						return previousBitmapFill;
+					}
+					return new BitmapFill();
+				}
+				
+				return null;
+			}
+			
+			public function getDefaultLinearFillEntries():Array {
+				var entries:Array = [];
+				
+				// black to white fill full alpha
+				entries[0] = new GradientEntry(0, 0, 1);
+				entries[1] = new GradientEntry(0xFFFFFF, 1, 1);
+				
+				return entries;
+			}
 		]]>
 	</fx:Script>
 	
@@ -277,7 +393,7 @@
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Fill Type" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<s:DropDownList id="fillList" height="24" requireSelection="true" 
-						minWidth="120" change="fillList_changeHandler(event)"/>
+						minWidth="150" change="fillList_changeHandler(event)"/>
 	</s:HGroup>
 	
 	<!-- SOLID COLOR -->
@@ -299,8 +415,15 @@
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<!-- Linear gradient -->
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient" itemCreationPolicy="immediate">
+	<!-- LINEAR GRADIENT -->
+	<s:HGroup width="100%" verticalAlign="middle" includeIn="RadialGradient,LinearGradient" itemCreationPolicy="immediate">
+		<s:Label text="Gradient" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:RectFillRenderer id="entriesRenderer" height="24" 
+										minWidth="180" width="100%"
+										subPropertyName="entries"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient,LinearGradient" itemCreationPolicy="immediate">
 		<s:Label text="Interpolation" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="interpolationRenderer" height="24" 
 									minWidth="180" width="100%"
@@ -308,7 +431,7 @@
 									subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient" itemCreationPolicy="immediate">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient,LinearGradient" itemCreationPolicy="immediate">
 		<s:Label text="Rotation" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="rotationRenderer" height="24" defaultValue="0"
 								  stepSize="1" 
@@ -316,13 +439,31 @@
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient" itemCreationPolicy="immediate">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient" itemCreationPolicy="immediate">
+		<s:Label text="Angle" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="angleRenderer" height="24" defaultValue="0"
+								  stepSize="1" 
+								  snapInterval="0" 
+								  subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient" itemCreationPolicy="immediate">
+		<s:Label text="Focal Point Ratio" styleName="inspectablePanelLabel" showTruncationTip="true"/>
+		<renderers:NumberRenderer id="focalPointRenderer" height="24" 
+								  defaultValue="0"
+								  minimum="-1" maximum="1"
+								  stepSize=".01" 
+								  snapInterval="0" 
+								  subPropertyName="fill"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient,LinearGradient" itemCreationPolicy="immediate">
 		<s:Label text="Spread Method" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:DropDownListRenderer id="spreadMethodRenderer" height="24" 
 										subPropertyName="fill" defaultValue="pad"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill" itemCreationPolicy="immediate">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient,LinearGradient,BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Matrix" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:TextRenderer id="matrixRenderer" height="24"
 								  subPropertyName="fill"/>
@@ -348,7 +489,7 @@
 								subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill" itemCreationPolicy="immediate">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient,LinearGradient,BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="X" toolTip="The distance by which to translate each point along the x axis" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="xRenderer" 
 								  height="24" 
@@ -357,7 +498,7 @@
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill" itemCreationPolicy="immediate">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient,LinearGradient,BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Y" toolTip="The distance by which to translate each point along the y axis" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="yRenderer" 
 								  height="24" 
@@ -366,7 +507,7 @@
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="LinearGradient,BitmapFill" itemCreationPolicy="immediate">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient,LinearGradient,BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Scale X" 
 				 toolTip.LinearGradient="The horizontal scale of the gradient transform, which defines the width of the (unrotated) gradient" 
 				 styleName="inspectablePanelLabel" showTruncationTip="true"/>
@@ -374,17 +515,17 @@
 								  height="24" 
 								  stepSize="1" 
 								  snapInterval="0"
-								  defaultValue="1"
+								  defaultValue="{NaN}"
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	
-	<s:HGroup width="100%" verticalAlign="baseline" includeIn="BitmapFill" itemCreationPolicy="immediate">
+	<s:HGroup width="100%" verticalAlign="baseline" includeIn="RadialGradient,BitmapFill" itemCreationPolicy="immediate">
 		<s:Label text="Scale Y" toolTip="" styleName="inspectablePanelLabel" showTruncationTip="true"/>
 		<renderers:NumberRenderer id="scaleYRenderer" 
 								  height="24" 
 								  stepSize="1" 
 								  snapInterval="0"
-								  defaultValue="1"
+								  defaultValue="{NaN}"
 								  subPropertyName="fill"/>
 	</s:HGroup>
 	

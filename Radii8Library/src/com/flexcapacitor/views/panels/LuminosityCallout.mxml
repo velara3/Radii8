@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<c:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:c="com.flexcapacitor.controls.*" 
+		 
+		 frameThickness="8"
+		 contentCornerRadius="0"
+		 hideOnMouseDownOutside="true"
+		 horizontalPosition="middle"
+		 verticalPosition="before"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			
+			import spark.components.supportClasses.GroupBase;
+
+			public var groupBase:GroupBase;
+			
+			public function setGroupBase(group:GroupBase):void {
+				groupBase = group;
+				invertCheckbox.selected = group.luminosityInvert;
+				clipCheckbox.selected = group.luminosityClip;
+			}
+			
+			override public function open(owner:DisplayObjectContainer, modal:Boolean = false):void {
+				super.open(owner, modal);
+			}
+			
+			/**
+			 *  @private
+			 */
+			override public function close(commit:Boolean=false, data:*=null):void {
+				groupBase = null;
+				super.close(commit, null);
+			}
+			
+			protected function invert_changeHandler(event:Event):void {
+				
+				//groupBase.luminosityInvert = invertCheckbox.selected;
+				
+				Radiate.setProperty(groupBase, "luminosityInvert", invertCheckbox.selected);
+			}
+			
+			protected function clip_changeHandler(event:Event):void {
+				
+				//groupBase.luminosityClip = clipCheckbox.selected;
+				Radiate.setProperty(groupBase, "luminosityClip", clipCheckbox.selected);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup>
+		<s:CheckBox id="invertCheckbox" label="Invert" change="invert_changeHandler(event)" />
+		<s:CheckBox id="clipCheckbox" label="Clip" change="clip_changeHandler(event)" />
+	</s:VGroup>
+	
+</c:Callout>

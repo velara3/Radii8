@@ -163,7 +163,7 @@
 				var selectedNavigatorContent:IInspector;
 				var inspector:IInspector;
 				var item:Object;
-				var inspectors:Array;
+				var inspectors:Array = [];
 				
 				if (selectedNavigator && selectedNavigator.numElements>0) {
 					inspectors = ClassUtils.getElementsByType(selectedNavigator, IInspector, null, true);

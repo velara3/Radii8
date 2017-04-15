@@ -15,7 +15,7 @@
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
-			import com.flexcapacitor.views.LayersInspector;
+			import com.flexcapacitor.views.panels.LuminosityCallout;
 			import com.flexcapacitor.views.panels.MaskTypeCallout;
 			
 			import mx.controls.Tree;
@@ -23,6 +23,7 @@
 			import mx.events.FlexEvent;
 			
 			import spark.components.Application;
+			import spark.components.supportClasses.GroupBase;
 			/**
 			 * TypeError: Error #1034: Type Coercion failed: cannot convert Object@391af1d2bb51 to com.flexcapacitor.utils.supportClasses.ComponentDescription.
 	at Function/<anonymous>()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/views/renderers/LayersRenderer.mxml:281]
@@ -44,6 +45,7 @@ changed to
 				var componentDescription:ComponentDescription = value as ComponentDescription;
 				var path:String;
 				var instance:Object = componentDescription ? componentDescription.instance : null;
+				var maskType:String;
 				
 				if (componentDescription) {
 					if (componentDescription.icon) {
@@ -116,7 +118,18 @@ changed to
 						(instance && "mask" in instance && instance.mask)) {
 						hasMaskGroup.visible = true;
 						hasMaskGroup.includeInLayout = true;
-						maskTypeLabel.text = getMaskType(instance);
+						
+						maskType = getMaskType(instance);
+						maskTypeLabel.text = maskType;
+						
+						if (maskType=="L") {
+							luminosityTypeLabel.visible = true;
+							luminosityTypeLabel.includeInLayout = true;
+						}
+						else {
+							luminosityTypeLabel.visible = false;
+							luminosityTypeLabel.includeInLayout = false;
+						}
 					}
 					else {
 						hasMaskGroup.visible = false;
@@ -306,9 +319,11 @@ changed to
 				return super.getCurrentRendererState();
 			}
 			
-			protected function changeMaskType_clickHandler(event:MouseEvent):void
-			{
-				MaskTypeCallout(Object(owner).document.maskTypesCallout).open(event.currentTarget as DisplayObjectContainer);
+			protected function changeMaskType_clickHandler(event:MouseEvent):void {
+
+				if (!MaskTypeCallout(Object(owner).document.maskTypesCallout).isOpen) {
+					MaskTypeCallout(Object(owner).document.maskTypesCallout).open(event.currentTarget as DisplayObjectContainer);
+				}
 			}
 			
 			private var previousDragEnabled:Boolean;
@@ -322,6 +337,16 @@ changed to
 				}
 				
 				Radiate.showFiltersPanel();
+			}
+			
+			protected function luminosityTypeLabel_clickHandler(event:MouseEvent):void {
+				var luminosityCallout:LuminosityCallout = LuminosityCallout(Object(owner).document.luminosityCallout);
+				var groupBase:GroupBase = Radiate.instance.target as GroupBase;
+				
+				if (!luminosityCallout.isOpen) {
+					luminosityCallout.open(event.currentTarget as DisplayObjectContainer);
+					luminosityCallout.setGroupBase(groupBase);
+				}
 			}
 			
 		]]>
@@ -438,6 +463,15 @@ changed to
 					 verticalAlign="middle"
 					 toolTip="Mask Type"
 					 click="changeMaskType_clickHandler(event)"/>
+			<controls:LabelButton id="luminosityTypeLabel" text="S" 
+								  height="100%"
+								  fontSize="10"
+								  paddingTop="2"
+								  verticalAlign="middle"
+								  toolTip="Luminosity Type"
+								  click="luminosityTypeLabel_clickHandler(event)"
+								  visible="false"
+								  includeInLayout="false"/>
 			<s:BitmapImage source="{Radii8LibraryAssets.hasMask}" 
 						   />
 		</s:HGroup>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<r:PropertiesGridRendererBase xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx" 
+		xmlns:c="com.flexcapacitor.components.*"
+		xmlns:r="com.flexcapacitor.views.renderers.*"
+
+		clipAndEnableScrolling="true">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.views.panels.GradientCallout;
+			
+			import mx.graphics.GradientBase;
+			import mx.graphics.GradientEntry;
+			
+			import spark.events.PopUpEvent;
+			import spark.primitives.supportClasses.FilledElement;
+			
+			public var gradientCallOut:GradientCallout = new GradientCallout();
+			public var originalEntries:Array;
+			
+			protected function group1_clickHandler(event:MouseEvent):void {
+				var entries:Array;
+				
+				if (gradientCallOut.isOpen) return;
+				
+				if (!gradientCallOut.hasEventListener(Event.CLOSE)) {
+					gradientCallOut.addEventListener(Event.CLOSE, closeCallOut, false, 0, true);
+				}
+				
+				var filledElement:FilledElement = Radiate.instance.target as FilledElement;
+				var currentGradient:GradientBase;
+				
+				if (filledElement) {
+					currentGradient = filledElement.fill as GradientBase;
+					
+					if (currentGradient ==null) {
+						return;
+					}
+					
+					entries = copyGradientEntries(currentGradient.entries);
+					originalEntries = copyGradientEntries(entries);
+					
+					gradientCallOut.open(gradientContainer);
+					gradientCallOut.setEntries(entries, currentGradient);
+				}
+			}
+			
+			/**
+			 * Set data
+			 * */
+			override public function set data(value:Object):void {
+				var filledElement:FilledElement = Radiate.instance.target as FilledElement;
+				var currentGradient:GradientBase;
+				
+				if (filledElement) {
+					currentGradient = filledElement.fill as GradientBase;
+					
+					if (currentGradient ==null) {
+						return;
+					}
+					
+					linearGradientFill.entries = copyGradientEntries(currentGradient.entries);
+				}
+			}
+			
+			protected function closeCallOut(event:PopUpEvent):void {
+				var entries:Array = event.data;
+				var filledElement:FilledElement;
+				var currentGradient:GradientBase;
+				
+				gradientCallOut.removeEventListener(Event.CLOSE, closeCallOut);
+				
+				filledElement = Radiate.instance.target as FilledElement;
+				
+				if (filledElement) {
+					currentGradient = filledElement.fill as GradientBase;
+				}
+				
+				if (entries) {
+					
+					if (originalEntries) {
+						currentGradient.entries = originalEntries;
+					}
+					
+					//entries = copyGradientEntries(entries);
+					Radiate.setProperty(currentGradient, "entries", entries);
+				}
+				else {
+					if (originalEntries && currentGradient) {
+						currentGradient.entries = originalEntries;
+					}
+				}
+				
+				originalEntries = null;
+			}
+			
+			public function copyGradientEntries(entries:Array):Array {
+				var newEntries:Array = [];
+				var entry:GradientEntry;
+				var newEntry:GradientEntry;
+				
+				for (var i:int = entries.length-1; i>-1; i--) {
+					entry = entries[i];
+					newEntries[i] = new GradientEntry();
+					newEntries[i].color = entry.color;
+					newEntries[i].ratio = entry.ratio;
+					newEntries[i].alpha = entry.alpha;
+					//newEntries.push(newEntry);
+				}
+				
+				// this loop ended up showing only the last entry when drawn
+				/*
+				for (var i:int = entries.length-1; i>-1; i--) {
+					entry = entries[i];
+					newEntry = new GradientEntry();
+					newEntry.color = entry.color;
+					newEntry.ratio = entry.ratio;
+					newEntry.alpha = entry.alpha;
+					newEntries.push(newEntry);
+				}
+				*/
+				//newEntries.reverse();
+				
+				return newEntries;
+			}
+			
+			protected function clearStyleButton_clickHandler(event:MouseEvent):void{
+				var filledElement:FilledElement;
+				var currentGradient:GradientBase;
+				
+				filledElement = Radiate.instance.target as FilledElement;
+				
+				if (filledElement) {
+					currentGradient = filledElement.fill as GradientBase;
+					
+					if (currentGradient) {
+						Radiate.setProperty(currentGradient, "entries", []);
+					}
+				}
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<fx:Boolean id="includeCopyIcon"/>
+		<fx:Boolean id="includeTextInput"/>
+	</fx:Declarations>
+	
+	<s:HGroup width="100%" verticalAlign="middle" >
+		<s:Group id="gradientContainer" width="100" height="23" click="group1_clickHandler(event)">
+			<s:Rect id="gradientRectangle" width="100%" height="100%">
+				<s:fill>
+					<s:LinearGradient id="linearGradientFill" />
+				</s:fill>
+				<s:stroke>
+					<s:SolidColorStroke color="black" alpha=".5"/>
+				</s:stroke>
+			</s:Rect>
+		</s:Group>
+		
+		<s:Button id="clearStyleButton" 
+				  skinClass="com.flexcapacitor.skins.ClearButtonSkin"
+				  click="clearStyleButton_clickHandler(event)"
+				  right="0" 
+				  verticalCenter="0"/>
+		<s:Label />
+		
+	</s:HGroup>
+	
+</r:PropertiesGridRendererBase>

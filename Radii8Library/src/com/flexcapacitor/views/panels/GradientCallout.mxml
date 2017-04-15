@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<controls:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:controls="com.flexcapacitor.controls.*" 
+		 
+		 fontSize="11"
+		 contentCornerRadius="0"
+		 height="150"
+		 hideOnMouseDownOutside="true"
+		 horizontalPosition="middle"
+		 verticalPosition="before">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.graphics.GradientBase;
+			import mx.graphics.GradientEntry;
+			
+			
+			/**
+			 *  @private
+			 */
+			override public function close(commit:Boolean=false, data:*=null):void {
+				gradient.removeAllItems();
+				gradient.clientGradientBase = null;
+				
+				super.close(commit, data);
+			}
+			
+			override public function open(owner:DisplayObjectContainer, modal:Boolean = false):void {
+				super.open(owner, modal);
+			}
+			
+			public function setEntries(value:Object, clientGradient:GradientBase = null):void {
+				if (value is Array) {
+					gradient.dataProvider = new ArrayCollection(value as Array);
+				}
+				
+				if (value is ArrayCollection) {
+					gradient.dataProvider = value as ArrayCollection;
+				}
+				
+				gradient.clientGradientBase = clientGradient;
+				
+			}
+			
+			public function getEntries():Array {
+				var entries:Array;
+				
+				entries = gradient.toArray();
+				
+				return entries;
+			}
+			
+			protected function okButton_clickHandler(event:MouseEvent):void {
+				var entries:Array = getEntries();
+				close(false, entries);
+			}
+			
+			protected function cancel_clickHandler(event:MouseEvent):void {
+				close(false, null);
+			}
+			
+			protected function preview_changeHandler(event:Event):void
+			{
+				gradient.updateLive = preview.selected;
+			}
+			
+			protected function beveledimagebutton1_clickHandler(event:MouseEvent):void
+			{
+				gradient.dataProvider = new ArrayCollection(getDefaultLinearFillEntries());
+			}
+			
+			public function getDefaultLinearFillEntries():Array {
+				var entries:Array = [];
+				
+				// black to white fill full alpha
+				entries[0] = new GradientEntry(0, 0, 1);
+				entries[1] = new GradientEntry(0xFFFFFF, 1, 1);
+				
+				return entries;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:VGroup width="100%" height="100%" 
+			  paddingLeft="8" paddingRight="8" paddingBottom="8" 
+			  gap="12"
+			  paddingTop="8">
+		<controls:Gradient id="gradient" height="100%" width="100%" />
+		<s:HGroup width="100%">
+			<controls:BeveledImageButton source="{Radii8LibraryAssets.refresh}" click="beveledimagebutton1_clickHandler(event)"/>
+			<s:CheckBox id="preview" label="Preview" selected="true" change="preview_changeHandler(event)"/>
+			<s:Spacer width="100%" />
+			<s:Button label="Cancel" click="cancel_clickHandler(event)"/>
+			<s:Button label="OK" click="okButton_clickHandler(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+</controls:Callout>

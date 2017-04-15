@@ -28,7 +28,7 @@ package com.flexcapacitor.managers {
 
 	
 	/**
-	 * Helper class to run common commands
+	 * Helper class for common run commands
 	 * */
 	public class RunManager extends EventDispatcher {
 		

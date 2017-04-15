@@ -19,6 +19,7 @@
 			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.model.HistoryEventData;
 			import com.flexcapacitor.model.HistoryEventItem;
+			import com.flexcapacitor.skins.TransparentFillButtonSkin;
 			
 			import flash.utils.getTimer;
 			
@@ -421,6 +422,7 @@
 				if (radiate.selectedDocument) {
 					Radiate.info("Rebuilding document");
 					Radiate.callAfter(250, HistoryManager.rebuild, radiate.selectedDocument);
+					Radiate.callAfter(500, Radiate.info, "Document rebuilt");
 				}
 			}
 			
@@ -507,19 +509,28 @@
 							  toolTip="Refresh"
 							  click="refreshIcon_clickHandler(event)"/>
 		
-		<c:BeveledImageButton id="backButton" 
-							  source="{Radii8LibraryAssets.undo}" 
-							  height="15"
-							  alpha=".8"
-							  click="undo()" 
-							  toolTip="Undo"
-							  />
-		<c:BeveledImageButton id="forwardButton" 
-							  source="{Radii8LibraryAssets.redo}"
-							  height="15"
-							  alpha=".8"
-							  click="redo()" 
-							  toolTip="Redo"
-							  />
+		
+		<s:Button id="backButton" 
+				  icon="{Radii8LibraryAssets.undo}" 
+				  alpha=".8"
+				  width="24"
+				  height="18"
+				  buttonDown="undo()" 
+				  toolTip="Undo"
+				  autoRepeat="true"
+				  repeatInterval="100"
+				  skinClass="com.flexcapacitor.skins.TransparentFillButtonSkin"
+				  />
+		<s:Button id="forwardButton" 
+				  icon="{Radii8LibraryAssets.redo}" 
+				  alpha=".8"
+				  width="24"
+				  height="18"
+				  buttonDown="redo()" 
+				  toolTip="Redo"
+				  autoRepeat="true"
+				  repeatInterval="100"
+				  skinClass="com.flexcapacitor.skins.TransparentFillButtonSkin"
+				  />
 	</s:HGroup>
 </s:Group>

@@ -17,6 +17,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.log;
+	import com.flexcapacitor.views.SelectionInspector;
 	import com.roguedevelopment.DisplayModel;
 	import com.roguedevelopment.DragGeometry;
 	import com.roguedevelopment.Flex4ChildManager;
@@ -144,6 +145,8 @@ package com.flexcapacitor.tools {
 	 * 
 	 * THERE ARE SECTIONS IN THIS CLASS THAT NEED TO BE REFACTORED
 	 * 
+	 * Getting the correct size: 
+	 * http://help.adobe.com/en_US/flex/using/WS2db454920e96a9e51e63e3d11c0bf633a0-7fff.html
 	 * */
 	public class Selection extends FlexSprite implements ITool {
 		
@@ -353,6 +356,7 @@ package com.flexcapacitor.tools {
 		public var toolLayer:IVisualElementContainer;
 		public var updateOnUpdateComplete:Boolean = false;
 		
+		public var selectionInspector:SelectionInspector;
 		
 		public var objectHandles:ObjectHandles;
 		
@@ -1138,6 +1142,7 @@ package com.flexcapacitor.tools {
 					// dragging graphic elements
 					if (target is IVisualElement) {
 						dragManagerInstance.listenForDragBehavior(target as IVisualElement, document, event, null, dragAllowedOutside);
+						dragManagerInstance.roundToIntegers = roundToIntegers;
 						addDragManagerListeners();
 					}
 					
@@ -1389,6 +1394,10 @@ package com.flexcapacitor.tools {
 			// sometimes the selection rectangle is not hidden??
 			if (hideSelectionOnDrag && targetSelectionGroup.visible) {
 				clearSelection();
+			}
+			
+			if (selectionInspector) {
+				selectionInspector.dragLocation = dragLocation;
 			}
 		}
 		
@@ -2136,6 +2145,7 @@ package com.flexcapacitor.tools {
 		 * */
 		public var showResizeHandles:Boolean = false;
 		public var useObjectHandles:Boolean = true;
+		public var roundToIntegers:Boolean;
 		
 		/**
 		 * Clears the outline around a target display object

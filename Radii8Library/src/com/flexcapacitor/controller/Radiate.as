@@ -152,6 +152,7 @@ package com.flexcapacitor.controller {
 	import mx.containers.GridItem;
 	import mx.containers.GridRow;
 	import mx.containers.TabNavigator;
+	import mx.containers.ViewStack;
 	import mx.controls.Alert;
 	import mx.controls.ColorPicker;
 	import mx.controls.LinkButton;
@@ -3573,7 +3574,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Stops on the scale
 		 * */
-		public var scaleStops:Array = [.05,.0625,.0833,.125,.1666,.25,.333,.50,.667,1,1.25,1.50,1.75,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+		public var scaleStops:Array = [.05,.0625,.0833,.125,.1666,.25,.333,.4,.50,.667,.8,.9,1,1.25,1.50,1.75,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
 		
 		/**
 		 * Increases the zoom of the target application to next value 
@@ -15109,6 +15110,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			return null;
 		}
+		
 	}
 }
 

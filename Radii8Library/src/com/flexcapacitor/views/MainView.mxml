@@ -32,6 +32,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.effects.popup.OpenPopUp;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ArrangeLayers;
 			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.model.DocumentData;
@@ -1646,6 +1647,26 @@
 				}
 			}
 			
+			protected function bringForwardLayer_itemClickHandler(event:MenuEvent):void
+			{
+				ArrangeLayers.bringForwards(radiate.target, radiate.selectedDocument);
+			}
+			
+			protected function sendBackwardLayer_itemClickHandler(event:MenuEvent):void
+			{
+				ArrangeLayers.sendBackwards(radiate.target, radiate.selectedDocument);
+			}
+			
+			protected function bringToFront_itemClickHandler(event:MenuEvent):void
+			{
+				ArrangeLayers.bringToFront(radiate.target, radiate.selectedDocument);
+			}
+			
+			protected function sendToBack_itemClickHandler(event:MenuEvent):void
+			{
+				ArrangeLayers.sendToBack(radiate.target, radiate.selectedDocument);
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1922,6 +1943,13 @@
 					<model:MenuItem id="unlockLayer" label="Unlock layer" itemClick="unlockLayer_itemClickHandler(event)" />
 					<model:MenuItem id="lockDescendantLayers" label="Lock descendant layers" itemClick="lockDescendantLayers_itemClickHandler(event)" />
 					<model:MenuItem id="unlockDescendantLayers" label="Unlock descendant layers" itemClick="unlockDescendantLayers_itemClickHandler(event)" />
+				</model:MenuItem>
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="arrangeLayers" label="Arrange Layer" >
+					<model:MenuItem id="bringForwardLayer" label="Bring Forward" itemClick="bringForwardLayer_itemClickHandler(event)" />
+					<model:MenuItem id="bringToFront" label="Bring to Front" itemClick="bringToFront_itemClickHandler(event)" />
+					<model:MenuItem id="sendBackwardLayer" label="Send Backward" itemClick="sendBackwardLayer_itemClickHandler(event)" />
+					<model:MenuItem id="sendToBack" label="Send to Back" itemClick="sendToBack_itemClickHandler(event)" />
 				</model:MenuItem>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="sizeSelectionToContent_itemClickHandler(event)" />

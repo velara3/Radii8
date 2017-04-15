@@ -318,5 +318,6 @@
 				   height="100%"
 				   top="0"
 				   bottom="40"
+				   click="addFilter_clickHandler(event)"
 				   />
 </s:Group>

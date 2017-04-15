@@ -33,6 +33,7 @@ package com.flexcapacitor.utils {
 	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
+	import mx.core.mx_internal;
 	import mx.events.DragEvent;
 	import mx.events.SandboxMouseEvent;
 	import mx.managers.DragManager;
@@ -40,6 +41,7 @@ package com.flexcapacitor.utils {
 	import mx.managers.PopUpManager;
 	import mx.managers.SystemManager;
 	import mx.managers.SystemManagerGlobals;
+	import mx.managers.dragClasses.DragProxy;
 	import mx.utils.NameUtil;
 	
 	import spark.components.Application;
@@ -60,7 +62,9 @@ package com.flexcapacitor.utils {
 	import spark.skins.spark.ApplicationSkin;
 	import spark.skins.spark.ImageSkin;
 	import spark.skins.spark.ListDropIndicator;
-
+	
+	use namespace mx_internal;
+	
 	/**
 	 * Drag start 
 	 * */
@@ -129,6 +133,8 @@ package com.flexcapacitor.utils {
 		public var showSelectionBoxOnApplication:Boolean;
 		
 		public var swfRoot:DisplayObject;
+		public var dragProxy:DragProxy;
+		public var dragManager:DragManager;
 		
 		/**
 		 * Reference to the document
@@ -148,8 +154,12 @@ package com.flexcapacitor.utils {
 		/**
 		 * X and Y location of dragged object
 		 * */
-		[Bindable] 
 		public var dropTargetLocation:String;
+		
+		/**
+		 * X and Y location of dragged object
+		 * */
+		public var dropLocationPoint:Point;
 		
 		public var startingPoint:Point;
 		
@@ -165,7 +175,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * How many pixels the mouse has to move before a drag operation is started
 		 * */
-		public var dragStartTolerance:int = 5;
+		public var dragStartTolerance:int = 4;
 		
 		public var dragInitiator:IVisualElement;
 		public var dragInitiatorProxy:Image;
@@ -183,6 +193,7 @@ package com.flexcapacitor.utils {
 		private var topLevelApplication:Application;
 		public var testScaledMovement:Boolean;
 		public var dragOutAllowed:Boolean;
+		public var roundToIntegers:Boolean;
 		
 		public var hiddenItemsDictionary:Dictionary = new Dictionary(true);
 		
@@ -244,7 +255,7 @@ package com.flexcapacitor.utils {
 			startingPoint.y = event.stageY;
 			
 			
-			updateDropTargetLocation(targetApplication, event);
+			//updateDropTargetLocation(targetApplication, event);
 			
 			var topSystemManager:SystemManager;
 			
@@ -283,6 +294,61 @@ package com.flexcapacitor.utils {
 		 * Updates the drop target location property with the x and y values of the dragged item.
 		 * Format is "XxY", so for example, "100x50".
 		 * */
+		private function updateDropLocation():void {
+			var dropX:Number;
+			var dropY:Number;
+			var out:String;
+			var dropPoint:Point;
+			var scaleX:Number;
+			
+			scaleX = targetApplication.scaleX;
+			
+			if (dropLocation!=null) {
+			
+				dropPoint = dropLocation.dropPoint;
+				
+				if (scaleX<1) {
+					dropX = dropPoint.x-dragProxy.xOffset/scaleX;
+					dropY = dropPoint.y-dragProxy.yOffset/scaleX;
+				}
+				else if (scaleX>1) {
+					dropX = dropPoint.x-dragProxy.xOffset/scaleX;
+					dropY = dropPoint.y-dragProxy.yOffset/scaleX;
+				}
+				else {
+					dropX = dropPoint.x - dragProxy.xOffset;
+					dropY = dropPoint.y - dragProxy.yOffset;
+				}
+			}
+			else {
+				dropX = 0;
+				dropY = 0;
+			}
+			
+			if (dropLocationPoint==null) {
+				dropLocationPoint = new Point();
+			}
+			
+			if (roundToIntegers) {
+				dropLocationPoint.x = Math.round(dropX);
+				dropLocationPoint.y = Math.round(dropY);
+			}
+			else {
+				dropLocationPoint.x = NumberUtils.toDecimalPoint(dropX);
+				dropLocationPoint.y = NumberUtils.toDecimalPoint(dropY);
+			}
+				
+			out = dropLocationPoint.x + "x" + dropLocationPoint.y;
+			
+			if (dropTargetLocation!=out) {
+				dropTargetLocation = out;
+			}
+		}
+		
+		/**
+		 * Updates the drop target location property with the x and y values of the dragged item.
+		 * Format is "XxY", so for example, "100x50".
+		 * */
 		private function updateDropTargetLocation(rootDisplayObject:DisplayObject, event:MouseEvent):void {
 			var mousePoint:Point = new Point(event.stageX, event.stageY);
 			//var applicationLocationPoint:Point = DisplayObjectUtils.getDisplayObjectPosition(targetApplication, mousePoint);
@@ -295,19 +361,31 @@ package com.flexcapacitor.utils {
 			// this one works 
 			//var newPoint3:Point = DisplayObject(rootDisplayObject).globalToLocal(mousePoint);
 			//var newPoint4:Point = DisplayObject(rootDisplayObject).globalToLocal(point2);
-			
-			var newX:Number = mousePoint.x - applicationLocationPoint.x - offset.x;
-			var newY:Number = mousePoint.y - applicationLocationPoint.y - offset.y;
+			var applicationScaleX:Number = rootDisplayObject.scaleX;
+			var applicationScaleY:Number = rootDisplayObject.scaleY;
+			var newX:Number = mousePoint.x - applicationLocationPoint.x - offset.x*applicationScaleX;
+			var newY:Number = mousePoint.y - applicationLocationPoint.y - offset.y*applicationScaleY;
 			//var newX2:Number = targetApplication.contentMouseX - offset.x;
 			//var newY2:Number = targetApplication.contentMouseY - offset.y;
 			
-			var out:String = newX + "x" + newY;
+			//newX = NumberUtils.toDecimalPoint(newX*applicationScaleX);
+			//newY = NumberUtils.toDecimalPoint(newY*applicationScaleY);
+			
+			
+			if (dropLocationPoint==null) {
+				dropLocationPoint = new Point();
+			}
+			
+			dropLocationPoint.x = NumberUtils.toDecimalPoint(newX);
+			dropLocationPoint.y = NumberUtils.toDecimalPoint(newY);
+			
+			var out:String = dropLocationPoint.x + "x" + dropLocationPoint.y;
 			// Find the registration point of the owner
-	        /*var sandboxRoot:DisplayObject = systemManager.getSandboxRoot();
-	        var regPoint:Point = owner.localToGlobal(new Point());
-	        regPoint = sandboxRoot.globalToLocal(regPoint);*/
-	        //var regPoint:Point = rootDisplayObject.localToGlobal(new Point());
-	        //regPoint = rootDisplayObject.globalToLocal(regPoint);
+			/*var sandboxRoot:DisplayObject = systemManager.getSandboxRoot();
+			var regPoint:Point = owner.localToGlobal(new Point());
+			regPoint = sandboxRoot.globalToLocal(regPoint);*/
+			//var regPoint:Point = rootDisplayObject.localToGlobal(new Point());
+			//regPoint = rootDisplayObject.globalToLocal(regPoint);
 			
 			if (dropTargetLocation!=out) {
 				dropTargetLocation = out;
@@ -329,7 +407,7 @@ package com.flexcapacitor.utils {
 			dragToleranceMet = Math.abs(startingPoint.x - event.stageX) >= dragStartTolerance;
 			dragToleranceMet = !dragToleranceMet ? Math.abs(startingPoint.y - event.stageY)  >= dragStartTolerance: true;
 			
-			updateDropTargetLocation(targetApplication, event);
+			//updateDropTargetLocation(targetApplication, event);
 			
 			if (dragToleranceMet) {
 				
@@ -400,7 +478,7 @@ package com.flexcapacitor.utils {
 				offset.y = event.stageY - distanceFromTop;
 			}
 			
-			updateDropTargetLocation(targetApplication, event);
+			//updateDropTargetLocation(targetApplication, event);
 			
 			addGroupListeners(application);
 			
@@ -523,6 +601,14 @@ package com.flexcapacitor.utils {
 				//   - dragManagerStyleDeclaration is null 
 			}
 			
+			if (dragManager==null) {
+				//dragManager = Singleton.getInstance("mx.managers::IDragManager");
+			}
+			
+			var dragManagerImplementation:Object = mx.managers.DragManagerImpl.getInstance();
+			dragProxy = dragManagerImplementation.dragProxy;
+			//dragProxy = DragManager::mx_internal.getDragProxy(); //throws error below???
+			// TypeError: Error #1034: Type Coercion failed: cannot convert mx.managers::DragManager$ to Namespace.
 			//removeDragInitiatorProxy();
 			
 			dragging = true;
@@ -606,7 +692,7 @@ package com.flexcapacitor.utils {
 				log(" current target: " + ClassUtils.getClassName(event.currentTarget));
 			}
 			
-			var eventTarget:FlexSprite = FlexSprite(event.target);
+			var eventTarget:FlexSprite;
 			//var description:ComponentDescription;
 			var topLeftEdgePoint:Point;
 			var rectangle:Rectangle;
@@ -617,6 +703,8 @@ package com.flexcapacitor.utils {
 			var isTile:Boolean;
 			var target:Object;
 			var replaceTarget:Boolean;
+			
+			eventTarget = FlexSprite(event.target);
 			
 			dragData = findDropTarget(event, true, targetApplication.scaleX);
 			
@@ -637,6 +725,11 @@ package com.flexcapacitor.utils {
 			dropLocation = dragData.dropLocation;
 			dropLayout = dragData.layout;
 			replaceTarget = dragData.replaceTarget;
+			
+			
+			// update location properties
+			//updateDropTargetLocation(targetApplication, event);
+			updateDropLocation();
 			
 			////////////////////////////////////////////////////////////
 			// show selection box
@@ -894,6 +987,8 @@ package com.flexcapacitor.utils {
 			// hide drop indicator
 			DragManager.showFeedback(DragManager.NONE);
 			
+			updateDropLocation();
+			
 			// Destroy the dropIndicator instance
 			destroyDropIndicator();
 			
@@ -961,10 +1056,13 @@ package com.flexcapacitor.utils {
 			// it seems to happen when dragging and dropping rapidly
 			// stops the drop not accepted animation
 			var dragManagerImplementation:Object = mx.managers.DragManagerImpl.getInstance();
-			var dragProxy:Object = dragManagerImplementation.dragProxy;
+			//var dragProxy:DragProxy = dragManagerImplementation.dragProxy;
 			//var startPoint:Point = new Point(dragProxy.startX, dragProxy.startY);
 			Object(dragManagerImplementation).endDrag(); 
 			//DragManager.endDrag();
+			
+			distanceFromLeftEdge = targetApplication.localToGlobal(new Point()).x;
+			distanceFromTopEdge = targetApplication.localToGlobal(new Point()).y;
 			
 			if (dropLocation) {
 				
@@ -972,7 +1070,34 @@ package com.flexcapacitor.utils {
 					index = dropLocation.dropIndex;
 				}
 				else if (isGroup || isSkinnableContainer) {
-					dropPoint = offscreen ? new Point(event.localX, event.localY) : dropLocation.dropPoint;
+					/*
+					trace("drag comp X:"+ distanceFromLeft);
+					trace("drag comp Y:"+ distanceFromTop);
+					trace("app X:"+ distanceFromLeftEdge);
+					trace("app Y:"+ distanceFromTopEdge);
+					trace("start point X:"+ startingPoint.x);
+					trace("start point Y:"+ startingPoint.y);
+					trace("drag proxy start X:"+ dragProxy.startX);
+					trace("drag proxy start Y:"+ dragProxy.startY);
+					trace("dragProxy.xOffset:"+ dragProxy.xOffset);
+					trace("dragProxy.yOffset:"+ dragProxy.yOffset);
+					trace("stageX:"+ event.stageX);
+					trace("stageY:"+ event.stageY);
+					trace("event.localX:"+ event.localX);
+					trace("event.localY:"+ event.localY);
+					trace("application.scaleX:" + targetApplication.scaleX);
+					trace("offset.x:" + offset.x);
+					trace("offset.y:" + offset.y);
+					trace("dropPoint.y:"+ dropLocation.dropPoint.y);
+					trace("dropPoint.x:"+ dropLocation.dropPoint.x);
+					*/
+					
+					if (offscreen) {
+						dropPoint = new Point(event.localX, event.localY);
+					}
+					else {
+						dropPoint = dropLocation.dropPoint;
+					}
 				}
 			}
 			
@@ -1017,11 +1142,7 @@ package com.flexcapacitor.utils {
 				return;
 			}
 			
-			// attempt to add or move
-			//addResult = Radiate.requestAddDisplayItems(draggedItem, dropTarget, null, eventDescription, null, index);
 			
-			
-			// setPositionFromXY(target, startPoint, endPoint);
 			if (isBasicLayout) {
 				var dropX:Number;
 				var dropY:Number;
@@ -1038,31 +1159,53 @@ package com.flexcapacitor.utils {
 				var setTop:Boolean;
 				var setX:Boolean;
 				var setY:Boolean;
-				var bottom:int;
-				var right:int;
-				var left:int;
-				var top:int;
-				var x:int;
-				var y:int;
-				var scaleX:Number = targetApplication.scaleX;
-				var scaleY:Number = targetApplication.scaleY;
+				var bottom:Number;
+				var right:Number;
+				var left:Number;
+				var top:Number;
+				var x:Number;
+				var y:Number;
+				var scaleX:Number;
+				var scaleY:Number;
+				var distanceFromLeftEdge:Number;
+				var distanceFromTopEdge:Number;
 				
+				scaleX = targetApplication.scaleX;
+				scaleY = targetApplication.scaleY;
 				
-				var distanceFromLeftEdge:Number = targetApplication.localToGlobal(new Point()).x;
-				var distanceFromTopEdge:Number = targetApplication.localToGlobal(new Point()).y;
+				if (scaleX<1) {
+					//dropX = dropPoint.x-dragProxy.xOffset*(1+(1-scaleX));
+					//dropY = dropPoint.y-dragProxy.yOffset*(1+(1-scaleY));
+					dropX = dropPoint.x-dragProxy.xOffset/scaleX;
+					dropY = dropPoint.y-dragProxy.yOffset/scaleY;
+					//dropX = dropPoint.x;
+					//dropY = dropPoint.y;
+				}
+				else if (scaleX>1) {
+					dropX = dropPoint.x-dragProxy.xOffset/scaleX;
+					dropY = dropPoint.y-dragProxy.yOffset/scaleY;
+				}
 				
 				// check for scaling
 				if (scaleX!=1 && !isNaN(scaleX)) {
-					//dropX = (dropPoint.x*scaleX) - offset.x; //45.6875
+					//dropX = dropPoint.x-dragProxy.xOffset;
+					//dropY = dropPoint.y-dragProxy.yOffset;
+					//dropX = (dropPoint.x*scaleX) - offset.x;
 					//dropY = (dropPoint.y*scaleY) - offset.y;
-					dropX = dropPoint.x - offset.x; //45.6875
-					dropY = dropPoint.y - offset.y;
+					//dropX = invertedScale*dropPoint.x - offset.x;
+					//dropY = invertedScale*dropPoint.y - offset.y;
+					dropX;
 				}
 				else {
 					dropX = dropPoint.x - offset.x;
 					dropY = dropPoint.y - offset.y;
 				}
 				
+				
+				if (roundToIntegers) {
+					dropX = Math.round(dropX);
+					dropY = Math.round(dropY);
+				}
 				
 				////////////////////////////////////////
 				// X and Y
@@ -1382,7 +1525,7 @@ package com.flexcapacitor.utils {
 			var isBasic:Boolean;
 			var isTile:Boolean;
 			var layout:LayoutBase;
-			var targetsLength:int;
+			var numberOfTargets:int;
 			var target:Object;
 			var debug:Boolean;
 			var dropIndex:int;
@@ -1405,14 +1548,13 @@ package com.flexcapacitor.utils {
 			}
 			
 			// get items under point
+			// according to DragProxy the player doesn't handle getObjectsUnderPoint correctly 
+			// and uses it's own method. maybe use that if any issues
 			targetsUnderPoint = topLevelApplication.getObjectsUnderPoint(topLeftEdgePoint);
-			targetsLength = targetsUnderPoint.length;
+			numberOfTargets = targetsUnderPoint.length;
 			
 			// start from highest component and go back to application
 			targetsUnderPoint = targetsUnderPoint.reverse();
-			
-			// update location properties
-			updateDropTargetLocation(targetApplication, event);
 			
 			if (!dragOutAllowed && "owner" in draggedItem && draggedItem.owner) {
 				allowedParent = draggedItem.owner;
@@ -1425,7 +1567,7 @@ package com.flexcapacitor.utils {
 			componentTreeLoop:
 			
 			// loop through items under point until we find one on the *component* tree
-			for (var i:int;i<targetsLength;i++) {
+			for (var i:int;i<numberOfTargets;i++) {
 				target = targetsUnderPoint[i];
 				// if parent application does not contain the target
 				if (!targetApplication.contains(DisplayObject(target))) {

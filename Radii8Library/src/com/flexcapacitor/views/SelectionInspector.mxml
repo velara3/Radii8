@@ -42,6 +42,26 @@
 			
 			private var _target:Object;
 			
+			private var _dragLocation:String;
+
+			public function get dragLocation():String
+			{
+				return _dragLocation;
+			}
+
+			public function set dragLocation(value:String):void
+			{
+				_dragLocation = value;
+				
+				if (value==null) {
+					updateTarget();
+				}
+				else if (dropLocation) {
+					dropLocation.text = value;
+				}
+			}
+
+			
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				
@@ -66,6 +86,12 @@
 			public function deactivate():void {
 				removeListeners();
 				updateTarget();
+				
+				if (tool is Selection) {
+					if (Selection(tool).selectionInspector==this) {
+						Selection(tool).selectionInspector = null;
+					}
+				}
 			}
 			
 			protected function addListeners():void {
@@ -132,6 +158,10 @@
 					showLabel.selected = selectionTool.showSelectionLabel;
 					selectGroup.selected = selectionTool.selectGroup;
 					dragAllowedOutside.selected = selectionTool.dragAllowedOutside;
+					
+					if (Selection(tool).selectionInspector==null) {
+						Selection(tool).selectionInspector = this;
+					}
 				}
 			}
 			
@@ -269,12 +299,12 @@
 				
 				if (radiate.selectedDocument && radiate.selectedDocument.scale!=1) {
 					if (warningMessage!="") warningMessage += "\n";
-					warningMessage += "When the document is scaled drag and drop inside of a basic layout doesn't work. ";
-					warningMessage += "Use the arrow keys or use the Layout Panel to size and position.";
-					warningMessage += "\n\n";
-					warningMessage += "Also, resize handles do not work when the document is scaled. ";
-					warningMessage += "Use the Layout Panel to resize.";
-					warningMessage += "\n";
+					//warningMessage += "When the document is scaled drag and drop inside of a basic layout doesn't work. ";
+					//warningMessage += "Use the arrow keys or use the Layout Panel to size and position.";
+					//warningMessage += "\n\n";
+					warningMessage += "The resize handles do not work when the document is scaled. ";
+					warningMessage += "Use the Layout Panel to resize or set the scale back to 100%.";
+					//warningMessage += "\n";
 					warningNeeded = true;
 				}
 				
@@ -308,6 +338,35 @@
 				if (toolDescription.instance) {
 					selectionTool = Selection(toolDescription.instance);
 					selectionTool.dragAllowedOutside = dragAllowedOutside.selected;
+				}
+				
+			}
+			
+			protected function dropLocation_clickHandler(event:MouseEvent):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var selectedTool:ITool = tool;
+				var selectionTool:Selection;
+				var left:String;
+				var top:String;
+				var array:Array;
+				
+				if (toolDescription.instance) {
+					selectionTool = Selection(toolDescription.instance);
+					selectionTool.roundToIntegers = !selectionTool.roundToIntegers;
+					array = dropLocation.text.split("x");
+					
+					if (array.length) {
+						if (selectionTool.roundToIntegers) {
+							left = String(Math.round(array[0]));
+							top = String(Math.round(array[1]));
+						}
+						else {
+							left = Number(array[0]).toFixed(1);
+							top = Number(array[1]).toFixed(1);
+						}
+						
+						dropLocation.text = left + "x" + top;
+					}
 				}
 				
 			}
@@ -387,11 +446,15 @@
 		
 		<s:BitmapImage source="{Radii8LibraryToolAssets.DragStrip}" verticalAlign="top"/>
 		<!--<s:Label text="Drop Location: " paddingLeft="4" visible="false" includeInLayout="false"/>-->
-		<s:Label id="dropLocation" 
-				 minWidth="65" maxWidth="65" paddingTop="8" textAlign="center"
+		<c:LabelButton id="dropLocation" 
+				 minWidth="65" 
+				 maxWidth="65" 
+				 paddingTop="8" 
+				 textAlign="center"
 				 fontSize="10" 
 				 maxDisplayedLines="1"
-				 toolTip="The X and Y position of the selected element"/>
+				 click="dropLocation_clickHandler(event)"
+				 toolTip="The X and Y position of the selected element. Click to round between whole numbers and fractions"/>
 		
 	</s:HGroup>
 	

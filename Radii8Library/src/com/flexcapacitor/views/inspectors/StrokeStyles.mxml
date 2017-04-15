@@ -146,7 +146,7 @@
 				var jointsStyle:AccessorMetaData 		= ClassUtils.getMetaDataOfProperty(stroke, "joints");
 				var miterLimitStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(stroke, "miterLimit");
 				var pixelHintingStyle:AccessorMetaData  = ClassUtils.getMetaDataOfProperty(stroke, "pixelHinting");
-				var scaleModeStyle:AccessorMetaData  = ClassUtils.getMetaDataOfProperty(stroke, "scaleMode");
+				var scaleModeStyle:AccessorMetaData  	= ClassUtils.getMetaDataOfProperty(stroke, "scaleMode");
 				var weightStyle:AccessorMetaData  		= ClassUtils.getMetaDataOfProperty(stroke, "weight");
 				
 				

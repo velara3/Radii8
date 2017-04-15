@@ -166,21 +166,6 @@
 	</fx:Declarations>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >
-		<s:Label text="Blur" toolTip="Update the horizontal and vertical blur at the same time. " styleName="inspectablePanelLabel" />
-		<renderers:BooleanRenderer id="blurSelectedRenderer" height="24" change="blurSelectedRenderer_changeHandler(event)"/>
-	</s:HGroup>
-	
-	<s:HGroup width="100%" verticalAlign="baseline" >
-		<s:Label text="Blur X" toolTip="The amount of horizontal blur. Valid values are 0 to 255." styleName="inspectablePanelLabel" />
-		<renderers:NumberRenderer id="blurXRenderer" height="24" stepSize="1" defaultValue="4" change="blurXRenderer_changeHandler(event)"/>
-	</s:HGroup>
-	
-	<s:HGroup width="100%" verticalAlign="baseline" >
-		<s:Label text="Blur Y" toolTip="The amount of vertical blur. Valid values are 0 to 255." styleName="inspectablePanelLabel" />
-		<renderers:NumberRenderer id="blurYRenderer" height="24" stepSize="1" defaultValue="4" change="blurYRenderer_changeHandler(event)"/>
-	</s:HGroup>
-	
-	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Knockout" toolTip="Specifies whether the object has a knockout effect." styleName="inspectablePanelLabel" />
 		<renderers:BooleanRenderer id="knockoutRenderer" defaultValue="false"/>
 	</s:HGroup>
@@ -193,6 +178,21 @@
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Strength" toolTip="The strength of the imprint or spread. " styleName="inspectablePanelLabel" />
 		<renderers:NumberRenderer id="strengthRenderer" height="24" stepSize=".1" defaultValue="1"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Blur" toolTip="Update the horizontal and vertical blur at the same time. " styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="blurSelectedRenderer" height="24" change="blurSelectedRenderer_changeHandler(event)"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Blur X" toolTip="The amount of horizontal blur. Valid values are 0 to 255." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="blurXRenderer" height="24" stepSize="1" defaultValue="4" change="blurXRenderer_changeHandler(event)"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Blur Y" toolTip="The amount of vertical blur. Valid values are 0 to 255." styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="blurYRenderer" height="24" stepSize="1" defaultValue="4" change="blurYRenderer_changeHandler(event)"/>
 	</s:HGroup>
 	
 </s:VGroup>

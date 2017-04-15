@@ -188,6 +188,6 @@
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Alignment Baseline" styleName="inspectablePanelLabel" showTruncationTip="true" />
-		<renderers:DropDownListRenderer id="alignmentBaselineRenderer" width="175" height="24" defaultValue="useDominantBaseline"/>
+		<renderers:DropDownListRenderer id="alignmentBaselineRenderer" width="185" height="24" defaultValue="useDominantBaseline"/>
 	</s:HGroup>
 </s:Group>

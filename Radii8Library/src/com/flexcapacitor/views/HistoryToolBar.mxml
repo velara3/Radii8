@@ -92,6 +92,30 @@
 		<s:HorizontalLayout paddingTop="4" verticalAlign="baseline" />
 	</s:layout>
 
+	
+	<s:Button id="backButton" 
+			  icon="{Radii8LibraryAssets.undo}" 
+			  alpha=".8"
+			  width="20"
+			  height="18"
+			  buttonDown="undo()" 
+			  toolTip="Undo"
+			  autoRepeat="true"
+			  repeatInterval="100"
+			  skinClass="com.flexcapacitor.skins.TransparentFillButtonSkin"
+			  />
+	<s:Button id="forwardButton" 
+			  icon="{Radii8LibraryAssets.redo}" 
+			  alpha=".8"
+			  width="20"
+			  height="18"
+			  buttonDown="redo()" 
+			  toolTip="Redo"
+			  autoRepeat="true"
+			  repeatInterval="100"
+			  skinClass="com.flexcapacitor.skins.TransparentFillButtonSkin"
+			  />
+	<!--
 	<c:BeveledImageButton id="backButton" source="{Radii8LibraryAssets.undo}" 
 						  height="15"
 						  alpha=".8"
@@ -103,5 +127,5 @@
 						  alpha=".8"
 						  click="redo()" 
 						  toolTip="Redo"
-						  />
+						  />-->
 </s:Group>

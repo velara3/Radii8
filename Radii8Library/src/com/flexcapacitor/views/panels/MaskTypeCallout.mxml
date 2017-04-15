@@ -4,11 +4,11 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:c="com.flexcapacitor.controls.*" 
 		 
+		 frameThickness="8"
 		 hideOnMouseDownOutside="true"
 		 creationComplete="callout1_creationCompleteHandler(event)"
 		 horizontalPosition="middle"
 		 verticalPosition="before"
-		 contentCornerRadius="0"
 		 >
 	
 	<fx:Script>
@@ -61,7 +61,7 @@
 	
 	<s:List id="maskTypesList" 
 			width="90" 
-			height="70"
+			height="67"
 			minHeight="1"
 			labelField="name" 
 			borderVisible="false"
