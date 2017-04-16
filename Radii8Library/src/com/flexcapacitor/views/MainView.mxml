@@ -1356,22 +1356,20 @@
 				radiate.createNewDocument();
 			}
 			
+			public var isCreatingDocument:Boolean;
+			
 			/**
 			 * Create a new document with default project for quick mockups
 			 * */
 			protected function newDocumentAndProjectButton_clickHandler(event:MouseEvent):void {
-				Radiate.info("Creating a new document");
-				Radiate.callAfter(250, radiate.createNewDocumentAndSwitchToDesignView);
-				Radiate.callAfter(3000, LayoutManager.getInstance().invalidateSize, FlexGlobals.topLevelApplication);
-				Radiate.callAfter(4000, LayoutManager.getInstance().invalidateProperties, FlexGlobals.topLevelApplication);
-				Radiate.callAfter(4000, LayoutManager.getInstance().invalidateDisplayList, FlexGlobals.topLevelApplication);
-				Radiate.callAfter(5000, LayoutManager.getInstance().validateClient, FlexGlobals.topLevelApplication);
-				Radiate.callAfter(10000, LayoutManager.getInstance().validateClient, FlexGlobals.topLevelApplication);
-				/*
-				Radiate.callAfter(5000, resizing);
-				Radiate.callAfter(6000, resizing);
-				Radiate.callAfter(7000, resizing);
-				*/
+				
+				if (!isCreatingDocument) {
+					Radiate.info("Creating a new document");
+					Radiate.callAfter(250, radiate.createNewDocumentAndSwitchToDesignView);
+					radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
+					isCreatingDocument = true;
+				}
+				
 			}
 			
 			public function resizing():void {
@@ -1665,6 +1663,10 @@
 			protected function sendToBack_itemClickHandler(event:MenuEvent):void
 			{
 				ArrangeLayers.sendToBack(radiate.target, radiate.selectedDocument);
+			}
+			
+			protected function documentOpenedHandler(event:Event):void {
+				isCreatingDocument = false;
 			}
 			
 		]]>
@@ -2648,7 +2650,7 @@
 		<s:Label text="Drop files here" 
 				 verticalCenter="0" 
 				 horizontalCenter="0" 
-				 fontSize="42"
+				 fontSize="32"
 				 fontWeight="bold"
 				 color="#ffffff"/>
 	</s:BorderContainer>

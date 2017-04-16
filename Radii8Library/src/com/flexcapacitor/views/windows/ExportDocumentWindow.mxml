@@ -57,6 +57,12 @@
 				if (radiate.exportFileLocation) {
 					updateDirectoryLabel();
 				}
+				
+				// disable in browser
+				if (ExternalInterface.available) {
+					browseForOutputDirectoryButton.enabled = false;
+					browseForOutputDirectoryButton.label = "Disabled in browser edition";
+				}
 			}
 			
 			protected function eventhandler1_effectEndHandler(event:EffectEvent):void {

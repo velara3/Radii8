@@ -197,6 +197,7 @@ package com.flexcapacitor.controller {
 	import spark.components.Application;
 	import spark.components.BorderContainer;
 	import spark.components.Button;
+	import spark.components.ColorPicker;
 	import spark.components.ComboBox;
 	import spark.components.ContentBackgroundAppearance;
 	import spark.components.DropDownList;
@@ -9616,6 +9617,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			// spark or mx ColorPicker
 			if ((sparkColorPicker && componentInstance is sparkColorPicker) || componentInstance is mx.controls.ColorPicker) {
 				Object(componentInstance).mouseChildren = interactive;
+				IStyleClient(componentInstance).setStyle("focusThickness", 0);
 			}
 			
 			// NumericStepper

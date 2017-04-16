@@ -92,7 +92,7 @@
 		<renderers:TextRenderer id="labelFieldRenderer" />
 		
 		<s:Label text="Swatch Panel Style Name" styleName="inspectablePanelLabel"/>
-		<renderers:TextRenderer id="swatchPanelStyleNameRenderer" />
+		<renderers:TextRenderer id="swatchPanelStyleNameRenderer" minWidth="170"/>
 		
 		<s:Label text="Selected Color" styleName="inspectablePanelLabel"/>
 		<renderers:ColorPickerRenderer id="selectedColorRenderer" convertColorToUInt="true"/>

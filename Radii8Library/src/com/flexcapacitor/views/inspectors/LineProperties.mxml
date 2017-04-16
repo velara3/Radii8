@@ -77,7 +77,7 @@
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Alpha" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:NumberRenderer id="alphaRenderer" height="24" />
+		<renderers:NumberRenderer id="alphaRenderer" height="24" defaultValue="1" />
 	</s:HGroup>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
@@ -87,6 +87,6 @@
 	
 	<s:HGroup width="100%" verticalAlign="baseline" gap="{getStyle('gap')}">
 		<s:Label text="Stroke Weight" styleName="inspectablePanelLabel" width="{getStyle('labelWidth')}"/>
-		<renderers:NumberRenderer id="strokeWeightRenderer" height="24" stepSize="1"/>
+		<renderers:NumberRenderer id="strokeWeightRenderer" height="24" stepSize="1" defaultValue="1"/>
 	</s:HGroup>
 </s:VGroup>

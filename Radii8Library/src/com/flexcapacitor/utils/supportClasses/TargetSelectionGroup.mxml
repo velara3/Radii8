@@ -180,10 +180,10 @@
 				}
 				
 				if (showResizeHandles) {
-					topRight.visible = true;
+					//topRight.visible = true;
 				}
 				else {
-					topRight.visible = false;
+					//topRight.visible = false;
 				}
 				
 			}
@@ -211,7 +211,7 @@
 	<s:SolidColorStroke color="0x2da6e9" weight="0" alpha="1"/>
 	</s:stroke>
 	</s:Rect>-->
-	
+	<!--
 	<s:BorderContainer id="topRight" 
 					   visible="false"
 					   width="8" height="8" 
@@ -224,17 +224,18 @@
 								rollOut="trace('roll out')"
 								click="trace('clicked')">
 	
-	</s:BorderContainer>
+	</s:BorderContainer>-->
 	
 	<s:Label id="labelDisplay" 
-			 top="-14"
-			 fontSize="9"
+			 top="-12"
+			 fontSize="8"
 			 typographicCase="uppercase"
 			 text="Group"
 			 textAlign="center"
 			 verticalAlign="middle"
-			 height="14" 
-			 paddingLeft="5" 
+			 height="12" 
+			 paddingTop="1"
+			 paddingLeft="4" 
 			 paddingRight="5"
 			 fontWeight="bold"
 			 color="0xffffff" 

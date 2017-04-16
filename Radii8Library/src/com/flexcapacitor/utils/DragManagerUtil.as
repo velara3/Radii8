@@ -232,7 +232,7 @@ package com.flexcapacitor.utils {
 			this.dragOutAllowed = dragOutAllowed;
 			
 			if (debug) {
-				logTarget(draggedItem, " is dragged item");
+				logTarget(draggedItem, "is dragged item");
 			}
 			
 			// if selection is offset then check if using system manager sandbox root or top level root
@@ -275,11 +275,21 @@ package com.flexcapacitor.utils {
 			swfRoot.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
 			//swfRoot.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler, true);
 			swfRoot.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler);
+			// let's add this so we can be sure to unhide all the display objects that we hid
+			// but set priority low so everything else runs first
+			swfRoot.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandlerUnhideObjects, false, -10, true);
 			//swfRoot.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler, true);
 		}
 		
-		protected function mouseUpSomewhereHandler(event:Event):void
-		{
+		protected function mouseUpHandlerUnhideObjects(event:Event):void {
+			if (debug) {
+				logTarget(event.currentTarget);
+			}
+			swfRoot.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandlerUnhideObjects);
+			restoreHiddenItems();
+		}
+		
+		protected function mouseUpSomewhereHandler(event:Event):void {
 			if (debug) {
 				logTarget(event.currentTarget);
 			}

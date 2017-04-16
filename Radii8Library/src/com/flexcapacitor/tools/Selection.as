@@ -2059,11 +2059,13 @@ package com.flexcapacitor.tools {
 				HistoryManager.redo(radiate.selectedDocument, true); // legacy redo
 				actionOccured = true;
 			}
-			else if (event.keyCode==Keyboard.MINUS && (event.ctrlKey || event.commandKey)) {
+			//ReferenceError: Error #1069: Property commandKey not found on flash.events.KeyboardEvent and there is no default value.
+			// KeyboardEvent "keyup"
+			else if (event.keyCode==Keyboard.MINUS && (event.ctrlKey || ("commandKey" in event && event.commandKey))) {
 				Radiate.instance.decreaseScale();
 				actionOccured = true;
 			}
-			else if (event.keyCode==Keyboard.EQUAL && (event.ctrlKey || event.commandKey)) {
+			else if (event.keyCode==Keyboard.EQUAL && (event.ctrlKey || ("commandKey" in event && event.commandKey))) {
 				Radiate.instance.increaseScale();
 				actionOccured = true;
 			}
