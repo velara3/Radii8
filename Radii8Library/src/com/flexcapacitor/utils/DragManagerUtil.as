@@ -11,6 +11,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.utils.supportClasses.log;
 	import com.flexcapacitor.utils.supportClasses.logTarget;
 	
+	import flash.display.BitmapData;
 	import flash.display.BlendMode;
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
@@ -43,6 +44,7 @@ package com.flexcapacitor.utils {
 	import mx.managers.SystemManagerGlobals;
 	import mx.managers.dragClasses.DragProxy;
 	import mx.utils.NameUtil;
+	import mx.utils.Platform;
 	
 	import spark.components.Application;
 	import spark.components.Image;
@@ -62,6 +64,7 @@ package com.flexcapacitor.utils {
 	import spark.skins.spark.ApplicationSkin;
 	import spark.skins.spark.ImageSkin;
 	import spark.skins.spark.ListDropIndicator;
+	import spark.utils.BitmapUtil;
 	
 	use namespace mx_internal;
 	
@@ -317,17 +320,34 @@ package com.flexcapacitor.utils {
 			
 				dropPoint = dropLocation.dropPoint;
 				
-				if (scaleX<1) {
-					dropX = dropPoint.x-dragProxy.xOffset/scaleX;
-					dropY = dropPoint.y-dragProxy.yOffset/scaleX;
-				}
-				else if (scaleX>1) {
-					dropX = dropPoint.x-dragProxy.xOffset/scaleX;
-					dropY = dropPoint.y-dragProxy.yOffset/scaleX;
+				// on desktop drag proxy is null
+				if (dragProxy==null) {
+					if (scaleX<1) {
+						dropX = dropPoint.x-offset.x/scaleX;
+						dropY = dropPoint.y-offset.y/scaleX;
+					}
+					else if (scaleX>1) {
+						dropX = dropPoint.x-offset.x/scaleX;
+						dropY = dropPoint.y-offset.y/scaleX;
+					}
+					else {
+						dropX = dropPoint.x - offset.x;
+						dropY = dropPoint.y - offset.y;
+					}
 				}
 				else {
-					dropX = dropPoint.x - dragProxy.xOffset;
-					dropY = dropPoint.y - dragProxy.yOffset;
+					if (scaleX<1) {
+						dropX = dropPoint.x-dragProxy.xOffset/scaleX;
+						dropY = dropPoint.y-dragProxy.yOffset/scaleX;
+					}
+					else if (scaleX>1) {
+						dropX = dropPoint.x-dragProxy.xOffset/scaleX;
+						dropY = dropPoint.y-dragProxy.yOffset/scaleX;
+					}
+					else {
+						dropX = dropPoint.x - dragProxy.xOffset;
+						dropY = dropPoint.y - dragProxy.yOffset;
+					}
 				}
 			}
 			else {
@@ -458,6 +478,7 @@ package com.flexcapacitor.utils {
 		public function startDrag(dragInitiator:IUIComponent, application:Application, event:MouseEvent):void {
 			var dragSource:DragSource = new DragSource();
 			var snapshot:BitmapAsset;
+			var scaleOffsetPoint:Point;
 			
 			if (debug) {
 				log(" current target: " + event.currentTarget);
@@ -476,10 +497,13 @@ package com.flexcapacitor.utils {
 			// TODO = READ 
 			// Flex coordinate systems
 			// http://help.adobe.com/en_US/flex/using/WS2db454920e96a9e51e63e3d11c0bf69084-7de0.html
-			var scale:Number = application.scaleX;
+			var scaleX:Number = application.scaleX;
+			var scaleY:Number = application.scaleY;
+			
+			scaleOffsetPoint = new Point();
 			
 			// store distance of mouse point to top left of display object
-			if (scale!=1 && !isNaN(scale)) {
+			if (scaleX!=1 && !isNaN(scaleX)) {
 				offset.x = event.stageX - distanceFromLeft;// * scale;
 				offset.y = event.stageY - distanceFromTop;// * scale;
 			}
@@ -536,24 +560,36 @@ package com.flexcapacitor.utils {
 				// i think this is causing some resizing of images problems when zoomed out during drag and drop 
 				// update: may have been caused by embedding image - that converts bitmap to base64 
 				// which may update source bitmapData
-				if (scale!=1 && false) {
+				if (scaleX!=1 && false) {
 					var tempScale:Number = dragInitiator.scaleX;
-					dragInitiator.scaleX = scale;
-					dragInitiator.scaleY = scale;
+					dragInitiator.scaleX = scaleX;
+					dragInitiator.scaleY = scaleX;
 					Object(dragInitiator).validateNow();
 				}
 				
-				if (testSomething) {
-					if (scale!=1) {
-						offset.x = 0;
-						offset.y = 0;
-					}
+				if (Platform.isAir) {
+					testSomething = true;
 					
-					if (dragInitiatorProxy) {
-						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiatorProxy as DisplayObject, true, scale, scale);
+					//if (scaleOffsetPoint.x>dragInitiator.width && "mouseX" in dragInitiator) {
+					if ("mouseX" in dragInitiator) {
+						scaleOffsetPoint.x = dragInitiator.mouseX-dragInitiator.mouseX*scaleX;
+						scaleOffsetPoint.y = dragInitiator.mouseY-dragInitiator.mouseY*scaleY;
 					}
 					else {
-						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject, true, scale, scale);
+						scaleOffsetPoint.x = event.localX-event.localX*scaleX;
+						scaleOffsetPoint.y = event.localY-event.localY*scaleY;
+					}
+				}
+				
+				if (testSomething) {
+					
+					if (dragInitiatorProxy) {
+						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiatorProxy as DisplayObject, true, scaleX, scaleX);
+					}
+					else {
+						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject, true, scaleX, scaleX);
+						var bitmapData:BitmapData = BitmapUtil.getSnapshotWithPadding(dragInitiator as IUIComponent, 0);
+						snapshot = new BitmapAsset(bitmapData);
 					}
 				}
 				else {
@@ -589,6 +625,7 @@ package com.flexcapacitor.utils {
 			
 			dragSource.addData(draggedItem, "UIComponent");
 			
+			
 			if (setDragManagerOffset) {
 				DragManager.doDrag(dragInitiator, dragSource, event, snapshot, -offset.x, -offset.y, 1);
 				
@@ -596,7 +633,12 @@ package com.flexcapacitor.utils {
 				
 			}
 			else {
-				DragManager.doDrag(dragInitiator, dragSource, event, snapshot, 0, 0, 1);
+				if (Platform.isAir) {
+					DragManager.doDrag(dragInitiator, dragSource, event, snapshot, scaleOffsetPoint.x, scaleOffsetPoint.y, 1);
+				}
+				else {
+					DragManager.doDrag(dragInitiator, dragSource, event, snapshot, 0, 0, 1);
+				}
 				
 				//icon = getDragIcon();
 				
@@ -1183,32 +1225,45 @@ package com.flexcapacitor.utils {
 				scaleX = targetApplication.scaleX;
 				scaleY = targetApplication.scaleY;
 				
-				if (scaleX<1) {
-					//dropX = dropPoint.x-dragProxy.xOffset*(1+(1-scaleX));
-					//dropY = dropPoint.y-dragProxy.yOffset*(1+(1-scaleY));
-					dropX = dropPoint.x-dragProxy.xOffset/scaleX;
-					dropY = dropPoint.y-dragProxy.yOffset/scaleY;
-					//dropX = dropPoint.x;
-					//dropY = dropPoint.y;
-				}
-				else if (scaleX>1) {
-					dropX = dropPoint.x-dragProxy.xOffset/scaleX;
-					dropY = dropPoint.y-dragProxy.yOffset/scaleY;
-				}
 				
-				// check for scaling
-				if (scaleX!=1 && !isNaN(scaleX)) {
-					//dropX = dropPoint.x-dragProxy.xOffset;
-					//dropY = dropPoint.y-dragProxy.yOffset;
-					//dropX = (dropPoint.x*scaleX) - offset.x;
-					//dropY = (dropPoint.y*scaleY) - offset.y;
-					//dropX = invertedScale*dropPoint.x - offset.x;
-					//dropY = invertedScale*dropPoint.y - offset.y;
-					dropX;
+				if (dragProxy==null) {
+					
+					if (scaleX<1) {
+						dropX = dropPoint.x-offset.x/scaleX;
+						dropY = dropPoint.y-offset.y/scaleY;
+					}
+					else if (scaleX>1) {
+						dropX = dropPoint.x-offset.x/scaleX;
+						dropY = dropPoint.y-offset.y/scaleY;
+					}
+					
+					// check for scaling
+					if (scaleX!=1 && !isNaN(scaleX)) {
+						dropX;
+					}
+					else {
+						dropX = dropPoint.x - offset.x;
+						dropY = dropPoint.y - offset.y;
+					}
 				}
 				else {
-					dropX = dropPoint.x - offset.x;
-					dropY = dropPoint.y - offset.y;
+					if (scaleX<1) {
+						dropX = dropPoint.x-dragProxy.xOffset/scaleX;
+						dropY = dropPoint.y-dragProxy.yOffset/scaleY;
+					}
+					else if (scaleX>1) {
+						dropX = dropPoint.x-dragProxy.xOffset/scaleX;
+						dropY = dropPoint.y-dragProxy.yOffset/scaleY;
+					}
+					
+					// check for scaling
+					if (scaleX!=1 && !isNaN(scaleX)) {
+						dropX;
+					}
+					else {
+						dropX = dropPoint.x - offset.x;
+						dropY = dropPoint.y - offset.y;
+					}
 				}
 				
 				

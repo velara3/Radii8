@@ -18,8 +18,6 @@
 					   frameRate="46"
 					   pageTitle="Radiate"
 					   
-					   keyUp="windowedapplication1_keyUpHandler(event)"
-					   keyDown="windowedapplication1_keyDownHandler(event)"
 					   networkChange="windowedapplication1_networkChangeHandler(event)"
 					   applicationComplete="applicationCompleteHandler(event)" 
 					   initialize="initializeHandler(event)" 
@@ -99,37 +97,24 @@
 				import com.flexcapacitor.events.RadiateEvent;
 				import com.flexcapacitor.managers.HistoryManager;
 				import com.flexcapacitor.model.MenuItem;
-				import com.flexcapacitor.tools.Hand;
-				import com.flexcapacitor.tools.ITool;
 				import com.flexcapacitor.utils.NativeMenuManager;
-				import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 				
 				import flash.display.NativeMenu;
 				import flash.display.NativeMenuItem;
 				import flash.display.Screen;
-				import flash.display.Stage;
 				
 				import mx.collections.ArrayCollection;
 				import mx.controls.HTML;
-				import mx.core.FTETextField;
-				import mx.core.FlexHTMLLoader;
+				import mx.core.FlexHTMLLoader;FlexHTMLLoader;
 				import mx.core.mx_internal;
 				import mx.events.AIREvent;
 				import mx.events.FlexEvent;
 				import mx.events.FlexNativeMenuEvent;
-				import mx.events.FlexNativeWindowBoundsEvent;
 				import mx.utils.Platform;
 				
-				import spark.components.Application;
-				import spark.components.ComboBox;
-				import spark.components.RichEditableText;
 				import spark.components.WindowedApplication;
-				import spark.components.supportClasses.SkinnableTextBase;
-				import spark.core.IEditableText;
 				
 				import air.net.URLMonitor;HTML
-				
-				
 				
 				use namespace mx_internal;
 				//include "build.as";
@@ -348,7 +333,7 @@
 				to resolve a connection to a remote address
 				*/
 				private function monitorConnection():void {
-					var urlPath:String = "http://www.google.com";// should use radii8.com
+					var urlPath:String = "http://www.radii8.com";// should use radii8.com
 					
 					if (monitor==null) {
 						monitor = new URLMonitor(new URLRequest(urlPath));
@@ -368,157 +353,6 @@
 					}
 				}
 				
-				public var spaceBarDown:Boolean;
-				
-				protected function windowedapplication1_keyDownHandler(event:KeyboardEvent):void {
-					var keyCode:int = event.keyCode;
-					var componentDescription:ComponentDescription;
-					var applicable:Boolean;
-					var focusedObject:Object;
-					var isApplication:Boolean;
-					var target:Object = event.target;
-					
-
-					// prevent key repeat
-					if (spaceBarDown) {
-						event.preventDefault();
-						event.stopImmediatePropagation()
-						return;
-					}
-					
-					if (keyCode==Keyboard.V || 
-						keyCode==Keyboard.Z || 
-						keyCode==Keyboard.I || 
-						keyCode==Keyboard.H ||
-						keyCode==Keyboard.T ||
-						keyCode==Keyboard.M ||
-						keyCode==Keyboard.SPACE) {
-						
-						if (!event.controlKey && !event.commandKey) {
-							applicable = true;
-						}
-					}
-					
-					if (!applicable) return;
-					
-					focusedObject = focusManager.getFocus();
-					
-					if (focusedObject is Application || event.target is Stage) {
-						isApplication = true;
-					}
-					
-					//var t:int = getTimer();
-					// not sure if this is expensive... todo performance test
-					// would like to take out textfield and ftetextfield check
-					if (target is RichEditableText ||
-						focusedObject is IEditableText ||
-						focusedObject is SkinnableTextBase ||
-						focusedObject is TextField ||
-						focusedObject is FTETextField ||
-						focusedObject is FlexHTMLLoader ||
-						focusedObject is ComboBox) {
-						applicable = false;
-					}
-					//trace("time:" + (getTimer() - t)); takes 0 ms
-					
-					// names are in tools-manifest.xml
-					if (applicable) {
-						if (keyCode==Keyboard.V) {
-							componentDescription = radiate.getToolByName("Selection");
-							
-							if (componentDescription) {
-								radiate.setTool(componentDescription.instance as ITool);
-							}
-						}
-						else if (keyCode==Keyboard.Z) {
-							componentDescription = radiate.getToolByName("Zoom");
-							
-							if (componentDescription) {
-								radiate.setTool(componentDescription.instance as ITool);
-							}
-						}
-						else if (keyCode==Keyboard.T) {
-							componentDescription = radiate.getToolByName("Text");
-							
-							if (componentDescription) {
-								radiate.setTool(componentDescription.instance as ITool);
-							}
-						}
-						else if (keyCode==Keyboard.I) {
-							componentDescription = radiate.getToolByName("EyeDropper");
-							
-							if (componentDescription) {
-								radiate.setTool(componentDescription.instance as ITool);
-							}
-						}
-						else if (keyCode==Keyboard.M) {
-							componentDescription = radiate.getToolByName("Marquee");
-							
-							if (componentDescription) {
-								radiate.setTool(componentDescription.instance as ITool);
-							}
-						}
-						else if (keyCode==Keyboard.H || keyCode==Keyboard.SPACE) {
-							componentDescription = radiate.getToolByName("Hand");
-							
-							if (componentDescription) {
-								if (keyCode==Keyboard.SPACE) {
-									spaceBarDown = true;
-									//trace("setting temp hand cursor");
-									radiate.saveCurrentTool();
-									radiate.setTool(componentDescription.instance as ITool);
-									Hand(componentDescription.instance).updateMouseCursor(true);
-								}
-								else {
-									radiate.setTool(componentDescription.instance as ITool);
-								}
-							}
-						}
-					}
-				}
-				
-				protected function windowedapplication1_keyUpHandler(event:KeyboardEvent):void {
-					var keyCode:int = event.keyCode;
-					var componentDescription:ComponentDescription;
-					var applicable:Boolean;
-					var focusedObject:Object;
-					var isApplication:Boolean;
-					var target:Object = event.target;
-					
-					// prevent repeat key events in key down
-					spaceBarDown = false;
-					
-					if (keyCode==Keyboard.SPACE) {
-						applicable = true;
-					}
-					
-					if (!applicable) return;
-					
-					focusedObject = focusManager.getFocus();
-					
-					// not sure if this is expensive... todo performance test
-					// would like to take out textfield and ftetextfield check
-					if (target is RichEditableText ||
-						focusedObject is IEditableText ||
-						focusedObject is SkinnableTextBase ||
-						focusedObject is TextField ||
-						focusedObject is FTETextField ||
-						focusedObject is FlexHTMLLoader ||
-						focusedObject is ComboBox) {
-						applicable = false;
-					}
-					// takes 0 ms
-					
-					// names are in tools-manifest.xml
-					if (applicable) {
-						if (keyCode==Keyboard.SPACE) {
-							
-							//trace("restorin previ tool");
-							radiate.restoreTool();
-						}
-					}
-
-				}
 				
 				protected function updateApplication_firstRunHandler(event:Event):void {
 					Radiate.firstRun = true;

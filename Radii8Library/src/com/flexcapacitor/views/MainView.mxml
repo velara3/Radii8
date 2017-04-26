@@ -51,6 +51,7 @@
 			import com.flexcapacitor.views.windows.CreditsWindow;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			import com.flexcapacitor.views.windows.ExportDocumentWindow;
+			import com.flexcapacitor.views.windows.GalleryWindow;
 			import com.flexcapacitor.views.windows.HelpWindow;
 			import com.flexcapacitor.views.windows.LoginWindow;
 			import com.flexcapacitor.views.windows.NewDocumentWindow;
@@ -1669,6 +1670,11 @@
 				isCreatingDocument = false;
 			}
 			
+			protected function openGallery_itemClickHandler(event:MenuEvent):void
+			{
+				openGalleryPopUp.play();
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1756,6 +1762,12 @@
 						  close="getProjectsByUser();"
 						  />
 		</handlers:EventHandler>
+		
+		<fc:OpenPopUp id="openGalleryPopUp" 
+					  popUpType="{GalleryWindow}" 
+					  modalDuration="100" 
+					  backgroundAlpha=".5"
+					  parent="{parentApplication}"/>
 		
 		<file:BrowseForFile id="browseForPSD" 
 							targetAncestor="{this}"
@@ -1953,6 +1965,8 @@
 					<model:MenuItem id="sendBackwardLayer" label="Send Backward" itemClick="sendBackwardLayer_itemClickHandler(event)" />
 					<model:MenuItem id="sendToBack" label="Send to Back" itemClick="sendToBack_itemClickHandler(event)" />
 				</model:MenuItem>
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="openGallery" label="Open Gallery" itemClick="openGallery_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="sizeSelectionToContent_itemClickHandler(event)" />
 				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />

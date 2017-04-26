@@ -91,7 +91,11 @@
 				}
 				
 				lineHeightRenderer.data = lineHeightStyle;
-				fontFamilyStyle.enumeration = fonts;
+				
+				if (fontFamilyStyle) {
+					fontFamilyStyle.enumeration = fonts;
+				}
+				
 				//fontsRenderer.data = data;
 				fontFamilyRenderer.data = fontFamilyStyle;
 				fontSizeRenderer.data = fontSizeStyle;

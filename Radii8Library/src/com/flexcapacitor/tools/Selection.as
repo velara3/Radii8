@@ -13,6 +13,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.utils.DragManagerUtil;
 	import com.flexcapacitor.utils.LayoutDebugHelper;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
+	import com.flexcapacitor.utils.NumberUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
@@ -80,6 +81,7 @@ package com.flexcapacitor.tools {
 	import spark.components.supportClasses.InvalidatingSprite;
 	import spark.components.supportClasses.ItemRenderer;
 	import spark.components.supportClasses.ListBase;
+	import spark.core.IDisplayText;
 	import spark.core.IGraphicElement;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.ListDropIndicator;
@@ -1186,16 +1188,25 @@ package com.flexcapacitor.tools {
 		}
 		
 		public var startValuesDictionary:Object = new Dictionary(true);
+		public var startWidth:Number;
+		public var startHeight:Number;
 		
 		protected function resizingHandler(event:ObjectChangedEvent):void {
 			//trace("sizing");
-			var elements:Array = event.relatedObjects;
+			var elements:Array;
 			var startValues:Array;
+			var model:Object;
+			var component:Object;
+			var scaleX:Number;
+			var scaleY:Number;
+			var altKey:Boolean;
 			
-			for (var i:int = 0; i < elements.length; i++) 
-			{
-				var model:Object = elements[i];
-				var component:Object = objectHandles.getDisplayForModel(model);
+			altKey = event.mouseEvent.altKey;
+			elements = event.relatedObjects;
+			
+			for (var i:int = 0; i < elements.length; i++) {
+				model = elements[i];
+				component = objectHandles.getDisplayForModel(model);
 				
 				if (component is InvalidatingSprite && lastTarget is GraphicElement) {
 					component = lastTarget;
@@ -1204,6 +1215,22 @@ package com.flexcapacitor.tools {
 				if (startValuesDictionary[component]==null) {
 					startValues = Radiate.captureSizingPropertyValues([component]);
 					startValuesDictionary[component] = startValues;
+				}
+				
+				// scale text font if shift key down
+				if (component is IDisplayText) {
+					
+					if (altKey) {
+						startValues = startValuesDictionary[component];
+						scaleX = model.width/startValues[0].start.width;
+						scaleY = model.height/startValues[0].start.height;
+						component.scaleX = scaleX;
+						component.scaleY = scaleY;
+					}
+					else {
+						component.scaleX = 1;
+						component.scaleY = 1;
+					}
 				}
 				
 				component.x = model.x;
@@ -1225,9 +1252,22 @@ package com.flexcapacitor.tools {
 			var graphicElement:GraphicElement;
 			var startValues:Array;
 			var propertiesObject:Object;
-			var manualRestore:Boolean = true;
+			var manualRestore:Boolean;
 			var properties:Array;
+			var scaleX:Number;
+			var scaleY:Number;
+			var altKey:Boolean;
+			var shiftKey:Boolean;
+			var fontSize:Number;
+			var scaleFont:Boolean;
+			var setFontStyle:Boolean;
+			var resizeScaledValues:Boolean;
+			var hasExplicitWidth:Boolean;
+			var hasExplicitHeight:Boolean;
 			
+			manualRestore = true;
+			altKey = event.mouseEvent.altKey;
+			shiftKey = event.mouseEvent.shiftKey;
 			elements = event.relatedObjects;
 			
 			for (var i:int = 0; i < elements.length; i++) {
@@ -1249,18 +1289,121 @@ package com.flexcapacitor.tools {
 				uicomponent = component as UIComponent;
 				graphicElement = component as GraphicElement;
 				
+				hasExplicitWidth = startValues[0].start.explicitWidth===undefined ? false : true;
+				hasExplicitHeight = startValues[0].start.explicitHeight===undefined ? false : true;
+				
 				// restore original values so we can use undo history
+				// start values are removed by this call so may need to change this
 				Radiate.restoreCapturedValues(startValues, MXMLDocumentConstants.sizeAndPositionProperties);
 				delete startValuesDictionary[component];
 				
-				propertiesObject = Radiate.getPropertiesObjectFromBounds(component, model);
+				
+				propertiesObject = Radiate.getPropertiesObjectFromBounds(component, model, roundToIntegers);
 				properties = ClassUtils.getPropertyNames(propertiesObject);
+				
+				// set font size if alt + shift key down
+				if (component is IDisplayText) {
+					
+					if (altKey) {
+						scaleX = component.scaleX;
+						scaleY = component.scaleY;
+						component.scaleX = 1;
+						component.scaleY = 1;
+						fontSize = component.getStyle("fontSize");
+						
+						if (scaleX!=1 || scaleY!=1) {
+							
+							if (shiftKey) {
+								fontSize = scaleX*fontSize;
+								
+								if (hasExplicitWidth) {
+									if (roundToIntegers) {
+										propertiesObject.width = Math.ceil(propertiesObject.width/scaleX);
+									}
+									else {
+										propertiesObject.width = NumberUtils.toDecimalPoint(propertiesObject.width/scaleX);
+									}
+								}
+								else {
+									propertiesObject.width = undefined;
+									//delete propertiesObject.width;
+									//properties.splice(properties.indexOf("width"));
+								}
+								
+								if (hasExplicitHeight) {
+									if (roundToIntegers) {
+										propertiesObject.height = Math.ceil(propertiesObject.height/scaleY);
+									}
+									else {
+										propertiesObject.height = NumberUtils.toDecimalPoint(propertiesObject.height/scaleY);
+									}
+								}
+								else {
+									propertiesObject.height = undefined;
+									//delete propertiesObject.height;
+									//properties.splice(properties.indexOf("height"));
+								}
+								
+								//resizeScaledValues = true;
+								setFontStyle = true;
+							}
+							else {
+								scaleFont = true;
+							}
+						}
+					}
+				}
+				
+				if (scaleFont) {
+					
+					if (scaleX!=1) {
+						properties.push("scaleX");
+						propertiesObject.scaleX = scaleX;
+						resizeScaledValues = true;
+					}
+					
+					if (scaleY!=1) {
+						properties.push("scaleY");
+						propertiesObject.scaleY = scaleY;
+						resizeScaledValues = true;
+					}
+					
+				}
+				
+				if (resizeScaledValues) {
+					
+					if (scaleX!=1) {
+						
+						if (roundToIntegers) {
+							propertiesObject.width = Math.round(propertiesObject.width/scaleX);
+						}
+						else {
+							propertiesObject.width = NumberUtils.toDecimalPoint(propertiesObject.width/scaleX);
+						}
+					}
+					
+					if (scaleY!=1) {
+						
+						if (roundToIntegers) {
+							propertiesObject.height = Math.round(propertiesObject.height/scaleY);
+						}
+						else {
+							propertiesObject.height = NumberUtils.toDecimalPoint(propertiesObject.height/scaleY);
+						}
+					}
+					
+				}
 				
 				if (component is GraphicElement) {
 					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
 				}
 				else {
 					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
+				}
+				
+				if (setFontStyle) {
+					Radiate.setStyle(component, "fontSize", fontSize);
+					HistoryManager.mergeLastHistoryEvent(radiate.selectedDocument);
 				}
 			}
 			

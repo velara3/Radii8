@@ -196,7 +196,7 @@
 	Error: Request for resource at https://www.radii8.com/r8m/?json=core/get_category_posts&count=100&slug=Tutorial by requestor from http://localhost:8888/Radii8-debug/RadiateBrowser.swf is denied due to lack of policy file permissions.
 
 	
-	Changed to https and now go this error in the browser: 
+	Changed to https and now got this error in the browser: 
 	
 	Secure Connection Failed
 	

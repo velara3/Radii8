@@ -34,6 +34,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.managers.CreationManager;
 	import com.flexcapacitor.managers.HistoryEffect;
 	import com.flexcapacitor.managers.HistoryManager;
+	import com.flexcapacitor.managers.KeyboardManager;
 	import com.flexcapacitor.managers.ServicesManager;
 	import com.flexcapacitor.model.AttachmentData;
 	import com.flexcapacitor.model.Device;
@@ -190,6 +191,7 @@ package com.flexcapacitor.controller {
 	import mx.utils.ArrayUtil;
 	import mx.utils.NameUtil;
 	import mx.utils.ObjectUtil;
+	import mx.utils.Platform;
 	import mx.utils.UIDUtil;
 	
 	import spark.collections.Sort;
@@ -549,9 +551,12 @@ package com.flexcapacitor.controller {
 		private static var historyManager:HistoryManager;
 		private static var popUpOverlayManager:PopUpOverlayManager;
 		private static var serviceManager:ServicesManager;
+		private static var keyboardManager:KeyboardManager;
 		
 		[Bindable]
 		public static var fontsArray:Array;
+		
+		public var bitmapDictionary:Dictionary = new Dictionary(true);
 		
 		/**
 		 * Create references for classes we need.
@@ -2035,6 +2040,11 @@ package com.flexcapacitor.controller {
 			serviceManager 			= ServicesManager.getInstance();
 			historyManager 			= HistoryManager.getInstance();
 			popUpOverlayManager 	= PopUpOverlayManager.getInstance();
+			keyboardManager			= KeyboardManager.getInstance();
+			
+			var htmlClass:Object = ClassUtils.getDefinition("mx.core.FlexHTMLLoader");
+			
+			keyboardManager.initialize(applicationReference, htmlClass);
 			
 			serviceManager.radiate 	= instance;
 			HistoryManager.radiate 	= instance;
@@ -2055,7 +2065,7 @@ package com.flexcapacitor.controller {
 			layoutManager.usePhasedInstantiation;
 			
 			application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler, false, 0, true);
-			application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler2, false, 0, true);
+			//application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler2, false, 0, true);
 			
 			//ExternalInterface.call("Radiate.getInstance");
 			if (ExternalInterface.available) {
@@ -4812,8 +4822,6 @@ package com.flexcapacitor.controller {
 			dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
 		}
 		
-		public var bitmapDictionary:Dictionary = new Dictionary(true);
-		
 		/**
 		 * Adds bitmap data to the document
 		 * */
@@ -5576,19 +5584,28 @@ package com.flexcapacitor.controller {
 		 * @see pasteItem
 		 * */
 		public function pasteItem(destination:Object):void {
-			var clipboard:Clipboard = Clipboard.generalClipboard;
-			var formats:Array = clipboard.formats;
-			var component:Object;
-			var descriptor:ComponentDescription;
-			var newComponent:Object;
-			var exportOptions:ExportOptions;
-			var itemData:SourceData;
-			var useCopyObjectsTechnique:Boolean = false;
-			var bitmapData:BitmapData;
-			var data:Object;
 			var description:ComponentDescription;
-			var destinationIndex:int = -1;
+			var descriptor:ComponentDescription;
+			var useCopyObjectsTechnique:Boolean;
 			var importOptions:ImportOptions;
+			var exportOptions:ExportOptions;
+			var item:ComponentDefinition;
+			var useInlineStyles:Boolean;
+			var componentFound:Boolean;
+			var bitmapData:BitmapData;
+			var destinationIndex:int;
+			var clipboard:Clipboard;
+			var newComponent:Object;
+			var itemData:SourceData;
+			var numberOfFormats:int;
+			var component:Object;
+			var formats:Array;
+			var format:String;
+			var data:Object;
+			
+			clipboard = Clipboard.generalClipboard;
+			formats = clipboard.formats;
+			destinationIndex = -1;
 			
 			// get destination of clipboard contents
 			if (destination && !(destination is IVisualElementContainer)) {
@@ -5610,9 +5627,7 @@ package com.flexcapacitor.controller {
 				descriptor = selectedDocument.getItemDescription(component);
 			}
 			
-			var numberOfFormats:int = formats.length;
-			var format:String;
-			var componentFound:Boolean;
+			numberOfFormats = formats.length;
 			
 			// check for bitmap data, image files, air:rtf, air:text, etc 
 			// when multiple formats exist add first forrmat we suport
@@ -5669,7 +5684,7 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (useCopyObjectsTechnique) {
-				var item:ComponentDefinition = Radiate.getComponentType(component.className);
+				item = Radiate.getComponentType(component.className);
 				newComponent = createComponentToAdd(selectedDocument, item, true);
 				addElement(newComponent, destination, descriptor.propertyNames, descriptor.styleNames, descriptor.eventNames, ObjectUtils.merge(descriptor.properties, descriptor.styles));
 				updateComponentAfterAdd(selectedDocument, newComponent);
@@ -5680,7 +5695,7 @@ package com.flexcapacitor.controller {
 				setTarget(newComponent);
 			}
 			else if (component) {
-				var useInlineStyles:Boolean = false;
+				useInlineStyles = false;
 				exportOptions = new ExportOptions();
 				exportOptions.useInlineStyles = true;
 				exportOptions.exportChildDescriptors = true;
@@ -5860,6 +5875,20 @@ package com.flexcapacitor.controller {
 			//  at flash.desktop::Clipboard/getData()
 			// Occurs when accessing a dragSource at a later time than the drop event
 			// droppedFiles = dragSource.dataForFormat(ClipboardFormats.FILE_LIST_FORMAT) as Array;
+		}
+		
+		public function dropInBitmapData(bitmapData:BitmapData, createNewDocument:Boolean = false, createDocumentIfNeeded:Boolean = true):void {
+			var fileData:FileData;
+			var destination:Object;
+			var imageData:ImageData;
+			
+			if (createNewDocument || (createDocumentIfNeeded && selectedDocument==null)) {
+				createNewDocumentAndSwitchToDesignView(bitmapData, selectedProject);
+			}
+			else {
+				destination = getDestinationForExternalFileDrop();
+				imageData = addBitmapDataToDocument(selectedDocument, bitmapData, destination, null, true);
+			}
 		}
 		
 		/**
@@ -6533,6 +6562,9 @@ package com.flexcapacitor.controller {
 				//destination = getDestinationForExternalFileDrop();
 				addFileListDataToDocument(selectedDocument, fileToBeLoaded as Array);
 			}
+			else if (newFileData is BitmapData) {
+				addBitmapDataToDocument(selectedDocument, newFileData as BitmapData, null, null, true);
+			}
 			
 			removeEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler);
 		}
@@ -7061,8 +7093,9 @@ package com.flexcapacitor.controller {
 		
 		/**
 		 * Restores captured values in changes array.
+		 * Some values are removed by this call so may need to change this. 
 		 * */
-		public static function restoreCapturedValues(changes:Array, property:Array, style:Array = null, event:Array = null, validateLayout:Boolean = true):Boolean {
+		public static function restoreCapturedValues(changes:Array, property:Array, style:Array = null, event:Array = null, validateLayout:Boolean = true, stripUnchanged:Boolean = true):Boolean {
 			var numberOfChanges:int = changes ? changes.length : 0;
 			var effect:HistoryEffect = new HistoryEffect();
 			var onlyPropertyChanges:Array = [];
@@ -7083,7 +7116,7 @@ package com.flexcapacitor.controller {
 			}
 			
 			onlyPropertyChanges = captureSizingPropertyValues(targets, ArrayUtil.toArray(property), false, onlyPropertyChanges);
-			onlyPropertyChanges = stripUnchangedValues(onlyPropertyChanges);
+			onlyPropertyChanges = stripUnchanged ? stripUnchangedValues(onlyPropertyChanges) : onlyPropertyChanges;
 			
 			effect.targets = targets;
 			effect.propertyChangesArray = onlyPropertyChanges;
@@ -7429,22 +7462,22 @@ setPropertiesStyles(button, ["x", "left"], {x:50,left:undefined});
 		 * Capture sizing property values. Skips height and width unless explicitly set. 
 		 * */
 		public static function captureSizingPropertyValues(targets:Array, properties:Array = null, startValues:Boolean = true, previousChanges:Array = null):Array {
-			var tempEffect:HistoryEffect;
 			var propertyChanges:PropertyChanges;
-			var changes:Array;
-			var change:PropertyChanges;
 			var previousChange:PropertyChanges;
+			var change:PropertyChanges;
+			var effect:HistoryEffect;
+			var changes:Array;
 			
 			if (properties==null) {
 				properties = MXMLDocumentConstants.explicitSizeAndPositionRotationProperties.slice();
 			}
 			
-			tempEffect = new HistoryEffect();
-			tempEffect.targets = targets;
-			tempEffect.relevantProperties = properties;
+			effect = new HistoryEffect();
+			effect.targets = targets;
+			effect.relevantProperties = properties;
 			
 			// get start values for undo
-			changes = tempEffect.captureValues(null, startValues);
+			changes = effect.captureValues(null, startValues);
 			
 			if (startValues) {
 				for each (change in changes) {

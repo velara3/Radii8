@@ -8,14 +8,19 @@ package {
 		
 		/**
 		 * Attributions
-		 * */
+		 **/
 		[Embed(source="/assets/data/attributions.xml", mimeType="application/octet-stream")]
 		public static const attributions:Class;
 		
+		/**
+		 * Providers
+		 **/
+		[Embed(source="/assets/data/providers.xml", mimeType="application/octet-stream")]
+		public static const providers:Class;
 		
 		/**
 		 * ICONS
-		 * */
+		 **/
 		[Embed(source="assets/icons/general/actual_size.png")]
 		public static const actualSize:Class;
 		
@@ -105,6 +110,9 @@ package {
 		
 		[Embed(source="assets/icons/general/filters.png")]
 		public static const filters:Class;
+		
+		[Embed(source="assets/icons/general/gallery.png")]
+		public static const gallery:Class;
 		
 		[Embed(source="assets/icons/general/grid.png")]
 		public static const grid:Class;

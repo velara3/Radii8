@@ -1137,8 +1137,10 @@
 			
 			private var lastFocusedEditor:Object;
 			
-			private function editorFocusInHandler(event:FocusEvent):void
-			{
+			/**
+			 * Todo: Check why focus in or focus event not dispatched in the browser. 
+			 * */
+			private function editorFocusInHandler(event:Event):void {
 				lastFocusedEditor = event.currentTarget;
 				searchInput.aceEditor = lastFocusedEditor;
 				
@@ -1147,13 +1149,11 @@
 				}
 			}
 			
-			private function editorFindHandler(event:Event):void
-			{
+			private function editorFindHandler(event:Event):void {
 				lastFocusedEditor = event.currentTarget;
 				searchInput.aceEditor = lastFocusedEditor;
 				lastFocusedEditor.blur();
 				searchInput.setFocus();
-				
 			}
 			
 			
@@ -1478,6 +1478,8 @@
 					cursorLocationLabel.visible = false;
 					cursorLocationLabel.includeInLayout = false;
 				}
+
+				searchInput.aceEditor = aceEditor;
 			}
 			
 			/**
@@ -1851,6 +1853,7 @@ IFRAME_ID {
 					 showFoldWidgets="true" 
 					 margin="{editorMargin}"
 					 focusIn="editorFocusInHandler(event)"
+					 focus="editorFocusInHandler(event)"
 					 find="editorFindHandler(event)"
 					 scrollSpeed=".5"
 					 useWordWrap="{enableWordWrap}"
@@ -1864,6 +1867,7 @@ IFRAME_ID {
 					 showFoldWidgets="true" 
 					 margin="{editorMargin}"
 					 focusIn="editorFocusInHandler(event)"
+					 focus="editorFocusInHandler(event)"
 					 find="editorFindHandler(event)"
 					 scrollSpeed=".5"
 					 useWordWrap="{enableWordWrap}"
@@ -1878,6 +1882,7 @@ IFRAME_ID {
 					 showFoldWidgets="true" 
 					 margin="{editorMargin}"
 					 focusIn="editorFocusInHandler(event)"
+					 focus="editorFocusInHandler(event)"
 					 find="editorFindHandler(event)"
 					 scrollSpeed=".5"
 					 useWordWrap="{enableWordWrap}"

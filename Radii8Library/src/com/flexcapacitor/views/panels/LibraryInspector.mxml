@@ -53,6 +53,7 @@
 			import com.flexcapacitor.views.ImageView;
 			import com.flexcapacitor.views.renderers.LibraryInspectorRenderer;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
+			import com.flexcapacitor.views.windows.GalleryWindow;
 			
 			import mx.core.ClassFactory;
 			import mx.core.DragSource;
@@ -983,6 +984,11 @@
 				}
 			}
 			
+			protected function galleryButton_clickHandler(event:MouseEvent):void
+			{
+				openGalleryPopUp.play();
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1046,6 +1052,12 @@
 			</clipboard:CopyToClipboard>
 			
 		</handlers:EventHandler>-->
+		
+		<fc:OpenPopUp id="openGalleryPopUp" 
+					  popUpType="{GalleryWindow}" 
+					  modalDuration="100" 
+					  backgroundAlpha=".5"
+					  parent="{parentApplication}"/>
 		
 		<!-- BROWSE FOR FILE --> 
 		<handlers:EventHandler eventName="click" targets="{[browseForFileIcon,addImageLabel]}">
@@ -1182,6 +1194,13 @@
 						   visible="false"
 						   />
 			
+			<c:BeveledImageButton id="galleryButton" 
+								  source="{Radii8LibraryAssets.gallery}" 
+								  toolTip="Open clip art gallery"
+								  click="galleryButton_clickHandler(event)"
+								  visible="true"
+								  alpha=".6"/>
+			
 			<s:HGroup verticalAlign="bottom"
 					  includeInLayout="true"
 					  visible="false"
@@ -1278,5 +1297,6 @@
 				   includeInLayout="{libraryCollection.length==0}"
 				   width="100%"
 				   height="100%"
+				   bottom="40"
 				   />
 </s:Group>

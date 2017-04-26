@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				
+				autoDrawBackground="false"
+				depth="0" 
+				depth.hovered="1" 
+				depth.selected="2" 
+				width="75" height="75"
+				useHandCursor="true" 
+				buttonMode="true">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			
+			import spark.core.ContentCache;
+			
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				if (value) {
+					image.source = value.previewURL;
+				}
+				
+				if (thumbnailContentCache==null) {
+					thumbnailContentCache = new ContentCache();
+					thumbnailContentCache.maxCacheEntries = 500;
+				}
+			}
+			
+			protected function image_completeHandler(event:Event):void {
+				UIComponent(owner).parentDocument.imagesLoaded++;
+			}
+			
+			[Bindable]
+			private static var thumbnailContentCache:ContentCache;
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Sine id="sineEasing" easeInFraction="0.75" />
+	</fx:Declarations>
+	
+	<s:transitions>
+		<mx:Transition fromState="normal" toState="hovered" autoReverse="true">
+			<s:Animate target="{transformOffsets}" duration="100" easer="{sineEasing}">
+				<s:SimpleMotionPath property="scaleX" />
+				<s:SimpleMotionPath property="scaleY" />
+				<s:SimpleMotionPath property="x" />
+				<s:SimpleMotionPath property="y" />
+			</s:Animate>
+		</mx:Transition>
+		<mx:Transition fromState="hovered" toState="normal" autoReverse="true">
+			<s:Animate target="{transformOffsets}" duration="100" easer="{sineEasing}">
+				<s:SimpleMotionPath property="scaleX" />
+				<s:SimpleMotionPath property="scaleY" />
+				<s:SimpleMotionPath property="x" />
+				<s:SimpleMotionPath property="y" />
+			</s:Animate>
+		</mx:Transition>
+		<mx:Transition fromState="hovered" toState="selected" autoReverse="true">
+			<s:Animate target="{transformOffsets}" duration="100" easer="{sineEasing}" startDelay="1000">
+				<s:SimpleMotionPath property="scaleX" />
+				<s:SimpleMotionPath property="scaleY" />
+				<s:SimpleMotionPath property="x" />
+				<s:SimpleMotionPath property="y" />
+			</s:Animate>
+		</mx:Transition>
+	</s:transitions>
+	
+	<s:postLayoutTransformOffsets>
+		<mx:TransformOffsets id="transformOffsets"
+							 scaleX="1" 
+							 scaleY="1"
+							 x.hovered="{-((width *1.2-width)/2)}" 
+							 y.hovered="{-((height*1.2-height)/2)}" 
+							 scaleX.hovered="1.2"  
+							 scaleY.hovered="1.2"
+							 />
+	</s:postLayoutTransformOffsets>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="hovered" />
+		<s:State name="selected" />
+	</s:states>
+
+	
+	<s:Image id="image" 
+			 width="100%" height="100%"
+			 smooth="true"
+			 smoothingQuality="high"
+			 enableLoadingState="true"
+			 contentLoader="{thumbnailContentCache}"
+			 complete="image_completeHandler(event)"
+			 />
+	
+</s:ItemRenderer>

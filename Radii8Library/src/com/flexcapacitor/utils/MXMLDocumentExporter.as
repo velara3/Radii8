@@ -87,6 +87,16 @@ package com.flexcapacitor.utils {
 		public var userStyles:String;
 		
 		/**
+		 * Prefix for exported TextFlow. Default is Spark "s"
+		 * */
+		public var textFlowPrefix:String = MXMLDocumentConstants.sparkNamespacePrefix;
+		
+		/**
+		 * URI for exported TextFlow. Default is Spark "library://ns.adobe.com/flex/spark"
+		 * */
+		public var textFlowNamespace:String = MXMLDocumentConstants.sparkNamespaceURI;
+		
+		/**
 		 * @inheritDoc
 		 * */
 		override public function export(document:IDocument, componentDescription:ComponentDescription = null, parameterOptions:ExportOptions = null, dispatchEvents:Boolean = false):SourceData {
@@ -371,7 +381,7 @@ package com.flexcapacitor.utils {
 						//value = TextConverter.export(value, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.XML_TYPE) as XML;
 						
 						if (value) {
-							value = addNamespaceToTextFlow(value);
+							value = addNamespaceToTextFlow(value, textFlowPrefix, textFlowNamespace);
 							
 							if (useXMLFormatting) {
 								value = XML(value).toXMLString();
@@ -792,7 +802,7 @@ package com.flexcapacitor.utils {
 		/**
 		 * Set textflow XML to a new namespace
 		 * */
-		public function addNamespaceToTextFlow(value:Object, prefix:String = null, uri:String = null):XML {
+		public function addNamespaceToTextFlow(value:Object, prefix:String = null, uri:String = null, attributes:Boolean = true):XML {
 			var newNamespace:Namespace;
 			var sparkNamespace:Namespace;
 			var textFlowXML:XML;
@@ -803,7 +813,7 @@ package com.flexcapacitor.utils {
 			prefix 			= prefix ? prefix : MXMLDocumentConstants.tlfNamespacePrefix;
 			uri 			= uri ? uri : MXMLDocumentConstants.tlfNamespaceURI;
 			newNamespace 	= new Namespace(prefix, uri);
-			sparkNamespace 	= MXMLDocumentConstants.sparkNamespace;
+			//sparkNamespace 	= MXMLDocumentConstants.sparkNamespace;
 			
 			textFlowXML.removeNamespace(sparkNamespace);
 			textFlowXML.setNamespace(newNamespace);
@@ -811,8 +821,10 @@ package com.flexcapacitor.utils {
 			for each (node in textFlowXML.descendants()) {
 				node.setNamespace(newNamespace);
 				
-				for each (attribute in node.attributes()) {
-					attribute.setNamespace(newNamespace);
+				if (attributes) {
+					for each (attribute in node.attributes()) {
+						attribute.setNamespace(newNamespace);
+					}
 				}
 			}
 			

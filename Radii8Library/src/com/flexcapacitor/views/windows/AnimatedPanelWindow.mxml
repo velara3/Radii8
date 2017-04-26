@@ -18,6 +18,7 @@
 			
 			import mx.core.mx_internal;
 			import mx.events.EffectEvent;
+			import mx.managers.PopUpManager;
 			
 			use namespace mx_internal;
 			
@@ -45,6 +46,10 @@
 			{
 				var newEvent:Event = new Event("openAnimationEnd");
 				dispatchEvent(newEvent);
+			}
+			
+			public function close():void {
+				callLater(PopUpManager.removePopUp, [this]);
 			}
 			
 		]]>
