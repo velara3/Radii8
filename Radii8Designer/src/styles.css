@@ -17,8 +17,8 @@ controls|Hyperlink:hover, controls|Hyperlink:over {
 	color:blue;
 }
 mx|DragManager {
-/*	copyCursor: Embed(source="assets/globe.jpg");*/
-	copyCursor: ClassReference(null);
+/*	copyCursor: Embed(source="assets/globe.jpg");
+	copyCursor: ClassReference(null);*/
 }
 s|NumericStepper {
 	skinClass:ClassReference("com.flexcapacitor.skins.SolidFillNumericStepperSkin");

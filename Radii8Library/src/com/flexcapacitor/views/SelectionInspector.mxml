@@ -158,6 +158,7 @@
 					showLabel.selected = selectionTool.showSelectionLabel;
 					selectGroup.selected = selectionTool.selectGroup;
 					dragAllowedOutside.selected = selectionTool.dragAllowedOutside;
+					snapToElement.selected = selectionTool.snapToNearbyElements;
 					
 					if (Selection(tool).selectionInspector==null) {
 						Selection(tool).selectionInspector = this;
@@ -302,8 +303,8 @@
 					//warningMessage += "When the document is scaled drag and drop inside of a basic layout doesn't work. ";
 					//warningMessage += "Use the arrow keys or use the Layout Panel to size and position.";
 					//warningMessage += "\n\n";
-					warningMessage += "The resize handles do not work when the document is scaled. ";
-					warningMessage += "Use the Layout Panel to resize or set the scale back to 100%.";
+					warningMessage += "The resize handles are not supported when the document is scaled. ";
+					warningMessage += "Use the Layout Panel to resize or set the scale back to 100% and then resize.";
 					//warningMessage += "\n";
 					warningNeeded = true;
 				}
@@ -371,6 +372,17 @@
 				
 			}
 			
+			protected function snapToElement_clickHandler(event:MouseEvent):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var selectedTool:ITool = tool;
+				var selectionTool:Selection;
+				
+				if (toolDescription.instance) {
+					selectionTool = Selection(toolDescription.instance);
+					selectionTool.snapToNearbyElements = snapToElement.selected;
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -380,6 +392,17 @@
 	
 	
 	<s:HGroup width="100%" verticalAlign="top" height="100%" paddingTop="2">
+		
+		
+		<c:BeveledImageToggleButton id="snapToElement"
+									width="18"
+									height="18"
+									scaleMode="letterbox"
+									showBackgroundWhenSelected="true"
+									source="{Radii8LibraryAssets.snapToElement}"
+									toolTip="Snap the element being dragged to the edge of nearby elements (use CTRL key to disable)"
+									click="snapToElement_clickHandler(event)"
+									/>
 		
 		
 		<c:BeveledImageToggleButton id="showSelectionOutline"

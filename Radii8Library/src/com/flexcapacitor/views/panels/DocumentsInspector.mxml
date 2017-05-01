@@ -218,8 +218,17 @@
 			}
 			
 			protected function saveDocumentIcon_clickHandler(event:MouseEvent):void {
-				//radiate.saveProject(radiate.project);
-				var iDocument:IDocument = list.selectedItem as IDocument;
+				var iDocument:IDocument;
+				var usersSignedIn:Boolean;
+				
+				usersSignedIn = Radiate.instance.isUserLoggedIn;
+				
+				if (!usersSignedIn) {
+					Radiate.info("You must be logged in to save.");
+					return;
+				}
+				
+				iDocument = list.selectedItem as IDocument;
 				
 				if (iDocument) {
 					
@@ -571,11 +580,21 @@
 				}
 			}
 			
-			protected function saveRevisionIcon_clickHandler(event:MouseEvent):void
-			{
-				var iDocument:IDocument = radiate.selectedDocument;
+			protected function saveRevisionIcon_clickHandler(event:MouseEvent):void {
+				var iDocument:IDocument;
 				var sourceData:SourceData;
 				var revision:DocumentRevision;
+				var usersSignedIn:Boolean;
+				
+				usersSignedIn = Radiate.instance.isUserLoggedIn;
+				
+				if (!usersSignedIn) {
+					Radiate.info("You must be logged in to save a revision.");
+					return;
+				}
+				
+				iDocument = radiate.selectedDocument;
+				
 				
 				if (iDocument) {
 					sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, CodeManager.MXML);
@@ -589,8 +608,9 @@
 					iDocument.markDirty();
 					updateRevisionsToolTip();
 					Radiate.instance.saveDocument(iDocument);
-					
-					
+				}
+				else {
+					Radiate.warn("No document selected");
 				}
 			}
 			

@@ -7,14 +7,18 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.DragData;
+	import com.flexcapacitor.utils.supportClasses.SnapPoints;
+	import com.flexcapacitor.utils.supportClasses.SnapToElementDropIndicator;
 	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.log;
 	import com.flexcapacitor.utils.supportClasses.logTarget;
+	import com.jacobschatz.bk.utils.NumberUtil;
 	
 	import flash.display.BitmapData;
 	import flash.display.BlendMode;
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
+	import flash.display.InteractiveObject;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
@@ -34,6 +38,8 @@ package com.flexcapacitor.utils {
 	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
+	import mx.core.Singleton;
+	import mx.core.UIComponent;
 	import mx.core.mx_internal;
 	import mx.events.DragEvent;
 	import mx.events.SandboxMouseEvent;
@@ -43,6 +49,7 @@ package com.flexcapacitor.utils {
 	import mx.managers.SystemManager;
 	import mx.managers.SystemManagerGlobals;
 	import mx.managers.dragClasses.DragProxy;
+	import mx.skins.ProgrammaticSkin;
 	import mx.utils.NameUtil;
 	import mx.utils.Platform;
 	
@@ -103,9 +110,14 @@ package com.flexcapacitor.utils {
 	 * I don't know if this has a drag cancel event. 
 	 * That is, if you don't find a place to drop then what happens? 
 	 * Could listen for stage mouse up or mouse up outside. 
-	 * This class is ancient. We could clean it up. We might want to use 
-	 * displayObject.startDrag(), or objecthandles class
+	 * 
+	 * 
+	 * This class is ancient. We need to eventually clean it up. 
+	 * We might want to use displayObject.startDrag(), or objecthandles class
 	 * instead or a combination of drag methods.
+	 * Or better yet, rewrite the drag manager class.
+	 * Move some of this code to the Selection class except if selection tool is not 
+	 * selected. 
 	 * */
 	public class DragManagerUtil extends EventDispatcher {
 		
@@ -122,7 +134,12 @@ package com.flexcapacitor.utils {
 		/**
 		 * Used during drag and drop to indicate the target destination for the dragged element
 		 * */
-		public var dropIndicator:IFactory;
+		public var dropIndicatorFactory:IFactory;
+		
+		/**
+		 * Used during drag and drop to indicate the target destination for the dragged element
+		 * */
+		public var dropIndicatorInstance:DisplayObject;
 		
 		/**
 		 * The distance of the mouse pointer location from the edge of the dragged element
@@ -138,6 +155,8 @@ package com.flexcapacitor.utils {
 		public var swfRoot:DisplayObject;
 		public var dragProxy:DragProxy;
 		public var dragManager:DragManager;
+		public var scaleX:Number;
+		public var scaleY:Number;
 		
 		/**
 		 * Reference to the document
@@ -187,6 +206,8 @@ package com.flexcapacitor.utils {
 		
 		
 		public var showDropIndicator:Boolean = true;
+		public var showDropIndicatorInBasicLayout:Boolean = true;
+		public var useImageForDropIndicator:Boolean;
 		private var systemManager:Object;
 		private var dragListener:DisplayObjectContainer;
 		
@@ -467,17 +488,21 @@ package com.flexcapacitor.utils {
 		}
 		
 		public static var testSomething:Boolean;
+		
+		public var imageAlpha:Number = .9;
+		
 		/**
 		 * Helps highlights items that are locked
 		 * */
 		public var layoutDebugHelper:LayoutDebugHelper;
+		
+		public var snapshot:BitmapAsset;
 		
 		/**
 		 * Start dragging
 		 * */
 		public function startDrag(dragInitiator:IUIComponent, application:Application, event:MouseEvent):void {
 			var dragSource:DragSource = new DragSource();
-			var snapshot:BitmapAsset;
 			var scaleOffsetPoint:Point;
 			
 			if (debug) {
@@ -497,8 +522,8 @@ package com.flexcapacitor.utils {
 			// TODO = READ 
 			// Flex coordinate systems
 			// http://help.adobe.com/en_US/flex/using/WS2db454920e96a9e51e63e3d11c0bf69084-7de0.html
-			var scaleX:Number = application.scaleX;
-			var scaleY:Number = application.scaleY;
+			scaleX = application.scaleX;
+			scaleY = application.scaleY;
 			
 			scaleOffsetPoint = new Point();
 			
@@ -542,7 +567,7 @@ package com.flexcapacitor.utils {
 				// RangeError: Error #2006: The supplied index is out of bounds.
 				PopUpManager.addPopUp(selectionGroup, swfRoot);
 				selectionGroup.visible = false;
-				selectionGroup.addEventListener(DragEvent.DRAG_OVER, dragOverHandler);
+				//selectionGroup.addEventListener(DragEvent.DRAG_OVER, dragOverHandler);
 			}
 			
 			// show mouse location lines
@@ -587,7 +612,7 @@ package com.flexcapacitor.utils {
 						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiatorProxy as DisplayObject, true, scaleX, scaleX);
 					}
 					else {
-						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject, true, scaleX, scaleX);
+						//snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject, true, scaleX, scaleX);
 						var bitmapData:BitmapData = BitmapUtil.getSnapshotWithPadding(dragInitiator as IUIComponent, 0);
 						snapshot = new BitmapAsset(bitmapData);
 					}
@@ -627,7 +652,7 @@ package com.flexcapacitor.utils {
 			
 			
 			if (setDragManagerOffset) {
-				DragManager.doDrag(dragInitiator, dragSource, event, snapshot, -offset.x, -offset.y, 1);
+				DragManager.doDrag(dragInitiator, dragSource, event, snapshot, -offset.x, -offset.y, imageAlpha);
 				
 				//var icon:Sprite = getDragIcon();
 				
@@ -637,7 +662,7 @@ package com.flexcapacitor.utils {
 					DragManager.doDrag(dragInitiator, dragSource, event, snapshot, scaleOffsetPoint.x, scaleOffsetPoint.y, 1);
 				}
 				else {
-					DragManager.doDrag(dragInitiator, dragSource, event, snapshot, 0, 0, 1);
+					DragManager.doDrag(dragInitiator, dragSource, event, snapshot, 0, 0, imageAlpha);
 				}
 				
 				//icon = getDragIcon();
@@ -733,6 +758,8 @@ package com.flexcapacitor.utils {
 			if (debug) {
 				log();
 			}
+			
+			//destroyDropIndicator();
 			//trace("Drag Exit:" + event.target);
 		}
 		
@@ -768,15 +795,15 @@ package com.flexcapacitor.utils {
 			}
 			
 			
-			dropTarget = dragData.target;
-			isApplication = dragData.isApplication;
-			isTile = dragData.isTile;
-			isVertical = dragData.isVertical;
-			isBasic = dragData.isBasicLayout;
-			isHorizontal = dragData.isHorizontal;
-			dropLocation = dragData.dropLocation;
-			dropLayout = dragData.layout;
-			replaceTarget = dragData.replaceTarget;
+			dropTarget 		= dragData.target;
+			isApplication 	= dragData.isApplication;
+			isTile 			= dragData.isTile;
+			isVertical 		= dragData.isVertical;
+			isBasic 		= dragData.isBasicLayout;
+			isHorizontal 	= dragData.isHorizontal;
+			dropLocation 	= dragData.dropLocation;
+			dropLayout 		= dragData.layout;
+			replaceTarget 	= dragData.replaceTarget;
 			
 			
 			// update location properties
@@ -800,7 +827,11 @@ package com.flexcapacitor.utils {
 					// hide selection group
 					if (selectionGroup.visible) {
 						selectionGroup.visible = false;
+						//selectionGroup.x = rectangle.x;
+						//selectionGroup.y = rectangle.y;
 					}
+					selectionGroup.width = 0;
+					selectionGroup.height = 0;
 				}
 				else {
 					
@@ -866,17 +897,13 @@ package com.flexcapacitor.utils {
 				}
 				
 				// if drop indicator is needed
-				if (isHorizontal || isVertical || isTile) {
+				if (isHorizontal || isVertical || isTile || (isBasic && showDropIndicatorInBasicLayout)) {
 					// get drop indicator location
 					//dropLocation = targetGroupLayout.calculateDropLocation(event);
 					
 					if (dropLocation) {
 						//DragManager.acceptDragDrop(parentApplication);
 						DragManager.acceptDragDrop(targetApplication);
-						
-						// Create the dropIndicator instance. The layout will take care of
-						// parenting, sizing, positioning and validating the dropIndicator.
-						dropLayout.dropIndicator = createDropIndicator();
 						
 						// Show focus
 						//drawFocusAnyway = true;
@@ -885,12 +912,122 @@ package com.flexcapacitor.utils {
 						// Notify manager we can drop
 						DragManager.showFeedback(event.ctrlKey ? DragManager.COPY : DragManager.MOVE);
 						
+						/*
+						TypeError: Error #1007: Instantiation attempted on a non-constructor.
+						at mx.managers::CursorManagerImpl/showCurrentCursor()[/Users/justinmclean/Documents/ApacheFlex4.16/frameworks/projects/framework/src/mx/managers/CursorManagerImpl.as:621]
+						at mx.managers::CursorManagerImpl/setCursor()[/Users/justinmclean/Documents/ApacheFlex4.16/frameworks/projects/framework/src/mx/managers/CursorManagerImpl.as:452]
+						at mx.managers.dragClasses::DragProxy/showFeedback()[/Users/justinmclean/Documents/ApacheFlex4.16/frameworks/projects/framework/src/mx/managers/dragClasses/DragProxy.as:264]
+						at mx.managers.dragClasses::DragProxy/mouseMoveHandler()[/Users/justinmclean/Documents/ApacheFlex4.16/frameworks/projects/framework/src/mx/managers/dragClasses/DragProxy.as:553]
+						TypeError: Error #1007: Instantiation attempted on a non-constructor.
+						TypeError: Error #1007: Instantiation attempted on a non-constructor.
+						TypeError: Error #1007: Instantiation attempted on a non-constructor.
+						at mx.managers::CursorManagerImpl/showCurrentCursor()[/Users/justinmclean/Documents/ApacheFlex4.16/frameworks/projects/framework/src/mx/managers/CursorManagerImpl.as:621]
+						at mx.managers::CursorManagerImpl/setCursor()[/Users/justinmclean/Documents/ApacheFlex4.16/frameworks/projects/framework/src/mx/managers/CursorManagerImpl.as:452]
+						at mx.managers.dragClasses::DragProxy/showFeedback()[/Users/justinmclean/Documents/ApacheFlex4.16/frameworks/projects/framework/src/mx/managers/dragClasses/DragProxy.as:264]
+						at mx.managers.dragClasses::DragProxy/mouseMoveHandler()[/Users/justinmclean/Documents/ApacheFlex4.16/frameworks/projects/framework/src/mx/managers/dragClasses/DragProxy.as:553]
+						TypeError: Error #1007: Instantiation attempted on a non-constructor.
+						TypeError: Error #1007: Instantiation attempted on a non-constructor.
+						*/
+						
 						// Show drop indicator
 						// if you drag too fast with a graphic element it creates an error in VerticalLayout line 2281
 						//             emptySpaceTop = (dropIndex < count) ? getElementBounds(dropIndex).top - emptySpace :
 						// TypeError: Error #1009: Cannot access a property or method of a null object reference.
 						try {
-							dropLayout.showDropIndicator(dropLocation);
+							
+							var currentX:int;
+							var currentY:int;
+							var horizontalDifference:int;
+							var verticalDifference:int;
+							var hasHorizontalSnapEdge:Boolean;
+							var hasVerticalSnapEdge:Boolean;
+							
+							
+							// Create the dropIndicator instance. The layout will take care of
+							// parenting, sizing, positioning and validating the dropIndicator.
+							currentX = dropLocation.dropPoint.x - (offset.x/scaleX);
+							currentY = dropLocation.dropPoint.y - (offset.y/scaleY);
+							
+							if (isBasic) {
+								var skipOwner:Boolean = true;
+								
+								if (snapToNearbyElements && !event.ctrlKey) {
+									snapPoints = getElementSnapPoints(dropLayout.target, draggedItem, skipOwner, snapPoints);
+									
+									if (useImageForDropIndicator) {
+										dropLayout.dropIndicator = DisplayObjectUtils.getBitmapAssetSnapshot2(draggedItem as DisplayObject, true);
+										dropLayout.dropIndicator.width = draggedItem.width;
+										dropLayout.dropIndicator.height = draggedItem.height;
+										dropLayout.dropIndicator.visible = true;
+										dropLayout.dropIndicator.x = dropLocation.dropPoint.x - (offset.x/scaleX);
+										dropLayout.dropIndicator.y = 0;// dropLocation.dropPoint.y - (offset.y/scaleY);
+									}
+									else {
+										if (dropLayout.dropIndicator==null || dropLayout.dropIndicator!=dropIndicatorInstance) { 
+											dropLayout.dropIndicator = createBasicLayoutDropIndicator(dropLayout.target);
+										}
+									}
+									
+									// horizontal edge
+									//currentX = dropLayout.dropIndicator.x;
+									snapX = NumberUtil.snapToInArray(currentX, snapPoints.horizontal);
+									horizontalDifference = isNaN(snapX) ? snapThreshold+1 : Math.abs(snapX-currentX);
+									
+									// vertical edge
+									//currentY = dropLayout.dropIndicator.y;
+									snapY = NumberUtil.snapToInArray(currentY, snapPoints.vertical);
+									verticalDifference = isNaN(snapY) ? snapThreshold+1 : Math.abs(snapY-currentY);
+									
+									if (horizontalDifference<=snapThreshold) {
+										hasHorizontalSnapEdge = true;
+										//trace("snapping to=" + snapX);
+									}
+									else {
+										snapX = NaN;
+									}
+									
+									if (verticalDifference<=snapThreshold) {
+										hasVerticalSnapEdge = true;
+										//trace("snapping to=" + snapX);
+									}
+									else {
+										snapY = NaN;
+									}
+									
+									if (hasVerticalSnapEdge || hasHorizontalSnapEdge) {
+										SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(snapX, snapY);
+										//dropLayout.showDropIndicator(dropLocation.dropPoint);
+										dropLayout.dropIndicator.visible = true;
+										
+										if (dropLayout.dropIndicator is ProgrammaticSkin) {
+											ProgrammaticSkin(dropLayout.dropIndicator).validateDisplayList();
+										}
+									}
+									else {
+										dropLayout.hideDropIndicator();
+									}
+								}
+								else {
+									snapX = NaN;
+									snapY = NaN;
+									dropLayout.hideDropIndicator();
+								}
+								
+								//trace("x:" + dropLocation.dropPoint.x);
+								//trace("w:" + dropLayout.dropIndicator.width);
+								//trace("h:" + dropLayout.dropIndicator.height);
+							}
+							else {
+								
+								// Create the dropIndicator instance. The layout will take care of
+								// parenting, sizing, positioning and validating the dropIndicator.
+								
+								if (dropLayout.dropIndicator==null || dropLayout.dropIndicator!=dropIndicatorInstance) {
+									dropLayout.dropIndicator = createDropIndicator();
+								}
+								
+								dropLayout.showDropIndicator(dropLocation);
+							}
 						}
 						catch (e:Error) {
 							
@@ -1107,7 +1244,11 @@ package com.flexcapacitor.utils {
 			
 			// it seems to happen when dragging and dropping rapidly
 			// stops the drop not accepted animation
+			// when using our own dragmanager this no longer works: 
 			var dragManagerImplementation:Object = mx.managers.DragManagerImpl.getInstance();
+			// so we use this
+			dragManagerImplementation = Singleton.getClass("mx.managers::IDragManager");
+			dragManagerImplementation = dragManagerImplementation.getInstance();
 			//var dragProxy:DragProxy = dragManagerImplementation.dragProxy;
 			//var startPoint:Point = new Point(dragProxy.startX, dragProxy.startY);
 			Object(dragManagerImplementation).endDrag(); 
@@ -1245,8 +1386,16 @@ package com.flexcapacitor.utils {
 						dropX = dropPoint.x - offset.x;
 						dropY = dropPoint.y - offset.y;
 					}
+					
+					if (!isNaN(snapX)) {
+						dropX = snapX;
+					}
+					if (!isNaN(snapY)) {
+						dropY = snapY;
+					}
 				}
 				else {
+					
 					if (scaleX<1) {
 						dropX = dropPoint.x-dragProxy.xOffset/scaleX;
 						dropY = dropPoint.y-dragProxy.yOffset/scaleY;
@@ -1263,6 +1412,14 @@ package com.flexcapacitor.utils {
 					else {
 						dropX = dropPoint.x - offset.x;
 						dropY = dropPoint.y - offset.y;
+					}
+					
+					
+					if (!isNaN(snapX)) {
+						dropX = snapX;
+					}
+					if (!isNaN(snapY)) {
+						dropY = snapY;
 					}
 				}
 				
@@ -1404,6 +1561,7 @@ package com.flexcapacitor.utils {
 			removeDragInitiatorProxy();
 			removeDragListeners(dragListener);
 			removeDragDisplayObjects();
+			destroyDropIndicator();
 			//removeGroupListeners(targetApplication);
 			removeMouseHandlers(dragInitiator as IVisualElement);
 			dragging = false;
@@ -1519,19 +1677,21 @@ package com.flexcapacitor.utils {
 			
 		}
 		
-		
+		/**
+		 * Creates the drop indicator instance for horizontal, vertical and tile layouts 
+		 * */
 		public function createDropIndicator():DisplayObject {
+			
 			// Do we have a drop indicator already?
-			if (dropIndicator) {
-				return DisplayObject(dropIndicator);
+			if (dropIndicatorInstance && dropIndicatorInstance is ListDropIndicator) {
+				return DisplayObject(dropIndicatorInstance);
 			}
 			
-			var dropIndicatorInstance:DisplayObject;
 			var dropIndicatorClass:Class;
 			
-			if (dropIndicator) {
+			if (dropIndicatorFactory) {
 				//dropIndicatorInstance = DisplayObject(parentApplication.createDynamicPartInstance("dropIndicator"));
-				dropIndicatorInstance = DisplayObject(dropIndicator.newInstance());
+				dropIndicatorInstance = DisplayObject(dropIndicatorFactory.newInstance());
 			}
 			else {
 				dropIndicatorClass = spark.skins.spark.ListDropIndicator;
@@ -1550,14 +1710,56 @@ package com.flexcapacitor.utils {
 			return dropIndicatorInstance;
 		}
 		
+		/**
+		 * Create a indicator for basic layout that shows edge lines
+		 * */
+		public function createBasicLayoutDropIndicator(target:GroupBase):DisplayObject {
+			
+			// Do we have a drop indicator already?
+			if (dropIndicatorInstance && dropIndicatorInstance is SnapToElementDropIndicator && dropIndicatorInstance==target.layout.dropIndicator) {
+				return DisplayObject(dropIndicatorInstance);
+			}
+			
+			var dropIndicatorClass:Class;
+			
+			dropIndicatorClass = SnapToElementDropIndicator;
+			
+			if (dropIndicatorClass) {
+				dropIndicatorInstance = new dropIndicatorClass();
+			}
+			
+			if (dropIndicatorInstance is IVisualElement) {
+				IVisualElement(dropIndicatorInstance).owner = targetApplication;
+			}
+			
+			dropIndicatorInstance.x = 0;
+			dropIndicatorInstance.y = 0;
+			dropIndicatorInstance.width = target.width;
+			dropIndicatorInstance.height = target.height;
+			dropIndicatorInstance.alpha = .5;
+			
+			// Set it in the layout
+			//layout.dropIndicator = dropIndicatorInstance;
+			return dropIndicatorInstance;
+		}
+		
+		/**
+		 * Need to clean this up
+		 * */
 		public function destroyDropIndicator():DisplayObject {
-			var dropIndicatorInstance:DisplayObject = dropIndicator as DisplayObject;
+			if (dropLayout) {
+				dropLayout.hideDropIndicator();
+			}
+			
+			var dropIndicatorInstance:DisplayObject = dropIndicatorFactory as DisplayObject;
 			
 			if (!dropIndicatorInstance)
 				return null;
 			
+			dropIndicatorInstance.visible = false;
+			
 			// Release the reference from the layout
-			dropIndicator = null;
+			dropIndicatorFactory = null;
 			
 			// Release it if it's a dynamic skin part
 			/*var count:int = parentApplication.numDynamicParts("dropIndicator");
@@ -1569,7 +1771,45 @@ package com.flexcapacitor.utils {
 			break;
 			}
 			}*/
+			
 			return dropIndicatorInstance;
+		}
+		
+		public function getElementSnapPoints(target:GroupBase, excludeObject:Object = null, skipOwner:Boolean = true, snapPoints:SnapPoints = null):SnapPoints {
+			var numberOfElements:int;
+			var element:IVisualElement;
+			var verticalSnapPoints:Array = [];
+			var horizontalSnapPoints:Array = [];
+			
+			if (target==null) return null;
+			
+			numberOfElements = target.numElements;
+			
+			for (var i:int = 0; i < numberOfElements; i++) {
+				element = target.getElementAt(i);
+				
+				if (excludeObject) {
+					if (element==excludeObject) {
+						continue;
+					}
+					
+					if (skipOwner && "owner" in element && element==excludeObject.owner) {
+						continue;
+					}
+				}
+				
+				horizontalSnapPoints.push(element.x);
+				verticalSnapPoints.push(element.y);
+			}
+			
+			if (snapPoints==null) {
+				snapPoints = new SnapPoints();
+			}
+			
+			snapPoints.vertical = verticalSnapPoints;
+			snapPoints.horizontal = horizontalSnapPoints;
+			
+			return snapPoints;
 		}
 		
 		/**
@@ -1616,6 +1856,9 @@ package com.flexcapacitor.utils {
 			// according to DragProxy the player doesn't handle getObjectsUnderPoint correctly 
 			// and uses it's own method. maybe use that if any issues
 			targetsUnderPoint = topLevelApplication.getObjectsUnderPoint(topLeftEdgePoint);
+			//targetsUnderPoint = [];
+			//getObjectsUnderPoint(topLevelApplication, topLeftEdgePoint, targetsUnderPoint);
+			
 			numberOfTargets = targetsUnderPoint.length;
 			
 			// start from highest component and go back to application
@@ -2060,6 +2303,16 @@ package com.flexcapacitor.utils {
 		
 		public var dragging:Boolean;
 
+		private var snapPoints:SnapPoints;
+
+		private var snapX:Number;
+
+		private var snapY:Number;
+		
+		public var snapThreshold:int = 6;
+		
+		public var snapToNearbyElements:Boolean;
+
 		
 		/**
 		 * Gets the display list. The parentApplication needs to be set
@@ -2146,6 +2399,72 @@ package com.flexcapacitor.utils {
 				}
 			}
 			return parentItem;
+		}
+		
+		/**
+		 *  Player doesn't handle this correctly so we have to do it ourselves
+		 *  
+		 *  @langversion 3.0
+		 *  @playerversion Flash 9
+		 *  @playerversion AIR 1.1
+		 *  @productversion Flex 3
+		 */
+		public static function getObjectsUnderPoint(obj:DisplayObject, pt:Point, arr:Array):void
+		{
+			if (!obj.visible)
+				return;
+			
+			if ((obj is UIComponent) && !UIComponent(obj).$visible)
+				return;
+			
+			if (obj.hitTestPoint(pt.x, pt.y, true))
+			{
+				if (obj is InteractiveObject && InteractiveObject(obj).mouseEnabled)
+					arr.push(obj);
+				if (obj is DisplayObjectContainer)
+				{
+					var doc:DisplayObjectContainer = obj as DisplayObjectContainer;
+					if (doc.mouseChildren)
+					{
+						// we use this test so we can test in other application domains
+						if ("rawChildren" in doc)
+						{
+							var rc:Object = doc["rawChildren"];
+							n = rc.numChildren;
+							for (i = 0; i < n; i++)
+							{
+								try
+								{
+									getObjectsUnderPoint(rc.getChildAt(i), pt, arr);
+								}
+								catch (e:Error)
+								{
+									//another sandbox?
+								}
+							}
+						}
+						else
+						{
+							if (doc.numChildren)
+							{
+								var n:int = doc.numChildren;
+								for (var i:int = 0; i < n; i++)
+								{
+									try
+									{
+										var child:DisplayObject = doc.getChildAt(i);
+										getObjectsUnderPoint(child, pt, arr);
+									}
+									catch (e:Error)
+									{
+										//another sandbox?
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 		
 		public static function getInstance():DragManagerUtil {

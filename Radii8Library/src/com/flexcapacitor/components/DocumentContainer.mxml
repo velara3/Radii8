@@ -92,8 +92,8 @@
 			 * is to embed additional assets, components, fonts etc
 			 * that the MXML markup can use.  
 			 * 
-			 * Note: We caould also embed the blank application
-			 * 
+			 * Note: We could also embed the blank application
+			 * Blank application is now embedded
 			 * 
 			 * */
 			private function creationComplete():void {
@@ -1108,7 +1108,8 @@
 			
 			<!---
 			This second group is to provide padding to the top and bottom of the document 
-			and to receive any mouse events such as zoom in and out.
+			and to receive any mouse events such as zoom in and out. 
+			This may be the padding for rulers. Or the rulers can go on top. 
 			
 			It gets sized to the canvas size plus the padding value. 
 			
@@ -1187,6 +1188,7 @@
 	
 	<s:Group id="scrollerCornerButton" 
 			 width="16" height="16" right="0" bottom="0"
+			 toolTip="Clicking here will center the document"
 			 click="scrollerCornerButton_clickHandler(event)">
 		<s:Rect width="100%"
 				height="100%"

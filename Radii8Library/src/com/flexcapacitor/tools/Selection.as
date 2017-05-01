@@ -350,6 +350,7 @@ package com.flexcapacitor.tools {
 		}
 
 
+		public var snapToNearbyElements:Boolean = false;
 		public var showSelectionLabelOnDocument:Boolean = false;
 		public var showSelectionFill:Boolean = false;
 		public var showSelectionFillOnDocument:Boolean = false;
@@ -1145,6 +1146,7 @@ package com.flexcapacitor.tools {
 					if (target is IVisualElement) {
 						dragManagerInstance.listenForDragBehavior(target as IVisualElement, document, event, null, dragAllowedOutside);
 						dragManagerInstance.roundToIntegers = roundToIntegers;
+						dragManagerInstance.snapToNearbyElements = snapToNearbyElements;
 						addDragManagerListeners();
 					}
 					

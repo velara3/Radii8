@@ -231,6 +231,9 @@ package {
 		[Embed(source="assets/icons/general/sendBackwards.png")]
 		public static const sendBackwards:Class;
 		
+		[Embed(source="assets/icons/general/snapToElement.png")]
+		public static const snapToElement:Class;
+		
 		[Embed(source="assets/icons/general/multipleSave.png")]
 		public static const multipleSave:Class;
 		

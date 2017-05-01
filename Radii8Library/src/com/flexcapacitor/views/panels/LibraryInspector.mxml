@@ -14,10 +14,6 @@
 		 implements="com.flexcapacitor.views.IInspector" 
 		 width="400" 
 		 height="100%" 
-		 
-		 dragEnter="library_dragEnterHandler(event)"
-		 dragDrop="library_dragDropHandler(event)"
-		 dragOver="library_dragOverHandler(event)"
 		 >
 	
 	<!-- 
@@ -49,6 +45,7 @@
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.DragManagerUtil;
 			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.IInspector;
 			import com.flexcapacitor.views.ImageView;
 			import com.flexcapacitor.views.renderers.LibraryInspectorRenderer;
@@ -305,7 +302,7 @@
 			
 			
 			protected function smallImage_clickHandler(event:MouseEvent):void {
-				var selectedItem:AttachmentData = list.selectedItem as AttachmentData;
+				var selectedItem:AttachmentData = libraryList.selectedItem as AttachmentData;
 				var imageData:ImageData = selectedItem as ImageData;
 				
 				if (imageData) {
@@ -330,7 +327,7 @@
 			 * Set the URL 
 			 * */
 			public function setTextInputImageURL(value:String):void {
-				var selectedItem:AttachmentData = list.selectedItem as AttachmentData;
+				var selectedItem:AttachmentData = libraryList.selectedItem as AttachmentData;
 				var imageData:ImageData = selectedItem as ImageData;
 				
 				if (imageData) {
@@ -354,7 +351,7 @@
 			}
 			
 			protected function list_changeHandler(event:IndexChangeEvent):void {
-				var selectedItem:AttachmentData = list.selectedItem as AttachmentData;
+				var selectedItem:AttachmentData = libraryList.selectedItem as AttachmentData;
 				var imageData:ImageData = selectedItem as ImageData;
 				
 				if (imageData) {
@@ -508,8 +505,8 @@
 				// to do filter assets by document
 				var selectedIndex:int;
 				
-				if (list.selectedItem!=null) {
-					selectedIndex = list.selectedIndex;
+				if (libraryList.selectedItem!=null) {
+					selectedIndex = libraryList.selectedIndex;
 				}
 				
 				// not sure why it's not deleting the last item
@@ -537,24 +534,25 @@
 				}
 				
 				if (selectedIndex>0) {
-					list.validateNow();
-					list.ensureIndexIsVisible(selectedIndex);
+					libraryList.validateNow();
+					libraryList.ensureIndexIsVisible(selectedIndex);
 				}
 				
 				
 			}
 			
 			protected function library_dragEnterHandler(event:DragEvent):void {
-				var dragSource:DragSource = event.dragSource;
+				var containsDraggedItem:Boolean = libraryList.contains(event.dragInitiator as DisplayObject);
 				
-				if (Radiate.isAcceptableDragAndDropFormat(dragSource, true)) {
+				if (Radiate.isAcceptableDragAndDropFormat(event.dragSource, true) && !containsDraggedItem) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 				}
 			}
 			
 			protected function library_dragOverHandler(event:DragEvent):void {
+				var containsDraggedItem:Boolean = libraryList.contains(event.dragInitiator as DisplayObject);
 				
-				if (Radiate.isAcceptableDragAndDropFormat(event.dragSource, true)) {
+				if (Radiate.isAcceptableDragAndDropFormat(event.dragSource, true) && !containsDraggedItem) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 				}
 			}
@@ -613,7 +611,7 @@
 							
 							radiate.addAssetToDocument(imageData, radiate.selectedDocument);
 							
-							list.selectedItem = imageData;
+							libraryList.selectedItem = imageData;
 							
 							searchCollection.clearSearch();
 							
@@ -667,8 +665,8 @@
 			}
 			
 			public function showSelectedItemInPopUp():void {
-				list.setFocus();
-				var imageData:ImageData = list.selectedItem as ImageData;
+				libraryList.setFocus();
+				var imageData:ImageData = libraryList.selectedItem as ImageData;
 				
 				if (imageData) {
 					if (imageData.bitmapData) {
@@ -686,7 +684,7 @@
 			
 			protected function openInBrowserButton_clickHandler(event:MouseEvent):void
 			{
-				var imageData:ImageData = list.selectedItem as ImageData;
+				var imageData:ImageData = libraryList.selectedItem as ImageData;
 				
 				if (imageData && imageData.url) {
 					Radiate.openInBrowser(imageData);
@@ -805,15 +803,28 @@
 			
 			public var inProgress:Boolean;
 			
-			protected function deleteAttachmentIcon_clickHandler(event:MouseEvent):void {
-				var selectedItems:Array = ArrayUtils.getArrayFromVector(list.selectedItems);
+			protected function deleteAttachmentIcon_clickHandler(event:Event):void {
+				var selectedItems:Array;
 				var options:Object;
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument;
 				var attachments:Array;
 				var isRemote:Boolean;
 				var localRemoveSuccessful:Boolean;
 				var attachmentData:AttachmentData;
 				var attachmentIDs:Array;
+				var shiftPressed:Boolean;
+				
+				if (event is DragEvent) {
+					shiftPressed = DragEvent(event).shiftKey;
+					//selectedItems = ArrayUtils.getArrayFromVector(DragEvent(event).draggedItem);
+					selectedItems = ArrayUtils.getArrayFromVector(libraryList.selectedItems);
+				}
+				else {
+					shiftPressed = MouseEvent(event).shiftKey;
+					selectedItems = ArrayUtils.getArrayFromVector(libraryList.selectedItems);
+				}
+				
+				iDocument = radiate.selectedDocument;
 				
 				if (iDocument==null) {
 					Radiate.info("No document selected.");
@@ -826,7 +837,7 @@
 					options.attachments = selectedItems;
 					attachments = selectedItems;
 					
-					if (event.shiftKey) {
+					if (shiftPressed) {
 						
 						if (attachments && attachments.length) {
 							radiate.addEventListener(RadiateEvent.ATTACHMENTS_DELETED, deleteResultsHandler, false, 0, true);
@@ -865,6 +876,26 @@
 				else {
 					Radiate.info("No items selected.");
 				}
+			}
+			
+			protected function deleteItem_dragEnterHandler(event:DragEvent):void {
+				var isAcceptable:Boolean = libraryList.contains(event.dragInitiator as DisplayObject);
+				
+				if (event.dragInitiator!=null && isAcceptable) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+				}
+			}
+			
+			protected function deleteItem_dragOverHandler(event:DragEvent):void {
+				var isAcceptable:Boolean = libraryList.contains(event.dragInitiator as DisplayObject);
+				
+				if (event.dragInitiator!=null && isAcceptable) {
+					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+				}
+			}
+			
+			protected function deleteItem_dragDropHandler(event:DragEvent):void {
+				deleteAttachmentIcon_clickHandler(event);
 			}
 			
 			protected function deleteResultsHandler(event:RadiateEvent):void {
@@ -959,7 +990,7 @@
 			}
 			
 			protected function copyImageDataIcon_clickHandler(event:MouseEvent):void {
-				var imageData:ImageData = list.selectedItem as ImageData;
+				var imageData:ImageData = libraryList.selectedItem as ImageData;
 				
 				if (imageData) {
 					if (imageData.bitmapData) {
@@ -974,7 +1005,7 @@
 			}
 			
 			protected function shareIcon_clickHandler(event:MouseEvent):void {
-				var imageData:ImageData = list.selectedItem as ImageData;
+				var imageData:ImageData = libraryList.selectedItem as ImageData;
 				
 				if (imageData) {
 					RunManager.copyURLToDocument(imageData, "image");
@@ -987,6 +1018,11 @@
 			protected function galleryButton_clickHandler(event:MouseEvent):void
 			{
 				openGalleryPopUp.play();
+			}
+			
+			protected function deleteAttachmentIcon_dragDropHandler(event:DragEvent):void
+			{
+				
 			}
 			
 		]]>
@@ -1111,7 +1147,7 @@
 		</s:Group>
 		
 		
-		<s:List id="list" 
+		<s:List id="libraryList" 
 				width="100%" 
 				height="100%"
 				labelField="name" 
@@ -1125,6 +1161,9 @@
 				change="list_changeHandler(event)"
 				keyUp="list_keyUpHandler(event)"
 				horizontalScrollPolicy="off"
+				dragEnter="library_dragEnterHandler(event)"
+				dragDrop="library_dragDropHandler(event)"
+				dragOver="library_dragOverHandler(event)"
 				>
 			
 			<s:layout.grid>
@@ -1282,6 +1321,9 @@
 						   source="{Radii8LibraryAssets.trashCan}" 
 						   toolTip="Remove Attachment"
 						   click="deleteAttachmentIcon_clickHandler(event)"
+						   dragEnter="deleteItem_dragEnterHandler(event)"
+						   dragOver="deleteItem_dragOverHandler(event)"
+						   dragDrop="deleteItem_dragDropHandler(event)"
 						   />
 		</s:HGroup>
 	</s:BorderContainer>
@@ -1298,5 +1340,8 @@
 				   width="100%"
 				   height="100%"
 				   bottom="40"
+				   dragEnter="library_dragEnterHandler(event)"
+				   dragDrop="library_dragDropHandler(event)"
+				   dragOver="library_dragOverHandler(event)"
 				   />
 </s:Group>

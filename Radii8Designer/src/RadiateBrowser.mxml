@@ -14,11 +14,13 @@
 			   frameRate="46"
 			   pageTitle="Radiate" 
 			   >
-			   <!--preloader="RadiatePreloader"
-			   preloader="mx.preloaders.SparkDownloadProgressBar"
+	
+   <!--preloader="RadiatePreloader"
+			   preloader="com.flexcapacitor.preloaders.RegisteringPreloader"
+   preloader="mx.preloaders.SparkDownloadProgressBar"
 	-->
 	
-	<!--
+	<!--	
 	Description	Resource	Path	Location	Type
 	unable to open '/Applications/Adobe Flash Builder 4.7/sdks/4.15 AIR 23/frameworks/libs/player/15.0/playerglobal.swc'	Radii8		Unknown	Flex Problem
 	
@@ -39,6 +41,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.controls.AceEditor;
 			import com.flexcapacitor.events.HTMLDragEvent;
+			import com.flexcapacitor.managers.DragManagerImpl;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.skins.CallOutSkin;
 			import com.flexcapacitor.utils.ClassRegistry;
@@ -55,6 +58,7 @@
 			public var appInfo:Class;
 			public var applicationDescriptor:XML;
 			private var calloutSkin:CallOutSkin;
+			private var dragManager:DragManagerImpl;
 			
 			/**
 			 * 

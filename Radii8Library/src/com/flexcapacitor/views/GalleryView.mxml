@@ -259,10 +259,19 @@
 			}
 			
 			private function faultHandler(event:Event):void {
-				var message:String = event is FaultEvent ? FaultEvent(event).fault.faultString : event.toString();
+				var message:String;
+				var errorID:String;
+				
+				if (event is IOErrorEvent) {
+					errorID = IOErrorEvent(event).errorID + "";
+				}
+				else {
+					errorID = "";
+					//message = event is FaultEvent ? FaultEvent(event).fault.faultString : event.toString();
+				}
 				
 				errorOccuredLabel.visible = totalImages==0;
-				errorOccuredLabel.text = "An error occured. Connection may have been lost. Check your connection and try again:\n" + message;
+				errorOccuredLabel.text = "An error occured. Connection may have been lost. Check your connection and try again.\n" + errorID;
 			}
 			
 			private function checkLoad():void {

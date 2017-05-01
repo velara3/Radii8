@@ -229,6 +229,10 @@
     <classEntry path="com.flexcapacitor.views.windows.SettingsWindow"/>
     <classEntry path="com.flexcapacitor.managers.ArrangeLayers"/>
     <classEntry path="com.flexcapacitor.views.windows.GalleryWindow"/>
+    <classEntry path="com.flexcapacitor.managers.DragManagerImpl"/>
+    <classEntry path="com.flexcapacitor.preloaders.RegisteringPreloader"/>
+    <classEntry path="com.flexcapacitor.utils.supportClasses.SnapPoints"/>
+    <classEntry path="com.flexcapacitor.utils.supportClasses.SnapToElementDropIndicator"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>
