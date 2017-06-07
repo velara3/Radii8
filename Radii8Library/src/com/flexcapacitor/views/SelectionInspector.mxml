@@ -16,6 +16,7 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.tools.Selection;
+			import com.flexcapacitor.utils.MoveUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.events.FlexEvent;
@@ -351,6 +352,17 @@
 				var top:String;
 				var array:Array;
 				
+				if (event.shiftKey && target) {
+					MoveUtils.resetPosition(target);
+					Radiate.callAfter(1, updateTarget);
+					return;
+				}
+				
+				if (event.altKey && target) {
+					Radiate.showLayoutPanel();
+					return;
+				}
+				
 				if (toolDescription.instance) {
 					selectionTool = Selection(toolDescription.instance);
 					selectionTool.roundToIntegers = !selectionTool.roundToIntegers;
@@ -360,6 +372,8 @@
 						if (selectionTool.roundToIntegers) {
 							left = String(Math.round(array[0]));
 							top = String(Math.round(array[1]));
+							MoveUtils.roundPositionToIntegers(target);
+							Radiate.callAfter(1, updateTarget);
 						}
 						else {
 							left = Number(array[0]).toFixed(1);
@@ -477,7 +491,7 @@
 				 fontSize="10" 
 				 maxDisplayedLines="1"
 				 click="dropLocation_clickHandler(event)"
-				 toolTip="The X and Y position of the selected element. Click to round between whole numbers and fractions"/>
+				 toolTip="The X and Y position of the selected element. Click to round between whole numbers and fractions. \nPress shift and click to reset the position."/>
 		
 	</s:HGroup>
 	

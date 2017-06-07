@@ -77,6 +77,9 @@ package {
 		[Embed(source="assets/icons/tools/Launch.png")]
 		public static const Launch:Class;
 		
+		[Embed(source="assets/icons/tools/Line.png")]
+		public static const Line:Class;
+		
 		[Embed(source="assets/icons/tools/Marquee.png")]
 		public static const Marquee:Class;
 		

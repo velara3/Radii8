@@ -234,6 +234,9 @@ package {
 		[Embed(source="assets/icons/general/snapToElement.png")]
 		public static const snapToElement:Class;
 		
+		[Embed(source="assets/icons/general/swap.png")]
+		public static const swap:Class;
+		
 		[Embed(source="assets/icons/general/multipleSave.png")]
 		public static const multipleSave:Class;
 		

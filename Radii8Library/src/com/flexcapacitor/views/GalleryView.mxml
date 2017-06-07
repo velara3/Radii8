@@ -23,6 +23,9 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.services.WPService;
+			import com.flexcapacitor.services.WPServiceEvent;
 			import com.flexcapacitor.utils.ArrayUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
@@ -33,9 +36,9 @@
 			import mx.events.FlexEvent;
 			import mx.graphics.BitmapFill;
 			import mx.graphics.SolidColor;
-			import mx.rpc.events.FaultEvent;
 			import mx.rpc.events.ResultEvent;
 			
+			import spark.components.ContentBackgroundAppearance;
 			import spark.events.IndexChangeEvent;
 			
 			private var pixabayURL:String = "https://pixabay.com/api/";
@@ -44,7 +47,9 @@
 			private var KEY:String = "key";
 			
 			private var timeout:int;
-			private var isPixabay:Boolean = true;
+			private var isPixabay:Boolean = false;
+			private var isPixabayDirect:Boolean = false;
+			private var isGalleryService:Boolean = true;
 			private var isFlickr:Boolean;
 			
 			public var imagesLoaded:int = 0;
@@ -63,6 +68,8 @@
 			
 			[Bindable]
 			public var imageTypes:Array = ["all", "photo", "illustration", "vector"];
+			
+			private var galleryService:WPService;
 			
 			protected function init():void {
 				imageTypesDropdown.dataProvider = new ArrayCollection(imageTypes);
@@ -85,7 +92,7 @@
 					pixabayXML = providersXMLList[i];
 					pixabay = {};
 					pixabay.id = String(pixabayXML.@id);
-					pixabay.key =String(pixabayXML.@key);
+					pixabay.key = String(pixabayXML.@key);
 					PIXABAY_API_KEY = pixabay.key;
 				}
 				
@@ -93,12 +100,23 @@
 					loader = new URLLoader();
 					configureListeners(loader);
 				}
+				
+				if (galleryService==null) {
+					galleryService = new WPService();
+					
+					galleryService.addEventListener(WPService.RESULT, searchResultsHandler, false, 0, true);
+					galleryService.addEventListener(WPService.FAULT, faultHandler, false, 0, true);
+				}
+				
+				galleryService.host = Radiate.getWPURL();
+				
 			}
 			
 			public function search(value:String, page:int = 1):void {
 				if (value=="") return;
 				var imageType:String;
 				var urlRequest:URLRequest;
+				var parameters:URLVariables;
 				
 				if (page!=1) {
 					totalPages = Math.ceil(totalImages/pageSize);
@@ -113,7 +131,17 @@
 				
 				hideSelectedImage();
 				
-				if (isPixabay) {
+				if (isGalleryService) {
+					imageType = imageTypesDropdown.selectedItem as String;
+					parameters = new URLVariables();
+					parameters.imageType = imageType;
+					parameters.pageSize = pageSize;
+					parameters.page = page;
+					parameters.query = value; // encodeURIComponent(value);
+					//galleryService.contentType = "application/x-www-form-urlencoded";
+					galleryService.send("Gallery", "get_results", null, parameters);
+				}
+				else if (isPixabay) {
 					imageType = imageTypesDropdown.selectedItem as String;
 					urlRequest = new URLRequest();
 					urlRequest.url = pixabayURL + "?key=" + PIXABAY_API_KEY +  "&image_type=" + imageType + "&page=" + page + "&per_page=" + pageSize +"&q=" + encodeURIComponent(value);
@@ -137,9 +165,18 @@
 				var fetchesReset:int;
 				var fetchingLimit:int;
 				var header:URLRequestHeader;
+				var data:Object;
+				var cached:Boolean;
 				
-				if (isPixabay) {
-					if (event is ResultEvent) {
+				if (isPixabay || isGalleryService) {
+					
+					if (event is WPServiceEvent) {
+						data = WPServiceEvent(event).data; // todo parse into class
+						//headers = data.headers.split("\n"); // todo parse into URLRequestHeaders
+						result = data.post;
+						cached = data.cached;
+					}
+					else if (event is ResultEvent) {
 						result = ResultEvent(event).result;
 						//headers = pixabaySearch.headers;
 					}
@@ -152,7 +189,7 @@
 						// happens when same search was made multiple times (must cache calls)
 						return;
 					}
-						
+					
 					// The maximum number of requests that the consumer is permitted to make in 30 minutes.
 					if (headers && ArrayUtils.hasItem(headers, "X-RateLimit-Limit", "name")) {
 						header = ArrayUtils.getItem(headers, "X-RateLimit-Limit", "name", false) as URLRequestHeader;
@@ -299,7 +336,7 @@
 			public function showSelectedImage(data:Object, animate:Boolean = false):void {
 				var source:String;
 
-				if (isPixabay) {
+				if (isPixabay || isGalleryService) {
 					source = getPixabayImagePath(data, false);
 				}
 				else if (isFlickr) {
@@ -446,6 +483,7 @@
 				if (selectedProvider) {
 					if (selectedProvider.name=="Pixabay") {
 						isPixabay = true;
+						isGalleryService = true;
 					}
 				}
 			}
@@ -474,12 +512,16 @@
 			
 			private function configureListeners(dispatcher:IEventDispatcher):void {
 				dispatcher.addEventListener(Event.COMPLETE, completeHandler);
-				//dispatcher.addEventListener(Event.OPEN, openHandler);
-				//dispatcher.addEventListener(ProgressEvent.PROGRESS, progressHandler);
 				dispatcher.addEventListener(SecurityErrorEvent.SECURITY_ERROR, securityErrorHandler);
-				//dispatcher.addEventListener(HTTPStatusEvent.HTTP_STATUS, httpStatusHandler);
-				dispatcher.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, httpResposeStatusHandler);
 				dispatcher.addEventListener(IOErrorEvent.IO_ERROR, ioErrorHandler);
+				//dispatcher.addEventListener(HTTPStatusEvent.HTTP_STATUS, httpStatusHandler);
+				//dispatcher.addEventListener(ProgressEvent.PROGRESS, progressHandler);
+				//dispatcher.addEventListener(Event.OPEN, openHandler);
+				
+				// this only works in AIR bc the browser does not give the headers to the plugin in the response
+				if (HTTPStatusEvent.HTTP_RESPONSE_STATUS!=null) { 
+					dispatcher.addEventListener(HTTPStatusEvent.HTTP_RESPONSE_STATUS, httpResposeStatusHandler);
+				}
 			}
 			
 			private function completeHandler(event:Event):void {
@@ -523,8 +565,9 @@
 		<s:ArrayCollection id="providersCollection" />
 		<s:XMLListCollection id="photosCollection" />
 		
-		<s:HTTPService id="imageSearch" resultFormat="e4x" result="searchResultsHandler(event)" fault="faultHandler(event)" />
+		<!--<s:HTTPService id="imageSearch" resultFormat="e4x" result="searchResultsHandler(event)" fault="faultHandler(event)" />
 		<s:HTTPService id="pixabaySearch" resultFormat="text" result="searchResultsHandler(event)" fault="faultHandler(event)" />
+		http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/net/URLLoader.html-->
 		<!--http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/net/URLLoader.html-->
 		
 	</fx:Declarations>
@@ -715,6 +758,7 @@
 			 top="80" left="30" right="20"
 			 width="620" 
 			 visible="false"
+			 textAlign="center"
 			 text="" />
 	
 </s:BorderContainer>

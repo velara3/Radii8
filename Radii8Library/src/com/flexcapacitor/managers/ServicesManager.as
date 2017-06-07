@@ -1,5 +1,5 @@
-package com.flexcapacitor.managers
-{
+
+package com.flexcapacitor.managers {
 	
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;

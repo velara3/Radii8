@@ -13,6 +13,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.utils.DragManagerUtil;
 	import com.flexcapacitor.utils.LayoutDebugHelper;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
+	import com.flexcapacitor.utils.MoveUtils;
 	import com.flexcapacitor.utils.NumberUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
@@ -177,7 +178,7 @@ package com.flexcapacitor.tools {
 		 * */
 		public var radiate:Radiate;
 		
-		public static var debug:Boolean;
+		public static var debug:Boolean = false;
 		
 		/**
 		 * Drag helper utility.
@@ -1318,6 +1319,9 @@ package com.flexcapacitor.tools {
 							if (shiftKey) {
 								fontSize = scaleX*fontSize;
 								
+								fontSize = NumberUtils.toDecimalPoint(fontSize);
+								
+								
 								if (hasExplicitWidth) {
 									if (roundToIntegers) {
 										propertiesObject.width = Math.ceil(propertiesObject.width/scaleX);
@@ -2012,12 +2016,6 @@ package com.flexcapacitor.tools {
 			}
 			
 			var element:IVisualElement;
-			var leftValue:Object;
-			var rightValue:Object;
-			var topValue:Object;
-			var bottomValue:Object;
-			var horizontalCenter:Object;
-			var verticalCenter:Object;
 			var properties:Array = [];
 			var propertiesObject:Object = {};
 			var numberOfTargets:int = targets.length;
@@ -2031,42 +2029,11 @@ package com.flexcapacitor.tools {
 						continue;
 					}
 					
-					leftValue = element.left;
-					rightValue = element.right;
-					horizontalCenter = element.horizontalCenter;
-					
-					/**
-					 * If left is set then set x to nothing
-					 * If left and right are set then set width to nothing
-					 * If horizontalCenter is set than set left and right to nothing
-					 * Otherwise set left to nothing
-					 * */
-					if (leftValue!=null && rightValue!=null) {
-						propertiesObject.left = Number(element.left) - constant;
-						propertiesObject.right = Number(element.right) + constant;
-						properties.push(MXMLDocumentConstants.LEFT, MXMLDocumentConstants.RIGHT);
-					}
-					else if (leftValue!=null) {
-						propertiesObject.left = Number(element.left) - constant;
-						properties.push(MXMLDocumentConstants.LEFT);
-					}
-					else if (rightValue!=null) {
-						propertiesObject.right = Number(element.right) + constant;
-						properties.push(MXMLDocumentConstants.RIGHT);
-					}
-					else if (horizontalCenter!=null) {
-						propertiesObject.horizontalCenter = Number(element.horizontalCenter) - constant;
-						properties.push(MXMLDocumentConstants.HORIZONTAL_CENTER);
-					}
-					else {
-						propertiesObject.x = element.x - constant;
-						properties.push(MXMLDocumentConstants.X);
-					}
+					MoveUtils.moveLeft(element, constant);
 					
 				}
 				
 				
-				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (keyCode==Keyboard.RIGHT) {
@@ -2078,34 +2045,9 @@ package com.flexcapacitor.tools {
 						continue;
 					}
 					
-					leftValue = element.left;
-					rightValue = element.right;
-					horizontalCenter = element.horizontalCenter;
-					
-					if (leftValue!=null && rightValue!=null) {
-						propertiesObject.left = Number(element.left) + constant;
-						propertiesObject.right = Number(element.right) - constant;
-						properties.push(MXMLDocumentConstants.LEFT, MXMLDocumentConstants.RIGHT);
-					}
-					else if (leftValue!=null) {
-						propertiesObject.left = Number(element.left) + constant;
-						properties.push(MXMLDocumentConstants.LEFT);
-					}
-					else if (rightValue!=null) {
-						propertiesObject.right = Number(element.right) - constant;
-						properties.push(MXMLDocumentConstants.RIGHT);
-					}
-					else if (horizontalCenter!=null) {
-						propertiesObject.horizontalCenter = Number(element.horizontalCenter) + constant;
-						properties.push(MXMLDocumentConstants.HORIZONTAL_CENTER);
-					}
-					else {
-						propertiesObject.x = element.x + constant;
-						properties.push(MXMLDocumentConstants.X);
-					}
+					MoveUtils.moveRight(element, constant);
 				}
 				
-				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (keyCode==Keyboard.UP) {
@@ -2117,35 +2059,9 @@ package com.flexcapacitor.tools {
 						continue;
 					}
 					
-					topValue = element.top;
-					bottomValue = element.bottom;
-					verticalCenter = element.verticalCenter;
-					
-					if (topValue!=null && bottomValue!=null) {
-						propertiesObject.top = Number(element.top) - constant;
-						propertiesObject.bottom = Number(element.bottom) + constant;
-						properties.push(MXMLDocumentConstants.TOP, MXMLDocumentConstants.BOTTOM);
-					}
-					else if (topValue!=null) {
-						propertiesObject.top = Number(element.top) - constant;
-						properties.push(MXMLDocumentConstants.TOP);
-					}
-					else if (bottomValue!=null) {
-						propertiesObject.bottom = Number(element.bottom) + constant;
-						properties.push(MXMLDocumentConstants.BOTTOM);
-					}
-					else if (verticalCenter!=null) {
-						propertiesObject.verticalCenter = Number(element.verticalCenter) - constant;
-						properties.push(MXMLDocumentConstants.VERTICAL_CENTER);
-					}
-					else {
-						propertiesObject.y = element.y - constant;
-						properties.push(MXMLDocumentConstants.Y);
-					}
+					MoveUtils.moveUp(element, constant);
 				}
 				
-				//Radiate.moveElement(targets, element.parent, properties, null, propertiesObject);
-				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (keyCode==Keyboard.DOWN) {
@@ -2157,34 +2073,9 @@ package com.flexcapacitor.tools {
 						continue;
 					}
 					
-					topValue = element.top;
-					bottomValue = element.bottom;
-					verticalCenter = element.verticalCenter;
-					
-					if (topValue!=null && bottomValue!=null) {
-						propertiesObject.top = Number(element.top) + constant;
-						propertiesObject.bottom = Number(element.bottom) - constant;
-						properties.push(MXMLDocumentConstants.TOP, MXMLDocumentConstants.BOTTOM);
-					}
-					else if (topValue!=null) {
-						propertiesObject.top = Number(element.top) + constant;
-						properties.push(MXMLDocumentConstants.TOP);
-					}
-					else if (bottomValue!=null) {
-						propertiesObject.bottom = Number(element.bottom) - constant;
-						properties.push(MXMLDocumentConstants.BOTTOM);
-					}
-					else if (verticalCenter!=null) {
-						propertiesObject.verticalCenter = Number(element.verticalCenter) + constant;
-						properties.push(MXMLDocumentConstants.VERTICAL_CENTER);
-					}
-					else {
-						propertiesObject.y = element.y + constant;
-						properties.push(MXMLDocumentConstants.Y);
-					}
+					MoveUtils.moveDown(element, constant);
 				}
 				
-				Radiate.moveElement2(targets, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.BACKSPACE || event.keyCode==Keyboard.DELETE) {
@@ -2332,6 +2223,7 @@ package com.flexcapacitor.tools {
 				shapeModel = new DisplayModel();
 			}
 			
+			// http://help.adobe.com/en_US/flex/using/WS2db454920e96a9e51e63e3d11c0bf633a0-7fff.html
 			if (target is UIComponent) {
 				shapeModel.width 	= target.getLayoutBoundsWidth();
 				shapeModel.height 	= target.getLayoutBoundsHeight();
@@ -2548,6 +2440,9 @@ package com.flexcapacitor.tools {
 		
 		/**
 		 * Sets the selection rectangle to the size of the target.
+		 * 
+		 * TODO: 
+		 * http://help.adobe.com/en_US/flex/using/WS2db454920e96a9e51e63e3d11c0bf633a0-7fff.html
 		 * */
 		public function sizeSelectionGroup(target:Object, targetCoordinateSpace:DisplayObject = null, localTargetSpace:Boolean = true):void {
 			var rectangle:Rectangle;
@@ -2555,6 +2450,7 @@ package com.flexcapacitor.tools {
 			var isEmbeddedCoordinateSpace:Boolean;
 			var isTargetInvalid:Boolean;
 			var pixelBounds:Rectangle;
+			var wreck:Rectangle;
 			
 			
 			// get content width and height
@@ -2562,7 +2458,7 @@ package com.flexcapacitor.tools {
 				if (!targetCoordinateSpace) targetCoordinateSpace = target.parent;
 				//rectangle = GroupBase(target).getBounds(target.parent);
 				rectangle = GroupBase(target).getBounds(targetCoordinateSpace);
-				var wreck:Rectangle = DisplayObjectUtils.getRectangleBounds(target as UIComponent, targetCoordinateSpace);
+				wreck = DisplayObjectUtils.getRectangleBounds(target as UIComponent, targetCoordinateSpace);
 				
 				// size and position fill
 				if (rectangle.width==0 && rectangle.height==0) {
@@ -3087,6 +2983,7 @@ package com.flexcapacitor.tools {
 				event.currentTarget.removeEventListener(Event.COMPLETE, setSelectionLaterHandler);
 			}*/
 		}
+		
 		public function updateSelectionLater(target:Object = null):void {
 			if (target==null) {
 				target = radiate.target;
@@ -3094,6 +2991,15 @@ package com.flexcapacitor.tools {
 			
 			Radiate.callAfter(5, updateSelectionAroundTarget, target);
 			Radiate.callAfter(5, updateTransformRectangle, target);
+		}
+		
+		public function updateSelection(target:Object = null):void {
+			if (target==null) {
+				target = radiate.target;
+			}
+			
+			updateSelectionAroundTarget(target);
+			updateTransformRectangle(target);
 		}
 	}
 }

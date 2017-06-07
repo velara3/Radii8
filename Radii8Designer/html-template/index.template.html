@@ -54,6 +54,7 @@
         <script>
 		var isHTTPS = document.location.protocol.toLowerCase() == "https:";
 		var isFILE = document.location.protocol.toLowerCase() == "file:";
+		
 		if (isHTTPS==false && isFILE==false) {
 			document.location.href = document.location.href.replace("http:", "https:");
 		}
@@ -90,7 +91,7 @@
             attributes.name = "${application}";
             attributes.align = "middle";
             //attributes.wmode = "gpu";
-            // IE needs wmode to transparent or opaque to show HTML elements above plugin surface
+            // IE needs wmode set to transparent or opaque to show HTML elements above plugin surface
             attributes.wmode = "opaque";
             swfobject.embedSWF(
                 "${swf}.swf", "flashContent", 

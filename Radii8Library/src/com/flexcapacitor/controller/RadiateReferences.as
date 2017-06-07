@@ -5,6 +5,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.filters.TextShadowFilter;
 	import com.flexcapacitor.tools.EyeDropper;
 	import com.flexcapacitor.tools.Hand;
+	import com.flexcapacitor.tools.Line;
 	import com.flexcapacitor.tools.Marquee;
 	import com.flexcapacitor.tools.Selection;
 	import com.flexcapacitor.tools.Text;
@@ -90,7 +91,9 @@ package com.flexcapacitor.controller {
 		
 		public static var marqueeTool:com.flexcapacitor.tools.Marquee;
 		public static var marqueeInspector:com.flexcapacitor.views.MarqueeInspector;
-		//public static var textInspector:com.flexcapacitor.views.TextInspector;
+		
+		public static var lineTool:com.flexcapacitor.tools.Line;
+		public static var lineInspector:com.flexcapacitor.views.LineInspector;
 		
 		///////////////////////////////////////////////////////
 		// TOOLS CLASSES

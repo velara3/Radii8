@@ -449,7 +449,17 @@
 			}
 			
 			protected function openDocumentInBrowserButton_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = list.selectedItem as IDocument;
+				var iDocument:IDocument;
+				var usersSignedIn:Boolean;
+				
+				usersSignedIn = Radiate.instance.isUserLoggedIn;
+				
+				if (!usersSignedIn) {
+					Radiate.info("You must be logged in to preview the document in your browser");
+					return;
+				}
+				
+				iDocument = list.selectedItem as IDocument;
 				
 				if (iDocument) {
 					RunManager.openDocumentInBrowser();
@@ -562,6 +572,14 @@
 			}
 			
 			protected function openHomePageInBrowserButton_clickHandler():void {
+				var usersSignedIn:Boolean;
+				
+				usersSignedIn = Radiate.instance.isUserLoggedIn;
+				
+				if (!usersSignedIn) {
+					Radiate.info("You must be logged in to view your home page");
+					return;
+				}
 				
 				RunManager.openHomePageInBrowserButton();
 			}
@@ -917,9 +935,9 @@
 		<c:BeveledImageButton id="openDocumentInBrowserButton" 
 							  source="{Radii8LibraryAssets.documentExternalPlayIcon}" 
 							  toolTip="View a published document in the browser (if document is not published you must login to the site via in your browser before you can see it)"
-							  click="openDocumentInBrowserButton_clickHandler(event)"
 							  includeInLayout="true"
 							  visible="true"
+							  click="openDocumentInBrowserButton_clickHandler(event)"
 							  />
 		<c:BeveledImageButton id="openDocumentInBrowserScreenshotButton" 
 							  source="{Radii8LibraryAssets.browserScreenShot}" 

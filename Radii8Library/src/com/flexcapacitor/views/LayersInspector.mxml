@@ -82,7 +82,6 @@
 			import spark.components.supportClasses.DisplayLayer;
 			import spark.components.supportClasses.GroupBase;
 			import spark.events.PopUpEvent;
-			import spark.layouts.BasicLayout;
 			
 			private var rootDisplayObject:DisplayObject;
 			private var displayList:Array = [];
@@ -806,6 +805,7 @@
 				
 				if (event.dragInitiator!=null && event.dragInitiator==componentListTree) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+					removeItem.filters = [glowFilter];
 				}
 			}
 			
@@ -826,6 +826,7 @@
 						componentListTree.selectedIndex = 0;
 					}
 				}
+				removeItem.filters = [];
 				//radiate.dropItem(event);
 			}
 			
@@ -1003,12 +1004,19 @@
 					}
 				}
 			}
+			
+			protected function removeItem_dragExitHandler(event:DragEvent):void
+			{
+				removeItem.filters = [];
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
 		<core:CallMethod id="doThingsLater" method="activate" startDelay="50"/>
-		
+		<s:GlowFilter id="glowFilter" color="0x0000ff" />
 		<panels:MaskTypeCallout id="maskTypesCallout" close="maskTypesCallout_closeHandler(event)"/>
 		<panels:LuminosityCallout id="luminosityCallout" />
 	</fx:Declarations>
@@ -1068,9 +1076,12 @@
 					 dragDrop="displayListTree_dragDropHandler(event)"
 					 dragComplete="displayListTree_dragCompleteHandler(event)"
 					 >
-
-				
 			</c:TreeNoKeyboardHandling>
+			
+			<!--
+			<s:Label top="30" visible="{componentListTree.dataProvider==null || componentListTree.dataProvider.length==1}" 
+					 textAlign="center" text="No layers" width="100%" color="gray"/>
+			-->
 		</s:Group>
 	</s:Scroller>
 	
@@ -1149,6 +1160,7 @@
 							  dragEnter="removeItem_dragEnterHandler(event)"
 							  dragOver="removeItem_dragOverHandler(event)"
 							  dragDrop="removeItem_dragDropHandler(event)"
+							  dragExit="removeItem_dragExitHandler(event)"
 							  />
 	</s:HGroup>
 	

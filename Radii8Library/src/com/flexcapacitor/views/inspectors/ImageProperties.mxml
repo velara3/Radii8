@@ -55,6 +55,7 @@
 			}
 			
 			protected function handleTargetChange(event:RadiateEvent):void {
+				if (settingTarget) return;
 				if (target!=event.selectedItem) {
 					target = event.selectedItem;
 					update();
@@ -79,6 +80,7 @@
 				contentLoaderGroupRenderer.data = ClassUtils.getMetaDataOfProperty(target, "contentLoaderGrouping");
 				clearOnLoadRenderer.data 	= ClassUtils.getMetaDataOfProperty(target, 	"clearOnLoad");
 				
+				embedImageData.selected = "bitmapData" in target && target.bitmapData && componentDescription.embedBitmapData;
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {
@@ -115,6 +117,21 @@
 				"scaleMode", "fillMode", "contentLoaderGrouping", "clearOnLoad"];
 			
 			
+			protected function embed_changeHandler(event:Event):void {
+				var iDocument:IDocument;
+				var componentDescription:ComponentDescription;
+				
+				iDocument = radiate.selectedDocument;
+				componentDescription = iDocument ? iDocument.getItemDescription(target) : null;
+				
+				if (componentDescription && componentDescription.embedBitmapData != embedImageData.selected) {
+					settingTarget = true;
+					Radiate.setProperty(componentDescription, "embedBitmapData", embedImageData.selected);
+					Radiate.setTarget(target, true, "", true);
+					settingTarget = false;
+				}
+			}
+			public var settingTarget:Boolean;
 		]]>
 	</fx:Script>
 	
@@ -125,6 +142,7 @@
 	<s:HGroup width="100%" verticalAlign="baseline">
 		<s:Label text="Source" styleName="inspectablePanelLabel" />
 		<renderers:TextRenderer id="sourceRenderer" height="24" width="100%"/>
+		<s:CheckBox id="embedImageData" toolTip="Embed Image Data" change="embed_changeHandler(event)" baseline="3"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline">
 		<s:Label text="Alpha" styleName="inspectablePanelLabel" />

@@ -397,6 +397,19 @@
 				}
 			}
 			
+			public function showLayoutPanel():void
+			{
+				if (secondViewStack==null) {
+					currentState = DEVELOP;
+					validateNow();
+				}
+				
+				if (secondViewStack) {
+					secondViewStack.selectedChild = layoutTab;
+					validateNow();
+				}
+			}
+			
 			public function showFiltersPanel():void
 			{
 				if (firstViewStack==null) {
@@ -772,7 +785,7 @@
 					</s:NavigatorContent>
 					
 					<!-- LAYOUT CONSTRAINTS -->
-					<s:NavigatorContent label="LAYOUT">
+					<s:NavigatorContent id="layoutTab" label="LAYOUT">
 						<s:Scroller width="100%" height="100%">
 							<panels:ConstraintsInspector height="100%" width="100%" />
 						</s:Scroller>

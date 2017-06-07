@@ -203,8 +203,7 @@ package com.flexcapacitor.managers {
 			
 			focusedObject = application.focusManager.getFocus();
 			
-			// not sure if this is expensive... todo performance test
-			// would like to take out textfield and ftetextfield check
+			
 			if (target is RichEditableText ||
 				focusedObject is IEditableText ||
 				focusedObject is SkinnableTextBase ||
@@ -222,7 +221,6 @@ package com.flexcapacitor.managers {
 			if (applicable) {
 				if (keyCode==Keyboard.SPACE) {
 					
-					//trace("restorin previ tool");
 					radiate.restoreTool();
 				}
 			}

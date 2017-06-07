@@ -64,9 +64,12 @@
 				var pathData:MetaData 			= ClassUtils.getMetaDataOfProperty(target, "data");
 				var winding:MetaData 			= ClassUtils.getMetaDataOfProperty(target, "winding");
 				pathDataRenderer.data 			= pathData;
-				winding.enumeration 			= [GraphicsPathWinding.EVEN_ODD, GraphicsPathWinding.NON_ZERO];
-				windingRenderer.defaultValue	= GraphicsPathWinding.EVEN_ODD;
-				windingRenderer.data 			= winding;
+				
+				if (winding) {
+					winding.enumeration 			= [GraphicsPathWinding.EVEN_ODD, GraphicsPathWinding.NON_ZERO];
+					windingRenderer.defaultValue	= GraphicsPathWinding.EVEN_ODD;
+					windingRenderer.data 			= winding;
+				}
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {

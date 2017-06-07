@@ -114,6 +114,7 @@ package com.flexcapacitor.controller {
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display.IBitmapDrawable;
+	import flash.display.JointStyle;
 	import flash.display.LoaderInfo;
 	import flash.display.Sprite;
 	import flash.display.StageQuality;
@@ -227,7 +228,10 @@ package com.flexcapacitor.controller {
 	import spark.formatters.DateTimeFormatter;
 	import spark.layouts.BasicLayout;
 	import spark.primitives.BitmapImage;
+	import spark.primitives.Ellipse;
+	import spark.primitives.Line;
 	import spark.primitives.Path;
+	import spark.primitives.Rect;
 	import spark.primitives.supportClasses.FilledElement;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.primitives.supportClasses.StrokedElement;
@@ -846,6 +850,16 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public var autoSaveLocations:String;
+		
+		/**
+		 * Open the design view at startup
+		 * */
+		public static var startInDesignView:Boolean;
+		
+		/**
+		 * HTML Class
+		 * */
+		public static var htmlClass:Object;
 		
 		private var _enableAutoSave:Boolean;
 
@@ -2030,6 +2044,8 @@ package com.flexcapacitor.controller {
 									   host:String = null, 
 									   path:String = null):void {
 			
+			applySettings();
+			
 			application 		= applicationReference;
 			mainView 			= mainViewReference;
 			
@@ -2042,7 +2058,7 @@ package com.flexcapacitor.controller {
 			popUpOverlayManager 	= PopUpOverlayManager.getInstance();
 			keyboardManager			= KeyboardManager.getInstance();
 			
-			var htmlClass:Object = ClassUtils.getDefinition("mx.core.FlexHTMLLoader");
+			htmlClass = ClassUtils.getDefinition("mx.core.FlexHTMLLoader");
 			
 			keyboardManager.initialize(applicationReference, htmlClass);
 			
@@ -2058,11 +2074,11 @@ package com.flexcapacitor.controller {
 			MainView.debug 			= false;
 			ClassLoader.debug 		= false;
 			
-			// testing for why layout is invalid when disconnected from network
-			var layoutManager:ILayoutManager;
-			UIComponentGlobals.catchCallLaterExceptions = true;
-			layoutManager = UIComponentGlobals.layoutManager;
-			layoutManager.usePhasedInstantiation;
+			// testing for why layout is invalid when disconnected from network - no longer needed
+			//var layoutManager:ILayoutManager;
+			//UIComponentGlobals.catchCallLaterExceptions = true;
+			//layoutManager = UIComponentGlobals.layoutManager;
+			//layoutManager.usePhasedInstantiation;
 			
 			application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler, false, 0, true);
 			//application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler2, false, 0, true);
@@ -2127,6 +2143,7 @@ package com.flexcapacitor.controller {
 			//LayoutManager.getInstance().usePhasedInstantiation = false;
 			
 			registerClasses();
+			
 		}
 		
 		protected static function registerClasses():void {
@@ -3658,7 +3675,7 @@ package com.flexcapacitor.controller {
 		 * Sets the zoom of the target application to value. 
 		 * */
 		public function setScale(value:Number, dispatchEvent:Boolean = true):void {
-			var maxScale:int = 10;
+			var maxScale:int = 20;
 			var minScale:Number = .05;
 			
 			if (value>maxScale) {
@@ -4825,10 +4842,10 @@ package com.flexcapacitor.controller {
 		/**
 		 * Adds bitmap data to the document
 		 * */
-		public function addBase64ImageDataToDocument(iDocument:IDocument, fileData:FileData, destination:Object = null, name:String = null, addComponent:Boolean = true):void {
+		public function addBase64ImageDataToDocument(iDocument:IDocument, fileData:FileData, destination:Object = null, name:String = null, addComponent:Boolean = true, resizeIfNeeded:Boolean = true):void {
 			var bitmapData:BitmapData = DisplayObjectUtils.getBitmapDataFromBase64(fileData.dataURI, null, true, fileData.type);
 			if (destination==null) destination = getDestinationForExternalFileDrop();
-			var imageData:ImageData = addBitmapDataToDocument(iDocument, bitmapData, destination, fileData.name, addComponent);
+			var imageData:ImageData = addBitmapDataToDocument(iDocument, bitmapData, destination, fileData.name, addComponent, resizeIfNeeded);
 			
 			// it's possible we weren't able to determine the dimensions of the image
 			// so we add a listener to check after loading it with a loader
@@ -4899,7 +4916,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Adds an asset to the document
 		 * */
-		public function addImageDataToDocument(imageData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true):Boolean {
+		public function addImageDataToDocument(imageData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true, smooth:Boolean = true):Boolean {
 			var item:ComponentDefinition;
 			var application:Application;
 			var componentInstance:Object;
@@ -4925,6 +4942,7 @@ package com.flexcapacitor.controller {
 			const WIDTH:String = "width";
 			const HEIGHT:String = "height";
 			
+			var styles:Array = [];
 			var properties:Array = [];
 			var propertiesObject:Object;
 			
@@ -4944,6 +4962,17 @@ package com.flexcapacitor.controller {
 			propertiesObject.scaleMode = "stretch";
 			properties.push("scaleMode");
 			
+			if (smooth) {
+				properties.push("smooth");
+				propertiesObject.smooth = true;
+				
+				// the bitmap is all white when smoothing quality is enabled (safari mac fp 25.0.0.171(
+				// changing any settings such as smooth enable or disable then shows the image correctly
+				// so disabling for now
+				//styles.push("smoothingQuality");
+				//propertiesObject.smoothingQuality = "high";
+			}
+			
 			if (imageData is ImageData) {
 				path = imageData.url;
 				
@@ -4961,7 +4990,7 @@ package com.flexcapacitor.controller {
 				properties.push("source");
 			}
 			
-			addElement(componentInstance, iDocument.instance, properties, null, null, propertiesObject);
+			addElement(componentInstance, iDocument.instance, properties, styles, null, propertiesObject);
 			
 			updateComponentAfterAdd(iDocument, componentInstance);
 			
@@ -5665,7 +5694,7 @@ package com.flexcapacitor.controller {
 				else if (format==ClipboardFormats.BITMAP_FORMAT) {
 					data = clipboard.getData(ClipboardFormats.BITMAP_FORMAT);
 					bitmapData = data as BitmapData;
-					
+					// not supported in FP in the browser - might try capturing via JS 
 					addBitmapDataToDocument(selectedDocument, bitmapData, destination);
 					return;
 				}
@@ -5726,7 +5755,7 @@ package com.flexcapacitor.controller {
 			}
 		}
 		
-		public function dropItemWeb(object:Object, createNewDocument:Boolean = false, createDocumentIfNeeded:Boolean = true):void {
+		public function dropItemWeb(object:Object, createNewDocument:Boolean = false, createDocumentIfNeeded:Boolean = true, resizeIfNeeded:Boolean = true):void {
 			var fileData:FileData;
 			var byteArray:ByteArray;
 			var destination:Object;
@@ -5786,11 +5815,11 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (createNewDocument || (createDocumentIfNeeded && selectedDocument==null)) {
-				createNewDocumentAndSwitchToDesignView(htmlDragData, selectedProject);
+				createNewDocumentAndSwitchToDesignView(htmlDragData, selectedProject, resizeIfNeeded);
 			}
 			else {
 				if (hasImage) {
-					addBase64ImageDataToDocument(selectedDocument, fileData, destination, fileData.name);
+					addBase64ImageDataToDocument(selectedDocument, fileData, destination, fileData.name, true, resizeIfNeeded);
 				}
 				else if (hasPSD) {
 					byteArray = htmlDragData.getByteArray();
@@ -6303,7 +6332,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add bitmap data to a document
 		 * */
-		public function addBitmapDataToDocument(iDocument:IDocument, bitmapData:BitmapData, destination:Object = null, name:String = null, addComponent:Boolean = false):ImageData {
+		public function addBitmapDataToDocument(iDocument:IDocument, bitmapData:BitmapData, destination:Object = null, name:String = null, addComponent:Boolean = false, resizeIfNeeded:Boolean = true):ImageData {
 			if (bitmapData==null) {
 				error("Not valid bitmap data");
 			}
@@ -6336,7 +6365,7 @@ package com.flexcapacitor.controller {
 			
 			
 			if (addComponent) {
-				resized = addImageDataToDocument(imageData, iDocument);
+				resized = addImageDataToDocument(imageData, iDocument, resizeIfNeeded);
 				
 				//uploadAttachment(fileLoader.fileReference);
 				if (resized) {
@@ -6470,53 +6499,18 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
-		 * Issue when loading with no there is no connection
-		 * */
-		public function resizeFix(secondResize:Boolean = false):void {
-			// i don't understand why loading a local SWF breaks the UI but resizing the application 
-			// fixes
-			var systemManager:ISystemManager = application.systemManager;
-			var component:Object;
-			if ((systemManager != null) && (systemManager.stage != null)) {
-				component = systemManager.stage.nativeWindow;
-			}
-			else {
-				return;
-			}
-			var width:int = component.width;
-			var height:int = component.height;
-			var offset:int = 1;
-			
-			if (secondResize) {
-				component.width = width - offset;
-				component.height = height - offset;
-			}
-			else {
-				component.width = width+offset;
-				component.height = height+offset;
-				
-				application.invalidateSize();
-				application.invalidateDisplayList();
-				
-				component.startResize("BR");
-			}
-			//component.validateNow();
-			//stage.nativeWindow.startResize(start);
-			//application.validateNow();
-		}
-		
-		/**
 		 * Creates a new project and document and if a file is 
 		 * provided then it imports the file and sizes the document to the fit. 
 		 * 
 		 * This is to support drag and drop of file onto application icon
 		 * and open with methods. 
 		 * */
-		public function createNewDocumentAndSwitchToDesignView(file:Object = null, iProject:Object = null):IDocument {
+		public function createNewDocumentAndSwitchToDesignView(file:Object = null, iProject:Object = null, resizeIfNeeded:Boolean = true):IDocument {
 			var documentName:String = "Document";
 			var iDocument:IDocument;
 			
 			fileToBeLoaded = file;
+			resizeNewFileIfNeeded = resizeIfNeeded;
 			
 			goToDesignScreen();
 			
@@ -6535,6 +6529,7 @@ package com.flexcapacitor.controller {
 		}
 		
 		public var fileToBeLoaded:Object;
+		public var resizeNewFileIfNeeded:Boolean;
 		
 		public function documentOpenedHandler(event:RadiateEvent):void {
 			var iDocument:IDocument = event.selectedItem as IDocument;
@@ -6552,21 +6547,23 @@ package com.flexcapacitor.controller {
 				dropItem(newFileData as DragEvent);
 			}
 			else if (newFileData is HTMLDragData) {
-				dropItemWeb(newFileData, false);
+				dropItemWeb(newFileData, false, true, resizeNewFileIfNeeded);
 			}
 			else if (newFileData is FileData) {
 				fileData = newFileData as FileData;
-				addBase64ImageDataToDocument(selectedDocument, fileData, null, fileData.name);
+				addBase64ImageDataToDocument(selectedDocument, fileData, null, fileData.name, true, resizeNewFileIfNeeded);
 			}
 			else if (newFileData is Array && newFileData.length) {
 				//destination = getDestinationForExternalFileDrop();
 				addFileListDataToDocument(selectedDocument, fileToBeLoaded as Array);
 			}
 			else if (newFileData is BitmapData) {
-				addBitmapDataToDocument(selectedDocument, newFileData as BitmapData, null, null, true);
+				addBitmapDataToDocument(selectedDocument, newFileData as BitmapData, null, null, true, resizeNewFileIfNeeded);
 			}
 			
 			removeEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler);
+			
+			resizeNewFileIfNeeded = false;
 		}
 		
 		protected function fileLoadedHandler(event:RadiateEvent):void {
@@ -8491,6 +8488,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 			catch (errorEvent:Error) {
 				// this is clunky - needs to be upgraded
+				
+				// Move error: Error #1069: Property null not found on com.flexcapacitor.model.Document and there is no default value.
+				// Solution: you are passing in the document not the instance of the document
 				error("Move error: " + errorEvent.message);
 				
 				if (!HistoryManager.doNotAddEventsToHistory) {
@@ -8908,6 +8908,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					if (selectText) {
 						callAfter(1, editableRichTextField.selectAll);
 					}
+					
 					
 					/*
 					editableRichTextField.addEventListener(TextOperationEvent.CHANGE, richTextEditor_changeHandler, false, 0, true);
@@ -9532,9 +9533,17 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				}
 				
 				if (componentInstance is StrokedElement && componentInstance.stroke==null) {
-					stroke = new SolidColorStroke();
-					stroke.color = 0xA6A6A6;
-					object.stroke = stroke;
+					
+					// not adding stroke to rectangle, path, ellipse
+					if (componentInstance is Rect || componentInstance is Path || componentInstance is Ellipse) {
+						
+					}
+					else {
+						stroke = new SolidColorStroke();
+						stroke.color = 0xA6A6A6;
+						stroke.joints = JointStyle.MITER;
+						object.stroke = stroke;
+					}
 				}
 				
 				if (componentInstance is Path && componentInstance.data==null) {
@@ -10744,7 +10753,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				// show HTML page
 				var htmlClass:Object = ApplicationDomain.currentDomain.getDefinition(desktopHTMLClassName);
 				html = new htmlClass();
-				html.id = elementId;
+				//html.id = elementId;
 				html.percentWidth = 100;
 				html.percentHeight = 100;
 				html.top = -10; // get rid of spacing navigator adds
@@ -10764,7 +10773,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			else {
 				// show HTML page
 				iframe = new IFrame();
-				iframe.id = elementId;
+				//iframe.id = elementId;
 				iframe.percentWidth = 100;
 				iframe.percentHeight = 100;
 				iframe.top = -10;
@@ -12108,7 +12117,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		/**
 		 * Save settings data
 		 * */
-		public function saveSettings():Boolean {
+		public static function saveSettings():Boolean {
 			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
 			var so:SharedObject;
 			
@@ -12493,10 +12502,16 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					if (target is IDocument) {
 						target = IDocument(target).instance;
 					}
+					
 					//target = DisplayObjectUtils.getAnyTypeBitmapData(IDocument(target).instance);
 					// we are using StageQuality to BEST since using anything higher shrinks the text (.75 / 1.25) if the font is
 					// not embedded (currently found up to FP 25)
-					result = DisplayObjectUtils.getSnapshot(target as UIComponent, null, false, true, StageQuality.BEST);
+					
+					// also, if we are taking a snapshot of the document we need to clip the edges
+					// and not include anything outside of the visible rectangle
+					// using getSnapshot which clips the UIComponent 
+					result = getSnapshot(target as UIComponent, 1, StageQuality.BEST);
+					
 					if (result is Error) {
 						Radiate.warn("An error occurred. " + (result as SecurityError));
 					}
@@ -12949,12 +12964,15 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Save file as
 		 * */
 		public function saveFileAs(data:Object, name:String = "", extension:String = "html"):FileReference {
-			var fileName:String = name==null ? "" : name;
+			var fileReference:FileReference;
+			var fileName:String;
+			
+			fileName = name==null ? "" : name;
 			fileName = fileName.indexOf(".")==-1 && extension ? fileName + "." + extension : fileName;
 			
 			// FOR SAVING A FILE (save as) WE MAY NOT NEED ALL THE LISTENERS WE ARE ADDING
 			// add listeners
-			var fileReference:FileReference = new FileReference();
+			fileReference = new FileReference();
 			addFileSaveAsListeners(fileReference);
 			
 			fileReference.save(data, fileName);
@@ -13063,9 +13081,27 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		/**
+		 * Apply the settings
+		 * */
+		public static function applySettings():Settings {
+			if (settings==null) {
+				instance.getSettingsData();
+			}
+			
+			instance.enableAutoSave = settings.enableAutoSave;
+			
+			//enableWordWrap = settings.enableWordWrap;
+			//embedImages = settings.embedImages;
+			startInDesignView = settings.startInDesignView;
+			
+			
+			return settings;
+		}
+		
+		/**
 		 * Get the latest settings and copy them into the settings object
 		 * */
-		public function updateSettingsBeforeSave():Settings {
+		public static function updateSettingsBeforeSave():Settings {
 			// get selected document
 			// get selected project
 			// get open projects
@@ -13078,13 +13114,13 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			settings.lastOpened 		= new Date().time;
 			//settings.modified 		= new Date().time;
 			
-			settings.openDocuments 		= getOpenDocumentsSaveData(true);
-			settings.openProjects 		= getOpenProjectsSaveData(true);
+			//settings.openDocuments 		= getOpenDocumentsSaveData(true);
+			//settings.openProjects 		= getOpenProjectsSaveData(true);
 
-			settings.selectedProject 	= selectedProject ? selectedProject.toMetaData() : null;
-			settings.selectedDocument 	= selectedDocument ? selectedDocument.toMetaData() : null;
+			//settings.selectedProject 	= instance.selectedProject ? instance.selectedProject.toMetaData() : null;
+			//settings.selectedDocument 	= instance.selectedDocument ? instance.selectedDocument.toMetaData() : null;
 			
-			settings.enableAutoSave 	= enableAutoSave;
+			settings.enableAutoSave 	= instance.enableAutoSave;
 			
 			settings.saveCount++;
 			
@@ -14775,6 +14811,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				}
 				
 				if (snapshot is BitmapData) {
+					
+					// need to trim the transparent areas 
+					snapshot = DisplayObjectUtils.trimTransparentBitmapData(snapshot as BitmapData);
+					
 					data = new ImageData();
 					data.bitmapData = snapshot as BitmapData;
 					data.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(snapshot as BitmapData);
@@ -14833,7 +14873,13 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public static function getPosition(target:Object):Rectangle {
 			//if (target is DisplayObject || target is IBitmapDrawable || target is IVisualElement) {
-			if ("x" in target && "y" in target) {
+			
+			if (target is Line) {
+				positionRectangle.x = Math.min(target.xFrom, target.xTo);
+				positionRectangle.y = Math.min(target.yFrom, target.yTo);
+				return positionRectangle;
+			}
+			else if ("x" in target && "y" in target) {
 				positionRectangle.x = target.x;
 				positionRectangle.y = target.y;
 				return positionRectangle;
@@ -15012,11 +15058,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		/**
 		 * Gets a snapshot of target and returns bitmap data
 		 * */
-		public static function getSnapshot(object:Object, scale:Number = 1, quality:String = StageQuality.BEST):BitmapData {
+		public static function getSnapshot(object:Object, scale:Number = 1, quality:String = StageQuality.BEST, smoothing:Boolean = true):BitmapData {
 			var bitmapData:BitmapData;
 			
 			if (object is IUIComponent) {
-				bitmapData = DisplayObjectUtils.getUIComponentBitmapData(object as IUIComponent, quality);
+				bitmapData = DisplayObjectUtils.getUIComponentBitmapData(object as IUIComponent, quality, smoothing);
 			}
 			else if (object is IGraphicElement) {
 				bitmapData = DisplayObjectUtils.getGraphicElementBitmapData(object as IGraphicElement);
@@ -15115,6 +15161,19 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		/**
+		 * Opens and displays the layout panel
+		 * */
+		public static function showLayoutPanel():void {
+			if (mainView) {
+				mainView.currentState = MainView.DESIGN_STATE;
+				
+				if (remoteView) {
+					remoteView.showLayoutPanel();
+				}
+			}
+		}
+		
+		/**
 		 * Opens and displays the filters panel
 		 * */
 		public static function showFiltersPanel():void {
@@ -15124,6 +15183,33 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				if (remoteView) {
 					remoteView.showFiltersPanel();
 				}
+			}
+		}
+		
+		/**
+		 * Shows the tool layer if it's been hidden
+		 * */
+		public static function showToolsLayer():void {
+			if (instance.toolLayer) {
+				Object(instance.toolLayer).visible = true;
+			}
+		}
+		
+		/**
+		 * Hides the tool layer if it's been hidden
+		 * */
+		public static function hideToolsLayer():void {
+			if (instance.toolLayer) {
+				Object(instance.toolLayer).visible = false;
+			}
+		}
+		
+		/**
+		 * Updates the selection if the selection tool is selected
+		 * */
+		public static function updateSelection(target:Object = null):void {
+			if (instance.toolLayer && instance.selectedTool is Selection) {
+				Selection(instance.selectedTool).updateSelection(target);
 			}
 		}
 		

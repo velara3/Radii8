@@ -365,6 +365,7 @@
 					}
 				}
 				else {
+					hideMessage();
 					setEditorText(sourceData);
 					
 					if (radiate.isPreviewDocumentVisible() && language==CodeManager.HTML) {
@@ -588,6 +589,7 @@
 				
 				if (!radiate.target && !radiate.selectedDocument) {
 					updateTarget(null);
+					hideMessage();
 					return;
 				}
 				

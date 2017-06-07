@@ -172,11 +172,14 @@
 				radiate.addEventListener(RadiateEvent.DOCUMENT_RENAME, documentChangeEventHandler, false, 0, true);
 				
 				
-				var settings:com.flexcapacitor.model.Settings = Radiate.settings;
-				radiate.enableAutoSave = settings.enableAutoSave;
-				
 				if (Capabilities.touchscreenType==TouchscreenType.FINGER) {
 					cornerLogo_clickHandler(null);
+				}
+				
+				if (Radiate.startInDesignView) {
+					radiate.createNewDocumentAndSwitchToDesignView();
+					radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
+					isCreatingDocument = true;
 				}
 				//PerformanceManager.start();
 				//trace(radiate.isUserLoggedIn);
@@ -221,6 +224,8 @@
 			}
 			
 			protected function cornerLogo_clickHandler(event:MouseEvent):void {
+				
+				openSettingsWindow.play();
 				
 				// was trying to add fancy special effects to home screen
 				// but disabling for now
@@ -1242,11 +1247,13 @@
 				
 				dropImagesLocation.visible = false;
 				
+				
 				if (event.dragInitiator) {
 					isSelf = this.contains(event.dragInitiator as DisplayObject);
 					return;
 				}
 				
+				// TODO: Add option to not resize by holding down the shift key 
 				if (currentState==DESIGN_STATE) {
 					radiate.dropItem(event);
 				}
@@ -1878,7 +1885,7 @@
 		</handlers:EventHandler>
 		
 		<handlers:EventHandler eventName="itemClick" target="{settingsMenuItem}">
-			<fc:OpenPopUp popUpType="{SettingsWindow}" 
+			<fc:OpenPopUp id="openSettingsWindow" popUpType="{SettingsWindow}" 
 						  modalDuration="150" 
 						  percentWidth="75"
 						  percentHeight="90"

@@ -282,7 +282,7 @@
 					//Radiate.info("3 Get properties on target : " + String(getTimer()-time));
 					
 					// make copy because collection.removeAll() is removing properties from cached XML?
-					var list:XMLList = new XMLList((describedType.accessor as XMLList).toXMLString());
+					var list:XMLList = new XMLList((describedType..accessor as XMLList).toXMLString());
 					accessorList = new XMLListCollection(list);
 					
 					// DISABLE UPDATE UNTIL COMPLETE

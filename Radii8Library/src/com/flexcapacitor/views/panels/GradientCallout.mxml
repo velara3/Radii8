@@ -13,10 +13,7 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import mx.collections.ArrayCollection;
 			import mx.graphics.GradientBase;
-			import mx.graphics.GradientEntry;
-			
 			
 			/**
 			 *  @private
@@ -33,16 +30,7 @@
 			}
 			
 			public function setEntries(value:Object, clientGradient:GradientBase = null):void {
-				if (value is Array) {
-					gradient.dataProvider = new ArrayCollection(value as Array);
-				}
-				
-				if (value is ArrayCollection) {
-					gradient.dataProvider = value as ArrayCollection;
-				}
-				
-				gradient.clientGradientBase = clientGradient;
-				
+				gradient.setEntries(value, clientGradient);
 			}
 			
 			public function getEntries():Array {
@@ -62,25 +50,24 @@
 				close(false, null);
 			}
 			
-			protected function preview_changeHandler(event:Event):void
-			{
+			protected function preview_changeHandler(event:Event):void {
+				var entries:Array;
 				gradient.updateLive = preview.selected;
+				
+				if (preview.selected) {
+					entries = getEntries();
+					setEntries(entries, gradient.clientGradientBase);
+				}
 			}
 			
-			protected function beveledimagebutton1_clickHandler(event:MouseEvent):void
-			{
-				gradient.dataProvider = new ArrayCollection(getDefaultLinearFillEntries());
+			protected function resetGradient_clickHandler(event:MouseEvent):void {
+				gradient.reset();
 			}
 			
-			public function getDefaultLinearFillEntries():Array {
-				var entries:Array = [];
-				
-				// black to white fill full alpha
-				entries[0] = new GradientEntry(0, 0, 1);
-				entries[1] = new GradientEntry(0xFFFFFF, 1, 1);
-				
-				return entries;
+			protected function swapDirection_clickHandler(event:MouseEvent):void {
+				gradient.reverse();
 			}
+			
 		]]>
 	</fx:Script>
 	
@@ -90,8 +77,15 @@
 			  paddingTop="8">
 		<controls:Gradient id="gradient" height="100%" width="100%" />
 		<s:HGroup width="100%">
-			<controls:BeveledImageButton source="{Radii8LibraryAssets.refresh}" click="beveledimagebutton1_clickHandler(event)"/>
-			<s:CheckBox id="preview" label="Preview" selected="true" change="preview_changeHandler(event)"/>
+			<controls:BeveledImageButton source="{Radii8LibraryAssets.swap}" 
+										 click="swapDirection_clickHandler(event)"
+										 toolTip="Reverse the gradient"/>
+			<controls:BeveledImageButton source="{Radii8LibraryAssets.refresh}" 
+										 toolTip="Revert to default"
+										 click="resetGradient_clickHandler(event)"/>
+			<s:CheckBox id="preview" label="Preview" selected="true" 
+						change="preview_changeHandler(event)"
+						toolTip="Show a preview"/>
 			<s:Spacer width="100%" />
 			<s:Button label="Cancel" click="cancel_clickHandler(event)"/>
 			<s:Button label="OK" click="okButton_clickHandler(event)"/>

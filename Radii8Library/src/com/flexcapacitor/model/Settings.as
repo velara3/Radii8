@@ -55,6 +55,7 @@ package com.flexcapacitor.model {
 		public var enableAutoSave:Boolean = false;
 		public var enableWordWrap:Boolean = false;
 		public var embedImages:Boolean = false;
+		public var startInDesignView:Boolean = false;
 		
 		public function unmarshall(data:Object):void {
 			

@@ -128,7 +128,7 @@
 					}
 					
 					if (!isValid) {
-						message = XMLUtils.validationError ? "" +  validationInfo.internalErrorMessage : warningMessage;
+						message = XMLUtils.validationError ? "" +  validationInfo.errorMessage : warningMessage;
 						
 						errorLocation = "At line " + (validationInfo.row) + " column " + validationInfo.column+ ":";
 						showMessage(errorLocation, message, validationInfo.row-1, validationInfo.column);

@@ -46,6 +46,7 @@
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
 				
 				target = radiate.target;
 				updateFiltersCollection();
@@ -55,6 +56,7 @@
 				if (radiate) {
 					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
 					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+					radiate.removeEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler);
 				}
 			}
 			
@@ -64,6 +66,15 @@
 				}
 				
 				target = event.selectedItem;
+				updateFiltersCollection();
+			}
+			
+			protected function historyChangeHandler(event:RadiateEvent):void {
+				
+				if (!target) {
+					return;
+				}
+				
 				updateFiltersCollection();
 			}
 			
@@ -130,7 +141,6 @@
 					appliedFiltersCollection.removeItem(selectedItem);
 					existingFilters = appliedFiltersCollection.source.slice();
 					
-					
 					if (existingFilters.length==0) {
 						// we need an empty array for graphic elements
 						Radiate.clearProperty(target, FILTERS, []);
@@ -138,6 +148,7 @@
 					else {
 						Radiate.setProperty(target, FILTERS, existingFilters);
 					}
+					
 					updateFiltersCollection(true);
 				}
 			}
@@ -263,6 +274,7 @@
 				keyUp="list_keyUpHandler(event)"
 				dragComplete="list_dragCompleteHandler(event)"
 				horizontalScrollPolicy="off"
+				itemRenderer="com.flexcapacitor.views.renderers.FiltersRenderer"
 				>
 		</s:List>
 	</s:VGroup>

@@ -826,6 +826,14 @@ package com.flexcapacitor.utils {
 			var imageData:ImageData;
 			var originalBitmapData:BitmapData;
 			
+			
+			if (componentDescription is ComponentDescription) {
+				componentInstance = ComponentDescription(componentDescription).instance;
+			}
+			else {
+				componentInstance = componentDescription;
+			}
+			
 			//originalBitmapData = componentInstance.bitmapData; returns a clone use image.source 
 			originalBitmapData = componentInstance.source;
 			imageData = Radiate.getImageDataFromBitmapData(originalBitmapData);
@@ -833,13 +841,6 @@ package com.flexcapacitor.utils {
 			if (contentLoaderInfo.loader.content) {
 				bitmap = contentLoaderInfo.loader.content as Bitmap;
 				newBitmapData = bitmap ? bitmap.bitmapData : null;
-			}
-			
-			if (componentDescription is ComponentDescription) {
-				componentInstance = ComponentDescription(componentDescription).instance;
-			}
-			else {
-				componentInstance = componentDescription;
 			}
 			
 			if (newBitmapData && componentInstance) {

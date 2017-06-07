@@ -144,7 +144,7 @@ package com.flexcapacitor.managers {
 			
 			if (openPopUp==null) {
 				openPopUp = new OpenPopUp();
-				openPopUp.modalDuration = 250;
+				openPopUp.modalDuration = 150;
 				openPopUp.showDropShadow = true;
 				openPopUp.popUpType = ImageView;
 				openPopUp.autoCenter = true;
@@ -272,6 +272,7 @@ package com.flexcapacitor.managers {
 					
 					if (previewDocument is IFrame) {
 						previewDocument.content = sourceData.source;
+						//IFrame(previewDocument).visible = true;
 					}
 					
 					//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));

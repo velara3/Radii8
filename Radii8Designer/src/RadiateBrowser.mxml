@@ -20,7 +20,8 @@
    preloader="mx.preloaders.SparkDownloadProgressBar"
 	-->
 	
-	<!--	
+	<!--
+	
 	Description	Resource	Path	Location	Type
 	unable to open '/Applications/Adobe Flash Builder 4.7/sdks/4.15 AIR 23/frameworks/libs/player/15.0/playerglobal.swc'	Radii8		Unknown	Flex Problem
 	
@@ -134,7 +135,7 @@
 			public var htmlDragAndDrop:HTMLDragManager;
 			
 			private function listenForDragAndDrop():void {
-				HTMLDragManager.debug=false;
+				HTMLDragManager.debug = false;
 			}
 			
 			public function dragHandler(event:HTMLDragEvent):void {
@@ -152,12 +153,16 @@
 				var selectedDocument:IDocument = radiate.selectedDocument;
 				PopUpOverlayManager.instance.showAllOverlays();
 				mainView.dropImagesLocation.visible = false;
+				
 				Radiate.info("Opening... Hold on...");
-				Radiate.callAfter(500, openDraggedItem, event);
+				Radiate.callAfter(500, openDraggedItem, event, !event.shiftKey);
 			}
 			
-			public function openDraggedItem(event:HTMLDragEvent):void {
-				radiate.dropItemWeb(event);
+			public function openDraggedItem(event:HTMLDragEvent, resizeIfNeeded:Boolean = true):void {
+				var createDocument:Boolean;
+				var createDocumentIfNeeded:Boolean = true;
+				
+				radiate.dropItemWeb(event, createDocument, createDocumentIfNeeded, resizeIfNeeded);
 			}
 			
 			
@@ -228,6 +233,7 @@
 							 showAllStyleDeclarations="false"
 							 showColorUnderMouse="false"
 							 enabled="false"
+							 showHTMLErrors="true"
 							 />
 	</fx:Declarations>
 

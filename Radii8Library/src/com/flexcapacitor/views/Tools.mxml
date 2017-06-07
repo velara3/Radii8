@@ -4,7 +4,7 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 height="24"
 		 
-		 creationComplete="group1_creationCompleteHandler(event)">
+		 creationComplete="group1_creationCompleteHandler(event)" xmlns:controls="com.flexcapacitor.controls.*">
 	
 	
 	<!-- 
@@ -101,26 +101,27 @@
 		]]>
 	</fx:Script>
 	
-	<s:List id="tools" 
+	<controls:ListNoKeyboardHandling id="tools" 
 			height="24"
 			minHeight="24"
-			minWidth="155"
+			minWidth="180"
 			labelField="name" 
 			dragEnabled="false"
 			borderVisible="false"
 			interactionMode="mouse"
 			selectionColor="#C9C9C9"
 			rollOverColor="#D9D9D9"
+			contentBackgroundAlpha="0"
 			updateComplete="tools_updateCompleteHandler(event)"
 			change="tools_changeHandler(event)"
 			verticalScrollPolicy="off"
 			>
 		
-		<s:layout>
+		<controls:layout>
 			<s:TileLayout horizontalGap="2" verticalGap="2" />
-		</s:layout>
+		</controls:layout>
 		
-		<s:itemRenderer>
+		<controls:itemRenderer>
 			<fx:Component>
 				<s:ItemRenderer width="24" height="24" minHeight="22" >
 					<fx:Script>
@@ -135,8 +136,8 @@
 								
 								
 								if (definition) {
-									if (definition.icon) {
-										iconImage.source = definition.icon;
+									if (definition.instance.icon) {
+										iconImage.source = definition.instance.icon;
 										iconImage.toolTip = definition.name + " (" + definition.key + ")";
 									}
 									else {
@@ -169,7 +170,7 @@
 				</s:ItemRenderer>
 			</fx:Component>
 			
-		</s:itemRenderer>
-	</s:List>
+		</controls:itemRenderer>
+	</controls:ListNoKeyboardHandling>
 	
 </s:Group>

@@ -4,6 +4,8 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
 		 
 		 autoDrawBackground="false"
+		 click="itemrenderer1_clickHandler(event)"
+		 keyDown="itemrenderer1_keyDownHandler(event)"
 		 removedFromStage="itemrenderer1_removedFromStageHandler(event)">
 	
 	<fx:Script>
@@ -52,6 +54,16 @@
 			{
 				if (image && image.source) {
 					image.source = null;
+				}
+			}
+			
+			protected function itemrenderer1_clickHandler(event:MouseEvent):void {
+				callLater(PopUpManager.removePopUp, [this]);
+			}
+			
+			protected function itemrenderer1_keyDownHandler(event:KeyboardEvent):void {
+				if (event.keyCode==Keyboard.ESCAPE) {
+					callLater(PopUpManager.removePopUp, [this]);
 				}
 			}
 			

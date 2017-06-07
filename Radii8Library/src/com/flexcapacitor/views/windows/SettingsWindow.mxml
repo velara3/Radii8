@@ -46,6 +46,7 @@
 				autoSaveCheckbox.selected = settings.enableAutoSave;
 				wordWrapCheckbox.selected = settings.enableWordWrap;
 				embedImagesCheckbox.selected = settings.embedImages;
+				startInDesignViewCheckbox.selected = settings.startInDesignView
 				
 				hostInput.text = Radiate.WP_HOST;
 				pathInput.text = Radiate.WP_PATH;
@@ -76,6 +77,8 @@
 				else {
 					saveLoginCheckbox.selected = false;
 				}
+				
+				
 			}
 			
 			public var savePassword:StoreLogin;
@@ -88,11 +91,10 @@
 				// save settings
 				settings = Radiate.settings;
 				
-				// set autosave
-				Radiate.instance.enableAutoSave = autoSaveCheckbox.selected;
 				settings.enableAutoSave = autoSaveCheckbox.selected;
 				settings.enableWordWrap = wordWrapCheckbox.selected;
 				settings.embedImages = embedImagesCheckbox.selected;
+				settings.startInDesignView = startInDesignViewCheckbox.selected;
 				
 				// clear logins
 				if (!saveLoginCheckbox.selected) {
@@ -104,7 +106,9 @@
 					}
 				}
 				
-				Radiate.instance.saveSettings();
+				// set autosave - we need to move this to an apply settings method
+				Radiate.saveSettings();
+				Radiate.applySettings();
 				
 				// update screenshot path
 				if (screenshotPathInput.text) {
@@ -192,7 +196,6 @@
 				else {
 					PersistentStorage.removeAllFromStorage(Radiate.USER_STORE);
 					warning.text = "All logins erased.";
-					var removedNote:Function;
 					setTimeout(removedNotes, 3000);
 				}
 			}
@@ -219,6 +222,36 @@
 			
 			protected function clearBrowserSiteScannerSite_clickHandler(event:MouseEvent):void {
 				siteScannerPathInput.text = Radiate.defaultSiteScannerPath;
+			}
+			
+			protected function wordWrapCheckbox_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function startInDesignViewCheckbox_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function autoSaveCheckbox_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function embedImagesCheckbox_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+			protected function uploadLibraryItemsCheckbox_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				
 			}
 			
 		]]>
@@ -318,7 +351,7 @@
 			</s:HGroup>
 			
 			<s:Label text="Word wrap in editor" />
-			<s:CheckBox id="wordWrapCheckbox" />
+			<s:CheckBox id="wordWrapCheckbox" click="wordWrapCheckbox_clickHandler(event)"/>
 			
 			<s:Label text="Automatically upload media" />
 			<s:CheckBox id="uploadLibraryItemsCheckbox" />
@@ -329,8 +362,11 @@
 			<s:Label text="Auto-Save" />
 			<s:CheckBox id="autoSaveCheckbox" toolTip="If you enable auto save do NOT edit the document in the browser and RADIATE at the same time" />
 			
-			<s:Label text="Save login" />
+			<s:Label text="Save logins" toolTip="Save logins when logging in" />
 			<s:CheckBox id="saveLoginCheckbox" />
+			
+			<s:Label text="Start in Design View" toolTip="Start in the design view" />
+			<s:CheckBox id="startInDesignViewCheckbox" click="startInDesignViewCheckbox_clickHandler(event)"/>
 			
 			<s:Label text="Remove all logins" />
 			<s:HGroup width="100%" verticalAlign="middle">

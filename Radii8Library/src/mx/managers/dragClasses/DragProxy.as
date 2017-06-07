@@ -632,7 +632,7 @@ package mx.managers.dragClasses
 			}
 			else {
 				
-				// sometimes the parent is null so we 
+				// sometimes the parent is null so 
 				// if that's the case just end the drag
 				if (parent==null) {
 					DragManager.endDrag();

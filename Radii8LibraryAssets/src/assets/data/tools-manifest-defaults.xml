@@ -69,5 +69,12 @@
     		include="true"
     		key="m">
     </tool>
+    
+    <tool id="Line" 
+    		class="com.flexcapacitor.tools.Line" 
+    		inspector="com.flexcapacitor.views.LineInspector" 
+    		include="true"
+    		key="u">
+    </tool>
 
 </toolsPackage>

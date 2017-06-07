@@ -17,12 +17,15 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.utils.supportClasses.XMLValidationInfo;
 	
 	import flash.display.BitmapData;
+	import flash.display.CapsStyle;
 	import flash.display.DisplayObjectContainer;
+	import flash.display.JointStyle;
 	import flash.utils.getTimer;
 	
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.ScrollPolicy;
+	import mx.graphics.SolidColorStroke;
 	import mx.styles.IStyleClient;
 	import mx.utils.NameUtil;
 	
@@ -1809,26 +1812,31 @@ package com.flexcapacitor.utils {
 					
 					if (localName=="horizontalline") {
 						layoutOutput = getLinePosition(componentInstance, HORIZONTAL_LINE, layoutOutput);
+						styleValue = getLineColor(componentInstance, styleValue);
+						styleValue = getLineWeight(componentInstance, styleValue);
+						styleValue += "shape-rendering:crispEdges;";
 					}
 					else if (localName=="verticalline") {
 						layoutOutput = getLinePosition(componentInstance, VERTICAL_LINE, layoutOutput);
+						styleValue = getLineColor(componentInstance, styleValue);
+						styleValue = getLineWeight(componentInstance, styleValue);
+						styleValue += "shape-rendering:crispEdges;";
 					}
 					else {
 						layoutOutput = getLinePosition(componentInstance, LINE, layoutOutput);
+						styleValue += "shape-rendering:auto;";
+						styleValue = getStroke(componentInstance as Line, styleValue);
 					}
 					
 					
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 
-					styleValue = getLineColor(componentInstance, styleValue);
-					styleValue = getLineWeight(componentInstance, styleValue);
 					styleValue = getAlpha(componentInstance, styleValue);
 					styleValue = getBorderString(componentInstance, styleValue);
 					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
 					
 					if (true) {
-						styleValue += "shape-rendering:crispEdges;";
 					}
 					else {
 						
@@ -2454,14 +2462,14 @@ package com.flexcapacitor.utils {
 			return htmlElement.toString();
 		}
 		
-		public function getBackgroundImageData(componentInstance:Object, imageDataFormat:String = "png"):String {
-			var color:Number = 0xFF0000;
-			var alpha:Number = .5;
-			var imageData:String = DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat, null, true, color);
-			var imageDataStyle:String = "";
-			//imageDataStyle = "background-repeat: no-repeat;";
-			//imageDataStyle += "background-image: url(" + imageData + ");";
+		public function getBackgroundImageData(componentInstance:Object, imageDataFormat:String = "png", color:Number = NaN, alpha:Number = 0.5, linebreaks:Boolean = false):String {
+			var imageData:String;
+			var imageDataStyle:String;
+			
+			imageData = DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat, null, true, color, alpha, linebreaks);
+			imageDataStyle = "";
 			imageDataStyle += "background: no-repeat url(" + imageData + ");";
+			
 			return imageDataStyle;
 		}
 		
@@ -2847,6 +2855,34 @@ package com.flexcapacitor.utils {
 			if ("color" in componentInstance && componentInstance.color!=0) {
 				styleValue += "stroke:" + DisplayObjectUtils.getColorInRGB(componentInstance.color, componentInstance.alpha) + ";";
 			}
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the stroke
+		 * */
+		public function getStroke(componentInstance:Line, styleValue:String):String {
+			var solidColorStroke:SolidColorStroke;
+			
+			solidColorStroke = componentInstance.stroke as SolidColorStroke;
+			
+			if (solidColorStroke) {
+				styleValue += "stroke:" + DisplayObjectUtils.getColorInRGB(solidColorStroke.color, solidColorStroke.alpha) + ";";
+				styleValue += "stroke-width:" + solidColorStroke.weight + "px;";
+				styleValue += "stroke-linejoin:" + solidColorStroke.joints + ";";
+					
+				if (solidColorStroke.caps==CapsStyle.NONE) {
+					styleValue += "stroke-linecap:" + "butt" + ";";
+				}
+				else {
+					styleValue += "stroke-linecap:" + solidColorStroke.caps + ";";
+				}
+				
+				styleValue += "stroke-miterlimit:" + solidColorStroke.miterLimit + ";";
+				
+			}
+			
 			
 			return styleValue;
 		}
@@ -3589,8 +3625,7 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		/**
 		 * Get line position details
 		 * For horizontal and vertical lines the start positions are ignored
-		 * because we create a wrapper div positioning the SVG contents. 
-		 * This could be incorrect but we have a low bar for this option.
+		 * because we create a wrapper div positioning the SVG content
 		 * */
 		public function getLinePosition(instance:Object, type:String, value:String = ""):String {
 			var line:Line = instance as Line;
@@ -3630,8 +3665,28 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 				
 			}
 			else {
-				value += " x1=\"" + line.xFrom + "\" x2=\""+ line.xTo  + "\"";
-				value += " y1=\"" + line.yFrom + "\" y2=\"" + line.yTo + "\"";
+				//value += " x1=\"" + line.xFrom + "\" x2=\""+ line.xTo  + "\"";
+				//value += " y1=\"" + line.yFrom + "\" y2=\"" + line.yTo + "\"";
+				
+				value += " x1=\"" + line.xFrom + "\"";
+				
+				// stretch to width 
+				if (!isNaN(line.percentWidth)) {
+					value += " x2=\"" + line.percentWidth + "%\"";
+				}
+				else {
+					value += " x2=\"" + line.xTo + "\"";
+				}
+				
+				value += " y1=\"" + line.yFrom + "\"";
+				
+				if (!isNaN(line.percentHeight)) {
+					value += " y2=\"" + line.percentHeight + "%\"";
+				}
+				else {
+					value += " y2=\"" + line.yTo + "\"";
+				}
+				
 			}
 			
 			return value;

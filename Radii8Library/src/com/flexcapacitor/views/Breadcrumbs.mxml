@@ -301,6 +301,7 @@
 									toolTipShow="itemrenderer1_toolTipShowHandler(event)">
 						<fx:Script>
 							<![CDATA[
+								import com.flexcapacitor.utils.ClassUtils;
 								import mx.core.IToolTip;
 								import mx.managers.ToolTipManager;
 								import mx.events.ToolTipEvent;
@@ -309,14 +310,25 @@
 								
 								public var myToolTip:IToolTip;
 								
-								protected function itemrenderer1_toolTipShowHandler(event:ToolTipEvent):void
-								{
-									var componentDescription:ComponentDescription = data as ComponentDescription;
+								protected function itemrenderer1_toolTipShowHandler(event:ToolTipEvent):void {
+									var elementName:String;
+									var componentDescription:ComponentDescription;
+									var descendantsCount:int;
+									
+									componentDescription = data as ComponentDescription;
 									if (componentDescription==null) return;
-									var descendantsCount:int = componentDescription.getNumberOfElements();
+									
+									elementName = componentDescription.getNameOrID();
+									descendantsCount = componentDescription.getNumberOfElements();
 									
 									myToolTip = ToolTipManager.currentToolTip;
-									myToolTip.text = descendantsCount + " descendants";
+									
+									if (elementName) {
+										myToolTip.text = elementName + " " + descendantsCount + " descendants";
+									}
+									else {
+										myToolTip.text = descendantsCount + " descendants";
+									}
 								}
 								
 							]]>

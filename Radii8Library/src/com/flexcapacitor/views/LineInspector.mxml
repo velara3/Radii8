@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:graphics="be.nascom.flash.graphics.*"
+		 xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:flexcapacitor="flexcapacitor.*"
+		 xmlns:c="com.flexcapacitor.controls.*"
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 
+		 implements="com.flexcapacitor.tools.IToolInspector, com.flexcapacitor.views.IInspector" 
+		 creationComplete="creationCompleteHandler(event)" 
+		 fontSize="11" 
+		 >
+
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.tools.IToolInspector;
+			import com.flexcapacitor.tools.Line;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+			
+			import mx.events.ColorPickerEvent;
+			import mx.events.FlexEvent;
+			
+			public var radiate:Radiate;
+			public var tool:ITool;
+
+			[Bindable]
+			public var lineTool:Line;
+			
+			public function get target():Object {
+				return _target;
+			}
+			
+			[Bindable]
+			public function set target(value:Object):void {
+				_target = value;
+			}
+			
+			private var _target:Object;
+
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				radiate = Radiate.getInstance();
+				
+				
+				tool = radiate.selectedTool;
+				
+				updateTool(tool);
+				
+			}
+			
+			public function activate(selectedTarget:Object = null):void {
+				radiate = Radiate.getInstance();
+				
+				addListeners();
+				
+				if (radiate.target) {
+					target = radiate.target;
+					updateTarget();
+				}
+			}
+			
+			public function deactivate():void {
+				removeListeners();
+				updateTarget();
+				
+				if (tool is Line) {
+					if (Line(tool).inspector==this) {
+						Line(tool).inspector = null;
+					}
+				}
+			}
+			
+			protected function addListeners():void {
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
+			}
+			
+			protected function removeListeners():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler);
+				}
+			}
+			
+			/**
+			 * Get current target
+			 * */
+			protected function targetChangeHandler(event:RadiateEvent):void {
+				target = event.selectedItem;
+				updateTarget();
+			}
+			
+			/**
+			 * Update UI components to tool value
+			 * */
+			public function updateTool(tool:ITool):void {
+				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				
+				if (toolDescription && 
+					toolDescription.instance && 
+					toolDescription.instance is Line) {
+					
+					lineTool = Line(toolDescription.instance);
+					colorPicker.selectedColor = lineTool.lineColor;
+					lineWeight.value = lineTool.lineWeight;
+					
+					if (lineTool.inspector==null) {
+						lineTool.inspector = this;
+					}
+				}
+			}
+			
+			private function updateTarget():void {
+				var rectangle:Rectangle;
+				
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function colorPicker_changeHandler(event:ColorPickerEvent):void {
+				
+				if (lineTool) {
+					lineTool.lineColor = colorPicker.selectedColor;
+				}
+			}
+			
+			/**
+			 * 
+			 * */
+			protected function weight_changeHandler(event:Event):void {
+				
+				if (lineTool) {
+					lineTool.lineWeight = lineWeight.value;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+	</fx:Declarations>
+	
+	
+	<s:HGroup width="100%" verticalAlign="top" height="100%" paddingTop="2">
+		<c:ColorPicker id="colorPicker" 
+					   height="21" 
+					   change="colorPicker_changeHandler(event)"/>
+		<s:NumericStepper id="lineWeight" 
+						  minimum="0" 
+						  maximum="{NaN}"
+						  width="46"
+						  focusThickness="0" 
+						  height="21" 
+						  stepSize="1" 
+						  change="weight_changeHandler(event)"/>
+	</s:HGroup>
+	
+</s:Group>

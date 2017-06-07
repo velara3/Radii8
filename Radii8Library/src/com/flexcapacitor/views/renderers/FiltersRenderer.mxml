@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/halo"
+				autoDrawBackground="true"
+				height="25">
+	
+	<fx:Metadata>
+		[HostComponent("spark.components.List")]
+	</fx:Metadata>
+	
+	<s:states>
+		<s:State name="normal" />
+		<s:State name="hovered" />
+		<s:State name="selected" />
+		<s:State name="disabled" />
+	</s:states>
+	
+	<s:BitmapImage id="icon" 
+				   left="2"
+				   top="2"
+				   width="15"
+				   horizontalAlign="right"
+				   fillMode="clip"
+				   source="{Radii8LibraryAssets.filters}"
+				   >
+	</s:BitmapImage>
+	
+	
+	<s:Label id="labelDisplay" 
+			 top="1"
+			 left="19"
+			 paddingLeft="4"
+			 height="100%"
+			 width="100%"
+			 verticalAlign="middle"
+			 itemCreationPolicy="immediate"
+			 includeIn="hovered, normal, selected"/>
+	
+</s:ItemRenderer>

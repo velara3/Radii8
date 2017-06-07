@@ -161,13 +161,13 @@
 			protected function saveProjectOnlyIcon_clickHandler(event:MouseEvent):void {
 				radiate.saveProjectOnly(radiate.selectedProject);
 				//radiate.save();
-				radiate.saveSettings();
+				Radiate.saveSettings();
 			}
 			
 			protected function saveProjectIcon_clickHandler(event:MouseEvent):void {
 				radiate.saveProject(radiate.selectedProject);
 				//radiate.save();
-				radiate.saveSettings();
+				Radiate.saveSettings();
 			}
 			
 			protected function getSavedProjectsIcon_clickHandler(event:MouseEvent):void {
@@ -243,7 +243,7 @@
 			
 			protected function autoSaveToggle_clickHandler(event:MouseEvent):void {
 				radiate.enableAutoSave = autoSaveToggle.selected;
-				radiate.saveSettings();
+				Radiate.saveSettings();
 			}
 			
 			protected function openHomePageInBrowserButton_clickHandler():void {
@@ -257,8 +257,16 @@
 				}
 			}
 			
-			protected function shareIcon_clickHandler(event:MouseEvent):void
-			{
+			protected function shareIcon_clickHandler(event:MouseEvent):void {
+				var usersSignedIn:Boolean;
+				
+				usersSignedIn = Radiate.instance.isUserLoggedIn;
+				
+				if (!usersSignedIn) {
+					Radiate.info("You must be logged in to perform this action.");
+					return;
+				}
+				
 				if (radiate.selectedDocument) {
 					RunManager.copyURLToHomePage(radiate.selectedDocument as DocumentData);
 				}

@@ -6,7 +6,12 @@ package com.flexcapacitor.utils.supportClasses
 		{
 		}
 		
-		public var horizontal:Array = [];
-		public var vertical:Array = [];
+		public var left:Array = [];
+		public var top:Array = [];
+		public var right:Array = [];
+		public var bottom:Array = [];
+		public var baseline:Array = [];
+		public var verticalCenter:Array = [];
+		public var horizontalCenter:Array = [];
 	}
 }

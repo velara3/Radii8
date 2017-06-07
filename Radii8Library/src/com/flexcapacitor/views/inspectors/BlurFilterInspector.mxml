@@ -167,7 +167,7 @@
 	</fx:Declarations>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >
-		<s:Label text="Blur" toolTip="Update the horizontal and vertical blur at the same time. " styleName="inspectablePanelLabel" />
+		<s:Label text="Blur Lock" toolTip="Update the horizontal and vertical blur at the same time. " styleName="inspectablePanelLabel" />
 		<renderers:BooleanRenderer id="blurSelectedRenderer" height="24" change="blurSelectedRenderer_changeHandler(event)"/>
 	</s:HGroup>
 	

@@ -203,8 +203,8 @@ package com.flexcapacitor.utils {
 				
 				pageOutput = replaceStylesheetsToken(pageOutput, stylesheetLinks, false);
 			}
-			
-			validationInfo = XMLUtils.validateXML(pageOutput);
+			// until Microsoft edge is figured out, 
+			validationInfo = XMLUtils.validateXML(pageOutput, true, false, true);
 			
 			if (validationInfo && !validationInfo.valid) {
 				warningData = IssueData.getIssue("Possibly Invalid Markup", validationInfo.internalErrorMessage);
@@ -590,7 +590,7 @@ package com.flexcapacitor.utils {
 					}
 					
 					// if the image hasn't been uploaded we can save it as an attribute or node
-					if (embedImage && imageData) {
+					if (componentDescription.embedBitmapData && imageData) {
 						base64ImageData = DisplayObjectUtils.getBase64ImageDataString(componentDescription.instance.source, DisplayObjectUtils.PNG, null, true);
 						
 						// we may need to change this so it doesn't conflict with "bitmapData" in the spark namespace
@@ -611,7 +611,7 @@ package com.flexcapacitor.utils {
 					className = "Application";
 					prefixedName = MXMLDocumentConstants.sparkNamespacePrefix + ":" + className;
 					namespaces = MXMLDocumentConstants.getDefaultNamespaceDeclarations();
-					output = output + " " + MXMLDocumentConstants.fcNamespacePrefix + ":version=\"" + version + "\"";
+					output = output + "" + MXMLDocumentConstants.fcNamespacePrefix + ":version=\"" + version + "\"";
 					output = namespaces + output;
 				}
 				else if (useClassRegistry) {

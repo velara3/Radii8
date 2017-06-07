@@ -42,6 +42,7 @@ package com.flexcapacitor.utils {
 	import mx.core.UIComponent;
 	import mx.core.mx_internal;
 	import mx.events.DragEvent;
+	import mx.events.EffectEvent;
 	import mx.events.SandboxMouseEvent;
 	import mx.managers.DragManager;
 	import mx.managers.ISystemManager;
@@ -61,17 +62,25 @@ package com.flexcapacitor.utils {
 	import spark.components.supportClasses.ItemRenderer;
 	import spark.components.supportClasses.Skin;
 	import spark.core.IGraphicElement;
+	import spark.effects.Animate;
+	import spark.effects.animation.MotionPath;
+	import spark.effects.animation.SimpleMotionPath;
+	import spark.effects.easing.IEaser;
+	import spark.effects.easing.Sine;
 	import spark.layouts.BasicLayout;
 	import spark.layouts.HorizontalLayout;
 	import spark.layouts.TileLayout;
 	import spark.layouts.VerticalLayout;
 	import spark.layouts.supportClasses.DropLocation;
 	import spark.layouts.supportClasses.LayoutBase;
+	import spark.primitives.Line;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.ApplicationSkin;
 	import spark.skins.spark.ImageSkin;
 	import spark.skins.spark.ListDropIndicator;
 	import spark.utils.BitmapUtil;
+	
+	import org.as3commons.lang.DictionaryUtils;
 	
 	use namespace mx_internal;
 	
@@ -147,7 +156,8 @@ package com.flexcapacitor.utils {
 		private var offset:Point = new Point;
 		
 		[Bindable] 
-		public var showSelectionBox:Boolean = true;
+		public var showSelectionBox:Boolean = false;
+		public var showGroupDropZone:Boolean = true;
 		public var showListDropIndicator:Boolean = true;
 		public var showMousePositionLines:Boolean = true;
 		public var showSelectionBoxOnApplication:Boolean;
@@ -238,6 +248,7 @@ package com.flexcapacitor.utils {
 				log();
 			}
 			
+			destroySnapPointsCache();
 			systemManager = targetApplication.systemManager;
 			topLevelApplication = Application(FlexGlobals.topLevelApplication);
 			startingPoint = new Point();
@@ -508,7 +519,9 @@ package com.flexcapacitor.utils {
 			if (debug) {
 				log(" current target: " + event.currentTarget);
 			}
-
+			
+			destroySnapPointsCache();
+			
 			this.dragInitiator = dragInitiator as IVisualElement;
 			this.targetApplication = application;
 			this.systemManager = application.systemManager;
@@ -563,6 +576,7 @@ package com.flexcapacitor.utils {
 			layoutDebugHelper.clear();
 			
 			// show selection / bounding box 
+			// we should be drawing this with the drop indicator not adding as a pop up
 			if (showSelectionBox) {
 				// RangeError: Error #2006: The supplied index is out of bounds.
 				PopUpManager.addPopUp(selectionGroup, swfRoot);
@@ -659,7 +673,7 @@ package com.flexcapacitor.utils {
 			}
 			else {
 				if (Platform.isAir) {
-					DragManager.doDrag(dragInitiator, dragSource, event, snapshot, scaleOffsetPoint.x, scaleOffsetPoint.y, 1);
+					DragManager.doDrag(dragInitiator, dragSource, event, snapshot, scaleOffsetPoint.x, scaleOffsetPoint.y, imageAlpha);
 				}
 				else {
 					DragManager.doDrag(dragInitiator, dragSource, event, snapshot, 0, 0, imageAlpha);
@@ -676,13 +690,18 @@ package com.flexcapacitor.utils {
 				//   var dragManagerStyleDeclaration:CSSStyleDeclaration = getStyleManager(dragInitiator).getStyleDeclaration("mx.managers.DragManager");
 				//   var dragImageClass:Class = dragManagerStyleDeclaration.getStyle("defaultDragImageSkin");
 				//   - dragManagerStyleDeclaration is null 
+				// 
+				// drag icon style (copy or move) was set to ClassReference(null);?
 			}
 			
 			if (dragManager==null) {
 				//dragManager = Singleton.getInstance("mx.managers::IDragManager");
 			}
 			
-			var dragManagerImplementation:Object = mx.managers.DragManagerImpl.getInstance();
+			//dragManagerImplementation = Singleton.getClass("mx.managers::IDragManager");
+			//var dragManagerImplementation:Object = mx.managers.DragManagerImpl.getInstance();
+			var dragManagerImplementation:Object;
+			dragManagerImplementation = Singleton.getClass("mx.managers::IDragManager").getInstance();
 			dragProxy = dragManagerImplementation.dragProxy;
 			//dragProxy = DragManager::mx_internal.getDragProxy(); //throws error below???
 			// TypeError: Error #1034: Type Coercion failed: cannot convert mx.managers::DragManager$ to Namespace.
@@ -694,6 +713,9 @@ package com.flexcapacitor.utils {
 		
 		// attempt to find the dragged image but it might be passed to the OS so we 
 		// can't get it after the fact
+		// on native it is passed to the OS
+		// on drag manager it is DragProxy
+		// this is outdated though so remove
 		private function getDragIcon():Sprite
 		{
 			var modalWindow:FlexSprite;
@@ -806,9 +828,6 @@ package com.flexcapacitor.utils {
 			replaceTarget 	= dragData.replaceTarget;
 			
 			
-			// update location properties
-			//updateDropTargetLocation(targetApplication, event);
-			updateDropLocation();
 			
 			////////////////////////////////////////////////////////////
 			// show selection box
@@ -937,22 +956,28 @@ package com.flexcapacitor.utils {
 							
 							var currentX:int;
 							var currentY:int;
-							var horizontalDifference:int;
-							var verticalDifference:int;
-							var hasHorizontalSnapEdge:Boolean;
-							var hasVerticalSnapEdge:Boolean;
+							var currentRight:int;
+							var currentBottom:int;
+							var hasLeftSnapEdge:Boolean;
+							var hasTopSnapEdge:Boolean;
+							var hasBottomSnapEdge:Boolean;
+							var hasRightSnapEdge:Boolean;
+							var snapPoints:SnapPoints;
 							
 							
 							// Create the dropIndicator instance. The layout will take care of
 							// parenting, sizing, positioning and validating the dropIndicator.
 							currentX = dropLocation.dropPoint.x - (offset.x/scaleX);
 							currentY = dropLocation.dropPoint.y - (offset.y/scaleY);
+							currentRight = dropLocation.dropPoint.x + draggedItem.width - (offset.x/scaleX);
+							currentBottom = dropLocation.dropPoint.y + draggedItem.height - (offset.y/scaleY);
 							
+							// this has not at all been optimized. we should probably create a drop indicator on basic layout
 							if (isBasic) {
 								var skipOwner:Boolean = true;
 								
-								if (snapToNearbyElements && !event.ctrlKey) {
-									snapPoints = getElementSnapPoints(dropLayout.target, draggedItem, skipOwner, snapPoints);
+								if (snapToNearbyElements && !event.altKey) {
+									snapPoints = getSnapPoints(dropLayout.target, draggedItem, skipOwner);
 									
 									if (useImageForDropIndicator) {
 										dropLayout.dropIndicator = DisplayObjectUtils.getBitmapAssetSnapshot2(draggedItem as DisplayObject, true);
@@ -968,49 +993,118 @@ package com.flexcapacitor.utils {
 										}
 									}
 									
-									// horizontal edge
+									// left edge
 									//currentX = dropLayout.dropIndicator.x;
-									snapX = NumberUtil.snapToInArray(currentX, snapPoints.horizontal);
-									horizontalDifference = isNaN(snapX) ? snapThreshold+1 : Math.abs(snapX-currentX);
+									snapX = NumberUtil.snapToInArray(currentX, snapPoints.left);
+									leftDifference = isNaN(snapX) ? snapThreshold+1 : Math.abs(snapX-currentX);
 									
-									// vertical edge
+									// top edge
 									//currentY = dropLayout.dropIndicator.y;
-									snapY = NumberUtil.snapToInArray(currentY, snapPoints.vertical);
-									verticalDifference = isNaN(snapY) ? snapThreshold+1 : Math.abs(snapY-currentY);
+									snapY = NumberUtil.snapToInArray(currentY, snapPoints.top);
+									topDifference = isNaN(snapY) ? snapThreshold+1 : Math.abs(snapY-currentY);
 									
-									if (horizontalDifference<=snapThreshold) {
-										hasHorizontalSnapEdge = true;
-										//trace("snapping to=" + snapX);
+									// right edge
+									//currentX = dropLayout.dropIndicator.x;
+									snapRight = NumberUtil.snapToInArray(currentRight, snapPoints.right);
+									rightDifference = isNaN(snapRight) ? snapThreshold+1 : Math.abs(snapRight-currentRight);
+									
+									// bottom edge
+									//currentY = dropLayout.dropIndicator.y;
+									snapBottom = NumberUtil.snapToInArray(currentBottom, snapPoints.bottom);
+									bottomDifference = isNaN(snapBottom) ? snapThreshold+1 : Math.abs(snapBottom-currentBottom);
+									
+									if (leftDifference<=snapThreshold) {
+										hasLeftSnapEdge = true;
+										//trace("snapx found =" + snapX);
 									}
 									else {
 										snapX = NaN;
 									}
 									
-									if (verticalDifference<=snapThreshold) {
-										hasVerticalSnapEdge = true;
-										//trace("snapping to=" + snapX);
+									if (topDifference<=snapThreshold) {
+										hasTopSnapEdge = true;
+										//trace("snapy found =" + snapY);
 									}
 									else {
 										snapY = NaN;
 									}
 									
-									if (hasVerticalSnapEdge || hasHorizontalSnapEdge) {
-										SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(snapX, snapY);
+									if (rightDifference<=snapThreshold) {
+										hasRightSnapEdge = true;
+										//trace("snapping to=" + snapX);
+									}
+									else {
+										snapRight = NaN;
+									}
+									
+									if (bottomDifference<=snapThreshold) {
+										hasBottomSnapEdge = true;
+										//trace("snapping to=" + snapX);
+									}
+									else {
+										snapBottom = NaN;
+									}
+									
+									if (hasLeftSnapEdge || hasTopSnapEdge || hasRightSnapEdge || hasBottomSnapEdge) {
+										SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(snapX, snapY, snapRight, snapBottom);
+										
+										if (isApplication) {
+											SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showSelectionBoxOnApplication && showGroupDropZone;
+										}
+										else {
+											SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showGroupDropZone;
+										}
 										//dropLayout.showDropIndicator(dropLocation.dropPoint);
 										dropLayout.dropIndicator.visible = true;
 										
 										if (dropLayout.dropIndicator is ProgrammaticSkin) {
-											ProgrammaticSkin(dropLayout.dropIndicator).validateDisplayList();
+											//SnapToElementDropIndicator(dropLayout.dropIndicator).updateSize();
+											ProgrammaticSkin(dropLayout.dropIndicator).invalidateSize();
+											ProgrammaticSkin(dropLayout.dropIndicator).invalidateDisplayList();
 										}
 									}
 									else {
-										dropLayout.hideDropIndicator();
+										
+										if (showGroupDropZone && dropLayout.dropIndicator is ProgrammaticSkin) {
+											SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(NaN, NaN);
+											
+											if (isApplication) {
+												SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showSelectionBoxOnApplication && showGroupDropZone;
+											}
+											else {
+												SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showGroupDropZone;
+											}
+											dropLayout.dropIndicator.visible = true;
+											
+											ProgrammaticSkin(dropLayout.dropIndicator).invalidateDisplayList();
+										}
+										else {
+											dropLayout.hideDropIndicator();
+										}
 									}
 								}
 								else {
 									snapX = NaN;
 									snapY = NaN;
-									dropLayout.hideDropIndicator();
+									snapRight = NaN;
+									snapBottom = NaN;
+									
+									if (showGroupDropZone && dropLayout.dropIndicator is ProgrammaticSkin) {
+										SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(NaN, NaN);
+										
+										if (isApplication) {
+											SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showSelectionBoxOnApplication && showGroupDropZone;
+										}
+										else {
+											SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showGroupDropZone;
+										}
+										dropLayout.dropIndicator.visible = true;
+										
+										ProgrammaticSkin(dropLayout.dropIndicator).invalidateDisplayList();
+									}
+									else {
+										dropLayout.hideDropIndicator();
+									}
 								}
 								
 								//trace("x:" + dropLocation.dropPoint.x);
@@ -1077,40 +1171,36 @@ package com.flexcapacitor.utils {
 			
 			event.updateAfterEvent();
 			
+			if (!hasLeftSnapEdge && !hasRightSnapEdge) {
+				
+				if (roundToIntegers) {
+					//snapX = Math.round(snapX);
+				}
+				else {
+					//snapX = NumberUtils.toDecimalPoint(snapX);
+				}
+			}
+			
+			if (!hasTopSnapEdge && !hasTopSnapEdge) {
+				
+				if (roundToIntegers) {
+					//snapY = Math.round(snapY);
+				}
+				else {
+					//snapY = NumberUtils.toDecimalPoint(snapY);
+				}
+			}
+			
+			// update location properties
+			//updateDropTargetLocation(targetApplication, event);
+			updateDropLocation();
 			
 			if (hasEventListener(DragDropEvent.DRAG_OVER)) {
 				dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_OVER));
 			}
 			
 			
-			return;
 			
-			
-			
-			
-			////////////////////////////////////////////////////////////
-			// show mouse lines
-			////////////////////////////////////////////////////////////
-			/*if (showListDropIndicator) {
-				mouseLocationLines.x = topLeftEdgePoint.x;
-				mouseLocationLines.y = topLeftEdgePoint.y;
-				mouseLocationLines.width = 1;
-				mouseLocationLines.height = parentApplication.height;
-				
-				// show mouse location
-				if (!mouseLocationLines.visible) {
-					mouseLocationLines.visible = true;
-				}
-			}
-			
-			
-			// store the last target
-			lastTargetCandidate = dropTarget;
-			
-			dropTargetName = NameUtil.getUnqualifiedClassName(dropTarget);
-			
-			//trace("target: " + dropTargetName);
-			event.updateAfterEvent();*/
 		}
 		
 		/**
@@ -1135,6 +1225,7 @@ package com.flexcapacitor.utils {
 			var point:Point;
 			var length:int;
 			var replaceTarget:Boolean;
+			var eventDescription:String;
 			
 			
 			dragData = findDropTarget(event, false);
@@ -1164,7 +1255,7 @@ package com.flexcapacitor.utils {
 			removeGroupListeners(targetApplication);*/
 			
 			// Hide if previously showing
-			if (dropLayout) {
+			if (dropLayout && !animateSnapToEdge) {
 				dropLayout.hideDropIndicator();
 			}
 			
@@ -1179,7 +1270,9 @@ package com.flexcapacitor.utils {
 			updateDropLocation();
 			
 			// Destroy the dropIndicator instance
-			destroyDropIndicator();
+			if (!animateSnapToEdge) {
+				destroyDropIndicator();
+			}
 			
 			restoreHiddenItems();
 			
@@ -1232,6 +1325,8 @@ package com.flexcapacitor.utils {
 			var move:Boolean;
 			var width:int;
 			var height:int;
+			var moveResult:String; 
+			var dragManagerImplementation:Object;
 			
 			//sm = SystemManagerGlobals.topLevelSystemManagers[0];
 			
@@ -1244,8 +1339,8 @@ package com.flexcapacitor.utils {
 			
 			// it seems to happen when dragging and dropping rapidly
 			// stops the drop not accepted animation
-			// when using our own dragmanager this no longer works: 
-			var dragManagerImplementation:Object = mx.managers.DragManagerImpl.getInstance();
+			// when using our own dragmanager this no longer works:
+			dragManagerImplementation = mx.managers.DragManagerImpl.getInstance();
 			// so we use this
 			dragManagerImplementation = Singleton.getClass("mx.managers::IDragManager");
 			dragManagerImplementation = dragManagerImplementation.getInstance();
@@ -1294,8 +1389,6 @@ package com.flexcapacitor.utils {
 				}
 			}
 			
-			var eventDescription:String;
-			
 			if (draggedItem.parent==null) {
 				eventDescription = HistoryManager.getAddDescription(draggedItem);
 			}
@@ -1335,13 +1428,13 @@ package com.flexcapacitor.utils {
 				return;
 			}
 			
-			
+			// try to refactor to use MoveUtils
 			if (isBasicLayout) {
 				var dropX:Number;
 				var dropY:Number;
-				var values:Object = new Object();
-				var properties:Array = [];
-				var styles:Array = [];
+				var values:Object;
+				var properties:Array;
+				var styles:Array;
 				var verticalCenter:int;
 				var horizontalCenter:int;
 				var setVerticalCenter:Boolean;
@@ -1362,11 +1455,51 @@ package com.flexcapacitor.utils {
 				var scaleY:Number;
 				var distanceFromLeftEdge:Number;
 				var distanceFromTopEdge:Number;
+				var line:Line;
+				var xFrom:Number;
+				var xTo:Number;
+				var yFrom:Number;
+				var yTo:Number;
+				var xDiff:Number;
+				var yDiff:Number;
+				var snapStartDropPoint:Point;
+				var snapEndDropPoint:Point;
+				var hasSnapX:Boolean;
+				var hasSnapY:Boolean;
+				var hasSnapRight:Boolean;
+				var hasSnapBottom:Boolean;
+				var minimumSnapValue:Number;
+				
+				values = {};
+				properties = [];
+				styles = [];
 				
 				scaleX = targetApplication.scaleX;
 				scaleY = targetApplication.scaleY;
 				
 				
+				if (!isNaN(snapX)) {
+					hasSnapX = true;
+				}
+				
+				if (!isNaN(snapY)) {
+					hasSnapY = true;
+				}
+				
+				if (!isNaN(snapRight)) {
+					hasSnapRight = true;
+				}
+				
+				if (!isNaN(snapBottom)) {
+					hasSnapBottom = true;
+				}
+				
+				if (hasSnapX || hasSnapY || hasSnapRight || hasSnapBottom) {
+					snapStartDropPoint = new Point();
+					snapEndDropPoint = new Point();
+				}
+				
+				// desktop this is null - but our offset point might be the same 
 				if (dragProxy==null) {
 					
 					if (scaleX<1) {
@@ -1377,22 +1510,6 @@ package com.flexcapacitor.utils {
 						dropX = dropPoint.x-offset.x/scaleX;
 						dropY = dropPoint.y-offset.y/scaleY;
 					}
-					
-					// check for scaling
-					if (scaleX!=1 && !isNaN(scaleX)) {
-						dropX;
-					}
-					else {
-						dropX = dropPoint.x - offset.x;
-						dropY = dropPoint.y - offset.y;
-					}
-					
-					if (!isNaN(snapX)) {
-						dropX = snapX;
-					}
-					if (!isNaN(snapY)) {
-						dropY = snapY;
-					}
 				}
 				else {
 					
@@ -1404,95 +1521,183 @@ package com.flexcapacitor.utils {
 						dropX = dropPoint.x-dragProxy.xOffset/scaleX;
 						dropY = dropPoint.y-dragProxy.yOffset/scaleY;
 					}
+				}
 					
-					// check for scaling
-					if (scaleX!=1 && !isNaN(scaleX)) {
-						dropX;
+				// check for scaling
+				if (scaleX!=1 && !isNaN(scaleX)) {
+					dropX;
+				}
+				else {
+					dropX = dropPoint.x - offset.x;
+					dropY = dropPoint.y - offset.y;
+				}
+				
+				
+				if (hasSnapX || hasSnapY || hasSnapRight || hasSnapBottom) {
+					snapStartDropPoint.x = dropX;
+					snapStartDropPoint.y = dropY;
+					
+					if (hasSnapX && hasSnapRight) {
+						minimumSnapValue = NumberUtil.snapToInArray(0, [snapX, snapRight]);
+						
+						if (minimumSnapValue==snapX) {
+							hasSnapRight = false;
+						}
+						else if (minimumSnapValue==snapRight) {
+							hasSnapX = false;
+						}
+					}
+					
+					if (hasSnapY && hasSnapBottom) {
+						minimumSnapValue = NumberUtil.snapToInArray(0, [snapY, snapBottom]);
+						
+						if (minimumSnapValue==snapY) {
+							hasSnapBottom = false;
+						}
+						else if (minimumSnapValue==snapBottom) {
+							hasSnapY = false;
+						}
+					}
+					
+					if (hasSnapX) {
+						dropX = snapX;
+						//trace("snapX to:" + dropX);
+					}
+					
+					if (hasSnapY) {
+						dropY = snapY;
+						//trace("snapY to:" + dropY);
+					}
+					
+					if (hasSnapRight) {
+						dropX = snapRight - draggedItem.width;
+						//trace("snapX to:" + dropX);
+					}
+					
+					if (hasSnapBottom) {
+						dropY = snapBottom - draggedItem.height;
+						//trace("snapY to:" + dropY);
+					}
+				}
+				
+				
+				if (!hasSnapX && !hasSnapRight) {
+					
+					if (roundToIntegers) {
+						dropX = Math.round(dropX);
+						//trace("rounding dropX to:" + dropX);
 					}
 					else {
-						dropX = dropPoint.x - offset.x;
-						dropY = dropPoint.y - offset.y;
-					}
-					
-					
-					if (!isNaN(snapX)) {
-						dropX = snapX;
-					}
-					if (!isNaN(snapY)) {
-						dropY = snapY;
+						dropX = NumberUtils.toDecimalPoint(dropX);
+						//trace("to dec dropX to:" + dropX);
 					}
 				}
 				
-				
-				if (roundToIntegers) {
-					dropX = Math.round(dropX);
-					dropY = Math.round(dropY);
-				}
-				
-				////////////////////////////////////////
-				// X and Y
-				////////////////////////////////////////
-				setX = true;
-				x = dropX;
-				values["x"] = x;
-				
-				setY = true;
-				y = dropY;
-				values["y"] = y;
-				
-				
-				////////////////////////////////////////
-				// Top and bottom
-				////////////////////////////////////////
-				if (draggedItem.top!=undefined) {
-					setTop = true;
-					top = dropY;
-					values["top"] = top;
-					delete values["y"];
-				}
-				
-				if (draggedItem.bottom!=undefined) {
-					setBottom = true;
-					bottom = Number(draggedItem.parent.height) - Number(draggedItem.height) - Number(dropY);
-					values["bottom"] = bottom;
+				if (!hasSnapY && !hasSnapBottom) {
 					
+					if (roundToIntegers) {
+						dropY = Math.round(dropY);
+						//trace("rounding dropY to:" + dropY);
+					}
+					else {
+						dropY = NumberUtils.toDecimalPoint(dropY);
+						//trace("to dec dropY to:" + dropY);
+					}
 				}
 				
-				////////////////////////////////////////
-				// Left and Right
-				////////////////////////////////////////
-				if (draggedItem.left!=undefined) {
-					setLeft = true;
-					left = dropX;
-					values["left"] = left;
-					delete values["x"];
+				if (draggedItem is Line) {
+					line = draggedItem as Line;
+					
+					xDiff = dropX - line.xFrom;
+					xDiff = line.xTo<line.xFrom ? xDiff + line.xFrom-line.xTo : xDiff;
+					xFrom = line.xFrom + xDiff + line.stroke.weight/2;
+					values["xFrom"] = xFrom;
+					
+					if (isNaN(line.percentWidth)) {
+						xTo = line.xTo + xDiff + line.stroke.weight/2;
+						values["xTo"] = xTo;
+					}
+					
+					yDiff = dropY - line.yFrom;
+					yDiff = line.yTo<line.yFrom ? yDiff + line.yFrom-line.yTo : yDiff;
+					yFrom = line.yFrom + yDiff + line.stroke.weight/2;
+					values["yFrom"] = yFrom;
+					
+					if (isNaN(line.percentHeight)) {
+						yTo = line.yTo + yDiff + line.stroke.weight/2;
+						values["yTo"] = yTo;
+					}
+					
+					dropX = Math.min(xFrom, xTo); 
+					dropY = Math.min(yFrom, yTo); 
 				}
-				
-				if (draggedItem.right!=undefined) {
-					setRight = true;
-					right = Number(draggedItem.parent.width) - Number(draggedItem.width) - Number(dropX);
-					values["right"] = right;
-				}
-				
-				////////////////////////////////////////
-				// Vertical and Horizontal Center
-				////////////////////////////////////////
-				if (draggedItem.verticalCenter!=undefined) {
-					setVerticalCenter = true;
-					verticalCenter = dropY - draggedItem.parent.height /2;
-					values["verticalCenter"] = verticalCenter;
-					delete values["y"];
-					//delete values["top"]; need to test
-					//delete values["bottom"];
-				}
-				
-				if (draggedItem.horizontalCenter!=undefined) {
-					setHorizontalCenter = true;
-					horizontalCenter = dropX - draggedItem.parent.width/2;
-					values["horizontalCenter"] = horizontalCenter;
-					delete values["x"];
-					//delete values["left"];
-					//delete values["right"];
+				else {
+					
+					////////////////////////////////////////
+					// X and Y
+					////////////////////////////////////////
+					setX = true;
+					x = dropX;
+					values["x"] = x;
+					
+					setY = true;
+					y = dropY;
+					values["y"] = y;
+					
+					
+					////////////////////////////////////////
+					// Top and bottom
+					////////////////////////////////////////
+					if (draggedItem.top!=undefined) {
+						setTop = true;
+						top = dropY;
+						values["top"] = top;
+						delete values["y"];
+					}
+					
+					if (draggedItem.bottom!=undefined) {
+						setBottom = true;
+						bottom = Number(draggedItem.parent.height) - Number(draggedItem.height) - Number(dropY);
+						values["bottom"] = bottom;
+						
+					}
+					
+					////////////////////////////////////////
+					// Left and Right
+					////////////////////////////////////////
+					if (draggedItem.left!=undefined) {
+						setLeft = true;
+						left = dropX;
+						values["left"] = left;
+						delete values["x"];
+					}
+					
+					if (draggedItem.right!=undefined) {
+						setRight = true;
+						right = Number(draggedItem.parent.width) - Number(draggedItem.width) - Number(dropX);
+						values["right"] = right;
+					}
+					
+					////////////////////////////////////////
+					// Vertical and Horizontal Center
+					////////////////////////////////////////
+					if (draggedItem.verticalCenter!=undefined) {
+						setVerticalCenter = true;
+						verticalCenter = dropY - draggedItem.parent.height /2;
+						values["verticalCenter"] = verticalCenter;
+						delete values["y"];
+						//delete values["top"]; need to test
+						//delete values["bottom"];
+					}
+					
+					if (draggedItem.horizontalCenter!=undefined) {
+						setHorizontalCenter = true;
+						horizontalCenter = dropX - draggedItem.parent.width/2;
+						values["horizontalCenter"] = horizontalCenter;
+						delete values["x"];
+						//delete values["left"];
+						//delete values["right"];
+					}
 				}
 				
 				// build affected properties array
@@ -1503,8 +1708,6 @@ package com.flexcapacitor.utils {
 				properties 				= ClassUtils.getPropertiesFromObject(draggedItem, values, true);
 				styles 					= ClassUtils.getStylesFromObject(draggedItem, values);
 				
-				var moveResult:String;
-				
 				if (draggedItem.parent==null) {
 					addResult = Radiate.addElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
 				}
@@ -1512,6 +1715,15 @@ package com.flexcapacitor.utils {
 					moveResult = Radiate.moveElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
 				}
 				
+				if (animateSnapToEdge && (hasSnapX || hasSnapY) && !(draggedItem is Line) && 
+					(properties.indexOf("x")!=-1 || properties.indexOf("y")!=-1)) {
+					snapEndDropPoint.x = dropX;
+					snapEndDropPoint.y = dropY;
+					animateSnapPoint(draggedItem, snapEndDropPoint, snapStartDropPoint);
+				}
+				else {
+					destroyDropIndicator();
+				}
 			}
 			// tile, vertical or horizontal layout
 			else {
@@ -1522,6 +1734,8 @@ package com.flexcapacitor.utils {
 				else {
 					moveResult = Radiate.moveElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
 				}
+				
+				destroyDropIndicator();
 			}
 			
 			// try and reduce the delay of the new component showing up after screen updates
@@ -1549,6 +1763,10 @@ package com.flexcapacitor.utils {
 			
 			dispatchEvent(dragCompleteEvent);
 			
+			// TODO: should possibly use events to update the drop location
+			// or move to the drop indicator classes
+			updateDropLocation();
+			
 			// try and reduce the delay of the new component showing up after screen updates
 			//event.updateAfterEvent();
 		}
@@ -1564,6 +1782,8 @@ package com.flexcapacitor.utils {
 			destroyDropIndicator();
 			//removeGroupListeners(targetApplication);
 			removeMouseHandlers(dragInitiator as IVisualElement);
+			destroySnapPointsCache();
+			
 			dragging = false;
 			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_END));
 			Radiate.instance.dispatchDocumentUpdatedEvent(Radiate.instance.selectedDocument);
@@ -1598,7 +1818,6 @@ package com.flexcapacitor.utils {
 		}
 		
 		private function removeDragDisplayObjects():void {
-			destroyDropIndicator();
 			selectionGroup.width = 0;
 			selectionGroup.height = 0;
 			
@@ -1744,9 +1963,25 @@ package com.flexcapacitor.utils {
 		}
 		
 		/**
+		 * Remove snap points cache
+		 * */
+		public function destroySnapPointsCache():void {
+			//trace("Destroying snap points");
+			
+			if (snapPointsCache) {
+				var keys:Array = DictionaryUtils.getKeys(snapPointsCache);
+				DictionaryUtils.deleteKeys(snapPointsCache, keys);
+			}
+		}
+		
+		/**
 		 * Need to clean this up
 		 * */
 		public function destroyDropIndicator():DisplayObject {
+			if (snapToEdgeAnimation && snapToEdgeAnimation.isPlaying) {
+				return null;
+			}
+			
 			if (dropLayout) {
 				dropLayout.hideDropIndicator();
 			}
@@ -1760,6 +1995,7 @@ package com.flexcapacitor.utils {
 			
 			// Release the reference from the layout
 			dropIndicatorFactory = null;
+			
 			
 			// Release it if it's a dynamic skin part
 			/*var count:int = parentApplication.numDynamicParts("dropIndicator");
@@ -1775,14 +2011,27 @@ package com.flexcapacitor.utils {
 			return dropIndicatorInstance;
 		}
 		
-		public function getElementSnapPoints(target:GroupBase, excludeObject:Object = null, skipOwner:Boolean = true, snapPoints:SnapPoints = null):SnapPoints {
+		public function getSnapPoints(target:GroupBase, excludeObject:Object = null, skipOwner:Boolean = true, edges:Boolean = true):SnapPoints {
 			var numberOfElements:int;
 			var element:IVisualElement;
-			var verticalSnapPoints:Array = [];
-			var horizontalSnapPoints:Array = [];
+			var topSnapPoints:Array = [];
+			var bottomSnapPoints:Array = [];
+			var leftSnapPoints:Array = [];
+			var rightSnapPoints:Array = [];
+			var elementRectangle:Rectangle;
+			var groupRectangle:Rectangle;
+			var line:Line;
+			var snapPoints:SnapPoints;
+			
 			
 			if (target==null) return null;
+			if (snapPointsCache[target]) {
+				//trace("Getting snap points from cache");
+				return snapPointsCache[target] as SnapPoints;
+			}
+			//trace("Getting snap points");
 			
+			groupRectangle = target.getBounds(target);
 			numberOfElements = target.numElements;
 			
 			for (var i:int = 0; i < numberOfElements; i++) {
@@ -1792,22 +2041,56 @@ package com.flexcapacitor.utils {
 					if (element==excludeObject) {
 						continue;
 					}
-					
-					if (skipOwner && "owner" in element && element==excludeObject.owner) {
-						continue;
-					}
 				}
 				
-				horizontalSnapPoints.push(element.x);
-				verticalSnapPoints.push(element.y);
+				if (element.visible == false) {
+					continue;
+				}
+				
+				if (skipOwner && "owner" in element && element==excludeObject.owner) {
+					continue;
+				}
+				
+				// drag initiator is created for things like graphic elements
+				// drag manager needs a uicomponent to drag not graphic element so we create one before drag
+				// it seems like it's getting added to the stage at some point by the drag manager class
+				if (element==dragInitiator) {
+					continue;
+				}
+				
+				//elementRectangle = target.layout.getElementBounds(i);
+				//elementRectangle = target.layout.getChildElementBounds(element);
+				
+				if (element is Line) {
+					line = element as Line;
+					leftSnapPoints.push(Math.min(line.xFrom, line.xTo));
+					rightSnapPoints.push(Math.max(line.xTo, line.xFrom));
+					topSnapPoints.push(Math.min(line.yTo, line.yFrom));
+					bottomSnapPoints.push(Math.max(line.yTo, line.yFrom));
+				}
+				else {
+					leftSnapPoints.push(element.x);
+					rightSnapPoints.push(element.x + element.width);
+					topSnapPoints.push(element.y);
+					bottomSnapPoints.push(element.y + element.height);
+				}
 			}
 			
-			if (snapPoints==null) {
-				snapPoints = new SnapPoints();
+			snapPoints = new SnapPoints();
+			
+			if (edges) {
+				leftSnapPoints.push(0);
+				topSnapPoints.push(0);
+				rightSnapPoints.push(target.width);
+				bottomSnapPoints.push(target.height);
 			}
 			
-			snapPoints.vertical = verticalSnapPoints;
-			snapPoints.horizontal = horizontalSnapPoints;
+			snapPoints.left = leftSnapPoints.concat(rightSnapPoints);
+			snapPoints.top = topSnapPoints.concat(bottomSnapPoints);
+			snapPoints.right = rightSnapPoints.concat(leftSnapPoints);
+			snapPoints.bottom = bottomSnapPoints.concat(topSnapPoints);
+			
+			snapPointsCache[target] = snapPoints;
 			
 			return snapPoints;
 		}
@@ -2303,11 +2586,27 @@ package com.flexcapacitor.utils {
 		
 		public var dragging:Boolean;
 
-		private var snapPoints:SnapPoints;
-
 		private var snapX:Number;
 
 		private var snapY:Number;
+
+		private var snapRight:Number;
+
+		private var snapBottom:Number;
+
+		private var snapVerticalCenter:Number;
+
+		private var snapHorizontalCenter:Number;
+		
+		private var snapBaseline:Number;
+		
+		public var leftDifference:Number;
+		
+		public var topDifference:Number;
+		
+		public var rightDifference:Number;
+		
+		public var bottomDifference:Number;
 		
 		public var snapThreshold:int = 6;
 		
@@ -2467,9 +2766,50 @@ package com.flexcapacitor.utils {
 			}
 		}
 		
+		public var animateSnapToEdge:Boolean = true; 
+		public var snapToEdgeAnimation:Animate;
+		public var snapToEdgeAnimationDuration:int = 60;
+		public var snapToEdgeAnimationStartDelay:int = 0;
+		public var snapToEdgeAnimationEaser:IEaser = new Sine(.75);// = new Bounce();
+		private var snapPointsCache:Dictionary = new Dictionary(true);
+		
+		public function animateSnapPoint(target:Object, newPoint:Point, oldPoint:Point = null):void {
+			var snapMotionPaths:Vector.<MotionPath>;
+			var snapHorizontalPath:SimpleMotionPath;
+			var snapVerticalPath:SimpleMotionPath;
+			
+			snapToEdgeAnimation = new Animate();
+			snapToEdgeAnimation.addEventListener(EffectEvent.EFFECT_END, snapToEdgeAnimation_effectEndHandler);
+			snapToEdgeAnimation.duration = snapToEdgeAnimationDuration;
+			snapToEdgeAnimation.startDelay = snapToEdgeAnimationStartDelay;
+			snapToEdgeAnimation.easer = snapToEdgeAnimationEaser;
+			
+			if (oldPoint) {
+				snapHorizontalPath = new SimpleMotionPath("x", oldPoint.x, newPoint.x);
+				snapVerticalPath = new SimpleMotionPath("y", oldPoint.y, newPoint.y);
+			}
+			else {
+				snapHorizontalPath = new SimpleMotionPath("x", null, newPoint.x);
+				snapVerticalPath = new SimpleMotionPath("y", null, newPoint.y);
+			}
+			
+			snapMotionPaths = Vector.<MotionPath>([snapHorizontalPath, snapVerticalPath]);
+			snapToEdgeAnimation.motionPaths = snapMotionPaths;
+			snapToEdgeAnimation.play([target]);
+			Radiate.hideToolsLayer();
+		}
+		
+		protected function snapToEdgeAnimation_effectEndHandler(event:Event):void {
+			snapToEdgeAnimation.removeEventListener(EffectEvent.EFFECT_END, snapToEdgeAnimation_effectEndHandler);
+			destroyDropIndicator();
+			Radiate.showToolsLayer();
+			Radiate.updateSelection(Radiate.instance.target);
+		}
+		
 		public static function getInstance():DragManagerUtil {
 			if (_instance==null) _instance = new DragManagerUtil();
 			return _instance;
 		}
+		
 	}
 }

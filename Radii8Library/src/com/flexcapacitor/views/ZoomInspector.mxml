@@ -18,8 +18,14 @@
 			import com.flexcapacitor.tools.Zoom;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
+			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			
+			import spark.components.Application;
+			import spark.components.Scroller;
+			import spark.effects.Animate;
+			import spark.effects.animation.MotionPath;
+			import spark.effects.animation.SimpleMotionPath;
 			import spark.events.IndexChangeEvent;
 			
 			public var radiate:Radiate;
@@ -73,6 +79,7 @@
 			 * 
 			 * */
 			protected function actualSize_clickHandler(event:MouseEvent):void {
+				var currentScale:Number = radiate.getScale();
 				
 				if (zoomTool) {
 					zoomTool.restoreDefaultScale();
@@ -81,6 +88,35 @@
 				else {
 					radiate.restoreDefaultScale();
 				}
+				
+				if (animate) {
+					animateIntoView(1, currentScale);
+				}
+			}
+			
+			public var animate:Boolean;
+			public var scaleAnimation:Animate;
+			public var scaleAnimationDuration:int = 250;
+			
+			
+			public function animateIntoView(newScale:Number, oldScale:Number = NaN):void {
+				var newPoint:Point;
+				var scrollMotionPaths:Vector.<MotionPath>;
+				var horizontalScale:SimpleMotionPath;
+				var verticalScale:SimpleMotionPath;
+				
+				if (!radiate.selectedDocument) {
+					return;
+				}
+				
+				scaleAnimation = new Animate();
+				//scrollBarAnimation.addEventListener(EffectEvent.EFFECT_END, hideScrollBarAnimation_effectEndHandler);
+				scaleAnimation.duration = scaleAnimationDuration;
+				horizontalScale = new SimpleMotionPath("scaleX", oldScale, newScale);
+				verticalScale = new SimpleMotionPath("scaleY", oldScale, newScale);
+				scrollMotionPaths = Vector.<MotionPath>([horizontalScale, verticalScale]);
+				scaleAnimation.motionPaths = scrollMotionPaths;
+				scaleAnimation.play([radiate.selectedDocument.instance]);
 			}
 			
 			/**
@@ -153,6 +189,28 @@
 			}
 			
 			protected function fitInButton_clickHandler(event:MouseEvent):void {
+				var scroller:Scroller;
+				var target:Application;
+				var ws:Number;
+				var hs:Number;
+				
+				if (animate && radiate.selectedDocument) {
+					scroller = radiate.canvasScroller;
+					target = radiate.selectedDocument.instance as Application;
+					
+					if (target && radiate.selectedDocument) {
+						//ws = scroller.width/scroller.viewport.contentWidth;
+						//hs = scroller.height/scroller.viewport.contentHeight;
+						ws = target.width/target.contentGroup.contentWidth;
+						hs = target.height/target.contentGroup.contentHeight;
+						
+						fitToScale.scaleXTo = ws;
+						fitToScale.scaleYTo = hs;
+						fitToScale.duration = 250;
+						fitToScale.play([radiate.selectedDocument.instance]);
+					}
+				}
+				
 				radiate.scaleToFit(true);
 				radiate.centerApplication(true, true);
 			}
@@ -165,7 +223,9 @@
 		]]>
 	</fx:Script>
 	
-	
+	<fx:Declarations>
+		<s:Scale id="fitToScale"  /> 
+	</fx:Declarations>
 	
 	<!--<s:CheckBox label="Scrub Zoom" />-->
 	<!--<c:BeveledImageButton id="actualSizeButton" 

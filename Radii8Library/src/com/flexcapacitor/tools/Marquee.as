@@ -4,33 +4,15 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImageData;
-	import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
-	import com.flexcapacitor.tools.supportClasses.VisualElementRotationHandle;
-	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
 	import com.flexcapacitor.utils.supportClasses.MarqueeSelection;
 	import com.flexcapacitor.utils.supportClasses.log;
-	import com.roguedevelopment.DragGeometry;
-	import com.roguedevelopment.Flex4ChildManager;
-	import com.roguedevelopment.Flex4HandleFactory;
-	import com.roguedevelopment.ObjectChangedEvent;
-	import com.roguedevelopment.ObjectHandles;
-	import com.roguedevelopment.ObjectHandlesSelectionManager;
-	import com.roguedevelopment.constraints.MaintainProportionConstraint;
-	import com.roguedevelopment.constraints.SizeConstraint;
-	import com.roguedevelopment.constraints.SnapToGridConstraint;
-	import com.roguedevelopment.decorators.AlignmentDecorator;
-	import com.roguedevelopment.decorators.DecoratorManager;
-	import com.roguedevelopment.decorators.ObjectLinesDecorator;
-	import com.roguedevelopment.decorators.OutlineDecorator;
-	import com.roguedevelopment.decorators.WebDecorator;
 	
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
 	import flash.display.Graphics;
-	import flash.display.Sprite;
 	import flash.display.StageQuality;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
@@ -40,7 +22,6 @@ package com.flexcapacitor.tools {
 	import flash.ui.Keyboard;
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
-	import flash.utils.Dictionary;
 	
 	import mx.containers.TabNavigator;
 	import mx.core.EventPriority;
@@ -49,19 +30,17 @@ package com.flexcapacitor.tools {
 	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
-	import mx.core.UIComponent;
 	import mx.events.SandboxMouseEvent;
 	import mx.managers.SystemManager;
 	
 	import spark.components.Application;
 	import spark.components.Image;
-	import spark.components.supportClasses.InvalidatingSprite;
 	import spark.core.IGraphicElement;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.utils.BitmapUtil;
 	
 	/**
-	 * Draws a rectangle used for selection
+	 * Draws a rectangle used for selection.
 	 * */
 	public class Marquee extends FlexSprite implements ITool {
 		
@@ -91,40 +70,6 @@ package com.flexcapacitor.tools {
 		public var toolLayer:IVisualElementContainer;
 		public var document:IDocument;
 		public var canvasBackground:Object;
-		
-		// Object handles
-		public var objectHandles:ObjectHandles;
-		public var manager:Flex4ChildManager;
-		public var selectionManager:ObjectHandlesSelectionManager;
-		public var handleFactory:Flex4HandleFactory;
-		public var decoratorManager:DecoratorManager;
-		
-		public var alignmentDecorator:AlignmentDecorator;
-		public var objectLinesDecorator:ObjectLinesDecorator;
-		public var outlineDecorator:OutlineDecorator;
-		public var webDecorator:WebDecorator;
-		
-		public var sizeConstraint:SizeConstraint;
-		public var snapToGridConstraint:SnapToGridConstraint;
-		public var aspectRatioConstraint:MaintainProportionConstraint;
-		
-		
-		private var _selectionBorderColor:uint = 0x2da6e9;
-		
-		public function get selectionBorderColor():uint {
-			return _selectionBorderColor;
-		}
-		
-		/**
-		 * Sets the color used on the selection rectangle
-		 * */
-		public function set selectionBorderColor(value:uint):void {
-			if (_selectionBorderColor==value) return;
-			
-			_selectionBorderColor = value;
-			
-		}
-		
 		public var radiate:Radiate;
 		
 		public function enable():void {
@@ -151,7 +96,6 @@ package com.flexcapacitor.tools {
 			addMarquee();
 			addKeyboardListeners();
 			
-			setupObjectHandles();
 		}
 		
 		public function disable():void {
@@ -265,75 +209,6 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * Setup object handles for resizing and rotation
-		 * */
-		public function setupObjectHandles():void {
-			var container:Sprite;
-			var useToolLayer:Boolean = true;
-			var enableRotation:Boolean = false;
-			
-			if (useToolLayer) {
-				container = toolLayer as Sprite;
-			}
-			else if (document) {
-				container = document.instance as Sprite;
-			}
-			
-			if (objectHandles==null && radiate.canvasBorder) {
-				manager = new Flex4ChildManager();
-				handleFactory = new Flex4HandleFactory();
-				selectionManager = new ObjectHandlesSelectionManager();
-				
-				VisualElementHandle.handleLineColor = selectionBorderColor;
-				VisualElementHandle.handleFillColor = selectionBorderColor;
-				VisualElementRotationHandle.handleFillColor = selectionBorderColor;
-				//selectionManager.unselectedModelState();
-				
-				// CREATE OBJECT HANDLES
-				//objectHandles = new ObjectHandles(radiate.canvasBorder as Sprite, null, handleFactory, manager);
-				
-				
-				ObjectHandles.defaultHandleClass = VisualElementHandle;
-				
-				// ROTATION - to enable rotation uncomment the next line
-				if (enableRotation) {
-					ObjectHandles.defaultRotationHandleClass = VisualElementRotationHandle;
-				}
-				
-				objectHandles = new ObjectHandles(container, selectionManager, null, manager);
-				objectHandles.enableMultiSelect = false;
-				objectHandles.snapGrid = false;
-				objectHandles.snapNumber = 8;
-				objectHandles.snapAngle = false;
-				objectHandles.moveEnabled = true;
-				
-				//selectionManager = objectHandles.selectionManager;
-				
-				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVED, movedHandler);
-				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_MOVING, movingHandler);
-				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZING, resizingHandler);
-				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_RESIZED, resizedHandler);
-				//objectHandles.addEventListener(ObjectChangedEvent.OBJECT_ROTATING, rotatingHandler);
-				//objectHandles.addEventListener(ObjectChangedEvent.OBJECT_ROTATED, rotatedHandler);
-				
-				
-				//decoratorManager = new DecoratorManager(objectHandles, radiate.toolLayer as Sprite);
-				aspectRatioConstraint = new MaintainProportionConstraint();
-				aspectRatioConstraint.shiftKeyRequired = true;
-				objectHandles.addDefaultConstraint(aspectRatioConstraint);
-				
-				sizeConstraint = new SizeConstraint();
-				//sizeConstraint.minHeight = 1;
-				//sizeConstraint.minWidth = 1;
-				//objectHandles.addDefaultConstraint(sizeConstraint);
-			}
-			
-			if (objectHandles) {
-				objectHandles.container = container;
-			}
-		}
-		
-		/**
 		 * Handle mouse down on application
 		 * 
 		 * Three scenarios: 
@@ -388,7 +263,7 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * Handle mouse down on application
+		 * Handle mouse move on application
 		 * 
 		 * Three scenarios: 
 		 * 
@@ -452,36 +327,18 @@ package com.flexcapacitor.tools {
 				}
 			}
 			
-			isDrawing			= false;
-			isDragging			= false;
-			isMouseDown 		= false;
-			isOverMarquee 		= false;
-			isOverApplication	= false;
+			isDrawing				= false;
+			isDragging				= false;
+			isMouseDown 			= false;
+			isOverMarquee 			= false;
+			isOverApplication		= false;
+			isOverCanvasBackground	= false;
 		}
 		
 		public function mouseUpSomewhereHandler(event:SandboxMouseEvent):void {
-			
 			systemManager.removeEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
 			
-			var mouseEvent:MouseEvent = new MouseEvent(MouseEvent.MOUSE_UP, event.bubbles, event.cancelable);
-			
 			mouseUpHandler(null);
-		}
-		
-		public function getSystemManager():SystemManager {
-			var systemManager:SystemManager = FlexGlobals.topLevelApplication.systemManager;
-			var marshallPlanSystemManager:Object = systemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
-			var targetCoordinateSpace:SystemManager;
-			
-			if (marshallPlanSystemManager && marshallPlanSystemManager.useSWFBridge()) {
-				targetCoordinateSpace = systemManager.getSandboxRoot() as SystemManager;
-			}
-			
-			if (targetCoordinateSpace==null) {
-				targetCoordinateSpace = systemManager;
-			}
-			
-			return targetCoordinateSpace;
 		}
 		
 		public function updateMarqueeSize(event:MouseEvent, absolutePath:Boolean = true):void {
@@ -519,6 +376,22 @@ package com.flexcapacitor.tools {
 				marqueeGroup.width = width;
 				marqueeGroup.height = height;
 			}
+		}
+		
+		public function getSystemManager():SystemManager {
+			var systemManager:SystemManager = FlexGlobals.topLevelApplication.systemManager;
+			var marshallPlanSystemManager:Object = systemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
+			var targetCoordinateSpace:SystemManager;
+			
+			if (marshallPlanSystemManager && marshallPlanSystemManager.useSWFBridge()) {
+				targetCoordinateSpace = systemManager.getSandboxRoot() as SystemManager;
+			}
+			
+			if (targetCoordinateSpace==null) {
+				targetCoordinateSpace = systemManager;
+			}
+			
+			return targetCoordinateSpace;
 		}
 		
 		/*******************
@@ -726,7 +599,6 @@ package com.flexcapacitor.tools {
 		protected function documentChangeHandler(event:RadiateEvent):void {
 			clearSelection();
 			updateDocument(IDocument(event.selectedItem));
-			setupObjectHandles();
 		}
 		
 		/**
@@ -734,118 +606,9 @@ package com.flexcapacitor.tools {
 		 * */
 		protected function documentCloseHandler(event:RadiateEvent):void {
 			clearSelection();
-			setupObjectHandles();
 		}
 
 		public function clearSelection():void {
-			
-		}
-		
-		/******************
-		 * 
-		 * Object Handles handlers
-		 * 
-		 ******************/
-		
-		
-		public var startValuesDictionary:Object = new Dictionary(true);
-		
-		protected function movedHandler(event:ObjectChangedEvent):void {
-			var model:Object = event.relatedObjects[0];
-			var component:Object = objectHandles.getDisplayForModel(model);
-			component.x = model.x;
-			component.y = model.y;
-		}
-		
-		protected function resizingHandler(event:ObjectChangedEvent):void {
-			//trace("sizing");
-			var elements:Array = event.relatedObjects;
-			var startValues:Array;
-			var lastTarget:Object;
-			
-			for (var i:int = 0; i < elements.length; i++) {
-				var model:Object = elements[i];
-				var component:Object = objectHandles.getDisplayForModel(model);
-				
-				if (component is InvalidatingSprite && lastTarget is GraphicElement) {
-					component = lastTarget;
-				}
-				
-				if (startValuesDictionary[component]==null) {
-					startValues = Radiate.captureSizingPropertyValues([component]);
-					startValuesDictionary[component] = startValues;
-				}
-				
-				component.x = model.x;
-				component.y = model.y;
-				component.width = model.width;
-				component.height = model.height;
-			}
-			
-			clearSelection();
-		}
-		
-		protected function resizedHandler(event:ObjectChangedEvent):void {
-			//trace("resized");
-			var elements:Array;
-			var model:Object;
-			var originalGeometry:DragGeometry;
-			var component:Object;
-			var uicomponent:UIComponent;
-			var graphicElement:GraphicElement;
-			var startValues:Array;
-			var propertiesObject:Object;
-			var manualRestore:Boolean = true;
-			var properties:Array;
-			var lastTarget:Object;
-			
-			elements = event.relatedObjects;
-			
-			for (var i:int = 0; i < elements.length; i++) {
-				model = elements[i];
-				component = objectHandles.getDisplayForModel(model);
-				
-				if (component is InvalidatingSprite && lastTarget is GraphicElement) {
-					component = lastTarget;
-				}
-				
-				originalGeometry = objectHandles.getOriginalGeometryOfModel(model);
-				startValues = startValuesDictionary[component];
-				
-				if (originalGeometry==null) {
-					trace("Resizing bug. Not sure of cause. Fix later");
-					continue;
-				}
-				
-				uicomponent = component as UIComponent;
-				graphicElement = component as GraphicElement;
-				
-				// restore original values so we can use undo history
-				Radiate.restoreCapturedValues(startValues, MXMLDocumentConstants.sizeAndPositionProperties);
-				delete startValuesDictionary[component];
-				
-				propertiesObject = Radiate.getPropertiesObjectFromBounds(component, model);
-				properties = ClassUtils.getPropertyNames(propertiesObject);
-				
-				if (component is GraphicElement) {
-					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
-				}
-				else {
-					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
-				}
-			}
-			
-		}
-		
-		protected function movingHandler(event:ObjectChangedEvent):void {
-			var elements:Array = event.relatedObjects;
-			
-			for (var i:int = 0; i < elements.length; i++) {
-				var model:Object = elements[i];
-				var component:Object = objectHandles.getDisplayForModel(model);
-				component.x = model.x;
-				component.y = model.y;
-			}
 			
 		}
 		
@@ -1064,7 +827,7 @@ package com.flexcapacitor.tools {
 				radiate.addBitmapDataToDocument(radiate.selectedDocument, croppedBitmapData, null, imageName, false);
 			}
 			else {
-				Radiate.warn("The selection does not intersect any image bitmap data in the uni matrix. Make sure the selection is over an unscaled image."); 
+				Radiate.warn("The selection does not intersect any images. Make sure to select an unscaled image."); 
 			}
 		}
 		
