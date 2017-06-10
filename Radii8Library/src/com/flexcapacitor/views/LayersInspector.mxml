@@ -119,9 +119,9 @@
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_UPDATED, documentUpdatedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_REVERTED, documentChangeHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler, false, 0, true);
+				//radiate.addEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler, false, 0, true);
+				//radiate.addEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler, false, 0, true);
+				//radiate.addEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
 				
 				if (radiate.target) {
@@ -137,9 +137,9 @@
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_UPDATED, documentUpdatedHandler);
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_REVERTED, documentChangeHandler);
-					radiate.removeEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
-					radiate.removeEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler);
-					radiate.removeEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler);
+					//radiate.removeEventListener(RadiateEvent.ADD_ITEM, addItemChangeHandler);
+					//radiate.removeEventListener(RadiateEvent.MOVE_ITEM, addItemChangeHandler);
+					//radiate.removeEventListener(RadiateEvent.REMOVE_ITEM, addItemChangeHandler);
 					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
 					
 					target = null;
@@ -218,11 +218,13 @@
 				}
 				
 				if (target && collection.length) {
+					iDocument.updateComponentTree();
 					rootApplicationDescription = collection.getItemAt(0) as ComponentDescription;
 					
 					if (rootApplicationDescription) {
 						//targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, rootApplicationDescription);
 						targetDescription = iDocument.getItemDescription(target);
+						
 						
 						if (targetDescription) {
 							
@@ -357,7 +359,7 @@
 			/**
 			 * Recreate the display list and open all items.
 			 * */
-			private function updateComponentDisplayList(preserveOpenItems:Boolean = true):void {
+			public function updateComponentDisplayList(preserveOpenItems:Boolean = true):void {
 				var openItem:Object;
 				var openItems:Object;
 				var iDocument:IDocument;
@@ -367,6 +369,10 @@
 				var selectedItem:Object;
 				
 				iDocument = radiate.selectedDocument;
+				
+				if (iDocument is Document) {
+					Document(iDocument).updateComponentTree();
+				}
 				
 				if (iDocument) {
 					documentItemRenderer.data = iDocument.componentDescription;

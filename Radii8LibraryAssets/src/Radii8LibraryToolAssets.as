@@ -80,6 +80,9 @@ package {
 		[Embed(source="assets/icons/tools/Line.png")]
 		public static const Line:Class;
 		
+		[Embed(source="assets/icons/tools/FreeformLine.png")]
+		public static const FreeformLine:Class;
+		
 		[Embed(source="assets/icons/tools/Marquee.png")]
 		public static const Marquee:Class;
 		

@@ -1145,6 +1145,7 @@
 					This should help resize issues when not connected online. 
 					-->
 					<controls:ApplicationLoader id="applicationLoader"
+												addUncaughtErrorHandler="true"
 												applicationComplete="applicationLoader_applicationCompleteHandler(event)"
 												/>
 					<!--- 

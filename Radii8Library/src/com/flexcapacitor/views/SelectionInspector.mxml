@@ -21,7 +21,7 @@
 			
 			import mx.events.FlexEvent;
 			
-			import spark.primitives.supportClasses.GraphicElement;
+			import spark.primitives.Line;
 			
 			public var radiate:Radiate;
 			public var tool:ITool;
@@ -62,6 +62,8 @@
 				}
 			}
 
+			[Bindable]
+			public var dropLocationToolTip:String;
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
@@ -70,6 +72,12 @@
 				tool = radiate.selectedTool;
 				
 				updateTool(tool);
+				
+				
+				dropLocationToolTip = "The X and Y position of the selected element.&#10;";
+				dropLocationToolTip += "Click to round between whole numbers and fractions.&#10;";
+				dropLocationToolTip += "Press shift and set the position to zero.&#10;";
+				dropLocationToolTip += "Double click to open the layout panel.";
 				
 			}
 			
@@ -279,6 +287,14 @@
 					warnDragStrip.visible = false;
 					warnDragStrip.includeInLayout = false;*/
 				}
+				
+				
+				if (target is Line) {
+					showTransform.enabled = false;
+				}
+				else if (radiate.getScale()==1) {
+					showTransform.enabled = true;
+				}
 			}
 			
 			protected function warnIcon_clickHandler(event:MouseEvent):void
@@ -292,10 +308,8 @@
 				var warningNeeded:Boolean;
 				
 				// we can now drag around graphic elements
-				if (false && target is GraphicElement) {
-					warningMessage += "At this time you must use keyboard arrows to move a graphic element ";
-					warningMessage += "or use the Layout Panel to enter size and position.";
-					warningMessage += "\n";
+				if (target is Line) {
+					warningMessage += "At this time resize handles are not supported on line elements";
 					warningNeeded = true;
 				}
 				
@@ -358,11 +372,6 @@
 					return;
 				}
 				
-				if (event.altKey && target) {
-					Radiate.showLayoutPanel();
-					return;
-				}
-				
 				if (toolDescription.instance) {
 					selectionTool = Selection(toolDescription.instance);
 					selectionTool.roundToIntegers = !selectionTool.roundToIntegers;
@@ -394,6 +403,13 @@
 				if (toolDescription.instance) {
 					selectionTool = Selection(toolDescription.instance);
 					selectionTool.snapToNearbyElements = snapToElement.selected;
+				}
+			}
+			
+			protected function dropLocation_doubleClickHandler(event:MouseEvent):void {
+				if (target) {
+					Radiate.showLayoutPanel();
+					return;
 				}
 			}
 			
@@ -490,8 +506,10 @@
 				 textAlign="center"
 				 fontSize="10" 
 				 maxDisplayedLines="1"
+				 doubleClickEnabled="true"
+				 doubleClick="dropLocation_doubleClickHandler(event)"
 				 click="dropLocation_clickHandler(event)"
-				 toolTip="The X and Y position of the selected element. Click to round between whole numbers and fractions. \nPress shift and click to reset the position."/>
+				 toolTip="{dropLocationToolTip}"/>
 		
 	</s:HGroup>
 	

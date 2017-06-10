@@ -229,12 +229,12 @@ package com.flexcapacitor.model {
 			if (!_componentDescription) {
 				
 				if (instance) {
-					_componentDescription = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary);
+					_componentDescription = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary, exclusions);
 				}
 			}
 			
 			// com.flexcapacitor.utils.supportClasses.ComponentDescription (@1234c3539)
-			_componentDescription = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary);
+			_componentDescription = DisplayObjectUtils.getComponentDisplayList2(instance, null, 0, descriptionsDictionary, exclusions);
 			
 			return _componentDescription;
 		}
@@ -413,6 +413,11 @@ package com.flexcapacitor.model {
 		}
 		
 		/**
+		 * Objects not to show in the component tree
+		 * */
+		public var exclusions:Dictionary = new Dictionary(true);
+		
+		/**
 		 * Rebuilds or updates the component tree  
 		 * */
 		public function updateComponentTree(target:Object = null):void
@@ -421,7 +426,29 @@ package com.flexcapacitor.model {
 				target = instance;
 			}
 			
-			DisplayObjectUtils.getComponentDisplayList2(target, null, 0, descriptionsDictionary);
+			DisplayObjectUtils.getComponentDisplayList2(target, null, 0, descriptionsDictionary, exclusions);
+		}
+		
+		/**
+		 * Adds an item to ignore when creating a component tree
+		 * */
+		public function addExclusion(object:Object):void {
+			if (object) {
+				exclusions[object] = 1;
+			}
+		}
+		
+		public function removeExclusion(object:Object):void {
+			if (object && object in exclusions) {
+				exclusions[object] = null;
+				delete exclusions[object];
+			}
+		}
+		
+		public function removeAllExclusions(object:Object):void {
+			for(var id:* in exclusions) {
+				delete exclusions[id];
+			}
 		}
 		
 		/**

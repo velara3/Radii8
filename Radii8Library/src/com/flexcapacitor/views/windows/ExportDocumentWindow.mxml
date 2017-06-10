@@ -63,6 +63,8 @@
 					browseForOutputDirectoryButton.enabled = false;
 					browseForOutputDirectoryButton.label = "Disabled in browser edition";
 				}
+				
+				closeButton.visible = false;
 			}
 			
 			protected function eventhandler1_effectEndHandler(event:EffectEvent):void {
@@ -180,6 +182,13 @@
 						filesCreated = radiate.saveFiles(sourceData, outputFolder, overwriteFiles);
 						completeHandler();
 					}
+					else if (sourceData.files) {
+						for (var j:int = 0; j < files.length; j++) {
+							radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler, false, 0, true);
+							radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler, false, 0, true);
+							radiate.saveFileAs(sourceData.source, radiate.selectedDocument.name, extension);
+						}
+					}
 					else {
 						outputDirectoryLabel.setStyle("color", "red");
 					}
@@ -206,8 +215,10 @@
 				
 				if (filesCreated) {
 					afterFilesSaved();
-					filesCreatedLabel.text = sourceData.files.length + " files created.";
+					filesCreatedLabel.text = sourceData.files.length + " files created! You can close the export window.";
 				}
+				
+				closeButton.visible = true;
 			}
 			
 			protected function afterFilesSaved():void {
@@ -226,7 +237,7 @@
 					afterFilesSaved();
 				}
 				
-				filesCreatedLabel.text = sourceData.files.length + " files created.";
+				filesCreatedLabel.text = sourceData.files.length + " files created. You can close the export window.";
 				
 				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler);
 				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler);
@@ -298,8 +309,7 @@
 				//navigateButton.visible = false;
 			}
 			
-			protected function openDirectoryButton_clickHandler(event:MouseEvent):void
-			{
+			protected function openDirectoryButton_clickHandler(event:MouseEvent):void {
 				var outputFolder:FileReference = browseForFolder.file as FileReference;
 				
 				try {
@@ -311,8 +321,10 @@
 			}
 			
 			private function clearFilesList():void {
-				var files:Array = sourceData && sourceData.files ? sourceData.files : [];
+				var files:Array;
 				var fileInfo:FileInfo;
+				
+				files = sourceData && sourceData.files ? sourceData.files : [];
 				
 				for (var i:int;i<files.length;i++) {
 					fileInfo = files[i] as FileInfo;
@@ -370,6 +382,14 @@
 				else {
 					templateFileLabel.text = templateFileLabel.toolTip = browseForTemplate.fileNativePath;
 				}
+			}
+			
+			protected function closeButton_clickHandler(event:MouseEvent):void {
+				//Radiate.info("Canceled Save");
+				clearFilesList();
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler);
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler);
+				close();
 			}
 			
 		]]>
@@ -511,12 +531,12 @@
 			
 			<s:CheckBox id="setStylesInline" 
 						selected="false"
-						toolTip="Styles in the document are declared inline"
+						toolTip="Element styles are declared inline in a style attribute instead of inside a style declaration"
 						label="Styles inline"/>
 			
 			<s:CheckBox id="useExternalStylesheetCheckbox" 
 						selected="true"
-						toolTip="Any styles not set inline are linked to an external stylesheet"
+						toolTip="Instead of styles being declared in the head of the template document they are declared in a separate CSS file."
 						label="External Stylesheet"/>
 			
 		</s:HGroup>
@@ -597,6 +617,7 @@
 			<s:Label id="filesCreatedLabel" 
 					 text="" />
 			<s:Spacer width="100%"/>
+			<s:Button id="closeButton" label="Close" click="closeButton_clickHandler(event)"/>
 			<s:Button id="cancelButton" label="Cancel" />
 			<s:Button id="saveButton" label="Save" click="saveButton_clickHandler(event)"/>
 		</s:HGroup>

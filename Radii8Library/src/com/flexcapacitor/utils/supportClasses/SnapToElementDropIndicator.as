@@ -22,7 +22,7 @@ package com.flexcapacitor.utils.supportClasses {
 		public var fillColor:Number = 0x2DA7F0;
 		public var fillAlpha:Number = .6;
 		public var lineColor:Number = 0x2B333C;
-		public var lineWeight:int = 1;
+		public var lineWeight:Number = 1;
 		
 		public function setLines(x:Number, y:Number, rightEdge:Number = NaN, bottomEdge:Number = NaN):void {
 			left = x;

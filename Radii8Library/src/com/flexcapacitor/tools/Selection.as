@@ -767,6 +767,10 @@ package com.flexcapacitor.tools {
 		 * */
 		public function addTargetListeners(target:Object):void {
 			
+			// not sure why we are adding to the target
+			// should only need to add listeners to the stage
+			// reevaluate what we are doing here
+			
 			if (target) {
 				if (target is GraphicElement && target.displayObject) {
 					GraphicElement(target).displayObject.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
@@ -785,6 +789,10 @@ package com.flexcapacitor.tools {
 			
 			if (target) {
 				target.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				
+				if (target is GraphicElement && target.displayObject) {
+					GraphicElement(target).displayObject.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				}
 				
 				if (target is Image) {
 					target.removeEventListener(FlexEvent.READY, setSelectionLaterHandler);

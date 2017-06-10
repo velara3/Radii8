@@ -105,6 +105,7 @@
 					lineTool = Line(toolDescription.instance);
 					colorPicker.selectedColor = lineTool.lineColor;
 					lineWeight.value = lineTool.lineWeight;
+					freeformLine.selected = lineTool.isFreeformDrawing;
 					
 					if (lineTool.inspector==null) {
 						lineTool.inspector = this;
@@ -137,6 +138,13 @@
 				}
 			}
 			
+			protected function freeformLine_changeHandler(event:Event):void
+			{
+				if (lineTool) {
+					lineTool.isFreeformDrawing = freeformLine.selected;
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -146,6 +154,13 @@
 	
 	
 	<s:HGroup width="100%" verticalAlign="top" height="100%" paddingTop="2">
+		<c:BeveledImageToggleButton id="freeformLine" 
+					   height="21" 
+					   width="24"
+					   icon="{Radii8LibraryToolAssets.FreeformLine}"
+					   change="freeformLine_changeHandler(event)"
+					   showBackgroundWhenSelected="true"
+					   />
 		<c:ColorPicker id="colorPicker" 
 					   height="21" 
 					   change="colorPicker_changeHandler(event)"/>

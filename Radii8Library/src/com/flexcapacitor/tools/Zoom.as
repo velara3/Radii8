@@ -3,7 +3,6 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.model.IDocument;
-	import com.flexcapacitor.performance.PerformanceMeter;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	
 	import flash.display.DisplayObject;
@@ -19,14 +18,11 @@ package com.flexcapacitor.tools {
 	
 	import mx.core.EventPriority;
 	import mx.core.FlexGlobals;
-	import mx.core.IVisualElementContainer;
 	import mx.core.mx_internal;
-	import mx.events.EffectEvent;
 	import mx.events.SandboxMouseEvent;
 	import mx.managers.SystemManager;
 	
 	import spark.components.Button;
-	import spark.components.Group;
 	import spark.components.Scroller;
 	import spark.components.supportClasses.GroupBase;
 	import spark.core.IViewport;
@@ -327,18 +323,17 @@ package com.flexcapacitor.tools {
 			if (isDragging && event.currentTarget!=targetApplication) {
 				pixelDifference = event.stageX - startingStagePoint.x;
 				
-				// figure out what cursor we should show
-				// if less than previous position then 
-				// we are moving left. if more we are moving right
-				if (event.stageX<previousStageX) {
-					zoomOut = true;
-				}
-				
 				// update last move location
 				previousStageX = event.stageX;
 				
-				//if (pixelDifference<0) {
-				//}
+				newScale = startingScale + pixelDifference/scrubAmount;
+				
+				if (newScale<startingScale) {
+					zoomOut = true;
+				}
+				else {
+					zoomOut = false;
+				}
 				
 				updateMouseCursor(zoomOut);
 				
@@ -347,7 +342,6 @@ package com.flexcapacitor.tools {
 					return;
 				}
 				
-				newScale = startingScale + pixelDifference/scrubAmount;
 				//trace("new scale: "+ newScale);
 				updateZoom(newScale, event);
 				return;
@@ -811,16 +805,13 @@ package com.flexcapacitor.tools {
 			
 			if (isOverDocument) {
 				if (zoomOut) {
-					//Radiate.info("Setting zoom out");
 					Mouse.cursor = zoomOutCursorID;
 				}
 				else {
-					//Radiate.info("Setting zoom IN");
 					Mouse.cursor = zoomInCursorID;
 				}
 			}
 		}
-		
 		
 		/**
 		 * 

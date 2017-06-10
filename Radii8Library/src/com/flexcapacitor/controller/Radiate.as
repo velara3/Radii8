@@ -142,7 +142,6 @@ package com.flexcapacitor.controller {
 	import flash.ui.MouseCursorData;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
-	import flash.utils.getDefinitionByName;
 	import flash.utils.getTimer;
 	import flash.utils.setTimeout;
 	
@@ -154,7 +153,6 @@ package com.flexcapacitor.controller {
 	import mx.containers.GridItem;
 	import mx.containers.GridRow;
 	import mx.containers.TabNavigator;
-	import mx.containers.ViewStack;
 	import mx.controls.Alert;
 	import mx.controls.ColorPicker;
 	import mx.controls.LinkButton;
@@ -168,7 +166,6 @@ package com.flexcapacitor.controller {
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
-	import mx.core.UIComponentGlobals;
 	import mx.core.mx_internal;
 	import mx.effects.IEffect;
 	import mx.effects.Sequence;
@@ -182,7 +179,6 @@ package com.flexcapacitor.controller {
 	import mx.logging.ILogger;
 	import mx.logging.Log;
 	import mx.logging.LogEventLevel;
-	import mx.managers.ILayoutManager;
 	import mx.managers.ISystemManager;
 	import mx.managers.LayoutManager;
 	import mx.managers.SystemManagerGlobals;
@@ -192,7 +188,6 @@ package com.flexcapacitor.controller {
 	import mx.utils.ArrayUtil;
 	import mx.utils.NameUtil;
 	import mx.utils.ObjectUtil;
-	import mx.utils.Platform;
 	import mx.utils.UIDUtil;
 	
 	import spark.collections.Sort;
@@ -200,7 +195,6 @@ package com.flexcapacitor.controller {
 	import spark.components.Application;
 	import spark.components.BorderContainer;
 	import spark.components.Button;
-	import spark.components.ColorPicker;
 	import spark.components.ComboBox;
 	import spark.components.ContentBackgroundAppearance;
 	import spark.components.DropDownList;
@@ -9738,6 +9732,15 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		/**
+		 * Rebuilds the component tree structure
+		 * */
+		public function updateComponentTree(iDocument:IDocument):void {
+			if (iDocument is Document) {
+				Document(iDocument).updateComponentTree();
+			}
+		}
+		
+		/**
 		 * Disables toggle button base classes
 		 * */
 		public static function disableToggleButtonHandler(event:Event):void {
@@ -14023,6 +14026,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			return ClassUtils.isSameClassType(target, target1);
 		}
 		
+		
+		private static var lastErrorObject:Object;
+		
 		/**
 		 * Catch uncaught errors
 		 */
@@ -14031,19 +14037,20 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			//to capture the error message
 			var errorMessage:String = new String();
-			var error:Object;
+			var errorObject:Object;
+			var stack:String = getStackTrace(event.error);
 			
 			if (event) {
-				error = "error" in event ? event.error : null;
+				errorObject = "error" in event ? event.error : null;
 				
-				if (error is Error && "message" in event.error) {
-					errorMessage = Error(event.error).message;
+				if (errorObject is Error && "message" in errorObject) {
+					errorMessage = Error(errorObject).message;
 				}
-				else if (error is ErrorEvent && "text" in event.error) {
-					errorMessage = ErrorEvent(event.error).text;
+				else if (errorObject is ErrorEvent && "text" in errorObject) {
+					errorMessage = ErrorEvent(errorObject).text;
 				}
-				else if (error) {
-					errorMessage = event.error.toString();
+				else if (errorObject) {
+					errorMessage = errorObject.toString();
 				}
 				else {
 					errorMessage = event.toString();
@@ -14051,9 +14058,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				
 			}
 			
-			
-			Radiate.error(errorMessage);
-			
+			if (event!=lastErrorObject) {
+				lastErrorObject = event;
+				Radiate.error(errorMessage, event);
+			}
 		}
 		
 		/**
@@ -14266,7 +14274,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				name = "name" in errorObject ? errorObject.name : "";
 			}
 			
-			stackTrace = getStackTrace();
+			stackTrace = getStackTrace(event);
 			
 			if (enableDiagnosticLogs) {
 				errorData = addLogData(message, LogEventLevel.ERROR, className, Arguments) as ErrorData;
@@ -14345,6 +14353,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				errorObject = event;
 			}
 			
+			lastErrorObject = event;
+			
 			if (errorObject) {
 				message = "message" in errorObject ? errorObject.message : "";
 				message = "text" in errorObject ? errorObject.text : message;
@@ -14353,7 +14363,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				name = "name" in errorObject ? errorObject.name : "";
 			}
 			
-			stackTrace = getStackTrace();
+			stackTrace = getStackTrace(event);
 			
 			if (enableDiagnosticLogs) {
 				issueData = addLogData(message, LogEventLevel.ERROR, className, Arguments);
@@ -14471,22 +14481,29 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Get the stack trace from an error. Stack traces are available from 11.5 on
 		 * or possibly earlier if you set -compiler.verbose-stacktraces=true
 		 * */
-		protected static function getStackTrace(removeLines:Boolean = true):String {
-			var error:Error = new Error();
+		protected static function getStackTrace(error:Object, removeLines:Boolean = true):String {
 			var value:String;
 			var stackTrace:Array;
+			
+			if (error==null) {
+				error = new Error();
+			}
+			else if ("error" in error) {
+				error = error.error;
+			}
 			
 			if ("getStackTrace" in error) {
 				value = error.getStackTrace();
 				value = value.replace(/\t/, "");
 				if (removeLines) {
+					value = value.replace(/\[.*(:\d+)\]/, "$1");
 					value = value.replace(/\[.*\]/g, "");
 					value = value.replace(/.*?::/g, "");
 				}
 				stackTrace = value.split("\n");
-				stackTrace.shift();
-				stackTrace.shift();
-				stackTrace.shift();
+				//stackTrace.shift();
+				//stackTrace.shift();
+				//stackTrace.shift();
 				return stackTrace.join("\n");
 			}
 			
@@ -15058,7 +15075,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		/**
 		 * Gets a snapshot of target and returns bitmap data
 		 * */
-		public static function getSnapshot(object:Object, scale:Number = 1, quality:String = StageQuality.BEST, smoothing:Boolean = true):BitmapData {
+		public static function getSnapshot(object:Object, scale:Number = 1, quality:String = StageQuality.BEST, smoothing:Boolean = true, clip:Boolean = true):BitmapData {
 			var bitmapData:BitmapData;
 			
 			if (object is IUIComponent) {

@@ -1653,23 +1653,19 @@
 				}
 			}
 			
-			protected function bringForwardLayer_itemClickHandler(event:MenuEvent):void
-			{
+			protected function bringForwardLayer_itemClickHandler(event:MenuEvent):void {
 				ArrangeLayers.bringForwards(radiate.target, radiate.selectedDocument);
 			}
 			
-			protected function sendBackwardLayer_itemClickHandler(event:MenuEvent):void
-			{
+			protected function sendBackwardLayer_itemClickHandler(event:MenuEvent):void {
 				ArrangeLayers.sendBackwards(radiate.target, radiate.selectedDocument);
 			}
 			
-			protected function bringToFront_itemClickHandler(event:MenuEvent):void
-			{
+			protected function bringToFront_itemClickHandler(event:MenuEvent):void {
 				ArrangeLayers.bringToFront(radiate.target, radiate.selectedDocument);
 			}
 			
-			protected function sendToBack_itemClickHandler(event:MenuEvent):void
-			{
+			protected function sendToBack_itemClickHandler(event:MenuEvent):void {
 				ArrangeLayers.sendToBack(radiate.target, radiate.selectedDocument);
 			}
 			
@@ -1677,9 +1673,12 @@
 				isCreatingDocument = false;
 			}
 			
-			protected function openGallery_itemClickHandler(event:MenuEvent):void
-			{
+			protected function openGallery_itemClickHandler(event:MenuEvent):void {
 				openGalleryPopUp.play();
+			}
+			
+			protected function saveDocumentMenuItem_itemClickHandler(event:MenuEvent):void {
+				openExportPopUp.play();				
 			}
 			
 		]]>
@@ -1911,9 +1910,10 @@
 				<!--<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>-->
 				<model:MenuItem type="separator"/>
 				<!-- keyEquivalent="s" seemed to be catching the s key everywhere. needs cmd for mac and ctrl for win-->
-				<model:MenuItem id="saveMenuItem" label="Save" itemClick="saveMenuItem_itemClickHandler(event)"
+				<model:MenuItem id="saveDocumentMenuItem" label="Save" itemClick="saveDocumentMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveMenuItem" label="Save online" itemClick="saveMenuItem_itemClickHandler(event)"
 								keyEquivalent="s" commandKey="true"/>
-				<model:MenuItem id="saveAsImageMenuItem" label="Save as Image" itemClick="saveAsImageMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveAsImageMenuItem" label="Save as image" itemClick="saveAsImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="saveSelectionAsImageMenuItem" label="Save Selection as Image" itemClick="saveSelectionAsImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem label="Save Project" itemClick="{radiate.saveProject(radiate.selectedProject)}"/>
 				<model:MenuItem label="Save All Documents" itemClick="{radiate.saveAllDocuments()}"/>
