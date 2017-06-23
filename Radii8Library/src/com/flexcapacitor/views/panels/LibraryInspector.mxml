@@ -45,7 +45,6 @@
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.DragManagerUtil;
 			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
-			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.IInspector;
 			import com.flexcapacitor.views.ImageView;
 			import com.flexcapacitor.views.renderers.LibraryInspectorRenderer;
@@ -589,6 +588,22 @@
 					// initiator will always be UIComponent with current drag manager
 					if (initiator) {
 						
+						var imageDataOrError:Object;
+						imageDataOrError = Radiate.saveToLibrary(initiator);
+						
+						if (imageDataOrError is Error) {
+							Radiate.error("Could not create a snapshot of the selected item. " + imageDataOrError); 
+						}
+						else if (imageDataOrError) {
+							
+							libraryList.selectedItem = imageDataOrError;
+							
+							searchCollection.clearSearch();
+							
+							Radiate.info("Selection was saved as an image into the library.");
+						}
+						
+						/*
 						if (snapshotTest) {
 							snapshot = DisplayObjectUtils.getSnapshotWithQuality(initiator, quality);
 						}
@@ -620,6 +635,7 @@
 						else {
 							Radiate.error("Could not create a snapshot of the selected item."); 
 						}
+						*/
 					}
 				}
 			}

@@ -445,6 +445,7 @@ package com.flexcapacitor.utils {
 						mask = value as DisplayObject;
 						qname = new QName(MXMLDocumentConstants.sparkNamespace, ClassUtils.getClassName(mask));
 						maskComponentDescription = componentDescription.getTargetInTree(mask, true);
+						
 						if (maskComponentDescription) {
 							var tempSourceData:SourceData = export(iDocument, maskComponentDescription);
 							var tempSource:String = XMLUtils.addNamespacesToXMLString(tempSourceData.source, {s:MXMLDocumentConstants.sparkNamespace, fc:MXMLDocumentConstants.fcNamespace});

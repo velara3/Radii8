@@ -199,6 +199,7 @@
 				if (activatedOnce==false) {
 					enableWordWrap = settings.enableWordWrap;
 					embedImages = settings.embedImages;
+					enableWordWrapButton.selected = enableWordWrap;
 					activatedOnce = true;
 				}
 				
@@ -1931,6 +1932,7 @@ IFRAME_ID {
 		
 		<c:BeveledImageToggleButton id="stylesButton" 
 									toolTip="Show styles editor" 
+									selected="false"
 									icon="{Radii8LibraryAssets.styles}"
 									click="stylesButton_clickHandler(event)"
 									showBackgroundWhenSelected="true"/>
@@ -1953,7 +1955,9 @@ IFRAME_ID {
 		
 		
 		<c:BeveledImageToggleButton id="linkButton" 
-									toolTip="Scroll style into view when cursor is placed in component" 
+									toolTip="Scroll style into view when cursor is placed in component"
+									selected="true"
+									width="31"
 									icon="{Radii8LibraryAssets.linkeditor}"
 									click="linkButton_clickHandler(event)"
 									showBackgroundWhenSelected="true"/>

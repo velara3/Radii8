@@ -33,6 +33,7 @@
 			import com.flexcapacitor.effects.popup.OpenPopUp;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ArrangeLayers;
+			import com.flexcapacitor.managers.ClipboardManager;
 			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.model.DocumentData;
@@ -131,12 +132,14 @@
 			 * */
 			[Bindable]
 			public var radiate:Radiate;
+			public var clipboardManager:ClipboardManager;
 			
 			[Bindable]
 			public var serviceManager:ServicesManager;
 			
 			public function startup():void {
 				radiate = Radiate.getInstance();
+				clipboardManager= ClipboardManager.getInstance();
 				serviceManager = ServicesManager.getInstance();
 				
 				Radiate.showMessageLabel = instantMessageLabel;
@@ -1681,6 +1684,30 @@
 				openExportPopUp.play();				
 			}
 			
+			protected function cut_itemClickHandler(event:MenuEvent):void {
+				if (radiate.target) {
+					clipboardManager.cutItem(radiate.target, radiate.selectedDocument);
+				}
+			}
+			
+			protected function copy_itemClickHandler(event:MenuEvent):void {
+				if (radiate.target) {
+					clipboardManager.copyItem(radiate.target, radiate.selectedDocument);
+				}				
+			}
+			
+			protected function paste_itemClickHandler(event:MenuEvent):void {
+				if (radiate.target) {
+					clipboardManager.pasteItem(radiate.target, radiate.selectedDocument);
+				}
+			}
+			
+			protected function delete_itemClickHandler(event:MenuEvent):void {
+				if (radiate.target) {
+					Radiate.removeElement(radiate.target);
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1939,10 +1966,10 @@
 				<model:MenuItem id="redo" label="Redo" itemClick="redo_itemClickHandler(event)"
 								enabled="{HistoryManager.canRedo}"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="cut" label="Cut" name="cut" enabled="true" keyEquivalent="x" controlKey="true"/>
-				<model:MenuItem id="copy" label="Copy" name="copy" enabled="true" keyEquivalent="c" controlKey="true"/>
-				<model:MenuItem id="paste" label="Paste" name="paste" enabled="true" keyEquivalent="v" controlKey="true"/>
-				<model:MenuItem id="delete" label="Delete" name="delete" enabled="true"/>
+				<model:MenuItem id="cut" label="Cut" name="cut" enabled="true" keyEquivalent="x" controlKey="true" itemClick="cut_itemClickHandler(event)"/>
+				<model:MenuItem id="copy" label="Copy" name="copy" enabled="true" keyEquivalent="c" controlKey="true" itemClick="copy_itemClickHandler(event)"/>
+				<model:MenuItem id="paste" label="Paste" name="paste" enabled="true" keyEquivalent="v" controlKey="true" itemClick="paste_itemClickHandler(event)"/>
+				<model:MenuItem id="delete" label="Delete" name="delete" enabled="true" itemClick="delete_itemClickHandler(event)"/>
 				<model:MenuItem id="selectAll" label="Select All" name="selectAll" enabled="true" keyEquivalent="a" controlKey="true"/>
 			</model:MenuItem>
 			<!--<model:MenuItem label="Tools" >

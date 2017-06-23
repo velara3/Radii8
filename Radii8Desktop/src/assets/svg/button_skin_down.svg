@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark" xmlns:xs="http://www.w3.org/2001/XMLSchema" id="button_down" width="100%" height="100%" version="1.1">
+<svg xmlns="http://www.w3.org/2000/svg" 
+     xmlns:fn="http://www.w3.org/2005/xpath-functions" 
+     xmlns:fx="http://ns.adobe.com/mxml/2009" 
+     xmlns:s="library://ns.adobe.com/flex/spark" 
+     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+      
+     id="button_down" 
+     width="100%" 
+     height="100%" 
+     version="1.1">
+     
     <svg xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" left="-1" right="-1" top="-1" bottom="-1">
         <defs>
             <linearGradient id="idLinearGradientx63x32" gradientTransform="rotate(90)">
@@ -9,6 +19,7 @@
         </defs>
         <rect id="shadow" rx="2" ry="2" width="100%" height="100%" style="fill:url(#idLinearGradientx63x32)"/>
     </svg>
+    
     <svg xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" left="1" right="1" top="1" bottom="1">
         <defs>
             <linearGradient id="idLinearGradientx63x54" gradientTransform="rotate(90)">
@@ -18,6 +29,7 @@
         </defs>
         <rect id="fill" rx="2" ry="2" width="100%" height="100%" style="fill:url(#idLinearGradientx63x54)"/>
     </svg>
+    
     <svg xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" left="1" right="1" top="1" bottom="1">
         <defs>
             <linearGradient id="idLinearGradientx63x76" x1="0%" y1="100%" x2="0%" y2="0%">

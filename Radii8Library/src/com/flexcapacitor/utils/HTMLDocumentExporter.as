@@ -1,6 +1,7 @@
 
 package com.flexcapacitor.utils {
 	import com.flexcapacitor.model.ConstrainedLocations;
+	import com.flexcapacitor.model.Document;
 	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.FileInfo;
@@ -19,12 +20,19 @@ package com.flexcapacitor.utils {
 	import flash.display.BitmapData;
 	import flash.display.CapsStyle;
 	import flash.display.DisplayObjectContainer;
-	import flash.display.JointStyle;
+	import flash.geom.Rectangle;
 	import flash.utils.getTimer;
 	
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
 	import mx.core.ScrollPolicy;
+	import mx.core.mx_internal;
+	import mx.graphics.GradientBase;
+	import mx.graphics.GradientEntry;
+	import mx.graphics.IFill;
+	import mx.graphics.LinearGradient;
+	import mx.graphics.RadialGradient;
+	import mx.graphics.SolidColor;
 	import mx.graphics.SolidColorStroke;
 	import mx.styles.IStyleClient;
 	import mx.utils.NameUtil;
@@ -42,11 +50,19 @@ package com.flexcapacitor.utils {
 	import spark.layouts.TileLayout;
 	import spark.layouts.VerticalLayout;
 	import spark.layouts.supportClasses.LayoutBase;
+	import spark.primitives.Ellipse;
+	import spark.primitives.Graphic;
 	import spark.primitives.Line;
+	import spark.primitives.Path;
+	import spark.primitives.Rect;
+	import spark.primitives.supportClasses.FilledElement;
 	import spark.primitives.supportClasses.GraphicElement;
+	import spark.primitives.supportClasses.StrokedElement;
 	
 	import flashx.textLayout.conversion.ConversionType;
 	import flashx.textLayout.conversion.TextConverter;
+	
+	use namespace mx_internal;
 	
 	/**
 	 * Exports a document to HTML<br/><br/>
@@ -226,6 +242,7 @@ package com.flexcapacitor.utils {
 		public var wrapInPreview:Boolean;
 		
 		public var disableTabs:Boolean;
+		public var tab:String = "\t";
 		
 		/**
 		 * URL to transparent Gif used for spacing
@@ -601,6 +618,7 @@ package com.flexcapacitor.utils {
 			var centeredHorizontally:Boolean;
 			var wrapperTagStyles:String = "";
 			var wrapperSVGStyles:String = "";
+			var wrapperSVGProperties:String = "";
 			var wrapWithAnchor:Boolean;
 			var anchorURL:String;
 			var anchorTarget:String;
@@ -612,6 +630,7 @@ package com.flexcapacitor.utils {
 			var errorData:ErrorData;
 			var componentNotFound:Boolean;
 			var layoutOutput:String = "";
+			var svgDefinitions:Array = [];
 			var numberOfChildren:int;
 			var type:String = "";
 			var instance:Object;
@@ -648,6 +667,7 @@ package com.flexcapacitor.utils {
 			var htmlAfter:String;
 			var htmlAttributes:String;
 			var useUpdatedIndent:Boolean;
+			var bounds:Rectangle;
 			
 			isInBasicLayout = false;
 			setPositioningStylesOnElement = true;
@@ -854,6 +874,10 @@ package com.flexcapacitor.utils {
 			//var imageDataFormat:String = "jpeg";
 			
 			
+			
+			if (Document(iDocument).exclusions && Document(iDocument).exclusions[componentInstance]) {
+				return layoutOutput;
+			}
 			
 			// export component
 			
@@ -1797,17 +1821,13 @@ package com.flexcapacitor.utils {
 					wrapperSVGStyles = styleValue;
 					wrapperSVGStyles += getLineWrapperSize(componentInstance);
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperSVGStyles);
-					//}
-					//else {
-					//	layoutOutput = tabs;
-					//}
-						
+					
+					// graphic element has no name property
 					if (componentInstance is GraphicElement && componentInstance.id ==null) {
-						// graphic element has no name property
 						componentInstance.id = NameUtil.createUniqueName(componentInstance);
 					}
 					
-					layoutOutput += "<" + htmlName + " "  + properties;
+					layoutOutput += newLine + tabs + tab + "<" + htmlName + " "  + properties;
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					
 					if (localName=="horizontalline") {
@@ -1836,18 +1856,12 @@ package com.flexcapacitor.utils {
 					styleValue = getTextAlign(componentInstance, styleValue);
 					styleValue = getPadding(componentInstance, styleValue);
 					
-					if (true) {
-					}
-					else {
-						
-					}
 					//styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet, isVerticalCenterSet);
 					//styleValue += isInVerticalLayout ? getDisplayBlock() : "";
 					
 					layoutOutput += properties ? " " : "";
 					//output += setStyles(componentInstance, wrapperTagStyles+styleValue);
 					//stylesOut = wrapperTagStyles + styleValue;
-					stylesOut = styleValue;
 					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -1859,9 +1873,120 @@ package com.flexcapacitor.utils {
 					//output += "&#160;"
 					layoutOutput += "</" + htmlName + ">";
 					
-					//if (useWrapperDivs) {
-						layoutOutput += getWrapperTag(wrapperTag, true);
-					//}
+					layoutOutput += newLine + tabs + getWrapperTag(wrapperTag, true);
+				}
+				else if (componentInstance is GraphicElement) {
+					// for graphic elements look at the button.svg code
+					// it uses percents and LTBR constraints
+					// this might be better than the way described
+					// on most of the SVG sites
+					// and provide for a better more dynamic Flex way
+					// for skinning and constraint based layout
+					// first step, obviously, is to get it working
+					// second step, make it performant and clean
+					// third step is make it delightful
+					if (localName=="path") {
+						htmlName = tagName ? tagName : "path";
+					}
+					else if (localName=="rect") {
+						htmlName = tagName ? tagName : "rect";
+					}
+					else if (localName=="ellipse") {
+						htmlName = tagName ? tagName : "ellipse";
+					}
+					
+					wrapperTag = "svg";
+					styleValue = "";
+					
+					/*
+					<svg height="210" width="500">
+						<line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" />
+					</svg>
+					*/
+					
+					if (localName=="path") {
+						wrapperSVGProperties += getSVGViewBox(componentInstance, layoutBase);
+					}
+					
+					wrapperSVGStyles = isInBasicLayout ? "position:absolute;" : "";
+					wrapperSVGStyles += getSVGSize(componentInstance, layoutBase);
+					layoutOutput = getWrapperTag(wrapperTag, false, wrapperSVGStyles, wrapperSVGProperties);
+
+					// graphic element has no name property
+					if (componentInstance is GraphicElement && componentInstance.id==null) {
+						componentInstance.id = NameUtil.createUniqueName(componentInstance);
+					}
+					
+					layoutOutput += newLine + tabs + "<" + htmlName + " " + properties;
+					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
+					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
+					
+					if (localName=="path") {
+						layoutOutput = getAttributeLayout("d", Path(componentInstance).data, layoutOutput, false);
+						styleValue = getGraphicElementPositionString(componentInstance as GraphicElement, styleValue);
+						styleValue = getGraphicElementSizeString(componentInstance as GraphicElement, styleValue);
+					}
+					else if (localName=="rect") {
+						layoutOutput = getGraphicElementPositionAttributes(componentInstance as GraphicElement, layoutOutput);
+						layoutOutput = getGraphicElementSizeAttributes(componentInstance as GraphicElement, layoutOutput);
+						layoutOutput = getRectCornerRadius(Rect(componentInstance), layoutOutput);
+					}
+					else if (localName=="ellipse") {
+						layoutOutput = getEllipsePositionString(componentInstance as Ellipse, layoutOutput);
+					}
+					
+					styleValue = getFill(componentInstance as FilledElement, styleValue, svgDefinitions);
+					styleValue = getStroke(componentInstance as StrokedElement, styleValue, svgDefinitions);
+					
+					styleValue += userInstanceStyles;
+					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
+					
+					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
+					layoutOutput += newLine + tabs + tab + "</" + htmlName + ">";
+					
+					if (svgDefinitions.length) {
+						layoutOutput += newLine + StringUtils.indent(svgDefinitions.join("\n"), tabs+tab);
+					}
+					
+					layoutOutput += newLine + tabs + getWrapperTag(wrapperTag, true);
+				}
+				else if (localName=="graphic") {
+					
+					htmlName = "svg";
+					
+					wrapperTag = "svg";
+					styleValue = "";
+					
+					/*
+					<svg height="210" width="500">
+					<line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2" />
+					</svg>
+					*/
+					
+					layoutOutput = "<" + htmlName + " " + properties;
+					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput, "", true);
+					
+					if (localName=="graphic") {
+						layoutOutput = getSVGViewBox(componentInstance, layoutBase, layoutOutput);
+					}
+					
+					//styleValue = isInBasicLayout ? "position:absolute;" : "";
+					styleValue = isInBasicLayout ? "position:absolute;" : "";
+					styleValue += getSVGSize(componentInstance, layoutBase);
+					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
+					
+					styleValue += userInstanceStyles;
+					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
+					
+					layoutOutput += setStyles(componentInstance, styleValue);
+					layoutOutput += setUserAttributes(htmlAttributes);
+					layoutOutput += closeTag(componentInstance);
+					
+					layoutOutput += componentInstance.numElements==0? "&#160;": contentToken;
+					
+					layoutOutput += newLine + tabs + "</" + htmlName + ">";
 				}
 				else {
 					
@@ -2861,8 +2986,10 @@ package com.flexcapacitor.utils {
 		
 		/**
 		 * Gets the stroke
+		 * 
+		 * https://svgwg.org/specs/strokes/
 		 * */
-		public function getStroke(componentInstance:Line, styleValue:String):String {
+		public function getStroke(componentInstance:StrokedElement, styleValue:String, svgDefinitions:Array = null):String {
 			var solidColorStroke:SolidColorStroke;
 			
 			solidColorStroke = componentInstance.stroke as SolidColorStroke;
@@ -2880,7 +3007,84 @@ package com.flexcapacitor.utils {
 				}
 				
 				styleValue += "stroke-miterlimit:" + solidColorStroke.miterLimit + ";";
+				styleValue += "stroke-align:" + "center" + ";";
 				
+			}
+			
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Gets the fill
+		 * 
+		 * https://www.w3.org/TR/SVG/pservers.html#StopElement
+		 * */
+		public function getFill(componentInstance:FilledElement, styleValue:String, definition:Array = null):String {
+			var gradientBase:GradientBase;
+			var linear:LinearGradient;
+			var radial:RadialGradient;
+			var solid:SolidColor;
+			var fill:IFill;
+			var gradientXML:XML;
+			var entryXML:XML;
+			var entry:GradientEntry;
+			var entries:Array;
+			var numberOfEntries:int;
+			var id:String;
+			
+			fill = componentInstance.fill as IFill;
+			
+			if (fill) {
+				
+				if (fill is GradientBase) {
+					linear = fill as LinearGradient;
+					radial = fill as RadialGradient;
+					gradientBase = fill as GradientBase;
+
+					if (linear) {
+						gradientXML = new XML("<linearGradient/>");
+					}
+					else if (radial) {
+						gradientXML = new XML("<radialGradient/>");
+					}
+					
+					id = NameUtil.createUniqueName(gradientBase);
+					gradientXML.@id = id;
+					gradientXML.@spreadMethod = gradientBase.spreadMethod;
+					gradientXML.@gradientTransform = "rotate(" + gradientBase.rotation + ")";
+					entries = gradientBase.entries;
+					numberOfEntries = entries ? entries.length : 0;
+					
+					for (var i:int; i < numberOfEntries; i++) {
+						entry = entries[i];
+						entryXML = new XML("<stop/>");
+						entryXML.@offset = entry.ratio;
+						entryXML["@stop-color"] = DisplayObjectUtils.getColorInHexWithHash(entry.color);
+						entryXML["@stop-opacity"] = entry.alpha;
+						gradientXML.appendChild(entryXML);
+					}
+					
+					styleValue += "fill:url(#" + id + ");";
+					
+					if (componentInstance is Path) {
+						styleValue += "fill-rule:" + Path(componentInstance).winding.toLowerCase() + ";";
+					}
+					
+					if (definition) {
+						definition.push(gradientXML.toXMLString());
+					}
+				}
+				else if (fill is SolidColor) {
+					solid = fill as SolidColor;
+					//styleValue += "fill:" + DisplayObjectUtils.getColorInRGB(solid.color, solid.alpha) + ";";
+					styleValue += "fill:" + DisplayObjectUtils.getColorInHexWithHash(solid.color) + ";";
+					styleValue += "fill-opacity:" + solid.alpha + ";";
+				}
+				
+			}
+			else if (componentInstance is GraphicElement) {
+				styleValue += "fill:" + "transparent" + ";";
 			}
 			
 			
@@ -2934,7 +3138,7 @@ getWrapperTag("div", true); // returns &lt;/div>
 getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue;">
 </pre>
 		 * */
-		public function getWrapperTag(wrapperTag:String = "", end:Boolean = false, styles:String = ""):String {
+		public function getWrapperTag(wrapperTag:String = "", end:Boolean = false, styles:String = "", attributes:String = ""):String {
 			var output:String = "";
 			
 			if (wrapperTag=="") return "";
@@ -2946,6 +3150,10 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			
 			output += "<" + wrapperTag;
 			
+			if (attributes) {
+				output += " " + attributes;
+			}
+			
 			if (styles) {
 				output += " style=\"" + styles + "\"" ;
 			}
@@ -2953,6 +3161,34 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			output += ">";
 			
 			return output;
+		}
+		
+		/**
+		 * Get x and y of GraphicElement
+		 * */
+		public function getGraphicElementPositionString(componentInstance:GraphicElement, styleValue:String = ""):String {
+			
+			styleValue += "x:" + componentInstance.x + "px;";
+			styleValue += "y:" + componentInstance.y + "px;";
+			
+			return styleValue;
+		}
+		
+		/**
+		 * Get x and y of Ellipse
+		 * */
+		public function getEllipsePositionString(componentInstance:GraphicElement, layout:String = ""):String {
+			var rx:Number = componentInstance.width / 2;
+			var ry:Number = componentInstance.height / 2;
+			var cx:Number = componentInstance.x + rx;
+			var cy:Number = componentInstance.y + ry;
+			
+			layout = getAttributeLayout("cx", String(cx), layout);
+			layout = getAttributeLayout("cy", String(cy), layout);
+			layout = getAttributeLayout("rx", String(rx), layout);
+			layout = getAttributeLayout("ry", String(ry), layout);
+			
+			return layout;
 		}
 		
 		/**
@@ -2964,10 +3200,6 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			var hasExplicitSize:Boolean;
 			var hasBorder:Boolean;
 			var border:int;
-			
-			//if (instance is IStyleClient && IStyleClient(instance).getStyle("borderWeight")) {
-				
-			//}
 			
 			if (!isNaN(instance.percentWidth)) {
 				styleValue += "width:" + instance.percentWidth + "%;";
@@ -3006,6 +3238,45 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			
 			return styleValue;
 			
+		}
+		
+		/**
+		 * Get width and height of Rect
+		 * */
+		public function getGraphicElementSizeString(instance:IVisualElement, styleValue:String = "", sizeRequired:Boolean = true):String {
+			var hasExplicitSize:Boolean;
+			var hasBorder:Boolean;
+			var border:int;
+			
+			if (!isNaN(instance.percentWidth)) {
+				styleValue += "width:" + instance.percentWidth + "%;";
+			}
+			else if ("explicitWidth" in instance) {
+				if (Object(instance).explicitWidth!=null && !isNaN(Object(instance).explicitWidth)
+					|| setExplicitSize) {
+					styleValue += "width:" + instance.width + "px;";
+					hasExplicitSize = true;
+				}
+			}
+			else if (sizeRequired) {
+				styleValue += "width:" + instance.width + "px;";
+			}
+			
+			if (!isNaN(instance.percentHeight)) {
+				styleValue += "height:" + instance.percentHeight + "%;";
+			}
+			else if ("explicitHeight" in instance) {
+				if (Object(instance).explicitHeight!=null && !isNaN(Object(instance).explicitHeight)
+					|| setExplicitSize) {
+					styleValue += "height:" + instance.height + "px;";
+					hasExplicitSize = true;
+				}
+			}
+			else if (sizeRequired) {
+				styleValue += "height:" + instance.height + "px;";
+			}
+			
+			return styleValue;
 		}
 		
 		/**
@@ -3741,9 +4012,60 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 		}
 		
 		/**
+		 * Get the minimum SVG view box 
+		 * */
+		public function getSVGViewBox(componentInstance:Object, layoutBase:LayoutBase, value:String = ""):String {
+			var bounds:Rectangle;
+			
+			bounds = layoutBase.getChildElementBounds(componentInstance as IVisualElement);
+			
+			value = StringUtils.ensureSpaceExists(value);
+			
+			value += "viewBox=\"" + -bounds.x + " " + -bounds.y;
+			value += " " + bounds.right + " " + bounds.bottom + "\"";
+			
+			return value;
+		}
+		
+		/**
+		 * Get the minimum SVG size 
+		 * */
+		public function getSVGSize(componentInstance:Object, layoutBase:LayoutBase):String {
+			var value:String = "";
+			var bounds:Rectangle;
+			
+			bounds = layoutBase.getChildElementBounds(componentInstance as IVisualElement);
+			
+			if (!isNaN(componentInstance.percentWidth)) {
+				value += "width:" + componentInstance.percentWidth + "%;";
+			}
+			else {
+			
+				// if the width is zero then the element won't be visible so don't set it?
+				if (bounds.right>0) {
+					value += "width:" + bounds.right + "px;";
+				}
+			}
+			
+			if (!isNaN(componentInstance.percentHeight)) {
+				value += "height:" + componentInstance.percentHeight + "%;";
+			}
+			else {
+				
+				// if the height is zero then the element won't be visible so don't set it?
+				if (bounds.bottom>0) {
+					value += "height:" + bounds.bottom + "px;";
+				}
+			}
+			
+			return value;
+		}
+		
+		/**
 		 * Get ID from ID or else name attribute
 		 * */
 		public function getIdentifierAttribute(instance:Object, value:String = "", appendID:String = "", createUniqueName:Boolean = false):String {
+			value = StringUtils.ensureSpaceExists(value);
 			
 			if (instance && "id" in instance && instance.id) {
 				value += "id=\"" + instance.id + appendID + "\"";
@@ -3772,8 +4094,69 @@ getWrapperTag("div", false, "color:blue"); // returns &lt;div styles="color:blue
 			return value;
 		}
 		
+		
 		/**
-		 * Get specific attribute
+		 * Get rect corner radius
+		 * */
+		public function getRectCornerRadius(componentInstance:Rect, layout:String = "", spaceBefore:Boolean = true):String {
+			layout = StringUtils.ensureSpaceExists(layout);
+			
+			// we set the attributes explicitly because if they are not (in Mac Safari)
+			// setting them in styles does not have any effect
+			layout += "rx" + "=\"" + componentInstance.radiusX + "\"";
+			layout += " ry" + "=\"" + componentInstance.radiusY + "\"";
+			
+			return layout;
+		}
+		
+		/**
+		 * Get Graphic Element size attributes
+		 * */
+		public function getGraphicElementSizeAttributes(componentInstance:Object, layout:String = ""):String {
+			layout = StringUtils.ensureSpaceExists(layout);
+			
+			if (!isNaN(componentInstance.percentWidth)) {
+				layout += "width" + "=\"" + componentInstance.percentWidth + "%\"";
+			}
+			else {
+				layout += "width" + "=\"" + componentInstance.width + "\"";
+			}
+			
+			layout = StringUtils.ensureSpaceExists(layout);
+			
+			if (!isNaN(componentInstance.percentHeight)) {
+				layout += "height" + "=\"" + componentInstance.percentHeight + "%\"";
+			}
+			else {
+				layout += "height" + "=\"" + componentInstance.height + "\"";
+			}
+			
+			return layout;
+		}
+		
+		/**
+		 * Get graphic element position attributes
+		 * */
+		public function getGraphicElementPositionAttributes(componentInstance:GraphicElement, layout:String = ""):String {
+			layout = StringUtils.ensureSpaceExists(layout);
+			
+			layout += "x" + "=\"" + componentInstance.x + "\"";
+			
+			layout = StringUtils.ensureSpaceExists(layout);
+			
+			layout += "y" + "=\"" + componentInstance.y + "\"";
+			
+			return layout;
+		}
+		
+		/**
+		 * Adds an attribute to the string
+		 * 
+		 * @name name of attribute
+		 * @value value of attribute
+		 * @layout string to add attribute to 
+		 * @encode encodes the value with encodecomponent
+		 * @spaceBefore adds a space before the appended attribute
 		 * */
 		public function getAttributeLayout(name:String, value:String, layout:String = "", encode:Boolean = true, spaceBefore:Boolean = true):String {
 			// need to encode to be inside attribute quotes

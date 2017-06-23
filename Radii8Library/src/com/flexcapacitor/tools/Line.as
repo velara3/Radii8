@@ -30,7 +30,6 @@ package com.flexcapacitor.tools {
 	import mx.core.EventPriority;
 	import mx.core.FlexGlobals;
 	import mx.core.FlexSprite;
-	import mx.core.IInvalidating;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
 	import mx.events.SandboxMouseEvent;
@@ -84,15 +83,15 @@ package com.flexcapacitor.tools {
 		public var stageReference:Stage;
 		
 		public var pixelHinting:Boolean = true;
-		public var lineColor:Number = 0x000000;
+		public var lineColor:Number = 0x383838;
 		public var lineAlpha:Number = 1;
-		public var lineWeight:Number = 1;
+		public var lineWeight:Number = 2;
 		
 		private var previousPoint:Point = new Point();
 		private var drawCommands:Vector.<int>;
 		private var pathData:Vector.<Number>;
 		public var simplePath:String;
-		public var isFreeformDrawing:Boolean = true;
+		public var isFreeformDrawing:Boolean = false;
 		public var useDynamicGraphicsData:Boolean = true;
 		
 		/**
@@ -353,6 +352,7 @@ package com.flexcapacitor.tools {
 				applicable = true;
 			}
 			
+			/*
 			if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
 				HistoryManager.undo(radiate.selectedDocument, true);
 				actionOccured = true;
@@ -364,7 +364,7 @@ package com.flexcapacitor.tools {
 			else if (event.keyCode==Keyboard.Y && event.ctrlKey) {
 				HistoryManager.redo(radiate.selectedDocument, true); // legacy redo
 				actionOccured = true;
-			}
+			}*/
 			
 			if (applicable && actionOccured) {
 				event.stopImmediatePropagation();
@@ -584,7 +584,7 @@ package com.flexcapacitor.tools {
 				}
 				
 				// removing too early creates a disappear and reappear effect
-				event.updateAfterEvent();
+				if (event) event.updateAfterEvent();
 				
 				removePath();
 				removeLine();
@@ -643,6 +643,9 @@ package com.flexcapacitor.tools {
 		private var useSimplePath:Boolean = true;
 		private var useLocal:Boolean = true;
 		
+		/**
+		 * Updates the line position when using free hand drawing
+		 **/
 		public function updateLinePosition(event:MouseEvent):void {
 			var localPoint:Point;
 			var localPointTranslated:Point;
@@ -676,8 +679,8 @@ package com.flexcapacitor.tools {
 				pathData.push(scaledPoint.y);
 				
 			}
-			simplePath += " L " + scaledPoint.x + " " + scaledPoint.y;
 			
+			simplePath += " L " + scaledPoint.x + " " + scaledPoint.y;
 		}
 		
 		public function updateArrowPosition(event:MouseEvent):void {

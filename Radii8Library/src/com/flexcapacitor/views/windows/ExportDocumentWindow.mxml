@@ -45,6 +45,8 @@
 			public var isHTML:Boolean;
 			
 			public var iDocument:IDocument;
+			public var browserFiles:Array;
+			public var browserFileIndex:int;
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				var exporters:Array = CodeManager.getAllExporters();
@@ -64,11 +66,16 @@
 					browseForOutputDirectoryButton.label = "Disabled in browser edition";
 				}
 				
-				closeButton.visible = false;
+				saveNextButton.visible = false;
+				saveNextButton.includeInLayout = false;
+				navigateButton.visible = false;
+				navigateButton.includeInLayout = false;
+				openDirectoryButton.visible = false;
+				openDirectoryButton.includeInLayout = false;
 			}
 			
 			protected function eventhandler1_effectEndHandler(event:EffectEvent):void {
-				
+				clearFilesList();
 			}
 			
 			protected function saveButton_clickHandler(event:MouseEvent):void {
@@ -82,7 +89,9 @@
 				var template:String;
 				var exportProject:Boolean;
 				var sources:Array;
-				
+				var files:Array;
+				var messages:String = "";
+				var templateFileName:String;
 				
 				if (iDocument==null) {
 					Radiate.error("No document open. Open a document before attempting to export.");
@@ -109,7 +118,7 @@
 
 					if (extension=="auto") {
 						if (templateName=="external") {
-							var templateFileName:String = templateFile.currentFileReference.name;
+							templateFileName = templateFile.currentFileReference.name;
 							extension = templateFileName.substr(String(templateFileName).lastIndexOf(".")+1);
 							if (extension=="") {
 								extension = "html";
@@ -152,7 +161,7 @@
 				
 				if (exportProject) {
 					sources = CodeManager.getProjectData(iDocument.project, language, options);
-					var files:Array = [];
+					
 					for (var i:int = 0; i < sources.length; i++) {
 						sourceData = sources[i];
 						files = ArrayUtils.add(files, sourceData.files);
@@ -183,18 +192,18 @@
 						completeHandler();
 					}
 					else if (sourceData.files) {
-						for (var j:int = 0; j < files.length; j++) {
-							radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler, false, 0, true);
-							radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler, false, 0, true);
-							radiate.saveFileAs(sourceData.source, radiate.selectedDocument.name, extension);
-						}
+						browserFiles = sourceData.files;
+						browserFileIndex = 0;
+						
+						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler, false, 0, true);
+						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler, false, 0, true);
+						radiate.saveFileAs(sourceData.files[browserFileIndex], radiate.selectedDocument.name);
+						browserFileIndex = browserFileIndex + 1;
 					}
 					else {
 						outputDirectoryLabel.setStyle("color", "red");
 					}
 				}
-				
-				var messages:String = "";
 				
 				if (sourceData.errors && sourceData.errors.length) {
 					messages = "Warning - There are " + sourceData.errors.length +  " errors. ";
@@ -218,12 +227,14 @@
 					filesCreatedLabel.text = sourceData.files.length + " files created! You can close the export window.";
 				}
 				
-				closeButton.visible = true;
+				cancelButton.label = "Close";
 			}
 			
 			protected function afterFilesSaved():void {
 				navigateButton.visible = true;
+				navigateButton.includeInLayout = true;
 				openDirectoryButton.visible = true;
+				openDirectoryButton.includeInLayout= true;
 				clearFilesLabelEffect.end();
 				clearFilesLabelEffect.play([filesCreatedLabel]);
 				cancelButton.label = "Close";
@@ -233,10 +244,23 @@
 				var transcoderDescription:TranscoderDescription = getSelectedTranscoder();
 				var language:String = transcoderDescription.label;
 				
+				
+				if (browserFileIndex!=-1 && browserFileIndex<browserFiles.length) {
+					// can't save two files in a row in FP bc need to be invoked by mouse click
+					// Error: Error #2176: Certain actions, such as those that display a pop-up window, may only be invoked upon user interaction, for example by a mouse click or button press.
+					// 	at flash.net::FileReference/_save()
+					saveNextButton.visible = true;
+					saveNextButton.includeInLayout = true;
+					filesCreatedLabel.text = browserFileIndex + " files created. You need to click Save Next to save additional files.";
+					return;
+				}
+				
 				if (browseForFolder.file) {
 					afterFilesSaved();
 				}
 				
+				saveNextButton.visible = false;
+				saveNextButton.includeInLayout = false;
 				filesCreatedLabel.text = sourceData.files.length + " files created. You can close the export window.";
 				
 				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler);
@@ -260,9 +284,11 @@
 				
 				useExternalStylesheetCheckbox.visible = isHTML;
 				setStylesInline.visible = isHTML;
-				navigateButton.visible = false;
-				openDirectoryButton.visible = false;
 				filesCreatedLabel.text = "";
+				navigateButton.visible = false;
+				navigateButton.includeInLayout = false;
+				openDirectoryButton.visible = false;
+				openDirectoryButton.includeInLayout = false;
 			}
 			
 			private function getSelectedTranscoder():TranscoderDescription
@@ -330,6 +356,8 @@
 					fileInfo = files[i] as FileInfo;
 					fileInfo.filePath = "";
 				}
+				
+				browserFileIndex = -1;
 			}
 			
 			private function getSelectedTemplate(language:String = ""):String {
@@ -390,6 +418,23 @@
 				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler);
 				radiate.removeEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler);
 				close();
+			}
+			
+			protected function saveNextButton_clickHandler(event:MouseEvent):void {
+				
+				if (browserFileIndex!=-1 && browserFileIndex<browserFiles.length) {
+					// can't save two files in a row in FP bc need to be invoked by mouse click
+					// Error: Error #2176: Certain actions, such as those that display a pop-up window, may only be invoked upon user interaction, for example by a mouse click or button press.
+					// 	at flash.net::FileReference/_save()
+					radiate.saveFileAs(sourceData.files[browserFileIndex], radiate.selectedDocument.name);
+					browserFileIndex = browserFileIndex + 1;
+					return;
+				}
+				else {
+					saveNextButton.visible = false;
+					saveNextButton.includeInLayout = false;
+					afterFilesSaved();
+				}
 			}
 			
 		]]>
@@ -617,7 +662,7 @@
 			<s:Label id="filesCreatedLabel" 
 					 text="" />
 			<s:Spacer width="100%"/>
-			<s:Button id="closeButton" label="Close" click="closeButton_clickHandler(event)"/>
+			<s:Button id="saveNextButton" label="Save Next" toolTip="Save next file in list" click="saveNextButton_clickHandler(event)"/>
 			<s:Button id="cancelButton" label="Cancel" />
 			<s:Button id="saveButton" label="Save" click="saveButton_clickHandler(event)"/>
 		</s:HGroup>

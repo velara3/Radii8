@@ -61,8 +61,10 @@
 		
 		function onloadHandler() {
 			radiate = Radiate.getInstance(); //console.log("radiate: " + radiate);
+			
+			// do not add unload handler unless documents are being edited
 			if (document.location.protocol!="http") { // we are redirecting
-				window.onbeforeunload = radiate.beforeUnloadHandler;
+				//window.onbeforeunload = radiate.beforeUnloadHandler;
 			}
 		}
 		

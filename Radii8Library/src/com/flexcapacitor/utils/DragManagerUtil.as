@@ -66,7 +66,7 @@ package com.flexcapacitor.utils {
 	import spark.effects.animation.MotionPath;
 	import spark.effects.animation.SimpleMotionPath;
 	import spark.effects.easing.IEaser;
-	import spark.effects.easing.Sine;
+	import spark.effects.easing.Power;
 	import spark.layouts.BasicLayout;
 	import spark.layouts.HorizontalLayout;
 	import spark.layouts.TileLayout;
@@ -958,10 +958,14 @@ package com.flexcapacitor.utils {
 							var currentY:int;
 							var currentRight:int;
 							var currentBottom:int;
+							var currentHorizontalCenter:int;
+							var currentVerticalCenter:int;
 							var hasLeftSnapEdge:Boolean;
 							var hasTopSnapEdge:Boolean;
 							var hasBottomSnapEdge:Boolean;
 							var hasRightSnapEdge:Boolean;
+							var hasHorizontalSnapEdge:Boolean;
+							var hasVerticalSnapEdge:Boolean;
 							var snapPoints:SnapPoints;
 							
 							
@@ -972,7 +976,11 @@ package com.flexcapacitor.utils {
 							currentRight = dropLocation.dropPoint.x + draggedItem.width - (offset.x/scaleX);
 							currentBottom = dropLocation.dropPoint.y + draggedItem.height - (offset.y/scaleY);
 							
-							// this has not at all been optimized. we should probably create a drop indicator on basic layout
+							currentHorizontalCenter = dropLocation.dropPoint.x + draggedItem.width/2 - (offset.x/scaleX);
+							currentVerticalCenter = dropLocation.dropPoint.y + draggedItem.height/2 - (offset.y/scaleY);
+							
+							// this could be more optimized. 
+							// we should probably assign the drop indicator when creating groups based on basic layout
 							if (isBasic) {
 								var skipOwner:Boolean = true;
 								
@@ -994,22 +1002,26 @@ package com.flexcapacitor.utils {
 									}
 									
 									// left edge
-									//currentX = dropLayout.dropIndicator.x;
 									snapX = NumberUtil.snapToInArray(currentX, snapPoints.left);
 									leftDifference = isNaN(snapX) ? snapThreshold+1 : Math.abs(snapX-currentX);
 									
-									// top edge
-									//currentY = dropLayout.dropIndicator.y;
-									snapY = NumberUtil.snapToInArray(currentY, snapPoints.top);
-									topDifference = isNaN(snapY) ? snapThreshold+1 : Math.abs(snapY-currentY);
+									// horizontal center edge
+									snapHorizontalCenter = NumberUtil.snapToInArray(currentHorizontalCenter, snapPoints.horizontalCenter);
+									horizontalDifference = isNaN(snapHorizontalCenter) ? snapThreshold+1 : Math.abs(snapHorizontalCenter-currentHorizontalCenter);
 									
 									// right edge
-									//currentX = dropLayout.dropIndicator.x;
 									snapRight = NumberUtil.snapToInArray(currentRight, snapPoints.right);
 									rightDifference = isNaN(snapRight) ? snapThreshold+1 : Math.abs(snapRight-currentRight);
 									
+									// top edge
+									snapY = NumberUtil.snapToInArray(currentY, snapPoints.top);
+									topDifference = isNaN(snapY) ? snapThreshold+1 : Math.abs(snapY-currentY);
+									
+									// vertical center 
+									snapVerticalCenter = NumberUtil.snapToInArray(currentVerticalCenter, snapPoints.verticalCenter);
+									verticalDifference = isNaN(snapVerticalCenter) ? snapThreshold+1 : Math.abs(snapVerticalCenter-currentVerticalCenter);
+									
 									// bottom edge
-									//currentY = dropLayout.dropIndicator.y;
 									snapBottom = NumberUtil.snapToInArray(currentBottom, snapPoints.bottom);
 									bottomDifference = isNaN(snapBottom) ? snapThreshold+1 : Math.abs(snapBottom-currentBottom);
 									
@@ -1021,12 +1033,12 @@ package com.flexcapacitor.utils {
 										snapX = NaN;
 									}
 									
-									if (topDifference<=snapThreshold) {
-										hasTopSnapEdge = true;
-										//trace("snapy found =" + snapY);
+									if (horizontalDifference<=snapThreshold) {
+										hasHorizontalSnapEdge = true;
+										//trace("snapping to=" + snapX);
 									}
 									else {
-										snapY = NaN;
+										snapHorizontalCenter = NaN;
 									}
 									
 									if (rightDifference<=snapThreshold) {
@@ -1037,6 +1049,22 @@ package com.flexcapacitor.utils {
 										snapRight = NaN;
 									}
 									
+									if (topDifference<=snapThreshold) {
+										hasTopSnapEdge = true;
+										//trace("snapy found =" + snapY);
+									}
+									else {
+										snapY = NaN;
+									}
+									
+									if (verticalDifference<=snapThreshold) {
+										hasVerticalSnapEdge = true;
+										//trace("snapx found =" + snapX);
+									}
+									else {
+										snapVerticalCenter = NaN;
+									}
+									
 									if (bottomDifference<=snapThreshold) {
 										hasBottomSnapEdge = true;
 										//trace("snapping to=" + snapX);
@@ -1045,8 +1073,10 @@ package com.flexcapacitor.utils {
 										snapBottom = NaN;
 									}
 									
-									if (hasLeftSnapEdge || hasTopSnapEdge || hasRightSnapEdge || hasBottomSnapEdge) {
-										SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(snapX, snapY, snapRight, snapBottom);
+									if (hasLeftSnapEdge || hasTopSnapEdge || hasRightSnapEdge || hasBottomSnapEdge
+										|| hasVerticalSnapEdge || hasHorizontalSnapEdge) {
+										
+										SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(snapX, snapY, snapRight, snapBottom, snapHorizontalCenter, snapVerticalCenter);
 										
 										if (isApplication) {
 											SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showSelectionBoxOnApplication && showGroupDropZone;
@@ -1088,6 +1118,8 @@ package com.flexcapacitor.utils {
 									snapY = NaN;
 									snapRight = NaN;
 									snapBottom = NaN;
+									snapHorizontalCenter= NaN;
+									snapVerticalCenter= NaN;
 									
 									if (showGroupDropZone && dropLayout.dropIndicator is ProgrammaticSkin) {
 										SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(NaN, NaN);
@@ -1260,7 +1292,7 @@ package com.flexcapacitor.utils {
 			}
 			
 			// Hide if previously showing
-			if (lastTargetCandidate && "layout" in lastTargetCandidate) {
+			if (lastTargetCandidate && "layout" in lastTargetCandidate && !animateSnapToEdge) {
 				lastTargetCandidate.layout.hideDropIndicator();
 			}
 			
@@ -1468,6 +1500,8 @@ package com.flexcapacitor.utils {
 				var hasSnapY:Boolean;
 				var hasSnapRight:Boolean;
 				var hasSnapBottom:Boolean;
+				var hasSnapHorizontal:Boolean;
+				var hasSnapVertical:Boolean;
 				var minimumSnapValue:Number;
 				
 				values = {};
@@ -1494,7 +1528,15 @@ package com.flexcapacitor.utils {
 					hasSnapBottom = true;
 				}
 				
-				if (hasSnapX || hasSnapY || hasSnapRight || hasSnapBottom) {
+				if (!isNaN(snapVerticalCenter)) {
+					hasSnapVertical = true;
+				}
+				
+				if (!isNaN(snapHorizontalCenter)) {
+					hasSnapHorizontal = true;
+				}
+				
+				if (hasSnapX || hasSnapY || hasSnapRight || hasSnapBottom || hasSnapHorizontal || hasSnapVertical) {
 					snapStartDropPoint = new Point();
 					snapEndDropPoint = new Point();
 				}
@@ -1533,11 +1575,27 @@ package com.flexcapacitor.utils {
 				}
 				
 				
-				if (hasSnapX || hasSnapY || hasSnapRight || hasSnapBottom) {
+				if (hasSnapX || hasSnapY || hasSnapRight || hasSnapBottom || hasSnapHorizontal || hasSnapVertical) {
 					snapStartDropPoint.x = dropX;
 					snapStartDropPoint.y = dropY;
 					
-					if (hasSnapX && hasSnapRight) {
+					if (hasSnapX && hasSnapRight && hasSnapHorizontal) {
+						minimumSnapValue = NumberUtil.snapToInArray(0, [snapX, snapRight, snapHorizontalCenter]);
+						
+						if (minimumSnapValue==snapX) {
+							hasSnapRight = false;
+							hasSnapHorizontal = false;
+						}
+						else if (minimumSnapValue==snapRight) {
+							hasSnapX = false;
+							hasSnapHorizontal = false;
+						}
+						else if (minimumSnapValue==snapHorizontalCenter) {
+							hasSnapX = false;
+							hasSnapHorizontal = false;
+						}
+					}
+					else if (hasSnapX && hasSnapRight) {
 						minimumSnapValue = NumberUtil.snapToInArray(0, [snapX, snapRight]);
 						
 						if (minimumSnapValue==snapX) {
@@ -1548,7 +1606,23 @@ package com.flexcapacitor.utils {
 						}
 					}
 					
-					if (hasSnapY && hasSnapBottom) {
+					if (hasSnapY && hasSnapBottom && hasSnapVertical) {
+						minimumSnapValue = NumberUtil.snapToInArray(0, [snapY, snapBottom, snapVerticalCenter]);
+						
+						if (minimumSnapValue==snapY) {
+							hasSnapBottom = false;
+							hasSnapVertical = false;
+						}
+						else if (minimumSnapValue==snapBottom) {
+							hasSnapY = false;
+							hasSnapVertical = false;
+						}
+						else if (minimumSnapValue==snapVerticalCenter) {
+							hasSnapBottom = false;
+							hasSnapY = false;
+						}
+					}
+					else if (hasSnapY && hasSnapBottom) {
 						minimumSnapValue = NumberUtil.snapToInArray(0, [snapY, snapBottom]);
 						
 						if (minimumSnapValue==snapY) {
@@ -1559,19 +1633,31 @@ package com.flexcapacitor.utils {
 						}
 					}
 					
+					// horizontal 
 					if (hasSnapX) {
 						dropX = snapX;
 						//trace("snapX to:" + dropX);
 					}
 					
-					if (hasSnapY) {
-						dropY = snapY;
+					if (hasSnapHorizontal) {
+						dropX = snapHorizontalCenter - draggedItem.width/2;
 						//trace("snapY to:" + dropY);
 					}
 					
 					if (hasSnapRight) {
 						dropX = snapRight - draggedItem.width;
 						//trace("snapX to:" + dropX);
+					}
+					
+					// vertical
+					if (hasSnapY) {
+						dropY = snapY;
+						//trace("snapY to:" + dropY);
+					}
+					
+					if (hasSnapVertical) {
+						dropY = snapVerticalCenter - draggedItem.height/2;
+						//trace("snapY to:" + dropY);
 					}
 					
 					if (hasSnapBottom) {
@@ -1581,7 +1667,7 @@ package com.flexcapacitor.utils {
 				}
 				
 				
-				if (!hasSnapX && !hasSnapRight) {
+				if (!hasSnapX && !hasSnapRight && !hasSnapHorizontal) {
 					
 					if (roundToIntegers) {
 						dropX = Math.round(dropX);
@@ -1593,7 +1679,7 @@ package com.flexcapacitor.utils {
 					}
 				}
 				
-				if (!hasSnapY && !hasSnapBottom) {
+				if (!hasSnapY && !hasSnapBottom && !hasSnapVertical) {
 					
 					if (roundToIntegers) {
 						dropY = Math.round(dropY);
@@ -1715,8 +1801,10 @@ package com.flexcapacitor.utils {
 					moveResult = Radiate.moveElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
 				}
 				
-				if (animateSnapToEdge && (hasSnapX || hasSnapY) && !(draggedItem is Line) && 
-					(properties.indexOf("x")!=-1 || properties.indexOf("y")!=-1)) {
+				if (animateSnapToEdge && !(draggedItem is Line) && 
+					(properties.indexOf("x")!=-1 || properties.indexOf("y")!=-1) &&
+					(hasSnapX || hasSnapY || hasSnapVertical || hasSnapBottom || hasSnapRight || hasSnapHorizontal) ) {
+					SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(snapX, snapY, snapRight, snapBottom, snapHorizontalCenter, snapVerticalCenter);
 					snapEndDropPoint.x = dropX;
 					snapEndDropPoint.y = dropY;
 					animateSnapPoint(draggedItem, snapEndDropPoint, snapStartDropPoint);
@@ -1779,10 +1867,13 @@ package com.flexcapacitor.utils {
 			removeDragInitiatorProxy();
 			removeDragListeners(dragListener);
 			removeDragDisplayObjects();
-			destroyDropIndicator();
 			//removeGroupListeners(targetApplication);
 			removeMouseHandlers(dragInitiator as IVisualElement);
 			destroySnapPointsCache();
+			
+			if (snapToEdgeAnimation && !snapToEdgeAnimation.isPlaying) {
+				destroyDropIndicator();
+			}
 			
 			dragging = false;
 			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_END));
@@ -2017,7 +2108,11 @@ package com.flexcapacitor.utils {
 			var topSnapPoints:Array = [];
 			var bottomSnapPoints:Array = [];
 			var leftSnapPoints:Array = [];
+			var horizontalSnapPoints:Array = [];
+			var verticalSnapPoints:Array = [];
 			var rightSnapPoints:Array = [];
+			var horizontalPoints:Array = [];
+			var verticalPoints:Array = [];
 			var elementRectangle:Rectangle;
 			var groupRectangle:Rectangle;
 			var line:Line;
@@ -2065,14 +2160,19 @@ package com.flexcapacitor.utils {
 					line = element as Line;
 					leftSnapPoints.push(Math.min(line.xFrom, line.xTo));
 					rightSnapPoints.push(Math.max(line.xTo, line.xFrom));
+					//horizontalSnapPoints.push((line.xTo - line.xFrom)/2);
+					
 					topSnapPoints.push(Math.min(line.yTo, line.yFrom));
 					bottomSnapPoints.push(Math.max(line.yTo, line.yFrom));
 				}
 				else {
 					leftSnapPoints.push(element.x);
 					rightSnapPoints.push(element.x + element.width);
+					horizontalSnapPoints.push(element.x + element.width/2);
+					
 					topSnapPoints.push(element.y);
 					bottomSnapPoints.push(element.y + element.height);
+					verticalSnapPoints.push(element.y + element.height/2);
 				}
 			}
 			
@@ -2083,12 +2183,28 @@ package com.flexcapacitor.utils {
 				topSnapPoints.push(0);
 				rightSnapPoints.push(target.width);
 				bottomSnapPoints.push(target.height);
+				horizontalSnapPoints.push(target.width/2);
+				verticalSnapPoints.push(target.height/2);
 			}
 			
+			horizontalPoints = leftSnapPoints.concat(rightSnapPoints).concat(horizontalSnapPoints);
+			verticalPoints = topSnapPoints.concat(bottomSnapPoints).concat(verticalSnapPoints);
+			/*
 			snapPoints.left = leftSnapPoints.concat(rightSnapPoints);
 			snapPoints.top = topSnapPoints.concat(bottomSnapPoints);
 			snapPoints.right = rightSnapPoints.concat(leftSnapPoints);
 			snapPoints.bottom = bottomSnapPoints.concat(topSnapPoints);
+			snapPoints.verticalCenter = verticalSnapPoints;
+			snapPoints.horizontalCenter = horizontalSnapPoints;
+			*/
+			
+			snapPoints.left 			= horizontalPoints;
+			snapPoints.right 			= horizontalPoints;
+			snapPoints.horizontalCenter = horizontalPoints;
+			
+			snapPoints.top 				= verticalPoints;
+			snapPoints.bottom 			= verticalPoints;
+			snapPoints.verticalCenter 	= verticalPoints;
 			
 			snapPointsCache[target] = snapPoints;
 			
@@ -2122,13 +2238,15 @@ package com.flexcapacitor.utils {
 			var replaceTarget:Boolean;
 			var targetToReplace:Object;
 			var allowedParent:Object;
+			var adjustedX:Number;
+			var adjustedY:Number;
 			
 			dragData = new DragData();
 			
 			// get targets under mouse pointer
 			if (adjustMouseOffset) {
-				var adjustedX:Number = event.stageX-(offset.x * applicationScale);
-				var adjustedY:Number = event.stageY-(offset.y * applicationScale);
+				adjustedX = event.stageX-(offset.x / applicationScale);
+				adjustedY = event.stageY-(offset.y / applicationScale);
 				topLeftEdgePoint = new Point(adjustedX, adjustedY);
 			}
 			else {
@@ -2608,6 +2726,10 @@ package com.flexcapacitor.utils {
 		
 		public var bottomDifference:Number;
 		
+		public var horizontalDifference:Number;
+		
+		public var verticalDifference:Number;
+		
 		public var snapThreshold:int = 6;
 		
 		public var snapToNearbyElements:Boolean;
@@ -2768,9 +2890,9 @@ package com.flexcapacitor.utils {
 		
 		public var animateSnapToEdge:Boolean = true; 
 		public var snapToEdgeAnimation:Animate;
-		public var snapToEdgeAnimationDuration:int = 60;
+		public var snapToEdgeAnimationDuration:int = 260;
 		public var snapToEdgeAnimationStartDelay:int = 0;
-		public var snapToEdgeAnimationEaser:IEaser = new Sine(.75);// = new Bounce();
+		public var snapToEdgeAnimationEaser:IEaser = new Power();//new Elastic();//new Sine(.75);// = new Bounce();
 		private var snapPointsCache:Dictionary = new Dictionary(true);
 		
 		public function animateSnapPoint(target:Object, newPoint:Point, oldPoint:Point = null):void {
@@ -2778,7 +2900,9 @@ package com.flexcapacitor.utils {
 			var snapHorizontalPath:SimpleMotionPath;
 			var snapVerticalPath:SimpleMotionPath;
 			
-			snapToEdgeAnimation = new Animate();
+			if (snapToEdgeAnimation==null) {
+				snapToEdgeAnimation = new Animate();
+			}
 			snapToEdgeAnimation.addEventListener(EffectEvent.EFFECT_END, snapToEdgeAnimation_effectEndHandler);
 			snapToEdgeAnimation.duration = snapToEdgeAnimationDuration;
 			snapToEdgeAnimation.startDelay = snapToEdgeAnimationStartDelay;

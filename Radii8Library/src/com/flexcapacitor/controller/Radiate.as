@@ -30,6 +30,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.formatters.HTMLFormatterTLF;
 	import com.flexcapacitor.logging.RadiateLogTarget;
+	import com.flexcapacitor.managers.ClipboardManager;
 	import com.flexcapacitor.managers.CodeManager;
 	import com.flexcapacitor.managers.CreationManager;
 	import com.flexcapacitor.managers.HistoryEffect;
@@ -108,6 +109,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.windows.ImportWindow;
 	import com.google.code.flexiframe.IFrame;
 	
+	import flash.debugger.enterDebugger;
 	import flash.desktop.Clipboard;
 	import flash.desktop.ClipboardFormats;
 	import flash.display.Bitmap;
@@ -549,6 +551,7 @@ package com.flexcapacitor.controller {
 		private static var historyManager:HistoryManager;
 		private static var popUpOverlayManager:PopUpOverlayManager;
 		private static var serviceManager:ServicesManager;
+		private static var clipboardManager:ClipboardManager;
 		private static var keyboardManager:KeyboardManager;
 		
 		[Bindable]
@@ -809,28 +812,6 @@ package com.flexcapacitor.controller {
 		 * Last clipboard action. Either cut or copy;
 		 * */
 		public var lastClipboardAction:String;
-		
-		/**
-		 * Cut data
-		 * */
-		public var cutData:Object;
-		
-		/**
-		 * Copy data
-		 * */
-		public var copiedData:Object;
-		
-		/**
-		 * Reference to the document of the cut or copied data
-		 * */
-		public var copiedDataDocument:Object;
-		
-		/**
-		 * Reference to the source of the copied or cut data. Useful if reference to copied
-		 * item is gone. In other words, user copied an item from their document
-		 * and then deleted the document. They could still paste it.
-		 * */
-		public var copiedDataSource:String;
 		
 		/**
 		 * The different statuses a document can have
@@ -2051,6 +2032,7 @@ package com.flexcapacitor.controller {
 			historyManager 			= HistoryManager.getInstance();
 			popUpOverlayManager 	= PopUpOverlayManager.getInstance();
 			keyboardManager			= KeyboardManager.getInstance();
+			clipboardManager		= ClipboardManager.getInstance();
 			
 			htmlClass = ClassUtils.getDefinition("mx.core.FlexHTMLLoader");
 			
@@ -2058,6 +2040,7 @@ package com.flexcapacitor.controller {
 			
 			serviceManager.radiate 	= instance;
 			HistoryManager.radiate 	= instance;
+			clipboardManager.radiate= instance;
 			
 			// set debugging options here
 			HistoryManager.debug 	= false;
@@ -5241,6 +5224,10 @@ package com.flexcapacitor.controller {
 		public function setTarget(value:*, dispatchEvent:Boolean = true, cause:String = "", reselect:Boolean = false):void {
 			var _tempTarget:* = value && value is Array && value.length ? value[0] : value;
 			
+			if (target is IDocument) {
+				//enterDebugger();
+			}
+			
 			if (_targets.length == 1 && target==_tempTarget && reselect==false) {
 				//return;
 			}
@@ -5459,92 +5446,6 @@ package com.flexcapacitor.controller {
 		public static function getComponentDisplayList():ComponentDescription {
 			return IDocumentContainer(instance.selectedDocument).componentDescription;
 		}
-		
-		//----------------------------------
-		//  Clipboard
-		//----------------------------------
-		
-		/**
-		 * Cut item
-		 * @see copiedData
-		 * @see lastClipboardAction
-		 * @see pasteItem
-		 * */
-		public function cutItem(item:Object):void {
-			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
-			cutData = item;
-			copiedData = null;
-			copiedDataDocument = selectedDocument;
-			lastClipboardAction = "cut";
-			
-			// convert to string and then import to selected target or document
-			var options:ExportOptions = new ExportOptions();
-			var sourceItemData:SourceData;
-			options.useInlineStyles = true;
-			
-			if (selectedDocument.getItemDescription(item)) {
-				sourceItemData = CodeManager.getSourceData(target, selectedDocument, CodeManager.MXML, options);
-				
-				if (sourceItemData) {
-					copiedDataSource = sourceItemData.source;
-				}
-			}
-			
-		}
-		
-		/**
-		 * Copy item
-		 * @see cutData
-		 * @see lastClipboardAction
-		 * @see pasteItem
-		 * */
-		public function copyItem(item:Object, format:String = null, handler:Function = null):void {
-			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
-			cutData = null;
-			copiedData = item;
-			copiedDataDocument = selectedDocument;
-			lastClipboardAction = "copy";
-			
-			
-			var clipboard:Clipboard = Clipboard.generalClipboard;
-			var serializable:Boolean = true;
-			
-			format = format ? format : "Object";
-			handler = handler!=null ? handler : setClipboardDataHandler;
-			
-			if (true) {
-				clipboard.clear();
-			}
-				
-			try {
-				// convert to string and then import to selected target or document
-				var options:ExportOptions = new ExportOptions();
-				var sourceItemData:SourceData;
-				
-				options.useInlineStyles = true;
-				options.exportChildDescriptors = true;
-				
-				if (selectedDocument.getItemDescription(item)) {
-					sourceItemData = CodeManager.getSourceData(target, selectedDocument, CodeManager.MXML, options);
-					
-					if (sourceItemData) {
-						copiedDataSource = sourceItemData.source;
-					}
-				}
-				
-				
-				if (item is String) {
-					clipboard.setDataHandler(format, handler, serializable);
-				}
-				else {
-					clipboard.setDataHandler(format, handler, serializable);
-				}
-				
-			}
-			catch (error:ErrorEvent) {
-				
-			}
-		}
 	
 		/**
 		 * Get MXML source of the document 
@@ -5597,156 +5498,6 @@ package com.flexcapacitor.controller {
 			}
 			
 			return destination;
-		}
-		
-		/**
-		 * Paste item
-		 * @see cutData
-		 * @see copiedData
-		 * @see lastClipboardAction
-		 * @see pasteItem
-		 * */
-		public function pasteItem(destination:Object):void {
-			var description:ComponentDescription;
-			var descriptor:ComponentDescription;
-			var useCopyObjectsTechnique:Boolean;
-			var importOptions:ImportOptions;
-			var exportOptions:ExportOptions;
-			var item:ComponentDefinition;
-			var useInlineStyles:Boolean;
-			var componentFound:Boolean;
-			var bitmapData:BitmapData;
-			var destinationIndex:int;
-			var clipboard:Clipboard;
-			var newComponent:Object;
-			var itemData:SourceData;
-			var numberOfFormats:int;
-			var component:Object;
-			var formats:Array;
-			var format:String;
-			var data:Object;
-			
-			clipboard = Clipboard.generalClipboard;
-			formats = clipboard.formats;
-			destinationIndex = -1;
-			
-			// get destination of clipboard contents
-			if (destination && !(destination is IVisualElementContainer)) {
-				destination = destination.owner;
-			}
-			
-			// prevent containers from being pasted into themselves
-			if (cutData==destination || copiedData==destination) {
-				if (selectedDocument.instance.contains(destination.owner)) {
-					destination = destination.owner;
-				}
-			}
-			
-			if (!destination) {
-				destination = selectedDocument.instance;
-			}
-			
-			if (descriptor==null) {
-				descriptor = selectedDocument.getItemDescription(component);
-			}
-			
-			numberOfFormats = formats.length;
-			
-			// check for bitmap data, image files, air:rtf, air:text, etc 
-			// when multiple formats exist add first forrmat we suport
-			for (var i:int;i<numberOfFormats;i++) {
-				format = formats[i];
-				
-				
-				if (format=="UIComponent" || format=="Object") {
-					component = clipboard.getData(format);
-					
-					descriptor = component as ComponentDescription;
-					
-					if (component is Application) {
-						error("Cannot copy and paste the document.");
-						return;
-					}
-					
-					if (component==null) {
-						return;
-					}
-					
-					componentFound = true;
-					
-					// code is outside of for loop - refactor
-					break;
-					
-				}
-				else if (format==ClipboardFormats.FILE_LIST_FORMAT || 
-						format==ClipboardFormats.FILE_PROMISE_LIST_FORMAT) {
-					data = clipboard.getData(format);
-					
-					addFileListDataToDocument(selectedDocument, data as Array, destination);
-					return;
-				}
-				else if (format==ClipboardFormats.BITMAP_FORMAT) {
-					data = clipboard.getData(ClipboardFormats.BITMAP_FORMAT);
-					bitmapData = data as BitmapData;
-					// not supported in FP in the browser - might try capturing via JS 
-					addBitmapDataToDocument(selectedDocument, bitmapData, destination);
-					return;
-				}
-				else if (format==ClipboardFormats.TEXT_FORMAT) {
-					data = clipboard.getData(ClipboardFormats.TEXT_FORMAT);
-					
-					addTextDataToDocument(selectedDocument, data as String, destination);
-					return;
-				}
-				else if (format==ClipboardFormats.HTML_FORMAT) {
-					data = clipboard.getData(ClipboardFormats.HTML_FORMAT);
-					
-					addHTMLDataToDocument(selectedDocument, data as String, destination);
-					return;
-				}
-			}
-			
-			if (useCopyObjectsTechnique) {
-				item = Radiate.getComponentType(component.className);
-				newComponent = createComponentToAdd(selectedDocument, item, true);
-				addElement(newComponent, destination, descriptor.propertyNames, descriptor.styleNames, descriptor.eventNames, ObjectUtils.merge(descriptor.properties, descriptor.styles));
-				updateComponentAfterAdd(selectedDocument, newComponent);
-				//setProperties(newComponent, descriptor.propertyNames, descriptor.properties);
-				HistoryManager.doNotAddEventsToHistory = true;
-				//setStyles(newComponent, descriptor.styleNames, descriptor.styles);
-				HistoryManager.doNotAddEventsToHistory = false;
-				setTarget(newComponent);
-			}
-			else if (component) {
-				useInlineStyles = false;
-				exportOptions = new ExportOptions();
-				exportOptions.useInlineStyles = true;
-				exportOptions.exportChildDescriptors = true;
-				description = selectedDocument.getItemDescription(component);
-				
-				// copy selection
-				if (description) {
-					itemData = CodeManager.getSourceData(component, selectedDocument, CodeManager.MXML, exportOptions);
-				}
-				
-				// paste selection
-				if (itemData && description) {
-					itemData = CodeManager.setSourceData(itemData.source, destination, selectedDocument, CodeManager.MXML, destinationIndex, importOptions);
-				}
-				else if (copiedDataSource) {
-					itemData = CodeManager.setSourceData(copiedDataSource, destination, selectedDocument, CodeManager.MXML, destinationIndex, importOptions);
-				}
-				
-				// select first target
-				if (itemData && itemData.targets && itemData.targets.length) { 
-					setTarget(itemData.targets[0]);
-				}
-				else {
-					setTarget(destination);
-				}
-				
-				itemData = null;
-			}
 		}
 		
 		public function dropItemWeb(object:Object, createNewDocument:Boolean = false, createDocumentIfNeeded:Boolean = true, resizeIfNeeded:Boolean = true):void {
@@ -6586,37 +6337,6 @@ package com.flexcapacitor.controller {
 				centerApplication();
 			}
 			
-		}
-		
-		/**
-		 * Set clipboard data handler
-		 * */
-		public function setClipboardDataHandler():* {
-			/*Format	Return Type
-			ClipboardFormats.TEXT_FORMAT	String
-			ClipboardFormats.HTML_FORMAT	String
-			ClipboardFormats.URL_FORMAT	String (AIR only)
-			ClipboardFormats.RICH_TEXT_FORMAT	ByteArray
-			ClipboardFormats.BITMAP_FORMAT	BitmapData (AIR only)
-			ClipboardFormats.FILE_LIST_FORMAT	Array of File (AIR only)
-			ClipboardFormats.FILE_PROMISE_LIST_FORMAT	Array of File (AIR only)
-			Custom format name	Non-void*/
-			
-			// convert to string and then import to selected target or document
-			//var options:ExportOptions = new ExportOptions();
-			//options.useInlineStyles = true;
-			
-			//var sourceItemData:SourceData = CodeManager.getSourceData(target, selectedDocument, CodeManager.MXML, options);
-			
-			
-			if (copiedData) {
-				return copiedData;
-			}
-			else if (cutData) {
-				return cutData;
-			}
-			
-			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
 		}
 		
 		/**
@@ -10776,7 +10496,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			else {
 				// show HTML page
 				iframe = new IFrame();
-				//iframe.id = elementId;
+				iframe.id = NameUtil.createUniqueName(iframe);
 				iframe.percentWidth = 100;
 				iframe.percentHeight = 100;
 				iframe.top = -10;
@@ -12966,19 +12686,35 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		/**
 		 * Save file as
 		 * */
-		public function saveFileAs(data:Object, name:String = "", extension:String = "html"):FileReference {
+		public function saveFileAs(data:Object, name:String = "", extension:String = null):FileReference {
 			var fileReference:FileReference;
 			var fileName:String;
 			
 			fileName = name==null ? "" : name;
-			fileName = fileName.indexOf(".")==-1 && extension ? fileName + "." + extension : fileName;
+			
+			if (fileName.indexOf(".")==-1 && data) {
+				if (extension) {
+					fileName = fileName + "." + extension;
+				}
+				else if ("fileExtension" in data && data.fileExtension) {
+					fileName = fileName + "." + data.fileExtension;
+				}
+				else if ("extension" in data && data.extension) {
+					fileName = fileName + "." + data.extension;
+				}
+			}
 			
 			// FOR SAVING A FILE (save as) WE MAY NOT NEED ALL THE LISTENERS WE ARE ADDING
 			// add listeners
 			fileReference = new FileReference();
 			addFileSaveAsListeners(fileReference);
 			
-			fileReference.save(data, fileName);
+			if (data && !(data is String) && data is Object && "contents" in data) {
+				fileReference.save(data.contents, fileName);
+			}
+			else {
+				fileReference.save(data, fileName);
+			}
 			
 			return fileReference;
 		}
@@ -14795,15 +14531,14 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Saves the selected target as an image in the library. 
 		 * If successful returns ImageData. If unsuccessful returns Error
 		 * */
-		public static function saveToLibrary(target:Object):Object {
+		public static function saveToLibrary(target:Object, clip:Boolean = false):Object {
 			var iDocument:IDocument = instance.selectedDocument;
-			var snapshotTest:Boolean = true;
 			var snapshot:Object;
 			var data:ImageData;
 			
 			if (target && iDocument) {
 				
-				if (snapshotTest) {
+				if (!clip) {
 					if (target is UIComponent) {
 						// new 2015 method from Bitmap utils
 						snapshot = DisplayObjectUtils.getSnapshotWithQuality(target as UIComponent);
@@ -15074,6 +14809,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		
 		/**
 		 * Gets a snapshot of target and returns bitmap data
+		 * This method is clipping the content sometimes.  
 		 * */
 		public static function getSnapshot(object:Object, scale:Number = 1, quality:String = StageQuality.BEST, smoothing:Boolean = true, clip:Boolean = true):BitmapData {
 			var bitmapData:BitmapData;

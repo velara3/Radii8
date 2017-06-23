@@ -204,6 +204,9 @@ package {
 		[Embed(source="assets/icons/general/package.png")]
 		public static const packageIcon:Class;
 		
+		[Embed(source="assets/icons/general/paste.png")]
+		public static const pasteIcon:Class;
+		
 		[Embed(source="assets/icons/general/portrait_mode.png")]
 		public static const portraitMode:Class;
 		

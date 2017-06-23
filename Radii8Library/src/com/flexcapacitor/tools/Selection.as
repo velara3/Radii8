@@ -4,6 +4,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.managers.ClipboardManager;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
@@ -84,6 +85,7 @@ package com.flexcapacitor.tools {
 	import spark.components.supportClasses.ListBase;
 	import spark.core.IDisplayText;
 	import spark.core.IGraphicElement;
+	import spark.primitives.Line;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.ListDropIndicator;
 		
@@ -178,6 +180,11 @@ package com.flexcapacitor.tools {
 		 * */
 		public var radiate:Radiate;
 		
+		/**
+		 * The clipboard manager instance.
+		 * */
+		public var clipboardManager:ClipboardManager;
+		
 		public static var debug:Boolean = false;
 		
 		/**
@@ -244,6 +251,18 @@ package com.flexcapacitor.tools {
 		 * Highlights delay
 		 * */
 		public var highlightDelay:int = 250;
+		
+		/**
+		 * Move increment value when using arrow keys
+		 * @see alternateMoveIncrement
+		 * */
+		public var moveIncrement:int = 1;
+		
+		/**
+		 * Move increment value when using arrow keys and holding shift
+		 * @see moveIncrement
+		 * */
+		public var alternateMoveIncrement:int = 10;
 		
 		/**
 		 * Helps highlights items that are locked
@@ -388,6 +407,8 @@ package com.flexcapacitor.tools {
 		 * */
 		public function enable():void {
 			radiate = Radiate.getInstance();
+			clipboardManager = ClipboardManager.getInstance();
+			
 			removeAllListeners();
 			
 			if (radiate.selectedDocument) {
@@ -614,18 +635,25 @@ package com.flexcapacitor.tools {
 		 * EventPriority.EFFECT;//-100
 		 * EventPriority.DEFAULT;// 0
 		 * EventPriority.DEFAULT_HANDLER;//-50
+		 * 
+		 * https://stackoverflow.com/questions/31849/capturing-cmd-c-or-ctrl-c-keyboard-event-from-modular-flex-application-in-brow#32086
 		 * */
 		public function addKeyboardListeners(application:Object = null):void {
 			application = application ? application : targetApplication;
 			var systemManager:SystemManager = getCurrentSystemManager(application);
 			var stage:Stage = getCurrentStage(application);
+			var useCapture:Boolean;
+			
+			useCapture = true;
 			
 			systemManager.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
 			
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, true, 0, true);
-			stage.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, true, 0, true);
-			stage.addEventListener(Event.COPY, copyHandler, true, 0, true);
-			stage.addEventListener(Event.PASTE, pasteHandler, true, 0, true);
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, useCapture, 0, true);
+			//stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, useCapture, 0, true);
+			stage.addEventListener(KeyboardEvent.KEY_UP, keyUpHandler, useCapture, 0, true);
+			
+			//stage.addEventListener(Event.COPY, copyHandler, useCapture, 0, true);
+			//stage.addEventListener(Event.PASTE, pasteHandler, useCapture, 0, true);
 			//Radiate.info("Adding keyboard listeners");
 		}
 		
@@ -636,14 +664,17 @@ package com.flexcapacitor.tools {
 			application = application ? application : targetApplication;
 			var systemManager:SystemManager = getCurrentSystemManager(application);
 			var stage:Stage = getCurrentStage(application);
+			var useCapture:Boolean;
+			
+			useCapture = true;
 			
 			systemManager.removeEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false);
 			
-			stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, true);
-			stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true);
-			stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler, true);
-			stage.removeEventListener(Event.COPY, copyHandler, true);
-			stage.removeEventListener(Event.PASTE, pasteHandler, true);
+			stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandlerStage, useCapture);
+			stage.removeEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, useCapture);
+			stage.removeEventListener(KeyboardEvent.KEY_UP, keyUpHandler, useCapture);
+			//stage.removeEventListener(Event.COPY, copyHandler, useCapture);
+			//stage.removeEventListener(Event.PASTE, pasteHandler, useCapture);
 			//Radiate.info("Removing keyboard listeners");
 			
 			/*
@@ -840,8 +871,8 @@ package com.flexcapacitor.tools {
 				//updateSelectionAroundTarget(event.targets[0]);
 				//updateTransformRectangle(event.targets[0]);
 				
-				Radiate.callAfter(1, updateSelectionAroundTarget, null);
-				Radiate.callAfter(1, updateTransformRectangle, null);
+				Radiate.callLater(updateSelectionAroundTarget, null);
+				Radiate.callLater(updateTransformRectangle, null);
 			}
 			
 			if (event.newIndex<0) {
@@ -1840,47 +1871,21 @@ package com.flexcapacitor.tools {
 		}
 		
 		/**
-		 * ????? NOT USED ????
-		 * Prevent system manager from taking our events
-		 * */
-		private function keyDownHandlerCapture(event:KeyboardEvent):void
-		{
-			
-			// ?????? NOT USED ??????
-			switch (event.keyCode)
-			{
-				case Keyboard.UP:
-				case Keyboard.DOWN:
-				case Keyboard.PAGE_UP:
-				case Keyboard.PAGE_DOWN:
-				case Keyboard.HOME:
-				case Keyboard.END:
-				case Keyboard.LEFT:
-				case Keyboard.RIGHT:
-				case Keyboard.ENTER:
-				case Keyboard.DELETE:
-				{
-					
-					// ?????? NOT USED ?????? 
-					if (targetApplication && DisplayObjectContainer(targetApplication).contains(event.target as DisplayObject)) {
-						event.stopImmediatePropagation();
-					}
-					//event.stopImmediatePropagation();
-					//Radiate.info("Canceling key down");
-					break;
-				}
-			}
-		}
-		
-		/**
 		 * Prevent system manager from taking our events. 
 		 * This seems to be the only handler that is working for some keyboard events 
 		 * besides keyUpHandler
 		 * @see #keyUpHandler()
 		 * */
-	    private function keyDownHandlerStage(event:KeyboardEvent):void
-	    {
-			var tabNav:TabNavigator = radiate.documentsTabNavigator;
+	    private function keyDownHandlerStage(event:KeyboardEvent):void {
+			var tabNav:TabNavigator;
+			var keyCode:uint;
+			
+			if (debug) {
+				log("Key: " + event.keyCode);
+			}
+			
+			keyCode = event.keyCode;
+			tabNav = radiate.documentsTabNavigator;
 			
 			//Radiate.info("Key down: " + event.keyCode);
             switch (event.keyCode)
@@ -1907,44 +1912,6 @@ package com.flexcapacitor.tools {
 					//dispatchKeyEvent(event);
 					break;
                 }
-				case Keyboard.MINUS:
-				case Keyboard.EQUAL:
-				{
-					// ReferenceError: Error #1069: Property commandKey not found on flash.events.KeyboardEvent and there is no default value.
-					// added check for property in event
-					if (event.keyCode==Keyboard.MINUS && (event.ctrlKey || ("commandKey" in event && event.commandKey))) {
-						Radiate.instance.decreaseScale()
-					}
-					else if (event.keyCode==Keyboard.EQUAL && (event.ctrlKey || ("commandKey" in event && event.commandKey))) {
-						Radiate.instance.increaseScale()
-					}
-				}
-				case Keyboard.Y:
-				case Keyboard.Z:
-				{
-					//Radiate.info("UNDO REDO: Target = " + event.target);
-					if ((targetApplication as DisplayObjectContainer).contains(event.target as DisplayObject)
-						|| event.target is Stage 
-						|| (event.target==tabNav && event.currentTarget is Stage)) {
-						
-						//trace("UNDO REDO: Target = " + event.target); 
-						// undo 
-						if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
-							HistoryManager.undo(radiate.selectedDocument, true);
-							dispatchEditEvent(event, UNDO);
-						}
-						// redo
-						else if (event.keyCode==Keyboard.Z && event.ctrlKey && event.shiftKey) {
-							HistoryManager.redo(radiate.selectedDocument, true);
-							dispatchEditEvent(event, REDO);
-						}
-						// legacy redo
-						else if (event.keyCode==Keyboard.Y && event.ctrlKey) {
-							HistoryManager.redo(radiate.selectedDocument, true);
-							dispatchEditEvent(event, REDO);
-						}
-					}
-				}
             }
 	    }
 		
@@ -1953,23 +1920,31 @@ package com.flexcapacitor.tools {
 		 * Up left right down, etc.
 		 * */
 		protected function keyUpHandler(event:KeyboardEvent):void {
-			var keyCode:uint = event.keyCode;
-			if (debug) {
-				log("Key: " + keyCode);
-			}
-			var constant:int = event.shiftKey ? 10 : 1;
+			var keyCode:uint;
+			var constant:int;
 			var index:int;
 			var applicable:Boolean;
-			var systemManager:SystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
-			var topApplication:Object = FlexGlobals.topLevelApplication;
-			var focusedObject:Object = topApplication.focusManager.getFocus();
+			var topApplication:Object;
+			var focusedObject:Object;
 			var isApplication:Boolean;
-			var actionOccured:Boolean;
-			var eventTarget:Object = event.target;
-			var eventCurrentTarget:Object = event.currentTarget;
-			var tabNav:TabNavigator = radiate.documentsTabNavigator;
+			var actionOccurred:Boolean;
+			var eventTarget:Object;
+			var eventCurrentTarget:Object;
+			var tabNav:TabNavigator;
 			var isGraphicElement:Boolean;
 			var targets:Array;
+			var element:IVisualElement;
+			var properties:Array;
+			var propertiesObject:Object;
+			var numberOfTargets:int;
+			var ctrlKey:Boolean;
+			var applicableKeys:Array;
+			
+			if (debug) {
+				log("Key: " + event.keyCode);
+			}
+			
+			keyCode = event.keyCode;
 			
 			// Z = 90
 			// C = 67
@@ -1980,6 +1955,25 @@ package com.flexcapacitor.tools {
 			// backspace = 8
 			// delete = 46
 			//Radiate.info("Key up: " + event.keyCode);
+			
+			applicableKeys = [	Keyboard.LEFT, 
+								Keyboard.RIGHT, 
+								Keyboard.UP, 
+								Keyboard.DOWN 
+							 ];
+			
+			
+			if (applicableKeys.indexOf(keyCode)==-1) {
+				return;
+			}
+			
+			eventTarget = event.target;
+			eventCurrentTarget = event.currentTarget;
+			tabNav = radiate.documentsTabNavigator;
+			topApplication = FlexGlobals.topLevelApplication;
+			focusedObject = topApplication.focusManager.getFocus();
+			constant = event.shiftKey ? alternateMoveIncrement : moveIncrement;
+			ctrlKey = event.ctrlKey || ("commandKey" in event && event.commandKey);
 			
 			if (radiate==null) {
 				return;
@@ -2017,16 +2011,12 @@ package com.flexcapacitor.tools {
 			}
 			
 			targets = radiate.targets;
+			numberOfTargets = targets.length;
 			
 			// Radiate.info("Selection key up");
 			if (targets.length>0) {
 				applicable = true;
 			}
-			
-			var element:IVisualElement;
-			var properties:Array = [];
-			var propertiesObject:Object = {};
-			var numberOfTargets:int = targets.length;
 			
 			if (keyCode==Keyboard.LEFT) {
 				
@@ -2041,8 +2031,7 @@ package com.flexcapacitor.tools {
 					
 				}
 				
-				
-				actionOccured = true;
+				actionOccurred = true;
 			}
 			else if (keyCode==Keyboard.RIGHT) {
 				
@@ -2056,7 +2045,7 @@ package com.flexcapacitor.tools {
 					MoveUtils.moveRight(element, constant);
 				}
 				
-				actionOccured = true;
+				actionOccurred = true;
 			}
 			else if (keyCode==Keyboard.UP) {
 				
@@ -2070,7 +2059,7 @@ package com.flexcapacitor.tools {
 					MoveUtils.moveUp(element, constant);
 				}
 				
-				actionOccured = true;
+				actionOccurred = true;
 			}
 			else if (keyCode==Keyboard.DOWN) {
 				
@@ -2084,80 +2073,18 @@ package com.flexcapacitor.tools {
 					MoveUtils.moveDown(element, constant);
 				}
 				
-				actionOccured = true;
-			}
-			else if (event.keyCode==Keyboard.BACKSPACE || event.keyCode==Keyboard.DELETE) {
-				Radiate.removeElement(radiate.targets);
-				updateSelectionLater(radiate.selectedDocument);
-				actionOccured = true;
-			}
-			else if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
-				HistoryManager.undo(radiate.selectedDocument, true);
-				actionOccured = true;
-			}
-			else if (event.keyCode==Keyboard.Z && event.ctrlKey && event.shiftKey) {
-				HistoryManager.redo(radiate.selectedDocument, true);
-				actionOccured = true;
-			}
-			else if (event.keyCode==Keyboard.Y && event.ctrlKey) {
-				HistoryManager.redo(radiate.selectedDocument, true); // legacy redo
-				actionOccured = true;
-			}
-			//ReferenceError: Error #1069: Property commandKey not found on flash.events.KeyboardEvent and there is no default value.
-			// KeyboardEvent "keyup"
-			else if (event.keyCode==Keyboard.MINUS && (event.ctrlKey || ("commandKey" in event && event.commandKey))) {
-				Radiate.instance.decreaseScale();
-				actionOccured = true;
-			}
-			else if (event.keyCode==Keyboard.EQUAL && (event.ctrlKey || ("commandKey" in event && event.commandKey))) {
-				Radiate.instance.increaseScale();
-				actionOccured = true;
+				actionOccurred = true;
 			}
 			
-			if (applicable && actionOccured) {
+			if (applicable && actionOccurred) {
 				event.stopImmediatePropagation();
 				event.stopPropagation();
 				event.preventDefault();
 				dispatchKeyEvent(event);
 			}
 			
-			if (actionOccured) {
+			if (actionOccurred) {
 				//dispathKeyEvent(event);
-			}
-		}
-		
-		public function copyHandler(event:Event):void {
-			var applicable:Boolean;
-			applicable = isEventApplicable(event);
-			
-			if (debug) {
-				log("Is applicable: " + applicable);
-			}
-			
-			// this is a hack - if graphic element is selected then we say it's applicable
-			// because it does not have focus - need to refactor
-			if (applicable) {
-				radiate.copyItem(radiate.target);
-			}
-			else {
-				dispatchEditEvent(event, COPY);
-			}
-		}
-		
-		public function pasteHandler(event:Event):void {
-			var applicable:Boolean = isEventApplicable(event);
-			
-			if (debug) {
-				log("Is applicable: " + applicable);
-			}
-			
-			// this is a hack - if graphic element is selected then we say it's applicable
-			// because it will not register as having focus - need to refactor
-			if (applicable) {
-				radiate.pasteItem(radiate.target);
-			}
-			else {
-				dispatchEditEvent(event, PASTE);
 			}
 		}
 		
@@ -2247,7 +2174,7 @@ package com.flexcapacitor.tools {
 			}
 			
 			if (graphicElement) {
-				shapeModel.width 	= graphicElement;
+				shapeModel.width 	= graphicElement.getLayoutBoundsWidth();
 				shapeModel.height 	= graphicElement.getLayoutBoundsHeight();
 				shapeModel.x 		= graphicElement.getLayoutBoundsX();
 				shapeModel.y 		= graphicElement.getLayoutBoundsY();
@@ -2287,6 +2214,11 @@ package com.flexcapacitor.tools {
 					}
 					
 					if (target==targetApplication) {
+						objectHandles.unregisterAll();
+						return;
+					}
+					
+					if (target is spark.primitives.Line) {
 						objectHandles.unregisterAll();
 						return;
 					}

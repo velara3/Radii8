@@ -110,6 +110,7 @@
 				
 				galleryService.host = Radiate.getWPURL();
 				
+				searchInput.setFocus();
 			}
 			
 			public function search(value:String, page:int = 1):void {

@@ -832,6 +832,7 @@
 						componentListTree.selectedIndex = 0;
 					}
 				}
+				
 				removeItem.filters = [];
 				//radiate.dropItem(event);
 			}
@@ -857,6 +858,7 @@
 			protected function duplicateItem_dragOverHandler(event:DragEvent):void {
 				if (event.dragInitiator!=null && event.dragInitiator==componentListTree) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
+					duplicateItem.filters = [glowFilter];
 				}
 			}
 			
@@ -869,6 +871,12 @@
 				else {
 					Radiate.info("No layer selected");
 				}
+				
+				duplicateItem.filters = [];
+			}
+			
+			protected function duplicateItem_dragExitHandler(event:DragEvent):void {
+				duplicateItem.filters = [];
 			}
 			
 			protected function refreshTree_clickHandler(event:MouseEvent):void {
@@ -1014,7 +1022,6 @@
 			protected function removeItem_dragExitHandler(event:DragEvent):void
 			{
 				removeItem.filters = [];
-				
 			}
 			
 		]]>
@@ -1158,6 +1165,7 @@
 							  dragEnter="duplicateItem_dragEnterHandler(event)"
 							  dragOver="duplicateItem_dragOverHandler(event)"
 							  dragDrop="duplicateItem_dragDropHandler(event)"
+							  dragExit="duplicateItem_dragExitHandler(event)"
 							  />
 		<c:BeveledImageButton id="removeItem" 
 							  source="{Radii8LibraryAssets.trashCan}" 
