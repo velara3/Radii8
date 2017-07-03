@@ -1,12 +1,10 @@
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;
-	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.Document;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
-	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.log;
 	import com.flexcapacitor.views.IInspector;
 	
@@ -21,11 +19,9 @@ package com.flexcapacitor.tools {
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
-	import flash.ui.Keyboard;
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
 	
-	import mx.containers.TabNavigator;
 	import mx.controls.ToolTip;
 	import mx.core.EventPriority;
 	import mx.core.FlexGlobals;
@@ -38,7 +34,6 @@ package com.flexcapacitor.tools {
 	import mx.managers.SystemManagerGlobals;
 	import mx.managers.ToolTipManager;
 	
-	import spark.components.Application;
 	import spark.primitives.Path;
 	
 	/**
@@ -69,6 +64,7 @@ package com.flexcapacitor.tools {
 		public var isDragging:Boolean;
 		public var isDrawing:Boolean;
 		public var isMouseDown:Boolean;
+		public var lastMouseEvent:MouseEvent;
 		public var targetApplication:Object;
 		public var toolLayer:IVisualElementContainer;
 		public var document:IDocument;
@@ -279,103 +275,11 @@ package com.flexcapacitor.tools {
 				log("Key: " + event.keyCode);
 			}
 			
-			var constant:int;
-			var index:int;
-			var applicable:Boolean;
-			var systemManager:SystemManager;
-			var topApplication:Object;
-			var focusedObject:Object;
-			var isApplication:Boolean;
-			var actionOccured:Boolean;
-			var eventTarget:Object;
-			var eventCurrentTarget:Object;
-			var tabNav:TabNavigator;
-			var componentDescription:ComponentDescription;
-			var isGraphicElement:Boolean;
-			var targets:Array;
-			var keyCode:uint;
-			
-			topApplication = FlexGlobals.topLevelApplication;
-			focusedObject = topApplication.focusManager.getFocus();
-			eventTarget = event.target;
-			eventCurrentTarget = event.currentTarget;
-			tabNav = radiate.documentsTabNavigator;
-			systemManager = SystemManagerGlobals.topLevelSystemManagers[0];
-			constant = event.shiftKey ? 10 : 1;
-			keyCode = event.keyCode;
-			
-			if (radiate==null) {
-				return;
+			if (isMouseDown) {
+				lastMouseEvent.shiftKey = event.shiftKey;
+				mouseMoveHandler(lastMouseEvent);
 			}
 			
-			//componentDescription = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(eventTarget), componentTree);
-			
-			// capture key presses when application has focus
-			if (eventTarget is Stage) {
-				if (focusedObject==null) {
-					applicable = true;
-				}
-				else if (targetApplication && targetApplication.contains(focusedObject)) {
-					applicable = true;
-				}
-				else if (eventCurrentTarget is Stage) {
-					applicable = true;
-				}
-			}
-			
-			if (focusedObject is Application) {
-				isApplication = true;
-			}
-			
-			// check that the target is in the target application
-			if (isApplication || 
-				(targetApplication && 
-					(targetApplication.contains(eventCurrentTarget) || 
-						targetApplication.contains(eventTarget)))) {
-				applicable = true;
-			}
-			else if (eventTarget==tabNav) {
-				if (componentDescription && 
-					componentDescription.isGraphicElement) {
-					isGraphicElement = true;
-				}
-				applicable = true;
-			}
-			else {
-				return;
-			}
-			
-			targets = radiate.targets;
-			
-			// Radiate.info("Selection key up");
-			if (targets.length>0) {
-				applicable = true;
-			}
-			
-			/*
-			if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
-				HistoryManager.undo(radiate.selectedDocument, true);
-				actionOccured = true;
-			}
-			else if (event.keyCode==Keyboard.Z && event.ctrlKey && event.shiftKey) {
-				HistoryManager.redo(radiate.selectedDocument, true);
-				actionOccured = true;
-			}
-			else if (event.keyCode==Keyboard.Y && event.ctrlKey) {
-				HistoryManager.redo(radiate.selectedDocument, true); // legacy redo
-				actionOccured = true;
-			}*/
-			
-			if (applicable && actionOccured) {
-				event.stopImmediatePropagation();
-				event.stopPropagation();
-				event.preventDefault();
-				//dispatchKeyEvent(event);
-			}
-			
-			if (actionOccured) {
-				//dispathKeyEvent(event);
-			}
 		}
 		
 		/**
@@ -441,6 +345,8 @@ package com.flexcapacitor.tools {
 		 * */
 		public function mouseMoveHandler(event:MouseEvent):void {
 			var displayObject:DisplayObject = event.currentTarget as DisplayObject;
+			
+			lastMouseEvent = event;
 			
 			if (isMouseDown) {
 				

@@ -84,6 +84,8 @@
 	
 	There was an error downloading the update. Error# 16824
 	
+	// Error occured. how did this happen? is this the AIR update url?
+	SecurityDomain 'app:/Radii8Desktop.swf' tried to access incompatible context 'http://adobe.com/apollo'
 	-->
 	
 	<!-- LOOK IN TODO or CHANGES.txt for what to work on -->

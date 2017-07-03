@@ -11,30 +11,10 @@
 			   minWidth="800" minHeight="400"
 			   applicationComplete="applicationCompleteHandler(event)" 
 			   initialize="application1_initializeHandler(event)"
-			   frameRate="46"
+			   frameRate="50"
 			   pageTitle="Radiate" 
 			   >
-	
-   <!--preloader="RadiatePreloader"
-			   preloader="com.flexcapacitor.preloaders.RegisteringPreloader"
-   preloader="mx.preloaders.SparkDownloadProgressBar"
-	-->
-	
-	<!--
-	
-	Description	Resource	Path	Location	Type
-	unable to open '/Applications/Adobe Flash Builder 4.7/sdks/4.15 AIR 23/frameworks/libs/player/15.0/playerglobal.swc'	Radii8		Unknown	Flex Problem
-	
-	fix: 
-	removed references in compiler build path to old libraries and applied the properties. 
 
-	sometimes parent is null in DragProxy
-	line 648:
-	m.xTo = parent.mouseX;
-	m.yTo = parent.mouseY;
-	
-	maybe monkey patch with a null check
-	-->
 	
 	<fx:Script>
 		<![CDATA[
@@ -43,6 +23,7 @@
 			import com.flexcapacitor.controls.AceEditor;
 			import com.flexcapacitor.events.HTMLDragEvent;
 			import com.flexcapacitor.managers.DragManagerImpl;
+			import com.flexcapacitor.model.HTMLDragData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.skins.CallOutSkin;
 			import com.flexcapacitor.utils.ClassRegistry;
@@ -62,7 +43,7 @@
 			private var dragManager:DragManagerImpl;
 			
 			/**
-			 * 
+			 * @private
 			 * */
 			[Bindable]
 			public var radiate:Radiate;
@@ -76,6 +57,10 @@
 				var path:String;
 				var appNamespace:Namespace;
 				var versionNumber:String;
+				var quality:String;
+				
+				quality = StageQuality.BEST;
+				stage.quality = quality;
 				
 				radiate = Radiate.getInstance();
 				
@@ -150,7 +135,16 @@
 			}
 			
 			public function dragDropHandler(event:HTMLDragEvent):void {
-				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedDocument:IDocument;
+				
+				if (HTMLDragData(event.data).mimeType==HTMLDragManager.INVALID) {
+					Radiate.warn("The item you have dropped is invalid. Some supported types include png, jpg, jpeg and gif images");
+					PopUpOverlayManager.instance.showAllOverlays();
+					mainView.dropImagesLocation.visible = false;
+					return;
+				}
+				
+				selectedDocument = radiate.selectedDocument;
 				PopUpOverlayManager.instance.showAllOverlays();
 				mainView.dropImagesLocation.visible = false;
 				
@@ -165,11 +159,31 @@
 				radiate.dropItemWeb(event, createDocument, createDocumentIfNeeded, resizeIfNeeded);
 			}
 			
-			
 		]]>
 	</fx:Script>
 	
-	<!-- NOTICE! There are notes that go with this project. They have been moved to readme.txt -->
+	<!-- 
+	NOTICE! There are notes that go with this project. They have been moved to readme.txt -->
+	
+	<!--
+	preloader="RadiatePreloader"
+	preloader="com.flexcapacitor.preloaders.RegisteringPreloader"
+	preloader="mx.preloaders.SparkDownloadProgressBar"
+	
+	
+	Description	Resource	Path	Location	Type
+	unable to open '/Applications/Adobe Flash Builder 4.7/sdks/4.15 AIR 23/frameworks/libs/player/15.0/playerglobal.swc'	Radii8		Unknown	Flex Problem
+	
+	fix: 
+	removed references in compiler build path to old libraries and applied the properties. 
+	
+	sometimes parent is null in DragProxy
+	line 648:
+	m.xTo = parent.mouseX;
+	m.yTo = parent.mouseY;
+	
+	maybe monkey patch with a null check
+	-->
 	
 	<!--
 	show all properties if inspector is not available 
@@ -232,11 +246,11 @@
 							 showStyleInheritanceInformation="false"
 							 showAllStyleDeclarations="false"
 							 showColorUnderMouse="false"
-							 enabled="false"
-							 showHTMLErrors="true"
+							 enabled="true"
+							 showHTMLErrors="false"
 							 />
 	</fx:Declarations>
 
-	<views:MainView id="mainView" width="100%" height="100%"/>
+	<views:MainView id="mainView" width="100%" height="100%" />
 	
 </s:Application>

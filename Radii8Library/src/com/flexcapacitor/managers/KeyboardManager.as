@@ -56,15 +56,17 @@ package com.flexcapacitor.managers {
 		public var application:Application;
 		public var FlexHTMLLoader:Class;
 		public var debug:Boolean;
+		public var stage:Stage;
 		
 		public function initialize(application:Application, HTMLClass:* = null):void {
 			this.application = application;
 			var useCapture:Boolean = true;
-			var stage:Stage = getCurrentStage(application);
+			stage = getCurrentStage(application);
 			
-			application.addEventListener(KeyboardEvent.KEY_UP, application_keyUpHandler, false, 0, true);
+			application.addEventListener(KeyboardEvent.KEY_UP, application_keyUpHandler, useCapture, 0, true);
 			//application.addEventListener(KeyboardEvent.KEY_DOWN, application_keyDownHandler, false, 0, true);
-			stage.addEventListener(KeyboardEvent.KEY_DOWN, application_keyDownHandler, false, 0, true);
+			stage.addEventListener(KeyboardEvent.KEY_DOWN, application_keyDownHandler, useCapture, 0, true);
+			application.systemManager.addEventListener(KeyboardEvent.KEY_DOWN, application_keyDownHandler, useCapture, 0, true);
 			//application.stage.addEventListener(Event.PASTE, application_PasteHandler, false, 0, true);
 			
 			stage.addEventListener(Event.COPY, copyHandler, useCapture, 0, true);

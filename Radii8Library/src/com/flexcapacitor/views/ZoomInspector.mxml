@@ -194,6 +194,7 @@
 				var ws:Number;
 				var hs:Number;
 				
+				// disabled animation until bugs can be worked out
 				if (animate && radiate.selectedDocument) {
 					scroller = radiate.canvasScroller;
 					target = radiate.selectedDocument.instance as Application;
@@ -210,9 +211,10 @@
 						fitToScale.play([radiate.selectedDocument.instance]);
 					}
 				}
-				
-				radiate.scaleToFit(true);
-				radiate.centerApplication(true, true);
+				else {
+					radiate.scaleToFit(true);
+					radiate.centerApplication(true, true);
+				}
 			}
 			
 			protected function scrollToTopButton_clickHandler(event:MouseEvent):void {

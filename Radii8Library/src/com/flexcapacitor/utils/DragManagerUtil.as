@@ -63,10 +63,12 @@ package com.flexcapacitor.utils {
 	import spark.components.supportClasses.Skin;
 	import spark.core.IGraphicElement;
 	import spark.effects.Animate;
+	import spark.effects.Fade;
 	import spark.effects.animation.MotionPath;
 	import spark.effects.animation.SimpleMotionPath;
 	import spark.effects.easing.IEaser;
 	import spark.effects.easing.Power;
+	import spark.filters.GlowFilter;
 	import spark.layouts.BasicLayout;
 	import spark.layouts.HorizontalLayout;
 	import spark.layouts.TileLayout;
@@ -230,6 +232,11 @@ package com.flexcapacitor.utils {
 		public var roundToIntegers:Boolean;
 		
 		public var hiddenItemsDictionary:Dictionary = new Dictionary(true);
+		
+		public var replaceImageGlow:GlowFilter = new GlowFilter(255, 1, 8, 8, 3, 3, false, false);
+		public var replaceImageGlowApplied:Boolean;
+		public var replaceableImage:Object;
+		public var replaceableImageFilters:Array;
 		
 		/**
 		 * Sets up a target to listen for drag like behavior. 
@@ -828,6 +835,36 @@ package com.flexcapacitor.utils {
 			replaceTarget 	= dragData.replaceTarget;
 			
 			
+			//if (replaceTarget && showSelectionAroundReplaceTarget) {
+			if (replaceTarget) {
+				// todo: add glow filter or selection around drop target
+				
+				if (dropTarget.filters) {
+					if (dropTarget.filters.indexOf(replaceImageGlow)==-1) {
+						replaceableImageFilters = dropTarget.filters;
+						replaceableImageFilters.push(replaceImageGlow);
+						dropTarget.filters = replaceableImageFilters;
+					}
+				}
+				else {
+					dropTarget.filters = [replaceImageGlow];
+				}
+				
+				replaceImageGlowApplied = true;
+				replaceableImage = dropTarget;
+			}
+			else {
+				if (replaceImageGlowApplied && replaceableImage && replaceableImage.filters) {
+					replaceImageFilterIndex = replaceableImage.filters.indexOf(replaceImageGlow);
+					if (replaceImageFilterIndex!=-1) {
+						replaceableImageFilters = dropTarget.filters;
+						(replaceableImage.filters as Array).splice(replaceImageFilterIndex, 1);
+						replaceableImage.filters = replaceableImageFilters;
+					}
+					replaceImageGlowApplied = false;
+					replaceableImage = null;
+				}
+			}
 			
 			////////////////////////////////////////////////////////////
 			// show selection box
@@ -1000,6 +1037,8 @@ package com.flexcapacitor.utils {
 											dropLayout.dropIndicator = createBasicLayoutDropIndicator(dropLayout.target);
 										}
 									}
+									
+									// if its not a number we set the threshold too large so we skip it later on
 									
 									// left edge
 									snapX = NumberUtil.snapToInArray(currentX, snapPoints.left);
@@ -1337,6 +1376,19 @@ package com.flexcapacitor.utils {
 			
 			dispatchEvent(dragEvent);
 			
+			if (replaceImageGlowApplied && replaceableImage && replaceableImage.filters) {
+				replaceImageFilterIndex = replaceableImage.filters.indexOf(replaceImageGlow);
+				
+				if (replaceImageFilterIndex!=-1) {
+					replaceableImageFilters = dropTarget.filters;
+					(replaceableImage.filters as Array).splice(replaceImageFilterIndex, 1);
+					replaceableImage.filters = replaceableImageFilters;
+				}
+				
+				replaceImageGlowApplied = false;
+				replaceableImage = null;
+			}
+			
 			if (dragEvent.isDefaultPrevented()) {
 				
 				if (debug) {
@@ -1438,6 +1490,20 @@ package com.flexcapacitor.utils {
 				properties = ["source"];
 				
 				propertiesObject.source = imageSource.source;
+				
+				// Image has this line: 
+				// 
+				//     public function set source(value:Object):void {
+				// 		if (source == value) return;
+				// 
+				// so if source is set to the string [object BitmapData]
+				// then the assignment never occurs
+				// doing check here
+				
+				if (imageTarget.source == "[object BitmapData]") {
+					//var source:Object = imageTarget.source;
+					//imageTarget.source = null;
+				}
 				
 				Radiate.setProperties(imageTarget, properties, propertiesObject, eventDescription, true);
 				
@@ -1579,57 +1645,77 @@ package com.flexcapacitor.utils {
 					snapStartDropPoint.x = dropX;
 					snapStartDropPoint.y = dropY;
 					
-					if (hasSnapX && hasSnapRight && hasSnapHorizontal) {
-						minimumSnapValue = NumberUtil.snapToInArray(0, [snapX, snapRight, snapHorizontalCenter]);
+					if (hasSnapX || hasSnapRight || hasSnapHorizontal) {
+						//minimumSnapValue = NumberUtil.snapToInArray(0, [snapX, snapRight, snapHorizontalCenter]);
+						minimumSnapValue = NumberUtil.snapToInArray(0, [leftDifference, rightDifference, horizontalDifference]);
 						
-						if (minimumSnapValue==snapX) {
+						if (minimumSnapValue==leftDifference) {
 							hasSnapRight = false;
 							hasSnapHorizontal = false;
+							snapRight = NaN;
+							snapHorizontalCenter = NaN;
 						}
-						else if (minimumSnapValue==snapRight) {
+						else if (minimumSnapValue==rightDifference) {
 							hasSnapX = false;
 							hasSnapHorizontal = false;
+							snapX = NaN;
+							snapHorizontalCenter = NaN;
 						}
-						else if (minimumSnapValue==snapHorizontalCenter) {
+						else if (minimumSnapValue==horizontalDifference) {
 							hasSnapX = false;
-							hasSnapHorizontal = false;
+							hasSnapRight = false;
+							snapX = NaN;
+							snapRight= NaN;
 						}
 					}
 					else if (hasSnapX && hasSnapRight) {
-						minimumSnapValue = NumberUtil.snapToInArray(0, [snapX, snapRight]);
+						//minimumSnapValue = NumberUtil.snapToInArray(0, [snapX, snapRight]);
+						minimumSnapValue = NumberUtil.snapToInArray(0, [leftDifference, rightDifference]);
 						
 						if (minimumSnapValue==snapX) {
 							hasSnapRight = false;
+							snapRight= NaN;
 						}
 						else if (minimumSnapValue==snapRight) {
 							hasSnapX = false;
+							snapX = NaN;
 						}
 					}
 					
-					if (hasSnapY && hasSnapBottom && hasSnapVertical) {
-						minimumSnapValue = NumberUtil.snapToInArray(0, [snapY, snapBottom, snapVerticalCenter]);
+					if (hasSnapY || hasSnapBottom || hasSnapVertical) {
+						//minimumSnapValue = NumberUtil.snapToInArray(0, [snapY, snapBottom, snapVerticalCenter]);
+						minimumSnapValue = NumberUtil.snapToInArray(0, [topDifference, bottomDifference, verticalDifference]);
 						
-						if (minimumSnapValue==snapY) {
+						if (minimumSnapValue==topDifference) {
 							hasSnapBottom = false;
 							hasSnapVertical = false;
+							snapBottom = NaN;
+							snapVerticalCenter = NaN;
 						}
-						else if (minimumSnapValue==snapBottom) {
+						else if (minimumSnapValue==bottomDifference) {
 							hasSnapY = false;
 							hasSnapVertical = false;
+							snapY = NaN;
+							snapVerticalCenter = NaN;
 						}
-						else if (minimumSnapValue==snapVerticalCenter) {
+						else if (minimumSnapValue==verticalDifference) {
 							hasSnapBottom = false;
 							hasSnapY = false;
+							snapBottom = NaN;
+							snapY = NaN;
 						}
 					}
 					else if (hasSnapY && hasSnapBottom) {
-						minimumSnapValue = NumberUtil.snapToInArray(0, [snapY, snapBottom]);
+						//minimumSnapValue = NumberUtil.snapToInArray(0, [snapY, snapBottom]);
+						minimumSnapValue = NumberUtil.snapToInArray(0, [topDifference, bottomDifference]);
 						
 						if (minimumSnapValue==snapY) {
 							hasSnapBottom = false;
+							snapBottom = NaN;
 						}
 						else if (minimumSnapValue==snapBottom) {
 							hasSnapY = false;
+							snapY = NaN;
 						}
 					}
 					
@@ -1804,7 +1890,14 @@ package com.flexcapacitor.utils {
 				if (animateSnapToEdge && !(draggedItem is Line) && 
 					(properties.indexOf("x")!=-1 || properties.indexOf("y")!=-1) &&
 					(hasSnapX || hasSnapY || hasSnapVertical || hasSnapBottom || hasSnapRight || hasSnapHorizontal) ) {
+					var lineColor:uint = SnapToElementDropIndicator(dropLayout.dropIndicator).lineColor;
+					var lineWeight:Number = SnapToElementDropIndicator(dropLayout.dropIndicator).lineWeight;
+					//SnapToElementDropIndicator(dropLayout.dropIndicator).lineColor = 0x2222FF;
+					SnapToElementDropIndicator(dropLayout.dropIndicator).lineWeight = 2;
 					SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(snapX, snapY, snapRight, snapBottom, snapHorizontalCenter, snapVerticalCenter);
+					SnapToElementDropIndicator(dropLayout.dropIndicator).validateDisplayList();
+					SnapToElementDropIndicator(dropLayout.dropIndicator).lineColor = lineColor;
+					SnapToElementDropIndicator(dropLayout.dropIndicator).lineWeight = lineWeight;
 					snapEndDropPoint.x = dropX;
 					snapEndDropPoint.y = dropY;
 					animateSnapPoint(draggedItem, snapEndDropPoint, snapStartDropPoint);
@@ -2100,6 +2193,23 @@ package com.flexcapacitor.utils {
 			}*/
 			
 			return dropIndicatorInstance;
+		}
+		
+		/**
+		 * Fade out drop indicator
+		 * */
+		public function fadeOutDropIndicator():void {
+			if (snapToEdgeAnimation && snapToEdgeAnimation.isPlaying) {
+				return;
+			}
+			
+			if (fadeDropIndicatorAnimation==null) {
+				fadeDropIndicatorAnimation = new Fade();
+			}
+			
+			fadeDropIndicatorAnimation.addEventListener(EffectEvent.EFFECT_END, fadeDropIndicatorAnimation_effectEndHandler);
+			fadeDropIndicatorAnimation.duration = fadeDropIndicatorAnimationDuration;
+			fadeDropIndicatorAnimation.play([dropLayout.dropIndicator]);
 		}
 		
 		public function getSnapPoints(target:GroupBase, excludeObject:Object = null, skipOwner:Boolean = true, edges:Boolean = true):SnapPoints {
@@ -2888,12 +2998,16 @@ package com.flexcapacitor.utils {
 			}
 		}
 		
+		public var fadeDropIndicatorAnimation:Fade;
+		public var fadeDropIndicatorAnimationDuration:int = 150;
 		public var animateSnapToEdge:Boolean = true; 
 		public var snapToEdgeAnimation:Animate;
-		public var snapToEdgeAnimationDuration:int = 260;
+		public var snapToEdgeAnimationDuration:int = 250;
 		public var snapToEdgeAnimationStartDelay:int = 0;
 		public var snapToEdgeAnimationEaser:IEaser = new Power();//new Elastic();//new Sine(.75);// = new Bounce();
 		private var snapPointsCache:Dictionary = new Dictionary(true);
+
+		private var replaceImageFilterIndex:int;
 		
 		public function animateSnapPoint(target:Object, newPoint:Point, oldPoint:Point = null):void {
 			var snapMotionPaths:Vector.<MotionPath>;
@@ -2925,6 +3039,13 @@ package com.flexcapacitor.utils {
 		
 		protected function snapToEdgeAnimation_effectEndHandler(event:Event):void {
 			snapToEdgeAnimation.removeEventListener(EffectEvent.EFFECT_END, snapToEdgeAnimation_effectEndHandler);
+			fadeOutDropIndicator();
+			//Radiate.showToolsLayer();
+			///Radiate.updateSelection(Radiate.instance.target);
+		}
+		
+		protected function fadeDropIndicatorAnimation_effectEndHandler(event:Event):void {
+			fadeDropIndicatorAnimation.removeEventListener(EffectEvent.EFFECT_END, fadeDropIndicatorAnimation_effectEndHandler);
 			destroyDropIndicator();
 			Radiate.showToolsLayer();
 			Radiate.updateSelection(Radiate.instance.target);

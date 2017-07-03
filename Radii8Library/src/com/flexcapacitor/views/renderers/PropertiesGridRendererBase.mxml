@@ -597,6 +597,7 @@
 					type = propertyObject.type;
 					format = propertyObject.format;
 					enumeration = propertyObject.enumeration;
+					actualValue = propertyObject.value;
 					
 					if (showClearButton) { 
 						showClearStyleButton(showClearButton);
@@ -709,6 +710,10 @@
 								numericStepper.value = parseInt(value);
 							}
 						}
+					}
+					else if (targetValueText && actualValue is BitmapData) {
+						//targetValueText.prompt = "BitmapData";
+						targetValueText.text = "";
 					}
 					else if (targetValueText) {
 						actualValue = Radiate.getTypedValue(targetValueText.text, type);

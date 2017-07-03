@@ -219,6 +219,7 @@ package com.flexcapacitor.controller {
 	import spark.core.ContentCache;
 	import spark.core.IGraphicElement;
 	import spark.core.IViewport;
+	import spark.core.SpriteVisualElement;
 	import spark.events.PopUpEvent;
 	import spark.events.TextOperationEvent;
 	import spark.formatters.DateTimeFormatter;
@@ -3834,6 +3835,7 @@ package com.flexcapacitor.controller {
 			var documentInstance:IVisualElement;
 			var vsbWidth:int;
 			var hsbHeight:int;
+			var padding:Number = 4;
 			
 			documentInstance = selectedDocument ? selectedDocument.instance as IVisualElement : null;
 			
@@ -3842,10 +3844,13 @@ package com.flexcapacitor.controller {
 				//height = DisplayObject(document).height;
 				width = documentInstance.width;
 				height = documentInstance.height;
-				vsbWidth = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 20;
-				hsbHeight = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 20;
-				availableWidth = canvasScroller.width - vsbWidth*2.5;
-				availableHeight = canvasScroller.height - hsbHeight*2.5;
+				vsbWidth = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 50;
+				hsbHeight = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 50;
+				availableWidth = canvasScroller.width - vsbWidth * padding;
+				availableHeight = canvasScroller.height - hsbHeight * padding;
+				
+				//widthScale = documentInstance.width/SkinnableContainer(documentInstance).contentGroup.contentWidth;
+				//heightScale = documentInstance.height/SkinnableContainer(documentInstance).contentGroup.contentHeight;
 				
 				//var scrollerPaddedWidth:int = canvasScroller.width + documentPadding;
 				//var scrollerPaddedHeight:int = canvasScroller.height + documentPadding;
@@ -3853,8 +3858,6 @@ package com.flexcapacitor.controller {
                 // if the visible area is less than our content then scale down
                 if (height > availableHeight || width > availableWidth) {
 					heightScale = availableHeight/height;
-					widthScale = availableWidth/width;
-					newScale = Math.min(widthScale, heightScale);
 					width = newScale * width;
 					height = newScale * height;
                 }
@@ -8383,6 +8386,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public static var currentEditableComponent:Object;
 		public static var editableRichTextField:RichEditableText = new RichEditableText();
+		public static var editableRichTextFieldSprite:UIComponent = new UIComponent();
 		public static var editableRichTextEditorBarCallout:RichTextEditorBarCallout;
 		
 		/**
@@ -8415,6 +8419,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			var parentComponentDescription:ComponentDescription;
 			var basicFonts:Boolean = false;
 			var focusAlpha:Number = 0;
+			var position:Point;
+			var distancePoint:Point;
+			var scale:Number;
 			
 			const MIN_WIDTH:int = 22;
 			
@@ -8427,8 +8434,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			if (editableRichTextField==null) {
 				editableRichTextField = new RichEditableText();
-				editableRichTextField.selectionHighlighting = TextSelectionHighlighting.WHEN_ACTIVE;
 			}
+			
+			editableRichTextField.selectionHighlighting = TextSelectionHighlighting.WHEN_ACTIVE;
 			
 			// get positions of label or richtext
 			// and setup properties that need to be set for temporary rich text field
@@ -8461,6 +8469,9 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				else {
 					rectangle = DisplayObjectUtils.getRectangleBounds(textTarget, iDocument.instance);
 				}
+				
+				position = DisplayObjectUtils.getDisplayObjectPosition(currentEditableComponent as DisplayObject, null, true);
+				distancePoint = DisplayObjectUtils.getDistanceBetweenDisplayObjects(currentEditableComponent, instance.toolLayer);
 				
 				focusAlpha = 0;
 				valuesObject.x = rectangle.x;
@@ -8607,11 +8618,36 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				topSystemManager.stage.stageFocusRect = false;
 				
 				if (isRichEditor) {
-					editableRichTextField.setFocus();
-					editableRichTextEditorBarCallout.open(editableRichTextField);
+					scale = instance.getScale();
 					
-					editableRichTextEditorBarCallout.scaleX = 1;
-					editableRichTextEditorBarCallout.scaleY = 1;
+					editableRichTextFieldSprite.width = rectangle.width;
+					editableRichTextFieldSprite.height = rectangle.height;
+					
+					var showSpriteFillArea:Boolean = false;
+					
+					if (editableRichTextFieldSprite.owner!=instance.toolLayer) {
+						instance.toolLayer.addElement(editableRichTextFieldSprite);
+					}
+					
+					if (showSpriteFillArea) {
+						editableRichTextFieldSprite.graphics.clear();
+						editableRichTextFieldSprite.graphics.beginFill(Math.random()*255555,.4);
+						editableRichTextFieldSprite.graphics.drawRect(0, 0, rectangle.width, rectangle.height);
+						editableRichTextFieldSprite.graphics.endFill();
+					}
+					
+					distancePoint = DisplayObjectUtils.getDisplayObjectPosition(currentEditableComponent as DisplayObject, instance.toolLayer, true);
+					
+					editableRichTextFieldSprite.x = distancePoint.x;
+					editableRichTextFieldSprite.y = distancePoint.y;
+					editableRichTextFieldSprite.validateNow();
+					
+					editableRichTextField.setFocus();
+					editableRichTextEditorBarCallout.open(editableRichTextFieldSprite);
+					
+					//editableRichTextEditorBarCallout.alpha = .5;
+					//editableRichTextEditorBarCallout.scaleX = 1;
+					//editableRichTextEditorBarCallout.scaleY = 1;
 					editableRichTextEditorBarCallout.addEventListener(PopUpEvent.CLOSE, richTextCallOut_closeHandler, false, 0, true);
 					
 					
@@ -8623,17 +8659,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 						callAfter(1, editableRichTextField.selectAll);
 					}
 					
-					
-					/*
-					editableRichTextField.addEventListener(TextOperationEvent.CHANGE, richTextEditor_changeHandler, false, 0, true);
-					editableRichTextField.addEventListener(FlexEvent.UPDATE_COMPLETE, richTextEditor_updateCompleteHandler, false, 0, true);
-					editableRichTextField.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
-					
-					editableRichTextEditorBarCallout.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
-					editableRichTextEditorBarCallout.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
-					editableRichTextEditorBarCallout.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
-					editableRichTextEditorBarCallout.addEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents, false, 0, true);
-					*/
 				}
 				else {
 					editableRichTextField.selectAll();
@@ -8660,86 +8685,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				instance.disableTool();
 			}
 			
-			
-			
-			
-			// OLD CODE
-			/*
-			return; 
-			var target:TextBase = instance.target as TextBase;
-			var topSystemManager:ISystemManager;
-			
-			if (!(instance.selectedTool is Selection)) {
-				return;
-			}
-			
-			if (target) {
-				currentEditableComponent = target;
-				var iDocument:IDocument = instance.selectedDocument;
-				var targetComponentDescription:ComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, iDocument.componentDescription);
-				var parentComponentDescription:ComponentDescription = targetComponentDescription.parent;
-				var rectangle:Rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
-				var propertyNames:Array = ["x", "y", "text", "minWidth"];
-				var valuesObject:Object = {};
-				var isBasicLayout:Boolean;
-				
-				if ((parentComponentDescription.instance is GroupBase || parentComponentDescription.instance is BorderContainer)
-					&& parentComponentDescription.instance.layout is BasicLayout) {
-					isBasicLayout = true;
-					rectangle = DisplayObjectUtils.getRectangleBounds(target, parentComponentDescription.instance);
-				}
-				
-				valuesObject.x = rectangle.x;
-				valuesObject.y = rectangle.y;
-				//const MIN_WIDTH:int = 22;
-				valuesObject.minWidth = MIN_WIDTH;
-				//properties.width = "100";
-				
-				if (!isNaN(target.explicitWidth)) {
-					propertyNames.push("width");
-					valuesObject.width = rectangle.width;
-				}
-				else if (!isNaN(target.percentWidth)) {
-					// if basic layout we can get percent width
-					if (isBasicLayout) {
-						propertyNames.push("percentWidth");
-						valuesObject.percentWidth = target.percentWidth;
-					}
-					else {
-						propertyNames.push("width");
-						valuesObject.width = rectangle.width;
-					}
-				}
-				
-				editableRichTextField.width = undefined;
-				editableRichTextField.percentWidth = NaN;
-				//properties.height = rectangle.height;
-				valuesObject.text = target.text;
-				currentEditableComponent.visible = false;
-				editableRichTextField.styleName = currentEditableComponent;
-				editableRichTextField.focusRect = null;
-				editableRichTextField.setStyle("focusAlpha", 0.25);
-				
-				HistoryManager.doNotAddEventsToHistory = true;
-				if (isBasicLayout) {
-					addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
-				}
-				else {
-					addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
-				}
-				HistoryManager.doNotAddEventsToHistory = false;
-				
-				topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
-				topSystemManager.stage.stageFocusRect = false;
-				editableRichTextField.selectAll();
-				editableRichTextField.setFocus();
-				editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues, false, 0, true);
-				editableRichTextField.addEventListener(FlexEvent.ENTER, commitTextEditorValues, false, 0, true);
-				editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues, false, 0, true);
-				editableRichTextField.addEventListener(MouseEvent.CLICK, commitTextEditorValues, false, 0, true);
-				instance.disableTool();
-			}
-			*/
 		}
 		
 		public static function richTextCallOut_closeHandler(event:PopUpEvent):void {
@@ -8946,6 +8891,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			setTarget(currentEditableComponent);
 			
 			currentEditableComponent = null;
+			
+			
+			if (editableRichTextFieldSprite.owner==instance.toolLayer) {
+				instance.toolLayer.removeElement(editableRichTextFieldSprite);
+			}
 			
 			return;
 			

@@ -45,7 +45,7 @@
 			public var isHTML:Boolean;
 			
 			public var iDocument:IDocument;
-			public var browserFiles:Array;
+			public var browserFiles:Array = [];
 			public var browserFileIndex:int;
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {

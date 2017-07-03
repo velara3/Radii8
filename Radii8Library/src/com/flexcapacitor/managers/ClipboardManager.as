@@ -14,6 +14,7 @@ package com.flexcapacitor.managers
 	import flash.display.DisplayObject;
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
+	import flash.external.ExternalInterface;
 	import flash.geom.Point;
 	import flash.utils.Dictionary;
 	
@@ -29,6 +30,7 @@ package com.flexcapacitor.managers
 	import spark.effects.animation.SimpleMotionPath;
 	import spark.effects.easing.IEaser;
 	import spark.effects.easing.Sine;
+	import spark.primitives.supportClasses.GraphicElement;
 	
 	import org.as3commons.lang.ObjectUtils;
 
@@ -93,7 +95,7 @@ package com.flexcapacitor.managers
 				}
 				
 				if (showAnimation) {
-					animateCopy(item);
+					animateShortcut(item);
 				}
 			}
 			
@@ -148,7 +150,7 @@ package com.flexcapacitor.managers
 				}
 				
 				if (showAnimation) {
-					animateCopy(item);
+					animateShortcut(item);
 				}
 			}
 			catch (error:ErrorEvent) {
@@ -263,7 +265,7 @@ package com.flexcapacitor.managers
 					descriptor = component as ComponentDescription;
 					
 					if (component is Application) {
-						Radiate.error("Cannot copy and paste the document.");
+						//Radiate.error("Cannot copy and paste the document.");
 						return;
 					}
 					
@@ -285,11 +287,18 @@ package com.flexcapacitor.managers
 					actionPerformed = true;
 				}
 				else if (format==ClipboardFormats.BITMAP_FORMAT) {
+					// format is air:bitmap
 					data = clipboard.getData(ClipboardFormats.BITMAP_FORMAT);
 					bitmapData = data as BitmapData;
-					// not supported in FP in the browser - might try capturing via JS 
-					radiate.addBitmapDataToDocument(selectedDocument, bitmapData, destination);
-					actionPerformed = true;
+					
+					if (Radiate.isDesktop) {
+						// not supported in FP in the browser - might try capturing via JS 
+						radiate.addBitmapDataToDocument(selectedDocument, bitmapData, destination);
+						actionPerformed = true;
+					}
+					else {
+						Radiate.warn("You cannot paste image data from the clipboard in the browser at this time. Please import the image file.");
+					}
 				}
 				else if (format==ClipboardFormats.TEXT_FORMAT) {
 					data = clipboard.getData(ClipboardFormats.TEXT_FORMAT);
@@ -309,10 +318,10 @@ package com.flexcapacitor.managers
 					if (showAnimation) {
 						
 						if (radiate.target) {
-							animateCopy(radiate.target, true);
+							animateShortcut(radiate.target, true);
 						}
 						else {
-							animateCopy(destination, true);
+							animateShortcut(destination, true);
 						}
 					}
 					
@@ -364,10 +373,10 @@ package com.flexcapacitor.managers
 				if (showAnimation) {
 					
 					if (radiate.target) {
-						animateCopy(radiate.target, true);
+						animateShortcut(radiate.target, true);
 					}
 					else {
-						animateCopy(destination, true);
+						animateShortcut(destination, true);
 					}
 				}
 			}
@@ -414,7 +423,7 @@ package com.flexcapacitor.managers
 		public var copyIconInstance:UIComponent;
 		public var pasteIconInstance:UIComponent;
 		
-		public function animateCopy(target:Object, paste:Boolean = false):void {
+		public function animateShortcut(target:Object, paste:Boolean = false):void {
 			var iconBitmapData:BitmapAsset;
 			var toolLayer:IVisualElementContainer;
 			var targetPoint:Point;
@@ -464,11 +473,19 @@ package com.flexcapacitor.managers
 			}
 			
 			targetPoint = new Point();
-			stagePoint = DisplayObject(target).localToGlobal(targetPoint);
+			if (target is GraphicElement) {
+				stagePoint = DisplayObject(target.displayObject).localToGlobal(targetPoint);
+			}
+			else {
+				stagePoint = DisplayObject(target).localToGlobal(targetPoint);
+			}
+			
 			toolLayerPoint = DisplayObject(toolLayer).globalToLocal(stagePoint);
 	
 			if (fadeAnimation.isPlaying) {
 				fadeAnimation.end();
+				fadeAnimation.removeEventListener(EffectEvent.EFFECT_END, fadePasteAnimation_effectEndHandler);
+				fadeAnimation.removeEventListener(EffectEvent.EFFECT_END, fadeCopyAnimation_effectEndHandler);
 			}
 			
 			if (paste) {

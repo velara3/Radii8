@@ -41,8 +41,6 @@
 			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.services.WPAttachmentService;
 			import com.flexcapacitor.utils.ArrayUtils;
-			import com.flexcapacitor.utils.ClassUtils;
-			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.DragManagerUtil;
 			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 			import com.flexcapacitor.views.IInspector;

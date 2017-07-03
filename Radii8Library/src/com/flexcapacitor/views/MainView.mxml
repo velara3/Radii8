@@ -540,7 +540,7 @@
 				var loginWindow:LoginWindow = LoginWindow(openLogoutPopUp.popUp);
 				var action:String = loginWindow ? loginWindow.action : null;
 				
-				if (action==LoginWindow.CANCEL) {
+				if (action==LoginWindow.CANCEL || action==null) {
 					return;
 				}
 				
@@ -1312,6 +1312,14 @@
 				browseForPSD.play();
 			}
 			
+			protected function browseForFile_selectHandler(event:Event):void {
+				
+				if (browseForImage) {
+					radiate.selectItem(browseForImage);
+				}
+				
+			}
+			
 			protected function psdLoadedHandler(event:Event):void {
 				if (radiate.selectedDocument) {
 					Radiate.info("Importing PSD");
@@ -1708,6 +1716,34 @@
 				}
 			}
 			
+			public var browseForImage:FileReference;
+			
+			protected function importImageMenuItem_itemClickHandler(event:MenuEvent):void {
+				var fileFilter:FileFilter;
+				var filtersString:String;
+				var acceptedFileTypes:Array;
+				var fileFilterDescription:String;
+				var fileFilters:Array;
+				
+				fileFilters = [];
+				fileFilterDescription = "Images";
+				acceptedFileTypes = ["png", "jpg", "jpeg", "gif", "psd"];
+				
+				filtersString = "*." + acceptedFileTypes.join(";*.");
+				
+				fileFilter = new FileFilter(fileFilterDescription, filtersString);
+				fileFilters.push(fileFilter);
+				
+				try {
+					browseForImage = new FileReference();
+					browseForImage.browse(fileFilters);
+					browseForImage.addEventListener(Event.SELECT, browseForFile_selectHandler, false, 0, true);
+				}
+				catch (error:Error) {
+					
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -1956,6 +1992,7 @@
 				<model:MenuItem id="printItem" label="Print" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="importMXMLMenuItem" label="Import MXML..." itemClick="importMXMLMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="importImageMenuItem" label="Import Image..." itemClick="importImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="importPSDMenuItem" label="Import PSD..." itemClick="importPSDMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="quitApplication" label="Quit" />

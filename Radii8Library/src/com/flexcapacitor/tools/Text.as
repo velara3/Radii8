@@ -605,6 +605,8 @@ package com.flexcapacitor.tools {
 				var stagePoint:Point = new Point(event.stageX, event.stageY);
 				var dropLocationOnTarget:Point = target.localToGlobal(new Point());
 				dropLocationOnTarget = stagePoint.subtract(dropLocationOnTarget);
+				
+				dropLocationOnTarget = DisplayObjectUtils.getDisplayObjectPosition(target as DisplayObject, event, true);
 				var values:Object = {x:dropLocationOnTarget.x, y:dropLocationOnTarget.y, text:"Text"};
 				var properties:Array = [MXMLDocumentConstants.X, MXMLDocumentConstants.Y, "text"];
 				

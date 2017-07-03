@@ -141,7 +141,7 @@
 	
 	<s:HGroup width="100%" verticalAlign="baseline">
 		<s:Label text="Source" styleName="inspectablePanelLabel" />
-		<renderers:TextRenderer id="sourceRenderer" height="24" width="100%"/>
+		<renderers:ImageSourceRenderer id="sourceRenderer" height="24" width="100%"/>
 		<s:CheckBox id="embedImageData" toolTip="Embed Image Data" change="embed_changeHandler(event)" baseline="3"/>
 	</s:HGroup>
 	<s:HGroup width="100%" verticalAlign="baseline">
