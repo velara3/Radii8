@@ -28,15 +28,12 @@ package mx.managers.dragClasses
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
-	import flash.system.ApplicationDomain;
-	import flash.utils.getQualifiedClassName;
 	
 	import mx.core.DragSource;
 	import mx.core.IFlexModule;
 	import mx.core.IUIComponent;
 	import mx.core.UIComponent;
 	import mx.core.mx_internal;
-	import mx.effects.EffectInstance;
 	import mx.effects.Move;
 	import mx.effects.Zoom;
 	import mx.events.DragEvent;

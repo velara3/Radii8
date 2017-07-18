@@ -12,6 +12,7 @@
     <classEntry path="com.flexcapacitor.events.RadiateEvent"/>
     <classEntry path="com.flexcapacitor.logging.RadiateLogTarget"/>
     <classEntry path="com.flexcapacitor.managers.ArrangeLayers"/>
+    <classEntry path="com.flexcapacitor.managers.ClipboardManager"/>
     <classEntry path="com.flexcapacitor.managers.CodeManager"/>
     <classEntry path="com.flexcapacitor.managers.CreationManager"/>
     <classEntry path="com.flexcapacitor.managers.DragManagerImpl"/>
@@ -156,6 +157,7 @@
     <classEntry path="com.flexcapacitor.views.inspectors.ColorPickerProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.ComboBoxProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.ConvolutionFilterInspector"/>
+    <classEntry path="com.flexcapacitor.views.inspectors.CornerRadiusInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.DisplacementMapFilterInspector"/>
     <classEntry path="com.flexcapacitor.views.inspectors.DropDownListProperties"/>
     <classEntry path="com.flexcapacitor.views.inspectors.DropShadowFilterInspector"/>
@@ -220,6 +222,7 @@
     <classEntry path="com.flexcapacitor.views.renderers.GalleryItemRenderer"/>
     <classEntry path="com.flexcapacitor.views.renderers.GalleryProviderItemRenderer"/>
     <classEntry path="com.flexcapacitor.views.renderers.HistoryItemRenderer"/>
+    <classEntry path="com.flexcapacitor.views.renderers.ImageSourceRenderer"/>
     <classEntry path="com.flexcapacitor.views.renderers.IssuesRenderer"/>
     <classEntry path="com.flexcapacitor.views.renderers.ItemRendererButton"/>
     <classEntry path="com.flexcapacitor.views.renderers.LayersRenderer"/>
@@ -254,7 +257,6 @@
     <classEntry path="com.flexcapacitor.views.windows.SaveBeforeCloseWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.SettingsWindow"/>
     <classEntry path="mx.managers.dragClasses.DragProxy"/>
-    <classEntry path="com.flexcapacitor.managers.ClipboardManager"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

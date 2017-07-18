@@ -9,6 +9,7 @@
 	
 	<fx:Metadata>
 		[Event(name="change", type="flash.events.Event")]
+		[Event(name="beforeClear", type="flash.events.Event")]
 	</fx:Metadata>
 	
 	
@@ -100,11 +101,18 @@
 			}
 			
 			protected function clearStyleButton_clickHandler(event:MouseEvent):void {
-				setTargetValue(true);
+				var beforeClear:Event = new Event("beforeClear");
 				
-				if (hasEventListener(Event.CHANGE)) {
-					dispatchEvent(event);
+				dispatchEvent(beforeClear);
+				
+				if (!beforeClear.isDefaultPrevented()) {
+					setTargetValue(true);
+					
+					if (hasEventListener(Event.CHANGE)) {
+						dispatchEvent(event);
+					}
 				}
+				
 			}
 			
 		]]>

@@ -739,7 +739,7 @@
 				}
 			}
 			
-			public var outlineStyleSheet:Object;
+			public var outlineStyleSheets:Object;
 			
 			public function showBorderOutline(enabled:Boolean, outlineWidth:int = 1):void {
 				var previewDocument:Object;
@@ -748,6 +748,7 @@
 				var elementID:String;
 				var rule:String;
 				var outlineStyleNode:Object;
+				var outlineStyleSheet:Object;
 				var results:Object;
 				
 				if (radiate.isPreviewDocumentVisible()) {
@@ -766,23 +767,28 @@
 							window = previewDocument.domWindow;
 						}
 						
-						if (outlineStyleSheet==null) {
-							outlineStyleSheet = new Dictionary(true);
+						if (outlineStyleSheets==null) {
+							outlineStyleSheets = new Dictionary(true);
 						}
 						
 						rule = "*, *:before, *:after " + rule;
 						
-						outlineStyleSheet = outlineStyleSheet[previewDocument];
+						outlineStyleSheet = outlineStyleSheets[previewDocument];
 						
 						if (outlineStyleSheet==null) {
 							outlineStyleNode = window.document.createElement("style");
 							window.document.body.appendChild(outlineStyleNode);
 							outlineStyleSheet = outlineStyleNode.sheet;
-							outlineStyleSheet[previewDocument] = outlineStyleSheet;
+							outlineStyleSheets[previewDocument] = outlineStyleSheet;
 							outlineStyleSheet.insertRule(rule, 0);
 						}
 						
-						outlineStyleSheet.disabled = !enabled;
+						//Error: Error #3210: The application attempted to reference a JavaScript object in a HTML page that is no longer loaded.
+						//	at __HTMLScriptObject/throwJSObjectDead()
+						// if the object exists it may still be invalid. if it's invalid it has no properties except a timer
+						if (outlineStyleSheet && "disabled" in outlineStyleSheet) {
+							outlineStyleSheet.disabled = !enabled;
+						}
 					}
 					else {
 						

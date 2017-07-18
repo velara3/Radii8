@@ -41,6 +41,7 @@
 			import spark.components.Group;
 			import spark.components.Label;
 			import spark.components.supportClasses.GroupBase;
+			import spark.primitives.Line;
 			
 			private var target:Object;
 			private var currentComponentDescription:ComponentDescription;
@@ -76,7 +77,7 @@
 				var component:Object;
 				var rowGroup:Group;
 				
-				currentDocument= radiate.selectedDocument;
+				currentDocument = radiate.selectedDocument;
 				
 				currentComponentDescription = null;
 				
@@ -94,6 +95,11 @@
 				if (!application) return;
 				
 				component = Radiate.createComponentToAdd(currentDocument, componentDefinition, false);
+				
+				if (component is Line) {
+					Radiate.updateComponentAfterAdd(currentDocument, component);
+				}
+				
 				currentComponentDescription = currentDocument.getItemDescription(component);
 				
 				currentComponentDescription.defaultProperties = componentDefinition.defaultProperties;

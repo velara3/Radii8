@@ -35,6 +35,7 @@ package com.flexcapacitor.utils {
 	import mx.core.FlexSprite;
 	import mx.core.IFactory;
 	import mx.core.IFlexDisplayObject;
+	import mx.core.IInvalidating;
 	import mx.core.IUIComponent;
 	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
@@ -160,8 +161,8 @@ package com.flexcapacitor.utils {
 		[Bindable] 
 		public var showSelectionBox:Boolean = false;
 		public var showGroupDropZone:Boolean = true;
-		public var showListDropIndicator:Boolean = true;
-		public var showMousePositionLines:Boolean = true;
+		public var showListDropIndicator:Boolean = false;
+		public var showMousePositionLines:Boolean = false;
 		public var showSelectionBoxOnApplication:Boolean;
 		
 		public var swfRoot:DisplayObject;
@@ -228,7 +229,7 @@ package com.flexcapacitor.utils {
 		public var draggedItem:Object;
 		private var topLevelApplication:Application;
 		public var testScaledMovement:Boolean;
-		public var dragOutAllowed:Boolean;
+		public var isDragOutAllowed:Boolean;
 		public var roundToIntegers:Boolean;
 		
 		public var hiddenItemsDictionary:Dictionary = new Dictionary(true);
@@ -247,13 +248,23 @@ package com.flexcapacitor.utils {
 		 * @param event Mouse event from the mouse down event
 		 * @param draggedItem The item or data to be dragged. If null then this is the dragInitiator.
 		 * */
-		public function listenForDragBehavior(dragInitiator:IVisualElement, document:IDocument, event:MouseEvent, itemToDrag:Object = null, dragOutAllowed:Boolean = true):void {
-			this.dragInitiator = dragInitiator;
-			this.targetApplication = Application(document.instance);
+		public function listenForDragBehavior(dragInitiatorReference:IVisualElement, document:IDocument, event:MouseEvent, itemToDrag:Object = null, dragOutAllowed:Boolean = true):void {
+			var attemptToFixHiddenElements:Boolean;
+			var topSystemManager:SystemManager;
+			var systemManager:ISystemManager;
+			var marshallPlanSystemManager:Object;
+			var targetCoordinateSpace:DisplayObject;
 			
 			if (debug) {
 				log();
 			}
+			
+			attemptToFixHiddenElements = true;
+			
+			topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
+			
+			dragInitiator = dragInitiatorReference;
+			targetApplication = Application(document.instance);
 			
 			destroySnapPointsCache();
 			systemManager = targetApplication.systemManager;
@@ -265,24 +276,23 @@ package com.flexcapacitor.utils {
 			
 			// either the component to add or the component to move
 			if (arguments[3]) {
-				this.draggedItem = itemToDrag;
+				draggedItem = itemToDrag;
 			}
 			else {
-				this.draggedItem = dragInitiator;
+				draggedItem = dragInitiator;
 			}
 			
-			this.dragOutAllowed = dragOutAllowed;
+			isDragOutAllowed = dragOutAllowed;
 			
 			if (debug) {
 				logTarget(draggedItem, "is dragged item");
 			}
 			
 			// if selection is offset then check if using system manager sandbox root or top level root
-			var systemManager:ISystemManager = ISystemManager(topLevelApplication.systemManager);
+			systemManager = ISystemManager(topLevelApplication.systemManager);
 			
 			// no types so no dependencies
-			var marshallPlanSystemManager:Object = systemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
-			var targetCoordinateSpace:DisplayObject;
+			marshallPlanSystemManager = systemManager.getImplementation("mx.managers.IMarshallPlanSystemManager");
 			
 			if (marshallPlanSystemManager && marshallPlanSystemManager.useSWFBridge()) {
 				targetCoordinateSpace = Sprite(systemManager.getSandboxRoot());
@@ -291,7 +301,12 @@ package com.flexcapacitor.utils {
 				targetCoordinateSpace = Sprite(topLevelApplication);
 			}
 			
-			swfRoot = targetCoordinateSpace;
+			if (attemptToFixHiddenElements) {
+				swfRoot = topLevelApplication.systemManager.stage;
+			}
+			else {
+				swfRoot = targetCoordinateSpace;
+			}
 			
 			startingPoint.x = event.stageX;
 			startingPoint.y = event.stageY;
@@ -299,19 +314,23 @@ package com.flexcapacitor.utils {
 			
 			//updateDropTargetLocation(targetApplication, event);
 			
-			var topSystemManager:SystemManager;
+			// we shouldn't be listening on components but instead the stage
 			
-			if (dragInitiator is IUIComponent) {
-				dragInitiator.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
-			}
-			else if (dragInitiator is IGraphicElement) {
-				GraphicElement(dragInitiator).displayObject.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
-				//GraphicElement(dragInitiator).addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+			if (attemptToFixHiddenElements) {
 				swfRoot.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
-				topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
-				
-				//topSystemManager.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler);
-				//topSystemManager.stage.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler);
+			}
+			else {
+				if (dragInitiator is IUIComponent) {
+					dragInitiator.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+				}
+				else if (dragInitiator is IGraphicElement) {
+					GraphicElement(dragInitiator).displayObject.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+					//GraphicElement(dragInitiator).addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+					swfRoot.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
+					
+					//topSystemManager.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler);
+					//topSystemManager.stage.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler);
+				}
 			}
 			
 			swfRoot.addEventListener(MouseEvent.MOUSE_MOVE, mouseMoveHandler);
@@ -493,7 +512,15 @@ package com.flexcapacitor.utils {
 				}
 				
 				if (dragInitiator is IGraphicElement) {
-					dragInitiatorProxy = DisplayObjectUtils.duplicateIntoImage(dragInitiator as GraphicElement);
+					var useLocalSpaceForGraphicElement:Boolean = true;
+					dragInitiatorProxy = DisplayObjectUtils.duplicateIntoImage(dragInitiator as GraphicElement, true, 0xFFFFFF, useLocalSpaceForGraphicElement);
+					
+					if (Platform.isAir) {
+						dragInitiatorProxy.width = dragInitiatorProxy.width*targetApplication.scaleX;
+						dragInitiatorProxy.height = dragInitiatorProxy.height*targetApplication.scaleY;
+						dragInitiatorProxy.validateNow();
+					}
+					
 					startDrag(dragInitiatorProxy as IUIComponent, targetApplication, event);
 					dragInitiatorProxy.alpha = 0;
 				}
@@ -535,11 +562,9 @@ package com.flexcapacitor.utils {
 			
 			// set the object that will listen for drag events
 			dragListener = DisplayObjectContainer(application);
-			// TODO Get relative position when scaled in.
 			distanceFromLeft = dragInitiator.localToGlobal(new Point).x;
 			distanceFromTop = dragInitiator.localToGlobal(new Point).y;
 			
-			// TODO = READ 
 			// Flex coordinate systems
 			// http://help.adobe.com/en_US/flex/using/WS2db454920e96a9e51e63e3d11c0bf69084-7de0.html
 			scaleX = application.scaleX;
@@ -630,7 +655,14 @@ package com.flexcapacitor.utils {
 				if (testSomething) {
 					
 					if (dragInitiatorProxy) {
-						snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiatorProxy as DisplayObject, true, scaleX, scaleX);
+						
+						if (draggedItem is GraphicElement && Platform.isAir) {
+							// graphic element proxy is already scaled in desktop
+							snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiatorProxy as DisplayObject, true, 1, 1);
+						}
+						else {
+							snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiatorProxy as DisplayObject, true, scaleX, scaleX);
+						}
 					}
 					else {
 						//snapshot = DisplayObjectUtils.getBitmapAssetSnapshot2(dragInitiator as DisplayObject, true, scaleX, scaleX);
@@ -679,7 +711,9 @@ package com.flexcapacitor.utils {
 				
 			}
 			else {
+				
 				if (Platform.isAir) {
+					// native drag manager may use drag proxy if dragImage (snapshot) is UIComponent 
 					DragManager.doDrag(dragInitiator, dragSource, event, snapshot, scaleOffsetPoint.x, scaleOffsetPoint.y, imageAlpha);
 				}
 				else {
@@ -698,7 +732,7 @@ package com.flexcapacitor.utils {
 				//   var dragImageClass:Class = dragManagerStyleDeclaration.getStyle("defaultDragImageSkin");
 				//   - dragManagerStyleDeclaration is null 
 				// 
-				// drag icon style (copy or move) was set to ClassReference(null);?
+				// drag icon style (copy or move) was set to ClassReference(null);
 			}
 			
 			if (dragManager==null) {
@@ -835,9 +869,8 @@ package com.flexcapacitor.utils {
 			replaceTarget 	= dragData.replaceTarget;
 			
 			
-			//if (replaceTarget && showSelectionAroundReplaceTarget) {
+			// adds a glow filter or selection around a replaceable drop target ie an image
 			if (replaceTarget) {
-				// todo: add glow filter or selection around drop target
 				
 				if (dropTarget.filters) {
 					if (dropTarget.filters.indexOf(replaceImageGlow)==-1) {
@@ -908,6 +941,7 @@ package com.flexcapacitor.utils {
 							targetCoordinateSpace = Sprite(topLevelApplication);
 						}
 						
+						// SHOULD be using GroupBase.LayoutBase to get bounds of elements
 						// get target bounds
 						rectangle = DisplayObject(dropTarget).getBounds(targetCoordinateSpace);
 						
@@ -983,6 +1017,8 @@ package com.flexcapacitor.utils {
 						at mx.managers.dragClasses::DragProxy/mouseMoveHandler()[/Users/justinmclean/Documents/ApacheFlex4.16/frameworks/projects/framework/src/mx/managers/dragClasses/DragProxy.as:553]
 						TypeError: Error #1007: Instantiation attempted on a non-constructor.
 						TypeError: Error #1007: Instantiation attempted on a non-constructor.
+						
+						we had cleared the cursor in CSS using classReference(null) so it was not finding it
 						*/
 						
 						// Show drop indicator
@@ -1402,6 +1438,8 @@ package com.flexcapacitor.utils {
 
 			
 			// SHOULD BE MOVED TO SELECTION CLASS?!?!
+			// no because selection class is not always the selected tool
+			
 			// continue drop
 			var index:int = -1;
 			var dropPoint:Point;
@@ -1419,7 +1457,8 @@ package com.flexcapacitor.utils {
 			//	at mx.managers.dragClasses::DragProxy/mouseUpHandler()[E:\dev\4.y\frameworks\projects\framework\src\mx\managers\dragClasses\DragProxy.as:640]
 			//  - the parent property is null for some reason
 			//  solution maybe to add a try catch block if possible
-			//  or monkey patch DragProxy and remove animation effect (that causes error)
+			// 
+			//  monkey patched DragProxy and removed animation effect (that causes error)
 			
 			// it seems to happen when dragging and dropping rapidly
 			// stops the drop not accepted animation
@@ -1430,7 +1469,7 @@ package com.flexcapacitor.utils {
 			dragManagerImplementation = dragManagerImplementation.getInstance();
 			//var dragProxy:DragProxy = dragManagerImplementation.dragProxy;
 			//var startPoint:Point = new Point(dragProxy.startX, dragProxy.startY);
-			Object(dragManagerImplementation).endDrag(); 
+			Object(dragManagerImplementation).endDrag();
 			//DragManager.endDrag();
 			
 			distanceFromLeftEdge = targetApplication.localToGlobal(new Point()).x;
@@ -2034,6 +2073,8 @@ package com.flexcapacitor.utils {
 				dragging = false;
 			}
 			
+			// hopefully the following code is not necessary by listening to the stage
+			// attempt to fix hidden elements bug
 			if (event.currentTarget is InvalidatingSprite) {
 				if (dragInitiator is IGraphicElement) {
 					removeMouseHandlers((dragInitiator as IGraphicElement).displayObject);
@@ -2046,7 +2087,7 @@ package com.flexcapacitor.utils {
 				}
 			}
 			else {
-				removeMouseHandlers(IVisualElement(event.currentTarget));
+				removeMouseHandlers(event.currentTarget);
 				
 				if (dragInitiator) {
 					removeMouseHandlers(dragInitiator);
@@ -2375,7 +2416,7 @@ package com.flexcapacitor.utils {
 			// start from highest component and go back to application
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
-			if (!dragOutAllowed && "owner" in draggedItem && draggedItem.owner) {
+			if (!isDragOutAllowed && "owner" in draggedItem && draggedItem.owner) {
 				allowedParent = draggedItem.owner;
 			}
 			
@@ -3056,5 +3097,37 @@ package com.flexcapacitor.utils {
 			return _instance;
 		}
 		
+		/**
+		 * Create a duplicate and place it in the same location 
+		 * */
+		public static function createGraphicElementProxy(graphicElement:IGraphicElement, transparent:Boolean = true, fillColor:uint = 0xFFFFFFFF, useLocalSpace:Boolean = true, clipRectangle:Rectangle = null):Image {
+			var bitmapData:BitmapData = DisplayObjectUtils.getGraphicElementBitmapData(graphicElement as IGraphicElement, transparent, fillColor, useLocalSpace, clipRectangle);
+			var container:Object = graphicElement.owner ? graphicElement.owner : graphicElement.parent;
+			var image:Image = new Image();
+			var x:Number;
+			var y:Number;
+			image.source = bitmapData;
+			//image.includeInLayout = false;
+			x = graphicElement.getLayoutBoundsX();
+			y = graphicElement.getLayoutBoundsY();
+			
+			image.x = x;
+			image.y = y;
+			//image.width = bitmapData.width;
+			//image.height = bitmapData.height;
+			
+			if (container is IVisualElementContainer) {
+				container.addElement(image);
+			}
+			else if (container is DisplayObjectContainer) {
+				container.addChild(image);
+			}
+			
+			if (container is IInvalidating) {
+				IInvalidating(container).validateNow();
+			}
+			
+			return image;
+		}
 	}
 }

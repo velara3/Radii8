@@ -510,9 +510,9 @@
 			
 			<s:Label x="15" y="65" text="MXML code:" fontWeight="bold"/>
 			
-			<controls:AceEditor id="aceEditor" width="100%" height="100%"
+			<controls:AceEditor id="aceEditor" 
 								top="0" left="0"
-								editorIdentity="importWindow"
+								width="100%" height="100%"
 								mode="ace/mode/xml"
 								showFoldWidgets="true"
 								useWordWrap="true"
@@ -520,7 +520,7 @@
 								margin="{editorMargin}"
 								focusIn="editorFocusInHandler(event)"
 								change="changeHandler(event)"
-								visible="false"
+								visible="true"
 								/>
 			
 			<s:HGroup x="14" y="31" width="100%" height="22" 

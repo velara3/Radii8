@@ -462,7 +462,7 @@ package com.flexcapacitor.utils {
 					continue;
 				}
 				
-				output += " ";
+				output = StringUtils.ensureSpaceExists(output);
 				
 				// TODO REFACTOR
 				// add support to check for image source tags. if [object BitmapData] then we need 
@@ -495,7 +495,7 @@ package com.flexcapacitor.utils {
 					continue;
 				}
 				
-				output += " ";
+				output = StringUtils.ensureSpaceExists(output);
 				// we could be using XML itself to set values. It should encode as necessary
 				// todo: Refactor
 				output += styleName + "=\"" + XMLUtils.getAttributeSafeString(Object(styles[styleName]).toString()) + "\"";
@@ -527,18 +527,18 @@ package com.flexcapacitor.utils {
 			}
 			
 			if (componentDescription.locked) {
-				output += " ";
+				output = StringUtils.ensureSpaceExists(output);
 				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "locked=\"true\"";
 			}
 			
 			if (componentDescription.name!=componentDescription.className) {
-				output += " ";
+				output = StringUtils.ensureSpaceExists(output);
 				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "name=\"" + componentDescription.name + "\"";
 			}
 			
 			// maybe change this to htmlUserStyles and use fcNamespace
 			if (componentDescription.userStyles) {
-				output += " ";
+				output = StringUtils.ensureSpaceExists(output);
 				output += MXMLDocumentConstants.htmlNamespacePrefix + ":" + "style=\"" + XMLUtils.getAttributeSafeString(componentDescription.userStyles) + "\"";
 			}
 			
@@ -549,32 +549,32 @@ package com.flexcapacitor.utils {
 			}*/
 			
 			if (componentDescription.convertElementToImage) {
-				output += " ";
+				output = StringUtils.ensureSpaceExists(output);
 				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "convertToImage=\"" + componentDescription.convertElementToImage + "\"";
 			}
 			
 			if (componentDescription.createBackgroundSnapshot) {
-				output += " ";
+				output = StringUtils.ensureSpaceExists(output);
 				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "createBackgroundSnapshot=\"" + componentDescription.createBackgroundSnapshot + "\"";
 			}
 			
 			if (componentDescription.wrapWithAnchor) {
-				output += " ";
+				output = StringUtils.ensureSpaceExists(output);
 				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "wrapWithAnchor=\"" + componentDescription.wrapWithAnchor + "\"";
 				
 				if (componentDescription.anchorURL) {
-					output += " ";
+					output = StringUtils.ensureSpaceExists(output);
 					output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "anchorURL=\"" + componentDescription.anchorURL + "\"";
 				}
 				
 				if (componentDescription.anchorTarget) {
-					output += " ";
+					output = StringUtils.ensureSpaceExists(output);
 					output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "anchorTarget=\"" + componentDescription.anchorTarget + "\"";
 				}
 			}
 			
 			if (componentDescription.htmlTagName) {
-				output += " ";
+				output = StringUtils.ensureSpaceExists(output);
 				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "htmlTagName=\"" + componentDescription.htmlTagName + "\"";
 			}
 			
@@ -586,7 +586,7 @@ package com.flexcapacitor.utils {
 					imageData = Radiate.getImageDataFromBitmapData(componentDescription.instance.source);
 					
 					if (imageData && imageData.uid) {
-						output += " ";
+						output = StringUtils.ensureSpaceExists(output);
 						output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "bitmapDataId=\"" +imageData.uid + "\"";
 					}
 					
@@ -612,8 +612,8 @@ package com.flexcapacitor.utils {
 					className = "Application";
 					prefixedName = MXMLDocumentConstants.sparkNamespacePrefix + ":" + className;
 					namespaces = MXMLDocumentConstants.getDefaultNamespaceDeclarations();
-					output = output + "" + MXMLDocumentConstants.fcNamespacePrefix + ":version=\"" + version + "\"";
-					output = namespaces + output;
+					output = StringUtils.ensureCharacterBetween(namespaces, output, " ");
+					output = StringUtils.ensureCharacterBetween(output, MXMLDocumentConstants.fcNamespacePrefix + ":version=\"" + version + "\"", " ");
 				}
 				else if (useClassRegistry) {
 					prefixedName = classRegistry.getPrefixedNameForType(componentDescription.instance);

@@ -61,6 +61,7 @@
 			import spark.components.Group;
 			import spark.components.Image;
 			import spark.events.IndexChangeEvent;
+			import spark.primitives.supportClasses.GraphicElement;
 			
 			[Bindable]
 			private var radiate:Radiate;
@@ -567,8 +568,9 @@
 				var isSelf:Boolean;
 				var quality:String;
 				var fileName:String;
+				var imageDataOrError:Object;
 				
-				quality = StageQuality.BEST;
+				//quality = StageQuality.BEST;
 				
 				if (event.dragInitiator) {
 					isSelf = mainLibraryContainer.contains(event.dragInitiator as DisplayObject);
@@ -586,8 +588,13 @@
 					// initiator will always be UIComponent with current drag manager
 					if (initiator) {
 						
-						var imageDataOrError:Object;
-						imageDataOrError = Radiate.saveToLibrary(initiator);
+						// drag manager creates a raster snapshot when on desktop so don't use that
+						if (radiate.target is GraphicElement) {
+							imageDataOrError = Radiate.saveToLibrary(radiate.target, event.shiftKey);
+						}
+						else {
+							imageDataOrError = Radiate.saveToLibrary(initiator, event.shiftKey);
+						}
 						
 						if (imageDataOrError is Error) {
 							Radiate.error("Could not create a snapshot of the selected item. " + imageDataOrError); 

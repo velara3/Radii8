@@ -1704,6 +1704,12 @@
 				}				
 			}
 			
+			protected function duplicate_itemClickHandler(event:MenuEvent):void {
+				if (radiate.target) {
+					clipboardManager.duplicateItem(radiate.target, radiate.selectedDocument);
+				}				
+			}
+			
 			protected function paste_itemClickHandler(event:MenuEvent):void {
 				if (radiate.target) {
 					clipboardManager.pasteItem(radiate.target, radiate.selectedDocument);
@@ -2008,6 +2014,7 @@
 				<model:MenuItem id="paste" label="Paste" name="paste" enabled="true" keyEquivalent="v" controlKey="true" itemClick="paste_itemClickHandler(event)"/>
 				<model:MenuItem id="delete" label="Delete" name="delete" enabled="true" itemClick="delete_itemClickHandler(event)"/>
 				<model:MenuItem id="selectAll" label="Select All" name="selectAll" enabled="true" keyEquivalent="a" controlKey="true"/>
+				<model:MenuItem id="duplicate" label="Duplicate" name="Duplicate" enabled="true" keyEquivalent="d" controlKey="true" itemClick="duplicate_itemClickHandler(event)"/>
 			</model:MenuItem>
 			<!--<model:MenuItem label="Tools" >
 				<model:MenuItem id="selectSelectionTool" label="Selection" itemClick="selectSelectionTool_itemClickHandler(event)" />

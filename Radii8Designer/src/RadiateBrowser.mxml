@@ -246,7 +246,7 @@
 							 showStyleInheritanceInformation="false"
 							 showAllStyleDeclarations="false"
 							 showColorUnderMouse="false"
-							 enabled="true"
+							 enabled="false"
 							 showHTMLErrors="false"
 							 />
 	</fx:Declarations>

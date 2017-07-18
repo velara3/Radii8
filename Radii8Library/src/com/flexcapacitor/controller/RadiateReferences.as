@@ -2,6 +2,7 @@
 package com.flexcapacitor.controller {
 	import com.flexcapacitor.filters.BlackAndWhiteFilter;
 	import com.flexcapacitor.filters.BorderStrokeFilter;
+	import com.flexcapacitor.filters.SharpenFilter;
 	import com.flexcapacitor.filters.TextShadowFilter;
 	import com.flexcapacitor.tools.EyeDropper;
 	import com.flexcapacitor.tools.Hand;
@@ -20,6 +21,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.inspectors.BorderStyles;
 	import com.flexcapacitor.views.inspectors.ButtonProperties;
 	import com.flexcapacitor.views.inspectors.ColorPickerProperties;
+	import com.flexcapacitor.views.inspectors.CornerRadiusInspector;
 	import com.flexcapacitor.views.inspectors.DropShadowFilterInspector;
 	import com.flexcapacitor.views.inspectors.FillStyles;
 	import com.flexcapacitor.views.inspectors.FontStyles;
@@ -128,6 +130,7 @@ package com.flexcapacitor.controller {
 		public static var pathInspector:com.flexcapacitor.views.inspectors.PathProperties;
 		public static var fillInspector:com.flexcapacitor.views.inspectors.FillStyles;
 		public static var strokeInspector:com.flexcapacitor.views.inspectors.StrokeStyles;
+		public static var cornerRadiusInspector:com.flexcapacitor.views.inspectors.CornerRadiusInspector;
 		
 		// FILTERS
 		public static var filterInspector:com.flexcapacitor.views.panels.FiltersInspector;
@@ -157,6 +160,7 @@ package com.flexcapacitor.controller {
 		public static var shaderFilter:ShaderFilter;
 		public static var blackAndWhiteFilter:BlackAndWhiteFilter;
 		public static var borderStrokeFilter:BorderStrokeFilter;
+		public static var sharpenFilter:SharpenFilter;
 		public static var textShadowFilter:TextShadowFilter;
 		
 		///////////////////////////////////////////////////////

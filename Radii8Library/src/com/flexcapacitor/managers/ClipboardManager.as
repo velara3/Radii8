@@ -159,6 +159,83 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
+		 * Duplicate item
+		 * */
+		public function duplicateItem(item:Object, selectedDocument:IDocument):void {
+			var itemData:SourceData;
+			var description:ComponentDescription;
+			var destinationIndex:int;
+			var destination:Object;
+			var importOptions:ImportOptions;
+			var exportOptions:ExportOptions;
+			
+			
+			if (item == null || item is Application) {
+				return;
+			}
+			
+			destination = item && item.owner ? item.owner : null;
+			
+			if (destination==null && item && "parent" in item) {
+				destination = item && item.parent ? item.parent : null;
+			}
+			
+			// get destination
+			if (destination && !(destination is IVisualElementContainer)) {
+				destination = destination.owner;
+			}
+			
+			// prevent containers from being pasted into themselves
+			if (selectedDocument.instance.contains(destination.owner)) {
+				destination = destination.owner;
+			}
+			
+			if (!destination) {
+				destination = selectedDocument.instance;
+			}
+			
+			try {
+				// convert to string and then import to selected target or document
+				exportOptions = new ExportOptions();
+				
+				exportOptions.useInlineStyles = true;
+				exportOptions.exportChildDescriptors = true;
+				
+				if (selectedDocument.getItemDescription(item)) {
+					itemData = CodeManager.getSourceData(item, selectedDocument, CodeManager.MXML, exportOptions);
+				}
+				
+				// duplicate selection
+				if (itemData) {
+					itemData = CodeManager.setSourceData(itemData.source, destination, selectedDocument, CodeManager.MXML, destinationIndex, importOptions);
+				}
+				
+				// select first target
+				if (itemData && itemData.targets && itemData.targets.length) { 
+					radiate.setTarget(itemData.targets[0]);
+				}
+				else {
+					radiate.setTarget(destination);
+				}
+				
+				itemData = null;
+				
+				if (showAnimation) {
+					
+					if (radiate.target) {
+						animateShortcut(radiate.target, true);
+					}
+					else {
+						animateShortcut(destination, true);
+					}
+				}
+			}
+			catch (error:ErrorEvent) {
+				
+			}
+		}
+		
+		/**
 		 * Get destination component or application when image files are 
 		 * dropped from an external source
 		 * */
@@ -281,14 +358,15 @@ package com.flexcapacitor.managers
 				}
 				else if (format==ClipboardFormats.FILE_LIST_FORMAT || 
 					format==ClipboardFormats.FILE_PROMISE_LIST_FORMAT) {
-					data = clipboard.getData(format);
+					data = component;
 					
 					radiate.addFileListDataToDocument(selectedDocument, data as Array, destination);
 					actionPerformed = true;
 				}
 				else if (format==ClipboardFormats.BITMAP_FORMAT) {
 					// format is air:bitmap
-					data = clipboard.getData(ClipboardFormats.BITMAP_FORMAT);
+					//data = clipboard.getData(ClipboardFormats.BITMAP_FORMAT);
+					data = component;
 					bitmapData = data as BitmapData;
 					
 					if (Radiate.isDesktop) {
@@ -301,13 +379,17 @@ package com.flexcapacitor.managers
 					}
 				}
 				else if (format==ClipboardFormats.TEXT_FORMAT) {
-					data = clipboard.getData(ClipboardFormats.TEXT_FORMAT);
+					//data = clipboard.getData(ClipboardFormats.TEXT_FORMAT);
+					data = component;
 					
 					radiate.addTextDataToDocument(selectedDocument, data as String, destination);
 					actionPerformed = true;
 				}
 				else if (format==ClipboardFormats.HTML_FORMAT) {
-					data = clipboard.getData(ClipboardFormats.HTML_FORMAT);
+					// SecurityError: Error #2179: The Clipboard.generalClipboard object may only be read while processing a flash.events.Event.PASTE event.
+					// 	at flash.desktop::Clipboard/getHTML()
+					//data = clipboard.getData(ClipboardFormats.HTML_FORMAT);
+					data = component;
 					
 					radiate.addHTMLDataToDocument(selectedDocument, data as String, destination);
 					actionPerformed = true;
@@ -484,9 +566,10 @@ package com.flexcapacitor.managers
 	
 			if (fadeAnimation.isPlaying) {
 				fadeAnimation.end();
-				fadeAnimation.removeEventListener(EffectEvent.EFFECT_END, fadePasteAnimation_effectEndHandler);
-				fadeAnimation.removeEventListener(EffectEvent.EFFECT_END, fadeCopyAnimation_effectEndHandler);
 			}
+			
+			fadeAnimation.removeEventListener(EffectEvent.EFFECT_END, fadePasteAnimation_effectEndHandler);
+			fadeAnimation.removeEventListener(EffectEvent.EFFECT_END, fadeCopyAnimation_effectEndHandler);
 			
 			if (paste) {
 				fadeAnimation.addEventListener(EffectEvent.EFFECT_END, fadePasteAnimation_effectEndHandler);
@@ -510,9 +593,14 @@ package com.flexcapacitor.managers
 		protected function fadePasteAnimation_effectEndHandler(event:Event):void {
 			fadeAnimation.removeEventListener(EffectEvent.EFFECT_END, copyAnimation_effectEndHandler);
 			
+			if (copyIconInstance.owner) {
+				IVisualElementContainer(copyIconInstance.owner).removeElement(copyIconInstance);
+			}
+			
 			if (pasteIconInstance.owner) {
 				IVisualElementContainer(pasteIconInstance.owner).removeElement(pasteIconInstance);
 			}
+			
 			//Radiate.showToolsLayer();
 			//Radiate.updateSelection(Radiate.instance.target);
 		}
@@ -522,6 +610,10 @@ package com.flexcapacitor.managers
 			
 			if (copyIconInstance.owner) {
 				IVisualElementContainer(copyIconInstance.owner).removeElement(copyIconInstance);
+			}
+			
+			if (pasteIconInstance.owner) {
+				IVisualElementContainer(pasteIconInstance.owner).removeElement(pasteIconInstance);
 			}
 			//Radiate.showToolsLayer();
 			//Radiate.updateSelection(Radiate.instance.target);

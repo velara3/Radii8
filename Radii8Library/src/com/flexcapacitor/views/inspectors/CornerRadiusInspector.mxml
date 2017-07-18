@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:renderers="com.flexcapacitor.views.renderers.*"
+		 xmlns:local="*"
+		 
+		 show="group1_showHandler(event)"
+		 creationComplete="group1_showHandler(event)"
+		 implements="com.flexcapacitor.views.IInspector" 
+		 styleName="inspectablePanel"
+		 >
+	<!--
+	
+		ArgumentError: Error #2004: One of the parameters is invalid.
+		be sure to add the style styleName="inspectablePanel"
+	
+	-->
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.model.AccessorMetaData;
+			import com.flexcapacitor.utils.ClassUtils;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.primitives.Rect;
+			
+			import org.as3commons.lang.ArrayUtils;
+
+			public var radiate:Radiate;
+			public var target:Object;
+			public var data:Object;
+			
+			public function activate(selectedTarget:Object = null):void {
+				radiate = Radiate.getInstance();
+				
+				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
+				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
+				
+				if (selectedTarget) {
+					target = selectedTarget;
+				}
+				else if (radiate.target) {
+					target = radiate.target;
+				}
+				
+				update();
+			}
+			
+			public function deactivate():void {
+				if (radiate) {
+					radiate.removeEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange);
+					radiate.removeEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler);
+				}
+			}
+			
+			protected function handleTargetChange(event:RadiateEvent):void {
+				if (event.subSelectedItem) {
+					target = event.subSelectedItem;
+					update();
+				}
+				else if (target!=event.selectedItem) {
+					target = event.selectedItem;
+					update();
+				}
+			}
+			
+			public function update():void {
+				var rect:Rect = target as Rect;
+				
+				if (rect==null) return; // bug causing some target change before changing the target inspectors
+				radiusRenderer.numericStepper.value = Math.max(rect.radiusX, rect.radiusY);
+				
+				topLeftRenderer.numericStepper.value = Math.max(rect.topLeftRadiusX, rect.topLeftRadiusY);
+				topRightRenderer.numericStepper.value = Math.max(rect.topRightRadiusX, rect.topRightRadiusY);
+				bottomLeftRenderer.numericStepper.value = Math.max(rect.bottomLeftRadiusX, rect.bottomLeftRadiusY);
+				bottomRightRenderer.numericStepper.value = Math.max(rect.bottomRightRadiusX, rect.bottomRightRadiusY);
+				
+				/*
+				var radius:Number = 0;
+				var radiusXRendererData:AccessorMetaData;
+				var radiusYRendererData:AccessorMetaData;
+				
+				radiusXRendererData =	ClassUtils.getMetaDataOfProperty(target, "radiusX");
+				radiusYRendererData =	ClassUtils.getMetaDataOfProperty(target, "radiusY");
+				
+				// get minimum value zero or greater
+				//radius = Math.max(0, Math.min(rect.radiusX, rect.radiusY));
+				radius = Math.max(rect.radiusX, rect.radiusY);
+				
+				if (radiusXRendererData.value == radius) {
+					radiusRenderer.data = radiusXRendererData;
+				}
+				else {
+					radiusRenderer.data = radiusYRendererData;
+				}
+				topLeftXRendererData 		= 	ClassUtils.getMetaDataOfProperty(target, "topLeftRadiusX");
+				topLeftYRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(target, "topLeftRadiusY");
+				topRightXRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(target, "topRightRadiusX");
+				topRightYRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(target, "topRightRadiusY");
+				bottomLeftXRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(target, "bottomLeftRadiusX");
+				bottomLeftYRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(target, "bottomLeftRadiusY");
+				bottomRightXRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(target, "bottomRightRadiusX");
+				bottomRightYRenderer.data 		= 	ClassUtils.getMetaDataOfProperty(target, "bottomRightRadiusY");
+				*/
+			}
+			
+			public const RADIUS_X:String = "radiusX";
+			public const RADIUS_Y:String = "radiusY";
+			
+			public const TOP_LEFT_RADIUS_X:String = "topLeftRadiusX";
+			public const TOP_LEFT_RADIUS_Y:String = "topLeftRadiusY";
+			
+			public const TOP_RIGHT_RADIUS_X:String = "topRightRadiusX"; 
+			public const TOP_RIGHT_RADIUS_Y:String = "topRightRadiusY";
+			
+			public const BOTTOM_LEFT_RADIUS_X:String = "bottomLeftRadiusX"; 
+			public const BOTTOM_LEFT_RADIUS_Y:String = "bottomLeftRadiusY";
+			
+			public const BOTTOM_RIGHT_RADIUS_X:String = "bottomRightRadiusX"; 
+			public const BOTTOM_RIGHT_RADIUS_Y:String = "bottomRightRadiusY";
+		
+			public var relevantProperties:Array = [
+				RADIUS_X, 
+				RADIUS_Y, 
+				TOP_LEFT_RADIUS_X, 
+				TOP_LEFT_RADIUS_Y, 
+				TOP_RIGHT_RADIUS_X, 
+				TOP_RIGHT_RADIUS_Y, 
+				BOTTOM_LEFT_RADIUS_X, 
+				BOTTOM_LEFT_RADIUS_Y, 
+				BOTTOM_RIGHT_RADIUS_X, 
+				BOTTOM_RIGHT_RADIUS_Y, 
+				];
+			
+			protected function radiusLockedRenderer_changeHandler(event:Event):void {
+				var radiusX:Number;
+				var radiusY:Number;
+				var selected:Boolean;
+				var value:Number;
+				
+				selected = getRadiusLocked();
+				
+				/*
+				if (selected) {
+					radiusX = radiusRenderer.numericStepper.value;
+					radiusY = radiusYRenderer.numericStepper.value;
+					value = Math.max(radiusX, radiusY);
+					
+					if (value>0) {
+						radiusXRenderer.numericStepper.value = value;
+						radiusYRenderer.numericStepper.value = value;
+						radiusXRenderer.setTargetValue();
+						radiusYRenderer.setTargetValue();
+					}
+				}
+				*/
+			}
+			
+			protected function radiusRenderer_changeHandler(event:Event):void {
+				var properties:Array;
+				var propertyObject:Object;
+				var valueSuccessfullyApplied:Boolean;
+				
+				properties = [];
+				propertyObject = {};
+				
+				properties.push(RADIUS_X);
+				properties.push(RADIUS_Y);
+				
+				for each (var property:String in properties) {
+					propertyObject[property] = radiusRenderer.numericStepper.value
+				}
+				
+				valueSuccessfullyApplied = Radiate.setProperties(target, properties, propertyObject);
+			}
+			
+			protected function edgeRenderer_changeHandler(event:Event):void {
+				var radius:Number;
+				var properties:Array;
+				var propertyObject:Object;
+				var eventTarget:Object;
+				var valueSuccessfullyApplied:Boolean;
+				
+				properties = [];
+				propertyObject = {};
+				eventTarget = event.target;
+				
+				if (eventTarget==topLeftRenderer) {
+					properties.push(TOP_LEFT_RADIUS_X);
+					properties.push(TOP_LEFT_RADIUS_Y);
+				}
+				else if (eventTarget==topRightRenderer) {
+					properties.push(TOP_RIGHT_RADIUS_X);
+					properties.push(TOP_RIGHT_RADIUS_Y);
+				}
+				else if (eventTarget==bottomLeftRenderer) {
+					properties.push(BOTTOM_LEFT_RADIUS_X);
+					properties.push(BOTTOM_LEFT_RADIUS_Y);
+				}
+				else if (eventTarget==bottomRightRenderer) {
+					properties.push(BOTTOM_RIGHT_RADIUS_X);
+					properties.push(BOTTOM_RIGHT_RADIUS_Y);
+				}
+				
+				for each (var property:String in properties) {
+					propertyObject[property] = NumberRenderer(eventTarget).numericStepper.value;
+				}
+				
+				valueSuccessfullyApplied = Radiate.setProperties(target, properties, propertyObject);
+			}
+			
+			private function getRadiusLocked():Boolean {
+				return radiusLockedRenderer.booleanGroup.selectedValue=="True";
+			}
+			
+			
+			protected function propertyChangeHandler(event:RadiateEvent):void {
+				var relevant:Boolean;
+				
+				if (ArrayUtils.containsAny(relevantProperties, event.propertiesAndStyles)) {
+					relevant = true;
+				}
+				
+				if (relevant) {
+					//trace("property changed");
+					callLater(update);
+				}
+			}
+			
+			protected function group1_showHandler(event:FlexEvent):void {
+				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
+				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
+				var length:int = labels.length;
+				var gap:int = getStyle("gap");
+				var labelWidth:int = getStyle("labelWidth");
+				
+				for (var i:int;i<length;i++) {
+					labels[i].minWidth = labelWidth;
+				}
+				
+				length = hgroups.length;
+				
+				for (var j:int;j<length;j++) {
+					hgroups[j].gap = gap;
+				}
+				
+				radiusLockedRenderer.booleanEnabledRadioButton.selected = true;
+			}
+			
+			protected function radiusRenderer_beforeClearHandler(event:Event):void {
+				var radius:Number;
+				var properties:Array;
+				var eventTarget:Object;
+				var valueSuccessfullyApplied:Boolean;
+				
+				properties = [];
+				eventTarget = event.target;
+				
+				event.preventDefault();
+				
+				if (eventTarget==radiusRenderer) {
+					properties.push(RADIUS_X);
+					properties.push(RADIUS_Y);
+					
+					valueSuccessfullyApplied = Radiate.clearProperties(target, properties, 0);
+					return;
+				}
+				
+				if (eventTarget==topLeftRenderer) {
+					properties.push(TOP_LEFT_RADIUS_X);
+					properties.push(TOP_LEFT_RADIUS_Y);
+				}
+				else if (eventTarget==topRightRenderer) {
+					properties.push(TOP_RIGHT_RADIUS_X);
+					properties.push(TOP_RIGHT_RADIUS_Y);
+				}
+				else if (eventTarget==bottomLeftRenderer) {
+					properties.push(BOTTOM_LEFT_RADIUS_X);
+					properties.push(BOTTOM_LEFT_RADIUS_Y);
+				}
+				else if (eventTarget==bottomRightRenderer) {
+					properties.push(BOTTOM_RIGHT_RADIUS_X);
+					properties.push(BOTTOM_RIGHT_RADIUS_Y);
+				}
+				
+				valueSuccessfullyApplied = Radiate.clearProperties(target, properties);
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+
+	</fx:Declarations>
+
+	<s:HGroup width="100%" verticalAlign="baseline" includeInLayout="false" visible="false">
+		<s:Label text="Radius Lock" toolTip="Update the radius X and radius Y at the same time. " styleName="inspectablePanelLabel" />
+		<renderers:BooleanRenderer id="radiusLockedRenderer" height="24" change="radiusLockedRenderer_changeHandler(event)"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Radius" toolTip="The default corner radius to use for the x and y axis on all corners. The topLeftRadiusX, topRightRadiusX, bottomLeftRadiusX, and bottomRightRadiusX properties take precedence over this property." 
+				 styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="radiusRenderer" 
+								  height="24" 
+								  width="80"
+								  stepSize="1" 
+								  defaultValue="0"
+								  maximum="90000"
+								  beforeClear="radiusRenderer_beforeClearHandler(event)"
+								  change="radiusRenderer_changeHandler(event)"
+								  />
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Top Left" toolTip="Radius of the top left corner. Takes precedence over the radius properties (radiusX and radiusY)" 
+				 styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="topLeftRenderer" 
+								  height="24" 
+								  width="80"
+								  stepSize="1"
+								  maximum="90000"
+								  defaultValue="{NaN}" 
+								  beforeClear="radiusRenderer_beforeClearHandler(event)"
+								  change="edgeRenderer_changeHandler(event)"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Top Right" toolTip="Radius of the top right corner. Takes precedence over the radius properties (radiusX and radiusY)" 
+				 styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="topRightRenderer" 
+								  height="24" 
+								  width="80"
+								  stepSize="1" 
+								  maximum="90000"
+								  defaultValue="{NaN}" 
+								  beforeClear="radiusRenderer_beforeClearHandler(event)"
+								  change="edgeRenderer_changeHandler(event)"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Bottom Left" toolTip="Radius of the bottom left corner. Takes precedence over the radius properties (radiusX and radiusY)" 
+				 styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="bottomLeftRenderer" 
+								  height="24" 
+								  width="80"
+								  stepSize="1" 
+								  maximum="90000"
+								  defaultValue="{NaN}" 
+								  beforeClear="radiusRenderer_beforeClearHandler(event)"
+								  change="edgeRenderer_changeHandler(event)"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="baseline" >
+		<s:Label text="Bottom Right" toolTip="Radius of the bottom right corner. Takes precedence over the radius properties (radiusX and radiusY)" 
+				 styleName="inspectablePanelLabel" />
+		<renderers:NumberRenderer id="bottomRightRenderer" 
+								  height="24" 
+								  width="80"
+								  stepSize="1" 
+								  maximum="90000"
+								  defaultValue="{NaN}" 
+								  beforeClear="radiusRenderer_beforeClearHandler(event)"
+								  change="edgeRenderer_changeHandler(event)"/>
+	</s:HGroup>
+	
+</s:VGroup>

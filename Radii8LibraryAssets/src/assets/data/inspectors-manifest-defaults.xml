@@ -238,6 +238,7 @@
     <item name="Rect" className="spark.primitives.Rect" 
     		include="true">
    		<inspector name="Identity" className="com.flexcapacitor.views.inspectors.Identity"/>
+   		<inspector name="Corners" className="com.flexcapacitor.views.inspectors.CornerRadiusInspector"/>
    		<inspector name="Stroke" className="com.flexcapacitor.views.inspectors.StrokeStyles"/>
    		<inspector name="Fill" className="com.flexcapacitor.views.inspectors.FillStyles"/>
     </item>

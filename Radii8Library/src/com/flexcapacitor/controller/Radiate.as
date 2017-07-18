@@ -3857,7 +3857,7 @@ package com.flexcapacitor.controller {
 			
                 // if the visible area is less than our content then scale down
                 if (height > availableHeight || width > availableWidth) {
-					heightScale = availableHeight/height;
+					newScale = availableHeight/height;
 					width = newScale * width;
 					height = newScale * height;
                 }
@@ -6690,9 +6690,9 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (defaultValue!==undefined && defaultValue!==null) {
+				removeComponentProperties([target], [property]);
 				successful = setProperty(target, property, defaultValue, description, true, dispatchEvents);
 				// undefined values automatically get removed but nonundefined do not so we remove them manually 
-				removeComponentProperties([target], [property]);
 			}
 			else {
 				successful = setProperty(target, property, undefined, description, true, dispatchEvents);
@@ -6726,8 +6726,8 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (defaultValue!==undefined && defaultValue!==null) {
-				successful = setProperties(target, properties, propertiesObject, description, true, dispatchEvents);
 				removeComponentProperties([target], properties);
+				successful = setProperties(target, properties, propertiesObject, description, true, dispatchEvents);
 			}
 			else {
 				successful = setProperties(target, properties, propertiesObject, description, true, dispatchEvents);

@@ -38,6 +38,7 @@
 				//filtersArray.push({name:"Displacement Map", classe:"spark.filters.DisplacementMapFilter"});
 				filtersArray.push({name:"Drop Shadow", classe:"spark.filters.DropShadowFilter"});
 				filtersArray.push({name:"Glow", classe:"spark.filters.GlowFilter"});
+				filtersArray.push({name:"Sharpen", classe:"com.flexcapacitor.filters.SharpenFilter"});
 				filtersCollection.source = filtersArray;
 				filtersList.dataProvider = filtersCollection;
 			}
