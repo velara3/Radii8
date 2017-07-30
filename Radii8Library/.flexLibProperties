@@ -257,6 +257,8 @@
     <classEntry path="com.flexcapacitor.views.windows.SaveBeforeCloseWindow"/>
     <classEntry path="com.flexcapacitor.views.windows.SettingsWindow"/>
     <classEntry path="mx.managers.dragClasses.DragProxy"/>
+    <classEntry path="com.flexcapacitor.managers.URLManager"/>
+    <classEntry path="com.flexcapacitor.managers.SnippetManager"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

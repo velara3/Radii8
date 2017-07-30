@@ -22,6 +22,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.controls.AceEditor;
 			import com.flexcapacitor.events.HTMLDragEvent;
+			import com.flexcapacitor.events.RedirectEvent;
 			import com.flexcapacitor.managers.DragManagerImpl;
 			import com.flexcapacitor.model.HTMLDragData;
 			import com.flexcapacitor.model.IDocument;
@@ -32,7 +33,10 @@
 			import com.flexcapacitor.utils.PopUpOverlayManager;
 			import com.google.code.flexiframe.IFrame;
 			
+			import mx.events.BrowserChangeEvent;
 			import mx.events.FlexEvent;
+			import mx.managers.BrowserManager;
+			import mx.managers.IBrowserManager;
 			
 			include "build.as";
 			
@@ -41,6 +45,7 @@
 			public var applicationDescriptor:XML;
 			private var calloutSkin:CallOutSkin;
 			private var dragManager:DragManagerImpl;
+			private var browserManager:IBrowserManager;
 			
 			/**
 			 * @private
@@ -159,6 +164,13 @@
 				radiate.dropItemWeb(event, createDocument, createDocumentIfNeeded, resizeIfNeeded);
 			}
 			
+			protected function preventredirect1_redirectingHandler(event:RedirectEvent):void {
+				//event.preventDefault();
+				//trace("Redirecting away");
+				
+				// if no documents are open call event.preventDefault() to suppress popup message
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -177,25 +189,9 @@
 	fix: 
 	removed references in compiler build path to old libraries and applied the properties. 
 	
-	sometimes parent is null in DragProxy
-	line 648:
-	m.xTo = parent.mouseX;
-	m.yTo = parent.mouseY;
-	
-	maybe monkey patch with a null check
 	-->
 	
 	<!--
-	show all properties if inspector is not available 
-	add option to hide code in html view 
-	upload image automatically 
-	add delete attachment 
-	add automatically save document 
-	remove inspector panel 
-	remove focus rect in properties panel items 
-	add items from documents to assets array 
-	attach uploads to project document 
-	add uploaded icon to assets
 	
 	ArgumentError: Error #2004: One of the parameters is invalid.
 	at flash.display::Graphics/drawRect()
@@ -232,9 +228,12 @@
 	<fx:Style source="fonts.css" />
 	<fx:Style source="styles.css" />
 	
+	
 	<fx:Declarations>
 		<ebutils:MacMouseWheelHandler />
 		<utils:SecureRedirect />
+		<utils:PreventRedirect redirecting="preventredirect1_redirectingHandler(event)" 
+							   enabled="true"/>
 		<utils:HTMLKeyboardHandler />
 		<utils:HTMLDragManager dragDrop="dragDropHandler(event)"
 							   dragEnter="dragHandler(event)"
@@ -247,7 +246,7 @@
 							 showAllStyleDeclarations="false"
 							 showColorUnderMouse="false"
 							 enabled="false"
-							 showHTMLErrors="false"
+							 showHTMLErrors="true"
 							 />
 	</fx:Declarations>
 

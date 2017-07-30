@@ -3114,6 +3114,9 @@ package com.flexcapacitor.controller {
 		public static var WP_LOGIN_PATH:String = "/wp-admin/";
 		public static var WP_PROFILE_PATH:String = "/wp-admin/profile.php";
 		public static var WP_EDIT_POST_PATH:String = "/wp-admin/post.php";
+		public static var WP_SNIPPET_HOST:String = "https://www.radii8.com/snippets/";
+		public static var WP_SNIPPET_EDITOR:String = "https://www.radii8.com/mxml/";
+		public static var WP_SNIPPET_VIEWER:String = "https://www.radii8.com/viewer/";
 		public static var DEFAULT_DOCUMENT_WIDTH:int = 800;
 		public static var DEFAULT_DOCUMENT_HEIGHT:int = 500;//792;
 		public static var DEFAULT_NAVIGATION_WINDOW:String = "userNavigation";
@@ -6137,7 +6140,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add text data to a document
 		 * */
-		public function addTextDataToDocument(iDocument:IDocument, text:String, destination:Object = null):void {
+		public function addTextDataToDocument(iDocument:IDocument, text:String, destination:Object = null, useRichText:Boolean = true):void {
 			if (text==null || text=="") {
 				error("Not valid text data");
 			}
@@ -6148,12 +6151,16 @@ package com.flexcapacitor.controller {
 			if (text==null || iDocument==null) {
 				return;
 			}
+			var componentType:String = useRichText ? "spark.components.RichText" : "spark.components.Label";
+			var definition:ComponentDefinition =  getDynamicComponentType(componentType, true);
+			var component:Object = createComponentToAdd(iDocument, definition, false);
 			
-			var definition:ComponentDefinition =  getDynamicComponentType("spark.components.Label", true);
-			var component:Label = createComponentToAdd(iDocument, definition, false) as Label;
-			
-			// not sure why we're adding it
-			addElement(component, destination, ["text"], null, null, {text:text});
+			if (useRichText) {
+				addElement(component, destination, ["text"], null, null, {text:text});
+			}
+			else {
+				addElement(component, destination, ["text"], null, null, {text:text});
+			}
 			
 			updateComponentAfterAdd(iDocument, component);
 			

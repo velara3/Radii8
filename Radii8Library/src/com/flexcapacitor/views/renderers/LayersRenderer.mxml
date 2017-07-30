@@ -2,13 +2,19 @@
 <s:MXTreeItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					  xmlns:s="library://ns.adobe.com/flex/spark" 
 					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  xmlns:controls="com.flexcapacitor.controls.*"
 					  width="100%" 
 					  height="18" 
 					  autoDrawBackground="false"
 					  doubleClickEnabled="true"
 					  doubleClick="itemrenderer1_doubleClickHandler(event)"
-					  creationComplete="creationCompleteHandler(event)" xmlns:controls="com.flexcapacitor.controls.*"
+					  creationComplete="creationCompleteHandler(event)" 
 					  >
+	
+	<fx:Metadata>
+		[Event(name="lock", type="flash.events.Event")]
+	</fx:Metadata>
+	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
@@ -24,20 +30,21 @@
 			
 			import spark.components.Application;
 			import spark.components.supportClasses.GroupBase;
+			
 			/**
 			 * TypeError: Error #1034: Type Coercion failed: cannot convert Object@391af1d2bb51 to com.flexcapacitor.utils.supportClasses.ComponentDescription.
-	at Function/<anonymous>()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/views/renderers/LayersRenderer.mxml:281]
-	at Function/http://adobe.com/AS3/2006/builtin::apply()
-	 * 
-	 * Happened when dragging and dropping and holding alt key down (to make a copy) in Tree on LayersInspector
-	 * 
-	 * Might be caused by binding in 
-<s:Rect id="parentVisibleGroup" width="16" height="16" alpha="0.3" 
-					visible="{!ComponentDescription(data).parentVisible &amp;&amp; ComponentDescription(data).visible}">
-changed to 
- *
- * <s:Rect id="parentVisibleGroup" width="16" height="16" alpha="0.3" 
-					visible="{data as ComponentDescription && !ComponentDescription(data).parentVisible &amp;&amp; ComponentDescription(data).visible}">
+				at Function/<anonymous>()[/Users/monkeypunch/Documents/ProjectsGithub/Radii8/Radii8Library/src/com/flexcapacitor/views/renderers/LayersRenderer.mxml:281]
+				at Function/http://adobe.com/AS3/2006/builtin::apply()
+				 * 
+				 * Happened when dragging and dropping and holding alt key down (to make a copy) in Tree on LayersInspector
+				 * 
+				 * Might be caused by binding in 
+			<s:Rect id="parentVisibleGroup" width="16" height="16" alpha="0.3" 
+								visible="{!ComponentDescription(data).parentVisible &amp;&amp; ComponentDescription(data).visible}">
+			changed to 
+			 *
+			 * <s:Rect id="parentVisibleGroup" width="16" height="16" alpha="0.3" 
+								visible="{data as ComponentDescription && !ComponentDescription(data).parentVisible &amp;&amp; ComponentDescription(data).visible}">
 			 * */
 			override public function set data(value:Object):void {
 				super.data = value;
@@ -349,6 +356,23 @@ changed to
 				}
 			}
 			
+			protected function lockedGroup_clickHandler(event:MouseEvent):void {
+				var componentDescription:ComponentDescription;
+				var result:Boolean;
+				
+				componentDescription = data as ComponentDescription;
+				
+				if (componentDescription && componentDescription.instance) {
+					result = Radiate.lockComponent(componentDescription.instance, !componentDescription.locked);
+				}
+				
+				if (!result) {
+					Radiate.info("Unable to lock the selected item");
+				}
+				
+				dispatchEvent(new Event("lock"));
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -456,7 +480,9 @@ changed to
 		<!--- has mask -->
 		<s:HGroup id="hasMaskGroup" visible="false" 
 				  toolTip="Has mask applied">
-			<controls:LabelButton id="maskTypeLabel" text="C" 
+			<controls:LabelButton 
+					 id="maskTypeLabel" 
+					 text="C" 
 					 height="100%"
 					 fontSize="10"
 					 paddingTop="2"
@@ -472,8 +498,7 @@ changed to
 								  click="luminosityTypeLabel_clickHandler(event)"
 								  visible="false"
 								  includeInLayout="false"/>
-			<s:BitmapImage source="{Radii8LibraryAssets.hasMask}" 
-						   />
+			<s:BitmapImage source="{Radii8LibraryAssets.hasMask}" />
 		</s:HGroup>
 		
 		<!--- is mask -->
@@ -482,12 +507,21 @@ changed to
 		</s:Group>
 		
 		<!--- lock -->
-		<s:Group id="lockedGroup" visible="false" toolTip="Is locked">
+		<s:Group id="lockedGroup" 
+				 useHandCursor="true"
+				 buttonMode="true"
+				 visible="false" 
+				 toolTip="Is locked" click="lockedGroup_clickHandler(event)">
 			<s:BitmapImage source="{Radii8LibraryAssets.locked}" />
 		</s:Group>
 		
 		<!--- filters -->
-		<s:Group id="hasFiltersGroup" visible="false" toolTip="Has filters" click="hasFiltersGroup_clickHandler(event)">
+		<s:Group id="hasFiltersGroup" 
+				 useHandCursor="true"
+				 buttonMode="true"
+				 visible="false" 
+				 toolTip="Has filters" 
+				 click="hasFiltersGroup_clickHandler(event)">
 			<s:BitmapImage source="{Radii8LibraryAssets.filters}" />
 		</s:Group>
 		

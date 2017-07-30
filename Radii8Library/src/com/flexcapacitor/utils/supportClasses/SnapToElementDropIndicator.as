@@ -1,6 +1,8 @@
 package com.flexcapacitor.utils.supportClasses {
 	import mx.skins.ProgrammaticSkin;
 	
+	import spark.components.Application;
+	
 	/**
 	 * Shows a horizontal and vertical lines to indicate
 	 * a drop location in a basic layout
@@ -30,6 +32,7 @@ package com.flexcapacitor.utils.supportClasses {
 		public var lineCaps:String = "none";
 		public var drawAsRect:Boolean = false;
 		public var hairlineWhenLine:Boolean = true;
+		public var target:Object;
 		
 		public function setLines(x:Number, y:Number, rightEdge:Number = NaN, bottomEdge:Number = NaN, horizontal:Number = NaN, vertical:Number = NaN):void {
 			left = x;
@@ -104,11 +107,21 @@ package com.flexcapacitor.utils.supportClasses {
 			}
 			
 			if (!isNaN(right)) {
-				drawLine(right, 0, lineWeight, unscaledHeight);
+				if (target is Application) {
+					drawLine(right-1, 0, lineWeight, unscaledHeight);
+				}
+				else {
+					drawLine(right, 0, lineWeight, unscaledHeight);
+				}
 			}
 			
 			if (!isNaN(bottom)) {
-				drawLine(0, bottom, unscaledWidth, lineWeight);
+				if (target is Application) {
+					drawLine(0, bottom - 1, unscaledWidth, lineWeight);
+				}
+				else {
+					drawLine(0, bottom, unscaledWidth, lineWeight);
+				}
 			}
 			
 			if (!isNaN(horizontalCenter)) {

@@ -145,7 +145,7 @@
 					   minWidth="60" 
 					   prompt="Search"
 					   styleName="inputStyles"
-					   enter="filterInput_enterHandler(event)"
+					   enter="filterInput_enterHandler(event)" showSearchIcon="true"
 					   />
 	
 	<s:HGroup width="100%" top="33" left="4" verticalAlign="baseline">

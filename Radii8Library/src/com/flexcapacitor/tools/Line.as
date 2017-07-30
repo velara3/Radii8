@@ -275,7 +275,7 @@ package com.flexcapacitor.tools {
 				log("Key: " + event.keyCode);
 			}
 			
-			if (isMouseDown) {
+			if (isMouseDown && lastMouseEvent) {
 				lastMouseEvent.shiftKey = event.shiftKey;
 				mouseMoveHandler(lastMouseEvent);
 			}

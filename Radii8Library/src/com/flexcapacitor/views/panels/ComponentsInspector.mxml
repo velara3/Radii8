@@ -6,7 +6,7 @@
 		 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 width="400" 
-		 height="300"
+		 height="300" xmlns:handlers="com.flexcapacitor.handlers.*" xmlns:collections="com.flexcapacitor.effects.collections.*" xmlns:inspectors="com.flexcapacitor.views.inspectors.*"
 		 >
 	
 	<!-- 
@@ -28,6 +28,7 @@
 			import com.flexcapacitor.events.DragDropEvent;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.utils.DragManagerUtil;
 			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -223,9 +224,39 @@
 				return false;
 			}
 			
-			protected function graphicElementClicked(event:Event):void
-			{
-				// TODO Auto-generated method stub
+			
+			public function componentsFilterFunction(componentsDefinition:ComponentDefinition):Boolean {
+				var searchText:String;
+				var componentName:String;
+				var caseSensitive:Boolean;
+				
+				caseSensitive = searchCollection.caseSensitive;
+				
+				searchText = searchCollection.text;
+				searchText = caseSensitive ? searchText.toLowerCase() : searchText;
+				
+				componentName = componentsDefinition.name;
+				componentName = caseSensitive ? componentName.toLowerCase() : componentName;
+				
+				if (componentsDefinition.enabled==false) {
+					return false;
+				}
+				
+				if (searchCollection.searchAtStart.selected) {
+					if (componentName.indexOf(searchText)!=0) {
+						return false;
+					}
+				}
+				else {
+					if (componentName.indexOf(searchText)==-1) {
+						return false;
+					}
+				}
+				
+				return true;
+			}
+			
+			protected function graphicElementClicked(event:Event):void{
 				Radiate.info("Graphic clicked");
 			}
 			
@@ -233,7 +264,12 @@
 	</fx:Script>
 	
 	<fx:Declarations>
-		<s:ArrayCollection id="components" filterFunction="filterComponentsFunction"/>
+	<s:ArrayCollection id="components" filterFunction="filterComponentsFunction"/>
+		
+	<!-- SORT BY NAME -->
+	<handlers:EventHandler eventName="creationComplete" >
+		<collections:SortCollection target="{components}" fields="{['name']}" />
+	</handlers:EventHandler>
 		
 		
 		
@@ -251,26 +287,46 @@
 		</s:fill>
 	</s:Rect>-->
 	
-	<s:layout>
-		<s:VerticalLayout gap="6"/>
-	</s:layout>
 	
-	<s:List id="list" 
-			width="100%" 
-			height="100%"
-			labelField="name" 
-			dragEnabled="true"
-			borderVisible="false"
-			interactionMode="mouse"
-			dataProvider="{components}"
-			dragStart="list_dragStartHandler(event)"
-			itemRenderer="com.flexcapacitor.views.renderers.ComponentsRenderer"
-			>
-		<!--<s:layout>
-			<s:TileLayout requestedColumnCount="2" />
-		</s:layout>-->
-	</s:List>
 	
-	<s:Label id="dropTargetLabel" width="100%" paddingLeft="4" paddingTop="4" visible="false" includeInLayout="false"/>
-	<!--<s:Spacer height="4"/>-->
+	<mx:VDividedBox id="mainLibraryContainer" 
+					width="100%" height="100%"
+					top="0"
+					left="8" 
+					right="8" 
+					bottom="8"
+					>
+		
+		<s:Group height="24" 
+				 minHeight="24"
+				 maxHeight="60"
+				 width="100%" 
+				 >
+			
+			<inspectors:SearchCollection id="searchCollection" 
+										 dataProvider="{components}" 
+										 filterFunction="componentsFilterFunction"
+										 />
+		</s:Group>
+	
+		<s:List id="list" 
+				width="100%" 
+				height="100%"
+				labelField="name" 
+				dragEnabled="true"
+				borderVisible="false"
+				interactionMode="mouse"
+				dataProvider="{components}"
+				dragStart="list_dragStartHandler(event)"
+				itemRenderer="com.flexcapacitor.views.renderers.ComponentsRenderer"
+				>
+		</s:List>
+	
+		<s:Label id="dropTargetLabel" 
+				 width="100%" 
+				 paddingLeft="4" 
+				 paddingTop="4" 
+				 visible="false" 
+				 includeInLayout="false"/>
+	</mx:VDividedBox>
 </s:Group>

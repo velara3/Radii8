@@ -1406,9 +1406,11 @@ package com.flexcapacitor.utils {
 			dragEvent.isHorizontal 			= isHorizontal;
 			dragEvent.isBasicLayout			= isBasicLayout;
 			dragEvent.isSkinnableContainer	= isSkinnableContainer;
-			dragEvent.isDropTargetParent 	= (dropTarget == draggedItem.parent);
-			dragEvent.isDropTargetOwner 	= (dropTarget == draggedItem.owner);
 			dragEvent.replaceTarget 		= replaceTarget;
+			
+			// if object is not display object or uicomponent an error happens her
+			dragEvent.isDropTargetParent 	= ("parent" in draggedItem && dropTarget == draggedItem.parent);
+			dragEvent.isDropTargetOwner 	= ("owner" in draggedItem && dropTarget == draggedItem.owner);
 			
 			dispatchEvent(dragEvent);
 			

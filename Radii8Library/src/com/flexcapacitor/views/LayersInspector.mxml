@@ -127,6 +127,8 @@
 				if (radiate.target) {
 					updateTarget(radiate.target);
 				}
+				
+				componentListTree.addEventListener("lock", lockRendererClicked);
 			}
 			
 			public function deactivate():void {
@@ -1022,6 +1024,14 @@
 			protected function removeItem_dragExitHandler(event:DragEvent):void
 			{
 				removeItem.filters = [];
+			}
+			
+			protected function lockRendererClicked(event:Event):void {
+				var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
+				
+				if (componentDescription) {
+					lockedItem.selected = componentDescription.locked;
+				}
 			}
 			
 		]]>

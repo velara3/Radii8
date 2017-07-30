@@ -796,7 +796,7 @@
 				keyEquivalentModifiersFunction="standardOSModifier" 
 				showRoot="false"
 				itemClick="nativeMenuCommand(event)"/>-->
-		<utils:MiniInspector enabled="true"/>
+		<utils:MiniInspector enabled="false"/>
 		
 	</fx:Declarations>
 	

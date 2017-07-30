@@ -315,7 +315,7 @@ package com.flexcapacitor.managers
 			numberOfFormats = formats.length;
 			
 			// check for bitmap data, image files, air:rtf, air:text, etc 
-			// when multiple formats exist add first forrmat we suport
+			// when multiple formats exist add first format we support
 			for (var i:int;i<numberOfFormats;i++) {
 				format = formats[i];
 				
@@ -352,12 +352,20 @@ package com.flexcapacitor.managers
 					
 					componentFound = true;
 					
-					// code is outside of for loop - refactor
+					// code to add component is continued outside of for loop
 					break;
 					
 				}
 				else if (format==ClipboardFormats.FILE_LIST_FORMAT || 
 					format==ClipboardFormats.FILE_PROMISE_LIST_FORMAT) {
+					
+					try {
+						component = clipboard.getData(format);
+					}
+					catch (error:Error) {
+						
+					}
+					
 					data = component;
 					
 					radiate.addFileListDataToDocument(selectedDocument, data as Array, destination);
@@ -366,12 +374,20 @@ package com.flexcapacitor.managers
 				else if (format==ClipboardFormats.BITMAP_FORMAT) {
 					// format is air:bitmap
 					//data = clipboard.getData(ClipboardFormats.BITMAP_FORMAT);
+					
+					try {
+						component = clipboard.getData(format);
+					}
+					catch (error:Error) {
+						
+					}
+					
 					data = component;
 					bitmapData = data as BitmapData;
 					
 					if (Radiate.isDesktop) {
 						// not supported in FP in the browser - might try capturing via JS 
-						radiate.addBitmapDataToDocument(selectedDocument, bitmapData, destination);
+						radiate.addBitmapDataToDocument(selectedDocument, bitmapData, destination, null, true);
 						actionPerformed = true;
 					}
 					else {
@@ -380,6 +396,14 @@ package com.flexcapacitor.managers
 				}
 				else if (format==ClipboardFormats.TEXT_FORMAT) {
 					//data = clipboard.getData(ClipboardFormats.TEXT_FORMAT);
+					
+					try {
+						component = clipboard.getData(format);
+					}
+					catch (error:Error) {
+						
+					}
+					
 					data = component;
 					
 					radiate.addTextDataToDocument(selectedDocument, data as String, destination);
@@ -389,6 +413,14 @@ package com.flexcapacitor.managers
 					// SecurityError: Error #2179: The Clipboard.generalClipboard object may only be read while processing a flash.events.Event.PASTE event.
 					// 	at flash.desktop::Clipboard/getHTML()
 					//data = clipboard.getData(ClipboardFormats.HTML_FORMAT);
+					
+					try {
+						component = clipboard.getData(format);
+					}
+					catch (error:Error) {
+						
+					}
+					
 					data = component;
 					
 					radiate.addHTMLDataToDocument(selectedDocument, data as String, destination);

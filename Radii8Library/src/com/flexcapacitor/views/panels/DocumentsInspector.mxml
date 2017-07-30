@@ -11,7 +11,7 @@
 		 
 		 width="100%" 
 		 height="100%"
-		 implements="com.flexcapacitor.views.IInspector" 
+		 implements="com.flexcapacitor.views.IInspector" xmlns:panels="com.flexcapacitor.views.panels.*" 
 		 >
 	
 	<fx:Script>
@@ -33,7 +33,10 @@
 			import com.flexcapacitor.views.IInspector;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			
+			import flash.utils.setTimeout;
+			
 			import spark.events.IndexChangeEvent;
+			import spark.events.PopUpEvent;
 			
 			private var rootDisplayObject:DisplayObject;
 			private var displayList:Array = [];
@@ -640,13 +643,45 @@
 				}
 			}
 			
+			private var host:String;
+			private var viewerHost:String;
+			private var editorHost:String;
+			public var lastFragment:String;
+			public var saveSuccessful:Boolean;
+			
 			protected function shareIcon_clickHandler(event:MouseEvent):void {
+				
 				if (radiate.selectedDocument) {
 					RunManager.copyURLToDocument(radiate.selectedDocument as DocumentData);
 				}
 				else {
 					Radiate.warn("No document is open");
 				}
+				
+				return;
+				
+				if (shareCallout.isOpen) {
+					shareCallout.close();
+				}
+				else {
+					if (lastFragment==null) {
+						lastFragment = "";
+					}
+					
+					if (ExternalInterface.available) {
+						shareCallout.url = Radiate.WP_SNIPPET_HOST + "#" + lastFragment;
+						shareCallout.viewerURL = Radiate.WP_SNIPPET_VIEWER + "#" + lastFragment;
+						shareCallout.code = "";
+						shareCallout.open(shareIcon, true);
+					}
+					else if (saveSuccessful) {
+						shareCallout.url = Radiate.WP_SNIPPET_HOST + "#" + lastFragment;
+						shareCallout.viewerURL = Radiate.WP_SNIPPET_VIEWER + "#" + lastFragment;
+						shareCallout.code = "";
+						shareCallout.open(shareIcon, true);
+					}
+				}
+			
 			}
 			
 			protected function copyIcon_clickHandler(event:MouseEvent):void {
@@ -719,6 +754,9 @@
 				documentsCollection.refresh();
 			}
 			
+			protected function shareCallout_closeHandler(event:PopUpEvent):void {
+				
+			}
 		]]>
 	</fx:Script>
 	
@@ -808,6 +846,8 @@
 				</s:Group>
 			</s:Group>
 		</fx:Component>
+		
+		<panels:ShareCallout id="shareCallout" close="shareCallout_closeHandler(event)"/>
 	</fx:Declarations>
 	
 	<s:layout>

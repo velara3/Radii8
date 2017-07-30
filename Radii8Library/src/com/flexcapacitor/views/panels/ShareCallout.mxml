@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<controls:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   xmlns:clipboard="com.flexcapacitor.effects.clipboard.*" 
+		   xmlns:navigation="com.flexcapacitor.effects.navigation.*"
+		   xmlns:display="com.flexcapacitor.effects.display.*" 
+		   xmlns:status="com.flexcapacitor.effects.status.*" 
+		   xmlns:prompt="com.flexcapacitor.effects.prompt.*" 
+		   xmlns:handlers="com.flexcapacitor.handlers.*" 
+		   xmlns:core="com.flexcapacitor.effects.core.*" 
+		   xmlns:utils="com.flexcapacitor.utils.*" 
+		   xmlns:controller="controller.*" 
+		   xmlns:components="components.*" 
+		   
+		   creationComplete="creationCompleteHandler(event)"
+		   updateComplete="callout1_updateCompleteHandler(event)"
+		   contentBackgroundAppearance="flat"
+           horizontalPosition="middle"
+           verticalPosition="before" 
+		   xmlns:controls="com.flexcapacitor.controls.*"
+		   >
+	<!--
+	Using effects would cause the callout to fade out immediately after a second call.
+	showEffect="Fade"
+	hideEffect="Fade" 
+	-->
+	<fx:Style>
+		
+		.uppercase {
+			typographicCase: uppercase;
+		}
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.RunManager;
+			import com.flexcapacitor.model.DocumentData;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.events.FlexEvent;
+			import mx.utils.Platform;
+			
+			public var url:String;
+			public var viewerURL:String;
+			public var code:String;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				//trace("Callout created");
+				if (Platform.isDesktop) {
+					//arrow.y = arrow.y*1.2;
+				}
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				
+				if (Platform.isDesktop) {
+					//arrow.visible = false;
+				}
+			}
+			
+			protected function callout1_updateCompleteHandler(event:FlexEvent):void {
+				
+			}
+			
+			protected function copyURLButton_clickHandler(event:MouseEvent):void {
+				var clipboard:Clipboard = Clipboard.generalClipboard;
+				clipboard.clear();
+				clipboard.setData(ClipboardFormats.TEXT_FORMAT, url, false);
+				close();
+			}
+			
+			protected function copyURLToViewerButton_clickHandler(event:MouseEvent):void {
+				var clipboard:Clipboard;
+				var radiate:Radiate;
+				
+				radiate = Radiate.getInstance();
+				
+				if (radiate.selectedDocument) {
+					//RunManager.copyURLToDocument(radiate.selectedDocument as DocumentData);
+					//RunManager.copyURLToDocument(viewerURL);
+					clipboard = Clipboard.generalClipboard;
+					clipboard.clear();
+					clipboard.setData(ClipboardFormats.TEXT_FORMAT, viewerURL, false);
+				}
+				else {
+					Radiate.warn("No document is open");
+				}
+				close();
+			}
+			
+			protected function copyCodeButton_clickHandler(event:MouseEvent):void {
+				var clipboard:Clipboard = Clipboard.generalClipboard;
+				clipboard.clear();
+				clipboard.setData(ClipboardFormats.TEXT_FORMAT, code, false);
+				close();
+			}
+			
+			protected function openInViewer_clickHandler(event:MouseEvent):void
+			{
+				var request:URLRequest = new URLRequest(viewerURL);
+				navigateToURL(request);
+				close();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		
+	</fx:Declarations>
+	
+	<controls:layout>
+		<s:VerticalLayout paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10"/>
+	</controls:layout>
+    
+	<s:Button id="copyURLButton" 
+			  label="Copy URL to Clipboard" 
+			  height="60" 
+			  width="100%"
+			  styleName="sliderLabel" 
+			  click="copyURLButton_clickHandler(event)"
+			  />
+	
+	<s:Button id="copyViewerURLButton" 
+			  label="Copy viewer URL to Clipboard" 
+			  height="60" 
+			  width="100%"
+			  styleName="sliderLabel" 
+			  click="copyURLToViewerButton_clickHandler(event)"
+			  />
+	
+	<s:Button id="copyMXMLButton" 
+			  label="Copy code to Clipboard" 
+			  height="60" 
+			  width="100%"
+			  styleName="sliderLabel" 
+			  click="copyCodeButton_clickHandler(event)"
+			  />
+	
+	<!--<s:Button id="openInViewer" 
+			  label="Open in Viewer" 
+			  height="60" 
+			  width="100%"
+			  styleName="sliderLabel" 
+			  click="openInViewer_clickHandler(event)"
+			  />-->
+	
+	<s:Button id="cancelButton" 
+			  label="Close" 
+			  height="60" 
+			  width="100%"
+			  styleName="sliderLabel" 
+			  click="close()"
+			  />
+
+</controls:Callout>
