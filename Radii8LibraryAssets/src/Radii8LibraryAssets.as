@@ -198,6 +198,9 @@ package {
 		[Embed(source="assets/icons/general/open_folder.png")]
 		public static const openFolder:Class;
 		
+		[Embed(source="assets/icons/general/openInNewWindow.png")]
+		public static const openInNewWindow:Class;
+		
 		[Embed(source="assets/icons/general/outline.png")]
 		public static const outline:Class;
 		

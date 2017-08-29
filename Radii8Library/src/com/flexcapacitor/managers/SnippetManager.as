@@ -1,30 +1,31 @@
-package com.flexcapacitor.managers
-{
+package com.flexcapacitor.managers {
 	import com.flexcapacitor.model.SaveResultsEvent;
-	import com.flexcapacitor.services.IServiceEvent;
-	import com.flexcapacitor.services.IWPService;
-	import com.flexcapacitor.services.IWPServiceEvent;
+	import com.flexcapacitor.services.ServiceEvent;
 	import com.flexcapacitor.services.WPService;
 	
+	import flash.events.EventDispatcher;
 	import flash.net.URLVariables;
-	import flash.utils.setTimeout;
 	
 	import mx.managers.IBrowserManager;
+	
+	[Event("saveResults", type="com.flexcapacitor.services.ServiceEvent")]
+	[Event("retrievedResults", type="com.flexcapacitor.services.ServiceEvent")]
 
-	public class SnippetManager
-	{
-		public function SnippetManager()
-		{
+	public class SnippetManager extends EventDispatcher {
+		
+		public function SnippetManager(s:SINGLEDOUBLE) {
+		
 		}
 		
+		public static var SAVE_RESULTS:String = "saveResults";
+		public static var RETRIEVED_RESULTS:String = "retrievedResults";
 		
 		private var host:String;
 		private var viewerHost:String;
 		private var editorHost:String;
 		
-		private var loadService:WPService;
-		private var saveService:WPService;
-		private var snippetsService:WPService;
+		private var saveSnippetsService:WPService;
+		private var getSnippetsService:WPService;
 		private var saveSuccessful:Boolean;
 		private var saveInProgress:Boolean;
 		private var loadSuccessful:Boolean;
@@ -36,121 +37,141 @@ package com.flexcapacitor.managers
 		public var currentURL:String;
 		public var name:String;
 		
-		public function initialize():void {
+		public function initialize(location:String = null):void {
 			
-			if (snippetsService==null) {
-				snippetsService = new WPService();
-				snippetsService.addEventListener(WPService.RESULT, getSnippetsResultsHandler, false, 0, true);
-				snippetsService.addEventListener(WPService.FAULT, getSnippetsFaultHandler, false, 0, true);
-				snippetsService.host = host;
+			if (location) {
+				host = location;
+			}
+			
+			if (getSnippetsService==null) {
+				getSnippetsService = new WPService();
+				getSnippetsService.addEventListener(WPService.RESULT, getSnippetsResultsHandler, false, 0, true);
+				getSnippetsService.addEventListener(WPService.FAULT, getSnippetsFaultHandler, false, 0, true);
+				getSnippetsService.host = host;
+			}
+			
+			if (saveSnippetsService==null) {
+				saveSnippetsService = new WPService();
+				saveSnippetsService.addEventListener(WPService.RESULT, saveSnippetsResultsHandler, false, 0, true);
+				saveSnippetsService.addEventListener(WPService.FAULT, saveSnippetsFaultHandler, false, 0, true);
+				saveSnippetsService.host = host;
 			}
 		}
 		
 		/**
-		 * Results from call to get projects
-		 * */
-		public function getSnippetsResultsHandler(event:IServiceEvent):void {
-			var data:Object = event.data;
-			//examplesCollection.source = parseProjectsData(data);
+		 * Get the snippet by id
+		 **/
+		public function getSnippetByID(id:String):void {
+			var variables:URLVariables;
+			
+			loadSuccessful = false;
+			loadInProgress = true;
+			
+			variables = new URLVariables();
+			
+			variables.id = id;
+			
+			getSnippetsService.call = "Get Snippet";
+			getSnippetsService.send("snippets", "get_snippet", null, variables);
 		}
 		
 		/**
-		 * Result example projects fault
-		 * */
-		public function getSnippetsFaultHandler(event:IServiceEvent):void {
-			var data:Object = event.data;
+		 * Get the snippet by fragment
+		 **/
+		public function getSnippetByFragment(fragment:String):void {
+			var variables:URLVariables;
 			
-			if (event.hasError) {
-				//showErrorsImage(true, Object(event.faultEvent).text);
-			}
-			else {
-				//showErrorsImage(false);
-			}
+			loadSuccessful = false;
+			loadInProgress = true;
+			
+			variables = new URLVariables();
+			
+			variables.fragment = fragment;
+			
+			getSnippetsService.call = "Get Snippet";
+			getSnippetsService.send("snippets", "get_snippet", null, variables);
 		}
 		
 		/**
 		 * Saves the snippet to the server
 		 * */
-		private function postDocument(title:String, code:String, description:String = ""):void {
+		public function saveSnippet(title:String, code:String, description:String = "", thumbnail:String = null):void {
 			var form:URLVariables;
 			
 			saveSuccessful = false;
 			saveInProgress = true;
 			
-			form = toSaveFormObject(title, code, description);
+			form = createFormObject(title, code, description, thumbnail);
 			
-			if (title!=null) {
-				form.title = title;
-			}
-			
-			if (description) {
-				form.content = description;
-			}
-			
-			saveService.call = "Post call";
-			//savingStatus.text = "Saving";
-			//savingStatusGroup.visible = true;
-			// save project
-			saveService.send("snippets", "create_snippet", null, form);				
+			saveSnippetsService.call = "Post call";
+			saveSnippetsService.send("snippets", "create_snippet", null, form);				
 		}
 		
 		/**
 		 * Creates an object to send to the server
 		 * */
-		public function toSaveFormObject(title:String, code:String, description:String = ""):URLVariables {
-			var object:URLVariables = new URLVariables();
+		protected function createFormObject(title:String, code:String, description:String = "", thumbnail:String = null):URLVariables {
+			var variables:URLVariables = new URLVariables();
 			var value:String = code;
 			
-			object.title = title;
-			object.content = description=="" || description==null ? "An snippet" : description;
-			//object.content = value;
-			//object.categories = "document";
+			variables.title = title;
+			variables.content = description=="" || description==null ? "A snippet" : description;
 			
-			//if (id) 		object.id 		= id;
-			//if (status)		object.status 	= status;
-			//object.type 	= "page";
+			variables["custom[source]"] = value;
 			
-			//object["custom[uid]"] = uid;
-			//object["custom[sponge]"] = 1;
-			//object["custom[sandpaper]"] = 1;
+			if (thumbnail) {
+				variables["custom[thumbnail]"] = thumbnail;
+			}
 			
-			object["custom[source]"] = value;
-			
-			return object;
+			return variables;
 		}
+		
+		
+		/***************************************************
+		 * Event Handlers
+		 ****************************************************/
 		
 		/**
 		 * Result from save result
 		 * */
-		public function saveResultsHandler(event:IWPServiceEvent):void {
-			var saveResultsEvent:SaveResultsEvent = new SaveResultsEvent(SaveResultsEvent.SAVE_RESULTS);
-			var data:Object = event.data;
-			var post:Object = data ? data.post : null;
-			var pathElements:Array;
-			var key:String;
+		public function saveSnippetsResultsHandler(event:ServiceEvent):void {
+			var saveResultsEvent:SaveResultsEvent;
+			var data:Object;
+			var post:Object;
 			var uri:String;
 			var status:String;
+			var result:Array;
 			var id:String;
+			var serviceEvent:ServiceEvent;
 			
-			saveResultsEvent.call = event.call;
-			saveResultsEvent.data = event.data;
-			saveResultsEvent.message = event.message;
-			saveResultsEvent.text = event.text;
+			data = event.data;
+			post = data ? data.post : null;
+			
+			//saveResultsEvent = new SaveResultsEvent(SaveResultsEvent.SAVE_RESULTS);
+			//saveResultsEvent.call = event.call;
+			//saveResultsEvent.data = event.data;
+			//saveResultsEvent.message = event.message;
+			//saveResultsEvent.text = event.text;
 			
 			if (post) {
 				uri = post.url;
 				status = post.status;
+				//uri = post.url;
 				//savingStatus.text = "Snippet saved";
 				
 				//pathElements = uri.split("/");
 				//key = pathElements[pathElements.length-2];
-				var result:Array = uri.match(/(\w+)\/?$/);
-				if (result!=null) {//https://www.radii8.com/snippets/#Ewv0zaZ
-					browserManager.setFragment(result[1]);
+				result = uri.match(/(\w+)\/?$/);
+				
+				//https://www.radii8.com/snippets/#Ewv0zaZ23nA
+				if (result!=null) {
+					
+					//browserManager.setFragment(result[1]);
 					lastFragment = result[1];
 				}
 				else {
-					browserManager.setFragment(post.id);
+					
+					//browserManager.setFragment(post.id);
 					lastFragment = id;
 				}
 				
@@ -166,25 +187,34 @@ package com.flexcapacitor.managers
 				saveSuccessful = false;
 			}
 			
-			setTimeout(removeSaveLabel, 3000);
-			
 			saveInProgress = false;
-		}
-		
-		public function removeSaveLabel():void {
-			//savingStatusGroup.visible = false;
+			
+			if (hasEventListener(SAVE_RESULTS)) {
+				serviceEvent = new ServiceEvent(SAVE_RESULTS);
+				
+				if (event.hasError) {
+					serviceEvent.faultEvent = event;
+				}
+				else {
+					serviceEvent.resultEvent = event;
+				}
+				
+				dispatchEvent(serviceEvent);
+			}
 		}
 		
 		/**
 		 * Result from save fault
 		 * */
-		public function saveFaultHandler(event:IServiceEvent):void {
-			var service:IWPService = saveService;
-			var errorEvent:Object = service && "errorEvent" in service ? WPService(service).errorEvent : null;
-			var errorID:int;
+		public function saveSnippetsFaultHandler(event:ServiceEvent):void {
+			var errorEvent:Object;
 			var errorText:String;
 			var errorType:String;
 			var results:String;
+			var errorID:int;
+			var serviceEvent:ServiceEvent;
+			
+			errorEvent = saveSnippetsService && "errorEvent" in saveSnippetsService ? WPService(saveSnippetsService).errorEvent : null;
 			
 			if (errorEvent) {
 				errorText = "text" in errorEvent ? errorEvent.text : "";
@@ -197,43 +227,86 @@ package com.flexcapacitor.managers
 				results = "Error when trying to save document";
 			}
 			
-			//savingStatus.text = results;
-			
-			setTimeout(removeSaveLabel, 5000);
 			
 			saveInProgress = false;
+			
+			if (hasEventListener(SAVE_RESULTS)) {
+				serviceEvent = new ServiceEvent(SAVE_RESULTS);
+				
+				if (event.hasError) {
+					serviceEvent.hasError = true;
+					serviceEvent.faultEvent = event;
+				}
+				else {
+					serviceEvent.resultEvent = event;
+				}
+				
+				dispatchEvent(serviceEvent);
+			}
 		}
 		
 		/**
 		 * Result from load result
 		 * */
-		public function loadResultsHandler(event:IWPServiceEvent):void {
-			var data:Object = event.data;
-			var post:Object = data ? data.post : null;
+		public function getSnippetsResultsHandler(event:ServiceEvent):void {
+			var data:Object;
+			var post:Object;
+			var uri:String;
+			var status:String;
+			var customFields:Object;
+			var source:String;
+			var thumbnail:String;
+			var serviceEvent:ServiceEvent;
+			
+			data = event.data;
+			post = data ? data.post : null;
 			
 			if (post) {
-				var uri:String = post.url;
-				var status:String = post.status;
-				var customFields:Object = post.custom_fields;
-				var source:String = browserManager ? customFields.source : null;
-				//setEditorText(source);
-				//renderTimeLabel.text = "Loaded";
+				uri = post.url;
+				status = post.status;
+				customFields = post.custom_fields;
+				source = customFields.source;
+				thumbnail = customFields.thumbnail;
 			}
-			else {
-				//renderTimeLabel.text = "Not loaded";
+			else if ("error" in data && data.error) {
+				source = data.error; // Snippet not found.
 			}
 			
+			
+			if (hasEventListener(RETRIEVED_RESULTS)) {
+				serviceEvent = new ServiceEvent(RETRIEVED_RESULTS);
+				
+				if (event.hasError) {
+					serviceEvent.faultEvent = event;
+				}
+				else {
+					serviceEvent.resultEvent = event;
+				}
+				
+				if (serviceEvent.data==null) {
+					serviceEvent.data = data;
+				}
+				
+				if (event.hasError) {
+					serviceEvent.hasError = event.hasError;
+				}
+				
+				dispatchEvent(serviceEvent);
+			}
 		}
 		
 		/**
 		 * Result from load fault
 		 * */
-		public function loadFaultHandler(event:IServiceEvent):void {
-			var errorEvent:Object = loadService && "errorEvent" in loadService ? WPService(loadService).errorEvent : null;
+		public function getSnippetsFaultHandler(event:ServiceEvent):void {
+			var errorEvent:Object;
 			var errorID:int;
 			var errorText:String;
 			var errorType:String;
 			var results:String;
+			var serviceEvent:ServiceEvent;
+			
+			errorEvent = saveSnippetsService && "errorEvent" in saveSnippetsService ? WPService(saveSnippetsService).errorEvent : null;
 			
 			if (errorEvent) {
 				errorText = "text" in errorEvent ? errorEvent.text : "";
@@ -246,6 +319,38 @@ package com.flexcapacitor.managers
 				results = "Error when trying to save document: "+ name;
 			}
 			
+			if (hasEventListener(RETRIEVED_RESULTS)) {
+				serviceEvent = new ServiceEvent(RETRIEVED_RESULTS);
+				
+				if (event.hasError) {
+					serviceEvent.faultEvent = event;
+				}
+				else {
+					serviceEvent.resultEvent = event;
+				}
+				
+				dispatchEvent(serviceEvent);
+			}
 		}
+		
+		//----------------------------------
+		//  instance
+		//----------------------------------
+		
+		public static function get instance():SnippetManager
+		{
+			if (!_instance) {
+				_instance = new SnippetManager(new SINGLEDOUBLE());
+			}
+			return _instance;
+		}
+		
+		public static function getInstance():SnippetManager {
+			return instance;
+		}
+		
+		private static var _instance:SnippetManager;
 	}
 }
+
+class SINGLEDOUBLE{}

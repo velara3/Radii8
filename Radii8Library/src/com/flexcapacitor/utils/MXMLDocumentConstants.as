@@ -47,6 +47,7 @@ package com.flexcapacitor.utils {
 		public static const HTML_TAG_NAME:String 		= "htmlTagName";
 		public static const HTML_STYLES:String 			= "styles";
 		public static const BITMAP_DATA_ID:String 		= "bitmapDataId";
+		public static const THUMBNAIL_DATA:String		= "thumbnailData";
 		public static const LOCKED:String 				= "locked";
 		public static const CONVERT_TO_IMAGE:String 	= "convertToImage";
 		public static const CREATE_BACKGROUND_SNAPSHOT:String = "createBackgroundSnapshot";
@@ -74,6 +75,7 @@ package com.flexcapacitor.utils {
 		public static var BITMAP_DATA_ID_NS:String 		= fcNamespaceURI + "::" + BITMAP_DATA_ID;
 		public static var LOCKED_NS:String 				= fcNamespaceURI + "::" + LOCKED;
 		public static var CONVERT_TO_IMAGE_NS:String 	= fcNamespaceURI + "::" + CONVERT_TO_IMAGE;
+		public static var THUMBNAIL_DATA_NS:String 		= fcNamespaceURI + "::" + THUMBNAIL_DATA;
 		public static var CREATE_BACKGROUND_SNAPSHOT_NS:String = fcNamespaceURI + "::" + CREATE_BACKGROUND_SNAPSHOT;
 		
 		public static var MASK_NS:String 				= fxgNamespaceURI + "::" + MASK;

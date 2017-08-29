@@ -15,7 +15,9 @@ package com.flexcapacitor.utils {
 	
 	import flash.display.BitmapData;
 	import flash.display.DisplayObject;
+	import flash.display.StageQuality;
 	
+	import mx.core.UIComponent;
 	import mx.graphics.IFill;
 	import mx.graphics.IStroke;
 	
@@ -56,11 +58,6 @@ package com.flexcapacitor.utils {
 		 * Any styles not set inline are placed in an external stylesheet
 		 * */
 		public var useExternalStylesheet:Boolean;
-		
-		/**
-		 * Embed image data when image source is not a string or url
-		 * */
-		public var embedImage:Boolean = false;
 		
 		/**
 		 * Default file extension. Default is mxml. 
@@ -578,9 +575,12 @@ package com.flexcapacitor.utils {
 				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "htmlTagName=\"" + componentDescription.htmlTagName + "\"";
 			}
 			
-			if (componentDescription.instance is Image || componentDescription.instance is BitmapImage) {
+			if (componentInstance is Image || componentInstance is BitmapImage) {
 				var imageData:ImageData;
 				var base64ImageData:String;
+				var base64ThumbnailData:String;
+				var bitmapData:BitmapData;
+				var documentBitmapData:BitmapData;
 				
 				if (componentDescription.instance.source is BitmapData) {
 					imageData = Radiate.getImageDataFromBitmapData(componentDescription.instance.source);
@@ -591,17 +591,39 @@ package com.flexcapacitor.utils {
 					}
 					
 					// if the image hasn't been uploaded we can save it as an attribute or node
-					if (componentDescription.embedBitmapData && imageData) {
-						base64ImageData = DisplayObjectUtils.getBase64ImageDataString(componentDescription.instance.source, DisplayObjectUtils.PNG, null, true);
+					if (imageData) {
 						
-						// we may need to change this so it doesn't conflict with "bitmapData" in the spark namespace
-						childNodeNames.push(MXMLDocumentConstants.BITMAP_DATA_NS);
-						childNodesValues[MXMLDocumentConstants.BITMAP_DATA_NS] = base64ImageData;
+						if (componentDescription.embedBitmapData || embedImages) {
+							//if (imageData.bitmapData) {
+							// 
+							//}
+							base64ImageData = DisplayObjectUtils.getBase64ImageDataString(componentDescription.instance.source, DisplayObjectUtils.PNG, null, true);
+							
+							// we may need to change this so it doesn't conflict with "bitmapData" in the spark namespace
+							childNodeNames.push(MXMLDocumentConstants.BITMAP_DATA_NS);
+							childNodesValues[MXMLDocumentConstants.BITMAP_DATA_NS] = base64ImageData;
+						}
+						else {
+							warningData = IssueData.getIssue("Image data was not uploaded", "If you don't upload the image it will not be visible online.");
+							warnings.push(warningData);
+						}
+					}
+					else {
+						
+						warningData = IssueData.getIssue("Image data was not uploaded", "If you don't upload the image it will not be visible online.");
+						warnings.push(warningData);
 					}
 					
-					warningData = IssueData.getIssue("Image data was not uploaded", "If you don't upload the image it will not be visible online.");
-					warnings.push(warningData);
 				}
+			}
+			
+			// if the image hasn't been uploaded we can save it as an attribute or node
+			if (componentInstance is Application && embedThumbnail) {
+				documentBitmapData = DisplayObjectUtils.getUIComponentWithQuality(componentInstance as UIComponent, StageQuality.LOW) as BitmapData;
+				documentBitmapData = DisplayObjectUtils.resizeBitmapData(documentBitmapData, thumbnailWidth, thumbnailHeight, "letterbox");
+				base64ThumbnailData = DisplayObjectUtils.getBase64ImageDataString(documentBitmapData, DisplayObjectUtils.PNG, null, true);
+				childNodeNames.push(MXMLDocumentConstants.THUMBNAIL_DATA_NS);
+				childNodesValues[MXMLDocumentConstants.THUMBNAIL_DATA_NS] = base64ThumbnailData;
 			}
 			
 			if (className) {
@@ -656,6 +678,11 @@ package com.flexcapacitor.utils {
 						else if (propertyName==MXMLDocumentConstants.BITMAP_DATA_NS) {
 							childNodeNamespace = MXMLDocumentConstants.fcNamespacePrefix;
 							propertyName = MXMLDocumentConstants.BITMAP_DATA;
+							useCDATA = false;
+						}
+						else if (propertyName==MXMLDocumentConstants.THUMBNAIL_DATA_NS) {
+							childNodeNamespace = MXMLDocumentConstants.fcNamespacePrefix;
+							propertyName = MXMLDocumentConstants.THUMBNAIL_DATA;
 							useCDATA = false;
 						}
 						else {

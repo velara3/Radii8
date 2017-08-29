@@ -51,7 +51,6 @@ package com.flexcapacitor.utils {
 	import spark.layouts.VerticalLayout;
 	import spark.layouts.supportClasses.LayoutBase;
 	import spark.primitives.Ellipse;
-	import spark.primitives.Graphic;
 	import spark.primitives.Line;
 	import spark.primitives.Path;
 	import spark.primitives.Rect;
@@ -106,7 +105,7 @@ package com.flexcapacitor.utils {
 		 * cause all padding and borders to be inside width and height 
 		 * http://www.paulirish.com/2012/box-sizing-border-box-ftw/
 		 * */
-		public var borderBoxCSS:String = "*, *:before, *:after {\n\t-moz-box-sizing:border-box;\n\t-webkit-box-sizing:border-box;\n\tbox-sizing:border-box;\n}";
+		public var borderBoxCSS:String = "*, *:before, *:after {\n\t-moz-box-sizing:border-box;\n\t-webkit-box-sizing:border-box;\n\tbox-sizing:border-box;\n\tmargin:0;\n\tpadding:0;\n}";
 		
 		/**
 		 * Content token
@@ -132,6 +131,17 @@ package com.flexcapacitor.utils {
 		 * Zoom CSS
 		 * */
 		public var zoomCSS:String;
+		
+		/**
+		 * Substitute image data for light weight gray pixel
+		 * */
+		public var embedPlaceholderImageData:Boolean = false;
+		
+		/**
+		 * Image data for 1x1 gray pixel. Used as placeholder string so 
+		 * image data is not using all the screen real estate in text editors
+		 * */
+		public var embeddedImagePlaceholderData:String = "data:" + "image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWP49u3bfwAJqgPikU+0iAAAAABJRU5ErkJggg==";
 		
 		/**
 		 * Page zoom level
@@ -191,6 +201,8 @@ package com.flexcapacitor.utils {
 		public var reverseInitialCSS:Boolean = true;
 		
 		/**
+		 * Note: This is obsolete. Now using -0.2em to "pull up" text
+		 * 
 		 * Padding from browser text engine. 
 		 * In browsers (some or all) the text is not absolutely placed 
 		 * where you set it to be the larger the font is the farther down
@@ -208,11 +220,6 @@ package com.flexcapacitor.utils {
 		 * Show full HTML page source
 		 * */
 		public var showFullHTMLPageSource:Boolean = false;
-		
-		/**
-		 * Convert bitmap data to graphic data
-		 * */
-		public var createImageDataForGraphics:Boolean = true;
 		
 		/**
 		 * Show image snapshot when html element is not found or supported
@@ -245,7 +252,7 @@ package com.flexcapacitor.utils {
 		public var tab:String = "\t";
 		
 		/**
-		 * URL to transparent Gif used for spacing
+		 * URL to transparent Gif used for spacing. Not currently used. 
 		 * */
 		public var transparentGifURL:String = "/spacer.gif";
 		
@@ -295,7 +302,7 @@ package com.flexcapacitor.utils {
 			///////////////////////
 			
 			if (localOptions) {
-				savePresets();
+				savePresets(HTMLExportOptions);
 				applyPresets(localOptions);
 			}
 			
@@ -886,7 +893,9 @@ package com.flexcapacitor.utils {
 				// putting the convert to image code at the top. it's also used below if an element is not found
 				if (convertElementToImage || htmlOverride) {
 					layoutOutput = getWrapperTag(wrapperTag, false, wrapperTagStyles);
-					layoutOutput += "<img " + properties;
+					layoutOutput += "<img";
+					//layoutOutput = StringUtils.ensureSpaceExists(layoutOutput);
+					layoutOutput = StringUtils.ensureSpaceBetween(layoutOutput, properties);
 					layoutOutput = getIdentifierAttribute(componentInstance, layoutOutput);
 					layoutOutput = getStyleNameAttribute(componentInstance, layoutOutput);
 					styleValue = getSizeString(componentInstance as IVisualElement, styleValue, isHorizontalCenterSet);
@@ -894,7 +903,15 @@ package com.flexcapacitor.utils {
 					styleValue += getVisibleDisplay(componentInstance);
 					layoutOutput += properties ? " " : "";
 					
-					layoutOutput += " src=\"" + DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat) + "\"";
+					if (embedImages) {
+						
+						if (embedPlaceholderImageData) {
+							layoutOutput += " src=\"" + embeddedImagePlaceholderData + "\"";
+						}
+						else {
+							layoutOutput += " src=\"" + DisplayObjectUtils.getBase64ImageDataString(componentInstance, imageDataFormat) + "\"";
+						}
+					}
 					
 					styleValue += userInstanceStyles;
 					stylesOut = stylesHookFunction!=null ? stylesHookFunction(styleValue, componentDescription, document) : styleValue;
@@ -1763,8 +1780,21 @@ package com.flexcapacitor.utils {
 					
 					layoutOutput += properties ? " " : "";
 					
-					if (componentInstance.source is BitmapData && createImageDataForGraphics) {
-						layoutOutput += " src=\"" + DisplayObjectUtils.getBase64ImageDataString(componentInstance.source, encodingType) + "\"";
+					
+					// showing vast amounts of base64 string in the web editor can use up all screen 
+					// real estate - we can show placeholder data
+					// the base url string is for a single gray pixel
+					if (componentInstance.source is BitmapData) {
+						
+						if (embedImages) {
+							
+							if (embedPlaceholderImageData) {
+								layoutOutput += " src=\"" + embeddedImagePlaceholderData + "\"";
+							}
+							else {
+								layoutOutput += " src=\"" + DisplayObjectUtils.getBase64ImageDataString(componentInstance.source, imageDataFormat) + "\"";
+							}
+						}
 					}
 					else if (componentInstance.source is String) {
 						layoutOutput += " src=\"" + componentInstance.source + "\"";

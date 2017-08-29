@@ -5,6 +5,7 @@ package com.flexcapacitor.managers {
 	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.HTMLExportOptions;
 	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.IDocumentData;
 	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.model.MetaData;
 	import com.flexcapacitor.model.SourceData;
@@ -493,6 +494,29 @@ package com.flexcapacitor.managers {
 				}
 				
 			}
+		}
+		
+		/**
+		 * Opens the URL in a new window
+		 **/
+		public static function openURLInNewWindow(URL:String, windowName:String = null):void {
+			var request:URLRequest;
+			
+			if (URL==null || URL=="") {
+				//warn("Please select a document.");
+				return;
+			}
+			
+			request = new URLRequest();
+			
+			if (windowName==null || windowName=="") {
+				windowName = "preview";
+			}
+			
+			
+			request.url = URL;
+			navigateToURL(request, windowName);
+			
 		}
 	}
 }

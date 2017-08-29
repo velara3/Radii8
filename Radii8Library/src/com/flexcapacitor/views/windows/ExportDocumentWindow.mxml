@@ -32,6 +32,7 @@
 			
 			import mx.events.EffectEvent;
 			import mx.events.FlexEvent;
+			import mx.utils.Platform;
 			
 			import spark.events.IndexChangeEvent;
 			
@@ -112,6 +113,7 @@
 					htmlOptions = CodeManager.getExportOptions(language) as HTMLExportOptions;
 					htmlOptions.useInlineStyles = setStylesInline.selected;
 					htmlOptions.useExternalStylesheet = useExternalStylesheetCheckbox.selected;
+					htmlOptions.embedImages = embedLocalImagesCheckbox.selected;
 					htmlOptions.createFiles = true;
 					htmlOptions.showBorders = false;
 					htmlOptions.disableTabs = false;
@@ -141,6 +143,7 @@
 						extension = transcoderDescription.extension;
 					}
 					
+					options.embedImages = embedLocalImagesCheckbox.selected;
 					options.template = template;
 					options.fileExtension = extension;
 					options.createFiles = true;//options.embedImages = embed;
@@ -152,6 +155,7 @@
 						extension = transcoderDescription.extension;
 					}
 					
+					options.embedImages = embedLocalImagesCheckbox.selected;
 					options.useInlineStyles = setStylesInline.selected;
 					options.template = template;
 					options.fileExtension = extension;
@@ -186,6 +190,11 @@
 					}
 				}
 				else {
+					
+					if (Platform.isAir && outputFolder==null) {
+						warningLabel.text = warningLabel.toolTip = "Please select an output folder";
+						return;
+					}
 					
 					if (outputFolder) {
 						filesCreated = radiate.saveFiles(sourceData, outputFolder, overwriteFiles);
@@ -505,7 +514,7 @@
 	</fx:Declarations>
 	
 	
-	<s:VGroup left="15" 
+	<s:VGroup left="15" gap="10"
 				 top="20" 
 				 right="20"
 				 bottom="20">
@@ -529,7 +538,7 @@
 			</s:ButtonBar>
 		</s:HGroup>
 		
-		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
+		<!--<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>-->
 		
 		<s:HGroup width="100%" verticalAlign="baseline">
 			
@@ -559,7 +568,7 @@
 					 />
 		</s:HGroup>
 		
-		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
+		<!--<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>-->
 		
 		<s:HGroup width="100%" verticalAlign="middle">
 			
@@ -574,6 +583,15 @@
 							toolTip="Set the extension of the exported file. If not set then the extension will be automatically determined."
 							dataProvider="{extensionsList}"/>
 			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label id="optionsLabel" 
+					 text="Options:" 
+					 fontWeight="bold" 
+					 minWidth="120"/>
+			
 			<s:CheckBox id="setStylesInline" 
 						selected="false"
 						toolTip="Element styles are declared inline in a style attribute instead of inside a style declaration"
@@ -584,9 +602,14 @@
 						toolTip="Instead of styles being declared in the head of the template document they are declared in a separate CSS file."
 						label="External Stylesheet"/>
 			
+			<s:CheckBox id="embedLocalImagesCheckbox" 
+						selected="true"
+						toolTip="Embed images that are not uploaded"
+						label="Embed Local Images"/>
+			
 		</s:HGroup>
 		
-		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
+		<!--<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>-->
 		
 		<s:HGroup width="100%" verticalAlign="baseline">
 			
@@ -606,7 +629,7 @@
 					 maxDisplayedLines="1"/>
 		</s:HGroup>
 		
-		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
+		<!--<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>-->
 		
 		<s:HGroup width="100%" verticalAlign="baseline">
 			
@@ -639,7 +662,7 @@
 			
 		</s:HGroup>-->
 		
-		<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>
+		<!--<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>-->
 		
 		<s:Label id="warningLabel" 
 				 text="" 

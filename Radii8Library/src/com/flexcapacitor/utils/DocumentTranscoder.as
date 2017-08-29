@@ -129,6 +129,26 @@ package com.flexcapacitor.utils {
 		public var makeInteractive:Boolean;
 		
 		/**
+		 * Embed image data when image source is not a string or url
+		 * */
+		public var embedImages:Boolean = true;
+		
+		/**
+		 * Embed a thumbnail of document
+		 * */
+		public var embedThumbnail:Boolean = false;
+		
+		/**
+		 * Width of embedded thumbnail of document
+		 * */
+		public var thumbnailWidth:Number = 100;
+		
+		/**
+		 * Height of embedded thumbnail of document
+		 * */
+		public var thumbnailHeight:Number = 100;
+		
+		/**
 		 * When importing primitives add default fill and stroke
 		 * */
 		public var setPrimitivesDefaults:Boolean;
@@ -221,7 +241,7 @@ package com.flexcapacitor.utils {
 		 * */
 		public var stylesheetTokenMultiline:RegExp = /([\t| ]*)(<!--stylesheets_start-->)(.*)(^\s+)(<!--stylesheets_end-->)/ism;
 		public var stylesheetTokenSingleline:RegExp = /([\t| ]*)(<!--stylesheets-->)/i;
-		public var stylesheetTokenReplace:String = "$1$2$3$1[stylesheets]\n$4$5";
+		public var stylesheetTokenReplace:String = "$1$2$3[stylesheets]\n$4$5"; //"$1$2$3$1[stylesheets]\n$4$5";
 		public var stylesheetTokenStart:String = "<!--stylesheets_start-->";
 		public var stylesheetTokenEnd:String = "<!--stylesheets_end-->";
 		
@@ -424,7 +444,7 @@ package com.flexcapacitor.utils {
 				
 				if (match!=null) {
 					whiteSpace = match[1]!=null ? match[1] : "";
-					stylesheetLinks = StringUtils.indent(stylesheetLinks, whiteSpace + StringUtils.TAB);
+					stylesheetLinks = StringUtils.indent(stylesheetLinks, whiteSpace);
 					
 					stylesheetReplacement = stylesheetTokenReplace.replace("[stylesheets]", stylesheetLinks);
 					page = page.replace(stylesheetTokenMultiline, stylesheetReplacement);

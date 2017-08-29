@@ -334,6 +334,12 @@
 					
 					if (radiate.isPreviewDocumentVisible()) {
 						htmlOptions.exportFullDocument = true;
+						htmlOptions.embedPlaceholderImageData = false;
+					}
+					else {
+						htmlOptions.exportFullDocument = false;
+						//htmlOptions.embedImages = embedImagesButton.selected;
+						htmlOptions.embedPlaceholderImageData = true;
 					}
 					
 					options = htmlOptions;
@@ -905,7 +911,8 @@
 						htmlStartCompleteTime = htmlStartRenderTime = getTimer();
 						htmlRenderHandled = htmlCompleteHandled = false;
 						
-						previewDocument.addEventListener(HTML_RENDER, htmlRenderHandler, false, 0, true);
+						// render is being fired on mouse wheel scroll and scroll bar change so disabling for now
+						//previewDocument.addEventListener(HTML_RENDER, htmlRenderHandler, false, 0, true);
 						previewDocument.addEventListener(HTML_COMPLETE, htmlRenderHandler, false, 0, true);
 						
 						if (lastVerticalScrollPosition!=0) {
@@ -1540,6 +1547,8 @@
 					suggestions = [];
 				}
 				else {
+					//if (hasEmbedded
+					// if we have an embedded image then this takes way too much time
 					tokenInfo = AceEditorUtils.getTokenInformation(aceEditor);
 					suggestions = AceEditorUtils.getSuggestionList(tokenInfo, aceEditor);
 					count = suggestions.length; //PerformanceMeter.mark("After getAutoCompleteList");

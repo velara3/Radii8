@@ -13,7 +13,7 @@
 			   creationComplete="animatedpanelwindow1_creationCompleteHandler(event)" 
 			   openAnimationEnd="openAnimationEffectEndHandler(event)"
 			   resize="animatedpanelwindow1_resizeHandler(event)"
-			   updateComplete="animatedpanelwindow1_updateCompleteHandler(event)"
+			   updateComplete="animatedpanelwindow1_updateCompleteHandler(event)" xmlns:filters="com.flexcapacitor.filters.*"
 			   >
 	
 	<fx:Script>
@@ -21,11 +21,14 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.CodeManager;
+			import com.flexcapacitor.managers.SnippetManager;
 			import com.flexcapacitor.model.DocumentRevision;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.model.TranscoderDescription;
+			import com.flexcapacitor.services.ServiceEvent;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.DocumentTranscoder;
 			import com.flexcapacitor.utils.MXMLDocumentConstants;
 			import com.flexcapacitor.utils.MXMLDocumentImporter;
@@ -35,7 +38,6 @@
 			
 			import mx.collections.ArrayCollection;
 			import mx.core.IVisualElement;
-			import mx.events.EffectEvent;
 			import mx.events.FlexEvent;
 			import mx.events.ResizeEvent;
 			import mx.utils.Platform;
@@ -68,6 +70,8 @@
 					aceEditor.text = value;
 				}
 			}
+			
+			public var snippetID:String;
 
 			public var warningMessage:String = "Warning: XML is invalid and may not import correctly.";
 			
@@ -196,6 +200,18 @@
 				}
 			}
 			
+			public function showLoadingMessage():void {
+				hideMessage();
+				
+				notesGroup.visible = true;
+				notesGroup.includeInLayout = true;
+				messageLabel.text = "Loading";
+				
+				if (aceEditor.aceFound) {
+					aceEditor.clearAnnotations();
+				}
+			}
+			
 			/**
 			 * Import 
 			 * */
@@ -270,7 +286,7 @@
 				radiate = Radiate.instance;
 				var selectedDocument:IDocument = radiate.selectedDocument;
 				
-				Radiate.callAfter(200, afterCompleteTasks);
+				//Radiate.callAfter(200, afterCompleteTasks);
 				
 				if (showRevisions) {
 					currentState = REVISIONS;
@@ -290,6 +306,7 @@
 			
 			public function afterCompleteTasks():void {
 				createEditors();
+				var snippetMessage:String;
 				
 				if (_code && aceEditor) {
 					if (aceEditor.text!=_code) {
@@ -298,10 +315,23 @@
 						aceEditor.invalidateDisplayList();
 					}
 				}
+				
+				if (snippetID) {
+					snippetTextInput.text = snippetID;
+					snippetMessage = "Press the get snippet button to load the snippet";
+					
+					if (!Radiate.isDesktop) {
+						snippetMessage += " mentioned in the URL";
+					}
+					
+					snippetMessage += ". You can preview before importing";
+					aceEditor.text = snippetMessage;
+					
+					getSnippet();
+				}
 			}
 			
-			protected function revisions_clickHandler(event:MouseEvent):void
-			{
+			protected function revisions_clickHandler(event:MouseEvent):void {
 				var selectedItem:DocumentRevision = revisionsList.selectedItem as DocumentRevision;
 				
 				if (selectedItem) {
@@ -354,7 +384,9 @@
 					Radiate.warn("No source to show. No document is selected.");
 				}
 			}
+			
 			public var magicNumber:int = 250;
+			
 			protected function cancelButton_clickHandler(event:MouseEvent):void {
 				action = null;
 				code = null;
@@ -437,6 +469,7 @@
 				//trace("open animation finished");
 				aceEditor.visible = true;
 				callLater(updateAceEditor);
+				callLater(afterCompleteTasks);
 			}
 			
 			protected function animatedpanelwindow1_resizeHandler(event:ResizeEvent):void
@@ -464,18 +497,172 @@
 				}
 			}
 			
+			private var snippetManager:SnippetManager;
+			
+			protected function getURL_clickHandler(event:Event):void {
+				
+				getSnippet();
+			}
+			
+			public function getSnippet():void {
+				
+				if (snippetManager==null) {
+					snippetManager = SnippetManager.getInstance();
+				}
+				
+				snippetID = snippetTextInput.text;
+				
+				if (snippetID!=null && snippetID!="") {
+					snippetManager.addEventListener(SnippetManager.RETRIEVED_RESULTS, getSnippetResultsHandler, false, 0, true);
+					snippetManager.getSnippetByFragment(snippetID);
+					snippetProgressBar.visible = true;
+					snippetGroup.includeInLayout = true;
+					snippetGroup.visible = true;
+					mxmlCodeLabel.text = "Loading Snippet...";
+					//showLoadingMessage();
+				}
+			}
+			
+			public var thumbnailBitmapData:BitmapData;
+			
+			protected function getSnippetResultsHandler(event:ServiceEvent):void {
+				var serviceEvent:ServiceEvent;
+				var message:String;
+				var data:Object;
+				var post:Object;
+				var status:String;
+				var customFields:Object;
+				var source:String;
+				var uri:String;
+				var thumbnail:XML;
+				var thumbnailBase64Data:String;
+				var thumbnailQName:QName;
+				var thumbnailList:XMLList;
+				
+				mxmlCodeLabel.text = "Snippet";
+				snippetProgressBar.visible = false;
+				snippetManager.removeEventListener(SnippetManager.RETRIEVED_RESULTS, getSnippetResultsHandler);
+				
+				if (event.hasError) {
+					message = Object(event.faultEvent).text;
+					warningLabel.text = message;
+					
+					if (event.data && event.data.error) {
+						aceEditor.text = event.data.error;
+					}
+					else {
+						aceEditor.text = message;
+					}
+				}
+				else {
+					data = Object(event.resultEvent).data;
+					post = data ? data.post : null;
+					
+					if (post) {
+						uri = post.url;
+						status = post.status;
+						customFields = post.custom_fields;
+						source = customFields.source;
+						thumbnailBase64Data = customFields.thumbnail;
+						aceEditor.text = source;
+						
+						snippetTitle.text = post.title;
+						snippetTitle.toolTip = "Title of snippet";
+						snippetDescription.text = post.content.replace(/<\/?p>/g,"");
+						snippetGroup.includeInLayout = true;
+						snippetGroup.visible = true;
+						importButton.label = "Import";
+					}
+					else if (data && data.error) {
+						source = data.error;
+						aceEditor.text = source;
+					}
+					
+
+					if (XMLUtils.isValidXML(source)) {
+						try {
+							thumbnail = new XML(source);
+							thumbnailQName = new QName(MXMLDocumentConstants.fcNamespaceURI, MXMLDocumentConstants.THUMBNAIL_DATA);
+							////thumbnailList = thumbnail.descendants(MXMLDocumentConstants.THUMBNAIL_DATA);
+							thumbnailList = thumbnail.child(thumbnailQName);
+							
+							if (thumbnailList.length()>0) {
+								thumbnailBase64Data =  thumbnailList.toString();
+							}
+						}
+						catch (error:Error) {
+							Radiate.warn(error.toString());
+						}
+						
+						rollOverAnimation.play(null, false);
+					}
+					
+					
+					if (thumbnailBase64Data) {
+						DisplayObjectUtils.getBitmapDataFromBase64(thumbnailBase64Data, null, false, "png", thumbnailImage);
+						//thumbnailImage.source = thumbnailBitmapData;
+						//thumbnailImage.width = 100;
+					}
+					
+				}
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
-		
-		
 		<!--- hide about popup -->
 		<fc:ClosePopUp id="closePopUp" popUp="{this}"  />
 		
 		<fx:String id="action"></fx:String>
 		
 		<s:RadioButtonGroup id="importLocation"  />
+		
+		<s:Linear id="easer" easeInFraction="0" easeOutFraction="0"/>
+		<fx:int id="duration">1000</fx:int>
+		<fx:Number id="borderWeight">3</fx:Number>
+		<fx:Number id="borderColor">0x00FF00</fx:Number>
+		
+		<filters:BorderStrokeFilter id="borderStrokeFilter"
+									color="{borderColor}"
+									weight="0"/>
+		
+		<s:GlowFilter id="glowFilter"
+					  color="{borderColor}"
+					  strength="0"/>
+		
+		<fx:Vector id="rollOverMotionPathsBorder" 
+				   type="spark.effects.animation.MotionPath">
+			<s:SimpleMotionPath property="weight" 
+								valueFrom="0" 
+								valueTo="{borderWeight}"/>
+			<s:SimpleMotionPath property="weight" 
+								valueTo="0" 
+								valueFrom="{borderWeight}"/>
+		</fx:Vector>
+		
+		<fx:Vector id="rollOverMotionPathsGlow" 
+				   type="spark.effects.animation.MotionPath">
+			<s:SimpleMotionPath property="strength" 
+								valueFrom="0" 
+								valueTo="{borderWeight}"
+								/>
+			<s:SimpleMotionPath property="strength" 
+								valueFrom="{borderWeight}"
+								valueTo="0" 
+								/>
+		</fx:Vector>
+		
+		
+		<s:Animate id="rollOverAnimation" 
+				   easer="{easer}"
+				   duration="{duration}" 
+				   target="{glowFilter}"
+				   motionPaths="{rollOverMotionPathsGlow}"
+				   >
+			
+		</s:Animate>
 	</fx:Declarations>
 	
 	<w:states>
@@ -508,20 +695,58 @@
 				  width="100%"
 				  height="100%">
 			
-			<s:Label x="15" y="65" text="MXML code:" fontWeight="bold"/>
+			<s:HGroup width="100%" >
+				<s:Label id="mxmlCodeLabel" 
+						 x="15" y="65" 
+						 text="MXML code:" 
+						 fontWeight="bold"
+						 paddingBottom="10"/>
+				
+				<s:Label id="snippetTitle" width="100%" text=""
+						 toolTip=""/>
+			</s:HGroup>
 			
-			<controls:AceEditor id="aceEditor" 
-								top="0" left="0"
-								width="100%" height="100%"
-								mode="ace/mode/xml"
-								showFoldWidgets="true"
-								useWordWrap="true"
-								scrollSpeed=".5"
-								margin="{editorMargin}"
-								focusIn="editorFocusInHandler(event)"
-								change="changeHandler(event)"
-								visible="true"
-								/>
+			<mx:HDividedBox width="100%" height="100%" liveDragging="true">
+				<s:VGroup id="snippetGroup" 
+						  visible="false"
+						  includeInLayout="false"
+						  gap="10"
+						  width="150"
+						  height="100%"
+						  minWidth="100">
+					
+					<s:Label id="snippetTitleLabel" width="100%" text="Description:"
+							 fontWeight="bold"/>
+					<s:Label id="snippetDescription" width="100%" 
+							 maxDisplayedLines="5" text="Description"
+							 toolTip="Description of snippet"/>
+					<s:Label id="snippetThumbnailLabel" width="100%" text="Thumbnail:"
+							 fontWeight="bold"/>
+					<s:Image id="thumbnailImage" 
+							 width="100" height="100"
+							 smooth="true"
+							 smoothingQuality="high"
+							 toolTip="Thumbnail of snippet"/>
+					<s:Spacer height="100%"/>
+					
+					<s:Button id="importSnippetButton" label="Import Snippet" 
+							  click="importPopUp_closeHandler(event)" 
+							  filters="{[glowFilter]}"/>
+				</s:VGroup>
+				
+				<controls:AceEditor id="aceEditor" 
+									top="0" left="0"
+									width="100%" height="100%"
+									mode="ace/mode/xml"
+									showFoldWidgets="true"
+									useWordWrap="true"
+									scrollSpeed=".5"
+									margin="{editorMargin}"
+									focusIn="editorFocusInHandler(event)"
+									change="changeHandler(event)"
+									visible="true"
+									/>
+			</mx:HDividedBox>
 			
 			<s:HGroup x="14" y="31" width="100%" height="22" 
 					  horizontalAlign="right" 
@@ -549,6 +774,18 @@
 							   value="{CURRENT_SELECTION}"
 							   />
 				<s:Spacer width="100%"/>
+				
+				<mx:ProgressBar id="snippetProgressBar" 
+								label="" 
+								height="8"
+								visible="false"
+								indeterminate="true" 
+								width="100%"/>
+				<s:Label x="15" y="15" text="Snippet ID or URL:" 
+						 fontWeight="bold" paddingTop="3" paddingRight="10"/>
+				<s:TextInput id="snippetTextInput" prompt="ID or URL of snippet" width="200" 
+							 enter="getURL_clickHandler(event)"/>
+				<s:Button label="Get" click="getURL_clickHandler(event)"/>
 			</s:HGroup>
 			
 			<s:HGroup id="notesGroup" width="100%" verticalAlign="middle" 
@@ -585,11 +822,13 @@
 				<s:Button id="showCurrentSourceButton" 
 						  label="Show Current Source"
 						  click="showCurrentSourceButton_clickHandler(event)"/>
-				<controls:VerticalLine />
+				<controls:VerticalLine baseline="-5"/>
 				<s:Button label="Add namespaces" click="addNamespaces_clickHandler(event)"/>
 				<s:Spacer width="100%"/>
+				
 				<s:Button id="cancelButton" label="Close" click="cancelButton_clickHandler(event)"/>
-				<s:Button id="importButton" label="Import" click="importPopUp_closeHandler(event)"/>
+				<s:Button id="importButton" label="Import" click="importPopUp_closeHandler(event)" 
+						  filters="{[glowFilter]}"/>
 			</s:HGroup>
 		</s:VGroup>
 	</mx:HDividedBox>

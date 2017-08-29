@@ -33,6 +33,7 @@ package com.flexcapacitor.utils {
 	import mx.graphics.IFill;
 	import mx.graphics.IStroke;
 	import mx.graphics.LinearGradient;
+	import mx.graphics.RadialGradient;
 	import mx.graphics.SolidColor;
 	import mx.graphics.SolidColorStroke;
 	import mx.managers.ILayoutManagerClient;
@@ -451,6 +452,24 @@ package com.flexcapacitor.utils {
 					}
 					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.BITMAP_DATA];
 					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.BITMAP_DATA_NS];
+				}
+				
+				if (childNodeNames.indexOf(MXMLDocumentConstants.THUMBNAIL_DATA)!=-1 || 
+					qualifiedChildNodeNames.indexOf(MXMLDocumentConstants.THUMBNAIL_DATA_NS)!=-1) {
+					bitmapDataIndex = valuesObject.childProperties.indexOf(MXMLDocumentConstants.THUMBNAIL_DATA);
+					if (bitmapDataIndex!=-1) {
+						valuesObject.childProperties.splice(bitmapDataIndex, 1);
+					}
+					else {
+						bitmapDataIndex = valuesObject.childProperties.indexOf(MXMLDocumentConstants.THUMBNAIL_DATA_NS);
+						if (bitmapDataIndex!=-1) {
+							valuesObject.childProperties.splice(bitmapDataIndex, 1);
+						}
+					}
+					handledChildNodes.push(MXMLDocumentConstants.THUMBNAIL_DATA);
+					handledChildNodes.push(MXMLDocumentConstants.THUMBNAIL_DATA_NS);
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.THUMBNAIL_DATA];
+					delete valuesObject.propertiesErrorsObject[MXMLDocumentConstants.THUMBNAIL_DATA_NS];
 				}
 				
 				if (childNodeNames.indexOf(MXMLDocumentConstants.LAYOUT)!=-1 || 
@@ -1503,6 +1522,7 @@ public static function myErrorHandler(p:Property, value:Object):void
 			var fillType:String;
 			var solidColor:SolidColor;
 			var linearGradient:LinearGradient;
+			var radialGradient:RadialGradient;
 			var bitmapFill:BitmapFill;
 			
 			if (fill==null) {
@@ -1533,6 +1553,10 @@ public static function myErrorHandler(p:Property, value:Object):void
 				else if (fillType==MXMLDocumentConstants.LINEAR_GRADIENT) {
 					linearGradient = getLinearGradientFill(fillXML);
 					fill = linearGradient;
+				}
+				else if (fillType==MXMLDocumentConstants.RADIAL_GRADIENT) {
+					radialGradient = getRadialGradientFill(fillXML);
+					fill = radialGradient;
 				}
 			}
 			
@@ -1616,6 +1640,87 @@ public static function myErrorHandler(p:Property, value:Object):void
 			linearGradient.entries = entries;
 			
 			return linearGradient;
+		}
+		
+		public function getRadialGradientFill(fillXML:XML):RadialGradient {
+			var radialGradient:RadialGradient;
+			var entries:Array;
+			var entriesXML:XMLList;
+			var entryXML:XML;
+			var entry:GradientEntry;
+			var sparkQName:QName;
+			var fxgQName:QName;
+			var numberOfEntries:int;
+			
+			sparkQName = new QName(MXMLDocumentConstants.sparkNamespaceURI, MXMLDocumentConstants.GRADIENT_ENTRY);
+			fxgQName = new QName(MXMLDocumentConstants.fxgNamespaceURI, MXMLDocumentConstants.GRADIENT_ENTRY);
+			
+			radialGradient = new RadialGradient();
+			entriesXML = fillXML.descendants(MXMLDocumentConstants.GRADIENT_ENTRY);
+			
+			if (entriesXML.length()==0) {
+				entriesXML = fillXML.descendants(sparkQName);
+				
+				if (entriesXML.length()==0) {
+					entriesXML = fillXML.descendants(fxgQName);
+				}
+			}
+			
+			numberOfEntries = entriesXML.length();
+			entries = [];
+			
+			if (XMLUtils.hasAttribute(fillXML, "interpolationMethod")) {
+				radialGradient.interpolationMethod = fillXML.@interpolationMethod;
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "matrix")) {
+				radialGradient.matrix = fillXML.@matrix;
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "rotation")) {
+				radialGradient.rotation = fillXML.@rotation;
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "spreadMethod")) {
+				radialGradient.spreadMethod = fillXML.@spreadMethod;
+			}
+			
+			// angle is deprecated
+			if (XMLUtils.hasAttribute(fillXML, "angle")) {
+				radialGradient["angle"] = fillXML.@angle;
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "focalPointRatio")) {
+				radialGradient.focalPointRatio = fillXML.@focalPointRatio;
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "x")) {
+				radialGradient.x = fillXML.@x;
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "y")) {
+				radialGradient.y = fillXML.@y;
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "scaleX")) {
+				radialGradient.scaleX = fillXML.@scaleY;
+			}
+			
+			if (XMLUtils.hasAttribute(fillXML, "scaleY")) {
+				radialGradient.scaleY = fillXML.@scaleY; 
+			}
+			
+			for (var i:int = 0; i < numberOfEntries; i++)  {
+				entryXML = entriesXML[i];
+				
+				entry = getGradientEntry(entryXML);
+				
+				entries.push(entry);
+			}
+			
+			radialGradient.entries = entries;
+			
+			return radialGradient;
 		}
 		
 		public function getGradientEntry(entryXML:XML):GradientEntry {

@@ -174,33 +174,6 @@
 					//trace(loader.userAgent);
 				}
 				
-				protected function orderUpdateWindowToFront():void {
-					//height = Capabilities.screenResolutionY * .5;
-					//nativeWindow.y = 240;
-					var windows:Array = nativeApplication.openedWindows;
-					var window:NativeWindow;
-					
-					for (var i:int;i<windows.length;i++) {
-						window = windows[i];
-						
-						// if application then skip
-						if (window==nativeWindow) {
-							//trace(NativeWindow.supportsNotification);
-							window.notifyUser(NotificationType.INFORMATIONAL);
-							window.notifyUser(NotificationType.CRITICAL);
-							continue;
-						}
-						
-						window.orderToFront();
-						Radiate.callAfter(100, window.orderToFront);
-						Radiate.callAfter(1000, window.orderToFront);
-						Radiate.callAfter(2000, window.orderToFront);
-						//break;
-					}
-					
-					//Radiate.info("An update is available: " + "Current version: " + updateApplication.currentVersion + ". Remote version: " + updateApplication.remoteVersion);
-				}
-				
 				private function nativeMenuHandler(menuEvent:Event):void{
 					var application:WindowedApplication = this;
 					var nativeMenuItem:NativeMenuItem = menuEvent.target as NativeMenuItem;
@@ -756,7 +729,7 @@
 		Had an argument in the launch configuration
 		-->
 		
-		<handlers:EventHandler eventName="initialize" enabled="true">
+		<handlers:EventHandler eventName="applicationComplete" enabled="true">
 			
 			<local:UpdateApplication id="updateApplication"
 									 traceEvents="false" 
@@ -766,12 +739,6 @@
 									 error="updateApplication_errorHandler(event)"
 									 firstRun="updateApplication_firstRunHandler(event)"
 									 >
-
-				<local:updateAvailableEffect>
-					<s:Parallel>
-						<core:CallMethod method="orderUpdateWindowToFront"/>
-					</s:Parallel>
-				</local:updateAvailableEffect>
 			</local:UpdateApplication>
 		</handlers:EventHandler>
 		

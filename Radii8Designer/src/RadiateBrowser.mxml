@@ -22,6 +22,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.controls.AceEditor;
 			import com.flexcapacitor.events.HTMLDragEvent;
+			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.events.RedirectEvent;
 			import com.flexcapacitor.managers.DragManagerImpl;
 			import com.flexcapacitor.model.HTMLDragData;
@@ -33,9 +34,7 @@
 			import com.flexcapacitor.utils.PopUpOverlayManager;
 			import com.google.code.flexiframe.IFrame;
 			
-			import mx.events.BrowserChangeEvent;
 			import mx.events.FlexEvent;
-			import mx.managers.BrowserManager;
 			import mx.managers.IBrowserManager;
 			
 			include "build.as";
@@ -46,6 +45,7 @@
 			private var calloutSkin:CallOutSkin;
 			private var dragManager:DragManagerImpl;
 			private var browserManager:IBrowserManager;
+			public var htmlDragAndDrop:HTMLDragManager;
 			
 			/**
 			 * @private
@@ -90,11 +90,11 @@
 				
 				var classRegistry:ClassRegistry = ClassRegistry.getInstance();
 				var transcoder:DocumentTranscoder = new DocumentTranscoder();
-				var application:XML = transcoder.getDefaultMXMLDocumentXML();
+				var mxmlApplicationDocument:XML = transcoder.getDefaultMXMLDocumentXML();
 				
-				var walker:Walker = new Walker(startupBrowser);
+				//var walker:Walker = new Walker(startupBrowser);
 				
-				classRegistry.addNamespaces(application);
+				classRegistry.addNamespaces(mxmlApplicationDocument);
 				//componentName = component.@id;
 				//componentClass = component.attribute(CLASS);
 				//Walker;
@@ -102,15 +102,53 @@
 				//var componentClass:String = "com.flexcapacitor.filters.BlackAndWhiteFilter";
 				//var componentQName:QName = new QName(MXMLDocumentConstants.fcNamespaceURI, className);
 				//classRegistry.registerClass(componentQName, componentClass);
+				
+				
+				if (ExternalInterface.available) {
+					var string:String;
+					var results:String;
+					var testURL:Boolean;
+					
+					string = "function(id) { return document.location.hash; }";
+					results = ExternalInterface.call(string, ExternalInterface.objectID);
+					testURL = false;
+					
+					if (testURL) {
+						results = "0vOK6vg";
+					}
+					
+					if (results) {
+						var selectedDocument:IDocument = radiate.selectedDocument;
+						
+						if (!selectedDocument) {
+							radiate.createNewDocumentAndSwitchToDesignView();
+							radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
+							snippetID = results;
+						}
+						else {
+							radiate.openImportMXMLWindow("Import Snippet", "", false, results);
+						}
+					}
+				}
+			}
+			
+			private var snippetID:String;
+			public var isCreatingDocument:Boolean;
+			
+			protected function documentOpenedHandler(event:Event):void {
+				isCreatingDocument = false;
+				radiate.removeEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler);
+				radiate.openImportMXMLWindow("Import Snippet", "", false, snippetID);
 			}
 			
 			protected function application1_initializeHandler(event:FlexEvent):void {
 				//var version:String = LoaderConfig.swfVersion;
 				// get pixels of images for drag and drop in 
-				JPEGLoaderContext;
+				//JPEGLoaderContext;
 				var sandboxType:String = Security.sandboxType;
-				Security.allowDomain("*");
-				Security.allowInsecureDomain("*");
+				// attempt to allow image access for editing operations - doesn't work
+				//Security.allowDomain("*");
+				//Security.allowInsecureDomain("*");
 				Security.disableAVM1Loading = true;
 				var overlayTypes:Array = [IFrame, AceEditor];
 				new PopUpOverlayManager(null, overlayTypes);
@@ -121,8 +159,6 @@
 			private function startupBrowser():void {
 				radiate.applicationMenu = mainView.mainMenuBar;
 			}
-			
-			public var htmlDragAndDrop:HTMLDragManager;
 			
 			private function listenForDragAndDrop():void {
 				HTMLDragManager.debug = false;
@@ -148,6 +184,9 @@
 					mainView.dropImagesLocation.visible = false;
 					return;
 				}
+				
+				// not created yet
+				if (radiate==null) { return };
 				
 				selectedDocument = radiate.selectedDocument;
 				PopUpOverlayManager.instance.showAllOverlays();

@@ -1,0 +1,579 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:handlers="com.flexcapacitor.handlers.*" 
+			   xmlns:fc="com.flexcapacitor.effects.popup.*"
+			   xmlns:fce="com.flexcapacitor.effects.file.*"
+			   xmlns:fcb="com.flexcapacitor.effects.core.*"
+			   xmlns:flexcapacitor="flexcapacitor.*"
+			   xmlns:windows="com.flexcapacitor.views.windows.*" 
+			   xmlns:controls="com.flexcapacitor.controls.*" 
+
+			   title="Export snippet..."
+			   creationComplete="creationCompleteHandler(event)"  
+			   >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.ClipboardManager;
+			import com.flexcapacitor.managers.CodeManager;
+			import com.flexcapacitor.managers.RunManager;
+			import com.flexcapacitor.managers.SnippetManager;
+			import com.flexcapacitor.model.ExportOptions;
+			import com.flexcapacitor.model.HTMLExportOptions;
+			import com.flexcapacitor.model.IDocument;
+			import com.flexcapacitor.model.SourceData;
+			import com.flexcapacitor.model.TranscoderDescription;
+			import com.flexcapacitor.services.ServiceEvent;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.core.UIComponent;
+			import mx.events.EffectEvent;
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			private var htmlOptions:HTMLExportOptions;
+			 
+			private var options:ExportOptions;
+			
+			public var sourceData:SourceData;
+			
+			[Bindable]
+			public var isHTML:Boolean;
+			
+			public var iDocument:IDocument;
+			public var browserFiles:Array = [];
+			public var browserFileIndex:int;
+			
+			private var snippetsManager:SnippetManager;
+			
+			protected function creationCompleteHandler(event:FlexEvent):void {
+				var exporters:Array = CodeManager.getAllExporters();
+				radiate = Radiate.getInstance();
+				iDocument = radiate.selectedDocument;
+				languageTypes.source = exporters;
+				isHTML = TranscoderDescription(exporters[0]).type==CodeManager.HTML.toLowerCase();
+				
+				navigateButton.visible = false;
+				navigateButton.includeInLayout = false;
+				exportApplicationGroup.visible = false;
+				exportEditGroup.visible = false;
+				exportViewGroup.visible = false;
+				
+				if (iDocument) {
+					
+					if (iDocument.name=="Document") {
+						titleTextInput.text = "A Snippet";
+					}
+					else {
+						titleTextInput.text = iDocument.name;
+					}
+				}
+				
+				if (iDocument) {
+					thumbnail.source = DisplayObjectUtils.getUIComponentWithQuality(iDocument.instance as UIComponent, StageQuality.LOW) as BitmapData;
+				}
+				else {
+					saveButton.enabled = false;
+					saveButton.label = "Please open a document to save a snippet";
+				}
+			}
+			
+			protected function eventhandler1_effectEndHandler(event:EffectEvent):void {
+				
+			}
+			
+			protected function saveButton_clickHandler(event:MouseEvent):void {
+				var language:String;
+				var transcoderDescription:TranscoderDescription;
+				var extension:String;
+				var filesCreated:Boolean;
+				var template:String;
+				var exportProject:Boolean;
+				var sources:Array;
+				var files:Array;
+				var messages:String = "";
+				var templateFileName:String;
+				var title:String;
+				var description:String;
+				var source:String;
+				var thumbnail:String;
+				var base64ImageData:String;
+				var documentBitmapData:BitmapData;
+				
+				language = CodeManager.MXML;
+				transcoderDescription = getSelectedTranscoder();
+				extension = (language==CodeManager.HTML) ? "html" : (language==CodeManager.MXML) ? "mxml" : "xml";
+				
+				if (iDocument==null) {
+					var message:String = "No document open. Open a document before attempting to export.";
+					
+					return;
+				}
+				
+				filesCreatedLabel.text = "";
+				
+				
+				// options
+				if (language == CodeManager.HTML) {
+					htmlOptions = CodeManager.getExportOptions(language) as HTMLExportOptions;
+//					htmlOptions.useInlineStyles = setStylesInline.selected;
+//					htmlOptions.useExternalStylesheet = useExternalStylesheetCheckbox.selected;
+					htmlOptions.embedImages = embedLocalImagesCheckbox.selected;
+					htmlOptions.createFiles = true;
+					htmlOptions.showBorders = false;
+					htmlOptions.disableTabs = false;
+					
+					htmlOptions.fileExtension = extension;
+					htmlOptions.template = template;
+					options = htmlOptions;
+				}
+				else if (language == CodeManager.MXML) {
+					options = CodeManager.getExportOptions(language);
+//					options.useInlineStyles = setStylesInline.selected;
+					
+					if (extension=="auto") {
+						extension = transcoderDescription.extension;
+					}
+					
+					options.embedImages = embedLocalImagesCheckbox.selected;
+					options.embedThumbnail = embedThumbnailCheckbox.selected;
+					//options.template = template;
+					//options.fileExtension = extension;
+					options.createFiles = true;//options.embedImages = embed;
+				}
+				else if (language == CodeManager.ANDROID) {
+					options = CodeManager.getExportOptions(language);
+					
+					if (extension=="auto") {
+						extension = transcoderDescription.extension;
+					}
+					
+					options.embedImages = embedLocalImagesCheckbox.selected;
+//					options.useInlineStyles = setStylesInline.selected;
+					options.template = template;
+					options.fileExtension = extension;
+					options.createFiles = true;
+				}
+				
+				
+				sourceData = CodeManager.getSourceData(iDocument.instance, iDocument, language, options); 
+				
+				if (snippetsManager==null) {
+					snippetsManager = SnippetManager.getInstance();
+				}
+				
+				if (sourceData.files && sourceData.files.length<=1) {
+					snippetsManager.addEventListener(SnippetManager.SAVE_RESULTS, saveResultsHandler, false, 0, true);
+					title = titleTextInput.text;
+					source = sourceData.source;
+					description = descriptionTextArea.text;
+					
+					documentBitmapData = DisplayObjectUtils.getUIComponentWithQuality(iDocument.instance as UIComponent, StageQuality.LOW) as BitmapData;
+					documentBitmapData = DisplayObjectUtils.resizeBitmapData(documentBitmapData, 100, 100, "letterbox");
+					base64ImageData = DisplayObjectUtils.getBase64ImageDataString(documentBitmapData, DisplayObjectUtils.PNG, null, true);
+					snippetsManager.saveSnippet(title, source, description, base64ImageData);
+					saveButton.enabled = false;
+					progressBar.visible = true;
+					snippetEditorURLInput.text = "";
+					snippetViewerURLInput.text = "";
+					snippetApplicationURLInput.text = "";
+				}
+				else {
+					warningLabel.text = warningLabel.toolTip = "Please select an output folder";
+					return;
+				}
+				
+				cancelButton.label = "Close";
+			}
+			
+			protected function afterFilesSaved():void {
+				navigateButton.visible = true;
+				navigateButton.includeInLayout = true;
+				clearFilesLabelEffect.end();
+				clearFilesLabelEffect.play([filesCreatedLabel]);
+				cancelButton.label = "Close";
+			}
+			
+			protected function saveResultsHandler(event:ServiceEvent):void {
+				var data:Object;
+				var post:Object;
+				var status:String;
+				var customFields:Object;
+				var source:String;
+				var thumbnail:String;
+				var editorURI:String;
+				var viewerURI:String;
+				var applicationURI:String;
+				var message:String;
+				var uri:String;
+				var snippetID:String;
+				var site:String;
+				
+				exportApplicationGroup.visible = true;
+				exportEditGroup.visible = true;
+				exportViewGroup.visible = true;
+				navigateButton.visible = false;
+				navigateButton.includeInLayout = false;
+				saveButton.enabled = true;
+				progressBar.visible = false;
+				
+				if (event.hasError) {
+					message = Object(event.faultEvent).text;
+					filesCreatedLabel.text = message;
+				}
+				else {
+					filesCreatedLabel.text = "Snippet created";
+					data = Object(event.resultEvent).data;
+					post = data ? data.post : null;
+					
+					if (post) {
+						site = post.site;
+						uri = post.url;
+						snippetID = post.snippetID;
+						status = post.status;
+						customFields = post.custom_fields;
+						source = customFields.source;
+						thumbnail = customFields.thumbnail;
+						
+						applicationURI = Radiate.getSnippetApplicationURL(snippetID);
+						editorURI = Radiate.getSnippetEditorURL(snippetID);
+						viewerURI = Radiate.getSnippetViewerURL(snippetID);
+						snippetApplicationURLInput.text = applicationURI;
+						snippetEditorURLInput.text = editorURI;
+						snippetViewerURLInput.text = viewerURI;
+					}
+				}
+				
+				snippetsManager.removeEventListener(SnippetManager.SAVE_RESULTS, saveResultsHandler);
+			}
+			
+			protected function cancelHandler(event:Event):void {
+				//Radiate.info("Canceled Save");
+				//clearFilesList();
+			}
+			
+			/**
+			 * Updates the code to reflect the selected language 
+			 * */
+			protected function languageType_changeHandler(event:IndexChangeEvent):void {
+				filesCreatedLabel.text = "";
+				navigateButton.visible = false;
+				navigateButton.includeInLayout = false;
+			}
+			
+			private function getSelectedTranscoder():TranscoderDescription {
+				var item:TranscoderDescription = CodeManager.getTranscoder(CodeManager.MXML);
+				return item;
+			}
+			
+			private var request:URLRequest;
+			
+			protected function navigateButton_clickHandler(event:MouseEvent):void {
+				var url:String = snippetViewerURLInput.text;
+				
+				request = new URLRequest();
+				request.url = url;
+				navigateToURL(request, "previewInBrowser");
+			}
+
+			
+			protected function closeButton_clickHandler(event:MouseEvent):void {
+				if (snippetsManager) {
+					snippetsManager.removeEventListener(SnippetManager.SAVE_RESULTS, saveResultsHandler);
+				}
+				
+				close();
+			}
+			
+			protected function copyApplicationEditURLIcon_clickHandler(event:MouseEvent):void {
+				var clipboardManager:ClipboardManager = ClipboardManager.getInstance();
+				var url:String;
+				
+				url = snippetApplicationURLInput.text;
+				clipboardManager.copyURL(url);
+			}
+			
+			protected function openApplicationEditURLIcon_clickHandler(event:MouseEvent):void {
+				var clipboardManager:ClipboardManager = ClipboardManager.getInstance();
+				var url:String;
+				
+				url = snippetApplicationURLInput.text;
+				RunManager.openURLInNewWindow(url, "application");
+			}
+			
+			protected function copyEditURLIcon_clickHandler(event:MouseEvent):void {
+				var clipboardManager:ClipboardManager = ClipboardManager.getInstance();
+				var url:String;
+				
+				url = snippetEditorURLInput.text;
+				clipboardManager.copyURL(url);
+			}
+			
+			protected function openEditURLIcon_clickHandler(event:MouseEvent):void {
+				var clipboardManager:ClipboardManager = ClipboardManager.getInstance();
+				var url:String;
+				
+				url = snippetEditorURLInput.text;
+				RunManager.openURLInNewWindow(url, "editor");
+			}
+			
+			protected function copyViewURLIcon_clickHandler(event:MouseEvent):void {
+				var clipboardManager:ClipboardManager = ClipboardManager.getInstance();
+				var url:String;
+				
+				url = snippetViewerURLInput.text;
+				clipboardManager.copyURL(url);
+			}
+			
+			protected function openViewURLIcon_clickHandler(event:MouseEvent):void {
+				var clipboardManager:ClipboardManager = ClipboardManager.getInstance();
+				var url:String;
+				
+				url = snippetViewerURLInput.text;
+				RunManager.openURLInNewWindow(url, "viewer");
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<!--- hide about popup -->
+		<handlers:EventHandler targets="{cancelButton}" eventName="click" >
+			<s:SetAction property="action" target="{this}" value="cancel"/>
+			<fc:ClosePopUp id="closePopUp" popUp="{this}" effectEnd="eventhandler1_effectEndHandler(event)"/>
+		</handlers:EventHandler>
+		
+		<fcb:SetAction id="clearFilesLabelEffect" startDelay="5000" property="text" value=""/>
+		
+		<!--- hide about popup -->
+		<!--<handlers:EventHandler targets="{saveButton}" eventName="click" >
+			<s:SetAction property="action" target="{this}" value="save"/>
+		</handlers:EventHandler>-->
+		
+		<fx:String id="action"></fx:String>
+		
+		<s:ArrayList id="languageTypes">
+			<fx:String>auto</fx:String>
+		</s:ArrayList>
+		
+		<s:ArrayList id="extensionsList">
+			<fx:String>auto</fx:String>
+			<fx:String>html</fx:String>
+			<fx:String>mxml</fx:String>
+			<fx:String>xml</fx:String>
+			<fx:String>php</fx:String>
+		</s:ArrayList>
+		
+		<s:ArrayList id="templatesList">
+			<fx:String>auto</fx:String>
+			<fx:String>html</fx:String>
+			<fx:String>html2</fx:String>
+			<fx:String>external</fx:String>
+			<fx:String>custom</fx:String>
+			<fx:String>none</fx:String>
+		</s:ArrayList>
+		
+		
+	</fx:Declarations>
+	
+	
+	<s:VGroup left="15" 
+				 top="20" 
+				 right="20"
+				 bottom="20"
+				 gap="10">
+		
+		
+		<s:HGroup width="100%" verticalAlign="middle" paddingRight="110">
+			
+			<s:Label id="titleLabel" 
+					 text="Title:" 
+					 fontWeight="bold" 
+					 color="black"
+					 minWidth="120"/>
+			
+			<s:TextInput id="titleTextInput"
+						 width="100%"
+						 maxChars="128"/>
+		</s:HGroup>
+		
+		
+		<s:HGroup width="100%" verticalAlign="top" paddingRight="110">
+			
+			<s:Label text="Description:" 
+					 color="black"
+					 fontWeight="bold"
+					 minWidth="120"
+					 />
+			
+			<s:TextArea id="descriptionTextArea" 
+					 width="100%"
+					 heightInLines="3"
+					 text="" 
+					 maxChars="256"
+					 />
+		</s:HGroup>
+		
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label id="extensionLabel" 
+					 text="Options:" 
+					 fontWeight="bold" 
+					 minWidth="120"/>
+			
+			<s:CheckBox id="embedLocalImagesCheckbox" 
+						selected="true"
+						toolTip="Embed images that are not uploaded"
+						label="Embed images as needed"/>
+			
+			<s:CheckBox id="embedThumbnailCheckbox" 
+						selected="false"
+						toolTip="Embed thumbnail in the markup of the document"
+						label="Embed thumbnail in document"/>
+			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="baseline" id="exportApplicationGroup">
+			
+			<s:Label text="Application URL:" 
+					 color="black"
+					 fontWeight="bold"
+					 minWidth="120"/>
+			
+			<s:TextInput id="snippetApplicationURLInput" width="100%"/>
+			
+			<controls:BeveledImageButton id="copyApplicationURLIcon" 
+										 source="{Radii8LibraryAssets.copy}" 
+										 toolTip="Copy the URL to edit the snippet in the application to the Clipboard"
+										 verticalAlign="middle"
+										 useHandCursor="true"
+										 click="copyApplicationEditURLIcon_clickHandler(event)"
+										 />
+			
+			<controls:BeveledImageButton id="openApplicationURLIcon" 
+										 source="{Radii8LibraryAssets.openInNewWindow}" 
+										 toolTip="Opens the URL in a new window to edit the snippet in the application"
+										 verticalAlign="middle"
+										 useHandCursor="true"
+										 click="openApplicationEditURLIcon_clickHandler(event)"
+										 width="16"
+										 height="16"
+										 smooth="true"
+										 />
+			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="baseline" id="exportEditGroup">
+			
+			<s:Label text="Text Editor URL:" 
+					 color="black"
+					 fontWeight="bold"
+					 minWidth="120"/>
+			
+			<s:TextInput id="snippetEditorURLInput" width="100%"/>
+			
+			<controls:BeveledImageButton id="copyEditURLIcon" 
+										 source="{Radii8LibraryAssets.copy}" 
+										 toolTip="Copy the URL to edit the snippet to the Clipboard"
+										 verticalAlign="middle"
+										 useHandCursor="true"
+										 click="copyEditURLIcon_clickHandler(event)"
+										 />
+			
+			<controls:BeveledImageButton id="openEditURLIcon" 
+										 source="{Radii8LibraryAssets.openInNewWindow}" 
+										 toolTip="Opens the URL in a new window to edit the snippet in a text editor"
+										 verticalAlign="middle"
+										 useHandCursor="true"
+										 click="openEditURLIcon_clickHandler(event)"
+										 width="16"
+										 height="16"
+										 smooth="true"
+										 />
+			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="baseline" id="exportViewGroup">
+			
+			<s:Label text="View URL:" 
+					 color="black"
+					 fontWeight="bold"
+					 minWidth="120"/>
+			
+			<s:TextInput id="snippetViewerURLInput" width="100%"/>
+			
+			<controls:BeveledImageButton id="copyViewURLIcon" 
+										 source="{Radii8LibraryAssets.copy}" 
+										 toolTip="Copy the URL to view the snippet to the Clipboard"
+										 verticalAlign="middle"
+										 useHandCursor="true"
+										 click="copyViewURLIcon_clickHandler(event)"
+										 />
+			
+			<controls:BeveledImageButton id="openViewURLIcon" 
+										 source="{Radii8LibraryAssets.openInNewWindow}" 
+										 toolTip="Opens the URL in a new window to view the snippet"
+										 verticalAlign="middle"
+										 useHandCursor="true"
+										 width="16"
+										 height="16"
+										 smooth="true"
+										 click="openViewURLIcon_clickHandler(event)"
+										 />
+			
+		</s:HGroup>
+		
+		
+		<s:Label id="warningLabel" 
+				 text="" 
+				 width="100%"/>
+		
+		<mx:ProgressBar id="progressBar" 
+						indeterminate="true" 
+						width="100%" 
+						label="" 
+						height="8"
+						visible="false"/>
+		
+		
+		<s:HGroup width="100%" verticalAlign="baseline">
+			<s:Button id="navigateButton" label="Navigate" 
+					  visible="false"
+					  toolTip="View snippet online"
+					  click="navigateButton_clickHandler(event)"/>
+			<s:Label id="filesCreatedLabel" 
+					 text="" />
+			<s:Spacer width="100%"/>
+			<s:Button id="cancelButton" label="Cancel" />
+			<s:Button id="saveButton" label="Create Snippet" click="saveButton_clickHandler(event)"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+	<s:Rect top="20" right="20"
+			width="82"
+			height="82"
+			>
+		<s:fill>
+			<s:SolidColor color="#ffffff"/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="#FCFCFC"/>
+		</s:stroke>
+	</s:Rect>
+	<s:Image id="thumbnail"
+			 smooth="true"
+			 width="82"
+			 height="82"
+			 scaleMode="letterbox"
+			 top="20" 
+			 right="20"/>
+	
+</windows:AnimatedPanelWindow>

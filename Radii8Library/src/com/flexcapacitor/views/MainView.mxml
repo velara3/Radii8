@@ -43,7 +43,6 @@
 			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.model.MenuItem;
 			import com.flexcapacitor.model.MenuItemDataDescriptor;
-			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -52,6 +51,7 @@
 			import com.flexcapacitor.views.windows.CreditsWindow;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			import com.flexcapacitor.views.windows.ExportDocumentWindow;
+			import com.flexcapacitor.views.windows.ExportSnippetWindow;
 			import com.flexcapacitor.views.windows.GalleryWindow;
 			import com.flexcapacitor.views.windows.HelpWindow;
 			import com.flexcapacitor.views.windows.LoginWindow;
@@ -63,15 +63,12 @@
 			import flash.utils.setTimeout;
 			
 			import mx.core.DragSource;
-			import mx.core.FlexGlobals;
 			import mx.core.IUIComponent;
-			import mx.core.UIComponent;
 			import mx.events.DragEvent;
 			import mx.events.EffectEvent;
 			import mx.events.FlexEvent;
 			import mx.events.MenuEvent;
 			import mx.managers.DragManager;
-			import mx.managers.LayoutManager;
 			import mx.utils.Platform;
 			
 			import spark.collections.Sort;
@@ -1128,8 +1125,7 @@
 				return result;
 			}
 			
-			protected function saveMenuItem_itemClickHandler(event:MenuEvent):void
-			{
+			protected function saveMenuItem_itemClickHandler(event:MenuEvent):void {
 				//Radiate.info("Saved");
 				
 				if (radiate.isUserLoggedIn==false) {
@@ -1360,6 +1356,11 @@
 				radiate.openImportMXMLWindow("Import MXML");
 			}
 			
+			protected function importSnippetMenuItem_itemClickHandler(event:MenuEvent):void
+			{
+				radiate.openImportMXMLWindow("Import Snippet");
+			}
+			
 			protected function viewInBrowserScreenshot_itemClickHandler(event:MenuEvent):void
 			{
 				Radiate.openInBrowserScreenshot(radiate.selectedDocument);
@@ -1389,10 +1390,6 @@
 					isCreatingDocument = true;
 				}
 				
-			}
-			
-			public function resizing():void {
-				UIComponent.resumeBackgroundProcessing();
 			}
 			
 			public function goToDesignState(validate:Boolean = true):void {
@@ -1431,16 +1428,6 @@
 					event.preventDefault();
 					Radiate.info("The feature is only available in the desktop version");
 				}
-			}
-			
-			protected function cropDocument_itemClickHandler(event:MenuEvent):void
-			{
-				
-			}
-			
-			protected function cropSelection_itemClickHandler(event:MenuEvent):void
-			{
-				
 			}
 			
 			public static const DEG_TO_RAD:Number = 0.017453292519943294444444444444444;
@@ -1755,6 +1742,16 @@
 	
 	<fx:Declarations>
 		
+		<handlers:EventHandler eventName="itemClick" target="{saveSnippetMenuItem}">
+			<fc:OpenPopUp id="openExportSnippetPopUp" 
+						  popUpType="{ExportSnippetWindow}" 
+						  modalDuration="150" 
+						  percentWidth="75"
+						  percentHeight="90"
+						  width="800"
+						  parent="{parentApplication}"/>
+		</handlers:EventHandler>
+		
 		<!--- show about popup
 		<handlers:EventHandler target="{cornerLogo}" eventName="click">
 			<popup:ShowPopupAnchor target="{aboutPopUp}" closeOnMouseOut="true" displayObjectExceptions="{[cornerLogo]}"/>
@@ -1982,6 +1979,7 @@
 				<model:MenuItem id="saveDocumentMenuItem" label="Save" itemClick="saveDocumentMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="saveMenuItem" label="Save online" itemClick="saveMenuItem_itemClickHandler(event)"
 								keyEquivalent="s" commandKey="true"/>
+				<model:MenuItem id="saveSnippetMenuItem" label="Save snippet online" />
 				<model:MenuItem id="saveAsImageMenuItem" label="Save as image" itemClick="saveAsImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="saveSelectionAsImageMenuItem" label="Save Selection as Image" itemClick="saveSelectionAsImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem label="Save Project" itemClick="{radiate.saveProject(radiate.selectedProject)}"/>
@@ -1997,6 +1995,7 @@
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="printItem" label="Print" />
 				<model:MenuItem type="separator"/>
+				<model:MenuItem id="importSnippetMenuItem" label="Import Snippet..." itemClick="importSnippetMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="importMXMLMenuItem" label="Import MXML..." itemClick="importMXMLMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="importImageMenuItem" label="Import Image..." itemClick="importImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="importPSDMenuItem" label="Import PSD..." itemClick="importPSDMenuItem_itemClickHandler(event)"/>

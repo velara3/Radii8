@@ -37,6 +37,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.managers.KeyboardManager;
 	import com.flexcapacitor.managers.ServicesManager;
+	import com.flexcapacitor.managers.SnippetManager;
 	import com.flexcapacitor.model.AttachmentData;
 	import com.flexcapacitor.model.Device;
 	import com.flexcapacitor.model.Document;
@@ -553,6 +554,7 @@ package com.flexcapacitor.controller {
 		private static var popUpOverlayManager:PopUpOverlayManager;
 		private static var serviceManager:ServicesManager;
 		private static var clipboardManager:ClipboardManager;
+		private static var snippetManager:SnippetManager;
 		private static var keyboardManager:KeyboardManager;
 		
 		[Bindable]
@@ -2020,6 +2022,9 @@ package com.flexcapacitor.controller {
 									   host:String = null, 
 									   path:String = null):void {
 			
+			
+			var screenshotPath:String;
+			
 			applySettings();
 			
 			application 		= applicationReference;
@@ -2034,6 +2039,7 @@ package com.flexcapacitor.controller {
 			popUpOverlayManager 	= PopUpOverlayManager.getInstance();
 			keyboardManager			= KeyboardManager.getInstance();
 			clipboardManager		= ClipboardManager.getInstance();
+			snippetManager			= SnippetManager.getInstance();
 			
 			htmlClass = ClassUtils.getDefinition("mx.core.FlexHTMLLoader");
 			
@@ -2066,34 +2072,34 @@ package com.flexcapacitor.controller {
 				ExternalInterface.call("Radiate.instance.setFlashInstance", ExternalInterface.objectID);
 			}
 			
-			var screenshotPath:String;
-			
 			if (!firstRun && PersistentStorage.isSupported) {
-				host = PersistentStorage.read(Radiate.WP_HOST_NAME);
-				path = PersistentStorage.read(Radiate.WP_PATH_NAME);
-				screenshotPath = PersistentStorage.read(Radiate.SCREENSHOT_PATH_NAME);
+				host = PersistentStorage.read(WP_HOST_NAME);
+				path = PersistentStorage.read(WP_PATH_NAME);
+				screenshotPath = PersistentStorage.read(SCREENSHOT_PATH_NAME);
 			}
 			
 			if (host) {
-				Radiate.WP_HOST = host;
+				WP_HOST = host;
 			}
 			else {
 				WP_HOST = defaultHost;
 			}
 			
 			if (path && !firstRun) {
-				Radiate.WP_PATH = path;
+				WP_PATH = path;
 			}
 			else {
 				WP_PATH = defaultPath;
 			}
 			
 			if (screenshotPath) {
-				Radiate.SCREENSHOT_PATH = screenshotPath;
+				SCREENSHOT_PATH = screenshotPath;
 			}
 			else {
 				SCREENSHOT_PATH = defaultScreenshotPath;
 			}
+			
+			snippetManager.initialize(WP_SNIPPET_HOST);
 			
 			contentCache.maxCacheEntries = 200;
 			
@@ -3117,6 +3123,9 @@ package com.flexcapacitor.controller {
 		public static var WP_SNIPPET_HOST:String = "https://www.radii8.com/snippets/";
 		public static var WP_SNIPPET_EDITOR:String = "https://www.radii8.com/mxml/";
 		public static var WP_SNIPPET_VIEWER:String = "https://www.radii8.com/viewer/";
+		public static var APPLICATION_PATH:String = "/online/";
+		public static var EDITOR_PATH:String = "/mxml/";
+		public static var VIEWER_PATH:String = "/viewer/";
 		public static var DEFAULT_DOCUMENT_WIDTH:int = 800;
 		public static var DEFAULT_DOCUMENT_HEIGHT:int = 500;//792;
 		public static var DEFAULT_NAVIGATION_WINDOW:String = "userNavigation";
@@ -3185,6 +3194,27 @@ package com.flexcapacitor.controller {
 		public static function getWPEditPostURL(documentData:IDocumentData):String {
 			//http://www.radii8.com/r8m/wp-admin/post.php?post=5227&action=edit
 			return WP_HOST + WP_PATH + WP_USER_PATH + WP_EDIT_POST_PATH + "?post=" + documentData.id + "&action=edit";
+		}
+		
+		/**
+		 * Gets the URL to open this snippet
+		 * */
+		public static function getSnippetApplicationURL(snippedID:String):String {
+			return WP_HOST + APPLICATION_PATH + "#" + snippedID;
+		}
+		
+		/**
+		 * Gets the URL to edit this snippet in the text editor
+		 * */
+		public static function getSnippetEditorURL(snippedID:String):String {
+			return WP_HOST + EDITOR_PATH + "#" + snippedID;
+		}
+		
+		/**
+		 * Gets the URL to view this snippet
+		 * */
+		public static function getSnippetViewerURL(snippedID:String):String {
+			return WP_HOST + VIEWER_PATH + "#" + snippedID;
 		}
 		
 		/**
@@ -11017,14 +11047,14 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		/**
 		 * Open import MXML window
 		 * */
-		public function openImportMXMLWindow(title:String, code:String = "", showRevisions:Boolean = false):void {
+		public function openImportMXMLWindow(title:String, code:String = "", showRevisions:Boolean = false, snippet:String = ""):void {
 			
 			if (openImportPopUp==null) {
 				createOpenImportPopUp();
 			}
 			
 			if (!openImportPopUp.isOpen) {
-				openImportPopUp.popUpOptions = {title:title, code:code, showRevisions:showRevisions};
+				openImportPopUp.popUpOptions = {title:title, code:code, showRevisions:showRevisions, snippetID:snippet};
 				openImportPopUp.play();
 			}
 		}
@@ -14782,6 +14812,27 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			}
 			
 			return bitmapData;
+		}
+		
+		/**
+		 * Gets a snapshot of target and returns base 64 image data
+		 * */
+		public static function getThumbnailBaseData(object:Object, width:int=100, height:int=100):String {
+			var documentBitmapData:BitmapData;
+			var base64ImageData:String;
+			
+			if (object is IDocument) {
+				object = IDocument(object).instance;
+			}
+			
+			if (object is IUIComponent || object is IGraphicElement || object is IVisualElement) {
+				//documentBitmapData = DisplayObjectUtils.getUIComponentWithQuality(instance as UIComponent, StageQuality.LOW) as BitmapData;
+				documentBitmapData = getSnapshot(object) as BitmapData;
+				documentBitmapData = DisplayObjectUtils.resizeBitmapData(documentBitmapData, width, height, "letterbox");
+				base64ImageData = DisplayObjectUtils.getBase64ImageDataString(documentBitmapData, DisplayObjectUtils.PNG, null, true);
+			}
+			
+			return base64ImageData;
 		}
 		
 		/**

@@ -14,9 +14,7 @@ package com.flexcapacitor.managers
 	import flash.display.DisplayObject;
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
-	import flash.external.ExternalInterface;
 	import flash.geom.Point;
-	import flash.utils.Dictionary;
 	
 	import mx.core.BitmapAsset;
 	import mx.core.IVisualElementContainer;
@@ -34,6 +32,9 @@ package com.flexcapacitor.managers
 	
 	import org.as3commons.lang.ObjectUtils;
 
+	/**
+	 * Handles copying and pasting different data to the clipboard 
+	 **/
 	public class ClipboardManager {
 		
 		public function ClipboardManager(s:SINGLEDOUBLE) {
@@ -68,6 +69,16 @@ package com.flexcapacitor.managers
 		 * and then deleted the document. They could still paste it.
 		 * */
 		public var copiedDataSource:String;
+		
+		public var showAnimation:Boolean = true; 
+		public var fadeAnimation:Fade;
+		public var copyAnimation:Animate;
+		public var copyAnimationDuration:int = 600;
+		public var copyAnimationStartDelay:int = 50;
+		public var copyAnimationEaser:IEaser = new Sine(.75);// = new Bounce();
+		
+		public var copyIconInstance:UIComponent;
+		public var pasteIconInstance:UIComponent;
 		
 		/**
 		 * Cut item
@@ -497,6 +508,15 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
+		 * Copies a URL to the clipboard
+		 **/
+		public function copyURL(value:String):void {
+			Clipboard.generalClipboard.clear();
+			Clipboard.generalClipboard.setData(ClipboardFormats.URL_FORMAT, value, false);
+			Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, value, false);
+		}
+		
+		/**
 		 * Set clipboard data handler
 		 * */
 		public function setClipboardDataHandler():* {
@@ -526,16 +546,6 @@ package com.flexcapacitor.managers
 			
 			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
 		}
-		
-		public var showAnimation:Boolean = true; 
-		public var fadeAnimation:Fade;
-		public var copyAnimation:Animate;
-		public var copyAnimationDuration:int = 600;
-		public var copyAnimationStartDelay:int = 50;
-		public var copyAnimationEaser:IEaser = new Sine(.75);// = new Bounce();
-		
-		public var copyIconInstance:UIComponent;
-		public var pasteIconInstance:UIComponent;
 		
 		public function animateShortcut(target:Object, paste:Boolean = false):void {
 			var iconBitmapData:BitmapAsset;
