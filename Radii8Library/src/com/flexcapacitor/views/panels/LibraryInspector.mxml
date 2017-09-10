@@ -130,10 +130,38 @@
 				var component:Object;
 				var iDocument:IDocument = radiate.selectedDocument;
 				var rowGroup:Group;
+				var image:Image;
+				var attachmentData:AttachmentData = selectedItem as AttachmentData;
+				var imageData:ImageData = attachmentData as ImageData;
+				var path:String;
 				
 				selectedItem = data;
 				
 				item = Radiate.getComponentType("Image");
+				image = item as Image;
+				
+				// for replace target to work we need to set the image source here
+				
+				if (image) {
+					
+					if (imageData is ImageData) {
+						path = imageData.url;
+						
+						if (path) {
+							image.width = undefined;
+							image.height = undefined;
+							//image.source = null;//force it to show up in change history
+							image.source = path;
+						}
+						else if (imageData.bitmapData) {
+							image.source = imageData.bitmapData;
+						}
+					}
+					else {
+						image.source = "";
+					}
+					
+				}
 				
 				//dropTargetLabel.text = "";
 				
@@ -258,6 +286,16 @@
 				var imageData:ImageData = attachmentData as ImageData;
 				var path:String;
 				
+				
+				removeDragManagerListeners(dragManagerInstance);
+				
+				if (event.replaceTarget) {
+					image.source = null;
+					return;
+					//component = event.dropTarget;
+					//image = component as Image;
+				}
+				
 				//trace(event.type);
 				Radiate.updateComponentAfterAdd(radiate.selectedDocument, image, true);
 				
@@ -282,8 +320,6 @@
 					}
 					
 				}
-				
-				removeDragManagerListeners(dragManagerInstance);
 			}
 			
 			protected function handleDragOver(event:Event):void {

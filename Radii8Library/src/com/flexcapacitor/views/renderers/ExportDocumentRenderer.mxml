@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:controls="com.flexcapacitor.controls.*"
+				
+				autoDrawBackground="false"
+				width="100%" height="100%" minHeight="38" 
+				>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.ClipboardManager;
+			import com.flexcapacitor.model.FileInfo;
+			
+			import spark.core.ContentCache;
+			
+			private var fileInfo:FileInfo;
+			
+			override public function set data(value:Object):void {
+				super.data = value;
+				
+				fileInfo = value as FileInfo;
+				
+				if (fileInfo) {
+					iconImage.source = Radii8LibraryAssets.document;
+					labelDisplay.text = fileInfo.fileName + "." + fileInfo.fileExtension;
+				}
+				
+			}
+			
+			protected function copyIcon_clickHandler(event:MouseEvent):void {
+				var source:String;
+				var clipboardManager:ClipboardManager;
+				
+				clipboardManager = ClipboardManager.getInstance();
+				
+				if (fileInfo) {
+					source = fileInfo.contents as String;
+					clipboardManager.copyToClipboard(source);
+				}
+				
+			}
+			
+			[Bindable]
+			public static var contentCache:ContentCache = new ContentCache();
+			
+			protected function saveIcon_clickHandler(event:MouseEvent):void {
+				var radiate:Radiate = Radiate.getInstance();
+				
+				if (fileInfo) {
+					radiate.saveFileAs(fileInfo, fileInfo.fileName);
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:HGroup id="rowGroup" 
+			  width="100%" 
+			  height="100%" 
+			  verticalAlign="middle"
+			  paddingLeft="8"
+			  paddingRight="8">
+		<s:Image id="iconImage"
+				 contentLoader="{contentCache}"
+				 showErrorSkin="false"
+				 width="16" height="16"/>
+		<s:Label id="labelDisplay" 
+				 paddingTop="3" />
+		<s:Spacer width="100%"/>
+		
+		<controls:BeveledImageButton id="copyIcon" 
+									 source="{Radii8LibraryAssets.copy}" 
+									 toolTip="Copy the code to the Clipboard"
+									 verticalAlign="middle"
+									 useHandCursor="true"
+									 click="copyIcon_clickHandler(event)"
+									 />
+		<controls:BeveledImageButton id="saveIcon" 
+									 source="{Radii8LibraryAssets.save}" 
+									 toolTip="Save the file"
+									 verticalAlign="middle"
+									 useHandCursor="true"
+									 click="saveIcon_clickHandler(event)"
+									 />
+	</s:HGroup>
+	
+	<s:Line bottom="0" width="100%" height="1" >
+		<s:stroke>
+			<s:SolidColorStroke color="#484848" alpha=".3"/>
+		</s:stroke>
+	</s:Line>
+	
+</s:ItemRenderer>

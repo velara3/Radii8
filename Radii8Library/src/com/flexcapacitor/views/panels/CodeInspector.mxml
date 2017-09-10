@@ -25,6 +25,7 @@
 			import com.flexcapacitor.controls.supportClasses.TokenInformation;
 			import com.flexcapacitor.events.AceEvent;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ClipboardManager;
 			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.managers.RunManager;
@@ -98,6 +99,9 @@
 			 * Show borders around HTML elements
 			 * */
 			public var showBorders:Boolean;
+			
+			
+			public var embedPlaceholderImageDataHTML:Boolean = false;
 			
 			/**
 			 * Use SVG button class
@@ -339,7 +343,7 @@
 					else {
 						htmlOptions.exportFullDocument = false;
 						//htmlOptions.embedImages = embedImagesButton.selected;
-						htmlOptions.embedPlaceholderImageData = true;
+						htmlOptions.embedPlaceholderImageData = embedPlaceholderImageDataHTML;
 					}
 					
 					options = htmlOptions;
@@ -1732,24 +1736,18 @@
 				
 			}
 			
+			protected function copyIcon_clickHandler(event:MouseEvent):void {
+				var source:String = sourceData.source;
+				var clipboardManager:ClipboardManager = ClipboardManager.getInstance();
+				
+				clipboardManager.copyToClipboard(source);
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
-		
-		<handlers:EventHandler eventName="click" target="{copyIcon}" setTriggerEvent="true">
-			
-			<core:GetDataFromTarget target="{sourceData}" targetPropertyName="source"/> 
-			<core:CopyPreviousToNext />
-			<clipboard:CopyToClipboard targetAncestor="{this}" 
-									   allowNullData="true" 
-									   success="Radiate.info('Code copied to the clipboard')"
-									   noData="Radiate.info('Nothing to copy to the clipboard')"
-									   error="Radiate.info('An error occurred while attempting to copy to the clipboard')"
-									   >
-			</clipboard:CopyToClipboard>
-			
-		</handlers:EventHandler>
 		
 		<fx:String id="borderString">
 		<![CDATA[
@@ -2113,6 +2111,7 @@ IFRAME_ID {
 					   toolTip="Copy the code to the Clipboard"
 					   verticalAlign="middle"
 					   useHandCursor="true"
+					   click="copyIcon_clickHandler(event)"
 					   />
 	</s:HGroup>
 	

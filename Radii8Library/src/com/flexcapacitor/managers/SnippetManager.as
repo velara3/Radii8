@@ -36,6 +36,7 @@ package com.flexcapacitor.managers {
 		public var lastFragment:String;
 		public var currentURL:String;
 		public var name:String;
+		public var checkSize:Boolean;
 		
 		public function initialize(location:String = null):void {
 			
@@ -48,6 +49,7 @@ package com.flexcapacitor.managers {
 				getSnippetsService.addEventListener(WPService.RESULT, getSnippetsResultsHandler, false, 0, true);
 				getSnippetsService.addEventListener(WPService.FAULT, getSnippetsFaultHandler, false, 0, true);
 				getSnippetsService.host = host;
+				getSnippetsService.usePermalinks = true;
 			}
 			
 			if (saveSnippetsService==null) {
@@ -55,6 +57,7 @@ package com.flexcapacitor.managers {
 				saveSnippetsService.addEventListener(WPService.RESULT, saveSnippetsResultsHandler, false, 0, true);
 				saveSnippetsService.addEventListener(WPService.FAULT, saveSnippetsFaultHandler, false, 0, true);
 				saveSnippetsService.host = host;
+				saveSnippetsService.usePermalinks = true;
 			}
 		}
 		
@@ -95,11 +98,20 @@ package com.flexcapacitor.managers {
 		/**
 		 * Saves the snippet to the server
 		 * */
-		public function saveSnippet(title:String, code:String, description:String = "", thumbnail:String = null):void {
+		public function saveSnippet(title:String, code:String, description:String = "", thumbnail:String = ""):void {
 			var form:URLVariables;
+			var size:int;
 			
 			saveSuccessful = false;
 			saveInProgress = true;
+			
+			size = title.length + code.length + description.length + thumbnail.length;
+			
+			// on https the post size limit is sometimes much lower
+			// 413 Request Entity Too Large
+			if (checkSize) {
+				trace(size);
+			}
 			
 			form = createFormObject(title, code, description, thumbnail);
 			
@@ -236,6 +248,7 @@ package com.flexcapacitor.managers {
 				if (event.hasError) {
 					serviceEvent.hasError = true;
 					serviceEvent.faultEvent = event;
+					serviceEvent.errorMessage = errorText;
 				}
 				else {
 					serviceEvent.resultEvent = event;

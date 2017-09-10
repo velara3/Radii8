@@ -234,7 +234,7 @@ package com.flexcapacitor.utils {
 		
 		public var hiddenItemsDictionary:Dictionary = new Dictionary(true);
 		
-		public var replaceImageGlow:GlowFilter = new GlowFilter(255, 1, 8, 8, 3, 3, false, false);
+		public var replaceImageGlow:GlowFilter = new GlowFilter(255, 1, 8, 8, 2, 2, true, true);
 		public var replaceImageGlowApplied:Boolean;
 		public var replaceableImage:Object;
 		public var replaceableImageFilters:Array;
@@ -1529,6 +1529,22 @@ package com.flexcapacitor.utils {
 				var imageSource:Image = event.dragInitiator as Image;
 				var imageTarget:Image = dropTarget as Image;
 				properties = ["source"];
+				
+				if (imageSource==null) {
+					imageSource = draggedItem as Image;
+					
+					// if imageSource.source is null we need to set it before hand or after
+					if (imageSource == null) {
+						
+						if (debug) {
+							logTarget(lastTargetCandidate, "Drop image source not found");
+						}
+						
+						dragging = false;
+						dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_END));
+						return;
+					}
+				}
 				
 				propertiesObject.source = imageSource.source;
 				

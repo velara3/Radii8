@@ -486,11 +486,13 @@ package com.flexcapacitor.utils {
 				// VALIDATION
 				///////////////////////
 				
-				var validationInfo:XMLValidationInfo = XMLUtils.validateXML(pageOutput);
+				var validationInfo:XMLValidationInfo;
+				//validationInfo = XMLUtils.validateXML(pageOutput);
 				
 				if (validationInfo && !validationInfo.valid) {
-					warningData = IssueData.getIssue("Possibly Invalid Markup", validationInfo.internalErrorMessage, validationInfo.row, validationInfo.column);
-					warnings.push(warningData);
+					// it's not XML so skip this
+					//warningData = IssueData.getIssue("Possibly Invalid Markup", validationInfo.internalErrorMessage, validationInfo.row, validationInfo.column);
+					//warnings.push(warningData);
 				}
 				else {
 					error = null;

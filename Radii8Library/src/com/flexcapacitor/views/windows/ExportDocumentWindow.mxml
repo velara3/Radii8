@@ -30,6 +30,7 @@
 			
 			import flash.net.navigateToURL;
 			
+			import mx.collections.ArrayCollection;
 			import mx.events.EffectEvent;
 			import mx.events.FlexEvent;
 			import mx.utils.Platform;
@@ -73,6 +74,10 @@
 				navigateButton.includeInLayout = false;
 				openDirectoryButton.visible = false;
 				openDirectoryButton.includeInLayout = false;
+				
+				if (iDocument && iDocument.instance) {
+					thumbnailImage.source = Radiate.getSnapshot(iDocument.instance);
+				}
 			}
 			
 			protected function eventhandler1_effectEndHandler(event:EffectEvent):void {
@@ -80,12 +85,12 @@
 			}
 			
 			protected function saveButton_clickHandler(event:MouseEvent):void {
-				var transcoderDescription:TranscoderDescription = getSelectedTranscoder();
-				var language:String = transcoderDescription.label;
-				var extension:String = (language==CodeManager.HTML) ? "html" : (language==CodeManager.MXML) ? "mxml" : "xml";
-				var overwriteFiles:Boolean = true; //overwriteFilesCheckbox.selected;
-				var outputFolder:FileReference = browseForFolder.file as FileReference;
-				var templateName:String = templatesDropDownList.selectedItem;
+				var transcoderDescription:TranscoderDescription;
+				var language:String;
+				var extension:String;
+				var overwriteFiles:Boolean;
+				var outputFolder:FileReference;
+				var templateName:String;
 				var filesCreated:Boolean;
 				var template:String;
 				var exportProject:Boolean;
@@ -93,6 +98,13 @@
 				var files:Array;
 				var messages:String = "";
 				var templateFileName:String;
+				
+				transcoderDescription = getSelectedTranscoder();
+				language = transcoderDescription.label;
+				extension = (language==CodeManager.HTML) ? "html" : (language==CodeManager.MXML) ? "mxml" : "xml";
+				overwriteFiles = true; //overwriteFilesCheckbox.selected;
+				outputFolder = browseForFolder.file as FileReference;
+				templateName = templatesDropDownList.selectedItem;
 				
 				if (iDocument==null) {
 					Radiate.error("No document open. Open a document before attempting to export.");
@@ -191,9 +203,10 @@
 				}
 				else {
 					
+					// more than one file
 					if (Platform.isAir && outputFolder==null) {
-						warningLabel.text = warningLabel.toolTip = "Please select an output folder";
-						return;
+						//warningLabel.text = warningLabel.toolTip = "Please select an output folder";
+						//return;
 					}
 					
 					if (outputFolder) {
@@ -204,10 +217,15 @@
 						browserFiles = sourceData.files;
 						browserFileIndex = 0;
 						
-						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler, false, 0, true);
-						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler, false, 0, true);
-						radiate.saveFileAs(sourceData.files[browserFileIndex], radiate.selectedDocument.name);
-						browserFileIndex = browserFileIndex + 1;
+						//thumbnailImage.visible = false;
+						fileList.visible = true;
+						fileList.dataProvider = new ArrayCollection(browserFiles);
+						
+						//radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler, false, 0, true);
+						//radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler, false, 0, true);
+						//radiate.saveFileAs(sourceData.files[browserFileIndex], radiate.selectedDocument.name);
+						//browserFileIndex = browserFileIndex + 1;
+						completeHandler();
 					}
 					else {
 						outputDirectoryLabel.setStyle("color", "red");
@@ -240,10 +258,14 @@
 			}
 			
 			protected function afterFilesSaved():void {
-				navigateButton.visible = true;
-				navigateButton.includeInLayout = true;
-				openDirectoryButton.visible = true;
-				openDirectoryButton.includeInLayout= true;
+				
+				if (Radiate.isDesktop) {
+					navigateButton.visible = true;
+					navigateButton.includeInLayout = true;
+					openDirectoryButton.visible = true;
+					openDirectoryButton.includeInLayout= true;
+				}
+				
 				clearFilesLabelEffect.end();
 				clearFilesLabelEffect.play([filesCreatedLabel]);
 				cancelButton.label = "Close";
@@ -260,7 +282,12 @@
 					// 	at flash.net::FileReference/_save()
 					saveNextButton.visible = true;
 					saveNextButton.includeInLayout = true;
-					filesCreatedLabel.text = browserFileIndex + " files created. You need to click Save Next to save additional files.";
+					filesCreatedLabel.text = browserFiles.length + " files created. You need to click Save Next to each file.";
+					
+					saveNextButton.label = "Save Next (" + (browserFiles.length - browserFileIndex) + ")";
+					
+					radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, completeHandler, false, 0, true);
+					radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_AS_CANCEL, cancelHandler, false, 0, true);
 					return;
 				}
 				
@@ -540,7 +567,7 @@
 		
 		<!--<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>-->
 		
-		<s:HGroup width="100%" verticalAlign="baseline">
+		<s:HGroup width="100%" verticalAlign="baseline" visible="false" includeInLayout="false">
 			
 			<s:Label text="Template:" 
 					 color="black"
@@ -592,6 +619,11 @@
 					 fontWeight="bold" 
 					 minWidth="120"/>
 			
+			<s:CheckBox id="embedLocalImagesCheckbox" 
+						selected="true"
+						toolTip="Embed images that are not uploaded"
+						label="Embed Local Images"/>
+			
 			<s:CheckBox id="setStylesInline" 
 						selected="false"
 						toolTip="Element styles are declared inline in a style attribute instead of inside a style declaration"
@@ -602,16 +634,11 @@
 						toolTip="Instead of styles being declared in the head of the template document they are declared in a separate CSS file."
 						label="External Stylesheet"/>
 			
-			<s:CheckBox id="embedLocalImagesCheckbox" 
-						selected="true"
-						toolTip="Embed images that are not uploaded"
-						label="Embed Local Images"/>
-			
 		</s:HGroup>
 		
 		<!--<controls:HorizontalLine width="100%" alpha="1" shadowAngle="90"/>-->
 		
-		<s:HGroup width="100%" verticalAlign="baseline">
+		<s:HGroup width="100%" verticalAlign="middle">
 			
 			<s:Label text="Output Directory:" 
 					 color="black"
@@ -647,7 +674,8 @@
 			<s:RadioButton id="allDocumentsButton" 
 					 label="All documents in project (experimental)" 
 					 minWidth="120"
-					 groupName="amountOfDocuments"/>
+					 groupName="amountOfDocuments"
+					 visible="false"/>
 			
 		</s:HGroup>
 		
@@ -687,8 +715,24 @@
 			<s:Spacer width="100%"/>
 			<s:Button id="saveNextButton" label="Save Next" toolTip="Save next file in list" click="saveNextButton_clickHandler(event)"/>
 			<s:Button id="cancelButton" label="Cancel" />
-			<s:Button id="saveButton" label="Save" click="saveButton_clickHandler(event)"/>
+			<s:Button id="saveButton" label="Export" click="saveButton_clickHandler(event)"/>
 		</s:HGroup>
 	</s:VGroup>
+	
+	<s:Image id="thumbnailImage" right="20" top="20"
+			 width="200" height="140"
+			 smooth="true" smoothingQuality="high">
+		
+	</s:Image>
+	
+	<s:List id="fileList" right="20" top="20"
+			width="200" height="140"
+			borderColor="#D8D8D8"
+			labelField="fileName"
+			itemRenderer="com.flexcapacitor.views.renderers.ExportDocumentRenderer"
+			visible="false">
+		
+	</s:List>
+		
 	
 </windows:AnimatedPanelWindow>

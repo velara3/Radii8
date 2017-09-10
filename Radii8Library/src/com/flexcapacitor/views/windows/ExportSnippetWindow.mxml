@@ -68,7 +68,7 @@
 				if (iDocument) {
 					
 					if (iDocument.name=="Document") {
-						titleTextInput.text = "A Snippet";
+						titleTextInput.text = "";
 					}
 					else {
 						titleTextInput.text = iDocument.name;
@@ -105,19 +105,27 @@
 				var thumbnail:String;
 				var base64ImageData:String;
 				var documentBitmapData:BitmapData;
-				
-				language = CodeManager.MXML;
-				transcoderDescription = getSelectedTranscoder();
-				extension = (language==CodeManager.HTML) ? "html" : (language==CodeManager.MXML) ? "mxml" : "xml";
+				var message:String;
 				
 				if (iDocument==null) {
-					var message:String = "No document open. Open a document before attempting to export.";
-					
+					message = "No document open. Open a document before attempting to export.";
+					warningLabel.text = message;
+					return;
+				}
+				
+				if (titleTextInput.text=="") {
+					message = "Please enter a title.";
+					warningLabel.text = message;
 					return;
 				}
 				
 				filesCreatedLabel.text = "";
+				warningLabel.text = "";
 				
+				
+				language = CodeManager.MXML;
+				transcoderDescription = getSelectedTranscoder();
+				extension = (language==CodeManager.HTML) ? "html" : (language==CodeManager.MXML) ? "mxml" : "xml";
 				
 				// options
 				if (language == CodeManager.HTML) {
@@ -215,22 +223,21 @@
 				var snippetID:String;
 				var site:String;
 				
-				exportApplicationGroup.visible = true;
-				exportEditGroup.visible = true;
-				exportViewGroup.visible = true;
-				navigateButton.visible = false;
-				navigateButton.includeInLayout = false;
+				//saveButton.visible = false;
+				//saveButton.includeInLayout = false;
 				saveButton.enabled = true;
 				progressBar.visible = false;
 				
 				if (event.hasError) {
-					message = Object(event.faultEvent).text;
+					// Error #2032: Stream Error. URL: https://www.radii8.com/snippets/?json=snippets/create_snippet
+					message = event.errorMessage;
 					filesCreatedLabel.text = message;
 				}
 				else {
 					filesCreatedLabel.text = "Snippet created";
 					data = Object(event.resultEvent).data;
 					post = data ? data.post : null;
+					post = post==null ? data.snippet : post;
 					
 					if (post) {
 						site = post.site;
@@ -248,6 +255,14 @@
 						snippetEditorURLInput.text = editorURI;
 						snippetViewerURLInput.text = viewerURI;
 					}
+					
+					exportApplicationGroup.visible = true;
+					exportEditGroup.visible = true;
+					exportViewGroup.visible = true;
+					navigateButton.visible = false;
+					navigateButton.includeInLayout = false;
+					saveButton.visible = false;
+					saveButton.includeInLayout = false;
 				}
 				
 				snippetsManager.removeEventListener(SnippetManager.SAVE_RESULTS, saveResultsHandler);
@@ -391,7 +406,7 @@
 				 gap="10">
 		
 		
-		<s:HGroup width="100%" verticalAlign="middle" paddingRight="110">
+		<s:HGroup width="100%" verticalAlign="middle" >
 			
 			<s:Label id="titleLabel" 
 					 text="Title:" 
@@ -400,7 +415,7 @@
 					 minWidth="120"/>
 			
 			<s:TextInput id="titleTextInput"
-						 width="100%"
+						 width="525"
 						 maxChars="128"/>
 		</s:HGroup>
 		
@@ -414,7 +429,7 @@
 					 />
 			
 			<s:TextArea id="descriptionTextArea" 
-					 width="100%"
+					 width="525"
 					 heightInLines="3"
 					 text="" 
 					 maxChars="256"
@@ -441,32 +456,32 @@
 			
 		</s:HGroup>
 		
-		<s:HGroup width="100%" verticalAlign="baseline" id="exportApplicationGroup">
+		<s:HGroup width="100%" verticalAlign="baseline" id="exportViewGroup">
 			
-			<s:Label text="Application URL:" 
+			<s:Label text="View URL:" 
 					 color="black"
 					 fontWeight="bold"
 					 minWidth="120"/>
 			
-			<s:TextInput id="snippetApplicationURLInput" width="100%"/>
+			<s:TextInput id="snippetViewerURLInput" width="525"/>
 			
-			<controls:BeveledImageButton id="copyApplicationURLIcon" 
+			<controls:BeveledImageButton id="copyViewURLIcon" 
 										 source="{Radii8LibraryAssets.copy}" 
-										 toolTip="Copy the URL to edit the snippet in the application to the Clipboard"
+										 toolTip="Copy the URL to view the snippet to the Clipboard"
 										 verticalAlign="middle"
 										 useHandCursor="true"
-										 click="copyApplicationEditURLIcon_clickHandler(event)"
+										 click="copyViewURLIcon_clickHandler(event)"
 										 />
 			
-			<controls:BeveledImageButton id="openApplicationURLIcon" 
+			<controls:BeveledImageButton id="openViewURLIcon" 
 										 source="{Radii8LibraryAssets.openInNewWindow}" 
-										 toolTip="Opens the URL in a new window to edit the snippet in the application"
+										 toolTip="Opens the URL in a new window to view the snippet"
 										 verticalAlign="middle"
 										 useHandCursor="true"
-										 click="openApplicationEditURLIcon_clickHandler(event)"
 										 width="16"
 										 height="16"
 										 smooth="true"
+										 click="openViewURLIcon_clickHandler(event)"
 										 />
 			
 		</s:HGroup>
@@ -478,7 +493,7 @@
 					 fontWeight="bold"
 					 minWidth="120"/>
 			
-			<s:TextInput id="snippetEditorURLInput" width="100%"/>
+			<s:TextInput id="snippetEditorURLInput" width="525"/>
 			
 			<controls:BeveledImageButton id="copyEditURLIcon" 
 										 source="{Radii8LibraryAssets.copy}" 
@@ -501,32 +516,32 @@
 			
 		</s:HGroup>
 		
-		<s:HGroup width="100%" verticalAlign="baseline" id="exportViewGroup">
+		<s:HGroup width="100%" verticalAlign="baseline" id="exportApplicationGroup">
 			
-			<s:Label text="View URL:" 
+			<s:Label text="Application URL:" 
 					 color="black"
 					 fontWeight="bold"
 					 minWidth="120"/>
 			
-			<s:TextInput id="snippetViewerURLInput" width="100%"/>
+			<s:TextInput id="snippetApplicationURLInput" width="525"/>
 			
-			<controls:BeveledImageButton id="copyViewURLIcon" 
+			<controls:BeveledImageButton id="copyApplicationURLIcon" 
 										 source="{Radii8LibraryAssets.copy}" 
-										 toolTip="Copy the URL to view the snippet to the Clipboard"
+										 toolTip="Copy the URL to edit the snippet in the application to the Clipboard"
 										 verticalAlign="middle"
 										 useHandCursor="true"
-										 click="copyViewURLIcon_clickHandler(event)"
+										 click="copyApplicationEditURLIcon_clickHandler(event)"
 										 />
 			
-			<controls:BeveledImageButton id="openViewURLIcon" 
+			<controls:BeveledImageButton id="openApplicationURLIcon" 
 										 source="{Radii8LibraryAssets.openInNewWindow}" 
-										 toolTip="Opens the URL in a new window to view the snippet"
+										 toolTip="Opens the URL in a new window to edit the snippet in the application"
 										 verticalAlign="middle"
 										 useHandCursor="true"
+										 click="openApplicationEditURLIcon_clickHandler(event)"
 										 width="16"
 										 height="16"
 										 smooth="true"
-										 click="openViewURLIcon_clickHandler(event)"
 										 />
 			
 		</s:HGroup>

@@ -517,6 +517,14 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
+		 * Copies a string to the clipboard
+		 **/
+		public function copyToClipboard(value:String):void {
+			Clipboard.generalClipboard.clear();
+			Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, value, false);
+		}
+		
+		/**
 		 * Set clipboard data handler
 		 * */
 		public function setClipboardDataHandler():* {
