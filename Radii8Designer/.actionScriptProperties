@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <actionScriptProperties analytics="false" mainApplicationPath="RadiateBrowser.mxml" projectUUID="9dff9561-e640-4acd-8de7-74de46b90167" version="11">
-  <compiler additionalCompilerArguments="-dump-config radii8_config.xml&#10;-locale en_US &#10;-includes=mx.managers.systemClasses.MarshallingSupport &#10;-keep-all-type-selectors=true &#10;-link-report linkreport.txt &#10;-size-report=sizereport.txt&#10;-keep-as3-metadata+=Alternative &#10;-keep-as3-metadata+=ArrayElementType&#10;-keep-as3-metadata+=DefaultProperty&#10;-keep-as3-metadata+=Deprecated&#10;-keep-as3-metadata+=Effect&#10;-keep-as3-metadata+=Event &#10;-keep-as3-metadata+=HostComponent&#10;-keep-as3-metadata+=IconFile&#10;-keep-as3-metadata+=Inspectable&#10;-keep-as3-metadata+=InstanceType&#10;-keep-as3-metadata+=RemoteClass&#10;-keep-as3-metadata+=RichTextContent&#10;-keep-as3-metadata+=SkinPart&#10;-keep-as3-metadata+=SkinState&#10;-keep-as3-metadata+=Style&#10;-keep-as3-metadata+=SWF" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="true" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="true" htmlHistoryManagement="true" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderLocation="/Applications/MAMP/htdocs/Radii8-debug" outputFolderPath="bin-debug" removeUnusedRSL="false" rootURL="" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="false" useDebugRSLSwfs="true" useFlashSDK="false" verifyDigests="true" warn="true">
+  <compiler additionalCompilerArguments="-dump-config radii8_config.xml&#10;-locale en_US &#10;-includes=mx.managers.systemClasses.MarshallingSupport &#10;-keep-all-type-selectors=true &#10;-link-report linkreport.txt &#10;-size-report=sizereport.txt&#10;-keep-as3-metadata+=Alternative &#10;-keep-as3-metadata+=ArrayElementType&#10;-keep-as3-metadata+=DefaultProperty&#10;-keep-as3-metadata+=Deprecated&#10;-keep-as3-metadata+=Effect&#10;-keep-as3-metadata+=Event &#10;-keep-as3-metadata+=HostComponent&#10;-keep-as3-metadata+=IconFile&#10;-keep-as3-metadata+=Inspectable&#10;-keep-as3-metadata+=InstanceType&#10;-keep-as3-metadata+=RemoteClass&#10;-keep-as3-metadata+=RichTextContent&#10;-keep-as3-metadata+=SkinPart&#10;-keep-as3-metadata+=SkinState&#10;-keep-as3-metadata+=Style&#10;-keep-as3-metadata+=SWF" autoRSLOrdering="true" copyDependentFiles="true" fteInMXComponents="true" generateAccessible="true" htmlExpressInstall="true" htmlGenerate="true" htmlHistoryManagement="true" htmlPlayerVersionCheck="true" includeNetmonSwc="false" outputFolderLocation="/Applications/MAMP/htdocs/Radii8-debug" outputFolderPath="bin-debug" removeUnusedRSL="false" sourceFolderPath="src" strict="true" targetPlayerVersion="0.0.0" useApolloConfig="false" useDebugRSLSwfs="true" useFlashSDK="false" verifyDigests="true" warn="true">
     <compilerSourcePath/>
     <libraryPath defaultLinkType="1">
       <libraryPathEntry kind="4" path="">
@@ -11,7 +11,6 @@
       </libraryPathEntry>
       <libraryPathEntry kind="1" linkType="1" path="libs"/>
       <libraryPathEntry kind="3" linkType="1" path="/Radii8Library/bin/Radii8Library.swc" useDefaultLinkType="false"/>
-      <libraryPathEntry kind="3" linkType="1" path="/FlexIFrame/bin/FlexIFrame.swc" useDefaultLinkType="false"/>
       <libraryPathEntry kind="3" linkType="1" path="/FCLibrary/bin/FCLibrary.swc" useDefaultLinkType="false"/>
     </libraryPath>
     <sourceAttachmentPath/>
@@ -39,4 +38,3 @@
   </publishSource>
   <flashCatalyst validateFlashCatalystCompatibility="false"/>
 </actionScriptProperties>
-

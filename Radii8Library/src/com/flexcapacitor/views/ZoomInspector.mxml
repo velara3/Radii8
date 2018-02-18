@@ -13,7 +13,10 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ScaleManager;
+			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.tools.Zoom;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -46,7 +49,7 @@
 				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChangedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
 				
-				toolDescription = radiate.getToolByType(Zoom);
+				toolDescription = ToolManager.getToolByType(Zoom);
 				
 				zoomTool = toolDescription.instance as Zoom;
 				
@@ -79,14 +82,14 @@
 			 * 
 			 * */
 			protected function actualSize_clickHandler(event:MouseEvent):void {
-				var currentScale:Number = radiate.getScale();
+				var currentScale:Number = ScaleManager.getScale();
 				
 				if (zoomTool) {
 					zoomTool.restoreDefaultScale();
 					zoomComboBox.selectedItem = "100%";
 				}
 				else {
-					radiate.restoreDefaultScale();
+					ScaleManager.restoreDefaultScale();
 				}
 				
 				if (animate) {
@@ -178,14 +181,12 @@
 				}
 			}
 			
-			protected function zoomOutButton_clickHandler(event:MouseEvent):void
-			{
-				Radiate.instance.decreaseScale();
+			protected function zoomOutButton_clickHandler(event:FlexEvent):void {
+				ScaleManager.decreaseScale();
 			}
 			
-			protected function zoomInButton_clickHandler(event:MouseEvent):void
-			{
-				Radiate.instance.increaseScale();
+			protected function zoomInButton_clickHandler(event:FlexEvent):void {
+				ScaleManager.increaseScale();
 			}
 			
 			protected function fitInButton_clickHandler(event:MouseEvent):void {
@@ -212,13 +213,13 @@
 					}
 				}
 				else {
-					radiate.scaleToFit(true);
-					radiate.centerApplication(true, true);
+					ScaleManager.scaleToFit(true);
+					RadiateUtilities.centerApplication(true, true);
 				}
 			}
 			
 			protected function scrollToTopButton_clickHandler(event:MouseEvent):void {
-				radiate.centerApplication(true, true, true);
+				RadiateUtilities.centerApplication(true, true, true);
 			}
 			
 			
@@ -264,12 +265,16 @@
 	<c:SolidFillButton id="zoomOutButton" 
 					   width="30"
 					   toolTip="Zoom out"
-					   click="zoomOutButton_clickHandler(event)"
+					   buttonDown="zoomOutButton_clickHandler(event)"
+					   autoRepeat="true"
+					   repeatInterval="100"
 					   label="-"/>
 	<c:SolidFillButton id="zoomInButton" 
 					   width="30"
 					   toolTip="Zoom in"
-					   click="zoomInButton_clickHandler(event)"
+					   buttonDown="zoomInButton_clickHandler(event)"
+					   autoRepeat="true"
+					   repeatInterval="100"
 					   label="+"/>
 	<!--<s:Button id="fitSize" label="Fit Size"
 	visible="{showActualSize}"

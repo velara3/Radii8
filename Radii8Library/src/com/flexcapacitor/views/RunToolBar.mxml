@@ -138,6 +138,12 @@
 			
 			protected function openDocumentInBrowserSiteScannerButton_clickHandler(event:MouseEvent):void {
 				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
+				
+				if (!usersSignedIn) {
+					Radiate.warn("You must be signed into your account before previewing in the browser site scanner");
+					return;
+				}
 				
 				if (iDocument) {
 					if (iDocument.isChanged && iDocument is Document) {

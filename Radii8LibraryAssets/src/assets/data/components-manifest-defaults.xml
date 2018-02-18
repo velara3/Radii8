@@ -9,7 +9,7 @@
 -->
 <componentPackage>
 
-    <component id="Application" class="spark.components.Application" include="false">
+    <component id="Application" name="Application" class="spark.components.Application" include="false">
     	<descendents>
     		<property name="layout"/>
     		<property name="filters"/>
@@ -17,7 +17,7 @@
     	</descendents>
     </component>
     
-    <component id="BitmapImage" class="spark.primitives.BitmapImage" include="false">
+    <component id="BitmapImage" name="Bitmap Image" class="spark.primitives.BitmapImage" include="false">
     	<defaults source="assets/icons/components/BitmapImage.png" scaleMode="stretch"/>
     	<descendents>
     		<property name="layout"/>
@@ -26,7 +26,7 @@
     	</descendents>
     </component>
     
-    <component id="BorderContainer" class="spark.components.BorderContainer" include="true">
+    <component id="BorderContainer" name="Border Container" class="spark.components.BorderContainer" include="true">
     	<defaults width="240" height="160"/>
     	<descendents>
     		<property name="layout"/>
@@ -35,7 +35,7 @@
     	</descendents>
     </component>
     
-    <component id="Button" class="spark.components.Button">
+    <component id="Button" name="Button" class="spark.components.Button">
     	<defaults label="Button"/>
     	<descendents>
     		<property name="filters"/>
@@ -43,7 +43,7 @@
     	</descendents>
     </component>
     
-    <component id="ButtonBar" class="spark.components.ButtonBar" include="false" >
+    <component id="ButtonBar" name="Button Bar" class="spark.components.ButtonBar" include="false" >
     	<defaults width="240" height="22" dataProvider="Button 1, Button 2, Button 3"/>
     	<descendents>
     		<property name="dataProvider"/>
@@ -52,10 +52,10 @@
     	</descendents>
     </component>
     
-    <component id="ButtonBarButton" class="spark.components.ButtonBarButton" include="false">
+    <component id="ButtonBarButton" name="Button Bar Button" class="spark.components.ButtonBarButton" include="false">
     </component>
     
-    <component id="CheckBox" class="spark.components.CheckBox">
+    <component id="CheckBox" name="Checkbox" class="spark.components.CheckBox">
     	<defaults width="78" height="20" label="Checkbox"/>
     	<descendents>
     		<property name="filters"/>
@@ -63,7 +63,7 @@
     	</descendents>
     </component>
     
-    <component id="GridColumnHeaderGroup" class="spark.components.GridColumnHeaderGroup" include="false"/>
+    <component id="GridColumnHeaderGroup" name="Grid Column Header Group" class="spark.components.GridColumnHeaderGroup" include="false"/>
     
     <component id="ComboBox" class="spark.components.ComboBox" include="true">
     	<defaults width="166" height="23" />
@@ -74,11 +74,11 @@
     	</descendents>
     </component>
     
-    <component id="ColorPicker" class="com.flexcapacitor.controls.ColorPicker" include="true">
+    <component id="ColorPicker" name="Color Picker" class="com.flexcapacitor.controls.ColorPicker" include="true">
     	<defaults />
     </component>
 	
-	<component id="DataGrid" class="spark.components.DataGrid" include="false">
+	<component id="DataGrid" name="Data Grid" class="spark.components.DataGrid" include="false">
     	<defaults width="240" height="66" />
     	<descendents>
     		<property name="dataProvider"/>
@@ -87,7 +87,7 @@
     	</descendents>
     </component>
     
-    <component id="DataGroup" class="spark.components.DataGroup" include="false">
+    <component id="DataGroup" name="Data Group" class="spark.components.DataGroup" include="false">
     	<defaults width="240" height="66"/>
     	<descendents>
     		<property name="dataProvider"/>
@@ -96,14 +96,14 @@
     	</descendents>
     </component>
     
-    <component id="DataRenderer" class="spark.components.DataRenderer" include="false">
+    <component id="DataRenderer" name="Data Renderer" class="spark.components.DataRenderer" include="false">
     	<descendents>
     		<property name="filters"/>
     		<property name="mask"/>
     	</descendents>
     </component>
     
-    <component id="DropDownList" class="spark.components.DropDownList" include="true">
+    <component id="DropDownList" name="Drop Down List" class="spark.components.DropDownList" include="true">
     	<defaults width="166" height="23" />
     	<descendents>
     		<property name="dataProvider"/>
@@ -112,7 +112,7 @@
     	</descendents>
     </component>
     
-    <component id="Form" class="spark.components.Form" include="false">
+    <component id="Form" name="Form" class="spark.components.Form" include="false">
     	<defaults width="240" height="60"/>
     	<descendents>
     		<property name="filters"/>
@@ -120,7 +120,7 @@
     	</descendents>
     </component>
     
-    <component id="FormHeading" class="spark.components.FormHeading" include="false">
+    <component id="FormHeading" name="Form Heading" class="spark.components.FormHeading" include="false">
     	<defaults percentWidth="100%" height="30"/>
     	<descendents>
     		<property name="filters"/>
@@ -128,7 +128,7 @@
     	</descendents>
     </component>
     
-    <component id="FormItem" class="spark.components.FormItem" include="false">
+    <component id="FormItem" name="Form Item" class="spark.components.FormItem" include="false">
     	<defaults percentWidth="100%" height="23"/>
     	<descendents>
     		<property name="filters"/>
@@ -136,7 +136,7 @@
     	</descendents>
     </component>
     
-    <component id="Grid" class="spark.components.Grid" include="false">
+    <component id="Grid" name="Grid" class="spark.components.Grid" include="false">
     	<defaults width="240" height="160" />
     	<descendents>
     		<property name="filters"/>
@@ -144,7 +144,7 @@
     	</descendents>
     </component>
     
-    <component id="Grid" class="mx.containers.Grid" include="false">
+    <component id="Grid" name="Grid" class="mx.containers.Grid" include="false">
     	<defaults width="240" height="160" />
     	<descendents>
     		<property name="filters"/>
@@ -152,7 +152,7 @@
     	</descendents>
     </component>
     
-    <component id="Graphic" class="spark.primitives.Graphic">
+    <component id="Graphic" name="Graphic" class="spark.primitives.Graphic">
     	<defaults minWidth="20" minHeight="20"/>
     	<descendents>
     		<property name="filters"/>
@@ -160,7 +160,7 @@
     	</descendents>
     </component>
     
-    <component id="Group" class="spark.components.Group">
+    <component id="Group" name="Group" class="spark.components.Group">
     	<defaults minWidth="20" minHeight="20"/>
     	<descendents>
     		<property name="filters"/>
@@ -168,7 +168,7 @@
     	</descendents>
     </component>
     
-    <component id="HGroup" class="spark.components.HGroup">
+    <component id="HGroup" name="Horizontal Group" class="spark.components.HGroup">
     	<defaults minHeight="20" verticalAlign="middle" minWidth="20"/>
     	<descendents>
     		<property name="filters"/>
@@ -176,14 +176,14 @@
     	</descendents>
     </component>
     
-    <component id="HScrollBar" class="spark.components.HScrollBar" include="false">
+    <component id="HScrollBar" name="Horizontal Scroll Bar" class="spark.components.HScrollBar" include="false">
     	<descendents>
     		<property name="filters"/>
     		<property name="mask"/>
     	</descendents>
     </component>
     
-    <component id="HSlider" class="spark.components.HSlider" include="true">
+    <component id="HSlider" name="Horizontal Slider" class="spark.components.HSlider" include="true">
     	<defaults width="166" />
     	<descendents>
     		<property name="filters"/>
@@ -191,7 +191,7 @@
     	</descendents>
     </component>
     
-    <component id="HorizontalLine" class="com.flexcapacitor.controls.HorizontalLine" include="true">
+    <component id="HorizontalLine" name="Horizontal Line" class="com.flexcapacitor.controls.HorizontalLine" include="false">
     	<defaults width="100" />
     	<descendents>
     		<property name="filters"/>
@@ -199,7 +199,7 @@
     	</descendents>
     </component>
     
-    <component id="Hyperlink" class="com.flexcapacitor.controls.Hyperlink" include="true">
+    <component id="Hyperlink" name="Hyperlink" class="com.flexcapacitor.controls.Hyperlink" include="true">
     	<defaults text="Link"/>
     	<descendents>
     		<property name="filters"/>
@@ -207,7 +207,7 @@
     	</descendents>
     </component>
     
-    <component id="Image" class="spark.components.Image">
+    <component id="Image" name="Image" class="spark.components.Image">
     	<defaults source="assets/icons/components/Image.png" scaleMode="stretch" />
     	<descendents>
     		<property name="filters"/>
@@ -215,7 +215,7 @@
     	</descendents>
     </component>
      
-    <component id="Label" class="spark.components.Label">
+    <component id="Label" name="Label" class="spark.components.Label">
     	<defaults text="Label"/>
     	<descendents>
     		<property name="filters"/>
@@ -223,7 +223,7 @@
     	</descendents>
     </component>
     
-	<component id="LinkButton" class="mx.controls.LinkButton" include="true">
+	<component id="LinkButton" name="Link Button" class="mx.controls.LinkButton" include="true">
     	<defaults label="Link"/>
     	<descendents>
     		<property name="filters"/>
@@ -231,7 +231,7 @@
     	</descendents>
     </component>
     
-	<component id="List" class="spark.components.List" include="true">
+	<component id="List" name="List" class="spark.components.List" include="true">
     	<defaults width="160" height="160" dataProvider="Item 1,Item 2,Item 3"/>
     	<descendents>
     		<property name="dataProvider"/>
@@ -240,14 +240,14 @@
     	</descendents>
     </component>
     
-    <component id="NavigatorContent" class="spark.components.NavigatorContent" include="false">
+    <component id="NavigatorContent" name="Navigator Content" class="spark.components.NavigatorContent" include="false">
     	<descendents>
     		<property name="filters"/>
     		<property name="mask"/>
     	</descendents>
     </component>
     
-    <component id="NumericStepper" class="spark.components.NumericStepper" include="true">
+    <component id="NumericStepper" name="Numeric Stepper" class="spark.components.NumericStepper" include="true">
     	<defaults />
     	<descendents>
     		<property name="filters"/>
@@ -255,7 +255,7 @@
     	</descendents>
     </component>
     
-    <component id="Panel" class="spark.components.Panel" include="false">
+    <component id="Panel" name="Panel" class="spark.components.Panel" include="false">
     	<defaults width="240" height="166"/>
     	<descendents>
     		<property name="filters"/>
@@ -263,21 +263,21 @@
     	</descendents>
     </component>
     
-	<component id="PopUpAnchor" class="spark.components.PopUpAnchor" include="false">
+	<component id="PopUpAnchor" name="Pop Up Anchor" class="spark.components.PopUpAnchor" include="false">
     	<descendents>
     		<property name="filters"/>
     		<property name="mask"/>
     	</descendents>
 	</component>
 	
- 	<component id="PopUpPosition" class="spark.components.PopUpPosition" include="false">
+ 	<component id="PopUpPosition" name="Pop Up Position" class="spark.components.PopUpPosition" include="false">
     	<descendents>
     		<property name="filters"/>
     		<property name="mask"/>
     	</descendents>
  	</component>
     
-	<component id="RadioButton" class="spark.components.RadioButton">
+	<component id="RadioButton" name="Radio Button" class="spark.components.RadioButton">
     	<defaults width="96" height="20" label="Radio Button"/>
     	<descendents>
     		<property name="filters"/>
@@ -285,24 +285,15 @@
     	</descendents>
     </component>
     
-    <component id="RadioButtonGroup" class="spark.components.RadioButtonGroup" include="false">
+    <component id="RadioButtonGroup" name="Radio Button Group" class="spark.components.RadioButtonGroup" include="false">
     	<descendents>
     		<property name="filters"/>
     		<property name="mask"/>
     	</descendents>
     </component>
     
-    <component id="RichEditableText" class="spark.components.RichEditableText" include="false">
-    	<defaults text="Text" editable="false" selectable="false"/>
-    	<descendents>
-    		<property name="textFlow"/>
-    		<property name="filters"/>
-    		<property name="mask"/>
-    	</descendents>
-    </component>
-    
-    <component id="RichText" class="spark.components.RichText" include="true">
-    	<defaults text="Text"/>
+    <component id="RichEditableText" name="Rich Editable Text" class="spark.components.RichEditableText" include="false">
+    	<defaults editable="false" selectable="false"/>
     	<descendents>
     		<property name="textFlow"/>
     		<property name="filters"/>
@@ -310,7 +301,16 @@
     	</descendents>
     </component>
     
-    <component id="Scroller" class="spark.components.Scroller" include="false">
+    <component id="RichText" name="Rich Text" class="spark.components.RichText" include="true">
+    	<defaults />
+    	<descendents>
+    		<property name="textFlow"/>
+    		<property name="filters"/>
+    		<property name="mask"/>
+    	</descendents>
+    </component>
+    
+    <component id="Scroller" name="Scroller" class="spark.components.Scroller" include="false">
     	<defaults width="166" height="23"/>
     	<descendents>
     		<property name="filters"/>
@@ -318,7 +318,7 @@
     	</descendents>
     </component>
     
-    <component id="SkinnableContainer" class="spark.components.SkinnableContainer" include="false">
+    <component id="SkinnableContainer" name="Skinnable Container" class="spark.components.SkinnableContainer" include="false">
     	<defaults width="240" height="166"/>
     	<descendents>
     		<property name="filters"/>
@@ -326,7 +326,7 @@
     	</descendents>
     </component>
     
-    <component id="SkinnableDataContainer" class="spark.components.SkinnableDataContainer" include="false">
+    <component id="SkinnableDataContainer" name="Skinnable Data Container" class="spark.components.SkinnableDataContainer" include="false">
     	<defaults width="240" height="166"/>
     	<descendents>
     		<property name="dataProvider"/>
@@ -335,9 +335,9 @@
     	</descendents>
     </component>
     
-    <component id="SkinnablePopUpContainer" class="spark.components.SkinnablePopUpContainer" include="false"/>
+    <component id="SkinnablePopUpContainer" name="Skinnable Pop Up Container" class="spark.components.SkinnablePopUpContainer" include="false"/>
     
-    <component id="Spacer" class="mx.controls.Spacer" lookupOnly="true" include="true">
+    <component id="Spacer" name="Spacer" class="mx.controls.Spacer" lookupOnly="true" include="true">
     	<defaults width="16" height="16"/>
     	<descendents>
     		<property name="filters"/>
@@ -345,7 +345,7 @@
     	</descendents>
     </component>
     
-    <component id="Spinner" class="spark.components.Spinner" include="false">
+    <component id="Spinner" name="Spinner" class="spark.components.Spinner" include="false">
     	<defaults width="86" height="20"/>
     	<descendents>
     		<property name="filters"/>
@@ -353,7 +353,7 @@
     	</descendents>
     </component>
     
-    <component id="TabBar" class="spark.components.TabBar" include="false">
+    <component id="TabBar" name="Tab Bar" class="spark.components.TabBar" include="false">
     	<defaults width="240" height="22" dataProvider="Item 1,Item 2,Item 3"/>
     	<descendents>
     		<property name="dataProvider"/>
@@ -362,7 +362,7 @@
     	</descendents>
     </component>
     
-    <component id="TextArea" class="spark.components.TextArea" include="true">
+    <component id="TextArea" name="Text Area" class="spark.components.TextArea" include="true">
     	<defaults width="166" height="66"/>
     	<descendents>
     		<property name="textFlow"/>
@@ -371,7 +371,7 @@
     	</descendents>
     </component>
     
-    <component id="TextInput" class="spark.components.TextInput">
+    <component id="TextInput" name="Text Input" class="spark.components.TextInput">
     	<defaults width="120" height="22"/>
     	<descendents>
     		<property name="filters"/>
@@ -379,10 +379,10 @@
     	</descendents>
     </component>
     
-    <component id="TextSelectionHighlighting" class="spark.components.TextSelectionHighlighting" include="false">
+    <component id="TextSelectionHighlighting" name="Text Selection Highlighting" class="spark.components.TextSelectionHighlighting" include="false">
     </component>
     
-    <component id="TileGroup" class="spark.components.TileGroup">
+    <component id="TileGroup" name="Tile Group" class="spark.components.TileGroup">
     	<defaults width="240" height="166"/>
     	<descendents>
     		<property name="filters"/>
@@ -390,7 +390,7 @@
     	</descendents>
     </component>
     
-    <component id="TitleWindow" class="spark.components.TitleWindow" include="false">
+    <component id="TitleWindow" name="Title Window" class="spark.components.TitleWindow" include="false">
     	<defaults width="240" height="166"/>
     	<descendents>
     		<property name="filters"/>
@@ -398,7 +398,7 @@
     	</descendents>
     </component>
     
-    <component id="ToggleButton" class="spark.components.ToggleButton" include="true">
+    <component id="ToggleButton" name="Toggle Button" class="spark.components.ToggleButton" include="true">
     	<defaults width="76" height="20" label="Toggle"/>
     	<descendents>
     		<property name="filters"/>
@@ -406,7 +406,7 @@
     	</descendents>
     </component>
     
-    <component id="VerticalLine" class="com.flexcapacitor.controls.VerticalLine" include="true">
+    <component id="VerticalLine" name="Vertical Line" class="com.flexcapacitor.controls.VerticalLine" include="false">
     	<defaults height="100" />
     	<descendents>
     		<property name="filters"/>
@@ -414,7 +414,7 @@
     	</descendents>
     </component>
     
-    <component id="VGroup" class="spark.components.VGroup" include="true">
+    <component id="VGroup" name="Vertical Group" class="spark.components.VGroup" include="true">
     	<defaults minWidth="20" minHeight="20"/>
     	<descendents>
     		<property name="filters"/>
@@ -422,7 +422,7 @@
     	</descendents>
     </component>
     
-    <component id="VideoDisplay" class="spark.components.VideoDisplay" include="false">
+    <component id="VideoDisplay" name="Video Display" class="spark.components.VideoDisplay" include="false">
     	<defaults width="320" height="240"/>
     	<descendents>
     		<property name="filters"/>
@@ -430,7 +430,7 @@
     	</descendents>
     </component>
     
-    <component id="VideoPlayer" class="spark.components.VideoPlayer" include="true">
+    <component id="VideoPlayer" name="Video Player" class="spark.components.VideoPlayer" include="true">
     	<defaults width="320" height="240" autoPlay="false" dropShadowVisible="false"/>
     	<descendents>
     		<property name="filters"/>
@@ -438,14 +438,14 @@
     	</descendents>
     </component>
     
-    <component id="VScrollBar" class="spark.components.VScrollBar" include="false">
+    <component id="VScrollBar" name="Vertical Scroll Bar" class="spark.components.VScrollBar" include="false">
     	<descendents>
     		<property name="filters"/>
     		<property name="mask"/>
     	</descendents>
     </component>
     
-    <component id="VSlider" class="spark.components.VSlider" include="true">
+    <component id="VSlider" name="Vertical Slider" class="spark.components.VSlider" include="true">
     	<defaults width="10" height="166"/>
     	<descendents>
     		<property name="filters"/>

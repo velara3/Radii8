@@ -28,6 +28,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.model.AttachmentData;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IDocument;
@@ -216,8 +217,8 @@
 					numberOfProjects = radiate.projects ? radiate.projects.length : 0;
 					
 					if (numberOfProjects==0) {
-						Radiate.goToHomeScreen();
-						Radiate.mainView.getProjectsByUser();
+						ViewManager.goToHomeScreen();
+						ViewManager.mainView.getProjectsByUser();
 					}
 				}
 				

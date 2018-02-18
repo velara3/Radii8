@@ -24,6 +24,8 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.filters.BorderStrokeFilter;
 			import com.flexcapacitor.managers.RunManager;
+			import com.flexcapacitor.managers.ViewManager;
+			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -126,7 +128,7 @@
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.getInstance();
 				
-				Radiate.remoteView = this;
+				ViewManager.remoteView = this;
 				radiate.documentsTabNavigator = documentsTagNavigator;
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChange, false, 0, true);
@@ -146,11 +148,11 @@
 				var navigatorContent:INavigatorContent = documentsTagNavigator.selectedChild;
 				
 				if (target && "setFocus" in target) {
-					callLater(target["setFocus"]);
+					//callLater(target["setFocus"]);&& target!=radiate.editorComponent && !radiate.editorComponent.contains(target)
 				}
 				
 				if (navigatorContent is DisplayObject) {
-					var filter:BorderStrokeFilter = new BorderStrokeFilter();
+					//var filter:BorderStrokeFilter = new BorderStrokeFilter();
 					////navigatorContent.filters = [filter];
 				}
 			}
@@ -407,6 +409,23 @@
 				if (secondViewStack) {
 					secondViewStack.selectedChild = layoutTab;
 					validateNow();
+				}
+			}
+			
+			public function showLibraryPanel(data:DocumentData = null, clearSearch:Boolean = false):void
+			{
+				if (secondViewStack==null) {
+					currentState = DEVELOP;
+					validateNow();
+				}
+				
+				if (secondViewStack) {
+					secondViewStack.selectedChild = libraryTab;
+					validateNow();
+					
+					if (data) {
+						libraryInspector.selectLibraryItem(data, clearSearch);
+					}
 				}
 			}
 			
@@ -792,8 +811,8 @@
 					</s:NavigatorContent>
 					
 					<!-- LIBRARY -->
-					<s:NavigatorContent label="LIBRARY">
-						<panels:LibraryInspector minHeight="180" height="100%" width="100%"/>
+					<s:NavigatorContent id="libraryTab" label="LIBRARY">
+						<panels:LibraryInspector id="libraryInspector" minHeight="180" height="100%" width="100%"/>
 					</s:NavigatorContent>
 					
 					<!-- EVENTS -->
@@ -854,8 +873,7 @@
 				<c:TabNavigator id="documentsTagNavigator" width="100%" height="100%"
 								 childAdd="documentsTagNavigator_childAddHandler(event)"
 								 childRemove="documentsTagNavigator_childRemoveHandler(event)"
-								  change="navigatorContent_changeHandler(event)"
-								  click="documentsTagNavigator_clickHandler(event)">
+								  change="navigatorContent_changeHandler(event)">
 				</c:TabNavigator>
 				
 				<s:Label id="noDocumentLabel" 

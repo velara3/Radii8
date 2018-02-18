@@ -14,6 +14,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
@@ -55,7 +56,7 @@
 				var componentDescription:ComponentDescription;
 				
 				selectedTool = event.tool as ITool;
-				componentDescription = radiate.getToolDescription(selectedTool);
+				componentDescription = ToolManager.getToolDescription(selectedTool);
 				
 				if (tools.selectedItem==null || tools.selectedItem != componentDescription) {
 					tools.selectedItem = componentDescription;
@@ -94,7 +95,7 @@
 				componentDescription = tools.selectedItem as ComponentDescription;
 				
 				if (componentDescription && componentDescription.instance != radiate.selectedTool) {
-					radiate.setTool(componentDescription.instance as ITool);
+					ToolManager.setTool(componentDescription.instance as ITool);
 				}
 			}
 			

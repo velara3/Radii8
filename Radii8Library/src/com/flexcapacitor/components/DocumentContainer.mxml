@@ -27,7 +27,9 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -84,6 +86,7 @@
 				canvasBorder = canvasBorderInstance;
 				canvasBackground = canvasBackgroundInstance;
 				canvasScroller = canvasScrollerInstance;
+				editorComponent = editorBar;
 				//radiate.setCanvas(canvasBorder, canvasBackground, canvasScroller);				
 				
 				
@@ -205,7 +208,7 @@
 				updateBackgroundSize();
 				
 				iDocument.instance = targetApplication;
-				Radiate.createComponentToAdd(iDocument, null, false, targetApplication);
+				ComponentManager.createComponentToAdd(iDocument, null, false, targetApplication);
 				iDocument.addComponentDescription(targetApplication);
 				
 				//radiate.setDocument(iDocument);
@@ -244,7 +247,7 @@
 				
 				applicationReady = true;
 				
-				radiate.centerApplication(true, true, true);
+				RadiateUtilities.centerApplication(true, true, true);
 				
 				radiate.dispatchDocumentOpenEvent(iDocument);
 				//Radiate.info("Application Complete");
@@ -276,7 +279,7 @@
 				updateBackgroundSize();
 				
 				iDocument.instance = targetApplication;
-				Radiate.createComponentToAdd(iDocument, null, false, targetApplication);
+				ComponentManager.createComponentToAdd(iDocument, null, false, targetApplication);
 				iDocument.addComponentDescription(targetApplication);
 				
 				//radiate.setDocument(iDocument);
@@ -315,7 +318,7 @@
 				
 				applicationReady = true;
 				
-				radiate.centerApplication(true, true, true);
+				RadiateUtilities.centerApplication(true, true, true);
 				
 				radiate.dispatchDocumentOpenEvent(iDocument);
 			}
@@ -476,6 +479,20 @@
 			[Bindable]
 			public function set canvasScroller(value:Scroller):void {
 				_canvasScroller = value;
+			}
+
+			private var _editorComponent:RichTextEditorBar;
+
+			public function get editorComponent():RichTextEditorBar {
+				return _editorComponent;
+			}
+
+			/**
+			 * Text editor component
+			 * */
+			[Bindable]
+			public function set editorComponent(value:RichTextEditorBar):void {
+				_editorComponent = value;
 			}
 
 			/**
@@ -729,7 +746,7 @@
 			private function updateAppScrollPosition():void {
 				
 				if (targetApplication is DisplayObject) {
-					radiate.centerApplication();
+					RadiateUtilities.centerApplication();
 				}
 			}
 			
@@ -933,7 +950,7 @@
 				//showBorders = !showBorders;
 				
 				//if (!inUpdateBackgroundSize) { 
-					radiate.centerApplication();
+				RadiateUtilities.centerApplication();
 				//}
 			}
 			
@@ -1197,6 +1214,8 @@
 			<s:SolidColor color="#FFFFFF"/>
 		</s:fill>
 	</s:Rect>
+	
+	<controls:RichTextEditorBar id="editorBar" width="100%" visible="false"/>
 	<!--<components:Ruler left="20" width="100%" height="20"/>
 	
 	<components:Ruler top="20" width="20" height="100%" direction="vertical"/>-->

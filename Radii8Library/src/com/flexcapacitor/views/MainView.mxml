@@ -30,23 +30,25 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.effects.popup.OpenPopUp;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ArrangeLayers;
 			import com.flexcapacitor.managers.ClipboardManager;
 			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.managers.ToolManager;
+			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.DocumentMetaData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IProject;
-			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.model.MenuItem;
 			import com.flexcapacitor.model.MenuItemDataDescriptor;
 			import com.flexcapacitor.tools.ITool;
-			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.utils.supportClasses.log;
+			import com.flexcapacitor.views.windows.ClipboardToImageWindow;
 			import com.flexcapacitor.views.windows.ContactWindow;
 			import com.flexcapacitor.views.windows.CreditsWindow;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
@@ -54,6 +56,7 @@
 			import com.flexcapacitor.views.windows.ExportSnippetWindow;
 			import com.flexcapacitor.views.windows.GalleryWindow;
 			import com.flexcapacitor.views.windows.HelpWindow;
+			import com.flexcapacitor.views.windows.ImageToClipboardWindow;
 			import com.flexcapacitor.views.windows.LoginWindow;
 			import com.flexcapacitor.views.windows.NewDocumentWindow;
 			import com.flexcapacitor.views.windows.PrintWindow;
@@ -689,7 +692,7 @@
 					output = "\nSource for project, '" + iProject.name + "':\n";
 					output += iProject.post ? JSON.stringify(iProject.post) + "\n" : "";
 					output += iProject.toString();
-					Radiate.showConsolePanel(output);
+					ViewManager.showConsolePanel(output);
 					//Radiate.info();
 				}
 				else {
@@ -709,7 +712,7 @@
 					output += iDocument.post ? JSON.stringify(iDocument.post) + "\n" : "";
 					output += iDocument.marshall(DocumentMetaData.STRING_TYPE, true) as String;
 					
-					Radiate.showConsolePanel(output);
+					ViewManager.showConsolePanel(output);
 				}
 				else {
 					Radiate.warn("No document selected");
@@ -972,8 +975,8 @@
 				var bitmapData:BitmapData = image ? image.bitmapData : null;
 				
 				if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
-					Radiate.restoreImageToOriginalSize(image);
-					Radiate.sizeDocumentToBitmapData(iDocument, image.bitmapData);
+					RadiateUtilities.restoreImageToOriginalSize(image);
+					RadiateUtilities.sizeDocumentToBitmapData(iDocument, image.bitmapData);
 					
 					//radiate.scaleToFit(false);
 					//radiate.centerApplication();
@@ -982,17 +985,53 @@
 			
 			protected function sizeDocumentToSelection_itemClickHandler(event:MenuEvent):void
 			{
-				Radiate.sizeDocumentToSelection();
+				RadiateUtilities.sizeDocumentToSelection();
 			}
 			
 			protected function sizeSelectionToDocument_itemClickHandler(event:MenuEvent):void
 			{
-				Radiate.sizeSelectionToDocument();
+				RadiateUtilities.sizeSelectionToDocument();
 			}
 			
 			protected function resizeDocumentToContent_itemClickHandler(event:MenuEvent):void
 			{
-				Radiate.expandDocumentToContents();
+				RadiateUtilities.expandDocumentToContents();
+			}
+			
+			protected function copyDocumentImageToClipboard_itemClickHandler(event:MenuEvent):void
+			{
+				if (Platform.isBrowser) {
+					openImageToClipboardWindow.play();
+				}
+				else {
+					RadiateUtilities.copyDocumentImageToClipboard(Radiate.instance.selectedDocument);
+				}
+			}
+			
+			protected function pasteClipboardToDocument_itemClickHandler(event:MenuEvent):void
+			{
+				if (Platform.isBrowser) {
+					ViewManager.showPasteImagePanel();
+				}
+			}
+			
+			protected function saveSnapshotToLibrary_itemClickHandler(event:MenuEvent):void {
+				var imageDataOrError:Object;
+				
+				// drag manager creates a raster snapshot when on desktop so don't use that
+				if (radiate.selectedDocument) {
+					imageDataOrError = RadiateUtilities.saveToLibrary(radiate.selectedDocument.instance, false);
+				}
+				
+				if (imageDataOrError is Error) {
+					Radiate.error("Could not create a snapshot of the selected item. " + imageDataOrError); 
+				}
+				else if (imageDataOrError) {
+					
+					ViewManager.showLibraryPanel(imageDataOrError as DocumentData, true);
+					
+					Radiate.info("Selection was saved as an image into the library.");
+				}
 			}
 			
 			protected function restoreImageToOriginalSize_itemClickHandler(event:MenuEvent):void
@@ -1003,23 +1042,28 @@
 				var bitmapData:BitmapData = image ? image.bitmapData : null;
 				
 				if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
-					Radiate.restoreImageToOriginalSize(image);
+					RadiateUtilities.restoreImageToOriginalSize(image);
 				}
 			}
 			
-			protected function sizeSelectionToContent_itemClickHandler(event:MenuEvent):void {
+			protected function removeExplicitPosition_itemClickHandler(event:MenuEvent):void {
 				
-				Radiate.removeExplicitSizingFromSelection(radiate.target);
+				RadiateUtilities.removeExplicitPositionFromSelection(radiate.target);
+			}
+			
+			protected function removeExplicitSize_itemClickHandler(event:MenuEvent):void {
+				
+				RadiateUtilities.removeExplicitSizingFromSelection(radiate.target);
 			}
 			
 			protected function removeExplicitHeight_itemClickHandler(event:MenuEvent):void {
 				
-				Radiate.removeExplicitHeightFromSelection(radiate.target);
+				RadiateUtilities.removeExplicitHeightFromSelection(radiate.target);
 			}
 			
 			protected function removeExplicitWidth_itemClickHandler(event:MenuEvent):void {
 				
-				Radiate.removeExplicitWidthFromSelection(radiate.target);
+				RadiateUtilities.removeExplicitWidthFromSelection(radiate.target);
 			}
 			
 			protected function refreshView_itemClickHandler(event:MenuEvent):void {
@@ -1034,7 +1078,7 @@
 			
 			protected function copySelectionIntoLibrary_itemClickHandler(event:MenuEvent):void
 			{
-				var result:Object = Radiate.saveToLibrary(radiate.target);
+				var result:Object = RadiateUtilities.saveToLibrary(radiate.target);
 				
 				if (result is Error) {
 					Radiate.error("Could not create a snapshot of the selected item. " + result); 
@@ -1331,10 +1375,10 @@
 			
 			protected function selectSelectionTool_itemClickHandler(event:MenuEvent):void {
 				var componentDescription:ComponentDescription;
-				componentDescription = radiate.getToolByName("Selection");
+				componentDescription = ToolManager.getToolByName("Selection");
 				
 				if (componentDescription) {
-					radiate.setTool(componentDescription.instance as ITool);
+					ToolManager.setTool(componentDescription.instance as ITool);
 				}
 			}
 			
@@ -1393,8 +1437,7 @@
 			}
 			
 			public function goToDesignState(validate:Boolean = true):void {
-				Radiate.goToDesignScreen(validate);
-				
+				ViewManager.goToDesignScreen(validate);
 			}
 			
 			
@@ -1430,106 +1473,24 @@
 				}
 			}
 			
-			public static const DEG_TO_RAD:Number = 0.017453292519943294444444444444444;
 			
 			protected function rotateImage_itemClickHandler(event:MenuEvent):void{
-				var matrix:Matrix;
-				var newBitmapData:BitmapData;
-				var image:Image = radiate.target as Image;
-				var degree:int;
-				var bitmapData:BitmapData;
+				var angle:Number = 0;
 				var eventTarget:Object = event.currentTarget;
-				var angle:int;
-				var bitmapWidth:int;
-				var bitmapHeight:int;
-				var propertiesObject:Object;
-				var properties:Array;
-				var imageData:ImageData;
-				var imageName:String;
-				
-				bitmapData = image && image.source ? image.source as BitmapData : null;
-				
-				if (image && bitmapData) {
-					bitmapHeight = bitmapData.height;
-					bitmapWidth = bitmapData.width;
+				var image:Image = radiate.target as Image;
 					
-					if (eventTarget==rotateImage90) {
-						angle = 90;
-					}
-					else if (eventTarget==rotateImage180) {
-						angle = 180;
-					}
-					else if (eventTarget==rotateImage270) {
-						angle = 270;
-					}
-					
-					matrix = new Matrix();
-					matrix.rotate(angle * DEG_TO_RAD);
-					
-					propertiesObject = {};
-					properties = ["source"];
-					
-					if (angle==90) {
-						newBitmapData = new BitmapData(bitmapHeight, bitmapWidth, true);
-						matrix.translate(bitmapHeight, 0);
-						
-						if (!isNaN(image.explicitWidth)) {
-							properties.push("height");
-							propertiesObject.height = image.explicitWidth;
-						}
-						if (!isNaN(image.explicitHeight)) {
-							properties.push("width");
-							propertiesObject.width = image.explicitHeight;
-						}
-					}
-					else if (angle==-90 || angle==270) {
-						newBitmapData = new BitmapData(bitmapHeight, bitmapWidth, true);
-						matrix.translate(0, bitmapWidth);
-						
-						if (!isNaN(image.explicitWidth)) {
-							properties.push("height");
-							propertiesObject.height = image.explicitWidth;
-						}
-						if (!isNaN(image.explicitHeight)) {
-							properties.push("width");
-							propertiesObject.width = image.explicitHeight;
-						}
-					}
-					else if (angle==180) {
-						newBitmapData = new BitmapData(bitmapWidth, bitmapHeight, true);
-						matrix.translate(bitmapWidth, bitmapHeight);
-						
-					}
-					
-					newBitmapData.drawWithQuality(bitmapData, matrix, null, null, null, true, StageQuality.HIGH_16X16_LINEAR);
-					
-					propertiesObject.source = newBitmapData;
-					
-					Radiate.setProperties(image, properties, propertiesObject, "Rotate " + angle, true);
-					
-					// force redraw
-					updateScreenEvent = new MouseEvent(MouseEvent.MOUSE_UP);
-					updateScreenEvent.updateAfterEvent();
-					
-					// add image data to our library
-					if (image.source is BitmapData) {
-						imageData = Radiate.getImageDataFromBitmapData(image.source as BitmapData);
-					}
-					
-					imageName = "Rotated"; // should get name from component description
-					
-					if (imageData) {
-						imageName = imageData.name;
-					}
-					
-					radiate.addBitmapDataToDocument(radiate.selectedDocument, newBitmapData, null, imageName, false);
+				if (eventTarget==rotateImage90) {
+					angle = 90;
 				}
-				else {
-					Radiate.info("You must select an image to apply rotation"); 
+				else if (eventTarget==rotateImage180) {
+					angle = 180;
 				}
+				else if (eventTarget==rotateImage270) {
+					angle = 270;
+				}
+				
+				RadiateUtilities.rotateImage(image, angle);
 			}
-			
-			public var updateScreenEvent:MouseEvent;
 			
 			protected function lockLayer_itemClickHandler(event:MenuEvent):void {
 				var selectedDocument:IDocument = radiate.selectedDocument;
@@ -1594,61 +1555,10 @@
 			}
 			
 			protected function trimImage_itemClickHandler(event:MenuEvent):void {
-				var newBitmapData:BitmapData;
 				var image:Image;
-				var bitmapData:BitmapData;
-				var bitmapWidth:int;
-				var bitmapHeight:int;
-				var propertiesObject:Object;
-				var properties:Array;
-				var imageData:ImageData;
-				var imageName:String;
-				
 				image = radiate.target as Image;
-				bitmapData = image && image.source ? image.source as BitmapData : null;
 				
-				if (image && bitmapData) {
-					bitmapHeight = bitmapData.height;
-					bitmapWidth = bitmapData.width;
-					
-					newBitmapData = DisplayObjectUtils.trimTransparentBitmapData(bitmapData);
-					
-					if (newBitmapData==null) {
-						Radiate.info("Nothing was trimmed");
-						return;
-					}
-					
-					if (newBitmapData.width==bitmapData.width && newBitmapData.height==bitmapData.height) {
-						Radiate.info("Nothing was trimmed");
-						return;
-					}
-					
-					propertiesObject = {};
-					properties = ["source"];
-					propertiesObject.source = newBitmapData;
-					
-					Radiate.setProperties(image, properties, propertiesObject, "Trimmed transparent edges", true);
-					
-					// force redraw
-					updateScreenEvent = new MouseEvent(MouseEvent.MOUSE_UP);
-					updateScreenEvent.updateAfterEvent();
-					
-					// add image data to our library
-					if (image.source is BitmapData) {
-						imageData = Radiate.getImageDataFromBitmapData(image.source as BitmapData);
-					}
-					
-					imageName = "Trimmed image"; // should get name from component description
-					
-					if (imageData) {
-						imageName = imageData.name;
-					}
-					
-					radiate.addBitmapDataToDocument(radiate.selectedDocument, newBitmapData, null, imageName, false);
-				}
-				else {
-					Radiate.info("You must select an image to trim"); 
-				}
+				RadiateUtilities.trimImage(image);
 			}
 			
 			protected function bringForwardLayer_itemClickHandler(event:MenuEvent):void {
@@ -1672,7 +1582,7 @@
 			}
 			
 			protected function openGallery_itemClickHandler(event:MenuEvent):void {
-				openGalleryPopUp.play();
+				ViewManager.showGalleryPanel();
 			}
 			
 			protected function saveDocumentMenuItem_itemClickHandler(event:MenuEvent):void {
@@ -1735,6 +1645,11 @@
 				catch (error:Error) {
 					
 				}
+			}
+			
+			protected function openGalleryButton_clickHandler(event:MouseEvent):void
+			{
+				ViewManager.showGalleryPanel();
 			}
 			
 		]]>
@@ -1835,10 +1750,11 @@
 						  />
 		</handlers:EventHandler>
 		
-		<fc:OpenPopUp id="openGalleryPopUp" 
-					  popUpType="{GalleryWindow}" 
+		<fc:OpenPopUp id="openImageToClipboardWindow" 
+					  popUpType="{ImageToClipboardWindow}" 
 					  modalDuration="100" 
 					  backgroundAlpha=".5"
+					  autoCenter="false"
 					  parent="{parentApplication}"/>
 		
 		<file:BrowseForFile id="browseForPSD" 
@@ -1976,7 +1892,7 @@
 				<!--<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>-->
 				<model:MenuItem type="separator"/>
 				<!-- keyEquivalent="s" seemed to be catching the s key everywhere. needs cmd for mac and ctrl for win-->
-				<model:MenuItem id="saveDocumentMenuItem" label="Save" itemClick="saveDocumentMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveDocumentMenuItem" label="Save as..." itemClick="saveDocumentMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="saveMenuItem" label="Save online" itemClick="saveMenuItem_itemClickHandler(event)"
 								keyEquivalent="s" commandKey="true"/>
 				<model:MenuItem id="saveSnippetMenuItem" label="Save snippet online" />
@@ -2018,16 +1934,13 @@
 			<!--<model:MenuItem label="Tools" >
 				<model:MenuItem id="selectSelectionTool" label="Selection" itemClick="selectSelectionTool_itemClickHandler(event)" />
 			</model:MenuItem>-->
-			<model:MenuItem label="Commands" >
-				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="clearProjectHomePage_itemClickHandler(event)" />
-				<model:MenuItem type="separator"/>
-				<model:MenuItem id="copySelectionIntoLibrary" label="Create image from selection" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
-				<model:MenuItem id="trimImage" label="Trim transparent edges of image" itemClick="trimImage_itemClickHandler(event)" />
-				<model:MenuItem type="separator"/>
-				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToImage_itemClickHandler(event)" />
-				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
-				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
-				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to show all content" itemClick="resizeDocumentToContent_itemClickHandler(event)" />
+			<model:MenuItem label="Layers" >
+				<model:MenuItem id="arrangeLayers" label="Arrange Layer" >
+					<model:MenuItem id="bringForwardLayer" label="Bring Forward" itemClick="bringForwardLayer_itemClickHandler(event)" />
+					<model:MenuItem id="bringToFront" label="Bring to Front" itemClick="bringToFront_itemClickHandler(event)" />
+					<model:MenuItem id="sendBackwardLayer" label="Send Backward" itemClick="sendBackwardLayer_itemClickHandler(event)" />
+					<model:MenuItem id="sendToBack" label="Send to Back" itemClick="sendToBack_itemClickHandler(event)" />
+				</model:MenuItem>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="lockLayerGroup" label="Lock Layer" >
 					<model:MenuItem id="lockLayer" label="Lock layer" itemClick="lockLayer_itemClickHandler(event)" />
@@ -2036,32 +1949,37 @@
 					<model:MenuItem id="unlockDescendantLayers" label="Unlock descendant layers" itemClick="unlockDescendantLayers_itemClickHandler(event)" />
 				</model:MenuItem>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="arrangeLayers" label="Arrange Layer" >
-					<model:MenuItem id="bringForwardLayer" label="Bring Forward" itemClick="bringForwardLayer_itemClickHandler(event)" />
-					<model:MenuItem id="bringToFront" label="Bring to Front" itemClick="bringToFront_itemClickHandler(event)" />
-					<model:MenuItem id="sendBackwardLayer" label="Send Backward" itemClick="sendBackwardLayer_itemClickHandler(event)" />
-					<model:MenuItem id="sendToBack" label="Send to Back" itemClick="sendToBack_itemClickHandler(event)" />
-				</model:MenuItem>
-				<model:MenuItem type="separator"/>
-				<model:MenuItem id="openGallery" label="Open Gallery" itemClick="openGallery_itemClickHandler(event)" />
-				<model:MenuItem type="separator"/>
-				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="sizeSelectionToContent_itemClickHandler(event)" />
-				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />
-				<model:MenuItem id="removeExplicitWidth" label="Remove explicit width" itemClick="removeExplicitWidth_itemClickHandler(event)" />
-				<!--<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />-->
-				<model:MenuItem type="separator"/>
-				<!--<model:MenuItem id="cropSelection" label="Crop Selection" itemClick="cropSelection_itemClickHandler(event)" />
-				<model:MenuItem id="cropDocument" label="Crop Document" itemClick="cropDocument_itemClickHandler(event)" />
-				<model:MenuItem type="separator"/>-->
 				<model:MenuItem id="rotateImage" label="Rotate Image" >
 					<model:MenuItem id="rotateImage90" label="Rotate 90" itemClick="rotateImage_itemClickHandler(event)"/>
 					<model:MenuItem id="rotateImage180" label="Rotate 180" itemClick="rotateImage_itemClickHandler(event)"/>
 					<model:MenuItem id="rotateImage270" label="Rotate 270" itemClick="rotateImage_itemClickHandler(event)"/>
 				</model:MenuItem>
 				<model:MenuItem type="separator"/>
+				<model:MenuItem id="removeExplicitPosition" label="Remove explicit position" itemClick="removeExplicitPosition_itemClickHandler(event)" />
+				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="removeExplicitSize_itemClickHandler(event)" />
+				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />
+				<model:MenuItem id="removeExplicitWidth" label="Remove explicit width" itemClick="removeExplicitWidth_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
+				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
+				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToImage_itemClickHandler(event)" />
+				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to show all content" itemClick="resizeDocumentToContent_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="copySelectionIntoLibrary" label="Save selection to library" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
+				<model:MenuItem id="saveSnapshotToLibrary" label="Save snapshot to library" itemClick="saveSnapshotToLibrary_itemClickHandler(event)" />
+				<model:MenuItem id="copyDocumentToClipboard" label="Copy document snapshot to clipboard" itemClick="copyDocumentImageToClipboard_itemClickHandler(event)" />
+				<model:MenuItem id="pasteImageFromClipboard" label="Paste image from clipboard" itemClick="pasteClipboardToDocument_itemClickHandler(event)" />
+				<model:MenuItem id="trimImage" label="Trim transparent edges of image" itemClick="trimImage_itemClickHandler(event)" />
+				<!--<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />-->
 				<!--<model:MenuItem id="cropSelection" label="Crop Selection" itemClick="cropSelection_itemClickHandler(event)" />
 				<model:MenuItem id="cropDocument" label="Crop Document" itemClick="cropDocument_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>-->
+			</model:MenuItem>
+			<model:MenuItem label="Commands" >
+				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="clearProjectHomePage_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="openGallery" label="Open Gallery" itemClick="openGallery_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
 				<model:MenuItem id="refreshView" label="Refresh View" itemClick="refreshView_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="showProjectSource_itemClickHandler(event)" />
@@ -2334,7 +2252,7 @@
 		</s:HGroup>
 		
 		
-		<s:Label id="statusLabel" bottom="50" horizontalCenter="0" textAlign="left" fontStyle="italic"/>
+		<s:Label id="statusLabel" bottom="50" left="20" textAlign="left" fontStyle="italic"/>
 		
 		<s:HGroup bottom="20" left="20" right="20"
 				  width="100%"
@@ -2389,6 +2307,7 @@
 					  height="100%" 
 					  >
 				
+				
 				<renderers:ItemRendererButton id="openProjectButton" iconSource="{Radii8LibraryAssets.openFolder}"
 											  label="Open Project"
 											  click="openProjectButton_clickHandler(event)"
@@ -2425,6 +2344,13 @@
 										   click="newDocumentAndProjectButton_clickHandler(event)"/>
 				
 				
+				<renderers:ItemRendererButton id="openGalleryButton" 
+											  iconSource="{Radii8LibraryAssets.document}"
+											  bottom="20" 
+											  horizontalCenter="0" 
+											  label="Open Gallery" 
+											  autoDrawBackground="true"
+											  click="openGalleryButton_clickHandler(event)"/>
 			</s:HGroup>
 		</s:HGroup>
 		
@@ -2736,13 +2662,20 @@
 				 />
 	</s:HGroup>
 	
-	<s:BorderContainer id="dropImagesLocation" width="100%" height="100%" backgroundColor="#04527b" backgroundAlpha=".75" 
-					   visible="false" click="dropImagesLocation_clickHandler(event)">
-		<s:Label text="Drop files here" 
-				 verticalCenter="0" 
-				 horizontalCenter="0" 
-				 fontSize="32"
-				 fontWeight="bold"
-				 color="#ffffff"/>
+	<s:BorderContainer id="dropImagesLocation" 
+					   width="100%" height="100%" 
+					   backgroundColor="#757575" 
+					   backgroundAlpha=".75" 
+					   visible="false" 
+					   click="dropImagesLocation_clickHandler(event)">
+		<s:VGroup verticalCenter="0" horizontalCenter="0" horizontalAlign="center"
+				  fontWeight="bold"
+				  color="#ffffff">
+			<s:Label text="Drop files here" 
+					 fontSize="28"/>
+			<s:Label text="Hold SHIFT to preserve content original size" />
+			<s:Label text="Hold CMD or CTRL to size document to content" />
+			
+		</s:VGroup>
 	</s:BorderContainer>
 </s:Group>

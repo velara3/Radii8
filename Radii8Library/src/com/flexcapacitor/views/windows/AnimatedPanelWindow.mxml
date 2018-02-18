@@ -48,6 +48,9 @@
 				dispatchEvent(newEvent);
 			}
 			
+			/**
+			 * Close the pop up window
+			 **/
 			public function close():void {
 				callLater(PopUpManager.removePopUp, [this]);
 			}
@@ -63,7 +66,9 @@
 			<s:Fade alphaFrom="1" alphaTo="0" duration="250" startDelay="50"/>
 		</s:Parallel>
 		
-		<s:Parallel id="addedEffect" target="{this}" suspendBackgroundProcessing="false" effectEnd="addedEffect_effectEndHandler(event)">
+		<s:Parallel id="addedEffect" target="{this}" 
+					suspendBackgroundProcessing="false" 
+					effectEnd="addedEffect_effectEndHandler(event)">
 			<s:Scale3D scaleYFrom="0" scaleYTo="1" duration="250" disableLayout="false"
 					   autoCenterProjection="true" autoCenterTransform="true" applyChangesPostLayout="true"/>
 			<s:Fade alphaFrom="0" alphaTo="1" duration="200"/>

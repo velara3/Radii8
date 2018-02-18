@@ -259,6 +259,19 @@
     <classEntry path="mx.managers.dragClasses.DragProxy"/>
     <classEntry path="com.flexcapacitor.managers.URLManager"/>
     <classEntry path="com.flexcapacitor.managers.SnippetManager"/>
+    <classEntry path="com.flexcapacitor.controller.RadiateUtilities"/>
+    <classEntry path="com.flexcapacitor.managers.ToolManager"/>
+    <classEntry path="com.flexcapacitor.managers.ScaleManager"/>
+    <classEntry path="com.flexcapacitor.managers.ImportManager"/>
+    <classEntry path="com.flexcapacitor.managers.PrintManager"/>
+    <classEntry path="com.flexcapacitor.managers.SettingsManager"/>
+    <classEntry path="com.flexcapacitor.managers.DeviceManager"/>
+    <classEntry path="com.flexcapacitor.managers.FontManager"/>
+    <classEntry path="com.flexcapacitor.managers.ViewManager"/>
+    <classEntry path="com.flexcapacitor.controller.PSDImporter"/>
+    <classEntry path="com.flexcapacitor.controller.Console"/>
+    <classEntry path="com.flexcapacitor.managers.TextEditorManager"/>
+    <classEntry path="com.flexcapacitor.managers.ComponentManager"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>

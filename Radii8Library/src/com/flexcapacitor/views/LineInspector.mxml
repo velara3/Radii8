@@ -15,6 +15,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.tools.IToolInspector;
 			import com.flexcapacitor.tools.Line;
@@ -96,7 +97,7 @@
 			 * Update UI components to tool value
 			 * */
 			public function updateTool(tool:ITool):void {
-				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var toolDescription:ComponentDescription = ToolManager.getToolDescription(tool);
 				
 				if (toolDescription && 
 					toolDescription.instance && 

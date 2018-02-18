@@ -364,7 +364,7 @@ Button text is blue]]></fx:String>
 				  verticalAlign="middle"
 				  >
 			
-			<s:Label text="Send as many feature request and bug reports as you like."/>
+			<s:Label text="Enter your feature request or bug report below"/>
 			
 			<s:Spacer width="100%"/>
 			

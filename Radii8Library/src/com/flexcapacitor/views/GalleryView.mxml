@@ -38,7 +38,6 @@
 			import mx.graphics.SolidColor;
 			import mx.rpc.events.ResultEvent;
 			
-			import spark.components.ContentBackgroundAppearance;
 			import spark.events.IndexChangeEvent;
 			
 			private var pixabayURL:String = "https://pixabay.com/api/";
@@ -63,8 +62,10 @@
 			public var checkeredFill:BitmapFill;
 			public var blackFill:SolidColor;
 			public var selectedItem:Object;
-			private var loader:URLLoader;
 			private var headers:Array;
+			public var showProgressBar:Boolean;
+			private var loader:URLLoader;
+			private var imageLoader:Loader;
 			
 			[Bindable]
 			public var imageTypes:Array = ["all", "photo", "illustration", "vector"];
@@ -111,6 +112,8 @@
 				galleryService.host = Radiate.getWPURL();
 				
 				searchInput.setFocus();
+				
+				hideBusyIndicator();
 			}
 			
 			public function search(value:String, page:int = 1):void {
@@ -128,7 +131,7 @@
 				noImagesFoundLabel.visible = false;
 				errorOccuredLabel.visible = false;
 				
-				progressGroup.visible = false;
+				hideBusyIndicator();
 				
 				hideSelectedImage();
 				
@@ -141,6 +144,8 @@
 					parameters.query = value; // encodeURIComponent(value);
 					//galleryService.contentType = "application/x-www-form-urlencoded";
 					galleryService.send("Gallery", "get_results", null, parameters);
+					showBusyIndicator();
+					
 				}
 				else if (isPixabay) {
 					imageType = imageTypesDropdown.selectedItem as String;
@@ -253,10 +258,7 @@
 				
 				imagesLoaded = 0;
 				
-				if (progressGroup.value>=1) {
-					progressGroup.visible = false;
-					progressGroup.setProgress(0,100);
-				}
+				hideBusyIndicator();
 				
 				showPhotoList();
 				
@@ -310,6 +312,8 @@
 				
 				errorOccuredLabel.visible = totalImages==0;
 				errorOccuredLabel.text = "An error occured. Connection may have been lost. Check your connection and try again.\n" + errorID;
+				
+				hideBusyIndicator();
 			}
 			
 			private function checkLoad():void {
@@ -467,7 +471,9 @@
 			protected function insertButton_clickHandler(event:MouseEvent):void {
 				var bitmapData:BitmapData;
 				bitmapData = image.bitmapData;
-				dispatchEvent(new Event("insert"));
+				
+				getGalleryImage();
+				//dispatchEvent(new Event("insert"));
 			}
 			
 			protected function image_completeHandler(event:Event):void {
@@ -557,6 +563,79 @@
 			private function ioErrorHandler(event:IOErrorEvent):void {
 				//trace("ioErrorHandler: " + event);
 				faultHandler(event);
+			}
+			
+			protected function getGalleryImage():void {
+				var url:String;
+				var urlRequest:URLRequest;
+				
+				if (selectedItem) {
+					url = selectedItem.webformatURL;
+					url = url.replace(/_640/, "_960");
+					urlRequest = new URLRequest();
+					urlRequest.url = url;
+					
+					if (imageLoader==null) {
+						imageLoader = new Loader();
+					}
+					
+					imageLoader.load(urlRequest);
+					imageLoader.contentLoaderInfo.addEventListener(Event.COMPLETE, loaderComplete);
+					imageLoader.contentLoaderInfo.addEventListener(Event.INIT, initImage);
+					imageLoader.contentLoaderInfo.addEventListener(ProgressEvent.PROGRESS, onProgress);
+					imageLoader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, imageIOErrorHandler);
+					
+					showBusyIndicator();
+				}
+			}
+			
+			protected function loaderComplete(event:Event):void {
+				//trace("loader complete event");
+				var source:Object = imageLoader.content;
+				var bitmapData:BitmapData = source ? source.bitmapData : null;
+				var radiate:Radiate;
+				
+				if (bitmapData) {
+					radiate = Radiate.instance;
+					radiate.dropInBitmapData(bitmapData, false, true);
+					Radiate.callAfter(closeDelay, closeGallery);
+				}
+				
+				hideBusyIndicator();
+			}
+			
+			public var closeDelay:int = 250;
+			
+			protected function initImage(event:Event):void {
+				//trace("loader init event");
+			}
+			
+			protected function onProgress(event:ProgressEvent):void {
+				//trace("loader progress event");
+			}
+			
+			protected function imageIOErrorHandler(event:IOErrorEvent):void {
+				hideBusyIndicator();
+			}
+			
+			public function showBusyIndicator():void {
+				busyIndicator.visible = true;
+				
+				if (showProgressBar) {
+					progressGroup.visible = true;
+				}
+			}
+			
+			public function hideBusyIndicator():void {
+				busyIndicator.visible = false;
+				
+				if (showProgressBar) {
+					progressGroup.visible = false;
+				}
+			}
+			
+			public function closeGallery():void {
+				dispatchEvent(new Event("close"));
 			}
 		]]>
 	</fx:Script>
@@ -735,6 +814,10 @@
 				  />
 		<s:Spacer width="100%"/>
 		
+		<s:BusyIndicator id="busyIndicator" />
+		
+		<s:Spacer width="100%"/>
+		
 		<s:Button id="insertButton" 
 				  label="Insert"
 				  enabled="false"
@@ -744,8 +827,10 @@
 	
 	
 	<mx:ProgressBar id="progressGroup" 
-					width="400" height="10" 
-					horizontalCenter="0" top="215"
+					indeterminate="true"
+					label=""
+					right="20" height="4" 
+					left="20" top="64"
 					visible="false">
 	</mx:ProgressBar>
 	

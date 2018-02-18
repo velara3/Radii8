@@ -2,6 +2,7 @@
 package com.flexcapacitor.model {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.managers.ServicesManager;
+	import com.flexcapacitor.managers.SettingsManager;
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.services.IWPService;
 	import com.flexcapacitor.services.IWPServiceEvent;
@@ -971,7 +972,7 @@ package com.flexcapacitor.model {
 		 * */
 		public function saveDocumentLocally():Boolean {
 			// for now just passing to saveDocument
-			var result:Boolean = Radiate.getInstance().saveDocumentLocally(this);
+			var result:Boolean = SettingsManager.saveDocumentLocally(this);
 			
 			
 			/*var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);

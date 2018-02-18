@@ -18,6 +18,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.model.ExportOptions;
@@ -76,7 +77,7 @@
 				openDirectoryButton.includeInLayout = false;
 				
 				if (iDocument && iDocument.instance) {
-					thumbnailImage.source = Radiate.getSnapshot(iDocument.instance);
+					thumbnailImage.source = RadiateUtilities.getSnapshot(iDocument.instance);
 				}
 			}
 			

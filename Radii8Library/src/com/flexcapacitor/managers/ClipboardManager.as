@@ -1,12 +1,15 @@
 package com.flexcapacitor.managers
 {
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.effects.popup.OpenPopUp;
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImportOptions;
 	import com.flexcapacitor.model.SourceData;
+	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
+	import com.flexcapacitor.views.windows.ClipboardToImageWindow;
 	
 	import flash.desktop.Clipboard;
 	import flash.desktop.ClipboardFormats;
@@ -14,12 +17,14 @@ package com.flexcapacitor.managers
 	import flash.display.DisplayObject;
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
+	import flash.external.ExternalInterface;
 	import flash.geom.Point;
 	
 	import mx.core.BitmapAsset;
 	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
 	import mx.events.EffectEvent;
+	import mx.utils.Platform;
 	
 	import spark.components.Application;
 	import spark.effects.Animate;
@@ -79,6 +84,7 @@ package com.flexcapacitor.managers
 		
 		public var copyIconInstance:UIComponent;
 		public var pasteIconInstance:UIComponent;
+		
 		
 		/**
 		 * Cut item
@@ -298,6 +304,7 @@ package com.flexcapacitor.managers
 			var format:String;
 			var data:Object;
 			var actionPerformed:Boolean;
+			var htmlIndex:int;
 			
 			clipboard = Clipboard.generalClipboard;
 			formats = clipboard.formats;
@@ -324,6 +331,11 @@ package com.flexcapacitor.managers
 			}
 			
 			numberOfFormats = formats.length;
+			htmlIndex = formats.indexOf("air:html");
+			
+			if (numberOfFormats==2 && htmlIndex!=-1 && formats.indexOf("air:bitmap")!=-1) {
+				formats.splice(htmlIndex, 1);
+			}
 			
 			// check for bitmap data, image files, air:rtf, air:text, etc 
 			// when multiple formats exist add first format we support
@@ -397,12 +409,16 @@ package com.flexcapacitor.managers
 					bitmapData = data as BitmapData;
 					
 					if (Radiate.isDesktop) {
-						// not supported in FP in the browser - might try capturing via JS 
+						// we can't get bitmap image data from the clipboard in the browser
+						// might try overlaying an html element and capture via JS 
 						radiate.addBitmapDataToDocument(selectedDocument, bitmapData, destination, null, true);
 						actionPerformed = true;
 					}
+					else if (Platform.isBrowser) {
+						ViewManager.showPasteImagePanel();
+					}
 					else {
-						Radiate.warn("You cannot paste image data from the clipboard in the browser at this time. Please import the image file.");
+						Radiate.warn("You cannot paste image data from the clipboard at this time. Please import the image file.");
 					}
 				}
 				else if (format==ClipboardFormats.TEXT_FORMAT) {
@@ -434,8 +450,13 @@ package com.flexcapacitor.managers
 					
 					data = component;
 					
-					radiate.addHTMLDataToDocument(selectedDocument, data as String, destination);
-					actionPerformed = true;
+					if (data==null) {
+						radiate.addHTMLDataToDocument(selectedDocument, data as String, destination);
+						actionPerformed = true;
+					}
+					else {
+						
+					}
 				}
 				
 				if (actionPerformed) {
@@ -455,8 +476,8 @@ package com.flexcapacitor.managers
 			}
 			
 			if (useCopyObjectsTechnique) {
-				item = Radiate.getComponentType(component.className);
-				newComponent = Radiate.createComponentToAdd(selectedDocument, item, true);
+				item = ComponentManager.getComponentType(component.className);
+				newComponent = ComponentManager.createComponentToAdd(selectedDocument, item, true);
 				Radiate.addElement(newComponent, destination, descriptor.propertyNames, descriptor.styleNames, descriptor.eventNames, ObjectUtils.merge(descriptor.properties, descriptor.styles));
 				Radiate.updateComponentAfterAdd(selectedDocument, newComponent);
 				//setProperties(newComponent, descriptor.propertyNames, descriptor.properties);
@@ -508,6 +529,21 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
+		 * Copy bitmap data to clipboard
+		 **/
+		public function copyBitmapDataToClipboard(bitmapData:BitmapData):void {
+			if (Radiate.isDesktop) {
+				copyToClipboard(bitmapData, ClipboardFormats.BITMAP_FORMAT);
+			}
+			else if (Platform.isBrowser) {
+				ViewManager.showCopyImageToClipboardPanel(bitmapData);
+			}
+			else {
+				Radiate.warn("You cannot copy image data to the clipboard in the browser at this time. Please export the image file.");
+			}
+		}
+		
+		/**
 		 * Copies a URL to the clipboard
 		 **/
 		public function copyURL(value:String):void {
@@ -517,11 +553,38 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
-		 * Copies a string to the clipboard
+		 * Copies a string to the clipboard. Only some types work in the browser.
 		 **/
-		public function copyToClipboard(value:String):void {
+		public function copyToClipboard(value:Object, type:String = ClipboardFormats.TEXT_FORMAT):void {
 			Clipboard.generalClipboard.clear();
-			Clipboard.generalClipboard.setData(ClipboardFormats.TEXT_FORMAT, value, false);
+			Clipboard.generalClipboard.setData(type, value, false);
+		}
+		
+		/**
+		 * Copies a string to the clipboard via the browser
+		 **/
+		public function copyToClipboardBrowser(value:Object, type:String = ClipboardFormats.TEXT_FORMAT):void {
+			var base64:String;
+			
+			if (ExternalInterface.available) {
+				
+				if (type==ClipboardFormats.BITMAP_FORMAT) {
+					
+					if (value is BitmapData) {
+						base64 = DisplayObjectUtils.getBase64FromBitmapData(value as BitmapData);
+					}
+				}
+				
+				var string:String = <xml><![CDATA[
+					function(id, objectId, data, callbackName) {
+						var application = document.getElementById(objectId);
+						//console.log(element);
+						return true;
+					}
+				]]></xml>;
+				var results:Boolean;
+				results = ExternalInterface.call(string, ExternalInterface.objectID, base64);
+			}
 		}
 		
 		/**
@@ -712,6 +775,7 @@ package com.flexcapacitor.managers
 		}
 		
 		private static var _instance:ClipboardManager;
+		
 	}
 }
 

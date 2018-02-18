@@ -1,6 +1,7 @@
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.managers.ComponentManager;
 	import com.flexcapacitor.model.Document;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -398,8 +399,8 @@ package com.flexcapacitor.tools {
 					if (isFreeformDrawing) {
 						//updateLinePosition(event);
 						
-						definition = Radiate.getComponentType("Path");
-						componentInstance = Radiate.createComponentToAdd(radiate.selectedDocument, definition, setComponentDefaults) as Path;
+						definition = ComponentManager.getComponentType("Path");
+						componentInstance = ComponentManager.createComponentToAdd(radiate.selectedDocument, definition, setComponentDefaults) as Path;
 						//pathElement = componentInstance as Path;
 						
 						properties = ["data"];
@@ -449,8 +450,8 @@ package com.flexcapacitor.tools {
 						
 						if (!tooSmall) {
 							
-							definition = Radiate.getComponentType("Line");
-							componentInstance = Radiate.createComponentToAdd(radiate.selectedDocument, definition, true);
+							definition = ComponentManager.getComponentType("Line");
+							componentInstance = ComponentManager.createComponentToAdd(radiate.selectedDocument, definition, true);
 							
 							properties = ["xFrom","xTo","yFrom","yTo"];
 							propertiesObject = {};

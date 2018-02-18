@@ -4,6 +4,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.managers.HistoryManager;
+	import com.flexcapacitor.managers.ToolManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.DragData;
@@ -1040,6 +1041,7 @@ package com.flexcapacitor.utils {
 							var hasHorizontalSnapEdge:Boolean;
 							var hasVerticalSnapEdge:Boolean;
 							var snapPoints:SnapPoints;
+							var snapDropIndicator:SnapToElementDropIndicator;
 							
 							
 							// Create the dropIndicator instance. The layout will take care of
@@ -1148,22 +1150,25 @@ package com.flexcapacitor.utils {
 										snapBottom = NaN;
 									}
 									
+									snapDropIndicator = dropLayout.dropIndicator as SnapToElementDropIndicator;
+									
 									if (hasLeftSnapEdge || hasTopSnapEdge || hasRightSnapEdge || hasBottomSnapEdge
 										|| hasVerticalSnapEdge || hasHorizontalSnapEdge) {
 										
-										SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(snapX, snapY, snapRight, snapBottom, snapHorizontalCenter, snapVerticalCenter);
+										snapDropIndicator.isApplication = isApplication;
+										
+										snapDropIndicator.setLines(snapX, snapY, snapRight, snapBottom, snapHorizontalCenter, snapVerticalCenter);
 										
 										if (isApplication) {
-											SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showSelectionBoxOnApplication && showGroupDropZone;
+											snapDropIndicator.showFill = showSelectionBoxOnApplication && showGroupDropZone;
 										}
 										else {
-											SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showGroupDropZone;
+											snapDropIndicator.showFill = showGroupDropZone;
 										}
-										//dropLayout.showDropIndicator(dropLocation.dropPoint);
+										
 										dropLayout.dropIndicator.visible = true;
 										
 										if (dropLayout.dropIndicator is ProgrammaticSkin) {
-											//SnapToElementDropIndicator(dropLayout.dropIndicator).updateSize();
 											ProgrammaticSkin(dropLayout.dropIndicator).invalidateSize();
 											ProgrammaticSkin(dropLayout.dropIndicator).invalidateDisplayList();
 										}
@@ -1171,14 +1176,17 @@ package com.flexcapacitor.utils {
 									else {
 										
 										if (showGroupDropZone && dropLayout.dropIndicator is ProgrammaticSkin) {
-											SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(NaN, NaN);
+											snapDropIndicator.isApplication = isApplication;
+											
+											snapDropIndicator.setLines(NaN, NaN);
 											
 											if (isApplication) {
-												SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showSelectionBoxOnApplication && showGroupDropZone;
+												snapDropIndicator.showFill = showSelectionBoxOnApplication && showGroupDropZone;
 											}
 											else {
-												SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showGroupDropZone;
+												snapDropIndicator.showFill = showGroupDropZone;
 											}
+											
 											dropLayout.dropIndicator.visible = true;
 											
 											ProgrammaticSkin(dropLayout.dropIndicator).invalidateDisplayList();
@@ -1197,13 +1205,15 @@ package com.flexcapacitor.utils {
 									snapVerticalCenter= NaN;
 									
 									if (showGroupDropZone && dropLayout.dropIndicator is ProgrammaticSkin) {
-										SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(NaN, NaN);
+										snapDropIndicator.isApplication = isApplication;
+										
+										snapDropIndicator.setLines(NaN, NaN);
 										
 										if (isApplication) {
-											SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showSelectionBoxOnApplication && showGroupDropZone;
+											snapDropIndicator.showFill = showSelectionBoxOnApplication && showGroupDropZone;
 										}
 										else {
-											SnapToElementDropIndicator(dropLayout.dropIndicator).showFill = showGroupDropZone;
+											snapDropIndicator.showFill = showGroupDropZone;
 										}
 										dropLayout.dropIndicator.visible = true;
 										
@@ -1333,6 +1343,7 @@ package com.flexcapacitor.utils {
 			var length:int;
 			var replaceTarget:Boolean;
 			var eventDescription:String;
+			var snapDropIndicator:SnapToElementDropIndicator;
 			
 			
 			dragData = findDropTarget(event, false);
@@ -1947,14 +1958,18 @@ package com.flexcapacitor.utils {
 				if (animateSnapToEdge && !(draggedItem is Line) && 
 					(properties.indexOf("x")!=-1 || properties.indexOf("y")!=-1) &&
 					(hasSnapX || hasSnapY || hasSnapVertical || hasSnapBottom || hasSnapRight || hasSnapHorizontal) ) {
-					var lineColor:uint = SnapToElementDropIndicator(dropLayout.dropIndicator).lineColor;
-					var lineWeight:Number = SnapToElementDropIndicator(dropLayout.dropIndicator).lineWeight;
-					//SnapToElementDropIndicator(dropLayout.dropIndicator).lineColor = 0x2222FF;
-					SnapToElementDropIndicator(dropLayout.dropIndicator).lineWeight = 2;
-					SnapToElementDropIndicator(dropLayout.dropIndicator).setLines(snapX, snapY, snapRight, snapBottom, snapHorizontalCenter, snapVerticalCenter);
-					SnapToElementDropIndicator(dropLayout.dropIndicator).validateDisplayList();
-					SnapToElementDropIndicator(dropLayout.dropIndicator).lineColor = lineColor;
-					SnapToElementDropIndicator(dropLayout.dropIndicator).lineWeight = lineWeight;
+					
+					var lineColor:uint;
+					var lineWeight:Number;
+					snapDropIndicator = SnapToElementDropIndicator(dropLayout.dropIndicator);
+					lineColor = snapDropIndicator.lineColor;
+					lineWeight = snapDropIndicator.lineWeight;
+					snapDropIndicator.isApplication = isApplication;
+					snapDropIndicator.lineWeight = 2;
+					snapDropIndicator.setLines(snapX, snapY, snapRight, snapBottom, snapHorizontalCenter, snapVerticalCenter);
+					snapDropIndicator.validateDisplayList();
+					snapDropIndicator.lineColor = lineColor;
+					snapDropIndicator.lineWeight = lineWeight;
 					snapEndDropPoint.x = dropX;
 					snapEndDropPoint.y = dropY;
 					animateSnapPoint(draggedItem, snapEndDropPoint, snapStartDropPoint);
@@ -3093,7 +3108,7 @@ package com.flexcapacitor.utils {
 			snapMotionPaths = Vector.<MotionPath>([snapHorizontalPath, snapVerticalPath]);
 			snapToEdgeAnimation.motionPaths = snapMotionPaths;
 			snapToEdgeAnimation.play([target]);
-			Radiate.hideToolsLayer();
+			ToolManager.hideToolsLayer();
 		}
 		
 		protected function snapToEdgeAnimation_effectEndHandler(event:Event):void {
@@ -3106,7 +3121,7 @@ package com.flexcapacitor.utils {
 		protected function fadeDropIndicatorAnimation_effectEndHandler(event:Event):void {
 			fadeDropIndicatorAnimation.removeEventListener(EffectEvent.EFFECT_END, fadeDropIndicatorAnimation_effectEndHandler);
 			destroyDropIndicator();
-			Radiate.showToolsLayer();
+			ToolManager.showToolsLayer();
 			Radiate.updateSelection(Radiate.instance.target);
 		}
 		

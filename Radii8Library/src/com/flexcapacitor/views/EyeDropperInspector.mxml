@@ -17,6 +17,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.tools.EyeDropper;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -54,7 +55,7 @@
 			 * Update UI components to tool settings
 			 * */
 			public function updateTool(tool:ITool):void {
-				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var toolDescription:ComponentDescription = ToolManager.getToolDescription(tool);
 				
 				if (toolDescription && toolDescription.instance 
 					&& toolDescription.instance is EyeDropper) {

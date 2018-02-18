@@ -10,11 +10,7 @@
 							 >
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.controller.Radiate;
-			
 			import mx.managers.PopUpManager;
-			
-			import spark.components.Image;
 			
 			protected function cancelButton_clickHandler(event:MouseEvent):void {
 				callLater(PopUpManager.removePopUp, [this]);
@@ -24,80 +20,10 @@
 				callLater(PopUpManager.removePopUp, [this]);
 			}
 			
-			protected function galleryview1_insertHandler(event:Event):void {
-				var selectedItem:Object = galleryView.selectedItem;
-				var url:String;
-				var urlRequest:URLRequest;
-				
-				if (selectedItem) {
-					url = selectedItem.webformatURL;
-					url = url.replace(/_640/, "_960");
-					urlRequest = new URLRequest();
-					urlRequest.url = url;
-					
-					if (loader==null) {
-						loader = new Loader();
-					}
-					
-					loader.load(urlRequest);
-					loader.contentLoaderInfo.addEventListener(Event.COMPLETE, loaderComplete);
-					loader.contentLoaderInfo.addEventListener(Event.INIT, init);
-					loader.contentLoaderInfo.addEventListener(ProgressEvent.PROGRESS, onProgress);
-					loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, ioErrorHandler);
-					
-					/*
-					if (image==null) {
-						image = new Image();
-					}
-					
-					image.source = url;
-					image.addEventListener(Event.COMPLETE, imageComplete);
-					image.addEventListener(FlexEvent.READY, imageComplete);
-					image.addEventListener(IOErrorEvent.IO_ERROR, ioErrorHandler);
-					*/
-				}
-			}
-			
-			private var image:Image;
-			private var loader:Loader;
-			
-			protected function loaderComplete(event:Event):void {
-				//trace("loader complete event");
-				var source:Object = loader.content;
-				var bitmapData:BitmapData = source ? source.bitmapData : null;
-				
-				if (bitmapData) {
-					radiate = Radiate.getInstance();
-					radiate.dropInBitmapData(bitmapData, false, true);
-					close();
-				}
-			}
-			
-			protected function imageComplete(event:Event):void {
-				//trace("image complete event");
-				var source:Object = image.source;
-				var bitmapData:BitmapData = image.bitmapData;
-				
-			}
-			
-			protected function init(event:Event):void {
-				//trace("loader init event");
-			}
-			
-			protected function onProgress(event:ProgressEvent):void {
-				//trace("loader progress event");
-			}
-			
-			protected function ioErrorHandler(event:IOErrorEvent):void
-			{
-				// TODO Auto-generated method stub
-				
-			}
-			
 		]]>
 	</fx:Script>
 	
-	<views:GalleryView id="galleryView" width="100%" height="100%" close="galleryview1_closeHandler(event)" 
-					   insert="galleryview1_insertHandler(event)"/>
+	<views:GalleryView id="galleryView" width="100%" height="100%" 
+					   close="galleryview1_closeHandler(event)" />
 
 </windows:AnimatedPanelWindow>

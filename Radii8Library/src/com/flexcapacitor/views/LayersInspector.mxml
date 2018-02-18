@@ -58,6 +58,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ArrangeLayers;
+			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.IDocument;
@@ -921,7 +922,7 @@
 			
 			protected function filtersButton_clickHandler(event:MouseEvent):void
 			{
-				Radiate.showFiltersPanel();
+				ViewManager.showFiltersPanel();
 			}
 			
 			protected function maskItem_clickHandler(event:MouseEvent):void {

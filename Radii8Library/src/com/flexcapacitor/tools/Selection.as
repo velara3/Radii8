@@ -1110,7 +1110,9 @@ package com.flexcapacitor.tools {
 							
 							if (highlightLockedItems) {
 								//layoutDebugHelper.enable();
-								Radiate.callLater(layoutDebugHelper.addElement, componentDescription.instance);
+								//Radiate.callLater(layoutDebugHelper.addElement, componentDescription.instance);
+								var rectangle:Rectangle = DisplayObjectUtils.getBounds(componentDescription.instance, toolLayer);
+								layoutDebugHelper.addElement(componentDescription.instance as ILayoutElement, rectangle);
 								//layoutDebugHelper.addElement(ILayoutElement(target));
 								//layoutDebugHelper.render();
 							}

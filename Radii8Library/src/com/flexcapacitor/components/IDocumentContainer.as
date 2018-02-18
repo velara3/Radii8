@@ -16,6 +16,7 @@
 */
 
 package com.flexcapacitor.components {
+	import com.flexcapacitor.controls.RichTextEditorBar;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
@@ -79,6 +80,12 @@ package com.flexcapacitor.components {
 		 * */
 		function set canvasScroller(value:Scroller):void;
 		function get canvasScroller():Scroller;
+		
+		/**
+		 * Reference to the text editor component
+		 * */
+		function set editorComponent(value:RichTextEditorBar):void;
+		function get editorComponent():RichTextEditorBar;
 		
 		
 	}

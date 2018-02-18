@@ -2,8 +2,11 @@
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.managers.TextEditorManager;
+	import com.flexcapacitor.controls.RichTextEditorBar;
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.managers.ComponentManager;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
@@ -12,6 +15,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
+	import com.flexcapacitor.utils.TextFlowUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
@@ -97,6 +101,10 @@ package com.flexcapacitor.tools {
 	import spark.layouts.supportClasses.LayoutBase;
 	import spark.primitives.supportClasses.GraphicElement;
 	import spark.skins.spark.ListDropIndicator;
+	
+	import flashx.textLayout.conversion.PlainTextExporter;
+	import flashx.textLayout.conversion.TextConverter;
+	import flashx.textLayout.elements.TextFlow;
 		
 	/**
 		 Alex Harui Tue, 04 Mar 2008 21:03:35 -0800
@@ -204,6 +212,32 @@ package com.flexcapacitor.tools {
 		 * */
 		public var selectGroup:Boolean = true;
 		
+		/**
+		 * Use call out instead of editar bar
+		 **/
+		public static var showTextEditorInCallOut:Boolean = false;
+		
+		/**
+		 * Select text when opening or displaying text editor
+		 * on newly created text components
+		 **/
+		public var selectTextOnNewTextFields:Boolean = true;
+		
+		/**
+		 * Select text when opening or displaying text editor
+		 * on existing text components
+		 **/
+		public var selectTextOnExistingTextFields:Boolean = false;
+		
+		/**
+		 * Set focus on text when opening or displaying text editor
+		 **/
+		public var setFocusOnOpen:Boolean = true;
+		
+		/**
+		 * Text of new dynamically text field
+		 **/
+		public var newTextFieldText:String = "text";
 		
 		/**
 		 * Enable this tool. 
@@ -223,6 +257,10 @@ package com.flexcapacitor.tools {
 				dragManagerInstance = DragManagerUtil.getInstance();
 			}
 			
+			if (!showTextEditorInCallOut) {
+				showEditor();
+			}
+			
 			addRadiateListeners();
 			addListeners();
 			
@@ -238,6 +276,7 @@ package com.flexcapacitor.tools {
 			if (debug) {
 				log();
 			}
+			hideEditor();
 			removeRadiateListeners();
 			removeListeners();
 		}
@@ -457,21 +496,31 @@ package com.flexcapacitor.tools {
 		 * Handle mouse down on application
 		 * */
 		public function mouseDownHandler(event:MouseEvent):void {
-			if (debug) {
-				log();
-			}
-			var point:Point = new Point(event.stageX, event.stageY);
-			var targetsUnderPoint:Array = FlexGlobals.topLevelApplication.getObjectsUnderPoint(point);
+			if (debug) log();
+			var point:Point;
+			var targetsUnderPoint:Array;
 			var componentTree:ComponentDescription;
 			var componentDescription:ComponentDescription;
-			var target:Object = event.target;
-			var originalTarget:Object = event.target;
+			var target:Object;
+			var originalTarget:Object;
 			var items:Array = [];
 			var numberOfTargets:int;
 			var targetIsTextfield:Boolean;
 			var component:Object;
 			var componentDefinition:ComponentDefinition;
 			var possibleTarget:Object;
+			
+			point = new Point(event.stageX, event.stageY);
+			targetsUnderPoint = FlexGlobals.topLevelApplication.getObjectsUnderPoint(point);
+			target = event.target;
+			originalTarget = event.target;
+			
+			
+			// clicked on current editable text field
+			if (target==TextEditorManager.editableRichTextField ||
+				"owner" in target && target==TextEditorManager.editableRichTextField) {
+				return;
+			}
 			
 			/*radiate = Radiate.getInstance();
 			targetApplication = radiate.document;*/
@@ -493,6 +542,11 @@ package com.flexcapacitor.tools {
 			
 			// clicked on background area
 			if (target==canvasBackground || target==canvasBackgroundParent) {
+				
+				// commit values
+				if (TextEditorManager.isEditFieldVisible()) {
+					TextEditorManager.commitTextEditorValues();
+				}
 				//radiate.setTarget(targetApplication, true);
 				return;
 			}
@@ -579,11 +633,21 @@ package com.flexcapacitor.tools {
 			
 			// if we are over text field show editor
 			if (targetIsTextfield) {
-				if (debug) {
-					logTarget(target, "Showing editor");
+				
+				// clicked on current editable text field
+				if (target==TextEditorManager.editableRichTextField && 
+					TextEditorManager.isEditFieldVisible()) {
+					if (debug) {
+						log("Clicked on text field and editor is already open");
+					}
+					return;
 				}
 				
-				Radiate.callAfter(10, Radiate.showTextEditor, target);
+				if (debug) {
+					logTarget(target, "Showing text editor");
+				}
+				
+				TextEditorManager.showTextEditor(target, selectTextOnExistingTextFields, setFocusOnOpen, showTextEditorInCallOut);
 			}
 			else {
 				
@@ -592,9 +656,17 @@ package com.flexcapacitor.tools {
 					log("Creating text field");
 				}
 				
+				// if editor is still open we need to close it
+				if (TextEditorManager.isEditFieldVisible()) {
+					if (debug) {
+						log("Previous editor open. Committing values.");
+					}
+					TextEditorManager.commitTextEditorValues();
+				}
+				
 				// create rich text component
-				componentDefinition = Radiate.getComponentType("RichText");
-				component = Radiate.createComponentToAdd(document, componentDefinition, false);
+				componentDefinition = ComponentManager.getComponentType("RichText");
+				component = ComponentManager.createComponentToAdd(document, componentDefinition, false);
 				currentComponentDescription = document.getItemDescription(component);
 				
 				//currentComponentDescription.defaultProperties = componentDefinition.defaultProperties;
@@ -607,28 +679,19 @@ package com.flexcapacitor.tools {
 				dropLocationOnTarget = stagePoint.subtract(dropLocationOnTarget);
 				
 				dropLocationOnTarget = DisplayObjectUtils.getDisplayObjectPosition(target as DisplayObject, event, true);
-				var values:Object = {x:dropLocationOnTarget.x, y:dropLocationOnTarget.y, text:"Text"};
-				var properties:Array = [MXMLDocumentConstants.X, MXMLDocumentConstants.Y, "text"];
-				
-				/*
-				var point1:Point = new Point(event.localX, event.localY);
-				
-				var distanceFromLeftEdge:Number = targetApplication.localToGlobal(new Point()).x;
-				var distanceFromTopEdge:Number = targetApplication.localToGlobal(new Point()).y;
 				
 				
-				var location:Point = DisplayObjectContainer(target).localToGlobal(new Point());
-				var dropPoint:Point = location.subtract(new Point(event.stageX, event.stageY));
-				var dropPoint2:Point = location.add(new Point(event.stageX, event.stageY));*/
-				//DisplayObjectUtils.getDistanceBetweenDisplayObjects();
+				var values:Object = {x:dropLocationOnTarget.x, y:dropLocationOnTarget.y};
+				var properties:Array = [MXMLDocumentConstants.X, MXMLDocumentConstants.Y];
+				
+				values.textFlow = TextConverter.importToFlow(newTextFieldText, TextConverter.PLAIN_TEXT_FORMAT);
+				properties.push("textFlow");
 				
 				Radiate.addElement(component, target, properties, null, null, values, null);
 				
 				updateTextAfterDragOrAdd(component);
-				/*
-				dragManagerInstance.draggedItem = component;
-				dragManagerInstance.startDrag(component as IUIComponent, targetApplication as Application, event);
-				*/
+				
+				TextEditorManager.showTextEditor(component, selectTextOnExistingTextFields, setFocusOnOpen, showTextEditorInCallOut);
 			}
 		}
 		
@@ -662,7 +725,7 @@ package com.flexcapacitor.tools {
 				LayoutManager.getInstance().validateClient(component as ILayoutManagerClient);
 			}
 			
-			Radiate.callAfter(10, Radiate.showTextEditor, component, true);
+			TextEditorManager.showTextEditor(component, selectTextOnNewTextFields, setFocusOnOpen, showTextEditorInCallOut);
 		}
 		
 		/**
@@ -749,7 +812,31 @@ package com.flexcapacitor.tools {
 			
 		}
 		
+		/**
+		 * Hides text editor bar if visible
+		 **/
+		public static function hideEditor():void
+		{
+			var editor:RichTextEditorBar = Radiate.instance.editorComponent;
+			
+			if (editor) {
+				editor.visible = false;
+			}
+			
+		}
 		
+		/**
+		 * Shows text editor bar if visible
+		 **/
+		public static function showEditor():void
+		{
+			var editor:RichTextEditorBar = Radiate.instance.editorComponent;
+			
+			if (editor && !showTextEditorInCallOut) {
+				editor.visible = true;
+			}
+			
+		}
 	}
 }
 

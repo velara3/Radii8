@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:flexcapacitor="flexcapacitor.*"
+		 xmlns:fc="com.flexcapacitor.effects.popup.*"
+		 xmlns:windows="com.flexcapacitor.views.windows.*"
+		 xmlns:flexiframe="com.google.code.flexiframe.*"
+		 xmlns:utils="com.flexcapacitor.utils.*"
+		 
+		 title="Copy image to clipboard"
+		 width="600"
+		 height="450"
+		 creationComplete="panel1_creationCompleteHandler(event)" 
+		 openAnimationEnd="animatedpanelwindow1_openAnimationEndHandler(event)"
+		 >
+	
+		<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace c "com.flexcapacitor.controls.*";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace handlers "com.flexcapacitor.handlers.*";
+		@namespace fc "com.flexcapacitor.effects.popup.*";
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controller.RadiateUtilities;
+			import com.flexcapacitor.managers.ClipboardManager;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.utils.NameUtil;
+			
+			public var source:String;
+			public var bitmapData:BitmapData;
+			public var data:Object;
+			
+			protected function closeButton_clickHandler(event:MouseEvent):void {
+				bitmapData = null;
+				source = null;
+				data = null;
+				
+				if (ExternalInterface.available) {
+					var results:Boolean;
+					//ExternalInterface.marshallExceptions = true;
+					results = ExternalInterface.call(removeImageFrame, elementIdentity, ExternalInterface.objectID);
+				}
+				
+				callLater(PopUpManager.removePopUp, [this]);
+			}
+			
+			protected var elementIdentity:String;
+			
+			/**
+			 * Pass image to browser and display in container 
+			 **/
+			public function createImage(source:String):void {
+				var rectangle:Rectangle;
+				//source = DisplayObjectUtils.BASE64_HEADER_PNG + source;
+				
+				if (elementIdentity==null) {
+					elementIdentity = NameUtil.createUniqueName(this);
+				}
+				
+				rectangle = DisplayObjectUtils.getBounds(imagePlaceholder, imagePlaceholder.parent);
+				//rectangle = DisplayObjectUtils.getBounds(imagePlaceholder, FlexGlobals.topLevelApplication);
+				//rectangle = DisplayObjectUtils.getBounds(imagePlaceholder, systemManager.stage);
+				
+				ExternalInterface.marshallExceptions = false;
+				ExternalInterface.marshallExceptions = true;
+				
+				// create area to paste images
+				if (ExternalInterface.available) {
+					var string:String = imageFrame;
+					var results:Boolean;
+					results = ExternalInterface.call(string, elementIdentity, ExternalInterface.objectID, rectangle, source);
+				}
+				
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+				elementIdentity = NameUtil.createUniqueName(this);
+				
+				if (data && data.bitmapData) {
+					bitmapData = data.bitmapData;
+				}
+			}
+			
+			public var byteArray:ByteArray;
+			
+			private function saveButton_clickHandler():void {
+				var file:FileReference = new FileReference();
+				byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(bitmapData);
+				
+				if (byteArray) {
+					file.save(byteArray,".png");
+				}
+			}
+			
+			private function saveBase64Button_clickHandler():void {
+				var clipboardManager:ClipboardManager = ClipboardManager.instance;
+				clipboardManager.copyToClipboard(source);
+				infoLabel.text = "Base 64 text copied to the clipboard"; 
+			}
+			
+			protected function animatedpanelwindow1_openAnimationEndHandler(event:Event):void
+			{
+				radiate = Radiate.instance;
+				
+				if (bitmapData) {
+					source = RadiateUtilities.getBase64FromBitmapData(bitmapData);
+					createImage(source);
+				}
+				else if (radiate.selectedDocument) {
+					bitmapData = RadiateUtilities.getDocumentSnapshot(radiate.selectedDocument);
+					source = RadiateUtilities.getBase64FromBitmapData(bitmapData);
+					createImage(source);
+				}
+				
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<fx:String id="action"></fx:String>
+		
+		<fc:ClosePopUp id="closePopUp" popUp="{this}" />
+		
+	</fx:Declarations>
+	
+	
+	<fx:Declarations>
+		<fx:XML id="imageFrame" >
+			<xml><![CDATA[
+			function(id, objectId, rectangle, source) {
+				var division = document.createElement('div');
+				division.id = id;
+				division.style.left = rectangle.x + "px";
+				division.style.top = rectangle.y + "px";
+				division.style.width  = rectangle.width + "px";
+				division.style.height = rectangle.height + "px";
+				division.style.position = "absolute";
+				division.style.overflow = "hidden";
+				
+				var element = new Image();
+				element.src = source;
+				element.style.maxWidth  = "100%";
+				element.style.maxHeight = "100%";
+				element.style.left = "50%";
+				element.style.top = "50%";
+				element.style.position = "absolute";
+				element.style.transform = "translate(-50%,-50%)";
+				
+				document.body.appendChild(division);
+				division.appendChild(element);
+				
+				return true;
+			}
+			]]></xml>
+		</fx:XML>
+		<fx:XML id="removeImageFrame" >
+			<xml><![CDATA[
+				function(id, objectId) {
+					var element = document.getElementById(id);
+					if (element) {
+						element.parentNode.removeChild(element);
+					}
+					return true;
+				}
+			]]></xml>
+		</fx:XML>
+	</fx:Declarations>
+	
+	
+	<s:VGroup left="20" 
+			  top="20" 
+			  right="20"
+			  bottom="20"
+			  gap="10"
+			  >
+		
+		<s:HGroup width="100%"
+				  verticalAlign="middle"
+				  >
+			
+			<s:Label text="Right click on the image below and then choose Copy Image"/>
+			
+			<s:Spacer width="100%"/>
+			
+		</s:HGroup>
+		
+		<s:HGroup left="0" right="0" 
+				  width="100%" height="100%"
+				  clipAndEnableScrolling="true" 
+				  paddingRight="10"
+				  verticalAlign="middle"
+				  >
+			
+			<s:BorderContainer id="imagePlaceholder" width="100%" height="100%"
+							   borderWeight="0"
+							   >
+				<s:backgroundFill>
+					<s:SolidColor color="#f7f7f7"/>
+				</s:backgroundFill>
+				<s:borderStroke>
+					<s:SolidColorStroke weight="0" alpha="0" color="#0088FF" joints="miter"/>
+				</s:borderStroke>
+			</s:BorderContainer>
+			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" horizontalAlign="right" verticalAlign="baseline">
+			<s:Button label="Save" click="saveButton_clickHandler()" toolTip="Save to PNG"/>
+			<s:Button label="Copy Base64" click="saveBase64Button_clickHandler()" toolTip="Copy a base 64 string value to the clipboard"/>
+			<s:Label id="infoLabel" text="" />
+			<s:Spacer width="100%"/>
+			<s:Button id="closeButton" label="Close" click="closeButton_clickHandler(event)" toolTip="Close the window"/>
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+	
+</windows:AnimatedPanelWindow>

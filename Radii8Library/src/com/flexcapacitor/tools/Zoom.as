@@ -1,7 +1,9 @@
 
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.controller.RadiateUtilities;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.managers.ScaleManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	
@@ -259,7 +261,7 @@ package com.flexcapacitor.tools {
 				
 				startingStagePoint = new Point(event.stageX, event.stageY);
 				startingApplicationPoint = DisplayObjectUtils.getDisplayObjectPosition(targetApplication as DisplayObject, event, true);
-				startingScale = radiate.getScale();
+				startingScale = ScaleManager.getScale();
 				
 				localPositionPoint = DisplayObjectUtils.getDisplayObjectPosition(targetApplication as DisplayObject, event, true);;
 				//localPositionPoint.x /= startingScale;
@@ -374,10 +376,10 @@ package com.flexcapacitor.tools {
 		}
 		
 		public function updateZoom(newScale:Number, event:MouseEvent):void {
-			var currentScale:Number = radiate.getScale();
+			var currentScale:Number = ScaleManager.getScale();
 			var newPoint:Point;
 			
-			radiate.setScale(newScale);
+			ScaleManager.setScale(newScale);
 			
 			newPoint = new Point();
 			newPoint.x = localPositionPoint.x * newScale;
@@ -408,7 +410,7 @@ package com.flexcapacitor.tools {
 			updateMouseCursor(event.altKey || event.shiftKey);
 			
 			if (targetApplication is DisplayObject) {
-				var currentScale:Number = radiate.getScale();
+				var currentScale:Number = ScaleManager.getScale();
 				var offsetX:int;
 				var offsetY:int;
 				var point:Point;
@@ -480,8 +482,8 @@ package com.flexcapacitor.tools {
 					offsetX = (point.x * scaleChange);
 					offsetY = (point.y * scaleChange);
 					
-					radiate.setScrollPosition(offsetX+hPosition, offsetY+vPosition);
-					radiate.setScale(currentScale-scaleAmount);
+					RadiateUtilities.setScrollPosition(offsetX+hPosition, offsetY+vPosition);
+					ScaleManager.setScale(currentScale-scaleAmount);
 					//radiate.decreaseScale();
 				}
 				else {
@@ -499,7 +501,7 @@ package com.flexcapacitor.tools {
 					var localDistancePoint2:Point = DisplayObjectUtils.getDisplayObjectPosition(targetApplication as DisplayObject, event);
 					pointRectangle = new Rectangle(localMousePoint.x, localMousePoint.y, 10, 10);
 					
-					radiate.setScale(currentScale+scaleAmount);
+					ScaleManager.setScale(currentScale+scaleAmount);
 					
 					point = getScrollPositionDeltaToPoint(radiate.canvasScroller, localDistancePoint2);
 					
@@ -556,7 +558,7 @@ package com.flexcapacitor.tools {
 			updateMouseCursor(event.altKey || event.shiftKey);
 			
 			if (targetApplication is DisplayObject) {
-				currentScale = radiate.getScale();
+				currentScale = ScaleManager.getScale();
 				currentScrollRect = getScrollRect(canvasScroller.viewport as GroupBase);
 				currentScrollPoint = getScrollPoint(canvasScroller.viewport as GroupBase);
 				
@@ -586,7 +588,7 @@ package com.flexcapacitor.tools {
 				}
 				
 				//PerformanceMeter.mark("Setting scale", true);
-				radiate.setScale(newScale);
+				ScaleManager.setScale(newScale);
 				canvasScroller.validateNow();
 				//PerformanceMeter.mark("Setting scale");
 				
@@ -773,14 +775,13 @@ package com.flexcapacitor.tools {
 		 * */
 		protected function documentChangeHandler(event:RadiateEvent):void {
 			updateDocument(event.selectedItem as IDocument);
-			
 		}
 		
 		/**
 		 * Restores the zoom of the target application to 100%. 
 		 * */
 		public function setScale(value:Number):void {
-			radiate.setScale(value);
+			ScaleManager.setScale(value);
 		}
 		
 		/**
@@ -788,14 +789,14 @@ package com.flexcapacitor.tools {
 		 * */
 		public function getScale():Number {
 			
-			return radiate.getScale();
+			return ScaleManager.getScale();
 		}
 		
 		/**
 		 * Restores the zoom of the target application to 100%. 
 		 * */
 		public function restoreDefaultScale():void {
-			radiate.restoreDefaultScale();
+			ScaleManager.restoreDefaultScale();
 		}
 		
 		/**

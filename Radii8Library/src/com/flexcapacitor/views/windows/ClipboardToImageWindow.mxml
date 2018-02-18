@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<windows:AnimatedPanelWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:flexcapacitor="flexcapacitor.*"
+		 xmlns:fc="com.flexcapacitor.effects.popup.*"
+		 xmlns:windows="com.flexcapacitor.views.windows.*"
+		 xmlns:flexiframe="com.google.code.flexiframe.*"
+		 xmlns:utils="com.flexcapacitor.utils.*"
+		 
+		 title="Paste image from clipboard"
+		 width="600"
+		 height="450"
+		 creationComplete="panel1_creationCompleteHandler(event)" 
+		 openAnimationEnd="animatedpanelwindow1_openAnimationEndHandler(event)"
+		 >
+	
+		<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace c "com.flexcapacitor.controls.*";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		@namespace handlers "com.flexcapacitor.handlers.*";
+		@namespace fc "com.flexcapacitor.effects.popup.*";
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controller.RadiateUtilities;
+			import com.flexcapacitor.events.HTMLClipboardEvent;
+			import com.flexcapacitor.model.HTMLClipboardData;
+			import com.flexcapacitor.utils.DisplayObjectUtils;
+			
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.utils.NameUtil;
+			
+			import spark.components.Image;
+			
+			public var htmlData:HTMLClipboardData;
+			public var source:String;
+			public var bitmapData:BitmapData;
+			
+			protected function insertButton_clickHandler():void {
+				//createImage(source, image);
+				
+				if (htmlData && bitmapData) {
+					radiate = Radiate.instance;
+					radiate.dropInBitmapData(bitmapData, false, true);
+					Radiate.callAfter(closeDelay, close);
+				}
+			}
+			
+			override public function close():void {
+				
+				if (ExternalInterface.available) {
+					var results:Boolean;
+					results = ExternalInterface.call(removeImageFrame, elementIdentity, ExternalInterface.objectID);
+				}
+				
+				htmlClipboardManager.disableElement(elementIdentity);
+
+				super.close();
+			}
+			
+			protected var elementIdentity:String;
+			
+			public function createPasteZone():void {
+				var rectangle:Rectangle;
+				
+				if (elementIdentity==null) {
+					elementIdentity = NameUtil.createUniqueName(this);
+				}
+				
+				ExternalInterface.marshallExceptions = false;
+				ExternalInterface.marshallExceptions = true;
+				
+				// create content editable area to paste images into
+				if (ExternalInterface.available) {
+					rectangle = DisplayObjectUtils.getBounds(dropZoneArea, dropZoneArea.parent);
+					
+					var results:Boolean;
+					results = ExternalInterface.call(createImageFrame, elementIdentity, ExternalInterface.objectID, rectangle, source);
+					
+					// listen for paste event on content editable area
+					htmlClipboardManager.enableElement(elementIdentity);
+				}
+				
+			}
+			
+			protected function panel1_creationCompleteHandler(event:FlexEvent):void
+			{
+				elementIdentity = NameUtil.createUniqueName(this);
+			}
+			
+			public var closeDelay:int = 250;
+			
+			public var byteArray:ByteArray;
+			
+			protected function htmlClipboardManager_beforePasteHandler(event:HTMLClipboardEvent):void {
+				trace(event.data.originalData);
+				trace(event.data);
+				trace("has image data: " + event.data.types.indexOf("image/png"));// in safari
+				trace("has file data: " + event.data.types.indexOf("files")); // files in Firefox
+			}
+			
+			protected function htmlClipboardManager_pasteHandler(event:HTMLClipboardEvent):void {
+				var data:HTMLClipboardData = event.data;
+				htmlData = data;
+				//trace("Paste "+data.mimeType + ":"+ data.value);
+				
+				if (data.mimeType==HTMLClipboardManager.INVALID) {
+					infoLabel.text = "Invalid data";
+				}
+				else {
+					infoLabel.text = "Pasted type:" + data.mimeType;
+					
+					if (data.mimeType!=HTMLClipboardManager.INVALID && 
+						data.hasMimeType("image/png")) {
+						bitmapData = DisplayObjectUtils.getBitmapDataFromBase64(data.dataURI, null, true, DisplayObjectUtils.PNG);
+						thumbnail.source = bitmapData;
+						
+						insertButton.enabled = true;
+						saveButton.enabled = true;
+					}
+				}
+			}
+			
+			private function saveButton_clickHandler():void {
+				var file:FileReference = new FileReference();
+				
+				if (htmlData && htmlData.hasMimeType("image")) {
+					byteArray = htmlData.getByteArray();
+					file.save(byteArray);
+				}
+			}
+			
+			
+			protected function animatedpanelwindow1_openAnimationEndHandler(event:Event):void {
+				radiate = Radiate.instance;
+				
+				if (radiate.selectedDocument) {
+					createPasteZone();
+				}
+				
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		
+		<fx:String id="action"></fx:String>
+		
+		<fc:ClosePopUp id="closePopUp" popUp="{this}" />
+		
+		<utils:HTMLClipboardManager id="htmlClipboardManager" 
+									beforePaste="htmlClipboardManager_beforePasteHandler(event)"
+									paste="htmlClipboardManager_pasteHandler(event)"/>
+	</fx:Declarations>
+	
+	
+	<fx:Declarations>
+		<fx:XML id="createImageFrame" >
+			<xml><![CDATA[
+			function(id, objectId, rectangle, source) {
+				var division = document.createElement('div');
+				division.id = id;
+				division.style.left = rectangle.x + "px";
+				division.style.top = rectangle.y + "px";
+				division.style.width  = rectangle.width + "px";
+				division.style.height = rectangle.height + "px";
+				division.style.position = "absolute";
+				division.style.overflow = "auto";
+				division.contentEditable = true;
+				
+				document.body.appendChild(division);
+				
+				var addRule = function(sheet, selector, styles) {
+					if (sheet.insertRule) return sheet.insertRule(selector + " {" + styles + "}", sheet.cssRules.length);
+					if (sheet.addRule) return sheet.addRule(selector, styles);
+				};
+				
+				addRule(document.styleSheets[0], '[contenteditable="true"]:focus', "outline:1px dashed blue; border:none;");
+				
+				return true;
+			}
+			]]></xml>
+		</fx:XML>
+		<fx:XML id="removeImageFrame" >
+			<xml><![CDATA[
+				function(id, objectId) {
+					var element = document.getElementById(id);
+					if (element) {
+						element.parentNode.removeChild(element);
+					}
+					return true;
+				}
+			]]></xml>
+		</fx:XML>
+	</fx:Declarations>
+	
+	
+	<s:VGroup left="20" 
+			  top="20" 
+			  right="20"
+			  bottom="20"
+			  gap="10"
+			  >
+		
+		<s:HGroup width="100%"
+				  verticalAlign="middle"
+				  >
+			
+			<s:Label text="Click on the box below and then paste image (Right click > Paste or CTRL + V)"/>
+			
+			<s:Spacer width="100%"/>
+			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="100%"
+				  verticalAlign="middle"
+				  >
+			
+			<s:BorderContainer id="dropZoneArea" width="100%" height="100%"
+							   borderWeight="0"
+							   >
+				<s:backgroundFill>
+					<s:SolidColor color="#f7f7f7"/>
+				</s:backgroundFill>
+				<s:borderStroke>
+					<s:SolidColorStroke alpha="0" color="#0088FF" joints="miter"/>
+				</s:borderStroke>
+			</s:BorderContainer>
+			
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="baseline">
+			<s:Button id="saveButton" label="Save" click="saveButton_clickHandler()" enabled="false"/>
+			<s:Label id="infoLabel" text="" />
+			<s:Spacer width="100%"/>
+			
+			<s:Image id="thumbnail" height="30" width="100%" baseline="-12" smooth="true"/>
+			<s:Button id="cancelButton" label="Cancel" click="close()" />
+			<s:Button id="insertButton" label="Insert" click="insertButton_clickHandler()" enabled="false"/>
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+	
+</windows:AnimatedPanelWindow>

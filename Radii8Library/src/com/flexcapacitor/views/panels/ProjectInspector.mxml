@@ -19,6 +19,7 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.managers.SettingsManager;
 			import com.flexcapacitor.model.DocumentData;
 			import com.flexcapacitor.model.IProject;
 			import com.flexcapacitor.utils.ArrayUtils;
@@ -161,18 +162,18 @@
 			protected function saveProjectOnlyIcon_clickHandler(event:MouseEvent):void {
 				radiate.saveProjectOnly(radiate.selectedProject);
 				//radiate.save();
-				Radiate.saveSettings();
+				SettingsManager.saveSettings();
 			}
 			
 			protected function saveProjectIcon_clickHandler(event:MouseEvent):void {
 				radiate.saveProject(radiate.selectedProject);
 				//radiate.save();
-				Radiate.saveSettings();
+				SettingsManager.saveSettings();
 			}
 			
 			protected function getSavedProjectsIcon_clickHandler(event:MouseEvent):void {
-				radiate.getSavedData();
-				radiate.getSettingsData();
+				SettingsManager.getSavedData();
+				SettingsManager.getSettingsData();
 			}
 			/*
 			protected function deleteProjectIcon_clickHandler(event:MouseEvent):void {
@@ -193,8 +194,8 @@
 			}
 			
 			protected function removeSavedDataIcon_clickHandler(event:MouseEvent):void {
-				radiate.removeSavedData();
-				radiate.removeSavedSettings();
+				SettingsManager.removeSavedData();
+				SettingsManager.removeSavedSettings();
 			}
 			
 			/**
@@ -243,7 +244,7 @@
 			
 			protected function autoSaveToggle_clickHandler(event:MouseEvent):void {
 				radiate.enableAutoSave = autoSaveToggle.selected;
-				Radiate.saveSettings();
+				SettingsManager.saveSettings();
 			}
 			
 			protected function openHomePageInBrowserButton_clickHandler():void {

@@ -44,6 +44,8 @@ limitations under the License.
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controller.RadiateUtilities;
+			import com.flexcapacitor.controls.RichTextEditorBar;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -55,7 +57,6 @@ limitations under the License.
 			import mx.graphics.BitmapFill;
 			import mx.graphics.BitmapFillMode;
 			import mx.managers.SystemManager;
-			import mx.utils.NameUtil;
 			
 			import spark.components.Application;
 			
@@ -160,7 +161,7 @@ limitations under the License.
 				
 				applicationReady = true;
 				
-				radiate.centerApplication(true, true, true);
+				RadiateUtilities.centerApplication(true, true, true);
 				
 				radiate.dispatchDocumentOpenEvent(iDocument);
 				//Radiate.info("Application Complete");
@@ -322,6 +323,20 @@ limitations under the License.
 				_canvasScroller = value;
 			}
 			
+			private var _editorComponent:RichTextEditorBar;
+			
+			public function get editorComponent():RichTextEditorBar {
+				return _editorComponent;
+			}
+			
+			/**
+			 * Text editor component
+			 * */
+			[Bindable]
+			public function set editorComponent(value:RichTextEditorBar):void {
+				_editorComponent = value;
+			}
+			
 			/**
 			 * 
 			 * */
@@ -478,7 +493,7 @@ limitations under the License.
 			private function updateAppScrollPosition():void {
 				
 				if (targetApplication is DisplayObject) {
-					radiate.centerApplication();
+					RadiateUtilities.centerApplication();
 				}
 			}
 			
@@ -679,7 +694,7 @@ limitations under the License.
 				//showBorders = !showBorders;
 				
 				//if (!inUpdateBackgroundSize) { 
-				radiate.centerApplication();
+				RadiateUtilities.centerApplication();
 				//}
 			}
 			

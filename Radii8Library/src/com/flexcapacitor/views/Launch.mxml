@@ -12,6 +12,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -90,7 +91,7 @@
 				//item = tools.selectedItem as ComponentDescription;
 				
 				if (item) {
-					radiate.setTool(item.instance as ITool);
+					ToolManager.setTool(item.instance as ITool);
 				}
 			}
 			

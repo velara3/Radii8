@@ -32,8 +32,11 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.events.DragDropEvent;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ClipboardManager;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.model.AttachmentData;
 			import com.flexcapacitor.model.DocumentData;
@@ -137,7 +140,7 @@
 				
 				selectedItem = data;
 				
-				item = Radiate.getComponentType("Image");
+				item = ComponentManager.getComponentType("Image");
 				image = item as Image;
 				
 				// for replace target to work we need to set the image source here
@@ -179,7 +182,7 @@
 				if (!application) return;
 				
 				//trace("listening for drag behavior");
-				component = Radiate.createComponentToAdd(iDocument, item, false);
+				component = ComponentManager.createComponentToAdd(iDocument, item, false);
 				
 				
 				if (!dragManagerInstance) {
@@ -626,10 +629,10 @@
 						
 						// drag manager creates a raster snapshot when on desktop so don't use that
 						if (radiate.target is GraphicElement) {
-							imageDataOrError = Radiate.saveToLibrary(radiate.target, event.shiftKey);
+							imageDataOrError = RadiateUtilities.saveToLibrary(radiate.target, event.shiftKey);
 						}
 						else {
-							imageDataOrError = Radiate.saveToLibrary(initiator, event.shiftKey);
+							imageDataOrError = RadiateUtilities.saveToLibrary(initiator, event.shiftKey);
 						}
 						
 						if (imageDataOrError is Error) {
@@ -637,9 +640,7 @@
 						}
 						else if (imageDataOrError) {
 							
-							libraryList.selectedItem = imageDataOrError;
-							
-							searchCollection.clearSearch();
+							selectLibraryItem(imageDataOrError as DocumentData, true);
 							
 							Radiate.info("Selection was saved as an image into the library.");
 						}
@@ -679,6 +680,13 @@
 						*/
 					}
 				}
+			}
+			
+			public function selectLibraryItem(item:DocumentData, clearSearch:Boolean = false):void {
+				
+				libraryList.selectedItem = item;
+				
+				searchCollection.clearSearch();
 			}
 			
 			public function list_keyUpHandler(event:KeyboardEvent):void {
@@ -1051,9 +1059,7 @@
 				
 				if (imageData) {
 					if (imageData.bitmapData) {
-						copyImageDataToClipboard.data = imageData.bitmapData;
-						copyImageDataToClipboard.triggerEvent = event;
-						copyImageDataToClipboard.play();
+						ClipboardManager.instance.copyBitmapDataToClipboard(imageData.bitmapData);
 					}
 					else if (imageData.url) {
 						openPopUp.data = imageData.url;
@@ -1093,18 +1099,6 @@
 			<collections:SortCollection target="{libraryCollection}" fields="{['name']}" />
 		</handlers:EventHandler>
 		
-		<!--
-		<handlers:EventHandler eventName="click" target="{copyImageDataIcon}" >
-		</handlers:EventHandler>-->
-			<clipboard:CopyToClipboard id="copyImageDataToClipboard" 
-									   targetAncestor="{this}" 
-									   format="{ClipboardFormats.BITMAP_FORMAT}"
-									   allowNullData="true"
-									   success="Radiate.info('The image was copied to the clipboard');"
-									   noData="Radiate.info('Nothing was available to be copied to the clipboard');"
-									   error="Radiate.info('An error occurred while attempting to copy to the clipboard');"
-									   >
-			</clipboard:CopyToClipboard>
 		
 		<!-- SHOW DELETE ATTACHMENTS POP UP -->
 		<fc:OpenPopUp id="openDeleteDocumentsPopUp" 

@@ -1,6 +1,7 @@
 package com.flexcapacitor.managers {
 	
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.controller.RadiateUtilities;
 	import com.flexcapacitor.effects.popup.OpenPopUp;
 	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.HTMLExportOptions;
@@ -169,7 +170,7 @@ package com.flexcapacitor.managers {
 			}
 			// take snapshot of document
 			else if (documentData is IDocument) {
-				bitmapData = Radiate.getDocumentSnapshot(IDocument(documentData), 1, quality);
+				bitmapData = RadiateUtilities.getDocumentSnapshot(IDocument(documentData), 1, quality);
 				openPopUp.data = bitmapData;
 			}
 			
@@ -482,10 +483,10 @@ package com.flexcapacitor.managers {
 				
 				if (showInternally) {
 					if (showInAPIPanel) {
-						Radiate.showAPIPanel(url);
+						ViewManager.showAPIPanel(url);
 					}
 					else {
-						Radiate.showDocumentationPanel(url);
+						ViewManager.showDocumentationPanel(url);
 					}
 				}
 				else {

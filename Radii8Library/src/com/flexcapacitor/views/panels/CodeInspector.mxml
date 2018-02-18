@@ -29,6 +29,7 @@
 			import com.flexcapacitor.managers.CodeManager;
 			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.managers.RunManager;
+			import com.flexcapacitor.managers.SettingsManager;
 			import com.flexcapacitor.model.ExportOptions;
 			import com.flexcapacitor.model.HTMLExportOptions;
 			import com.flexcapacitor.model.IDocument;
@@ -198,7 +199,7 @@
 				
 				isMXML = isSelectedLanguage(CodeManager.MXML);
 				
-				var settings:Settings = Radiate.settings;
+				var settings:Settings = SettingsManager.settings;
 				
 				if (activatedOnce==false) {
 					enableWordWrap = settings.enableWordWrap;

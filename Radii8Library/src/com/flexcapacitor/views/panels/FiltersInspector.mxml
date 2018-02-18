@@ -23,6 +23,8 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.StringUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
@@ -163,7 +165,7 @@
 				//radiate.setTargetProperties(target, FILTERS, selectedIndex);
 				radiate.setSubTarget(target, selectedItem);
 				
-				Radiate.showPropertiesPanel(true);
+				ViewManager.showPropertiesPanel(true);
 				
 			}
 			
@@ -177,7 +179,7 @@
 				
 				if (filterObject) {
 					classe = filterObject.classe;
-					componentDefinition = Radiate.getDynamicComponentType(classe, true, true);
+					componentDefinition = ComponentManager.getDynamicComponentType(classe, true, true);
 					
 					if (componentDefinition) {
 						filter = componentDefinition.instance;

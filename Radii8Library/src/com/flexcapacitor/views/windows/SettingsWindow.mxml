@@ -17,6 +17,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ServicesManager;
+			import com.flexcapacitor.managers.SettingsManager;
 			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.utils.PersistentStorage;
 			import com.flexcapacitor.utils.StoreLogin;
@@ -41,12 +42,13 @@
 				var settings:Settings;
 				var object:Object;
 				
-				settings = Radiate.settings;
+				settings = SettingsManager.settings;
 				
 				autoSaveCheckbox.selected = settings.enableAutoSave;
 				wordWrapCheckbox.selected = settings.enableWordWrap;
 				embedImagesCheckbox.selected = settings.embedImages;
-				startInDesignViewCheckbox.selected = settings.startInDesignView
+				startInDesignViewCheckbox.selected = settings.startInDesignView;
+				useCalloutForEditingText.selected = settings.useCallOutForEditing;
 				
 				hostInput.text = Radiate.WP_HOST;
 				pathInput.text = Radiate.WP_PATH;
@@ -89,12 +91,13 @@
 				var settings:Settings;
 				
 				// save settings
-				settings = Radiate.settings;
+				settings = SettingsManager.settings;
 				
 				settings.enableAutoSave = autoSaveCheckbox.selected;
 				settings.enableWordWrap = wordWrapCheckbox.selected;
 				settings.embedImages = embedImagesCheckbox.selected;
 				settings.startInDesignView = startInDesignViewCheckbox.selected;
+				settings.useCallOutForEditing = useCalloutForEditingText.selected;
 				
 				// clear logins
 				if (!saveLoginCheckbox.selected) {
@@ -107,8 +110,8 @@
 				}
 				
 				// set autosave - we need to move this to an apply settings method
-				Radiate.saveSettings();
-				Radiate.applySettings();
+				SettingsManager.saveSettings();
+				SettingsManager.applySettings();
 				
 				// update screenshot path
 				if (screenshotPathInput.text) {
@@ -254,6 +257,11 @@
 				
 			}
 			
+			protected function useCalloutForEditingText_clickHandler(event:MouseEvent):void
+			{
+				
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -367,6 +375,9 @@
 			
 			<s:Label text="Start in Design View" toolTip="Start in the design view" />
 			<s:CheckBox id="startInDesignViewCheckbox" click="startInDesignViewCheckbox_clickHandler(event)"/>
+			
+			<s:Label text="Use Callout when editing" toolTip="Open a call out when editing text" />
+			<s:CheckBox id="useCalloutForEditingText" click="useCalloutForEditingText_clickHandler(event)"/>
 			
 			<s:Label text="Remove all logins" />
 			<s:HGroup width="100%" verticalAlign="middle">

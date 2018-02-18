@@ -18,6 +18,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -154,9 +155,9 @@
 			protected function colorPicker_openHandler(event:DropdownEvent):void
 			{
 				var radiate:Radiate = Radiate.getInstance();
-				var toolDescription:ComponentDescription = radiate.getToolByName("com.flexcapacitor.tools.EyeDropper");
-				radiate.saveCurrentTool();
-				radiate.setTool(toolDescription.instance as ITool);
+				var toolDescription:ComponentDescription = ToolManager.getToolByName("com.flexcapacitor.tools.EyeDropper");
+				ToolManager.saveCurrentTool();
+				ToolManager.setTool(toolDescription.instance as ITool);
 				radiate.addEventListener(RadiateEvent.COLOR_SELECTED, colorSelectedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.COLOR_PREVIEW, colorPreviewHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler, false, 0, true);
@@ -164,8 +165,7 @@
 			
 			protected function colorPicker_closeHandler(event:DropdownEvent):void
 			{
-				var radiate:Radiate = Radiate.getInstance();
-				setTimeout(radiate.restoreTool, 250);
+				setTimeout(ToolManager.restoreTool, 250);
 			}
 			
 			/**

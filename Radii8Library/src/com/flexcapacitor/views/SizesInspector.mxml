@@ -11,7 +11,9 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ScaleManager;
 			import com.flexcapacitor.model.Device;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.tools.ITool;
@@ -87,7 +89,7 @@
 			 * 
 			 * */
 			protected function actualSize_clickHandler(event:MouseEvent):void {
-				radiate.restoreDefaultScale();
+				ScaleManager.restoreDefaultScale();
 				
 			}
 			
@@ -238,12 +240,12 @@
 			}
 			
 			protected function fitSizeButton_clickHandler(event:MouseEvent):void {
-				radiate.scaleToFit(true);
-				radiate.centerApplication(true, true);
+				ScaleManager.scaleToFit(true);
+				RadiateUtilities.centerApplication(true, true);
 			}
 			
 			protected function centerButton_clickHandler(event:MouseEvent):void {
-				radiate.centerApplication(true, true);
+				RadiateUtilities.centerApplication(true, true);
 			}
 			
 			protected function documentSizeChangeHandler(event:RadiateEvent):void {

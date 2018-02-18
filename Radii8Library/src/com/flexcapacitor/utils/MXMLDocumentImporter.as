@@ -5,6 +5,7 @@ package com.flexcapacitor.utils {
 	
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.ImportEvent;
+	import com.flexcapacitor.managers.ComponentManager;
 	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImageData;
@@ -343,7 +344,7 @@ package com.flexcapacitor.utils {
 				
 			}
 			else {
-				componentDefinition = Radiate.getDynamicComponentType(elementName);
+				componentDefinition = ComponentManager.getDynamicComponentType(elementName);
 			}
 			
 			if (componentDefinition==null) {
@@ -411,7 +412,7 @@ package com.flexcapacitor.utils {
 				
 				//instance = Radiate.createComponentForAdd(document, componentDefinition, true);
 				if (componentInstance==null) {
-					componentInstance = Radiate.createComponentToAdd(iDocument, componentDefinition, false);
+					componentInstance = ComponentManager.createComponentToAdd(iDocument, componentDefinition, false);
 				}
 				else {
 					componentAlreadyAdded = true;

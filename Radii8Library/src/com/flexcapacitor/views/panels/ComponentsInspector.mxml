@@ -27,6 +27,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.DragDropEvent;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.utils.DragManagerUtil;
@@ -55,7 +56,7 @@
 			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.getInstance();
 				
-				components.source = Radiate.componentDefinitions.source;
+				components.source = ComponentManager.componentDefinitions.source;
 			}
 			
 			public function deactivate():void {
@@ -95,7 +96,7 @@
 				
 				if (!application) return;
 				
-				component = Radiate.createComponentToAdd(currentDocument, componentDefinition, false);
+				component = ComponentManager.createComponentToAdd(currentDocument, componentDefinition, false);
 				
 				if (component is Line) {
 					Radiate.updateComponentAfterAdd(currentDocument, component);
@@ -230,7 +231,7 @@
 				var componentName:String;
 				var caseSensitive:Boolean;
 				
-				caseSensitive = searchCollection.caseSensitive;
+				caseSensitive = searchCollection.caseSensitive.selected;
 				
 				searchText = searchCollection.text;
 				searchText = caseSensitive ? searchText.toLowerCase() : searchText;
@@ -312,7 +313,7 @@
 		<s:List id="list" 
 				width="100%" 
 				height="100%"
-				labelField="name" 
+				labelField="displayName" 
 				dragEnabled="true"
 				borderVisible="false"
 				interactionMode="mouse"

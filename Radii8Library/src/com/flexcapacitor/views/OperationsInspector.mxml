@@ -12,6 +12,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.tools.Selection;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -56,7 +57,7 @@
 			 * Update UI components to tool value
 			 * */
 			public function updateTool(tool:ITool):void {
-				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var toolDescription:ComponentDescription = ToolManager.getToolDescription(tool);
 				
 				if (toolDescription && toolDescription.instance 
 					&& toolDescription.instance is Selection) {
@@ -68,7 +69,7 @@
 			 * Show selection checkbox change handler
 			 * */
 			protected function showSelection_changeHandler(event:Event):void {
-				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var toolDescription:ComponentDescription = ToolManager.getToolDescription(tool);
 				var selectedTool:ITool = tool;
 				var selectionTool:Selection;
 				
@@ -82,7 +83,7 @@
 			 * Show label change handler
 			 * */
 			protected function showLabel_changeHandler(event:Event):void {
-				var toolDescription:ComponentDescription = radiate.getToolDescription(tool);
+				var toolDescription:ComponentDescription = ToolManager.getToolDescription(tool);
 				var selectedTool:ITool = tool;
 				var selectionTool:Selection;
 				

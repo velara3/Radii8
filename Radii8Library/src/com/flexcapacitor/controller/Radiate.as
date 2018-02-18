@@ -16,12 +16,10 @@
 */
 
 package com.flexcapacitor.controller {
-	import com.durej.PSDParser.PSDLayer;
-	import com.durej.PSDParser.PSDParser;
 	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.components.IDocumentContainer;
 	import com.flexcapacitor.controls.Hyperlink;
-	import com.flexcapacitor.controls.RichTextEditorBarCallout;
+	import com.flexcapacitor.controls.RichTextEditorBar;
 	import com.flexcapacitor.effects.core.CallMethod;
 	import com.flexcapacitor.effects.core.PlayerType;
 	import com.flexcapacitor.effects.file.LoadFile;
@@ -32,12 +30,19 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.logging.RadiateLogTarget;
 	import com.flexcapacitor.managers.ClipboardManager;
 	import com.flexcapacitor.managers.CodeManager;
+	import com.flexcapacitor.managers.ComponentManager;
 	import com.flexcapacitor.managers.CreationManager;
+	import com.flexcapacitor.managers.DeviceManager;
+	import com.flexcapacitor.managers.FontManager;
 	import com.flexcapacitor.managers.HistoryEffect;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.managers.KeyboardManager;
+	import com.flexcapacitor.managers.ScaleManager;
 	import com.flexcapacitor.managers.ServicesManager;
+	import com.flexcapacitor.managers.SettingsManager;
 	import com.flexcapacitor.managers.SnippetManager;
+	import com.flexcapacitor.managers.ToolManager;
+	import com.flexcapacitor.managers.ViewManager;
 	import com.flexcapacitor.model.AttachmentData;
 	import com.flexcapacitor.model.Device;
 	import com.flexcapacitor.model.Document;
@@ -246,6 +251,7 @@ package com.flexcapacitor.controller {
 	
 	import org.as3commons.lang.DictionaryUtils;
 	import org.as3commons.lang.ObjectUtils;
+	import com.flexcapacitor.managers.TextEditorManager;
 	
 	use namespace mx_internal;
 	
@@ -965,24 +971,6 @@ package com.flexcapacitor.controller {
 		 * */
 		[Bindable]
 		public var versionNumber:String;
-		
-		/**
-		 * Reference to the application
-		 */
-		[Bindable]
-		public static var application:Application;
-		
-		/**
-		 * Reference to the application main view
-		 */
-		[Bindable]
-		public static var mainView:MainView;
-		
-		/**
-		 * Reference to the application main layout
-		 */
-		[Bindable]
-		public static var remoteView:Remote;
 		
 		/**
 		 * Reference to the application main view importPopUp
@@ -1982,13 +1970,13 @@ package com.flexcapacitor.controller {
 			
 			setLoggingTarget(defaultLogTarget);
 			
-			createSettingsData();
+			SettingsManager.createSettingsData();
 
-			createSavedData();
+			SettingsManager.createSavedData();
 			
 			//createDocumentTypesList(documentsXML);
 			
-			createComponentList(componentsXML);
+			ComponentManager.createComponentList(componentsXML);
 			//createComponentList(sparkXML);
 			//createComponentList(mxmlXML);
 			
@@ -1996,22 +1984,15 @@ package com.flexcapacitor.controller {
 			
 			createInspectorsList(inspectorsXML);
 			
-			createToolsList(toolsXML);
+			ToolManager.createToolsList(toolsXML);
 			
-			createDevicesList(devicesXML);
+			DeviceManager.createDevicesList(devicesXML);
 			
-			createFontsList();
+			FontManager.createFontsList();
 			
 			documentStatuses.source = [WPService.STATUS_NONE, WPService.STATUS_DRAFT, WPService.STATUS_PUBLISH];
 			
 			initialized = true;
-		}
-		
-		/**
-		 * Get an array of fonts. Refactor to apply to projects and documents. 
-		 * */
-		public static function createFontsList():void {
-			fontsArray = FontUtils.getFontInformationDetails(null);
 		}
 		
 		/**
@@ -2025,10 +2006,10 @@ package com.flexcapacitor.controller {
 			
 			var screenshotPath:String;
 			
-			applySettings();
+			SettingsManager.applySettings();
 			
-			application 		= applicationReference;
-			mainView 			= mainViewReference;
+			ViewManager.application = applicationReference;
+			ViewManager.mainView 	= mainViewReference;
 			
 			// add support to enable this and send error reports
 			CreationManager.showMeWhatsActivatedSoFar = false;
@@ -2057,6 +2038,7 @@ package com.flexcapacitor.controller {
 			LayoutDebugHelper.debug	= false;
 			MainView.debug 			= false;
 			ClassLoader.debug 		= false;
+			TextEditorManager.debug = false;
 			
 			// testing for why layout is invalid when disconnected from network - no longer needed
 			//var layoutManager:ILayoutManager;
@@ -2064,7 +2046,7 @@ package com.flexcapacitor.controller {
 			//layoutManager = UIComponentGlobals.layoutManager;
 			//layoutManager.usePhasedInstantiation;
 			
-			application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler, false, 0, true);
+			ViewManager.application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler, false, 0, true);
 			//application.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, instance.uncaughtErrorHandler2, false, 0, true);
 			
 			//ExternalInterface.call("Radiate.getInstance");
@@ -2104,7 +2086,7 @@ package com.flexcapacitor.controller {
 			contentCache.maxCacheEntries = 200;
 			
 			CodeManager.setTranscodersVersion(instance.versionNumber);
-			CodeManager.setComponentDefinitions(componentDefinitions.source);
+			CodeManager.setComponentDefinitions(ComponentManager.componentDefinitions.source);
 			
 			setUpdatedHTMLImporterAndExporter();
 			
@@ -2115,7 +2097,9 @@ package com.flexcapacitor.controller {
 			
 			instance.createOpenImportPopUp();
 			
-			mainView.startup();
+			ViewManager.mainView.startup();
+			
+			TextEditorManager.createCallOut();
 			
 			// we use this to prevent hyperlinks from opening web pages when in design mode
 			// we don't know what changes this causes with other components 
@@ -2304,122 +2288,7 @@ package com.flexcapacitor.controller {
 		public static function addTranscoder(transcoder:TranscoderDescription):void {
 			
 			CodeManager.registerTranscoder(transcoder);
-			CodeManager.setComponentDefinitions(componentDefinitions.source);
-		}
-		
-		/**
-		 * Creates the list of components.
-		 * */
-		public static function createComponentList(xml:XML):void {
-			var numberOfItems:uint;
-			var items:XMLList;
-			var item:XML;
-			var className:String;
-			var skinClassName:String;
-			var inspectors:Array;
-			var hasDefinition:Boolean;
-			var classType:Object;
-			var includeItem:Boolean;
-			var attributes:XMLList;
-			var attributesLength:int;
-			var childNodes:Array = [];
-			var childNodesList:XMLList;
-			var childNodesLength:int;
-			var defaults:Object;
-			var propertyName:String;
-			var descendents:XMLList;
-			var name:String;
-			var defaultProperty:String;
-			var metaData:Object;
-			
-			// get list of component classes 
-			items = XML(xml).component;
-			
-			numberOfItems = items.length();
-			
-			for (var i:int;i<numberOfItems;i++) {
-				item = items[i];
-				
-				name = String(item.id);
-				className = item.attribute("class");
-				skinClassName = item.attribute("skinClass");
-				//inspectors = item.inspector;
-				
-				includeItem = item.attribute("include")=="false" ? false : true;
-				descendents = item.descendents.property;
-				childNodes = [];
-				
-				
-				// check that definitions exist in domain
-				// skip any support classes
-				if (className.indexOf("mediaClasses")==-1 && 
-					className.indexOf("gridClasses")==-1 &&
-					className.indexOf("windowClasses")==-1 &&
-					className.indexOf("supportClasses")==-1) {
-					
-					hasDefinition = ClassUtils.hasDefinition(className);
-					
-					if (hasDefinition) {
-						classType = ClassUtils.getDefinition(className);
-						metaData = ClassUtils.getMetaDataOfMember(classType, "DefaultProperty");
-						defaultProperty = metaData ? metaData.value : null;
-						// need to check if we have the skin as well
-						
-						//hasDefinition = ClassUtils.hasDefinition(skinClassName);
-						
-						if (hasDefinition) {
-							
-							// get default values
-							if (item.defaults) {
-								attributes = item.defaults.attributes();
-								attributesLength = attributes.length();
-								defaults = {};
-								
-								for each (var value:Object in attributes) {
-									propertyName = String(value.name());
-									
-									if (propertyName=="dataProvider") {
-										var array:Array = String(value).split(",");
-										defaults[propertyName] = new ArrayCollection(array);
-									}
-									else {
-										defaults[propertyName] = String(value);
-									}
-								}
-							}
-							
-							if (descendents.length()) {
-								childNodesList = descendents.attributes();
-								childNodesLength = childNodesList.length();
-								
-								for each (var node:XML in childNodesList) {
-									propertyName = String(node);
-									childNodes.push(propertyName);
-								}
-							}
-							
-							addComponentDefinition(item.@id, className, classType, inspectors, null, defaultProperty, defaults, null, includeItem, childNodes, false);
-						}
-						else {
-							error("Component skin class, '" + skinClassName + "' not found for '" + className + "'.");
-						}
-					}
-					else {
-						error("Component class not found: " + className);
-						// we need to add it to Radii8LibraryAssets 
-						// such as Radii8LibrarySparkAssets
-					}
-					
-				}
-				else {
-					// delete support classes
-					// may need to refactor why we are including them in the first place
-					delete items[i];
-					numberOfItems--;
-				}
-			}
-			
-			// componentDescriptions should now be populated
+			CodeManager.setComponentDefinitions(ComponentManager.componentDefinitions.source);
 		}
 		
 		/**
@@ -2517,253 +2386,11 @@ package com.flexcapacitor.controller {
 			// inspectorsInstancesDictionary should now be populated
 		}
 		
-		
-		/**
-		 * Creates the list of tools. Read the howto.txt to see how to add 
-		 * new tools. 
-		 * */
-		public static function createToolsList(xml:XML):void {
-			var inspectorClassName:String;
-			var hasDefinition:Boolean;
-			var toolClassDefinition:Object;
-			var inspectorClassDefinition:Object;
-			var inspectorClassFactory:ClassFactory;
-			var toolClassFactory:ClassFactory;
-			var items:XMLList;
-			var className:String;
-			var includeItem:Boolean;
-			var attributes:XMLList;
-			var numberOfItems:uint;
-			var attributesLength:int;
-			var defaults:Object;
-			var propertyName:String;
-			var toolInstance:ITool;
-			var inspectorInstance:UIComponent;
-			var name:String;
-			var cursorItems:XMLList;
-			var cursorItem:XML;
-			var cursorName:String;
-			var cursors:Dictionary;
-			var cursorsCount:int;
-			var cursorData:MouseCursorData;
-			var cursorBitmapDatas:Vector.<BitmapData>;
-			var cursorBitmap:Bitmap;
-			var cursorClass:Class;
-			var cursorID:String;
-			var cursorX:int;
-			var cursorY:int;
-			var item:XML;
-			var key:String;
-			
-			// get list of tool classes 
-			items = XML(xml).tool;
-			
-			numberOfItems = items.length();
-			
-			for (var i:int;i<numberOfItems;i++) {
-				item = items[i];
-				
-				name = String(item.id);
-				className = item.attribute("class");
-				inspectorClassName = item.attribute("inspector");
-				cursorItems = item..cursor;
-				key = item.attribute("key");
-				
-				includeItem = item.attribute("include")=="false" ? false : true;
-				
-				if (!includeItem) continue;
-				
-				hasDefinition = ClassUtils.hasDefinition(className);
-				
-				if (hasDefinition) {
-					toolClassDefinition = ClassUtils.getDefinition(className);
-					
-					
-					// get default values
-					if (item.defaults) {
-						attributes = item.defaults.attributes();
-						attributesLength = attributes.length();
-						defaults = {};
-						
-						for each (var value:Object in attributes) {
-							propertyName = String(value.name());
-							
-							if (propertyName=="dataProvider") {
-								defaults[propertyName] = new ArrayCollection(String(value).split(","));
-							}
-							else {
-								defaults[propertyName] = String(value);
-							}
-						}
-					}
-					
-					// create tool
-					toolClassFactory = new ClassFactory(toolClassDefinition as Class);
-					toolClassFactory.properties = defaults;
-					toolInstance = toolClassFactory.newInstance();
-					
-					
-					// create inspector
-					if (inspectorClassName!="") {
-						hasDefinition = ClassUtils.hasDefinition(inspectorClassName);
-						
-						if (hasDefinition) {
-							inspectorClassDefinition = ClassUtils.getDefinition(inspectorClassName);
-							
-							// Create tool inspector
-							inspectorClassFactory = new ClassFactory(inspectorClassDefinition as Class);
-							//classFactory.properties = defaults;
-							inspectorInstance = inspectorClassFactory.newInstance();
-					
-						}
-						else {
-							var errorMessage:String = "Could not find inspector, '" + inspectorClassName + "' for tool, '" + className + "'. ";
-							errorMessage += "You may need to add a reference to it in RadiateReferences.";
-							error(errorMessage);
-						}
-					}
-					
-					
-					cursorsCount = cursorItems.length();
-					
-					if (cursorsCount>0) {
-						cursors = new Dictionary(false);
-					}
-
-					// create mouse cursors
-					for (var j:int=0;j<cursorsCount;j++) {
-						cursorItem = cursorItems[j];
-						cursorName = cursorItem.@name.toString();
-						cursorX = int(cursorItem.@x.toString());
-						cursorY = int(cursorItem.@y.toString());
-						cursorID = cursorName != "" ? className + "." + cursorName : className;
-			
-						// Create a MouseCursorData object 
-						cursorData = new MouseCursorData();
-						
-						// Specify the hotspot 
-						cursorData.hotSpot = new Point(cursorX, cursorY); 
-						
-						// Pass the cursor bitmap to a BitmapData Vector 
-						cursorBitmapDatas = new Vector.<BitmapData>(1, true); 
-						
-						// Create the bitmap cursor 
-						// The bitmap must be 32x32 pixels or smaller, due to an OS limitation
-						//CursorClass = Radii8LibraryToolAssets.EyeDropper;
-						
-						if (cursorName) {
-							cursorClass = toolClassDefinition[cursorName];
-						}
-						else {
-							cursorClass = toolClassDefinition["Cursor"];
-						}
-						
-						if (cursorClass==null) {
-							error("Tool cursor not found: " + cursorName);
-							break;
-						}
-						// TypeError: Error #1007: Instantiation attempted on a non-constructor.
-						// reason: class did not have the static property as described in the xml  
-						cursorBitmap = new cursorClass();
-						
-						// Pass the value to the bitmapDatas vector 
-						cursorBitmapDatas[0] = cursorBitmap.bitmapData;
-						
-						// Assign the bitmap to the MouseCursor object 
-						cursorData.data = cursorBitmapDatas;
-						
-						// Register the MouseCursorData to the Mouse object with an alias 
-						Mouse.registerCursor(cursorID, cursorData);
-						
-						cursors[cursorName] = {cursorData:cursorData, id:cursorID};
-					}
-					
-					if (cursorsCount>0) {
-						mouseCursors[className] = cursors;
-					}
-					
-					// add keyboard shortcut
-					
-					//trace("tool cursors:", cursors);
-					var toolDescription:ComponentDescription = addToolType(item.@id, className, toolClassDefinition, toolInstance, inspectorClassName, null, defaults, null, cursors, key);
-					//trace("tool cursors:", toolDescription.cursors);
-				}
-				else {
-					//trace("Tool class not found: " + classDefinition);
-					error("Tool class not found: " + className);
-				}
-				
-			}
-			
-			// toolDescriptions should now be populated
-		}
-		
-		/**
-		 * Creates the list of devices.
-		 * */
-		public static function createDevicesList(xml:XML):void {
-			var includeItem:Boolean;
-			var items:XMLList;
-			var numberOfItems:uint;
-			var name:String;
-			var item:XML;
-			var device:Device;
-			var type:String;
-			
-			const RES_WIDTH:String = "resolutionWidth";
-			const RES_HEIGHT:String = "resolutionHeight";
-			const USABLE_WIDTH_PORTRAIT:String = "usableWidthPortrait";
-			const USABLE_HEIGHT_PORTRAIT:String = "usableHeightPortrait";
-			const USABLE_WIDTH_LANDSCAPE:String = "usableWidthLandscape";
-			const USABLE_HEIGHT_LANDSCAPE:String = "usableHeightLandscape";
-			
-			
-			// get list of device classes 
-			items = XML(xml).size;
-			
-			numberOfItems = items.length();
-			
-			for (var i:int;i<numberOfItems;i++) {
-				item = items[i];
-				
-				name = item.attribute("name");
-				type = item.attribute("type");
-				
-				device = new Device();
-				device.name = name;
-				device.type = type;
-				
-				if (type=="device") {
-					device.ppi 					= item.attribute("ppi");
-					
-					device.resolutionWidth 		= item.attribute(RES_WIDTH);
-					device.resolutionHeight 	= item.attribute(RES_HEIGHT);
-					device.usableWidthPortrait 	= item.attribute(USABLE_WIDTH_PORTRAIT);
-					device.usableHeightPortrait = item.attribute(USABLE_HEIGHT_PORTRAIT);
-					device.usableWidthLandscape = item.attribute(USABLE_WIDTH_LANDSCAPE);
-					device.usableHeightLandscape = item.attribute(USABLE_HEIGHT_LANDSCAPE);
-				}
-				else if (type=="screen") {
-					device.ppi 					= item.attribute("ppi");
-					device.resolutionWidth 		= item.attribute(RES_WIDTH);
-					device.resolutionHeight 	= item.attribute(RES_HEIGHT);
-					continue;
-				}
-				
-				includeItem = item.attribute("include")=="false" ? false : true;
-				
-				deviceCollections.addItem(device);
-				
-			}
-			
-			// deviceDescriptions should now be populated
-		}
-		
 		/**
 		 * Helper method to get the ID of the mouse cursor by name.
 		 * */
 		public function getMouseCursorID(tool:ITool, name:String = "Cursor"):String {
-			var component:ComponentDescription = getToolDescription(tool);
+			var component:ComponentDescription = ToolManager.getToolDescription(tool);
 			
 			
 			if (component.cursors && component.cursors[name]) {
@@ -3090,6 +2717,23 @@ package com.flexcapacitor.controller {
 		}
 
 		
+		private var _editorComponent:RichTextEditorBar;
+
+		/**
+		 * Text editor component that has formatting tools on it
+		 * */
+		public function get editorComponent():RichTextEditorBar {
+			return _editorComponent;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set editorComponent(value:RichTextEditorBar):void {
+			_editorComponent = value;
+		}
+
+		
 		/**
 		 * Default log target
 		 * */
@@ -3107,10 +2751,8 @@ package com.flexcapacitor.controller {
 		public static var componentsIconPath:String = "assets/icons/components/";
 		public static var componentsIconNotFoundPath:String = componentsIconPath + "/BorderContainer.png";
 		
-		public static var SETTINGS_DATA_NAME:String = "settingsData";
 		public static var WP_HOST_NAME:String = "wpHostName";
 		public static var WP_PATH_NAME:String = "wpPathName";
-		public static var SAVED_DATA_NAME:String 	= "savedData";
 		public static var CONTACT_FORM_URL:String = "http://www.radii8.com/support.php";
 		public static var WP_HOST:String = "https://www.radii8.com";
 		public static var WP_PATH:String = "/r8m/";
@@ -3224,16 +2866,6 @@ package com.flexcapacitor.controller {
 		public var isPreviewVisible:Boolean;
 		
 		/**
-		 * Settings 
-		 * */
-		public static var settings:Settings;
-		
-		/**
-		 * Settings 
-		 * */
-		public static var savedData:SavedData;
-		
-		/**
 		 * Registers and maps classes with namespaces 
 		 * */
 		public static var classRegistry:ClassRegistry;
@@ -3288,50 +2920,17 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Set selected tool.
+		 * */
+		public function set selectedTool(value:ITool):void {
+			_selectedTool = value;
+		}
+		
+		/**
 		 * Collection of tools that can be added or removed to 
 		 * */
 		[Bindable]
 		public static var toolsDescriptions:ArrayCollection = new ArrayCollection();
-		
-		/**
-		 * Add the named tool class to the list of available tools.
-		 * 
-		 * Not sure if we should create an instance here or earlier or later. 
-		 * */
-		public static function addToolType(name:String, className:String, classType:Object, instance:ITool, 
-										   inspectorClassName:String, icon:Object = null, defaultProperties:Object=null, 
-										   defaultStyles:Object=null, cursors:Dictionary = null, key:String = null):ComponentDescription {
-			var definition:ComponentDescription;
-			var numberOfTools:uint = toolsDescriptions.length;
-			var item:ComponentDescription;
-			
-			for (var i:uint;i<numberOfTools;i++) {
-				item = toolsDescriptions.getItemAt(i) as ComponentDescription;
-				
-				// check if it exists already
-				if (item && item.classType==classType) {
-					return item;
-					//return false;
-				}
-			}
-			
-			definition = new ComponentDescription();
-			
-			definition.name 			= name;
-			definition.icon 			= icon;
-			definition.className 		= className;
-			definition.classType 		= classType;
-			definition.defaultStyles 	= defaultStyles;
-			definition.defaultProperties = defaultProperties;
-			definition.instance 		= instance;
-			definition.inspectorClassName = inspectorClassName;
-			definition.cursors 			= cursors;
-			definition.key 				= key;
-			
-			toolsDescriptions.addItem(definition);
-			
-			return definition;
-		}
 		
 		private var _previousSelectedTool:ITool;
 
@@ -3345,140 +2944,6 @@ package com.flexcapacitor.controller {
 			_previousSelectedTool = value;
 		}
 
-		
-		/**
-		 * Save current tool
-		 * */
-		public function saveCurrentTool():void {
-			previousSelectedTool = selectedTool;
-		}
-		
-		/**
-		 * Sets the selected tool to the tool passed in
-		 * */
-		public function setTool(value:ITool, dispatchEvent:Boolean = true, cause:String = ""):void {
-			
-			if (selectedTool) {
-				selectedTool.disable();
-			}
-			
-			_selectedTool = value;
-			
-			if (selectedTool) {
-				selectedTool.enable();
-			}
-			
-			if (dispatchEvent) {
-				instance.dispatchToolChangeEvent(selectedTool);
-			}
-			
-		}
-		
-		/**
-		 * Restores the previously selected tool.
-		 * 
-		 * This restores the previous selected tool.
-		 * */
-		public function restoreTool(dispatchEvent:Boolean = true, cause:String = ""):void {
-			if (previousSelectedTool && previousSelectedTool!=selectedTool) {
-				setTool(previousSelectedTool, dispatchEvent, cause);
-			}
-		}
-			
-		
-		/**
-		 * Enables the selected tool
-		 * @see disableTool()
-		 * */
-		public function enableTool(dispatchEvent:Boolean = true, cause:String = ""):void {
-			
-			if (selectedTool) {
-				selectedTool.enable();
-			}
-			
-			if (dispatchEvent) {
-				//instance.dispatchToolChangeEvent(selectedTool);
-			}
-			
-		}
-		
-		/**
-		 * Disables the selected tool
-		 * @see enableTool()
-		 * */
-		public function disableTool(dispatchEvent:Boolean = true, cause:String = ""):void {
-			
-			if (selectedTool) {
-				selectedTool.disable();
-			}
-			
-			if (dispatchEvent) {
-				//instance.dispatchToolChangeEvent(selectedTool);
-			}
-			
-		}
-		
-		/**
-		 * Get tool description.
-		 * @see getToolByType()
-		 * @see getToolByName()
-		 * */
-		public function getToolDescription(instance:ITool):ComponentDescription {
-			var numberOfTools:int = toolsDescriptions.length;
-			var componentDescription:ComponentDescription;
-			
-			for (var i:int;i<numberOfTools;i++) {
-				componentDescription = ComponentDescription(toolsDescriptions.getItemAt(i));
-				
-				if (componentDescription.instance==instance) {
-					return componentDescription;
-				}
-			}
-			
-			return null;
-		}
-		
-		/**
-		 * Get tool by name. Pass in the class name or tool name. Match is case insensitive. 
-		 * List of class names are in tools-manifest-defaults.xml or radiate.toolsDescription
-		 * @see getToolByType()
-		 * */
-		public function getToolByName(name:String):ComponentDescription {
-			var numberOfTools:int = toolsDescriptions.length;
-			var componentDescription:ComponentDescription;
-			var nameLowerCase:String = name? name.toLowerCase() : null;
-			
-			if (name==null || name=="") return null;
-			
-			for (var i:int;i<numberOfTools;i++) {
-				componentDescription = ComponentDescription(toolsDescriptions.getItemAt(i));
-				
-				if (componentDescription.className.toLowerCase()==nameLowerCase ||
-					componentDescription.name.toLowerCase()==nameLowerCase) {
-					return componentDescription;
-				}
-			}
-			
-			return null;
-		}
-		
-		/**
-		 * Get tool by type.
-		 * */
-		public function getToolByType(type:Class):ComponentDescription {
-			var numberOfTools:int = toolsDescriptions.length;
-			var componentDescription:ComponentDescription;
-			
-			for (var i:int;i<numberOfTools;i++) {
-				componentDescription = ComponentDescription(toolsDescriptions.getItemAt(i));
-				
-				if (componentDescription.classType==type) {
-					return componentDescription;
-				}
-			}
-			
-			return null;
-		}
 		
 		//----------------------------------
 		//
@@ -3606,322 +3071,6 @@ package com.flexcapacitor.controller {
 		
 		//----------------------------------
 		//
-		//  Scale Management
-		// 
-		//----------------------------------
-		
-		/**
-		 * Stops on the scale
-		 * */
-		public var scaleStops:Array = [.05,.0625,.0833,.125,.1666,.25,.333,.4,.50,.667,.8,.9,1,1.25,1.50,1.75,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
-		
-		/**
-		 * Increases the zoom of the target application to next value 
-		 * */
-		public function increaseScale(valueFrom:Number = NaN, dispatchEvent:Boolean = true):void {
-			var newScale:Number;
-			var currentScale:Number;
-			
-		
-			if (isNaN(valueFrom)) {
-				currentScale = Number(DisplayObject(selectedDocument.instance).scaleX.toFixed(4));
-			}
-			else {
-				currentScale = valueFrom;
-			}
-			
-			//newScale = DisplayObject(document).scaleX;
-			
-			for (var i:int=0;i<scaleStops.length;i++) {
-				if (currentScale<scaleStops[i]) {
-					newScale = scaleStops[i];
-					break;
-				}
-			}
-			
-			if (i==scaleStops.length-1) {
-				newScale = scaleStops[i];
-			}
-			
-			newScale = Number(newScale.toFixed(4));
-			
-			setScale(newScale, dispatchEvent);
-				
-		}
-		
-		/**
-		 * Decreases the zoom of the target application to next value 
-		 * */
-		public function decreaseScale(valueFrom:Number = NaN, dispatchEvent:Boolean = true):void {
-			var newScale:Number;
-			var currentScale:Number;
-		
-			if (isNaN(valueFrom)) {
-				currentScale = Number(DisplayObject(selectedDocument.instance).scaleX.toFixed(4));
-			}
-			else {
-				currentScale = valueFrom;
-			}
-			
-			//newScale = DisplayObject(document).scaleX;
-			
-			for (var i:int=scaleStops.length;i--;) {
-				if (currentScale>scaleStops[i]) {
-					newScale = scaleStops[i];
-					break;
-				}
-			}
-			
-			if (i==0) {
-				newScale = scaleStops[i];
-			}
-			
-			newScale = Number(newScale.toFixed(4));
-			
-			setScale(newScale, dispatchEvent);
-				
-		}
-		
-		/**
-		 * Sets the zoom of the target application to value. 
-		 * */
-		public function setScale(value:Number, dispatchEvent:Boolean = true):void {
-			var maxScale:int = 20;
-			var minScale:Number = .05;
-			
-			if (value>maxScale) {
-				value = maxScale;
-			}
-			
-			if (value<minScale) {
-				value = minScale;
-			}
-			
-			if (selectedDocument && !isNaN(value) && value>0) {
-				//DisplayObject(selectedDocument.instance).scaleX = value;
-				//DisplayObject(selectedDocument.instance).scaleY = value;
-				selectedDocument.scale = Math.min(value, maxScale);
-				
-				if (dispatchEvent) {
-					dispatchScaleChangeEvent(selectedDocument.instance, value, value);
-				}
-			}
-		}
-		
-		/**
-		 * Gets the scale of the target application. 
-		 * */
-		public function getScale():Number {
-			
-			if (selectedDocument && selectedDocument.instance && "scaleX" in selectedDocument.instance) {
-				return Math.max(selectedDocument.instance.scaleX, selectedDocument.instance.scaleY);
-			}
-			
-			return NaN;
-		}
-		
-		/**
-		 * Set the scroll position of the document
-		 * */
-		public function setScrollPosition(x:int, y:int):void {
-			if (!canvasScroller) return;
-			
-			var viewport:IViewport = canvasScroller.viewport;
-			var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 11;
-			var hsbHeight:int = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 11;
-			var availableWidth:int = canvasScroller.width;// - vsbWidth;
-			var availableHeight:int = canvasScroller.height;// - hsbHeight;
-			
-			viewport.horizontalScrollPosition = Math.max(0, x);
-			viewport.verticalScrollPosition = Math.max(0, y);
-			
-		}
-		
-		/**
-		 * Center the application on a point
-		 * */
-		public function centerOnPoint(point:Point):void {
-			if (!canvasScroller) return;
-			var viewport:IViewport = canvasScroller.viewport;
-			var availableWidth:int = canvasScroller.width;// - vsbWidth;
-			var availableHeight:int = canvasScroller.height;// - hsbHeight;
-			var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 11;
-			var hsbHeight:int = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 11;
-			var documentVisualElement:IVisualElement = IVisualElement(selectedDocument.instance);
-			var currentScale:Number = getScale();
-			var contentWidth:int = documentVisualElement.width * currentScale;
-			var contentHeight:int = documentVisualElement.height * currentScale;
-			
-			//var horScrollPos:int = viewportWidth/2 - contentWidth/2;
-			var newX:int = availableWidth/2 - (contentWidth/2 - point.x);
-			newX = availableWidth/2 - (contentWidth/2 + (contentWidth/2-point.x));
-			newX = (contentWidth/2 + (contentWidth/2-(point.x*currentScale))) - availableWidth/2;
-			//newX = availableWidth/2 - (contentWidth/2 - (contentWidth/2-point.x));
-			//newX = (availableWidth- contentWidth)/2 - point.x;
-			//newX = (availableWidth - contentWidth + vsbWidth) / 2 - point.x;
-			var newY:int = (contentHeight/2 + (contentHeight/2-(point.y*currentScale))) - availableHeight/2;
-			newY = canvasScroller.verticalScrollBar.value;		
-			setScrollPosition(newX, newY);
-			// (495 - 750) - 736
-			// (-255) - 736
-			// -991
-			
-			// 495 - (750-736)
-			// 495 - (14)
-			// 481
-			
-			// 495 - (750-736*1)
-			// 495 - (14)
-			// 481
-			
-		}
-		
-		/**
-		 * Center the application. 
-		 * 
-		 * @param vertically enable vertically centering options. if verticalTop is false top and bottom may be cut off. if true, scroll to top
-		 * @param verticallyTop if document is taller than avialable space keep it at the top
-		 * @param horizontalLeft if document is wider than avialable space keep it to the left
-		 * @param totalDocumentPadding adjustment for space at the top of the document. not sure really
-		 * */
-		public function centerApplication(vertically:Boolean = true, verticallyTop:Boolean = true, horizontalLeft:Boolean=true, totalDocumentPadding:int = 0):void {
-			if (!canvasScroller) return;
-			var viewport:IViewport = canvasScroller.viewport;
-			var documentVisualElement:IVisualElement = IVisualElement(selectedDocument.instance);
-			//var contentHeight:int = viewport.contentHeight * getScale();
-			//var contentWidth:int = viewport.contentWidth * getScale();
-			// get document size NOT scroll content size
-			var contentWidth:int = documentVisualElement.width * getScale();
-			var contentHeight:int = documentVisualElement.height * getScale();
-			var newHorizontalPosition:int;
-			var newVerticalPosition:int;
-			var needsValidating:Boolean;
-			//var vsbWidth:int = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 11;
-			var hsbHeight:int = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 11;
-			var availableWidth:int = canvasScroller.width;// - vsbWidth;
-			var availableHeight:int = canvasScroller.height;// - hsbHeight;
-			
-			if (LayoutManager.getInstance().isInvalid()) {
-				needsValidating = true;
-				//LayoutManager.getInstance().validateClient(canvasScroller as ILayoutManagerClient);
-				//LayoutManager.getInstance().validateNow();
-			}
-			
-			
-			if (vertically) {
-				// scroller height 359, content height 504, content height validated 550
-				// if document is taller than available space and 
-				// verticalTop is true then keep it at the top
-				if (contentHeight > availableHeight && verticallyTop) {
-					newVerticalPosition = canvasBackground.y - totalDocumentPadding;
-					viewport.verticalScrollPosition = Math.max(0, newVerticalPosition);
-				}
-				else if (contentHeight > availableHeight) {
-					newVerticalPosition = (contentHeight + hsbHeight - availableHeight) / 2;
-					viewport.verticalScrollPosition = Math.max(0, newVerticalPosition);
-				}
-				else {
-					// content height 384, scroller height 359, vsp 12
-					newVerticalPosition = (availableHeight + hsbHeight - contentHeight) / 2;
-					viewport.verticalScrollPosition = Math.max(0, newVerticalPosition);
-				}
-			}
-			
-			// if width of content is wider than canvasScroller width then center
-			if (canvasScroller.width < contentWidth) {
-				
-				if (horizontalLeft) {
-					newHorizontalPosition = 0;
-					viewport.horizontalScrollPosition = newHorizontalPosition;
-				}
-				else {
-					newHorizontalPosition = (contentWidth - availableWidth) / 2;
-					viewport.horizontalScrollPosition = Math.max(0, newHorizontalPosition);
-				}
-			}
-			else {
-				//newHorizontalPosition = (contentWidth - canvasScroller.width) / 2;
-				//viewport.horizontalScrollPosition = Math.max(0, newHorizontalPosition);
-			}
-		}
-		
-		/**
-		 * Restores the scale of the target application to 100%.
-		 * */
-		public function restoreDefaultScale(dispatchEvent:Boolean = true):void {
-			if (selectedDocument) {
-				setScale(1, dispatchEvent);
-			}
-		}
-		
-		/**
-		 * Sets the scale to fit the available space. 
-		 * */
-		public function scaleToFit(enableScaleUp:Boolean = true, dispatchEvent:Boolean = true):void {
-			var width:int;
-			var height:int;
-			var availableWidth:int;
-			var availableHeight:int;
-			var widthScale:Number;
-			var heightScale:Number;
-			var newScale:Number;
-			var documentInstance:IVisualElement;
-			var vsbWidth:int;
-			var hsbHeight:int;
-			var padding:Number = 4;
-			
-			documentInstance = selectedDocument ? selectedDocument.instance as IVisualElement : null;
-			
-			if (documentInstance) {
-				//width = DisplayObject(document).width;
-				//height = DisplayObject(document).height;
-				width = documentInstance.width;
-				height = documentInstance.height;
-				vsbWidth = canvasScroller.verticalScrollBar ? canvasScroller.verticalScrollBar.width : 50;
-				hsbHeight = canvasScroller.horizontalScrollBar ? canvasScroller.horizontalScrollBar.height : 50;
-				availableWidth = canvasScroller.width - vsbWidth * padding;
-				availableHeight = canvasScroller.height - hsbHeight * padding;
-				
-				//widthScale = documentInstance.width/SkinnableContainer(documentInstance).contentGroup.contentWidth;
-				//heightScale = documentInstance.height/SkinnableContainer(documentInstance).contentGroup.contentHeight;
-				
-				//var scrollerPaddedWidth:int = canvasScroller.width + documentPadding;
-				//var scrollerPaddedHeight:int = canvasScroller.height + documentPadding;
-			
-                // if the visible area is less than our content then scale down
-                if (height > availableHeight || width > availableWidth) {
-					newScale = availableHeight/height;
-					width = newScale * width;
-					height = newScale * height;
-                }
-				else if (height < availableHeight && width < availableWidth) {
-					newScale = Math.min(availableHeight/height, availableWidth/width);
-					width = newScale * width;
-					height = newScale * height;
-					//newScale = Math.min(availableHeight/height, availableWidth/width);
-					//newScale = Math.max(availableHeight/height, availableWidth/width);
-                }
-
-				if (newScale>1 && !enableScaleUp) {
-					setScale(1, dispatchEvent);
-				}
-				else {
-					setScale(newScale, dispatchEvent);
-				}
-				
-				////////////////////////////////////////////////////////////////////////////////
-				/*var documentRatio:Number = width / height;
-				var canvasRatio:Number = availableWidth / availableHeight;
-				
-				var newRatio:Number = documentRatio / canvasRatio;
-				newRatio = canvasRatio / documentRatio;
-				newRatio = 1-documentRatio / canvasRatio;*/
-					
-			}
-		}
-		
-		//----------------------------------
-		//
 		//  Documentation Utility
 		// 
 		//----------------------------------
@@ -3986,214 +3135,11 @@ package com.flexcapacitor.controller {
 			return url;
 		}
 		
-		//----------------------------------
-		//
-		//  Component Management
-		// 
-		//----------------------------------
-		
-		/**
-		 * Collection of visual elements that can be added or removed to 
-		 * */
-		[Bindable]
-		public static var componentDefinitions:ArrayCollection = new ArrayCollection();
-		
 		/**
 		 * Cache for component icons
 		 * */
 		[Bindable]
 		public static var contentCache:ContentCache = new ContentCache();
-		
-		/**
-		 * Add the named component class to the list of available components
-		 * */
-		public static function addComponentDefinition(name:String, 
-													  className:String, 
-													  classType:Object, 
-													  inspectors:Array = null, 
-													  icon:Object = null, 
-													  defaultProperty:String = null,
-													  defaultProperties:Object=null, 
-													  defaultStyles:Object=null, 
-													  enabled:Boolean = true, 
-													  childNodes:Array = null, 
-													  dispatchEvents:Boolean = true):Boolean {
-			var componentDefinition:ComponentDefinition;
-			var numberOfDefinitions:uint = componentDefinitions.length;
-			var item:ComponentDefinition;
-			
-			
-			for (var i:uint;i<numberOfDefinitions;i++) {
-				item = ComponentDefinition(componentDefinitions.getItemAt(i));
-				
-				// check if it exists already
-				if (item && item.classType==classType) {
-					return false;
-				}
-			}
-			
-			
-			componentDefinition = new ComponentDefinition();
-			
-			componentDefinition.name = name;
-			componentDefinition.icon = icon;
-			componentDefinition.className = className;
-			componentDefinition.classType = classType;
-			componentDefinition.defaultStyles = defaultStyles;
-			componentDefinition.defaultProperties = defaultProperties;
-			componentDefinition.inspectors = inspectors;
-			componentDefinition.enabled = enabled;
-			componentDefinition.childNodes = childNodes;
-			
-			componentDefinitions.addItem(componentDefinition);
-			
-			if (dispatchEvents) {
-				instance.dispatchComponentDefinitionAddedEvent(componentDefinition);
-			}
-			
-			CodeManager.setComponentDefinitions(componentDefinitions.source);
-			
-			return true;
-		}
-		
-		/**
-		 * Remove the named component class
-		 * */
-		public static function removeComponentType(className:String):Boolean {
-			var definition:ComponentDefinition;
-			var numberOfDefinitions:uint = componentDefinitions.length;
-			var item:ComponentDefinition;
-			
-			for (var i:uint;i<numberOfDefinitions;i++) {
-				item = ComponentDefinition(componentDefinitions.getItemAt(i));
-				
-				if (item && item.classType==className) {
-					componentDefinitions.removeItemAt(i);
-				}
-			}
-			
-			return true;
-		}
-		
-		/**
-		 * Get the component by class name
-		 * */
-		public static function getComponentType(className:String, fullyQualified:Boolean = false):ComponentDefinition {
-			var definition:ComponentDefinition;
-			var numberOfDefinitions:uint = componentDefinitions.length;
-			var item:ComponentDefinition;
-			
-			for (var i:uint;i<numberOfDefinitions;i++) {
-				item = ComponentDefinition(componentDefinitions.getItemAt(i));
-				
-				if (fullyQualified) {
-					if (item && item.className==className) {
-						return item;
-					}
-				}
-				else {
-					if (item && item.name==className) {
-						return item;
-					}
-				}
-			}
-			
-			return null;
-		}
-		
-		/**
-		 * Get the component by class name
-		 * */
-		public static function getDynamicComponentType(componentName:Object, fullyQualified:Boolean = false, createInstance:Boolean = false):ComponentDefinition {
-			var definition:ComponentDefinition;
-			var numberOfDefinitions:uint;
-			var item:ComponentDefinition;
-			var className:String;
-			var hasDefinition:Boolean;
-			var classType:Object;
-			var name:String;
-			
-			if (componentName is QName) {
-				className = QName(componentName).localName;
-			}
-			else if (componentName is String) {
-				className = componentName as String;
-			}
-			else if (componentName is Object) {
-				className = ClassUtils.getQualifiedClassName(componentName);
-				
-				if (className=="application" || componentName is Application) {
-					className = ClassUtils.getSuperClassName(componentName, true);
-				}
-			}
-			
-			fullyQualified = className.indexOf("::")!=-1 ? true : fullyQualified;
-			
-			if (fullyQualified) {
-				className = className.replace("::", ".");
-			}
-			
-			numberOfDefinitions = componentDefinitions.length;
-			
-			for (var i:uint;i<numberOfDefinitions;i++) {
-				item = ComponentDefinition(componentDefinitions.getItemAt(i));
-				
-				if (fullyQualified) {
-					if (item && item.className==className) {
-						if (item.classType && createInstance) {
-							item.instance = new item.classType();
-						}
-						return item;
-					}
-				}
-				else {
-					if (item && item.name==className) {
-						if (item.classType && createInstance) {
-							item.instance = new item.classType();
-						}
-						return item;
-					}
-				}
-			}
-			
-			
-			hasDefinition = ClassUtils.hasDefinition(className);
-			
-			if (hasDefinition) {
-				if (className.indexOf("::")!=-1) {
-					name = className.split("::")[1];
-				}
-				else {
-					name = className;
-				}
-				classType = ClassUtils.getDefinition(className);
-				addComponentDefinition(name, className, classType, null, null, null, null, null, false);
-				item = getComponentType(className, fullyQualified);
-				
-				if (classType && createInstance) {
-					item.instance = new classType();
-				}
-				
-				
-				return item;
-			}
-			
-			return null;
-		}
-		
-		/**
-		 * Removes all components. If components were removed then returns true. 
-		 * */
-		public static function removeAllComponents():Boolean {
-			var numberOfDefinitions:uint = componentDefinitions.length;
-			
-			if (numberOfDefinitions) {
-				componentDefinitions.removeAll();
-				return true;
-			}
-			
-			return false;
-		}
 		
 		/**
 		 * Add multiple assets to a document or project
@@ -4359,506 +3305,26 @@ package com.flexcapacitor.controller {
 		 * Adds PSD to the document. <br/>
 		 * Adds assets to the library and document<br/>
 		 * Missing support for masks, shapes and text (text is shown as image)<br/>
-		 * Takes quite a while to import. <br/>
+		 * Can take quite a while to import. <br/>
 		 * Could use performance testing.
 		 * */
 		public function addPSDToDocument(psdFileData:ByteArray, iDocument:IDocument, matchDocumentSizeToPSD:Boolean = true, addToAssets:Boolean = true):void {
-			var componentDefinition:ComponentDefinition;
-			var application:Object;
-			var componentInstance:Object;
-			var componentDescription:ComponentDescription;
-			var path:String;
-			var bitmapData:BitmapData;
-			var psdParser:PSDParser;
-			var numberOfLayers:int;
-			var properties:Array = [];
-			var propertiesObject:Object; // could be causing performance issues - try typed
-			var psdLayer:PSDLayer;
-			var compositeBitmapData:BitmapData;
-			var compositeWidth:int;
-			var compositeHeight:int;
-			var addCompositeImage:Boolean;
-			var imageData:ImageData;
-			var blendModeKey:String;
-			var blendMode:String;
-			var insideFolder:Boolean;
-			var isFolderVisible:Boolean;
-			var layerType:String;
-			var layerName:String;
-			var folderName:String;
-			var layerVisible:Boolean;
-			var layers:Array;
-			var layersAndFolders:Dictionary;
-			var parentInstance:Object;
-			var layerFilters:Array;
-			var layerID:int;
-			var parentLayerID:int;
-			var currentFolders:Array = [];
-			var foldersDictionary:Object = [];
-			var xOffset:int;
-			var yOffset:int;
-			var parentGroup:Object;// could be causing performance issues - try typed
-			var hasShapes:Boolean;
-			var hasMasks:Boolean;
-			var resized:Boolean;
-			var showInfo:Boolean = false;
-			var testForErrors:Boolean = false;
-			var time:int;
-			var setDefaultsPre:Boolean = true;
-			var setDefaultsPost:Boolean = false;
-			
-			addCompositeImage = true;
-			
-			layersAndFolders = new Dictionary(true);
-			
-			application = iDocument && iDocument.instance ? iDocument.instance : null;
 			
 			if (documentThatPasteOfFilesToBeLoadedOccured==null) {
 				documentThatPasteOfFilesToBeLoadedOccured = iDocument;
 			}
 			
-			//setupPasteFileLoader();
+			PSDImporter.addPSDToDocument(documentThatPasteOfFilesToBeLoadedOccured, psdFileData, iDocument, matchDocumentSizeToPSD, addToAssets, pasteFileLoader, dropFileLoader);
 			
-			psdParser = PSDParser.getInstance();
-			
-			time = getTimer();
-			
-			if (testForErrors) {
-				psdParser.parse(psdFileData);
-			}
-			
-			try {
-				if (!testForErrors) {
-					psdParser.parse(psdFileData);
-				}
-			}
-			catch (errorObject:*) {
-				var errorMessage:String;
-				var stack:String;
-				
-				if ("getStackTrace" in errorObject) {
-					stack = errorObject.getStackTrace();
-				}
-				
-				if (errorObject) {
-					errorMessage = Object(errorObject).toString();
-				}
-				
-				error("Could not import the PSD. " + errorMessage, errorObject);
-				
-				pasteFileLoader ? pasteFileLoader.removeReferences(true) : -1;
-				dropFileLoader ? dropFileLoader.removeReferences(true) : -1;
-				
-				return;
-			}
-			
-			time = getTimer() - time;
-			
-			//layersLevel = iDocument.instance;
-			//this.addChild(layersLevel);
-			
-			layers = psdParser.allLayers ? psdParser.allLayers : [];
-			numberOfLayers = layers ? layers.length : 0;
-			
-			info("Time to import: " + int(time/1000) + " seconds. Number of layers: " + numberOfLayers);
-			
-			compositeBitmapData = psdParser.composite_bmp;
-			compositeWidth		= compositeBitmapData ? compositeBitmapData.width : 0;
-			compositeHeight		= compositeBitmapData ? compositeBitmapData.height : 0;
-			
-			// add composite of the PSD
-			if (addCompositeImage || numberOfLayers==0) {
-				
-				componentDefinition 		= getComponentType("Image");
-				componentInstance 			= createComponentToAdd(iDocument, componentDefinition, setDefaultsPre);
-				
-				propertiesObject 			= {};
-				propertiesObject.source 	= compositeBitmapData;
-				
-				propertiesObject.visible 	= numberOfLayers==0 ? true : false;
-				
-				properties.push("source");
-				properties.push("visible");
-				
-				addElement(componentInstance, application, properties, null, null, propertiesObject);
-				
-				updateComponentAfterAdd(iDocument, componentInstance, setDefaultsPost);
-				
-				componentDescription = iDocument.getItemDescription(componentInstance);
-				
-				if (numberOfLayers!=0) {
-					componentDescription.locked = true;
-					componentDescription.visible = propertiesObject.visible;
-					componentDescription.name = "Composite Layer";
-				}
-				
-				if (addToAssets) {
-					imageData = new ImageData();
-					imageData.bitmapData = compositeBitmapData;
-					imageData.name = "Composite Layer";
-					imageData.layerInfo = psdLayer;
-					
-					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured, false);
-				}
-			}
-			
-			if (numberOfLayers==0 && compositeBitmapData==null) {
-				warn("The PSD did not contain any readable layers.");
-				pasteFileLoader ? pasteFileLoader.removeReferences(true) : -1;
-				dropFileLoader ? dropFileLoader.removeReferences(true) : -1;
-				
-				if (addToAssets && imageData) {
-					dispatchAssetAddedEvent(imageData);
-				}
-				
-				dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, false, false);
-				
-				return;
-			}
-			
-			
-			
-			// Layer groups are being parsed and they are also PSDLayer class type.
-			
-			// There are 4 layer types :
-			// LayerType_FOLDER_OPEN, LayerType_FOLDER_CLOSED , 
-			// LayerType_HIDDEN and LayerType_NORMAL.
-			
-			// Layer folder hidden is marker for the end of the layer group. 
-			// So if you want to parse the folder structure, check where the layer type folder 
-			// starts and then every layer that follows is inside of that folder, 
-			// until you reach layer type hidden.
-			
-			// order from top to bottom from PSD
-			layers.reverse();
-			
-			// loop through layers and get the folders 
-			for (var a:int;a<numberOfLayers;a++)  {
-				psdLayer					= layers[a];
-				layerType 					= psdLayer.type;
-				layerID 					= psdLayer.layerID;
-				layerName 					= psdLayer.name;
-				layersAndFolders[layerID] 	= psdLayer;
-				
-				// create groups 
-				if (layerType==PSDLayer.LayerType_FOLDER_OPEN || 
-					layerType==PSDLayer.LayerType_FOLDER_CLOSED) {
-					insideFolder = true;
-					isFolderVisible = psdLayer.isVisible;
-					folderName = psdLayer.name;
-					parentLayerID = layerID;
-					
-					// get last added folder id
-					if (currentFolders.length) {
-						psdLayer.parentLayerID = currentFolders[0];
-					}
-					
-					
-					componentDefinition 		= getComponentType("Group");
-					
-					componentInstance 			= createComponentToAdd(iDocument, componentDefinition, setDefaultsPre);
-					
-					propertiesObject 			= {};
-					propertiesObject.x 			= 0;
-					propertiesObject.y			= 0;
-					propertiesObject.lowestX 	= [];
-					propertiesObject.lowestY	= [];
-					
-					// properties to set
-					properties = [];
-					
-					// properties to set
-					properties.push("x");
-					properties.push("y");
-					
-					if (psdLayer.alpha!=1) {
-						propertiesObject.alpha 	= psdLayer.alpha;
-						properties.push("alpha");
-					}
-					
-					if (psdLayer.isVisible==false) {
-						propertiesObject.visible = false;
-						properties.push("visible");
-					}
-					
-					if (psdLayer.blendModeKey!="norm") {
-						blendMode = DisplayObjectUtils.getBlendModeByKey(psdLayer.blendModeKey);
-						
-						if (blendMode) {
-							propertiesObject.blendMode 	= blendMode;
-							properties.push("blendMode");
-						}
-					}
-					
-					parentGroup = {};
-					parentGroup.properties = properties;
-					parentGroup.propertiesObject = propertiesObject;
-					parentGroup.instance = componentInstance;
-					parentGroup.parentID = currentFolders && currentFolders.length ? currentFolders[0] : 0;
-
-					foldersDictionary[layerID] = parentGroup;
-					
-					if (showInfo) {
-						trace("Creating folder properties for " + layerID + " " + layerName);
-					}
-					
-					// add group layer id ordered as depth
-					currentFolders.unshift(layerID);
-					
-				}
-				else if (layerType==PSDLayer.LayerType_HIDDEN) {
-					insideFolder = false;
-					isFolderVisible = false;
-					folderName = null;
-					layerID = currentFolders.shift();
-					
-					parentGroup = foldersDictionary[layerID];
-					
-					// set the group location to start where the contents start - later subtract the difference
-					parentGroup.propertiesObject.x = Math.min.apply(null, parentGroup.propertiesObject.lowestX);
-					parentGroup.propertiesObject.y = Math.min.apply(null, parentGroup.propertiesObject.lowestY);
-					
-				}
-				else if (layerType==PSDLayer.LayerType_NORMAL) {
-					
-					if (currentFolders.length) {
-						psdLayer.parentLayerID = currentFolders[0];
-						parentGroup = foldersDictionary[currentFolders[0]];
-						
-						while (parentGroup) {
-							parentGroup.propertiesObject.lowestX.push(psdLayer.position.x);
-							parentGroup.propertiesObject.lowestY.push(psdLayer.position.y);
-							parentGroup = foldersDictionary[parentGroup.parentID];
-						}
-					}
-					else {
-						psdLayer.parentLayerID = 0;
-					}
-				}
-				
-			}
-			
-			// order from bottom to top from PSD
-			layers.reverse();
-			
-			
-			// loop through layers and create properties object with layer destination
-			for (var i:int;i<numberOfLayers;i++)  {
-				psdLayer				= psdParser.allLayers[i];
-				bitmapData				= psdLayer.bmp;
-				
-				layerType 				= psdLayer.type;
-				layerVisible 			= psdLayer.isVisible;
-				layerName 				= psdLayer.name;
-				layerFilters			= psdLayer.filters_arr;
-				layerID					= psdLayer.layerID;
-				
-				parentLayerID 			= psdLayer.parentLayerID;
-				
-				parentGroup 			= foldersDictionary[parentLayerID];
-				
-				if (parentGroup) {
-					xOffset = 0;
-					yOffset = 0;
-					
-					// get different in location when layers are added to groups
-					while (parentGroup) {
-						xOffset += parentGroup.propertiesObject.x;
-						yOffset += parentGroup.propertiesObject.y;
-						parentGroup = foldersDictionary[parentGroup.parentID];
-					}
-				}
-				else {
-					xOffset = 0;
-					yOffset = 0;
-				}
-				
-				if (layerType==PSDLayer.LayerType_FOLDER_OPEN || 
-					layerType==PSDLayer.LayerType_FOLDER_CLOSED ||
-					layerType==PSDLayer.LayerType_HIDDEN) {
-					
-					if (showInfo) {
-						trace("Looping through layers excluding folder " + layerID + " " + layerName);
-					}
-					
-					continue;
-				}
-				
-				if (showInfo) {
-					trace("Looping through layers adding " + layerID + " " + layerName);
-				}
-				
-				if (layerID==0 && showInfo) {
-					trace("  - shape");
-					hasShapes = true;
-				}
-				
-				// need to keep track of errors during import
-				if (bitmapData==null) {
-					continue;
-				}
-				else if (bitmapData.width==0 || bitmapData.height==0) {
-					continue;
-				}
-				
-				componentDefinition 		= getComponentType("Image");
-				
-				componentInstance 			= createComponentToAdd(iDocument, componentDefinition, setDefaultsPre);
-				
-				propertiesObject 			= {};
-				propertiesObject.source 	= bitmapData;
-				propertiesObject.x 			= psdLayer.position.x - xOffset;
-				propertiesObject.y 			= psdLayer.position.y - yOffset;
-				
-				// properties to set
-				properties = [];
-				
-				// properties to set
-				properties.push("x");
-				properties.push("y");
-				properties.push("source");
-				
-				if (psdLayer.alpha!=1) {
-					propertiesObject.alpha 	= psdLayer.alpha;
-					properties.push("alpha");
-				}
-				
-				if (psdLayer.isVisible==false) {
-					propertiesObject.visible = false;
-					properties.push("visible");
-				}
-				
-				if (psdLayer.blendModeKey!="norm") {
-					blendMode = DisplayObjectUtils.getBlendModeByKey(psdLayer.blendModeKey);
-					
-					if (blendMode) {
-						propertiesObject.blendMode 	= blendMode;
-						properties.push("blendMode");
-					}
-				}
-				
-				if (layerFilters && layerFilters.length) {
-					propertiesObject.filters = layerFilters;
-					properties.push("filters");
-				}
-				
-				if (parentLayerID!=0) {
-					parentGroup = foldersDictionary[parentLayerID];
-					parentInstance = parentGroup.instance;
-				}
-				else {
-					parentInstance = application;
-				}
-				
-				// if on level 0 - no parent - add it in next loop so we keep the
-				// layer order
-				//if (parentLayerID==0) {
-				
-				parentGroup 					= {};
-				parentGroup.properties 			= properties;
-				parentGroup.propertiesObject 	= propertiesObject;
-				parentGroup.instance 			= componentInstance;
-				parentGroup.parentInstance 		= parentInstance;
-				
-				foldersDictionary[layerID] 		= parentGroup;
-				
-			}
-			
-			// add folders to document
-			
-			var customParent:Object;
-			
-			// loop through layers and add folders and top level layers 
-			for (var b:int;b<numberOfLayers;b++)  {
-				psdLayer		= layers[b];
-				layerType 		= psdLayer.type;
-				layerName 		= psdLayer.name;
-				layerID 		= psdLayer.layerID;
-				parentLayerID	= psdLayer.parentLayerID;
-				parentGroup 	= foldersDictionary[layerID];
-				
-				if (parentGroup==null) {
-					continue;
-				}
-				
-				//trace("adding " +  psdLayer.name + " ("+ layerID+")");
-				// get parent folder if one exists
-				customParent = parentLayerID!=0 ? foldersDictionary[parentLayerID] : null;
-				
-				parentInstance = customParent ? customParent.instance : application;
-				
-				componentInstance = parentGroup.instance;
-				
-				if (showInfo) {
-					trace("Adding layer " + layerName + " to group " + parentLayerID);
-				}
-				
-				addElement(componentInstance, parentInstance, parentGroup.properties, null, null, parentGroup.propertiesObject);
-				
-				updateComponentAfterAdd(iDocument, componentInstance, setDefaultsPost);
-				
-				componentDescription = iDocument.getItemDescription(componentInstance);
-				
-				if (componentDescription) {
-					componentDescription.locked = psdLayer.isLocked;
-					componentDescription.visible = psdLayer.isVisible;
-					componentDescription.name = psdLayer.name;
-					componentDescription.layerInfo = psdLayer;
-				}
-				
-				if (addToAssets && layerType==PSDLayer.LayerType_NORMAL) {
-					imageData = new ImageData();
-					imageData.bitmapData = psdLayer.bmp;
-					imageData.name = psdLayer.name;
-					imageData.layerInfo = psdLayer;
-					
-					addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured, false);
-				}
-			}
-			
-			// remove file references
-			if (pasteFileLoader) {
-				pasteFileLoader.removeReferences(true);
-			}
-			
-			// remove file references
-			if (dropFileLoader) {
-				dropFileLoader.removeReferences(true);
-			}
-			
-			const WIDTH:String = "width";
-			const HEIGHT:String = "height";
-			
-			if (matchDocumentSizeToPSD) {
-				resized = sizeDocumentToBitmapData(documentThatPasteOfFilesToBeLoadedOccured, compositeBitmapData);
-			}
-			
-			// dispatch event 
-			if (addToAssets && imageData) {
-				dispatchAssetAddedEvent(imageData);
-			}
-			
-			if (hasShapes || hasMasks) {
-				info("A PSD was partially imported. It does not fully support shapes or masks. Be sure to upload the images added to the Library.");
-			}
-			else {
-				info("A PSD was imported. Be sure to upload the images added to the Library.");
-			}
-			
-			setTarget(iDocument.instance);
-			
-			imageData = getImageDataFromBitmapData(compositeBitmapData);
-			
-			dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
 		}
 		
 		/**
 		 * Adds bitmap data to the document
 		 * */
-		public function addBase64ImageDataToDocument(iDocument:IDocument, fileData:FileData, destination:Object = null, name:String = null, addComponent:Boolean = true, resizeIfNeeded:Boolean = true):void {
+		public function addBase64ImageDataToDocument(iDocument:IDocument, fileData:FileData, destination:Object = null, name:String = null, addComponent:Boolean = true, resizeIfNeeded:Boolean = true, resizeDocumentToContent:Boolean = false):void {
 			var bitmapData:BitmapData = DisplayObjectUtils.getBitmapDataFromBase64(fileData.dataURI, null, true, fileData.type);
 			if (destination==null) destination = getDestinationForExternalFileDrop();
-			var imageData:ImageData = addBitmapDataToDocument(iDocument, bitmapData, destination, fileData.name, addComponent, resizeIfNeeded);
+			var imageData:ImageData = addBitmapDataToDocument(iDocument, bitmapData, destination, fileData.name, addComponent, resizeIfNeeded, resizeDocumentToContent);
 			
 			// it's possible we weren't able to determine the dimensions of the image
 			// so we add a listener to check after loading it with a loader
@@ -4873,7 +3339,6 @@ package com.flexcapacitor.controller {
 			var bitmap:Bitmap;
 			var contentLoaderInfo:LoaderInfo = event.currentTarget as LoaderInfo;
 			var componentInstance:Object = bitmapDictionary[contentLoaderInfo];
-			var constrainImageToDocument:Boolean = true;
 			
 			if (contentLoaderInfo.loader.content) {
 				bitmap = contentLoaderInfo.loader.content as Bitmap;
@@ -4889,6 +3354,8 @@ package com.flexcapacitor.controller {
 					
 					var properties:Array = [];
 					var propertiesObject:Object;
+					var documentProperties:Array = [];
+					var documentPropertiesObject:Object;
 					var imageData:ImageData;
 					var originalBitmapData:BitmapData;
 					
@@ -4896,7 +3363,16 @@ package com.flexcapacitor.controller {
 					originalBitmapData = componentInstance.source;
 					imageData = getImageDataFromBitmapData(originalBitmapData);
 					
-					if (constrainImageToDocument) {
+					if (imageData.resizeDocumentToFit) {
+						documentPropertiesObject = {};
+						documentPropertiesObject[WIDTH] = newBitmapData.width;
+						documentPropertiesObject[HEIGHT] = newBitmapData.height;
+						documentProperties.push(WIDTH);
+						documentProperties.push(HEIGHT);
+						
+						setProperties(selectedDocument.instance, documentProperties, documentPropertiesObject, "Document resized to image");
+					}
+					else if (imageData.resizeToFitDocument) {
 						propertiesObject = getConstrainedImageSizeObject(selectedDocument, newBitmapData);
 					}
 					
@@ -4929,7 +3405,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Adds an asset to the document
 		 * */
-		public function addImageDataToDocument(imageData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true, smooth:Boolean = true):Boolean {
+		public function addImageDataToDocument(imageData:ImageData, iDocument:IDocument, constrainImageToDocument:Boolean = true, smooth:Boolean = true, constrainDocumentToImage:Boolean = false):Boolean {
 			var item:ComponentDefinition;
 			var application:Application;
 			var componentInstance:Object;
@@ -4937,7 +3413,7 @@ package com.flexcapacitor.controller {
 			var bitmapData:BitmapData;
 			var resized:Boolean;
 			
-			item = getComponentType("Image");
+			item = ComponentManager.getComponentType("Image");
 			
 			
 			application = iDocument && iDocument.instance ? iDocument.instance as Application : null;
@@ -4948,7 +3424,7 @@ package com.flexcapacitor.controller {
 			}
 			
 			// set to true so if we undo it has defaults to start with
-			componentInstance = createComponentToAdd(iDocument, item, true);
+			componentInstance = ComponentManager.createComponentToAdd(iDocument, item, true);
 			bitmapData = imageData.bitmapData;
 			
 			
@@ -4958,8 +3434,18 @@ package com.flexcapacitor.controller {
 			var styles:Array = [];
 			var properties:Array = [];
 			var propertiesObject:Object;
+			var documentProperties:Array = [];
+			var documentPropertiesObject:Object;
 			
-			if (constrainImageToDocument) {
+			if (constrainDocumentToImage) {
+				documentPropertiesObject = {};
+				documentPropertiesObject[WIDTH] = bitmapData.width;
+				documentPropertiesObject[HEIGHT] = bitmapData.height;
+				documentProperties.push(WIDTH);
+				documentProperties.push(HEIGHT);
+				setProperties(iDocument.instance, documentProperties, documentPropertiesObject, "Document resized to image");
+			}
+			else if (constrainImageToDocument) {
 				propertiesObject = getConstrainedImageSizeObject(iDocument, bitmapData);
 			}
 			
@@ -5184,6 +3670,13 @@ package com.flexcapacitor.controller {
 		}
 		
 		/**
+		 * Get document container for document
+		 **/
+		public function getDocumentContainer(value:IDocument):IDocumentContainer {
+			return documentsContainerDictionary[value] as IDocumentContainer;
+		}
+		
+		/**
 		 * Selects the current document
 		 * */
 		public function selectDocument(value:IDocument, dispatchEvent:Boolean = true, cause:String = ""):void {
@@ -5200,6 +3693,7 @@ package com.flexcapacitor.controller {
 				canvasBorder = iDocumentContainer.canvasBorder;
 				canvasBackground= iDocumentContainer.canvasBackground;
 				canvasScroller = iDocumentContainer.canvasScroller;
+				editorComponent = iDocumentContainer.editorComponent;
 			}
 			
 			HistoryManager.history = selectedDocument ? selectedDocument.history : null;
@@ -5536,7 +4030,7 @@ package com.flexcapacitor.controller {
 			return destination;
 		}
 		
-		public function dropItemWeb(object:Object, createNewDocument:Boolean = false, createDocumentIfNeeded:Boolean = true, resizeIfNeeded:Boolean = true):void {
+		public function dropItemWeb(object:Object, createNewDocument:Boolean = false, createDocumentIfNeeded:Boolean = true, resizeIfNeeded:Boolean = true, resizeDocumentToContent:Boolean = false):void {
 			var fileData:FileData;
 			var byteArray:ByteArray;
 			var destination:Object;
@@ -5549,7 +4043,7 @@ package com.flexcapacitor.controller {
 			var hasImage:Boolean;
 			var fileSafeList:Array;
 			var value:String;
-			
+			var smooth:Boolean = true;
 			fileSafeList = [];
 			
 			if (object is HTMLDragEvent) {
@@ -5565,7 +4059,7 @@ package com.flexcapacitor.controller {
 			}
 			
 			fileData = new FileData(htmlDragData);
-			mainView.dropImagesLocation.visible = false;
+			ViewManager.mainView.dropImagesLocation.visible = false;
 			extension = htmlDragData.getExtension();
 			
 			if (extension=="png" || 
@@ -5596,11 +4090,11 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (createNewDocument || (createDocumentIfNeeded && selectedDocument==null)) {
-				createNewDocumentAndSwitchToDesignView(htmlDragData, selectedProject, resizeIfNeeded);
+				createNewDocumentAndSwitchToDesignView(htmlDragData, selectedProject, resizeIfNeeded, resizeDocumentToContent);
 			}
 			else {
 				if (hasImage) {
-					addBase64ImageDataToDocument(selectedDocument, fileData, destination, fileData.name, true, resizeIfNeeded);
+					addBase64ImageDataToDocument(selectedDocument, fileData, destination, fileData.name, true, resizeIfNeeded, resizeDocumentToContent);
 				}
 				else if (hasPSD) {
 					byteArray = htmlDragData.getByteArray();
@@ -5976,6 +4470,7 @@ package com.flexcapacitor.controller {
 			}
 		}
 		
+		// mostly a duplicate of setup paste file loader but haven't had chance to test it 
 		protected function setupDropFileLoader():void {
 			if (dropFileLoader==null) {
 				dropFileLoader = new LoadFile();
@@ -5983,61 +4478,6 @@ package com.flexcapacitor.controller {
 				dropFileLoader.addEventListener(LoadFile.COMPLETE, dropFileCompleteHandler, false, 0, true);
 			}
 		}
-		
-		/**
-		 * Occurs after files pasted into the document are fully loaded 
-		 
-		protected function pasteFileCompleteHandler(event:Event):void {
-			var resized:Boolean;
-			var imageData:ImageData;
-			
-			// if we need to load the images ourselves then skip complete event
-			// and wait until loader complete event
-			if (dropFileLoader.loadIntoLoader && event.type!=LoadFile.LOADER_COMPLETE) {
-				return;
-			}
-			
-			if (!documentThatPasteOfFilesToBeLoadedOccured) {
-				error("No document was found to paste a file into");
-				return;
-			}
-			
-			if (loadingPSD) {
-				loadingPSD = false;
-				info("Importing PSD");
-				callAfter(250, addPSDToDocument, pasteFileLoader.data, documentThatPasteOfFilesToBeLoadedOccured);
-				return;
-			}
-			
-			if (loadingMXML) {
-				loadingMXML = false;
-				info("Importing MXML");
-				callAfter(250, importMXMLDocument, selectedProject, documentThatPasteOfFilesToBeLoadedOccured, documentThatPasteOfFilesToBeLoadedOccured.instance, pasteFileLoader.dataAsString);
-				return;
-			}
-			
-			imageData = new ImageData();
-			imageData.bitmapData = pasteFileLoader.bitmapData;
-			imageData.byteArray = pasteFileLoader.data;
-			imageData.name = pasteFileLoader.currentFileReference.name;
-			imageData.contentType = pasteFileLoader.loaderContentType;
-			imageData.file = pasteFileLoader.currentFileReference;
-			
-			addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
-			resized = addImageDataToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured);
-			
-			//uploadAttachment(fileLoader.fileReference);
-			if (resized) {
-				info("Image was added to the library and the document and resized to fit");
-			}
-			else {
-				info("Image was added to the library and the document");
-			}
-			
-			setTarget(lastCreatedComponent);
-			
-			dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
-		}* */
 		
 		/**
 		 * Occurs after files are dropped into the document are fully loaded 
@@ -6113,7 +4553,7 @@ package com.flexcapacitor.controller {
 		/**
 		 * Add bitmap data to a document
 		 * */
-		public function addBitmapDataToDocument(iDocument:IDocument, bitmapData:BitmapData, destination:Object = null, name:String = null, addComponent:Boolean = false, resizeIfNeeded:Boolean = true):ImageData {
+		public function addBitmapDataToDocument(iDocument:IDocument, bitmapData:BitmapData, destination:Object = null, name:String = null, addComponent:Boolean = false, resizeIfNeeded:Boolean = true, resizeDocumentToContent:Boolean = false):ImageData {
 			if (bitmapData==null) {
 				error("Not valid bitmap data");
 			}
@@ -6127,6 +4567,7 @@ package com.flexcapacitor.controller {
 			
 			var imageData:ImageData = new ImageData();
 			var resized:Boolean;
+			var smooth:Boolean = true;
 			
 			imageData.bitmapData = bitmapData;
 			imageData.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(bitmapData);
@@ -6144,9 +4585,11 @@ package com.flexcapacitor.controller {
 			imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
 			imageData.file = null;
 			
+			imageData.resizeToFitDocument = resizeIfNeeded;
+			imageData.resizeDocumentToFit = resizeDocumentToContent;
 			
 			if (addComponent) {
-				resized = addImageDataToDocument(imageData, iDocument, resizeIfNeeded);
+				resized = addImageDataToDocument(imageData, iDocument, resizeIfNeeded, smooth, resizeDocumentToContent);
 				
 				//uploadAttachment(fileLoader.fileReference);
 				if (resized) {
@@ -6182,11 +4625,12 @@ package com.flexcapacitor.controller {
 				return;
 			}
 			var componentType:String = useRichText ? "spark.components.RichText" : "spark.components.Label";
-			var definition:ComponentDefinition =  getDynamicComponentType(componentType, true);
-			var component:Object = createComponentToAdd(iDocument, definition, false);
+			var definition:ComponentDefinition =  ComponentManager.getDynamicComponentType(componentType, true);
+			var component:Object = ComponentManager.createComponentToAdd(iDocument, definition, false);
 			
 			if (useRichText) {
-				addElement(component, destination, ["text"], null, null, {text:text});
+				var textFlow:TextFlow = TextConverter.importToFlow(text, TextConverter.PLAIN_TEXT_FORMAT);
+				addElement(component, destination, ["textFlow"], null, null, {textFlow:textFlow});
 			}
 			else {
 				addElement(component, destination, ["text"], null, null, {text:text});
@@ -6212,13 +4656,13 @@ package com.flexcapacitor.controller {
 				return;
 			}
 			
-			var definition:ComponentDefinition =  getDynamicComponentType("spark.components.RichText", true);
+			var definition:ComponentDefinition =  ComponentManager.getDynamicComponentType("spark.components.RichText", true);
 			
 			if (!definition) {
 				return;
 			}
 			
-			var componentInstance:RichText = createComponentToAdd(iDocument, definition, false) as RichText;
+			var componentInstance:RichText = ComponentManager.createComponentToAdd(iDocument, definition, false) as RichText;
 			var formatter:HTMLFormatterTLF = HTMLFormatterTLF.staticInstance;
 			var translatedHTMLText:String;
 			var textFlow:TextFlow;
@@ -6290,14 +4734,15 @@ package com.flexcapacitor.controller {
 		 * This is to support drag and drop of file onto application icon
 		 * and open with methods. 
 		 * */
-		public function createNewDocumentAndSwitchToDesignView(file:Object = null, iProject:Object = null, resizeIfNeeded:Boolean = true):IDocument {
+		public function createNewDocumentAndSwitchToDesignView(file:Object = null, iProject:Object = null, resizeIfNeeded:Boolean = true, resizeDocumentToContent:Boolean = false):IDocument {
 			var documentName:String = "Document";
 			var iDocument:IDocument;
 			
 			fileToBeLoaded = file;
 			resizeNewFileIfNeeded = resizeIfNeeded;
+			resizeDocumentToNewFileIfNeeded = resizeDocumentToContent;
 			
-			goToDesignScreen();
+			ViewManager.goToDesignScreen();
 			
 			if (fileToBeLoaded) {
 				addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
@@ -6315,6 +4760,7 @@ package com.flexcapacitor.controller {
 		
 		public var fileToBeLoaded:Object;
 		public var resizeNewFileIfNeeded:Boolean;
+		public var resizeDocumentToNewFileIfNeeded:Boolean;
 		
 		public function documentOpenedHandler(event:RadiateEvent):void {
 			var iDocument:IDocument = event.selectedItem as IDocument;
@@ -6332,18 +4778,18 @@ package com.flexcapacitor.controller {
 				dropItem(newFileData as DragEvent);
 			}
 			else if (newFileData is HTMLDragData) {
-				dropItemWeb(newFileData, false, true, resizeNewFileIfNeeded);
+				dropItemWeb(newFileData, false, true, resizeNewFileIfNeeded, resizeDocumentToNewFileIfNeeded);
 			}
 			else if (newFileData is FileData) {
 				fileData = newFileData as FileData;
-				addBase64ImageDataToDocument(selectedDocument, fileData, null, fileData.name, true, resizeNewFileIfNeeded);
+				addBase64ImageDataToDocument(selectedDocument, fileData, null, fileData.name, true, resizeNewFileIfNeeded, resizeDocumentToNewFileIfNeeded);
 			}
 			else if (newFileData is Array && newFileData.length) {
 				//destination = getDestinationForExternalFileDrop();
 				addFileListDataToDocument(selectedDocument, fileToBeLoaded as Array);
 			}
 			else if (newFileData is BitmapData) {
-				addBitmapDataToDocument(selectedDocument, newFileData as BitmapData, null, null, true, resizeNewFileIfNeeded);
+				addBitmapDataToDocument(selectedDocument, newFileData as BitmapData, null, null, true, resizeNewFileIfNeeded, resizeDocumentToNewFileIfNeeded);
 			}
 			
 			removeEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler);
@@ -6367,14 +4813,14 @@ package com.flexcapacitor.controller {
 			}
 			
 			if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
-				sizeDocumentToBitmapData(iDocument, bitmapData);
+				RadiateUtilities.sizeDocumentToBitmapData(iDocument, bitmapData);
 				
 				if (importedImageResized && target) {
-					sizeSelectionToDocument();
+					RadiateUtilities.sizeSelectionToDocument();
 				}
 				
-				scaleToFit(false);
-				centerApplication();
+				ScaleManager.scaleToFit(false);
+				RadiateUtilities.centerApplication();
 			}
 			
 		}
@@ -8418,740 +6864,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public static var lastCreatedComponent:Object;
 		
-		/**
-		 * Component that is in edit mode. Typically a Label. 
-		 * */
-		public static var currentEditableComponent:Object;
-		public static var editableRichTextField:RichEditableText = new RichEditableText();
-		public static var editableRichTextFieldSprite:UIComponent = new UIComponent();
-		public static var editableRichTextEditorBarCallout:RichTextEditorBarCallout;
-		
-		/**
-		 * Handles double click on text to show text editor. 
-		 * To support more components add the elements in the addElement method
-		 * */
-		public static function showTextEditorHandler(event:MouseEvent):void {
-			var currentTarget:Object = event.target;
-			
-			showTextEditor(currentTarget);
-		}
-		
-		/**
-		 * Handles double click on text to show text editor. 
-		 * To support more components add the elements in the addElement method
-		 * */
-		public static function showTextEditor(textField:Object, selectText:Boolean = false, setFocus:Boolean = true):void {
-			var textTarget:TextBase = textField as TextBase;
-			var isRichEditor:Boolean;
-			var rectangle:Rectangle;
-			var propertyNames:Array;
-			var valuesObject:Object;
-			var isBasicLayout:Boolean;
-			var topSystemManager:ISystemManager;
-			var currentEditor:Object;
-			var textFlowString:String;
-			var textFlow:TextFlow;
-			var iDocument:IDocument;
-			var targetComponentDescription:ComponentDescription;
-			var parentComponentDescription:ComponentDescription;
-			var basicFonts:Boolean = false;
-			var focusAlpha:Number = 0;
-			var position:Point;
-			var distancePoint:Point;
-			var scale:Number;
-			
-			const MIN_WIDTH:int = 22;
-			
-			if (!(instance.selectedTool is Selection) && !(instance.selectedTool is com.flexcapacitor.tools.Text)) {
-				return;
-			}
-			
-			// get reference to current source label or richtext 
-			currentEditableComponent = textTarget;
-			
-			if (editableRichTextField==null) {
-				editableRichTextField = new RichEditableText();
-			}
-			
-			editableRichTextField.selectionHighlighting = TextSelectionHighlighting.WHEN_ACTIVE;
-			
-			// get positions of label or richtext
-			// and setup properties that need to be set for temporary rich text field
-			if (currentEditableComponent) {
-				iDocument = instance.selectedDocument;
-				targetComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(textTarget, iDocument.componentDescription);
-				parentComponentDescription = targetComponentDescription.parent;
-				//rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
-				//propertyNames = ["x", "y", "text", "minWidth"];
-				//valuesObject = {};
-				
-				//if ((parentComponentDescription.instance is GroupBase || parentComponentDescription.instance is BorderContainer)
-				//	&& parentComponentDescription.instance.layout is BasicLayout) {
-				//	isBasicLayout = true;
-				//	rectangle = DisplayObjectUtils.getRectangleBounds(target, parentComponentDescription.instance);
-				//}
-				
-				isRichEditor = "textFlow" in currentEditableComponent;
-				//currentEditor = isRichEditor ? editableRichTextEditorBarCallout : editableRichTextField;
-				currentEditor = editableRichTextField;
-				
-				//rectangle = DisplayObjectUtils.getRectangleBounds(target);
-				propertyNames = ["x", "y", "minWidth"];
-				valuesObject = {};
-				
-				if (currentEditableComponent.owner.layout is BasicLayout) {
-					isBasicLayout = true;
-					rectangle = DisplayObjectUtils.getRectangleBounds(currentEditableComponent, currentEditableComponent.owner);
-				}
-				else {
-					rectangle = DisplayObjectUtils.getRectangleBounds(textTarget, iDocument.instance);
-				}
-				
-				position = DisplayObjectUtils.getDisplayObjectPosition(currentEditableComponent as DisplayObject, null, true);
-				distancePoint = DisplayObjectUtils.getDistanceBetweenDisplayObjects(currentEditableComponent, instance.toolLayer);
-				
-				focusAlpha = 0;
-				valuesObject.x = rectangle.x;
-				valuesObject.y = rectangle.y;
-				valuesObject.minWidth = MIN_WIDTH;
-				
-				if (!isNaN(textTarget.explicitWidth)) {
-					propertyNames.push("width");
-					valuesObject.width = rectangle.width;
-				}
-				else if (!isNaN(textTarget.percentWidth)) {
-					// if basic layout we can get percent width
-					if (isBasicLayout) {
-						propertyNames.push("percentWidth");
-						valuesObject.percentWidth = textTarget.percentWidth;
-					}
-					else {
-						propertyNames.push("width");
-						valuesObject.width = rectangle.width;
-					}
-				}
-				
-				currentEditableComponent.visible = false;
-				
-				if (editableRichTextEditorBarCallout==null) {
-					editableRichTextEditorBarCallout = new RichTextEditorBarCallout();
-					editableRichTextEditorBarCallout.initialize();
-					editableRichTextEditorBarCallout.createDeferredContent();
-				}
-				
-				if (basicFonts && editableRichTextEditorBarCallout.editorBar.fontDataProvider) {
-					editableRichTextEditorBarCallout.editorBar.fontDataProvider = null;
-				}
-				else if (!basicFonts && editableRichTextEditorBarCallout.editorBar.fontDataProvider ==null) {
-					editableRichTextEditorBarCallout.editorBar.fontDataProvider = new ArrayList(fontsArray);
-				}
-				
-				editableRichTextEditorBarCallout.editorBar.focusOnTextAfterFontChange = false;
-				editableRichTextEditorBarCallout.editorBar.focusOnTextAfterFontSizeChange = false;
-				
-				if (isRichEditor && editableRichTextEditorBarCallout.richEditableText != editableRichTextField) {
-					//testTextArea.heightInLines = NaN;
-					//editableRichTextEditorBarCallout.richEditableText = editableRichTextField;
-				}
-				
-
-				if (isRichEditor) {
-					editableRichTextEditorBarCallout.hideOnMouseDownOutside = true;
-					editableRichTextEditorBarCallout.showEditorOnFocusIn = true;
-					
-					// TODO: use TextFlowUtil
-					//TextFlowUtil.importFromString();
-					//TextFlowUtil.export();
-					
-					textFlowString = TextConverter.export(currentEditableComponent.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
-					textFlow = TextConverter.importToFlow(textFlowString, TextConverter.TEXT_LAYOUT_FORMAT);
-					
-					editableRichTextEditorBarCallout.horizontalPosition = "middle";
-					editableRichTextEditorBarCallout.verticalPosition = "before";
-					editableRichTextEditorBarCallout.setStyle("contentBackgroundAppearance", ContentBackgroundAppearance.NONE);
-					editableRichTextEditorBarCallout.richEditableText = editableRichTextField;
-					
-					
-					//editableRichTextEditorBar.textFlow = textFlow;
-					
-					//isEditableRichTextEditorBarVisible = true;
-					//editableRichTextEditorBarCallout.textFlow = textFlow;
-					// not sure why the next line is commented out
-					//editableRichTextEditor.styleName = currentEditableComponent;
-					editableRichTextField.styleName = currentEditableComponent;
-					editableRichTextField.focusRect = null;
-					editableRichTextField.setStyle("focusAlpha", focusAlpha);
-					editableRichTextField.validateNow();
-				}
-				else {
-					//editableRichTextField.text = currentEditableComponent.text;
-					valuesObject.text = currentEditableComponent.text;
-					
-					editableRichTextField.styleName = currentEditableComponent;
-					editableRichTextField.focusRect = null;
-					editableRichTextField.setStyle("focusAlpha", focusAlpha);
-					editableRichTextField.validateNow();
-				}
-				
-				
-				if (isRichEditor) {
-					//editableRichTextEditorBarCallout.includeInLayout = false;
-					valuesObject.textFlow = textFlow;
-					propertyNames.push("textFlow");
-					/*
-					testRichEditableText.clearStyle("horizontalCenter");
-					testRichEditableText.clearStyle("verticalCenter");
-					testRichEditableText.x = rectangle.x-2;
-					testRichEditableText.y = rectangle.y-2;
-					trace(testRichEditableText.x);
-					trace(testRichEditableText.y);
-					*/
-					/*
-					editableRichTextEditor.clearStyle("horizontalCenter");
-					editableRichTextEditor.clearStyle("verticalCenter");
-					editableRichTextEditor.x = rectangle.x-2;
-					editableRichTextEditor.y = rectangle.y-2;
-					*/
-				}
-				else {
-					valuesObject.text = currentEditableComponent.text;
-					propertyNames.push("text");
-				}
-				
-				// add editor but prevent from adding to document history
-				HistoryManager.doNotAddEventsToHistory = true;
-				if (isBasicLayout) {
-					
-					if (isRichEditor) {
-						
-						//if (editableRichTextField.stage==null) {
-						//	currentEditableComponent.owner.addElement(editableRichTextField);
-						//}
-						
-						//addElement(editableRichTextEditorBarCallout, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
-						addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
-					}
-					else {
-						addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
-					}
-				}
-				else {
-					if (isRichEditor) {
-						
-						//if (editableRichTextField.stage==null) {
-						//	currentEditableComponent.owner.addElement(editableRichTextField);
-						//}
-						
-						//addElement(editableRichTextEditorBarCallout, iDocument.instance, propertyNames, null, null, valuesObject);
-						addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
-					}
-					else {
-						addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
-					}
-				}
-				HistoryManager.doNotAddEventsToHistory = false;
-				
-				topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
-				topSystemManager.stage.stageFocusRect = false;
-				
-				if (isRichEditor) {
-					scale = instance.getScale();
-					
-					editableRichTextFieldSprite.width = rectangle.width;
-					editableRichTextFieldSprite.height = rectangle.height;
-					
-					var showSpriteFillArea:Boolean = false;
-					
-					if (editableRichTextFieldSprite.owner!=instance.toolLayer) {
-						instance.toolLayer.addElement(editableRichTextFieldSprite);
-					}
-					
-					if (showSpriteFillArea) {
-						editableRichTextFieldSprite.graphics.clear();
-						editableRichTextFieldSprite.graphics.beginFill(Math.random()*255555,.4);
-						editableRichTextFieldSprite.graphics.drawRect(0, 0, rectangle.width, rectangle.height);
-						editableRichTextFieldSprite.graphics.endFill();
-					}
-					
-					distancePoint = DisplayObjectUtils.getDisplayObjectPosition(currentEditableComponent as DisplayObject, instance.toolLayer, true);
-					
-					editableRichTextFieldSprite.x = distancePoint.x;
-					editableRichTextFieldSprite.y = distancePoint.y;
-					editableRichTextFieldSprite.validateNow();
-					
-					editableRichTextField.setFocus();
-					editableRichTextEditorBarCallout.open(editableRichTextFieldSprite);
-					
-					//editableRichTextEditorBarCallout.alpha = .5;
-					//editableRichTextEditorBarCallout.scaleX = 1;
-					//editableRichTextEditorBarCallout.scaleY = 1;
-					editableRichTextEditorBarCallout.addEventListener(PopUpEvent.CLOSE, richTextCallOut_closeHandler, false, 0, true);
-					
-					
-					if (setFocus) {
-						callAfter(1, editableRichTextField.setFocus);
-					}
-					
-					if (selectText) {
-						callAfter(1, editableRichTextField.selectAll);
-					}
-					
-				}
-				else {
-					editableRichTextField.selectAll();
-					editableRichTextField.setFocus();
-					
-					if (setFocus) {
-						callAfter(1, editableRichTextField.setFocus);
-					}
-					
-					if (selectText) {
-						callAfter(1, editableRichTextField.selectAll);
-					}
-					
-					editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
-					editableRichTextField.addEventListener(FlexEvent.ENTER, handleEditorEvents, false, 0, true);
-					editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, handleEditorEvents, false, 0, true);
-					editableRichTextField.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
-				}
-				
-				if (!(instance.selectedTool is com.flexcapacitor.tools.Text)) {
-					instance.disableTool();
-				}
-				
-				instance.disableTool();
-			}
-			
-		}
-		
-		public static function richTextCallOut_closeHandler(event:PopUpEvent):void {
-			var data:TextFlow = event.data as TextFlow;
-			
-			commitTextEditorValues();
-		}
-		
-		/**
-		 * Set the value that the user typed in
-		 * */
-		public static function handleEditorEvents(event:Event):void {
-			var newValue:String;
-			var oldValue:String;
-			var doSomething:Boolean;
-			var currentTarget:Object;
-			var editor:Object;
-			var isRichEditor:Boolean;
-			var textFlow:TextFlow;
-			
-			currentTarget = event.currentTarget;
-			
-			if (currentEditableComponent is Label) {
-				//editor = editableLabelTextField;
-				//newValue = editableLabelTextField.text;
-				editor = editableRichTextField;
-				//newValue = editableRichTextField.text;
-				//oldValue = currentEditableComponent.text;
-				isRichEditor = false;
-			}
-			else {
-				editor = editableRichTextField; //editableRichTextEditorBarCallout;
-				isRichEditor = true;
-			}
-			
-			
-			// CHECK if we should do something
-			if (event is MouseEvent && currentTarget==editor) {
-				doSomething = false;
-				//trace("Click event");
-			}
-			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
-				doSomething = false;
-				//trace("related object is still edit component");
-			}
-			else if (event is FocusEvent && isRichEditor) {
-				
-				// if rich editable text loses focus and the focus is not the edit bar
-				if (event.target==currentTarget && currentTarget==editor) {
-					doSomething = false;
-					//trace("focus out on rich editor. ignore");
-				}
-				else {
-					doSomething = false;
-					//trace("focus out not rich editor");
-				}
-			}
-			else if (event is FlexEvent && event.type=="valueCommit") {
-				doSomething = false;
-				//trace('value commit');
-			}
-			else {
-				doSomething = true;
-				//trace('other event: ' + event.type);
-			}
-			
-			// OLD CHECK IF DO SOMETHING
-			/*
-			if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
-				doSomething = false;
-			}
-			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
-				doSomething = false;
-			}
-			else if (event is FlexEvent && event.type=="valueCommit") {
-				doSomething = false;
-			}
-			else {
-				doSomething = true;
-			}
-			*/
-			
-			
-			if (doSomething) {
-				commitTextEditorValues();
-			}
-			
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			
-			//editableRichTextEditorBarCallout.editorBar.scaleX = 1;
-			//editableRichTextEditorBarCallout.editorBar.scaleY = 1;
-		}
-		
-		/**
-		 * Set the value that the user typed in
-		 * */
-		public static function commitTextEditorValues():void {
-			var newValue:String;
-			var oldValue:String;
-			var currentTarget:Object;
-			var editor:Object;
-			var isRichEditor:Boolean;
-			var textFlow:TextFlow;
-			var importer:ITextImporter;
-			var config:IConfiguration;
-			
-			if (currentEditableComponent==null) return;
-			
-			editor = editableRichTextField;
-			newValue = editableRichTextField.text;
-			oldValue = currentEditableComponent.text;
-			
-			if (currentEditableComponent is Label) {
-				editor = editableRichTextField;
-				newValue = editableRichTextField.text;
-				oldValue = currentEditableComponent.text;
-				isRichEditor = false;
-			}
-			else {
-				editor = editableRichTextField;
-				isRichEditor = true;
-			}
-			
-			if (isRichEditor) {
-				newValue = TextConverter.export(editor.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
-				oldValue = TextConverter.export(Object(currentEditableComponent).textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
-				
-				importer = TextConverter.getImporter(TextConverter.TEXT_FIELD_HTML_FORMAT);
-				config = importer.configuration;
-			}
-			
-			//if (currentEditableComponent && newValue!=oldValue) {
-			if (currentEditableComponent && newValue!=oldValue) {
-				
-				if (isRichEditor) {
-					textFlow = TextConverter.importToFlow(newValue, TextConverter.TEXT_LAYOUT_FORMAT);
-					
-					if (currentEditableComponent.textFlow) {
-						currentEditableComponent.textFlow.removeEventListener(StatusChangeEvent.INLINE_GRAPHIC_STATUS_CHANGE, inlineGraphicStatusChange);
-					}
-					
-					textFlow.addEventListener(StatusChangeEvent.INLINE_GRAPHIC_STATUS_CHANGE, inlineGraphicStatusChange, false, 0, true);
-					//currentEditableComponent.textFlow = textFlow;
-					setProperty(currentEditableComponent, "textFlow", textFlow);
-				}
-				else {
-					//currentEditableComponent.text = newValue;
-					setProperty(currentEditableComponent, "text", newValue);
-				}
-				
-			}
-			
-			currentEditableComponent.visible = true;
-			
-			if (isRichEditor) {
-				editableRichTextEditorBarCallout.removeEventListener(PopUpEvent.CLOSE, commitTextEditorValues);
-				/*
-				editableRichTextEditorBarCallout.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
-				editableRichTextEditorBarCallout.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
-				editableRichTextEditorBarCallout.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
-				
-				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
-				editableRichTextField.removeEventListener(TextOperationEvent.CHANGE, richTextEditor_changeHandler);
-				editableRichTextField.removeEventListener(FlexEvent.UPDATE_COMPLETE, richTextEditor_updateCompleteHandler);
-				*/
-			}
-			else {
-				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
-				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
-				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
-				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
-			}
-			
-			
-			if (editableRichTextField.owner) {
-				//editableRichTextField.owner.removeElement(editableRichTextField);
-				editableRichTextEditorBarCallout.richEditableText = null;
-			}
-			else if (isRichEditor) {
-				editableRichTextEditorBarCallout.richEditableText = null;
-			}
-			/*
-			if (isRichEditor) {
-				IVisualElementContainer(editableRichTextField.owner).removeElement(editableRichTextField);
-			}
-			
-			*/
-			
-			// remove editor from stage
-			HistoryManager.doNotAddEventsToHistory = true;
-			if (isRichEditor) {
-				//removeElement(editableRichTextEditorBarCallout);
-				removeElement(editableRichTextField);
-			}
-			else if (editableRichTextField.parent) {
-				removeElement(editableRichTextField);
-			}
-			HistoryManager.doNotAddEventsToHistory = false;
-			
-			
-			instance.enableTool();
-			
-			setTarget(currentEditableComponent);
-			
-			currentEditableComponent = null;
-			
-			
-			if (editableRichTextFieldSprite.owner==instance.toolLayer) {
-				instance.toolLayer.removeElement(editableRichTextFieldSprite);
-			}
-			
-			return;
-			
-			// OLD
-			/*
-			var newValue:String = editableRichTextField.text;
-			var oldValue:String = currentEditableComponent.text;
-			var doSomething:Boolean;
-			
-			
-			if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
-				doSomething = false;
-			}
-			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
-				doSomething = false;
-			}
-			else if (event is FlexEvent && event.type=="valueCommit") {
-				doSomething = false;
-			}
-			else {
-				doSomething = true;
-			}
-			
-			
-			if (doSomething) {
-				if (currentEditableComponent && newValue!=oldValue) {
-					setProperty(currentEditableComponent, "text", newValue);
-					//currentEditableComponent = null;
-				}
-				
-				currentEditableComponent.visible = true;
-				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
-				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
-				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
-				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
-				
-				if (editableRichTextField.parent) {
-					HistoryManager.doNotAddEventsToHistory = true;
-					removeElement(editableRichTextField);
-					HistoryManager.doNotAddEventsToHistory = false;
-				}
-				
-				instance.enableTool();
-			}
-			
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			*/
-		}
-		
-		/**
-		 * Handles when an remote image is loaded 
-		 * We must invalidate RichText components so that images are visible
-		 * See RichText class docs 
-		 * */
-		protected static function inlineGraphicStatusChange(event:StatusChangeEvent):void {
-			var textFlow:TextFlow;
-			var status:String = event.status;
-			var graphic:DisplayObject = InlineGraphicElement(event.element).graphic;
-			var component:UIComponent;
-			
-			// in a test READY status is not being received so checking for size pending
-			if (status==InlineGraphicElementStatus.READY || status==InlineGraphicElementStatus.SIZE_PENDING) {
-				component = DisplayObjectUtils.getTypeFromDisplayObject(graphic, UIComponent);
-				
-				if (component) {
-					component.invalidateSize();
-				}
-			}
-		}
-		
-		/**
-		 * Used to size the rich text editor as the user adds or removes new lines
-		 * */
-		public static function richTextEditor_changeHandler(event:TextOperationEvent):void {
-			//trace(RichEditableText(currentEditableComponent).contentHeight);
-			if (editableRichTextField is RichEditableText) {
-				editableRichTextField.height = RichEditableText(editableRichTextField).contentHeight + 2;
-			}
-		}
-		
-		/**
-		 * Used to size the rich text editor as the user adds or removes new lines
-		 * */
-		public static function richTextEditor_updateCompleteHandler(event:FlexEvent):void {
-			if (editableRichTextField is RichEditableText) {
-				editableRichTextField.height = RichEditableText(editableRichTextField).contentHeight + 2;
-			}
-		}
-		
-		/**
-		 * Set the value that the user typed in
-		 * */
-		public static function commitTextEditorValuesOLD(event:Event):void {
-			var newValue:String = editableRichTextField.text;
-			var oldValue:String = currentEditableComponent.text;
-			var doSomething:Boolean;
-			
-			
-			if (event is MouseEvent && MouseEvent(event).currentTarget==editableRichTextField) {
-				doSomething = false;
-			}
-			else if (event is FocusEvent && FocusEvent(event).relatedObject==currentEditableComponent) {
-				doSomething = false;
-			}
-			else if (event is FlexEvent && event.type=="valueCommit") {
-				doSomething = false;
-			}
-			else {
-				doSomething = true;
-			}
-			
-			
-			if (doSomething) {
-				if (currentEditableComponent && newValue!=oldValue) {
-					setProperty(currentEditableComponent, "text", newValue);
-					//currentEditableComponent = null;
-				}
-				
-				currentEditableComponent.visible = true;
-				editableRichTextField.removeEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues);
-				editableRichTextField.removeEventListener(FlexEvent.ENTER, commitTextEditorValues);
-				editableRichTextField.removeEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues);
-				editableRichTextField.removeEventListener(MouseEvent.CLICK, commitTextEditorValues);
-				
-				if (editableRichTextField.parent) {
-					HistoryManager.doNotAddEventsToHistory = true;
-					removeElement(editableRichTextField);
-					HistoryManager.doNotAddEventsToHistory = false;
-				}
-				
-				instance.enableTool();
-			}
-			
-			event.preventDefault();
-			event.stopImmediatePropagation();
-			
-		}
-		
-		/**
-		 * Handles double click on text to show text editor. 
-		 * To support more components add the elements in the addElement method
-		 * */
-		public static function showTextEditorOld(event:MouseEvent):void {
-			var target:TextBase = instance.target as TextBase;
-			var topSystemManager:ISystemManager;
-			
-			if (!(instance.selectedTool is Selection)) {
-				return;
-			}
-			
-			if (target) {
-				currentEditableComponent = target;
-				var iDocument:IDocument = instance.selectedDocument;
-				var targetComponentDescription:ComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(target, iDocument.componentDescription);
-				var parentComponentDescription:ComponentDescription = targetComponentDescription.parent;
-				var rectangle:Rectangle = DisplayObjectUtils.getRectangleBounds(target, iDocument.instance);
-				var propertyNames:Array = ["x", "y", "text", "minWidth"];
-				var valuesObject:Object = {};
-				var isBasicLayout:Boolean;
-				
-				if ((parentComponentDescription.instance is GroupBase || parentComponentDescription.instance is BorderContainer)
-					&& parentComponentDescription.instance.layout is BasicLayout) {
-					isBasicLayout = true;
-					rectangle = DisplayObjectUtils.getRectangleBounds(target, parentComponentDescription.instance);
-				}
-				
-				valuesObject.x = rectangle.x;
-				valuesObject.y = rectangle.y;
-				const MIN_WIDTH:int = 22;
-				valuesObject.minWidth = MIN_WIDTH;
-				//properties.width = "100";
-				
-				if (!isNaN(target.explicitWidth)) {
-					propertyNames.push("width");
-					valuesObject.width = rectangle.width;
-				}
-				else if (!isNaN(target.percentWidth)) {
-					// if basic layout we can get percent width
-					if (isBasicLayout) {
-						propertyNames.push("percentWidth");
-						valuesObject.percentWidth = target.percentWidth;
-					}
-					else {
-						propertyNames.push("width");
-						valuesObject.width = rectangle.width;
-					}
-				}
-				
-				editableRichTextField.width = undefined;
-				editableRichTextField.percentWidth = NaN;
-				//properties.height = rectangle.height;
-				valuesObject.text = target.text;
-				currentEditableComponent.visible = false;
-				editableRichTextField.styleName = currentEditableComponent;
-				editableRichTextField.focusRect = null;
-				editableRichTextField.setStyle("focusAlpha", 0.25);
-				
-				HistoryManager.doNotAddEventsToHistory = true;
-				if (isBasicLayout) {
-					addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
-				}
-				else {
-					addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
-				}
-				HistoryManager.doNotAddEventsToHistory = false;
-				
-				topSystemManager = SystemManagerGlobals.topLevelSystemManagers[0];
-				topSystemManager.stage.stageFocusRect = false;
-				editableRichTextField.selectAll();
-				editableRichTextField.setFocus();
-				editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, commitTextEditorValues, false, 0, true);
-				editableRichTextField.addEventListener(FlexEvent.ENTER, commitTextEditorValues, false, 0, true);
-				editableRichTextField.addEventListener(FlexEvent.VALUE_COMMIT, commitTextEditorValues, false, 0, true);
-				editableRichTextField.addEventListener(MouseEvent.CLICK, commitTextEditorValues, false, 0, true);
-				instance.disableTool();
-			}
-		}
-		
 		
 		/**
 		 * Required for creating BorderContainers
@@ -9326,11 +7038,11 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					if (componentInstance is Label || componentInstance is RichText || componentInstance is Hyperlink) {
 						componentInstance.doubleClickEnabled = true;
 						
-						componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditorHandler, false, 0, true);
+						componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, TextEditorManager.showTextEditorHandler, false, 0, true);
 					}
 					else {
 						componentInstance.doubleClickEnabled = false;
-						componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditorHandler);
+						componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, TextEditorManager.showTextEditorHandler);
 					}
 					
 					if (componentInstance is Hyperlink) {
@@ -9342,10 +7054,10 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 						componentInstance.doubleClickEnabled = interactive;
 						
 						if (interactive) {
-							componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, showTextEditorHandler, false, 0, true);
+							componentInstance.addEventListener(MouseEvent.DOUBLE_CLICK, TextEditorManager.showTextEditorHandler, false, 0, true);
 						}
 						else {
-							componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, showTextEditorHandler);
+							componentInstance.removeEventListener(MouseEvent.DOUBLE_CLICK, TextEditorManager.showTextEditorHandler);
 						}
 					}
 					
@@ -9457,73 +7169,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		/**
-		 * Creates an instance of the component in the descriptor and sets the 
-		 * default properties. We may need to use setActualSize type of methods here or when added. 
-		 * 
-		 * For instructions on setting default properties or adding new component types
-		 * look in Radii8Desktop/howto/HowTo.txt
-		 * 
-		 * @see #updateComponentAfterAdd()
-		 * */
-		public static function createComponentToAdd(iDocument:IDocument, componentDefinition:ComponentDefinition, setDefaults:Boolean = true, instance:Object = null):Object {
-			var componentDescription:ComponentDescription;
-			var classFactory:ClassFactory;
-			var componentInstance:Object;
-			var properties:Array = [];
-			
-			if (instance && componentDefinition==null) {
-				componentDefinition = getDynamicComponentType(instance);
-			}
-			
-			// Create component to drag
-			if (instance==null) {
-				classFactory = new ClassFactory(componentDefinition.classType as Class);
-			}
-			
-			/*if (setDefaults) {
-				//classFactory.properties = item.defaultProperties;
-				//componentDescription.properties = componentDefinition.defaultProperties;
-				componentDescription.defaultProperties = componentDefinition.defaultProperties;
-			}*/
-			
-			if (instance) {
-				componentInstance = instance;
-			}
-			else {
-				componentInstance = classFactory.newInstance();
-			}
-			
-			componentDescription 			= new ComponentDescription();
-			componentDescription.instance 	= componentInstance;
-			componentDescription.name 		= componentDefinition.name;
-			componentDescription.className 	= componentDefinition.name;
-			
-			// add default if we need to access defaults later
-			componentDescription.defaultProperties = componentDefinition.defaultProperties;
-			
-			if (setDefaults) {
-				
-				for (var property:String in componentDefinition.defaultProperties) {
-					//setProperty(component, property, [item.defaultProperties[property]]);
-					properties.push(property);
-				}
-				
-				// maybe do not add to history
-				//setProperties(componentInstance, properties, item.defaultProperties);
-				setDefaultProperties(componentDescription);
-			}
-			
-			componentDescription.componentDefinition = componentDefinition;
-			
-			iDocument.setItemDescription(componentInstance, componentDescription);
-			//iDocument.descriptionsDictionary[componentInstance] = componentDescription;
-			
-			lastCreatedComponent = componentInstance;
-			
-			return componentInstance;
-		}
-		
-		/**
 		 * Exports an XML string for a project
 		 * */
 		public function exportProject(project:IProject, format:String = "String"):String {
@@ -9587,15 +7232,15 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		public function openProjectFromMainView(project:IProject):void {
 			
 			if (project && project is IProject && !project.isOpen) {
-				mainView.currentState = MainView.DESIGN_STATE;
-				mainView.validateNow();
+				ViewManager.mainView.currentState = MainView.DESIGN_STATE;
+				ViewManager.mainView.validateNow();
 				addProject(project, false);
 				openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
 				setProject(project, true);
 			}
 			else if (project && project is IProject && project.isOpen) {
-				mainView.currentState = MainView.DESIGN_STATE;
-				mainView.validateNow();
+				ViewManager.mainView.currentState = MainView.DESIGN_STATE;
+				ViewManager.mainView.validateNow();
 				setProject(project, true);
 			}
 		}
@@ -9860,6 +7505,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				createBlankDemoDocument();
 			}
 			*/
+			var savedData:SavedData = SettingsManager.savedData;
 			
 			if (!isUserLoggedIn) {
 				if (savedData && (savedData.projects.length>0 || savedData.documents.length>0)) {
@@ -10118,79 +7764,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				IDocument(iDocument).id = null;
 				IDocument(iDocument).uid = null;
 			}
-		}
-		
-		/**
-		 * Print
-		 * */
-		public function print(data:Object, scaleType:String = FlexPrintJobScaleType.MATCH_WIDTH, printAsBitmap:Boolean = false):Object {
-			var flexPrintJob:FlexPrintJob = new FlexPrintJob();
-			var printableObject:IUIComponent;
-			var scaleX:Number;
-			var scaleY:Number;
-			
-			if (data is IDocument) {
-				printableObject = IUIComponent(IDocument(data).instance)
-			}
-			else if (data is IUIComponent) {
-				printableObject = IUIComponent(data);
-			}
-			else {
-				error("Printing failed: Object is not of accepted type.");
-				return false;
-			}
-			
-			if (data && "scaleX" in data) {
-				scaleX = data.scaleX;
-				scaleY = data.scaleY;
-			}
-			
-			flexPrintJob.printAsBitmap = printAsBitmap;
-			
-			if (printAsBitmap && data is IBitmapDrawable) {
-				var imageBitmapData:BitmapData = ImageSnapshot.captureBitmapData(IBitmapDrawable(data));
-				var bitmapImage:BitmapImage = new BitmapImage();
-                bitmapImage.source = new Bitmap(imageBitmapData);
-				//data = bitmapImage;
-			}
-			
-			// show OS print dialog
-			// printJobStarted is false if user cancels OS print dialog
-			var printJobStarted:Boolean = flexPrintJob.start();
-			
-			
-			// if user cancels print job and we continue then the stage disappears! 
-			// so we exit out (ie we don't do the try statement)
-			// workaround if we set the scale it reappears 
-			// so, scaleX and scaleY are set to NaN on the object when we try to print and it fails
-			if (!printJobStarted) {
-				error("Print job was not started");
-				dispatchPrintCancelledEvent(data, flexPrintJob);
-				return false;
-			}
-			
-			try {
-				//info("Print width and height: " + flexPrintJob.pageWidth + "x" + flexPrintJob.pageHeight);
-				flexPrintJob.addObject(printableObject, scaleType);
-				flexPrintJob.send();
-				dispatchPrintCompleteEvent(data, flexPrintJob);
-			}
-			catch(e:Error) {
-				// CHECK scale X and scale Y to see if they are null - see above
-				if (data && "scaleX" in data && data.scaleX!=scaleX) {
-					data.scaleX = scaleX;
-					data.scaleY = scaleY;
-				}
-				
-				// Printing failed: Error #2057: The page could not be added to the print job.
-				error("Printing failed: " + e.message);
-				
-				// TODO this should be print error event
-				dispatchPrintCancelledEvent(data, flexPrintJob);
-				return false;
-			} 
-			
-			return true;
 		}
 		
 		/**
@@ -11067,7 +8640,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				openImportPopUp.percentWidth = 80;
 				openImportPopUp.percentHeight = 76;
 				openImportPopUp.useHardPercent = true;
-				openImportPopUp.parent = application;
+				openImportPopUp.parent = ViewManager.application;
 				openImportPopUp.closeOnMouseDownOutside = false;
 				openImportPopUp.closeOnMouseDownInside = false;
 				openImportPopUp.closeOnEscapeKey = false;
@@ -11364,104 +8937,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			return null;
 		}
 		
-		
-		//----------------------------------
-		//
-		//  Persistant Data Management
-		// 
-		//----------------------------------
-		
-		/**
-		 * Creates the saved data
-		 * */
-		public static function createSavedData():Boolean {
-			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
-			var so:SharedObject;
-			
-			if (result is SharedObject) {
-				so = SharedObject(result);
-				
-				if (so.data) {
-					if (SAVED_DATA_NAME in so.data && so.data[SAVED_DATA_NAME]!=null) {
-						savedData = SavedData(so.data[SAVED_DATA_NAME]);
-						//log.info("createSavedData:"+ObjectUtil.toString(savedData));
-					}
-					// does not contain property
-					else {
-						savedData = new SavedData();
-					}
-				}
-				// data is null
-				else {
-					savedData = new SavedData();
-				}
-			}
-			else {
-				error("Could not get saved data. " + ObjectUtil.toString(result));
-			}
-			
-			return true;
-		}
-		
-		
-		/**
-		 * Creates the settings data
-		 * */
-		public static function createSettingsData():Boolean {
-			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
-			var so:SharedObject;
-			
-			if (result is SharedObject) {
-				so = SharedObject(result);
-				
-				if (so.data) {
-					if (SETTINGS_DATA_NAME in so.data && so.data[SETTINGS_DATA_NAME]!=null) {
-						settings = Settings(so.data[SETTINGS_DATA_NAME]);
-					}
-					// does not contain settings property
-					else {
-						settings = new Settings();
-					}
-				}
-				// data is null
-				else {
-					settings = new Settings();
-				}
-			}
-			else {
-				error("Could not get saved settings data. " + ObjectUtil.toString(result));
-			}
-			
-			return true;
-		}
-		
-		/**
-		 * Get saved data
-		 * */
-		public function getSavedData():Object {
-			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
-			var so:SharedObject;
-			
-			var data:SavedData;
-			
-			if (result is SharedObject) {
-				so = SharedObject(result);
-				
-				if (so.data) {
-					if (SAVED_DATA_NAME in so.data) {
-						data = SavedData(so.data[SAVED_DATA_NAME]);
-						
-						//openLocalProjects(data);
-					}
-				}
-			}
-			else {
-				error("Could not get saved data. " + ObjectUtil.toString(result));
-			}
-			
-			return result;
-		}
-		
 		/**
 		 * Create new document. 
 		 * */
@@ -11663,6 +9138,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Show previously opened project
 		 * */
 		public function showPreviouslyOpenProject():void {
+			var settings:Settings = SettingsManager.settings;
 			var iProject:IProject;
 			
 			// Select last selected project
@@ -11685,6 +9161,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Show previously opened document
 		 * */
 		public function showPreviouslyOpenDocument():void {
+			var settings:Settings = SettingsManager.settings;
 			var openDocuments:Array = settings.openDocuments;
 			var iDocumentMetaData:IDocumentMetaData;
 			var iDocument:IDocument;
@@ -11705,6 +9182,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Open previously opened documents
 		 * */
 		public function openPreviouslyOpenDocuments(project:IProject = null):void {
+			var settings:Settings = SettingsManager.settings;
 			var openDocuments:Array = settings.openDocuments;
 			var iDocumentMetaData:IDocumentMetaData;
 			var iDocument:IDocument;
@@ -11735,6 +9213,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public function openPreviouslyOpenProjects(locations:String = null):void {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
+			var settings:Settings = SettingsManager.settings;
 			var openProjects:Array = settings.openProjects;
 			var iProject:IProject;
 			var iProjectData:IProjectData;
@@ -11750,101 +9229,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					openProject(iProject, locations, true);
 				}
 			}
-		}
-		
-		/**
-		 * Get saved settings data
-		 * */
-		public function getSettingsData():Boolean {
-			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
-			var so:SharedObject;
-			
-			if (result is SharedObject) {
-				so = SharedObject(result);
-				
-				if (so.data) {
-					if (SETTINGS_DATA_NAME in so.data) {
-						settings = Settings(so.data[SETTINGS_DATA_NAME]);
-					}
-				}
-			}
-			else {
-				error("Could not get saved data. " + ObjectUtil.toString(result));
-			}
-			
-			return result;
-		}
-		
-		/**
-		 * Removed saved data
-		 * */
-		public function removeSavedData():Boolean {
-			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
-			var so:SharedObject;
-			
-			if (result is SharedObject) {
-				so = SharedObject(result);
-				
-				if (so.data) {
-					if (SAVED_DATA_NAME in so.data) {
-						so.clear();
-						log.info("Cleared saved data");
-					}
-				}
-			}
-			else {
-				error("Could not remove saved data. " + ObjectUtil.toString(result));
-			}
-			
-			return result;
-		}
-		
-		/**
-		 * Removed saved settings
-		 * */
-		public function removeSavedSettings():Boolean {
-			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
-			var so:SharedObject;
-			
-			if (result is SharedObject) {
-				so = SharedObject(result);
-				
-				if (so.data) {
-					if (SETTINGS_DATA_NAME in so.data) {
-						so.clear(); // this clears the whole thing
-						log.info("Cleared settings data");
-					}
-				}
-			}
-			else {
-				error("Could not remove settings data. " + ObjectUtil.toString(result));
-			}
-			
-			return result;
-		}
-		
-		
-		/**
-		 * Save settings data
-		 * */
-		public static function saveSettings():Boolean {
-			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
-			var so:SharedObject;
-			
-			if (result is SharedObject) {
-				updateSettingsBeforeSave();
-				so = SharedObject(result);
-				so.setProperty(SETTINGS_DATA_NAME, settings);
-				so.flush();
-				
-				//log.info("Saved Serrinfo: "+ ObjectUtil.toString(so.data));
-			}
-			else {
-				error("Could not save data. " + ObjectUtil.toString(result));
-				return false;
-			}
-			
-			return true;
 		}
 		
 		/**
@@ -11895,35 +9279,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 				}
 			}
 			
-		}
-		
-		/**
-		 * Save data
-		 * */
-		public function saveDataLocally():Boolean {
-			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
-			var so:SharedObject;
-			
-			if (result is SharedObject) {
-				updateSavedDataBeforeSave();
-				so = SharedObject(result);
-				so.setProperty(SAVED_DATA_NAME, savedData);
-				
-				try {
-					so.flush();
-				}
-				catch (errorEvent:Error) {
-					error(errorEvent.message);
-					return false;
-				}
-				
-			}
-			else {
-				error("Could not save data. " + ObjectUtil.toString(result));
-				return false;
-			}
-			
-			return true;
 		}
 
 		
@@ -12055,32 +9410,8 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			if (local) { 
 				// TODO add support to save after response from server 
 				// because ID's may have been added from new documents
-				locallySaved = saveProjectLocally(project);
+				locallySaved = SettingsManager.saveProjectLocally(project);
 				//project.saveCompleteCallback = saveData;
-			}
-			
-			return true;
-		}
-
-		/**
-		 * Save project locally
-		 * */
-		public function saveProjectLocally(project:IProject, saveProjectDocuments:Boolean = true):Boolean {
-			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
-			var so:SharedObject;
-			
-			if (result is SharedObject) {
-				// todo - implement saveProjectDocuments
-				updateSaveDataForProject(project);
-				
-				so = SharedObject(result);
-				so.setProperty(SAVED_DATA_NAME, savedData);
-				so.flush();
-				//log.info("Saved Data: " + ObjectUtil.toString(so.data));
-			}
-			else {
-				error("Could not save data. " + ObjectUtil.toString(result));
-				//return false;
 			}
 			
 			return true;
@@ -12220,7 +9551,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					// also, if we are taking a snapshot of the document we need to clip the edges
 					// and not include anything outside of the visible rectangle
 					// using getSnapshot which clips the UIComponent 
-					result = getSnapshot(target as UIComponent, 1, StageQuality.BEST);
+					result = RadiateUtilities.getSnapshot(target as UIComponent, 1, StageQuality.BEST);
 					
 					if (result is Error) {
 						Radiate.warn("An error occurred. " + (result as SecurityError));
@@ -12419,7 +9750,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 					// because ID's may have been added from new documents
 					//saveData();
 					//document.saveCompleteCallback = saveData;
-					saveDocumentLocally(document);
+					SettingsManager.saveDocumentLocally(document);
 					anyDocumentSaved = true;
 				}
 			}
@@ -12744,7 +10075,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Get document locally
 		 * */
 		public function getDocumentLocally(iDocumentData:IDocumentData):IDocumentData {
-			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
+			var result:Object = SharedObjectUtils.getSharedObject(SettingsManager.SAVED_DATA_NAME);
 			var so:SharedObject;
 			
 			if (result is SharedObject) {
@@ -12775,107 +10106,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			
 			return null;
 		}
-		
-		/**
-		 * Save document locally
-		 * */
-		public function saveDocumentLocally(document:IDocumentData):Boolean {
-			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
-			var so:SharedObject;
-			
-			if (result is SharedObject) {
-				updateSaveDataForDocument(document);
-				so = SharedObject(result);
-				so.setProperty(SAVED_DATA_NAME, savedData);
-				so.flush();
-				//log.info("Saved Data: " + ObjectUtil.toString(so.data));
-			}
-			else {
-				error("Could not save data. " + ObjectUtil.toString(result));
-				//return false;
-			}
-			
-			return true;
-		}
-		
-		/**
-		 * Get settings
-		 * */
-		public function getSettings():Boolean {
-			
-			return true;
-		}
-		
-		/**
-		 * Apply the settings
-		 * */
-		public static function applySettings():Settings {
-			if (settings==null) {
-				instance.getSettingsData();
-			}
-			
-			instance.enableAutoSave = settings.enableAutoSave;
-			
-			//enableWordWrap = settings.enableWordWrap;
-			//embedImages = settings.embedImages;
-			startInDesignView = settings.startInDesignView;
-			
-			
-			return settings;
-		}
-		
-		/**
-		 * Get the latest settings and copy them into the settings object
-		 * */
-		public static function updateSettingsBeforeSave():Settings {
-			// get selected document
-			// get selected project
-			// get open projects
-			// get open documents
-			// get all documents
-			// get all projects
-			// save workspace settings
-			// save preferences settings
-			
-			settings.lastOpened 		= new Date().time;
-			//settings.modified 		= new Date().time;
-			
-			//settings.openDocuments 		= getOpenDocumentsSaveData(true);
-			//settings.openProjects 		= getOpenProjectsSaveData(true);
-
-			//settings.selectedProject 	= instance.selectedProject ? instance.selectedProject.toMetaData() : null;
-			//settings.selectedDocument 	= instance.selectedDocument ? instance.selectedDocument.toMetaData() : null;
-			
-			settings.enableAutoSave 	= instance.enableAutoSave;
-			
-			settings.saveCount++;
-			
-			return settings;
-		}
-		
-		/**
-		 * Get the latest project and document data.
-		 * */
-		public function updateSavedDataBeforeSave():SavedData {
-			// get selected document
-			// get selected project
-			// get open projects
-			// get open documents
-			// get all documents
-			// get all projects
-			// save workspace settings
-			// save preferences settings
-			
-			savedData.modified 		= new Date().time;
-			//settings.modified 		= new Date().time;
-			savedData.documents 	= getSaveDataForAllDocuments();
-			savedData.projects 		= getSaveDataForAllProjects();
-			savedData.saveCount++;
-			//savedData.resources 	= getResources();
-			
-			return savedData;
-		}
-		
 		
 		
 		/**
@@ -13553,6 +10783,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Updates the saved data with the changes from the document passed in
 		 * */
 		public function updateSaveDataForDocument(iDocumentData:IDocumentData, metaData:Boolean = false):SavedData {
+			var savedData:SavedData = SettingsManager.savedData;
 			var documentsArray:Array = savedData.documents;
 			var numberOfDocuments:int = documentsArray.length;
 			var documentMetaData:IDocumentMetaData;
@@ -13595,6 +10826,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Updates the saved data with the changes from the project passed in
 		 * */
 		public function updateSaveDataForProject(iProject:IProject, metaData:Boolean = false):SavedData {
+			var savedData:SavedData = SettingsManager.savedData;
 			var projectsArray:Array = savedData.projects;
 			var numberOfProjects:int = projectsArray.length;
 			var documentMetaData:IDocumentMetaData;
@@ -13637,7 +10869,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * Get a list of documents. If open is set to true then gets only open documents.
 		 * */
 		public function getOpenDocumentsSaveData(metaData:Boolean = false):Array {
-			var documentsArray:Array = getSaveDataForAllDocuments(true, metaData);
+			var documentsArray:Array = SettingsManager.getSaveDataForAllDocuments(true, metaData);
 			return documentsArray;
 		}
 		
@@ -13650,67 +10882,13 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			return documentsArray;
 		}
 		
-		/**
-		 * Get a list of all documents data for storage. If open is set to 
-		 * true then only returns open documents.
-		 * */
-		public function getSaveDataForAllDocuments(open:Boolean = false, metaData:Boolean = false):Array {
-			var numberOfProjects:int = projects.length;
-			var documentsArray:Array = [];
-			var iProject:IProject;
-			
-			for (var i:int;i<numberOfProjects;i++) {
-				iProject = projects[i];
-				documentsArray = documentsArray.concat(iProject.getSavableDocumentsData(open, metaData));
-			}
-			
-			return documentsArray;
-		}
-		
 		
 		/**
 		 * Get a list of projects that are open. 
 		 * If meta data is true only returns meta data. 
 		 * */
 		public function getOpenProjectsSaveData(metaData:Boolean = false):Array {
-			var projectsArray:Array = getSaveDataForAllProjects(true, metaData);
-			
-			return projectsArray;
-		}
-		
-		/**
-		 * Get an array of projects serialized for storage. 
-		 * If open is set to true then only returns open projects.
-		 * If meta data is true then only returns meta data. 
-		 * */
-		public function getSaveDataForAllProjects(open:Boolean = false, metaData:Boolean = false):Array {
-			var projectsArray:Array = [];
-			var numberOfProjects:int = projects.length;
-			var iProject:IProject;
-			
-			for (var i:int; i < numberOfProjects; i++) {
-				iProject = IProject(projects[i]);
-				
-				if (open) {
-					if (iProject.isOpen) {
-						if (metaData) {
-							projectsArray.push(iProject.toMetaData());
-						}
-						else {
-							projectsArray.push(iProject.marshall());
-						}
-					}
-				}
-				else {
-					if (metaData) {
-						projectsArray.push(iProject.toMetaData());
-					}
-					else {
-						projectsArray.push(iProject.marshall());
-					}
-				}
-			}
-			
+			var projectsArray:Array = SettingsManager.getSaveDataForAllProjects(true, metaData);
 			
 			return projectsArray;
 		}
@@ -14322,115 +11500,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		}
 		
 		/**
-		 * Sizes the document to the current selected target
-		 * */
-		public static function sizeDocumentToSelection():void {
-			var iDocument:IDocument = instance.selectedDocument;
-			
-			if (instance.target && iDocument) {
-				var rectangle:Rectangle = getSize(instance.target);
-				
-				if (rectangle.width>0 && rectangle.height>0) {
-					setProperties(iDocument.instance, ["width","height"], rectangle, "Size document to selection");
-				}
-			}
-		}
-		
-		/**
-		 * Removes width and height so that component is sized to content
-		 * */
-		public static function removeExplicitSizingFromSelection(target:Object):Boolean {
-			var iDocument:IDocument = instance.selectedDocument;
-			var sized:Boolean;
-			
-			if (target) {
-				sized = clearProperties(target, ["width","percentWidth", "height", "percentHeight"], null, "Size to content");
-			}
-			
-			return sized;
-		}
-		
-		/**
-		 * Removes explicit width 
-		 * */
-		public static function removeExplicitWidthFromSelection(target:Object):Boolean {
-			var iDocument:IDocument = instance.selectedDocument;
-			var sized:Boolean;
-			
-			if (target) {
-				sized = clearProperties(target, ["width","percentWidth"], null, "Removed width");
-			}
-			
-			return sized;
-		}
-		
-		/**
-		 * Removes explicit height
-		 * */
-		public static function removeExplicitHeightFromSelection(target:Object):Boolean {
-			var iDocument:IDocument = instance.selectedDocument;
-			var sized:Boolean;
-			
-			if (target) {
-				sized = clearProperties(target, ["height", "percentHeight"], null, "Removed height");
-			}
-			
-			return sized;
-		}
-		
-		/**
-		 * Sizes the image to it's original size
-		 * */
-		public static function restoreImageToOriginalSize(target:Object):Boolean {
-			var rectangle:Rectangle;
-			var image:Image = target as Image;
-			var bitmapImage:BitmapImage = image ? image.imageDisplay : null;
-			var bitmapData:BitmapData;
-			var resized:Boolean;
-			
-			if (image) {
-				bitmapData = image.bitmapData;
-			}
-			else if (bitmapImage) {
-				bitmapData = bitmapImage.bitmapData;
-			}
-			
-			if (image || bitmapImage) {
-				rectangle = new Rectangle(0, 0, target.sourceWidth, target.sourceHeight);
-				
-				if (rectangle.width>0 && 
-					rectangle.height>0 &&
-					target.width!=rectangle.width && 
-					target.height!=rectangle.height) {
-					setProperties(target, ["width","height"], rectangle, "Restore to original size");
-					resized = true;
-				}
-			}
-			
-			return resized;
-		}
-		
-		/**
-		 * Sizes the document to the bitmap data target
-		 * */
-		public static function sizeDocumentToBitmapData(iDocument:IDocument, bitmapData:BitmapData):Boolean {
-			var documentInstance:Object = iDocument.instance;
-			var rectangle:Rectangle;
-			var resized:Boolean;
-			
-			if (documentInstance) {
-				rectangle = new Rectangle(0, 0, bitmapData.width, bitmapData.height);
-				
-				if (rectangle.width>0 && rectangle.height>0) {
-					setProperties(documentInstance, ["width","height"], rectangle, "Size document to image");
-					resized = true;
-				}
-			}
-			
-			return resized;
-		}
-		
-		/**
 		 * Refreshes the document by closing and opening
 		 * */
 		public static function refreshDocument(iDocument:IDocument, rebuildFromHistory:Boolean = false):Boolean {
@@ -14455,122 +11524,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		 * */
 		public function refreshDocumentHandler(event:RadiateEvent):void {
 			Radiate.info("Document rebuilt");
-		}
-		
-		/**
-		 * Sizes the current selected target to the document
-		 * */
-		public static function sizeSelectionToDocument(target:Object = null):Boolean {
-			var iDocument:IDocument = instance.selectedDocument;
-			var targetToResize:Object = target ? target : instance.target;
-			var rectangle:Rectangle;
-			var resized:Boolean;
-			
-			if (targetToResize && iDocument) {
-				rectangle = getSize(iDocument.instance);
-				
-				if (rectangle.width>0 && rectangle.height>0 && 
-					targetToResize.width!=rectangle.width && 
-					targetToResize.height!=rectangle.height) {
-					setProperties(targetToResize, ["width","height"], rectangle, "Size selection to document");
-					resized = true;
-				}
-			}
-			
-			return resized;
-		}
-		
-		/**
-		 * Resizes the current document to show all of it's content
-		 * */
-		public static function expandDocumentToContents():Boolean {
-			var iDocument:IDocument = instance.selectedDocument;
-			var targetObject:Object = iDocument.instance;
-			var documentRectangle:Rectangle;
-			var contentRectangle:Rectangle;
-			var resized:Boolean;
-			var width:Number;
-			var height:Number;
-			
-			contentRectangle = new Rectangle();
-			documentRectangle = new Rectangle();
-			
-			width = targetObject.contentGroup.contentWidth;
-			height = targetObject.contentGroup.contentHeight;
-			
-			contentRectangle.width = width;
-			contentRectangle.height = height;
-			
-			documentRectangle.width = targetObject.width;
-			documentRectangle.height = targetObject.height;
-			
-			if (contentRectangle.width>documentRectangle.width || contentRectangle.height>documentRectangle.height) {
-				contentRectangle.width = Math.max(contentRectangle.width, documentRectangle.width);
-				contentRectangle.height = Math.max(contentRectangle.height, documentRectangle.height);
-				setProperties(targetObject, ["width","height"], contentRectangle, "Expand document");
-				resized = true;
-			}
-			
-			return resized;
-		}
-		
-		/**
-		 * Saves the selected target as an image in the library. 
-		 * If successful returns ImageData. If unsuccessful returns Error
-		 * */
-		public static function saveToLibrary(target:Object, clip:Boolean = false):Object {
-			var iDocument:IDocument = instance.selectedDocument;
-			var snapshot:Object;
-			var data:ImageData;
-			
-			if (target && iDocument) {
-				
-				if (!clip) {
-					if (target is UIComponent) {
-						// new 2015 method from Bitmap utils
-						snapshot = DisplayObjectUtils.getSnapshotWithQuality(target as UIComponent);
-					}
-					else if (target is DisplayObject) {
-						snapshot = DisplayObjectUtils.rasterize2(target as DisplayObject);
-					}
-					else if (target is GraphicElement) {
-						snapshot = DisplayObjectUtils.getGraphicElementBitmapData(target as GraphicElement);
-					}
-				}
-				else {
-					if (target is UIComponent) {
-						snapshot = DisplayObjectUtils.getUIComponentWithQuality(target as UIComponent);
-					}
-					else if (target is DisplayObject) {
-						snapshot = DisplayObjectUtils.rasterize2(target as DisplayObject);
-					}
-					else if (target is GraphicElement) {
-						snapshot = DisplayObjectUtils.getGraphicElementBitmapData(target as GraphicElement);
-					}
-				}
-				
-				if (snapshot is BitmapData) {
-					
-					// need to trim the transparent areas 
-					snapshot = DisplayObjectUtils.trimTransparentBitmapData(snapshot as BitmapData);
-					
-					data = new ImageData();
-					data.bitmapData = snapshot as BitmapData;
-					data.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(snapshot as BitmapData);
-					data.name = ClassUtils.getIdentifierNameOrClass(target) + ".png";
-					data.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
-					data.file = null;
-					
-					instance.addAssetToDocument(data, instance.selectedDocument);
-					
-					return data;
-				}
-				else {
-					//Radiate.error("Could not create a snapshot of the selected item. " + snapshot); 
-				}
-			}
-			
-			return snapshot;
 		}
 		
 		/**
@@ -14722,7 +11675,7 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 			else {
 				windowItem.removeAllChildren();
 				isNativeMenu = false;
-				applicationMenusCollection = applicationMenu ? applicationMenu.dataProvider : mainView.mainMenuBar.dataProvider as ListCollectionView;
+				applicationMenusCollection = applicationMenu ? applicationMenu.dataProvider : ViewManager.mainView.mainMenuBar.dataProvider as ListCollectionView;
 				numberOfMenus = applicationMenusCollection ? applicationMenusCollection.length : 0;
 				
 				for (j; j < numberOfDocuments; j++) {
@@ -14779,190 +11732,6 @@ Radiate.moveElement(radiate.target, document.instance, ["x"], 15);
 		public static function logToConsole(message:String):void
 		{
 			log.info(message);
-		}
-		
-		/**
-		 * Gets a snapshot of document and returns bitmap data
-		 * */
-		public static function getDocumentSnapshot(iDocument:IDocument, scale:Number = 1, quality:String = StageQuality.BEST):BitmapData {
-			var bitmapData:BitmapData;
-			
-			if (iDocument && iDocument.instance) {
-				bitmapData = DisplayObjectUtils.getUIComponentWithQuality(iDocument.instance as UIComponent, quality) as BitmapData;
-			}
-			
-			return bitmapData;
-		}
-		
-		/**
-		 * Gets a snapshot of target and returns bitmap data
-		 * This method is clipping the content sometimes.  
-		 * */
-		public static function getSnapshot(object:Object, scale:Number = 1, quality:String = StageQuality.BEST, smoothing:Boolean = true, clip:Boolean = true):BitmapData {
-			var bitmapData:BitmapData;
-			
-			if (object is IUIComponent) {
-				bitmapData = DisplayObjectUtils.getUIComponentBitmapData(object as IUIComponent, quality, smoothing);
-			}
-			else if (object is IGraphicElement) {
-				bitmapData = DisplayObjectUtils.getGraphicElementBitmapData(object as IGraphicElement);
-			}
-			else if (object is IVisualElement) {
-				bitmapData = DisplayObjectUtils.getVisualElementBitmapData(object as IVisualElement);
-			}
-			
-			return bitmapData;
-		}
-		
-		/**
-		 * Gets a snapshot of target and returns base 64 image data
-		 * */
-		public static function getThumbnailBaseData(object:Object, width:int=100, height:int=100):String {
-			var documentBitmapData:BitmapData;
-			var base64ImageData:String;
-			
-			if (object is IDocument) {
-				object = IDocument(object).instance;
-			}
-			
-			if (object is IUIComponent || object is IGraphicElement || object is IVisualElement) {
-				//documentBitmapData = DisplayObjectUtils.getUIComponentWithQuality(instance as UIComponent, StageQuality.LOW) as BitmapData;
-				documentBitmapData = getSnapshot(object) as BitmapData;
-				documentBitmapData = DisplayObjectUtils.resizeBitmapData(documentBitmapData, width, height, "letterbox");
-				base64ImageData = DisplayObjectUtils.getBase64ImageDataString(documentBitmapData, DisplayObjectUtils.PNG, null, true);
-			}
-			
-			return base64ImageData;
-		}
-		
-		/**
-		 * Shows the welcome home screen
-		 * */
-		public static function goToHomeScreen():void {
-			if (mainView) {
-				mainView.currentState = MainView.HOME_STATE;
-			}
-		}
-		
-		/**
-		 * Shows the design screen
-		 * */
-		public static function goToDesignScreen(validate:Boolean = true):void {
-			if (mainView) {
-				mainView.currentState = MainView.DESIGN_STATE;
-			}
-			
-			if (validate) {
-				mainView.validateNow();
-			}
-		}
-		
-		/**
-		 * Opens and displays the documentation panel
-		 * */
-		public static function showDocumentationPanel(url:String):void {
-			if (mainView) {
-				mainView.currentState = MainView.DESIGN_STATE;
-				
-				if (remoteView) {
-					remoteView.showDocumentationPanel();
-					
-					if (url) {
-						instance.dispatchDocumentationChangeEvent(url);
-					}
-				}
-			}
-		}
-		
-		/**
-		 * Opens and displays the API documentation panel
-		 * */
-		public static function showAPIPanel(url:String):void {
-			if (mainView) {
-				mainView.currentState = MainView.DESIGN_STATE;
-				
-				if (remoteView) {
-					remoteView.showAPIPanel();
-					
-					if (url) {
-						instance.dispatchDocumentationChangeEvent(url);
-					}
-				}
-			}
-		}
-		
-		/**
-		 * Opens and displays the console panel
-		 * */
-		public static function showConsolePanel(value:String=""):void {
-			if (mainView) {
-				mainView.currentState = MainView.DESIGN_STATE;
-				
-				if (remoteView) {
-					remoteView.showConsolePanel();
-					
-					if (value) {
-						instance.dispatchConsoleValueChangeEvent(value);
-					}
-				}
-			}
-		}
-		
-		/**
-		 * Opens and displays the properties panel
-		 * */
-		public static function showPropertiesPanel(showFirstPage:Boolean = false):void {
-			if (mainView) {
-				mainView.currentState = MainView.DESIGN_STATE;
-				
-				if (remoteView) {
-					remoteView.showPropertiesPanel(showFirstPage);
-				}
-			}
-		}
-		
-		/**
-		 * Opens and displays the layout panel
-		 * */
-		public static function showLayoutPanel():void {
-			if (mainView) {
-				mainView.currentState = MainView.DESIGN_STATE;
-				
-				if (remoteView) {
-					remoteView.showLayoutPanel();
-				}
-			}
-		}
-		
-		/**
-		 * Opens and displays the filters panel
-		 * */
-		public static function showFiltersPanel():void {
-			if (mainView) {
-				mainView.currentState = MainView.DESIGN_STATE;
-				
-				if (remoteView) {
-					remoteView.showFiltersPanel();
-				}
-			}
-		}
-		
-		/**
-		 * Shows the tool layer if it's been hidden
-		 * */
-		public static function showToolsLayer():void {
-			if (instance.toolLayer) {
-				Object(instance.toolLayer).visible = true;
-			}
-		}
-		
-		/**
-		 * Hides the tool layer if it's been hidden
-		 * */
-		public static function hideToolsLayer():void {
-			if (instance.toolLayer) {
-				Object(instance.toolLayer).visible = false;
-			}
 		}
 		
 		/**

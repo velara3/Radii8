@@ -1,11 +1,11 @@
 package com.flexcapacitor.utils.supportClasses {
+	import flash.display.LineScaleMode;
+	
 	import mx.skins.ProgrammaticSkin;
 	
-	import spark.components.Application;
-	
 	/**
-	 * Shows a horizontal and vertical lines to indicate
-	 * a drop location in a basic layout
+	 * Shows horizontal and vertical lines to indicate
+	 * a drop location edge in a basic layout
 	 * */
 	public class SnapToElementDropIndicator extends ProgrammaticSkin {
 		
@@ -24,15 +24,21 @@ package com.flexcapacitor.utils.supportClasses {
 		public var borderColor:Number = 0x2DA7F0;
 		public var fillColor:Number = 0x2DA7F0;
 		public var fillAlpha:Number = .5;
+		public var centerColor:Number = 0xFF0000;
 		public var lineColor:Number = 0x2B333C;
 		public var lineWeight:Number = 1;
 		public var lineAlpha:Number = 1;
-		public var linePixelHinting:Boolean = true;
-		public var lineScaleMode:String = "none";
+		public var linePixelHinting:Boolean = false;
+		public var lineScaleMode:String = LineScaleMode.NORMAL;
 		public var lineCaps:String = "none";
 		public var drawAsRect:Boolean = false;
 		public var hairlineWhenLine:Boolean = true;
 		public var target:Object;
+		public var drawHorizontalCenter:Boolean = true;
+		public var drawVerticalCenter:Boolean = true;
+		public var isApplication:Boolean;
+		public var centerLineHeight:int = 6;
+		public var centerLineWidth:int = 6;
 		
 		public function setLines(x:Number, y:Number, rightEdge:Number = NaN, bottomEdge:Number = NaN, horizontal:Number = NaN, vertical:Number = NaN):void {
 			left = x;
@@ -99,42 +105,75 @@ package com.flexcapacitor.utils.supportClasses {
 			}
 			
 			if (!isNaN(left)) {
-				drawLine(left, 0, lineWeight, unscaledHeight);
+				drawVerticalLine(left, 0, unscaledHeight, lineColor, lineWeight);
 			}
 			
 			if (!isNaN(top)) {
-				drawLine(0, top, unscaledWidth, lineWeight);
+				drawHorizontalLine(0, top, unscaledWidth, lineColor, lineWeight);
 			}
 			
 			if (!isNaN(right)) {
-				if (target is Application) {
-					drawLine(right-1, 0, lineWeight, unscaledHeight);
+				if (isApplication) {
+					drawVerticalLine(right-1, 0, unscaledHeight, lineColor, lineWeight);
 				}
 				else {
-					drawLine(right, 0, lineWeight, unscaledHeight);
+					drawVerticalLine(right, 0, unscaledHeight, lineColor, lineWeight);
 				}
 			}
 			
 			if (!isNaN(bottom)) {
-				if (target is Application) {
-					drawLine(0, bottom - 1, unscaledWidth, lineWeight);
+				if (isApplication) {
+					drawHorizontalLine(0, bottom - 1, unscaledWidth, lineColor, lineWeight);
 				}
 				else {
-					drawLine(0, bottom, unscaledWidth, lineWeight);
+					drawHorizontalLine(0, bottom, unscaledWidth, lineColor, lineWeight);
 				}
 			}
 			
 			if (!isNaN(horizontalCenter)) {
-				drawLine(horizontalCenter, 0, lineWeight, unscaledHeight);
+				drawVerticalLine(horizontalCenter, 0, unscaledHeight, lineColor, lineWeight);
 			}
 			
 			if (!isNaN(verticalCenter)) {
-				drawLine(0, verticalCenter, unscaledWidth, lineWeight);
+				drawHorizontalLine(0, verticalCenter, unscaledWidth, lineColor, lineWeight);
+			}
+			
+			var weight:int = 4;
+			var centerX:Number;
+			var odd:Boolean;
+			var width:int;
+			var height:int;
+			var centerY:Number;
+			
+			if (drawHorizontalCenter) {
+				odd = unscaledWidth/2%2!=0;
+				width = odd ? 3 : 2;
+				height = 0;
+				centerX = Math.floor(unscaledWidth/2);
+				centerX = odd ? centerX-1 : centerX-1;
+				
+				// top edge center
+				drawHorizontalLine(centerX, 0, width, centerColor, weight);
+				// bottom edge center
+				drawHorizontalLine(centerX, measuredHeight-2, width, centerColor, weight);
+			}
+			
+			if (drawVerticalCenter) {
+				odd = unscaledHeight/2%2!=0;
+				width = 0;
+				height = odd ? 3 : 2;
+				centerY = Math.floor(unscaledHeight/2);
+				centerY = odd ? centerY-1 : centerY-1;
+				
+				// left edge middle
+				drawVerticalLine(0, centerY, height, centerColor, weight);
+				// right edge middle
+				drawVerticalLine(measuredWidth-2, centerY, height, centerColor, weight);
 			}
 			
 		}
 		
-		public function drawLine(x:int, y:int, width:int, height:int):void {
+		public function drawLine(x:Number, y:Number, width:int, height:int):void {
 			
 			if (drawAsRect) {
 				graphics.beginFill(lineColor);
@@ -155,6 +194,36 @@ package com.flexcapacitor.utils.supportClasses {
 				graphics.lineTo(width+x, height+y);
 				//graphics.lin
 			}
+		}
+		
+		public function drawLine2(x:int, y:int, width:int, height:int, color:Number, weight:int):void {
+			graphics.moveTo(x, y);
+			
+			graphics.lineStyle(weight, color, 1, linePixelHinting, LineScaleMode.NORMAL, lineCaps);
+			
+			graphics.lineTo(width+x, height+y);
+		}
+		
+		public function drawHorizontalLine(x:Number, y:Number, width:Number, color:Number, weight:Number):void {
+			graphics.moveTo(x, y);
+			
+			graphics.lineStyle(weight, color, 1, linePixelHinting, LineScaleMode.NORMAL, lineCaps);
+			
+			graphics.lineTo(width+x, y);
+		}
+		
+		public function drawVerticalLine(x:Number, y:Number, height:Number, color:Number, weight:Number):void {
+			graphics.moveTo(x, y);
+			
+			graphics.lineStyle(weight, color, 1, linePixelHinting, LineScaleMode.NORMAL, lineCaps);
+			
+			graphics.lineTo(x, height+y);
+		}
+		
+		public function drawRect(x:int, y:int, width:int, height:int, color:Number, weight:int):void {
+			graphics.beginFill(color);
+			graphics.drawRect(x, y, width, height);
+			graphics.endFill();
 		}
 	}
 }

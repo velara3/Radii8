@@ -15,6 +15,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.PrintManager;
 			
 			import mx.events.FlexEvent;
 			import mx.printing.FlexPrintJobScaleType;
@@ -28,10 +29,10 @@
 				var imageType:Boolean = imageTypeGroup.selectedValue ? true : false;
 				
 				if (printableObjectGroup.selectedValue==CURRENT_DOCUMENT) {
-					radiate.print(radiate.selectedDocument, scaleType, imageType);
+					PrintManager.print(radiate.selectedDocument, scaleType, imageType);
 				}
 				else if (printableObjectGroup.selectedValue==CURRENT_SELECTION) {
-					radiate.print(radiate.target, scaleType, imageType);
+					PrintManager.print(radiate.target, scaleType, imageType);
 				}
 			}
 			

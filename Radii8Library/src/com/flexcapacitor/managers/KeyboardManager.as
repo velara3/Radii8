@@ -273,73 +273,73 @@ package com.flexcapacitor.managers {
 				}
 				// zoom in or out
 				else if (keyCode==Keyboard.MINUS && ctrlKey) {
-					Radiate.instance.decreaseScale();
+					ScaleManager.decreaseScale();
 					actionOccurred = true;
 				}
 				else if (keyCode==Keyboard.EQUAL && ctrlKey) {
-					Radiate.instance.increaseScale();
+					ScaleManager.increaseScale();
 					actionOccurred = true;
 				}
 				// switch tools
 				else if (keyCode==Keyboard.V) {
-					componentDescription = radiate.getToolByName("Selection");
+					componentDescription = ToolManager.getToolByName("Selection");
 					
 					if (componentDescription) {
-						radiate.setTool(componentDescription.instance as ITool);
+						ToolManager.setTool(componentDescription.instance as ITool);
 					}
 					
 					actionOccurred = true;
 				}
 				else if (keyCode==Keyboard.Z) {
-					componentDescription = radiate.getToolByName("Zoom");
+					componentDescription = ToolManager.getToolByName("Zoom");
 					
 					if (componentDescription) {
-						radiate.setTool(componentDescription.instance as ITool);
+						ToolManager.setTool(componentDescription.instance as ITool);
 					}
 					
 					actionOccurred = true;
 				}
 				else if (keyCode==Keyboard.T) {
-					componentDescription = radiate.getToolByName("Text");
+					componentDescription = ToolManager.getToolByName("Text");
 					
 					if (componentDescription) {
-						radiate.setTool(componentDescription.instance as ITool);
+						ToolManager.setTool(componentDescription.instance as ITool);
 					}
 					
 					actionOccurred = true;
 				}
 				else if (keyCode==Keyboard.I) {
-					componentDescription = radiate.getToolByName("EyeDropper");
+					componentDescription = ToolManager.getToolByName("EyeDropper");
 					
 					if (componentDescription) {
-						radiate.setTool(componentDescription.instance as ITool);
+						ToolManager.setTool(componentDescription.instance as ITool);
 					}
 					
 					actionOccurred = true;
 				}
 				else if (keyCode==Keyboard.M) {
-					componentDescription = radiate.getToolByName("Marquee");
+					componentDescription = ToolManager.getToolByName("Marquee");
 					
 					if (componentDescription) {
-						radiate.setTool(componentDescription.instance as ITool);
+						ToolManager.setTool(componentDescription.instance as ITool);
 					}
 					
 					actionOccurred = true;
 				}
 				// switching temporarily to move tool
 				else if (keyCode==Keyboard.H || keyCode==Keyboard.SPACE) {
-					componentDescription = radiate.getToolByName("Hand");
+					componentDescription = ToolManager.getToolByName("Hand");
 					
 					if (componentDescription) {
 						if (keyCode==Keyboard.SPACE) {
 							spaceBarDown = true;
 							//trace("setting temp hand cursor");
-							radiate.saveCurrentTool();
-							radiate.setTool(componentDescription.instance as ITool);
+							ToolManager.saveCurrentTool();
+							ToolManager.setTool(componentDescription.instance as ITool);
 							Hand(componentDescription.instance).updateMouseCursor(true);
 						}
 						else {
-							radiate.setTool(componentDescription.instance as ITool);
+							ToolManager.setTool(componentDescription.instance as ITool);
 						}
 					}
 					
@@ -390,7 +390,7 @@ package com.flexcapacitor.managers {
 			if (applicable) {
 				if (keyCode==Keyboard.SPACE) {
 					
-					radiate.restoreTool();
+					ToolManager.restoreTool();
 				}
 			}
 			
