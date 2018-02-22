@@ -44,9 +44,10 @@
 		
         <script>
 		var isHTTPS = document.location.protocol.toLowerCase() == "https:";
+		var isHOST = document.location.href.match(/http:\/\/localhost:\d\d\d\d/);
 		var isFILE = document.location.protocol.toLowerCase() == "file:";
 		
-		if (isHTTPS==false && isFILE==false) {
+		if (isHTTPS==false && isFILE==false && isHOST==null) {
 			document.location.href = document.location.href.replace("http:", "https:");
 		}
 		

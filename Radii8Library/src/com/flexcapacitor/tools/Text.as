@@ -237,7 +237,7 @@ package com.flexcapacitor.tools {
 		/**
 		 * Text of new dynamically text field
 		 **/
-		public var newTextFieldText:String = "text";
+		public var newTextFieldText:String = "";
 		
 		/**
 		 * Enable this tool. 
@@ -436,22 +436,12 @@ package com.flexcapacitor.tools {
 		}
 		
 		
-		
-		/**
-		 * Property change
-		 * */
-		protected function propertyChangeHandler(event:RadiateEvent):void {
-
-		}
-		
 		/**
 		 * History event 
 		 * */
 		protected function historyEventHandler(event:RadiateEvent):void {
 
 		}
-		
-		public var lastTransformState:String;
 		
 		/**
 		 * Scale change
@@ -689,9 +679,9 @@ package com.flexcapacitor.tools {
 				
 				Radiate.addElement(component, target, properties, null, null, values, null);
 				
-				updateTextAfterDragOrAdd(component);
+				updateTextAfterDragOrAdd(component, false);
 				
-				TextEditorManager.showTextEditor(component, selectTextOnExistingTextFields, setFocusOnOpen, showTextEditorInCallOut);
+				//TextEditorManager.showTextEditor(component, selectTextOnExistingTextFields, setFocusOnOpen, showTextEditorInCallOut);
 			}
 		}
 		
@@ -703,7 +693,7 @@ package com.flexcapacitor.tools {
 			updateTextAfterDragOrAdd(event.draggedItem);
 		}
 		
-		private function updateTextAfterDragOrAdd(component:Object):void {
+		private function updateTextAfterDragOrAdd(component:Object, setDefaults:Boolean = true):void {
 			//var o:LayoutDebugHelper = debugHelper;
 			if (debug) {
 				logTarget(component);
@@ -712,7 +702,9 @@ package com.flexcapacitor.tools {
 			if (currentComponentDescription==null) return;
 			
 			// if new component then need to add defaults
-			Radiate.setDefaultProperties(currentComponentDescription);
+			if (setDefaults) {
+				Radiate.setDefaultProperties(currentComponentDescription);
+			}
 			
 			Radiate.updateComponentAfterAdd(document, component);
 			

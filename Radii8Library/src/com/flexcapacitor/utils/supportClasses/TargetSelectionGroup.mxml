@@ -28,10 +28,32 @@
 			override public function set data(value:Object):void {
 				super.data = value;
 				
+				var componentName:String;
+				var componentDescription:ComponentDescription;
 				
 				// check if target is component and is not skin
 				// should not be a skin
-				var componentName:String = NameUtil.getUnqualifiedClassName(data);
+				
+				componentDescription = value as ComponentDescription;
+				
+				if (componentDescription==null) {
+					componentDescription = Radiate.instance.selectedDocument.getItemDescription(value);
+				}
+				
+				if (componentDescription) {
+					// user gave layer a name
+					if (componentDescription.name!=componentDescription.className) {
+						componentName = componentDescription.name;		
+					}
+					else {
+						componentName = componentDescription.componentDefinition.displayName;
+					}
+				}
+				
+				if (!componentName) {
+					componentName = NameUtil.getUnqualifiedClassName(data);
+				}
+				
 				if (componentName.toLowerCase()=="application") {
 					componentName = "Document";
 				}
@@ -50,7 +72,7 @@
 			
 			protected function itemrenderer1_dragOverHandler(event:DragEvent):void
 			{
-				trace("selection group is getting drag events");
+				//trace("selection group is getting drag events");
 				dispatchEvent(event.clone());
 			}
 			

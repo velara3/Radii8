@@ -1,15 +1,6 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <!-- saved from url=(0014)about:internet -->
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"> 
-    <!-- 
-    Smart developers always View Source. 
-    
-    This application was built using Adobe Flex, an open source framework
-    for building rich Internet applications that get delivered via the
-    Flash Player or to desktops via Adobe AIR. 
-    
-    Learn more about Flex at http://flex.org 
-    // -->
     <head>
         <title>${title}</title>
         <meta name="google" value="notranslate" />         
@@ -21,117 +12,52 @@
              if JavaScript disabled.
         -->
         <style type="text/css" media="screen"> 
-            html, body  { height:100%; }
-            body { margin:0; padding:0; overflow:auto; text-align:left; 
-                   background-color: ${bgcolor}; }   
-            object:focus { outline:none; }
-            #flashContent { display:none; }
+            html, body  {
+            	height:100%;
+            }
+            body {
+            	margin:0;
+            	padding:0;
+            	overflow:hidden;
+            	text-align:left;
+                background-color: ${bgcolor};
+            }   
+            object:focus {
+            	outline:none;
+            }
+            #flashContent {
+            	display:none;
+            }
         </style>
-        
-		
-        <!-- NORMALIZE -->
-		<link rel="stylesheet" href="css/normalize/2.1.2/normalize.css"/>
 
         <!-- ACE editor -->
-        <script src="../src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="src-min-noconflict/ext-language_tools.js" type="text/javascript" charset="utf-8"></script>
+        <script src="src-min-noconflict/ext-beautify.js" type="text/javascript" charset="utf-8"></script>
+        <script src="src-min-noconflict/ext-searchbox.js" type="text/javascript" charset="utf-8"></script>
         
         <!-- RADII8 -->
-		<script src="js/code.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/Radiate.js" type="text/javascript" charset="utf-8"></script>
         
         <!-- USE BROWSER LOGIN -->
 		<script src="js/StoreLogin.js" type="text/javascript" charset="utf-8"></script>
 		
         <script>
-
-        function createEditor(editorName, flashID) {
-		    ace_editor = ace.edit(editorName);
-		    ace_editor.setTheme("ace/theme/crimson_editor");
-		    ace_editor.getSession().setMode("ace/mode/html");
-		    ace_editor.setShowFoldWidgets(false);
-		    ace_editor.setShowPrintMargin(false);
-		    ace_editor.renderer.setShowGutter(false);
-		    ace_editor.getSession().setUseWrapMode(true);
-		    // in firefox on mac editor stops working after placing cursor 
-		    // in different location with mouse (second time)
-		    // clicking on flash object then clicking back into editor 
-		    // allows typing again until placing cursor in another location
-		    // and you must click the flash object again. works in safari.
-		    //ace_editor.onFocus = function() { ace_editor.setReadOnly(false);};
-		    /*
-			ace_editor.__defineGetter__("$readOnly", function(){return false})
-			ace_editor.__defineSetter__("$readOnly", function(val){
-			    console.log("read only changed!!!");
-			})
-		    ace_editor.setReadOnly(false);
-		    ace_editor.setReadOnly(true);*/
-		    ace_editor.setReadOnly(false);
-		    
-		    ace_editor.getSession().on('change', function(e) {
-			    editorChange(flashID);
-			});
-			
-			//ace_editor.getSession().selection.on('changeCursor', function(e) {
-			//	cursorChange(flashID);
-			//});
-			
-		    //ace_editor.renderer.$keepTextAreaAtCursor = false;
-		    return "created";
-		}
+		var isHTTPS = document.location.protocol.toLowerCase() == "https:";
+		var isHOST = document.location.href.match(/http:\/\/localhost:\d\d\d\d/);
+		var isFILE = document.location.protocol.toLowerCase() == "file:";
 		
-		function setEditorText(value) {
-		    ace_editor.setValue(value);
-		    ace_editor.selection.clearSelection();
-		    ace_editor.navigateFileStart();
-		    ace_editor.setReadOnly(false);
-		    return value;
-		}
-		
-		function getEditorText() {
-		    return ace_editor.getValue();
-		}
-		
-		function editorChange(flashID) {
-			console.log("text changed");
-			var value = ace_editor.getValue();
-			var flash = document.getElementById(flashID);
-			ace_editor.setReadOnly(false);
-			flash.editorChange(value);
-		}
-		
-		function cursorChange(flashID) {
-			console.log("cursor changed");
-			ace_editor.setReadOnly(false);
-			var flash = document.getElementById(flashID);
-			flash.cursorChange();
-		}
-		
-		function wordWrapChange(flashID, enabled) {
-			console.log("word wrap changed");
-		    ace_editor.getSession().setUseWrapMode(enabled);
-			//var flash = document.getElementById(flashID);
-			//flash.wordWrapChange();
-		}
-		
-		function resizeEditor() {
-			console.log("editor resized");
-			ace_editor.resize();
-		}
-		
-		function beforeUnloadHandler() {
-			var testing = window.location.search.substr(1).indexOf("debug=true");
-			
-			if (testing==-1) {
-    			return "Are you sure you want to navigate away?";
-    		}
-    		else {
-    			//return false;
-    		}
+		if (isHTTPS==false && isFILE==false && isHOST==null) {
+			document.location.href = document.location.href.replace("http:", "https:");
 		}
 		
 		function onloadHandler() {
-			radiate = Radiate.getInstance();
-			//console.log("radiate: " + radiate);
-			window.onbeforeunload = radiate.beforeUnloadHandler;
+			radiate = Radiate.getInstance(); //console.log("radiate: " + radiate);
+			
+			// do not add unload handler unless documents are being edited
+			if (document.location.protocol!="http") { // we are redirecting
+				//window.onbeforeunload = radiate.beforeUnloadHandler;
+			}
 		}
 		
 		</script>
@@ -158,6 +84,8 @@
             attributes.id = "${application}";
             attributes.name = "${application}";
             attributes.align = "middle";
+            //attributes.wmode = "gpu";
+            // IE needs wmode set to transparent or opaque to show HTML elements above plugin surface
             attributes.wmode = "opaque";
             swfobject.embedSWF(
                 "${swf}.swf", "flashContent", 

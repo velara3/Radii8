@@ -75,6 +75,7 @@
 				_minimum = value;
 				if (numericStepper && !isNaN(value)) {
 					numericStepper.minimum = value;
+					hasMinimumValue = true;
 				}
 				
 			}
@@ -89,6 +90,7 @@
 				_maximum = value;
 				if (numericStepper && !isNaN(value)) {
 					numericStepper.maximum = value;
+					hasMaximumValue = true;
 				}
 			}
 

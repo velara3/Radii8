@@ -3,10 +3,13 @@
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 xmlns:flexcapacitor="flexcapacitor.*" 
+		 xmlns:handlers="com.flexcapacitor.handlers.*" 
+		 xmlns:collections="com.flexcapacitor.effects.collections.*" 
+		 xmlns:inspectors="com.flexcapacitor.views.inspectors.*"
 		 
 		 implements="com.flexcapacitor.views.IInspector" 
 		 width="400" 
-		 height="300" xmlns:handlers="com.flexcapacitor.handlers.*" xmlns:collections="com.flexcapacitor.effects.collections.*" xmlns:inspectors="com.flexcapacitor.views.inspectors.*"
+		 height="300" 
 		 >
 	
 	<!-- 
@@ -42,6 +45,7 @@
 			import spark.components.Application;
 			import spark.components.Group;
 			import spark.components.Label;
+			import spark.components.RichText;
 			import spark.components.supportClasses.GroupBase;
 			import spark.primitives.Line;
 			
@@ -234,10 +238,10 @@
 				caseSensitive = searchCollection.caseSensitive.selected;
 				
 				searchText = searchCollection.text;
-				searchText = caseSensitive ? searchText.toLowerCase() : searchText;
+				searchText = caseSensitive ? searchText : searchText.toLowerCase();
 				
 				componentName = componentsDefinition.name;
-				componentName = caseSensitive ? componentName.toLowerCase() : componentName;
+				componentName = caseSensitive ? componentName : componentName.toLowerCase();
 				
 				if (componentsDefinition.enabled==false) {
 					return false;

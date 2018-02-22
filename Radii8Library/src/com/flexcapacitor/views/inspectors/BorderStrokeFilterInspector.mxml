@@ -116,7 +116,7 @@
 	<s:HGroup width="100%" verticalAlign="baseline" >
 		<s:Label text="Weight" toolTip="The weight of the border." styleName="inspectablePanelLabel" />
 		<renderers:NumberRenderer id="weightRenderer" height="24" defaultValue="1" 
-								  maximum="36" minimum="0" stepSize="1"/>
+								  maximum="36" minimum="0" stepSize=".1"/>
 	</s:HGroup>
 	
 	<s:HGroup width="100%" verticalAlign="baseline" >

@@ -93,6 +93,9 @@ package {
 		[Embed(source="assets/icons/general/edit.png")]
 		public static const edit:Class;
 		
+		[Embed(source="assets/icons/general/editFilters.png")]
+		public static const editFilters:Class;
+		
 		[Embed(source="assets/icons/general/effect.png")]
 		public static const effect:Class;
 		

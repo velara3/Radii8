@@ -24,7 +24,7 @@
 		 dragDrop="mainView_dragDropHandler(event)"
 		 
 		 creationComplete="group1_creationCompleteHandler(event)"
-		 width="400" height="300"
+		 width="400" height="300" xmlns:ns="http://flex.apache.org/experimental/ns"
 		 >
 
 	<fx:Script>
@@ -48,23 +48,24 @@
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.utils.supportClasses.log;
-			import com.flexcapacitor.views.windows.ClipboardToImageWindow;
 			import com.flexcapacitor.views.windows.ContactWindow;
+			import com.flexcapacitor.views.windows.CopyImageToClipboardWindow;
 			import com.flexcapacitor.views.windows.CreditsWindow;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			import com.flexcapacitor.views.windows.ExportDocumentWindow;
 			import com.flexcapacitor.views.windows.ExportSnippetWindow;
 			import com.flexcapacitor.views.windows.GalleryWindow;
 			import com.flexcapacitor.views.windows.HelpWindow;
-			import com.flexcapacitor.views.windows.ImageToClipboardWindow;
 			import com.flexcapacitor.views.windows.LoginWindow;
 			import com.flexcapacitor.views.windows.NewDocumentWindow;
+			import com.flexcapacitor.views.windows.PasteImageFromClipboardWindow;
 			import com.flexcapacitor.views.windows.PrintWindow;
 			import com.flexcapacitor.views.windows.SettingsWindow;
 			
 			import flash.net.navigateToURL;
 			import flash.utils.setTimeout;
 			
+			import mx.controls.Menu;
 			import mx.core.DragSource;
 			import mx.core.IUIComponent;
 			import mx.events.DragEvent;
@@ -319,11 +320,20 @@
 				var iDocument:IDocument;
 				var item:MenuItem;
 				var menu:Object;
+				var menuList:Menu;
 				var label:String;
 				var index:int = -1;
 				var flexNativeMenu:Object;
 				var menuEvent:MenuEvent;
 				var applicableEvent:Boolean;
+				
+				if (event.type == MenuEvent.MENU_SHOW) {
+					menuList = MenuEvent(event).menu as Menu;
+					if (menuList.variableRowHeight != true) {
+						menuList.rowHeight = 22;
+						//menuList.variableRowHeight = true;
+					}
+				}
 				
 				if (event) {
 					if (event.type==MenuEvent.ITEM_CLICK || event.type=="select") {
@@ -1275,6 +1285,7 @@
 			
 			protected function mainView_dragOverHandler(event:DragEvent):void {
 				
+				// todo check if html element is visible in browser to ignore accidental drag of elements
 				if (event.dragInitiator==null && Radiate.isAcceptableDragAndDropFormat(event.dragSource)) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 					dropImagesLocation.visible = true;
@@ -1751,7 +1762,7 @@
 		</handlers:EventHandler>
 		
 		<fc:OpenPopUp id="openImageToClipboardWindow" 
-					  popUpType="{ImageToClipboardWindow}" 
+					  popUpType="{CopyImageToClipboardWindow}" 
 					  modalDuration="100" 
 					  backgroundAlpha=".5"
 					  autoCenter="false"
@@ -1882,6 +1893,7 @@
 		
 		<model:MenuItem id="rootMenu">
 			<model:MenuItem label="File">
+				<!--<model:MenuItem type="separator" isSpacer="true" spacerHeight="6"/>-->
 				<model:MenuItem id="menuNewDocument" label="New Document" itemClick="menuNewDocument_itemClickHandler(event)"/>
 				<model:MenuItem id="menuNewProject" label="New Project" />
 				<model:MenuItem type="separator"/>
@@ -1965,8 +1977,8 @@
 				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToImage_itemClickHandler(event)" />
 				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to show all content" itemClick="resizeDocumentToContent_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="copySelectionIntoLibrary" label="Save selection to library" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
-				<model:MenuItem id="saveSnapshotToLibrary" label="Save snapshot to library" itemClick="saveSnapshotToLibrary_itemClickHandler(event)" />
+				<model:MenuItem id="copySelectionIntoLibrary" label="Save selection snapshot to library" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
+				<model:MenuItem id="saveSnapshotToLibrary" label="Save document snapshot to library" itemClick="saveSnapshotToLibrary_itemClickHandler(event)" />
 				<model:MenuItem id="copyDocumentToClipboard" label="Copy document snapshot to clipboard" itemClick="copyDocumentImageToClipboard_itemClickHandler(event)" />
 				<model:MenuItem id="pasteImageFromClipboard" label="Paste image from clipboard" itemClick="pasteClipboardToDocument_itemClickHandler(event)" />
 				<model:MenuItem id="trimImage" label="Trim transparent edges of image" itemClick="trimImage_itemClickHandler(event)" />
@@ -2480,6 +2492,7 @@
 					buttonMode="true"
 					showRoot="false"
 					includeIn="design"
+					
 					itemCreationPolicy="immediate"
 					menuShow="menuItemEventHandler(event)" 
 					menuHide="menuItemEventHandler(event)"

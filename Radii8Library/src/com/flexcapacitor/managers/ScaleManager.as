@@ -21,7 +21,7 @@ package com.flexcapacitor.managers
 		/**
 		 * Stops on the scale
 		 * */
-		public static var scaleStops:Array = [.05,.0625,.0833,.125,.1666,.25,.333,.4,.50,.667,.8,.9,1,1.25,1.50,1.75,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+		public static var scaleStops:Array = [.01,.015,.02,.025,.033,.05,.0625,.0833,.125,.1666,.25,.333,.4,.50,.667,.8,.9,1,1.25,1.50,1.75,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
 		
 		/**
 		 * Increases the zoom of the target application to next value 

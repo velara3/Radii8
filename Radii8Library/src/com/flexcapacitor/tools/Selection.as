@@ -2647,7 +2647,12 @@ package com.flexcapacitor.tools {
 			}
 			
 			// we set to the target so we can display target name and size in label above selection
-			targetSelectionGroup.data = target;
+			if (currentComponentDescription && currentComponentDescription.instance==target) {
+				targetSelectionGroup.data = currentComponentDescription;
+			}
+			else {
+				targetSelectionGroup.data = target;
+			}
 			
 			
 			// unhide target selection group

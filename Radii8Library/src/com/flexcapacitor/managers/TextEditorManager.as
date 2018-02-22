@@ -1,5 +1,7 @@
 package com.flexcapacitor.managers
 {
+	import com.flexcapacitor.controller.Console;
+	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.controls.RichTextEditorBar;
 	import com.flexcapacitor.controls.RichTextEditorBarCallout;
 	import com.flexcapacitor.model.IDocument;
@@ -40,8 +42,6 @@ package com.flexcapacitor.managers
 	import flashx.textLayout.elements.InlineGraphicElementStatus;
 	import flashx.textLayout.elements.TextFlow;
 	import flashx.textLayout.events.StatusChangeEvent;
-	import com.flexcapacitor.controller.Console;
-	import com.flexcapacitor.controller.Radiate;
 
 	public class TextEditorManager extends Console {
 		
@@ -68,11 +68,19 @@ package com.flexcapacitor.managers
 		 * */
 		public static function showTextEditorHandler(event:MouseEvent):void {
 			var currentTarget:Object = event.target;
+			var radiate:Radiate = Radiate.instance;
 			var selectText:Boolean = true;
 			var setFocus:Boolean = true;
-			var showTextEditorInCallOut:Boolean = Text.showTextEditorInCallOut;
+			var showTextEditorInCallOut:Boolean;
+			var componentDescription:ComponentDescription;
 			
-			showTextEditor(currentTarget, selectText, setFocus, showTextEditorInCallOut);
+			componentDescription = radiate.selectedDocument.getItemDescription(currentTarget);
+			showTextEditorInCallOut = Text.showTextEditorInCallOut;
+			
+			// todo add and remove listeners when locked and unlocked
+			if (!componentDescription.locked) {
+				showTextEditor(currentTarget, selectText, setFocus, showTextEditorInCallOut);
+			}
 		}
 		
 		/**

@@ -1923,7 +1923,7 @@ package com.flexcapacitor.utils {
 					////////////////////////////////////////
 					if (draggedItem.verticalCenter!=undefined) {
 						setVerticalCenter = true;
-						verticalCenter = dropY - draggedItem.parent.height /2;
+						verticalCenter = dropY + draggedItem.height/2 - draggedItem.parent.height/2;
 						values["verticalCenter"] = verticalCenter;
 						delete values["y"];
 						//delete values["top"]; need to test
@@ -1932,7 +1932,7 @@ package com.flexcapacitor.utils {
 					
 					if (draggedItem.horizontalCenter!=undefined) {
 						setHorizontalCenter = true;
-						horizontalCenter = dropX - draggedItem.parent.width/2;
+						horizontalCenter = dropX + draggedItem.width/2 - draggedItem.parent.width/2;
 						values["horizontalCenter"] = horizontalCenter;
 						delete values["x"];
 						//delete values["left"];

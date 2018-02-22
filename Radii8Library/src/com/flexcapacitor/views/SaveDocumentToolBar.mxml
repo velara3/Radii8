@@ -63,7 +63,12 @@
 				
 				// SAVING PROJECT FOR NOW
 				var project:IProject = radiate.selectedProject;
+				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
 				
+				if (!usersSignedIn) {
+					Radiate.warn("You must be signed into your account before saving a project");
+					return;
+				}
 				
 				if (project) {
 					var saveRemote:Boolean = radiate.isUserConnected && radiate.isUserLoggedIn;
@@ -78,7 +83,12 @@
 			
 			protected function saveDocumentIcon_clickHandler(event:MouseEvent):void {
 				var document:IDocument = radiate.selectedDocument;
+				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
 				
+				if (!usersSignedIn) {
+					Radiate.warn("You must be signed into your account before saving online");
+					return;
+				}
 				
 				if (document) {
 					var saveRemote:Boolean = radiate.isUserConnected && radiate.isUserLoggedIn;

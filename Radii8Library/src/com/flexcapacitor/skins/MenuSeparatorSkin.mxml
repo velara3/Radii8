@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx"
+		xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+		minHeight="8"
+		height="8"
+		maxHeight="8">
+	
+	<fx:Script fb:purpose="styling">
+		<![CDATA[
+			import com.flexcapacitor.model.MenuItem;
+			
+			import mx.controls.Menu;
+			import mx.controls.menuClasses.MenuItemRenderer;
+			
+			/**
+			 *  @private
+			 */
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void {
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+				var menuItem:MenuItem = (owner as MenuItemRenderer).data as MenuItem;
+				var menu:Menu = (owner as MenuItemRenderer).owner as Menu;
+				
+				if (menuItem && menuItem.isSpacer) {
+					
+				}
+				
+			}
+			
+			override public function getExplicitOrMeasuredHeight():Number {
+				var menuItem:MenuItem = (owner as MenuItemRenderer).data as MenuItem;
+				var menu:Menu = (owner as MenuItemRenderer).owner as Menu;
+				
+				if (menuItem.isSpacer) {
+					measuredHeight = menuItem.spacerHeight;
+					line.visible = false;
+					if (menu.variableRowHeight!=true) {
+						menu.variableRowHeight = true;
+					}
+					
+					return measuredHeight;
+				}
+				return !isNaN(explicitHeight) ? explicitHeight : measuredHeight;
+			}
+		]]>        
+	</fx:Script>
+	
+	<!-- layer 1: line -->
+	<s:Rect id="line" left="0" right="0" verticalCenter="0" height="1" >
+		<s:fill>
+			<s:SolidColor color="0x000000" alpha=".55" />
+		</s:fill>
+	</s:Rect>
+	
+</s:Skin>

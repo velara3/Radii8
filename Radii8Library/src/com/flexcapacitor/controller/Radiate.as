@@ -41,6 +41,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.managers.ServicesManager;
 	import com.flexcapacitor.managers.SettingsManager;
 	import com.flexcapacitor.managers.SnippetManager;
+	import com.flexcapacitor.managers.TextEditorManager;
 	import com.flexcapacitor.managers.ToolManager;
 	import com.flexcapacitor.managers.ViewManager;
 	import com.flexcapacitor.model.AttachmentData;
@@ -113,6 +114,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.views.MainView;
 	import com.flexcapacitor.views.Remote;
 	import com.flexcapacitor.views.windows.ImportWindow;
+	import com.flexcapacitor.views.windows.PasteImageFromClipboardWindow;
 	import com.google.code.flexiframe.IFrame;
 	
 	import flash.debugger.enterDebugger;
@@ -251,7 +253,6 @@ package com.flexcapacitor.controller {
 	
 	import org.as3commons.lang.DictionaryUtils;
 	import org.as3commons.lang.ObjectUtils;
-	import com.flexcapacitor.managers.TextEditorManager;
 	
 	use namespace mx_internal;
 	
@@ -2039,6 +2040,8 @@ package com.flexcapacitor.controller {
 			MainView.debug 			= false;
 			ClassLoader.debug 		= false;
 			TextEditorManager.debug = false;
+			
+			PasteImageFromClipboardWindow.debug = false;
 			
 			// testing for why layout is invalid when disconnected from network - no longer needed
 			//var layoutManager:ILayoutManager;

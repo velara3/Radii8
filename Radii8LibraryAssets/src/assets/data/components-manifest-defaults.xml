@@ -302,7 +302,7 @@
     </component>
     
     <component id="RichText" name="Rich Text" class="spark.components.RichText" include="true">
-    	<defaults />
+    	<defaults text="text"/>
     	<descendents>
     		<property name="textFlow"/>
     		<property name="filters"/>

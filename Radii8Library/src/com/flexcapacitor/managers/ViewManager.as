@@ -4,9 +4,9 @@ package com.flexcapacitor.managers {
 	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.views.MainView;
 	import com.flexcapacitor.views.Remote;
-	import com.flexcapacitor.views.windows.ClipboardToImageWindow;
+	import com.flexcapacitor.views.windows.PasteImageFromClipboardWindow;
 	import com.flexcapacitor.views.windows.GalleryWindow;
-	import com.flexcapacitor.views.windows.ImageToClipboardWindow;
+	import com.flexcapacitor.views.windows.CopyImageToClipboardWindow;
 	
 	import flash.display.BitmapData;
 	
@@ -191,7 +191,7 @@ package com.flexcapacitor.managers {
 			
 			if (pasteImageFromClipboard ==null) {
 				pasteImageFromClipboard = new OpenPopUp();
-				pasteImageFromClipboard.popUpType = ClipboardToImageWindow;
+				pasteImageFromClipboard.popUpType = PasteImageFromClipboardWindow;
 				pasteImageFromClipboard.modalDuration = 100;
 				pasteImageFromClipboard.backgroundAlpha = .5;
 			}
@@ -222,7 +222,7 @@ package com.flexcapacitor.managers {
 			
 			if (copyImageToClipboard==null) {
 				copyImageToClipboard = new OpenPopUp();
-				copyImageToClipboard.popUpType = ImageToClipboardWindow;
+				copyImageToClipboard.popUpType = CopyImageToClipboardWindow;
 				copyImageToClipboard.modalDuration = 100;
 				copyImageToClipboard.backgroundAlpha = .5;
 			}

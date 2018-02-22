@@ -160,6 +160,9 @@
 			[Bindable]
 			public var snapInterval:Number = 0;
 			
+			public var hasMinimumValue:Boolean;
+			public var hasMaximumValue:Boolean;
+			
 			
 			public var ignoreEmptyData:Boolean = true;
 			
@@ -667,13 +670,14 @@
 						if (!isNaN(propertyObject.minValue)) {
 							numericStepper.minimum = propertyObject.minValue;
 						}
-						else {
+						else if (!hasMinimumValue) {
 							numericStepper.minimum = Number(int.MIN_VALUE);
 						}
+						
 						if (!isNaN(propertyObject.maxValue)) {
 							numericStepper.maximum = propertyObject.maxValue;
 						}
-						else {
+						else if (!hasMaximumValue) {
 							numericStepper.maximum = Number(int.MAX_VALUE);
 						}
 						

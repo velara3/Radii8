@@ -300,7 +300,7 @@
 			<s:Spacer width="100%"/>
 			
 			<c:BeveledImageButton id="editFilterIcon" 
-								  source="{Radii8LibraryAssets.edit}"
+								  source="{Radii8LibraryAssets.editFilters}"
 								  toolTip="Edit Filter"
 								  click="editFilter_clickHandler(event)"
 								  />

@@ -1,15 +1,14 @@
 package com.flexcapacitor.managers
 {
 	import com.flexcapacitor.controller.Radiate;
-	import com.flexcapacitor.effects.popup.OpenPopUp;
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImportOptions;
 	import com.flexcapacitor.model.SourceData;
+	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
-	import com.flexcapacitor.views.windows.ClipboardToImageWindow;
 	
 	import flash.desktop.Clipboard;
 	import flash.desktop.ClipboardFormats;
@@ -33,6 +32,7 @@ package com.flexcapacitor.managers
 	import spark.effects.animation.SimpleMotionPath;
 	import spark.effects.easing.IEaser;
 	import spark.effects.easing.Sine;
+	import spark.layouts.BasicLayout;
 	import spark.primitives.supportClasses.GraphicElement;
 	
 	import org.as3commons.lang.ObjectUtils;
@@ -84,6 +84,11 @@ package com.flexcapacitor.managers
 		
 		public var copyIconInstance:UIComponent;
 		public var pasteIconInstance:UIComponent;
+		
+		/**
+		 * Amount to offset object on paste in a basic layout
+		 **/
+		public var pasteOffset:int = 4;
 		
 		
 		/**
@@ -285,7 +290,7 @@ package com.flexcapacitor.managers
 		 * @see pasteItem
 		 * */
 		public function pasteItem(destination:Object, selectedDocument:IDocument):void {
-			var description:ComponentDescription;
+			var selectedComponentDescription:ComponentDescription;
 			var descriptor:ComponentDescription;
 			var useCopyObjectsTechnique:Boolean;
 			var importOptions:ImportOptions;
@@ -305,6 +310,10 @@ package com.flexcapacitor.managers
 			var data:Object;
 			var actionPerformed:Boolean;
 			var htmlIndex:int;
+			var bitmapDataIndex:int;
+			var hasBitmapData:Boolean;
+			var offsetObject:Object;
+			var offsets:Array;
 			
 			clipboard = Clipboard.generalClipboard;
 			formats = clipboard.formats;
@@ -317,7 +326,7 @@ package com.flexcapacitor.managers
 			
 			// prevent containers from being pasted into themselves
 			if (cutData==destination || copiedData==destination) {
-				if (selectedDocument.instance.contains(destination.owner)) {
+				if (destination && selectedDocument.instance.contains(destination.owner)) {
 					destination = destination.owner;
 				}
 			}
@@ -332,9 +341,13 @@ package com.flexcapacitor.managers
 			
 			numberOfFormats = formats.length;
 			htmlIndex = formats.indexOf("air:html");
+			bitmapDataIndex = formats.indexOf("air:bitmap");
+			hasBitmapData = formats.indexOf("air:bitmap")!=-1;
 			
-			if (numberOfFormats==2 && htmlIndex!=-1 && formats.indexOf("air:bitmap")!=-1) {
-				formats.splice(htmlIndex, 1);
+			// for now if there's bitmap data on the clipboard ignore other items 
+			if (hasBitmapData) {
+				formats = formats.splice(bitmapDataIndex, 1);
+				numberOfFormats = 1;
 			}
 			
 			// check for bitmap data, image files, air:rtf, air:text, etc 
@@ -491,15 +504,27 @@ package com.flexcapacitor.managers
 				exportOptions = new ExportOptions();
 				exportOptions.useInlineStyles = true;
 				exportOptions.exportChildDescriptors = true;
-				description = selectedDocument.getItemDescription(component);
+				selectedComponentDescription = selectedDocument.getItemDescription(component);
 				
-				// copy selection
-				if (description) {
+				
+				// copy selection - include paste offsets if needed
+				if (selectedComponentDescription) {
+					offsetObject = offsetComponent(selectedComponentDescription, selectedDocument);
+					
+					if (offsetObject) {
+						offsets = ClassUtils.getDynamicProperties(offsetObject);
+						Radiate.setProperties(component, offsets, offsetObject);
+					}
+					
 					itemData = CodeManager.getSourceData(component, selectedDocument, CodeManager.MXML, exportOptions);
+					
+					if (offsetObject) {
+						HistoryManager.undo(selectedDocument, false, false, false);
+					}
 				}
 				
 				// paste selection
-				if (itemData && description) {
+				if (itemData && selectedComponentDescription) {
 					itemData = CodeManager.setSourceData(itemData.source, destination, selectedDocument, CodeManager.MXML, destinationIndex, importOptions);
 				}
 				else if (copiedDataSource) {
@@ -756,6 +781,41 @@ package com.flexcapacitor.managers
 			copyAnimation.removeEventListener(EffectEvent.EFFECT_END, copyAnimation_effectEndHandler);
 			//Radiate.showToolsLayer();
 			//Radiate.updateSelection(Radiate.instance.target);
+		}
+		
+		/**
+		 * Returns object if needing to offset component for paste operation
+		 * Only supporting x and y offset
+		 **/
+		public function offsetComponent(target:ComponentDescription, selectedDocument:IDocument):Object {
+			var instance:Object = target.instance;
+			var changes:Object;
+			var hasChanges:Boolean;
+			
+			if (pasteOffset!=0 && instance!=selectedDocument.instance) {
+				
+				if (instance && 
+					"owner" in instance && 
+					"layout" in instance.owner && 
+					instance.owner.layout is BasicLayout) {
+					changes = {};
+					
+					if ("x" in target.properties && !isNaN(target.properties.x)) {
+						changes.x = target.properties.x + pasteOffset;
+						hasChanges = true;
+					}
+					
+					if ("y" in target.properties && !isNaN(target.properties.y)) {
+						changes.y = target.properties.y + pasteOffset;
+						hasChanges = true;
+					}
+					
+					if (hasChanges) {
+						return changes;
+					}
+				}
+			}
+			return false;
 		}
 		
 		//----------------------------------
