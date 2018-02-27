@@ -105,9 +105,14 @@ package com.flexcapacitor.managers
 					}
 					
 					// create tool
-					toolClassFactory = new ClassFactory(toolClassDefinition as Class);
-					toolClassFactory.properties = defaults;
-					toolInstance = toolClassFactory.newInstance();
+					if ("getInstance" in toolClassDefinition) {
+						toolInstance = toolClassDefinition.getInstance();
+					}
+					else {
+						toolClassFactory = new ClassFactory(toolClassDefinition as Class);
+						toolClassFactory.properties = defaults;
+						toolInstance = toolClassFactory.newInstance();
+					}
 					
 					
 					// create inspector
@@ -211,10 +216,8 @@ package com.flexcapacitor.managers
 		 * This restores the previous selected tool.
 		 * */
 		public static function restoreTool(dispatchEvent:Boolean = true, cause:String = ""):void {
-			var radiate:Radiate = Radiate.instance;
-			
-			if (radiate.previousSelectedTool && radiate.previousSelectedTool!=radiate.selectedTool) {
-				setTool(radiate.previousSelectedTool, dispatchEvent, cause);
+			if (Radiate.previousSelectedTool && Radiate.previousSelectedTool!=Radiate.selectedTool) {
+				setTool(Radiate.previousSelectedTool, dispatchEvent, cause);
 			}
 		}
 		
@@ -224,10 +227,9 @@ package com.flexcapacitor.managers
 		 * @see disableTool()
 		 * */
 		public static function enableTool(dispatchEvent:Boolean = true, cause:String = ""):void {
-			var radiate:Radiate = Radiate.instance;
 			
-			if (radiate.selectedTool) {
-				radiate.selectedTool.enable();
+			if (Radiate.selectedTool) {
+				Radiate.selectedTool.enable();
 			}
 			
 			if (dispatchEvent) {
@@ -241,10 +243,9 @@ package com.flexcapacitor.managers
 		 * @see enableTool()
 		 * */
 		public static function disableTool(dispatchEvent:Boolean = true, cause:String = ""):void {
-			var radiate:Radiate = Radiate.instance;
 			
-			if (radiate.selectedTool) {
-				radiate.selectedTool.disable();
+			if (Radiate.selectedTool) {
+				Radiate.selectedTool.disable();
 			}
 			
 			if (dispatchEvent) {
@@ -319,28 +320,27 @@ package com.flexcapacitor.managers
 		 * Save current tool
 		 * */
 		public static function saveCurrentTool():void {
-			var radiate:Radiate = Radiate.instance;
-			radiate.previousSelectedTool = radiate.selectedTool;
+			Radiate.previousSelectedTool = Radiate.selectedTool;
 		}
 		
 		/**
 		 * Sets the selected tool to the tool passed in
 		 * */
 		public static function setTool(value:ITool, dispatchEvent:Boolean = true, cause:String = ""):void {
-			var radiate:Radiate = Radiate.instance;
+			var previousTool:ITool = Radiate.selectedTool;
 			
-			if (radiate.selectedTool) {
-				radiate.selectedTool.disable();
+			if (previousTool) {
+				previousTool.disable();
 			}
 			
-			radiate.selectedTool = value;
+			Radiate.selectedTool = value;
 			
-			if (radiate.selectedTool) {
-				radiate.selectedTool.enable();
+			if (value) {
+				value.enable();
 			}
 			
 			if (dispatchEvent) {
-				radiate.dispatchToolChangeEvent(radiate.selectedTool);
+				Radiate.dispatchToolChangeEvent(value);
 			}
 			
 		}
@@ -391,10 +391,9 @@ package com.flexcapacitor.managers
 		 * Shows the tool layer if it's been hidden
 		 * */
 		public static function showToolsLayer():void {
-			var radiate:Radiate = Radiate.instance;
 			
-			if (radiate.toolLayer) {
-				Object(radiate.toolLayer).visible = true;
+			if (DocumentManager.toolLayer) {
+				Object(DocumentManager.toolLayer).visible = true;
 			}
 		}
 		
@@ -402,11 +401,24 @@ package com.flexcapacitor.managers
 		 * Hides the tool layer if it's visible
 		 * */
 		public static function hideToolsLayer():void {
-			var radiate:Radiate = Radiate.instance;
 			
-			if (radiate.toolLayer) {
-				Object(radiate.toolLayer).visible = false;
+			if (DocumentManager.toolLayer) {
+				Object(DocumentManager.toolLayer).visible = false;
 			}
+		}
+		
+		/**
+		 * Helper method to get the ID of the mouse cursor by name.
+		 * */
+		public static function getMouseCursorID(tool:ITool, name:String = "Cursor"):String {
+			var component:ComponentDescription = getToolDescription(tool);
+			
+			
+			if (component.cursors && component.cursors[name]) {
+				return component.cursors[name].id;
+			}
+			
+			return null;
 		}
 	}
 }

@@ -14,7 +14,7 @@
 			   applicationComplete="applicationCompleteHandler(event)" 
 			   initialize="application1_initializeHandler(event)"
 			   preinitialize="application1_preinitializeHandler(event)"
-			   frameRate="50"
+			   frameRate="60"
 			   pageTitle="Radiate" 
 			   >
 	
@@ -27,7 +27,12 @@
 			import com.flexcapacitor.events.HTMLDragEvent;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.events.RedirectEvent;
+			import com.flexcapacitor.managers.DeferManager;
+			import com.flexcapacitor.managers.DocumentManager;
 			import com.flexcapacitor.managers.DragManagerImpl;
+			import com.flexcapacitor.managers.LibraryManager;
+			import com.flexcapacitor.managers.MenuManager;
+			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.model.HTMLDragData;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.skins.CallOutSkin;
@@ -123,15 +128,15 @@
 					}
 					
 					if (results) {
-						selectedDocument = radiate.selectedDocument;
+						selectedDocument = Radiate.selectedDocument;
 						
 						if (!selectedDocument) {
-							radiate.createNewDocumentAndSwitchToDesignView();
+							DocumentManager.createNewDocumentAndSwitchToDesignView();
 							radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
 							snippetID = results;
 						}
 						else {
-							radiate.openImportMXMLWindow("Import Snippet", "", false, results);
+							ViewManager.openImportMXMLWindow("Import Snippet", "", false, results);
 						}
 					}
 				}
@@ -143,7 +148,7 @@
 			protected function documentOpenedHandler(event:Event):void {
 				isCreatingDocument = false;
 				radiate.removeEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler);
-				radiate.openImportMXMLWindow("Import Snippet", "", false, snippetID);
+				ViewManager.openImportMXMLWindow("Import Snippet", "", false, snippetID);
 			}
 			
 			protected function application1_initializeHandler(event:FlexEvent):void {
@@ -162,7 +167,7 @@
 			}
 			
 			private function startupBrowser():void {
-				radiate.applicationMenu = mainView.mainMenuBar;
+				MenuManager.applicationMenu = mainView.mainMenuBar;
 			}
 			
 			private function listenForDragAndDrop():void {
@@ -193,7 +198,7 @@
 				// not created yet
 				if (radiate==null) { return };
 				
-				selectedDocument = radiate.selectedDocument;
+				selectedDocument = Radiate.selectedDocument;
 				PopUpOverlayManager.instance.showAllOverlays();
 				mainView.dropImagesLocation.visible = false;
 				
@@ -202,14 +207,14 @@
 				
 				Radiate.info("Opening... Hold on...");
 				
-				Radiate.callAfter(500, openDraggedItem, event, !event.shiftKey, isControlOrCommand);
+				DeferManager.callAfter(500, openDraggedItem, event, !event.shiftKey, isControlOrCommand);
 			}
 			
 			public function openDraggedItem(event:HTMLDragEvent, resizeContentIfNeeded:Boolean = true, resizeDocumentToContent:Boolean = false):void {
 				var createDocument:Boolean;
 				var createDocumentIfNeeded:Boolean = true;
 				
-				radiate.dropItemWeb(event, createDocument, createDocumentIfNeeded, resizeContentIfNeeded, resizeDocumentToContent);
+				LibraryManager.dropItemWeb(event, createDocument, createDocumentIfNeeded, resizeContentIfNeeded, resizeDocumentToContent);
 			}
 			
 			protected function preventredirect1_redirectingHandler(event:RedirectEvent):void {
@@ -229,54 +234,6 @@
 	
 	<!-- 
 	NOTICE! There are notes that go with this project. They have been moved to readme.txt -->
-	
-	<!--
-	preloader="RadiatePreloader"
-	preloader="com.flexcapacitor.preloaders.RegisteringPreloader"
-	preloader="mx.preloaders.SparkDownloadProgressBar"
-	
-	
-	Description	Resource	Path	Location	Type
-	unable to open '/Applications/Adobe Flash Builder 4.7/sdks/4.15 AIR 23/frameworks/libs/player/15.0/playerglobal.swc'	Radii8		Unknown	Flex Problem
-	
-	fix: 
-	removed references in compiler build path to old libraries and applied the properties. 
-	
-	-->
-	
-	<!--
-	
-	ArgumentError: Error #2004: One of the parameters is invalid.
-	at flash.display::Graphics/drawRect()
-	at spark.components.supportClasses::TextBase/updateDisplayList()[/Users/aharui/release4.13.0/frameworks/projects/spark/src/spark/components/supportClasses/TextBase.as:734]
-	at mx.core::UIComponent/validateDisplayList()[/Users/aharui/release4.13.0/frameworks/projects/framework/src/mx/core/UIComponent.as:9531]
-	
-	
-	When testing locally I'm getting this error: 
-	
-	
-	Warning: Domain www.radii8.com does not specify a meta-policy.  
-	Applying default meta-policy 'master-only'.  This configuration is deprecated.  
-	See http://www.adobe.com/go/strict_policy_files to fix this problem.
-	
-	Error: Request for resource at https://www.radii8.com/r8m/?json=user/get_logged_in_user 
-	by requestor from http://localhost:8888/Radii8-debug/RadiateBrowser.swf is denied due 
-	to lack of policy file permissions.
-	
-	*** Security Sandbox Violation ***
-	Connection to https://www.radii8.com/r8m/?json=user/get_logged_in_user halted - not permitted from http://localhost:8888/Radii8-debug/RadiateBrowser.swf
-	Error: Request for resource at https://www.radii8.com/r8m/?json=core/get_category_posts&count=100&slug=Tutorial by requestor from http://localhost:8888/Radii8-debug/RadiateBrowser.swf is denied due to lack of policy file permissions.
-
-	
-	Changed to https and now got this error in the browser: 
-	
-	Secure Connection Failed
-	
-	An error occurred during a connection to localhost:8888. SSL received a record that exceeded the maximum permissible length. Error code: SSL_ERROR_RX_RECORD_TOO_LONG
-	
-	The page you are trying to view cannot be shown because the authenticity of the received data could not be verified.
-	Please contact the website owners to inform them of this problem.
-=-->
 	
 	<fx:Style source="fonts.css" />
 	<fx:Style source="styles.css" />

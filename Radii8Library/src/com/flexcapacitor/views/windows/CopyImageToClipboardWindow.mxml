@@ -27,8 +27,9 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.managers.ClipboardManager;
+			import com.flexcapacitor.managers.DocumentManager;
+			import com.flexcapacitor.managers.ImageManager;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
 			import mx.events.FlexEvent;
@@ -113,12 +114,12 @@
 				radiate = Radiate.instance;
 				
 				if (bitmapData) {
-					source = RadiateUtilities.getBase64FromBitmapData(bitmapData);
+					source = ImageManager.getBase64FromBitmapData(bitmapData);
 					createImage(source);
 				}
-				else if (radiate.selectedDocument) {
-					bitmapData = RadiateUtilities.getDocumentSnapshot(radiate.selectedDocument);
-					source = RadiateUtilities.getBase64FromBitmapData(bitmapData);
+				else if (Radiate.selectedDocument) {
+					bitmapData = DocumentManager.getDocumentSnapshot(Radiate.selectedDocument);
+					source = ImageManager.getBase64FromBitmapData(bitmapData);
 					createImage(source);
 				}
 				

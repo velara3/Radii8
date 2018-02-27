@@ -2,13 +2,19 @@ package com.flexcapacitor.managers {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.effects.popup.OpenPopUp;
 	import com.flexcapacitor.model.DocumentData;
+	import com.flexcapacitor.model.IDocument;
+	import com.flexcapacitor.model.IProject;
 	import com.flexcapacitor.views.MainView;
 	import com.flexcapacitor.views.Remote;
-	import com.flexcapacitor.views.windows.PasteImageFromClipboardWindow;
-	import com.flexcapacitor.views.windows.GalleryWindow;
 	import com.flexcapacitor.views.windows.CopyImageToClipboardWindow;
+	import com.flexcapacitor.views.windows.GalleryWindow;
+	import com.flexcapacitor.views.windows.ImportWindow;
+	import com.flexcapacitor.views.windows.PasteImageFromClipboardWindow;
 	
 	import flash.display.BitmapData;
+	import flash.events.Event;
+	
+	import mx.core.IVisualElement;
 	
 	import spark.components.Application;
 	
@@ -18,6 +24,19 @@ package com.flexcapacitor.managers {
 			
 		}
 		
+		/**
+		 * Get the current document.
+		 * */
+		public static function get selectedDocument():IDocument {
+			return Radiate.selectedDocument;
+		}
+		
+		/**
+		 * Get the current project.
+		 * */
+		public static function get selectedProject():IProject {
+			return Radiate.selectedProject;
+		}
 		
 		/**
 		 * Reference to the application
@@ -53,6 +72,12 @@ package com.flexcapacitor.managers {
 		public static var openGalleryPopUp:OpenPopUp;
 		
 		/**
+		 * Reference to the application main view importPopUp
+		 */
+		[Bindable]
+		public static var openImportPopUp:OpenPopUp;
+		
+		/**
 		 * Shows the welcome home screen
 		 * */
 		public static function goToHomeScreen():void {
@@ -78,7 +103,6 @@ package com.flexcapacitor.managers {
 		 * Opens and displays the documentation panel
 		 * */
 		public static function showDocumentationPanel(url:String):void {
-			var radiate:Radiate = Radiate.instance;
 			
 			if (mainView) {
 				mainView.currentState = MainView.DESIGN_STATE;
@@ -87,7 +111,7 @@ package com.flexcapacitor.managers {
 					remoteView.showDocumentationPanel();
 					
 					if (url) {
-						radiate.dispatchDocumentationChangeEvent(url);
+						Radiate.dispatchDocumentationChangeEvent(url);
 					}
 				}
 			}
@@ -97,7 +121,6 @@ package com.flexcapacitor.managers {
 		 * Opens and displays the API documentation panel
 		 * */
 		public static function showAPIPanel(url:String):void {
-			var radiate:Radiate = Radiate.instance;
 			
 			if (mainView) {
 				mainView.currentState = MainView.DESIGN_STATE;
@@ -106,7 +129,7 @@ package com.flexcapacitor.managers {
 					remoteView.showAPIPanel();
 					
 					if (url) {
-						radiate.dispatchDocumentationChangeEvent(url);
+						Radiate.dispatchDocumentationChangeEvent(url);
 					}
 				}
 			}
@@ -116,7 +139,6 @@ package com.flexcapacitor.managers {
 		 * Opens and displays the console panel
 		 * */
 		public static function showConsolePanel(value:String=""):void {
-			var radiate:Radiate = Radiate.instance;
 			
 			if (mainView) {
 				mainView.currentState = MainView.DESIGN_STATE;
@@ -125,7 +147,7 @@ package com.flexcapacitor.managers {
 					remoteView.showConsolePanel();
 					
 					if (value) {
-						radiate.dispatchConsoleValueChangeEvent(value);
+						Radiate.dispatchConsoleValueChangeEvent(value);
 					}
 				}
 			}
@@ -135,7 +157,6 @@ package com.flexcapacitor.managers {
 		 * Opens and displays the properties panel
 		 * */
 		public static function showPropertiesPanel(showFirstPage:Boolean = false):void {
-			var radiate:Radiate = Radiate.instance;
 			if (mainView) {
 				mainView.currentState = MainView.DESIGN_STATE;
 				
@@ -229,6 +250,74 @@ package com.flexcapacitor.managers {
 			copyImageToClipboard.data = {bitmapData:bitmapData};
 			
 			copyImageToClipboard.play();
+		}
+		
+		/**
+		 * Open import MXML window
+		 * */
+		public static function openImportMXMLWindow(title:String, code:String = "", showRevisions:Boolean = false, snippet:String = ""):void {
+			
+			if (openImportPopUp==null) {
+				createOpenImportPopUp();
+			}
+			
+			if (!openImportPopUp.isOpen) {
+				openImportPopUp.popUpOptions = {title:title, code:code, showRevisions:showRevisions, snippetID:snippet};
+				openImportPopUp.play();
+			}
+		}
+		
+		/**
+		 * Creates the import window pop up
+		 **/
+		public static function createOpenImportPopUp():void {
+			if (openImportPopUp==null) {
+				openImportPopUp = new OpenPopUp();
+				openImportPopUp.popUpType = ImportWindow; 
+				openImportPopUp.modalDuration = 150;
+				openImportPopUp.percentWidth = 80;
+				openImportPopUp.percentHeight = 76;
+				openImportPopUp.useHardPercent = true;
+				openImportPopUp.parent = ViewManager.application;
+				openImportPopUp.closeOnMouseDownOutside = false;
+				openImportPopUp.closeOnMouseDownInside = false;
+				openImportPopUp.closeOnEscapeKey = false;
+				openImportPopUp.addEventListener(OpenPopUp.CLOSE, closeImportWindowHandler);
+			}
+		}
+		
+		/**
+		 * When import MXML window is closed we check for requested action 
+		 * and import if necessary 
+		 * */
+		public static function closeImportWindowHandler(event:Event):void {
+			var selectedDocument:IDocument = selectedDocument;
+			var popUp:ImportWindow = ImportWindow(openImportPopUp.popUp);
+			var type:String = popUp.importLocation.selectedValue as String;
+			var action:String = popUp.action;
+			var code:String = popUp.code;
+			var target:Object = Radiate.instance.target;
+			
+			if (action==ImportWindow.IMPORT) {
+				if (type==ImportWindow.NEW_DOCUMENT) {
+					ImportManager.importMXMLDocument(selectedProject, null, code);
+				}
+				else if (type==ImportWindow.CURRENT_DOCUMENT && selectedDocument) {
+					ImportManager.importMXMLDocument(selectedProject, selectedDocument, code);
+				}
+				else if (type==ImportWindow.CURRENT_SELECTION && target is IVisualElement) {
+					if (target is IVisualElement) {
+						ImportManager.importMXMLDocument(selectedProject, selectedDocument, code, IVisualElement(target));
+					}
+					//Alert.show("Please select a visual element");
+				}
+				else {
+					//Alert.show("Please select a document");
+				}
+			}
+			
+			popUp.action = null;
+			popUp.code = null;
 		}
 	}
 }

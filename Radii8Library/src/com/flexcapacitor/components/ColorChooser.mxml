@@ -154,7 +154,7 @@
 			
 			protected function colorPicker_openHandler(event:DropdownEvent):void
 			{
-				var radiate:Radiate = Radiate.getInstance();
+				var radiate:Radiate = Radiate.instance;
 				var toolDescription:ComponentDescription = ToolManager.getToolByName("com.flexcapacitor.tools.EyeDropper");
 				ToolManager.saveCurrentTool();
 				ToolManager.setTool(toolDescription.instance as ITool);
@@ -214,7 +214,7 @@
 			
 			protected function toolChangeHandler(event:RadiateEvent):void
 			{
-				var radiate:Radiate = Radiate.getInstance();
+				var radiate:Radiate = Radiate.instance;
 				// clean up after ourselves
 				radiate.removeEventListener(RadiateEvent.COLOR_SELECTED, colorSelectedHandler);
 				radiate.removeEventListener(RadiateEvent.COLOR_PREVIEW, colorPreviewHandler);

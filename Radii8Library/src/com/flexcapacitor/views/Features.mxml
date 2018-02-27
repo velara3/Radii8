@@ -10,12 +10,8 @@
 	
 	<fx:Script>
 		<![CDATA[
-			
-			/**
-			 * Features is a bug or feature request view to submit to the developer
-			 * */
-			
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.ProfileManager;
 			import com.flexcapacitor.status.StatusManager;
 			
 			import mx.events.ValidationResultEvent;
@@ -65,8 +61,8 @@
 			public function activate(selectedTarget:Object = null):void {
 				radiate = Radiate.instance;
 				
-				if (radiate.isUserLoggedIn) {
-					emailText.text = radiate.userEmail;
+				if (ProfileManager.isUserLoggedIn) {
+					emailText.text = ProfileManager.userEmail;
 				}
 			}
 			

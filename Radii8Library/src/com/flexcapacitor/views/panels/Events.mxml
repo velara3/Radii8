@@ -16,6 +16,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.EventMetaData;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
@@ -49,7 +50,7 @@
 			
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				if (!showHeader) {
 					//propertiesGrid.columnHeaderGroup.visible = showHeader;
@@ -363,7 +364,7 @@
 					// if object set new target
 					if (!ObjectUtil.isSimple(something)) {
 						target = something;
-						radiate.dispatchTargetChangeEvent(something);
+						Radiate.dispatchTargetChangeEvent(something);
 						//InspectorUtils.dispatchTargetChangeEvent(something, this);
 					}
 				}
@@ -476,7 +477,7 @@
 				var property:String = String(item.@name);
 				
 				//trace("New Value= ", value);
-				Radiate.setProperty(target, property, value);
+				ComponentManager.setProperty(target, property, value);
 			}*/
 			/*
 			protected function startSessionHandler(event:GridItemEditorEvent):void {
@@ -530,9 +531,9 @@
 					var propertyType:String = String(item.@type);
 					
 					if (value!=targetValueText.text) {
-						actualValue = Radiate.getTypedValue(targetValueText.text, propertyType);
+						actualValue = ComponentManager.getTypedValue(targetValueText.text, propertyType);
 						//trace("New Value= ", value);
-						Radiate.setProperty(target, property, actualValue);
+						ComponentManager.setProperty(target, property, actualValue);
 					}
 				}
 			}
@@ -605,7 +606,7 @@
 					
 					propertyObject = new EventMetaData(item, target);
 					
-					radiate.dispatchPropertySelectedEvent(property, propertyObject);
+					Radiate.dispatchPropertySelectedEvent(property, propertyObject);
 				}
 			}
 			

@@ -90,7 +90,6 @@ package com.flexcapacitor.managers
 		 **/
 		public var pasteOffset:int = 4;
 		
-		
 		/**
 		 * Cut item
 		 * @see copiedData
@@ -404,7 +403,7 @@ package com.flexcapacitor.managers
 					
 					data = component;
 					
-					radiate.addFileListDataToDocument(selectedDocument, data as Array, destination);
+					LibraryManager.addFileListDataToDocument(selectedDocument, data as Array, destination);
 					actionPerformed = true;
 				}
 				else if (format==ClipboardFormats.BITMAP_FORMAT) {
@@ -424,7 +423,7 @@ package com.flexcapacitor.managers
 					if (Radiate.isDesktop) {
 						// we can't get bitmap image data from the clipboard in the browser
 						// might try overlaying an html element and capture via JS 
-						radiate.addBitmapDataToDocument(selectedDocument, bitmapData, destination, null, true);
+						LibraryManager.addBitmapDataToDocument(selectedDocument, bitmapData, destination, null, true);
 						actionPerformed = true;
 					}
 					else if (Platform.isBrowser) {
@@ -446,7 +445,7 @@ package com.flexcapacitor.managers
 					
 					data = component;
 					
-					radiate.addTextDataToDocument(selectedDocument, data as String, destination);
+					LibraryManager.addTextDataToDocument(selectedDocument, data as String, destination);
 					actionPerformed = true;
 				}
 				else if (format==ClipboardFormats.HTML_FORMAT) {
@@ -464,7 +463,7 @@ package com.flexcapacitor.managers
 					data = component;
 					
 					if (data==null) {
-						radiate.addHTMLDataToDocument(selectedDocument, data as String, destination);
+						LibraryManager.addHTMLDataToDocument(selectedDocument, data as String, destination);
 						actionPerformed = true;
 					}
 					else {
@@ -491,8 +490,8 @@ package com.flexcapacitor.managers
 			if (useCopyObjectsTechnique) {
 				item = ComponentManager.getComponentType(component.className);
 				newComponent = ComponentManager.createComponentToAdd(selectedDocument, item, true);
-				Radiate.addElement(newComponent, destination, descriptor.propertyNames, descriptor.styleNames, descriptor.eventNames, ObjectUtils.merge(descriptor.properties, descriptor.styles));
-				Radiate.updateComponentAfterAdd(selectedDocument, newComponent);
+				ComponentManager.addElement(newComponent, destination, descriptor.propertyNames, descriptor.styleNames, descriptor.eventNames, ObjectUtils.merge(descriptor.properties, descriptor.styles));
+				ComponentManager.updateComponentAfterAdd(selectedDocument, newComponent);
 				//setProperties(newComponent, descriptor.propertyNames, descriptor.properties);
 				HistoryManager.doNotAddEventsToHistory = true;
 				//setStyles(newComponent, descriptor.styleNames, descriptor.styles);
@@ -513,7 +512,7 @@ package com.flexcapacitor.managers
 					
 					if (offsetObject) {
 						offsets = ClassUtils.getDynamicProperties(offsetObject);
-						Radiate.setProperties(component, offsets, offsetObject);
+						ComponentManager.setProperties(component, offsets, offsetObject);
 					}
 					
 					itemData = CodeManager.getSourceData(component, selectedDocument, CodeManager.MXML, exportOptions);
@@ -616,31 +615,13 @@ package com.flexcapacitor.managers
 		 * Set clipboard data handler
 		 * */
 		public function setClipboardDataHandler():* {
-			/*Format	Return Type
-			ClipboardFormats.TEXT_FORMAT	String
-			ClipboardFormats.HTML_FORMAT	String
-			ClipboardFormats.URL_FORMAT	String (AIR only)
-			ClipboardFormats.RICH_TEXT_FORMAT	ByteArray
-			ClipboardFormats.BITMAP_FORMAT	BitmapData (AIR only)
-			ClipboardFormats.FILE_LIST_FORMAT	Array of File (AIR only)
-			ClipboardFormats.FILE_PROMISE_LIST_FORMAT	Array of File (AIR only)
-			Custom format name	Non-void*/
-			
-			// convert to string and then import to selected target or document
-			//var options:ExportOptions = new ExportOptions();
-			//options.useInlineStyles = true;
-			
-			//var sourceItemData:SourceData = CodeManager.getSourceData(target, selectedDocument, CodeManager.MXML, options);
-			
-			
+
 			if (copiedData) {
 				return copiedData;
 			}
 			else if (cutData) {
 				return cutData;
 			}
-			
-			//Clipboard.generalClipboard.setData(ClipboardFormats.HTML_FORMAT, );
 		}
 		
 		public function animateShortcut(target:Object, paste:Boolean = false):void {
@@ -679,7 +660,7 @@ package com.flexcapacitor.managers
 			
 			copyIconInstance.alpha = 0;
 			
-			toolLayer = radiate.toolLayer;
+			toolLayer = DocumentManager.toolLayer;
 			
 			if (paste) {
 				if ("contains" in toolLayer && !Object(toolLayer).contains(pasteIconInstance)) {
@@ -739,8 +720,6 @@ package com.flexcapacitor.managers
 				IVisualElementContainer(pasteIconInstance.owner).removeElement(pasteIconInstance);
 			}
 			
-			//Radiate.showToolsLayer();
-			//Radiate.updateSelection(Radiate.instance.target);
 		}
 		
 		protected function fadeCopyAnimation_effectEndHandler(event:Event):void {
@@ -753,8 +732,6 @@ package com.flexcapacitor.managers
 			if (pasteIconInstance.owner) {
 				IVisualElementContainer(pasteIconInstance.owner).removeElement(pasteIconInstance);
 			}
-			//Radiate.showToolsLayer();
-			//Radiate.updateSelection(Radiate.instance.target);
 		}
 		
 		public function animateCopy2(target:Object):void {
@@ -774,13 +751,10 @@ package com.flexcapacitor.managers
 			motionPaths = Vector.<MotionPath>([alphaFromPath, alphaToPath]);
 			copyAnimation.motionPaths = motionPaths;
 			copyAnimation.play([target]);
-			//Radiate.hideToolsLayer();
 		}
 		
 		protected function copyAnimation_effectEndHandler(event:Event):void {
 			copyAnimation.removeEventListener(EffectEvent.EFFECT_END, copyAnimation_effectEndHandler);
-			//Radiate.showToolsLayer();
-			//Radiate.updateSelection(Radiate.instance.target);
 		}
 		
 		/**

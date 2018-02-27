@@ -13,9 +13,10 @@
 	
 	<fx:Script>
 		<![CDATA[
-			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.ComponentManager;
 			
 			import spark.components.supportClasses.GroupBase;
+			
 
 			public var groupBase:GroupBase;
 			
@@ -38,16 +39,11 @@
 			}
 			
 			protected function invert_changeHandler(event:Event):void {
-				
-				//groupBase.luminosityInvert = invertCheckbox.selected;
-				
-				Radiate.setProperty(groupBase, "luminosityInvert", invertCheckbox.selected);
+				ComponentManager.setProperty(groupBase, "luminosityInvert", invertCheckbox.selected);
 			}
 			
 			protected function clip_changeHandler(event:Event):void {
-				
-				//groupBase.luminosityClip = clipCheckbox.selected;
-				Radiate.setProperty(groupBase, "luminosityClip", clipCheckbox.selected);
+				ComponentManager.setProperty(groupBase, "luminosityClip", clipCheckbox.selected);
 			}
 			
 		]]>

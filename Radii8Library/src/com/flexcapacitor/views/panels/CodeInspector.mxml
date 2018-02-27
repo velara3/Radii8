@@ -27,7 +27,10 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ClipboardManager;
 			import com.flexcapacitor.managers.CodeManager;
+			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DocumentManager;
 			import com.flexcapacitor.managers.HistoryManager;
+			import com.flexcapacitor.managers.ImportManager;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.managers.SettingsManager;
 			import com.flexcapacitor.model.ExportOptions;
@@ -166,7 +169,7 @@
 			public var activatedOnce:Boolean;
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				addListeners();
 				
@@ -192,7 +195,7 @@
 					languageTypeButtons.selectedIndex = 0;
 				}
 				
-				if (radiate.isDocumentPreviewOpen(radiate.selectedDocument)) {
+				if (DocumentManager.isDocumentPreviewOpen(Radiate.selectedDocument)) {
 					setSelectedLanguage(CodeManager.HTML);
 					isHTML = true;
 				}
@@ -283,7 +286,7 @@
 			 * Generate the code for the provided target component. 
 			 * */
 			public function updateTarget(target:Object):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var targetDescription:ComponentDescription;
 				var language:String = getSelectedLanguage();
 				var output:String = "";
@@ -337,7 +340,7 @@
 						htmlOptions.styles = "";
 					}
 					
-					if (radiate.isPreviewDocumentVisible()) {
+					if (DocumentManager.isPreviewDocumentVisible()) {
 						htmlOptions.exportFullDocument = true;
 						htmlOptions.embedPlaceholderImageData = false;
 					}
@@ -370,7 +373,7 @@
 				iDocument.errors = sourceData.errors;
 				iDocument.warnings = sourceData.warnings;
 				
-				//if (radiate.isPreviewDocumentVisible() && updateCodeLive.selected && isCodeModifiedByUser) {
+				//if (DocumentManager.isPreviewDocumentVisible() && updateCodeLive.selected && isCodeModifiedByUser) {
 				if (updateCodeLive.selected && isCodeModifiedByUser) {
 					if (language==CodeManager.HTML) {
 						updateHTMLPreview();
@@ -380,12 +383,12 @@
 					hideMessage();
 					setEditorText(sourceData);
 					
-					if (radiate.isPreviewDocumentVisible() && language==CodeManager.HTML) {
+					if (DocumentManager.isPreviewDocumentVisible() && language==CodeManager.HTML) {
 						updateHTMLPreview();
 					}
 				}
 				
-				radiate.dispatchPreviewEvent(sourceData, language);
+				Radiate.dispatchPreviewEvent(sourceData, language);
 			}
 			
 			/**
@@ -406,7 +409,7 @@
 					if (!isCodeModifiedByUser) {
 						updateCodeEditors();
 					}
-					else if (updateCodeLive.selected && radiate.isPreviewDocumentVisible()) {
+					else if (updateCodeLive.selected && DocumentManager.isPreviewDocumentVisible()) {
 						updateCodeEditors(true);
 						updateHTMLPreview();
 					}
@@ -419,7 +422,7 @@
 				}
 				
 				if (updateCodeLive.selected) {
-					radiate.dispatchCodeUpdatedEvent(sourceData, language);
+					Radiate.dispatchCodeUpdatedEvent(sourceData, language);
 				}
 			}
 			
@@ -430,7 +433,7 @@
 				var selectedDocument:IDocument = IDocument(event.selectedItem);
 				
 				
-				if (radiate.isPreviewDocumentVisible()) {
+				if (DocumentManager.isPreviewDocumentVisible()) {
 					//return;
 				}
 				
@@ -439,7 +442,7 @@
 				}
 				
 				if (updateCodeLive.selected) {
-					radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML);
+					Radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML);
 				}
 			}
 			
@@ -455,7 +458,7 @@
 				}
 				
 				if (updateCodeLive.selected) {
-					radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML);
+					Radiate.dispatchCodeUpdatedEvent(sourceData, CodeManager.HTML);
 				}
 			}
 			
@@ -478,10 +481,10 @@
 				// if HTML preview is visible then dispatch an event to 
 				// so that preview can be changed else where
 				// needs refactoring
-				if (radiate.isPreviewDocumentVisible() && String(selectedLanguage)!=CodeManager.HTML) {
-					radiate.dispatchPreviewEvent(sourceData, String(selectedLanguage));
-					radiate.openDocument(radiate.selectedDocument);
-					radiate.closeDocument(radiate.selectedDocument, true);
+				if (DocumentManager.isPreviewDocumentVisible() && String(selectedLanguage)!=CodeManager.HTML) {
+					Radiate.dispatchPreviewEvent(sourceData, String(selectedLanguage));
+					DocumentManager.openDocument(Radiate.selectedDocument);
+					DocumentManager.closeDocument(Radiate.selectedDocument, true);
 				}
 				
 				if (!isHTML && editTemplateButton.visible && editTemplateButton.selected) {
@@ -543,35 +546,35 @@
 				if (Radiate.isDesktop) {
 					if (updateCodeLive.selected) {
 						
-						if (radiate.isPreviewDocumentVisible()) {
-							//previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+						if (DocumentManager.isPreviewDocumentVisible()) {
+							//previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 							
-							updateTarget(radiate.selectedDocument.instance);
+							updateTarget(Radiate.selectedDocument.instance);
 							
 							if (previewDocument is UIComponent) {
 								//previewDocument.htmlText = wrapInPreview(getTextAreaCode());
 							}
 							
-							//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+							//Radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 						}
-						//radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
+						//Radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
 					}
 				}
 				else {
 					if (updateCodeLive.selected) {
 						
-						if (radiate.isPreviewDocumentVisible()) {
-							previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+						if (DocumentManager.isPreviewDocumentVisible()) {
+							previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 							
-							updateTarget(radiate.selectedDocument.instance);
+							updateTarget(Radiate.selectedDocument.instance);
 							
 							if (previewDocument is IFrame) {
 								previewDocument.content = sourceData.source;
 							}
 							
-							//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+							//Radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 						}
-						//radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
+						//Radiate.dispatchCodeUpdatedEvent(codeModelTextArea.text, HTML);
 					}
 				}
 				
@@ -585,7 +588,7 @@
 				isCodeModifiedByUser = false;
 				updateCodeEditors(true); // reset the contents of the editors
 				
-				if (updateCodeLive.selected && radiate.isPreviewDocumentVisible()) {
+				if (updateCodeLive.selected && DocumentManager.isPreviewDocumentVisible()) {
 					updateHTMLPreview();
 				}
 			}
@@ -597,9 +600,9 @@
 				var previewDocument:Object;
 				var selectedLanguage:String = getSelectedLanguage();
 				
-				//radiate = Radiate.getInstance();
+				//radiate = Radiate.instance;
 				
-				if (!radiate.target && !radiate.selectedDocument) {
+				if (!radiate.target && !Radiate.selectedDocument) {
 					updateTarget(null);
 					hideMessage();
 					return;
@@ -607,12 +610,12 @@
 				
 				
 				updateTarget(radiate.target);
-				//updateTarget(radiate.selectedDocument.instance);
+				//updateTarget(Radiate.selectedDocument.instance);
 				
 				if (dispatchCodeUpdatedEvent) {
 					
-					//if (radiate.isPreviewDocumentVisible()) {
-					previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+					//if (DocumentManager.isPreviewDocumentVisible()) {
+					previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 					
 					if (previewDocument is IFrame && sourceData) {
 						previewDocument.content = sourceData.source;
@@ -622,11 +625,11 @@
 						//previewDocument.htmlText = wrapInPreview(sourceData);
 					}
 						
-						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+						//Radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 					//}
 					
-					//radiate.dispatchCodeUpdatedEvent(sourceData, HTML, openInSeparateWindow.selected);
-					radiate.dispatchCodeUpdatedEvent(sourceData, selectedLanguage, false);
+					//Radiate.dispatchCodeUpdatedEvent(sourceData, HTML, openInSeparateWindow.selected);
+					Radiate.dispatchCodeUpdatedEvent(sourceData, selectedLanguage, false);
 				}
 				
 				return;
@@ -652,7 +655,7 @@
 					templateEditor.addEventListener(Event.CHANGE, templateEditorChangeHandler);
 					isCodeModifiedByUser = true;
 					updateCodeEditors(true);
-					radiate.dispatchCodeUpdatedEvent(sourceData, language);
+					Radiate.dispatchCodeUpdatedEvent(sourceData, language);
 					
 					if (language==CodeManager.MXML && aceEditor) {
 						importMXMLSource(aceEditor.text);
@@ -664,7 +667,7 @@
 					templateEditor.removeEventListener(Event.CHANGE, templateEditorChangeHandler);
 					isCodeModifiedByUser = false;
 					updateCodeEditors(true);
-					radiate.dispatchCodeUpdatedEvent(sourceData, language);
+					Radiate.dispatchCodeUpdatedEvent(sourceData, language);
 				}
 			}
 			
@@ -762,8 +765,8 @@
 				var outlineStyleSheet:Object;
 				var results:Object;
 				
-				if (radiate.isPreviewDocumentVisible()) {
-					previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+				if (DocumentManager.isPreviewDocumentVisible()) {
+					previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 					rule = "{ outline:" + outlineWidth + "px dotted red; }";
 					
 					if (ExternalInterface.available) {
@@ -836,7 +839,7 @@
 			}
 			
 			protected function showOriginalSourceLabel_clickHandler(event:MouseEvent):void {
-				var selectedDocument:IDocument = radiate.selectedDocument as IDocument;
+				var selectedDocument:IDocument = Radiate.selectedDocument as IDocument;
 				
 				if (selectedDocument) {
 					Radiate.info(selectedDocument.originalSource);
@@ -847,7 +850,7 @@
 			}
 			
 			protected function showProjectSourceLabel_clickHandler(event:MouseEvent):void {
-				var selectedProject:IProject = radiate.selectedProject as IProject;
+				var selectedProject:IProject = Radiate.selectedProject as IProject;
 				
 				if (selectedProject) {
 					Radiate.info(selectedProject.source);
@@ -861,11 +864,11 @@
 			 * Get the document code and dispatch a preview event.
 			 * */
 			protected function previewButton_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				
 				if (iDocument) {
 					settingTargets = true;
-					RunManager.openDocumentInInternalWeb(radiate.selectedDocument);
+					RunManager.openDocumentInInternalWeb(Radiate.selectedDocument);
 					settingTargets = false;
 				}
 				else {
@@ -883,16 +886,16 @@
 				
 				if (Radiate.isDesktop) {
 					// allow to swap between preview and non preview
-					if (!radiate.isPreviewDocumentVisible()) {
-						radiate.openDocumentPreview(radiate.selectedDocument, true);
+					if (!DocumentManager.isPreviewDocumentVisible()) {
+						DocumentManager.openDocumentPreview(Radiate.selectedDocument, true);
 					}
 					
-					previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+					previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 					
-						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+						//Radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 					/*else {
-						radiate.openDocument(radiate.selectedDocument);
-						//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+						DocumentManager.openDocument(Radiate.selectedDocument);
+						//Radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
 					}*/
 					
 					/*
@@ -937,19 +940,19 @@
 				}
 				else {
 					// allow to swap between preview and non preview
-					if (!radiate.isPreviewDocumentVisible()) {
-						radiate.openDocumentPreview(radiate.selectedDocument, true, false);
-						previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+					if (!DocumentManager.isPreviewDocumentVisible()) {
+						DocumentManager.openDocumentPreview(Radiate.selectedDocument, true, false);
+						previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 						
 						if (previewDocument is IFrame) {
 							previewDocument.content = sourceData.source;
 						}
 						
-						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+						//Radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 					}
 					else {
-						//radiate.openDocument(radiate.selectedDocument);
-						//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+						//DocumentManager.openDocument(Radiate.selectedDocument);
+						//Radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
 					}
 				}
 			}
@@ -978,7 +981,7 @@
 					htmlCompleteHandled = true;
 				}
 				
-				previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+				previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 				
 				if (previewDocument) {
 					previewDocument.removeEventListener(event.type, updateScrollPositionHandler);
@@ -987,7 +990,7 @@
 				if (htmlRenderHandled && htmlCompleteHandled) {
 					renderTime.text = htmlCompleteTime + "ms, " + htmlRenderTime + "ms  ";
 					renderTime.toolTip = htmlCompleteTime + "ms HTML Complete, " + htmlRenderTime + "ms HTML Render";
-					//Radiate.callAfter(3000, clearTimeLabel);
+					//DeferManager.callAfter(3000, clearTimeLabel);
 				}
 			}
 			
@@ -1008,7 +1011,7 @@
 				var domWindow:Object;
 				var htmlLoader:Object;
 				
-				previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+				previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 				
 				if (previewDocument && "htmlLoader" in previewDocument && previewDocument.htmlLoader) {
 					//previewDocument.removeEventListener("complete", updateScrollPositionHandler);
@@ -1103,11 +1106,11 @@
 			}*/
 			
 			protected function resetTemplateButton_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var showTemplate:Boolean = editTemplateButton.selected;
 				
 				if (iDocument) {
-					Radiate.revertDocumentTemplate(iDocument);
+					DocumentManager.revertDocumentTemplate(iDocument);
 				}
 					
 				if (templateEditor && iDocument) {
@@ -1116,7 +1119,7 @@
 			}
 			
 			protected function editTemplateButton_clickHandler(event:MouseEvent = null):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var showTemplate:Boolean = editTemplateButton.selected;
 				
 				if (iDocument==null) {
@@ -1223,8 +1226,8 @@
 			protected function importMXMLSource(code:String, dispatchEvents:Boolean = true):void {
 				var sourceData:SourceData;
 				var validationInfo:XMLValidationInfo;
-				var selectedDocument:IDocument = radiate.selectedDocument;
-				var selectedProject:IProject = radiate.selectedProject;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
+				var selectedProject:IProject = Radiate.selectedProject;
 				var container:Object;
 				var importedTargets:Array;
 				var currentTarget:Object;				
@@ -1349,16 +1352,16 @@
 					
 					// not very efficient if setting an attribute - we need to refactor
 					//Application(lastTarget).removeAllElements();
-					//Radiate.removeElement(lastTarget);
+					//ComponentManager.removeElement(lastTarget);
 				}
 				else {
 					if (lastTarget) {
-						Radiate.removeElement(lastTarget);
+						ComponentManager.removeElement(lastTarget);
 					}
 				}
 				
 				try {
-					sourceData = radiate.importMXMLDocument(selectedProject, selectedDocument, code, parentInstance as IVisualElement, currentIndex, null, mxmlOptions, dispatchEvents, false);
+					sourceData = ImportManager.importMXMLDocument(selectedProject, selectedDocument, code, parentInstance as IVisualElement, currentIndex, null, mxmlOptions, dispatchEvents, false);
 				}
 				catch (importError:Error) {
 					HistoryManager.undo(selectedDocument);
@@ -1373,7 +1376,7 @@
 					for (var i:int = 0; i < importedTargets.length; i++) {
 						currentTarget = importedTargets[i];
 						
-						Radiate.moveElement2(currentTarget, parentInstance, null, 
+						ComponentManager.moveElement2(currentTarget, parentInstance, null, 
 							null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 						
 					}
@@ -1385,8 +1388,8 @@
 					HistoryManager.mergeLastHistoryEvent(selectedDocument, "Updated source");
 					if (sourceData.errors.length==0) {
 						settingTargets = true;
-						if (Radiate.lastCreatedComponent) {
-							Radiate.setTargets(Radiate.lastCreatedComponent);
+						if (ComponentManager.lastCreatedComponent) {
+							Radiate.setTargets(ComponentManager.lastCreatedComponent);
 						}
 						else {
 							Radiate.setTargets(sourceData.targets);
@@ -1661,7 +1664,7 @@
 				
 				if (iDocument) {
 					
-					Radiate.callAfter(250, saveDocument, iDocument);
+					DeferManager.callAfter(250, saveDocument, iDocument);
 					Radiate.info("Saving document '" + iDocument.name + "'");
 				}
 				else {

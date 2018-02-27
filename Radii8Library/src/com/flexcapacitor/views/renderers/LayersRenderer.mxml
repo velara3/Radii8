@@ -18,6 +18,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -203,7 +204,7 @@
 				var visibility:Boolean;
 				
 				// setting visible with history support
-				Radiate.setProperty(componentDescription.instance, "visible", visible);
+				ComponentManager.setProperty(componentDescription.instance, "visible", visible);
 				
 				// old method not sure what parts are ok to remove
 				componentDescription.instance.visible = visible;
@@ -256,7 +257,7 @@
 				//dispatch the data update event
 				//var list:ListBase = this.owner as ListBase; is null for mx.controls.Tree??
 				var tree:Object = owner && "dataProvider" in owner ? owner : null;
-				//var iDocument:IDocument = Radiate.instance.selectedDocument;
+				//var iDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription = data as ComponentDescription;
 				
 				if (componentDescription && tree) {
@@ -265,7 +266,7 @@
 					
 					if (newName!=null && newName!="" 
 						&& newName!=oldName) {
-						Radiate.setProperty(componentDescription, "name", newName);
+						ComponentManager.setProperty(componentDescription, "name", newName);
 						tree.dataProvider.itemUpdated(componentDescription, "name", oldName, newName); 
 					}
 					
@@ -273,7 +274,7 @@
 						Object(owner).dragEnabled = previousDragEnabled;
 					}
 					
-					if (owner && "enableKeyBoardHandling" in owner) {
+					if (owner && "enableKeyboardHandling" in owner) {
 						Object(owner).enableKeyboardHandling = previousKeyboardHandlingEnabled;
 					}
 					
@@ -288,7 +289,7 @@
 					Object(owner).dragEnabled = previousDragEnabled;
 				}
 				
-				if (owner && "enableKeyBoardHandling" in owner) {
+				if (owner && "enableKeyboardHandling" in owner) {
 					Object(owner).enableKeyboardHandling = previousKeyboardHandlingEnabled;
 				}
 				
@@ -296,7 +297,7 @@
 			}
 			
 			protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				
 				if (iDocument==null || !iDocument.isOpen) {
 					return;
@@ -364,7 +365,7 @@
 				componentDescription = data as ComponentDescription;
 				
 				if (componentDescription && componentDescription.instance) {
-					result = Radiate.lockComponent(componentDescription.instance, !componentDescription.locked);
+					result = ComponentManager.lockComponent(componentDescription.instance, !componentDescription.locked);
 				}
 				
 				if (!result) {

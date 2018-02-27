@@ -43,7 +43,7 @@
 			
 			public function activate(selectedTarget:Object = null):void {
 				if (!radiate) {
-					radiate = Radiate.getInstance();
+					radiate = Radiate.instance;
 				}
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);

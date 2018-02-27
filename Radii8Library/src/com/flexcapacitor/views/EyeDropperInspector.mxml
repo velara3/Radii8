@@ -35,12 +35,12 @@
 			 * 
 			 * */
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.COLOR_SELECTED, colorSelectedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.COLOR_PREVIEW, colorPreviewHandler, false, 0, true);
 				
-				tool = radiate.selectedTool;
+				tool = Radiate.selectedTool;
 				
 				EyeDropper(tool).addEventListener(MouseEvent.ROLL_OUT, rollOutHandler, false, 0, true);
 				EyeDropper(tool).addEventListener(MouseEvent.ROLL_OVER, rollOverHandler, false, 0, true);

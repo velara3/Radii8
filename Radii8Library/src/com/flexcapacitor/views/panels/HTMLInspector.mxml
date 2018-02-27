@@ -18,6 +18,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.utils.MXMLDocumentConstants;
 			import com.flexcapacitor.utils.StringUtils;
@@ -70,7 +71,7 @@
 			
 			protected function targetChangedHandler(event:RadiateEvent = null):void {
 				if (settingTarget) return;
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				
 				if (iDocument==null) {
 					enabled = false;
@@ -122,7 +123,7 @@
 			public var componentDescriptor:ComponentDescription;
 			
 			protected function componentCSS_changeHandler(event:Event):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var prevTarget:Object = radiate.target;
 				
 				if (componentDescription==null && radiate.target) {
@@ -131,14 +132,14 @@
 				
 				settingTarget = true;
 				if (componentDescription) {
-					Radiate.setProperty(componentDescription, "userStyles", htmlStyles.text);
+					ComponentManager.setProperty(componentDescription, "userStyles", htmlStyles.text);
 					Radiate.setTarget(prevTarget, true, "", true);
 				}
 				settingTarget = false;
 			}
 			
 			protected function wrapWithAnchor_changeHandler(event:Event):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var prevTarget:Object = radiate.target;
 				
 				if (componentDescription==null && radiate.target) { 
@@ -148,20 +149,20 @@
 				settingTarget = true;
 				
 				if (componentDescription) {
-					Radiate.setProperty(componentDescription, "wrapWithAnchor", wrapWithAnchor.selected);
+					ComponentManager.setProperty(componentDescription, "wrapWithAnchor", wrapWithAnchor.selected);
 				
 					if (wrapWithAnchor.selected) {
-						Radiate.setProperty(componentDescription, "anchorURL", urlTextInput.text);
+						ComponentManager.setProperty(componentDescription, "anchorURL", urlTextInput.text);
 						if (event.type=="textInput") {
-							Radiate.setProperty(componentDescription, "anchorTarget", targetsComboBox.textInput.text);
+							ComponentManager.setProperty(componentDescription, "anchorTarget", targetsComboBox.textInput.text);
 						}
 						else {
-							Radiate.setProperty(componentDescription, "anchorTarget", targetsComboBox.selectedItem);
+							ComponentManager.setProperty(componentDescription, "anchorTarget", targetsComboBox.selectedItem);
 						}
 					}
 					else {
-						Radiate.clearProperty(componentDescription, "anchorURL");
-						Radiate.clearProperty(componentDescription, "anchorTarget");
+						ComponentManager.clearProperty(componentDescription, "anchorURL");
+						ComponentManager.clearProperty(componentDescription, "anchorTarget");
 					}
 					
 					Radiate.setTarget(prevTarget, true, "", true);
@@ -175,13 +176,13 @@
 				var prevTarget:Object = radiate.target;
 				
 				if (prevTarget) {
-					iDocument = radiate.selectedDocument;
+					iDocument = Radiate.selectedDocument;
 					componentDescription = iDocument.getItemDescription(target);
 				}
 				
 				if (componentDescription) {
 					settingTarget = true;
-					Radiate.setProperty(componentDescription, "createBackgroundSnapshot", embedSnapshopIntoBackground.selected);
+					ComponentManager.setProperty(componentDescription, "createBackgroundSnapshot", embedSnapshopIntoBackground.selected);
 					Radiate.setTarget(prevTarget, true, "", true);
 					settingTarget = false;
 				}
@@ -192,20 +193,20 @@
 				var prevTarget:Object = radiate.target;
 				
 				if (radiate.target) {
-					iDocument = radiate.selectedDocument;
+					iDocument = Radiate.selectedDocument;
 					componentDescription = iDocument.getItemDescription(target);
 				}
 				
 				if (componentDescription) {
 					settingTarget = true;
-					Radiate.setProperty(componentDescription, "convertElementToImage", convertElementToImage.selected);
+					ComponentManager.setProperty(componentDescription, "convertElementToImage", convertElementToImage.selected);
 					Radiate.setTarget(prevTarget, true, "", true);
 					settingTarget = false;
 				}
 			}
 			
 			protected function customTagName_changeHandler(event:Event):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var prevTarget:Object = radiate.target;
 				var value:String;
 				
@@ -216,14 +217,14 @@
 				settingTarget = true;
 				
 				if (componentDescription) {
-					//Radiate.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
+					//ComponentManager.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
 					value = StringUtils.trim(tagNameTextInput.text);
 					
 					if (value!="") {
-						Radiate.setProperty(componentDescription, "htmlTagName", value);
+						ComponentManager.setProperty(componentDescription, "htmlTagName", value);
 					}
 					else {
-						Radiate.clearProperty(componentDescription, "htmlTagName");
+						ComponentManager.clearProperty(componentDescription, "htmlTagName");
 					}
 					
 					Radiate.setTarget(prevTarget, true, "", true);
@@ -233,7 +234,7 @@
 			}
 			
 			protected function htmlOverride_changeHandler(event:Event):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var prevTarget:Object = radiate.target;
 				var value:String;
 				
@@ -244,14 +245,14 @@
 				settingTarget = true;
 				
 				if (componentDescription) {
-					//Radiate.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
+					//ComponentManager.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
 					value = StringUtils.trim(htmlOverride.text);
 					
 					if (value!="") {
-						Radiate.setProperty(componentDescription, MXMLDocumentConstants.HTML_OVERRIDE, value);
+						ComponentManager.setProperty(componentDescription, MXMLDocumentConstants.HTML_OVERRIDE, value);
 					}
 					else {
-						Radiate.clearProperty(componentDescription, MXMLDocumentConstants.HTML_OVERRIDE);
+						ComponentManager.clearProperty(componentDescription, MXMLDocumentConstants.HTML_OVERRIDE);
 					}
 					
 					Radiate.setTarget(prevTarget, true, "", true);
@@ -261,7 +262,7 @@
 			}
 			
 			protected function htmlBefore_changeHandler(event:Event):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var prevTarget:Object = radiate.target;
 				var value:String;
 				
@@ -272,14 +273,14 @@
 				settingTarget = true;
 				
 				if (componentDescription) {
-					//Radiate.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
+					//ComponentManager.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
 					value = StringUtils.trim(htmlBefore.text);
 					
 					if (value!="") {
-						Radiate.setProperty(componentDescription, MXMLDocumentConstants.HTML_BEFORE, value);
+						ComponentManager.setProperty(componentDescription, MXMLDocumentConstants.HTML_BEFORE, value);
 					}
 					else {
-						Radiate.clearProperty(componentDescription, MXMLDocumentConstants.HTML_BEFORE);
+						ComponentManager.clearProperty(componentDescription, MXMLDocumentConstants.HTML_BEFORE);
 					}
 					
 					Radiate.setTarget(prevTarget, true, "", true);
@@ -289,7 +290,7 @@
 			}
 			
 			protected function htmlAfter_changeHandler(event:Event):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var prevTarget:Object = radiate.target;
 				var value:String;
 				
@@ -300,14 +301,14 @@
 				settingTarget = true;
 				
 				if (componentDescription) {
-					//Radiate.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
+					//ComponentManager.setProperty(componentDescription, "htmlTagName", wrapWithAnchor.selected);
 					value = StringUtils.trim(htmlAfter.text);
 					
 					if (value!="") {
-						Radiate.setProperty(componentDescription, MXMLDocumentConstants.HTML_AFTER, value);
+						ComponentManager.setProperty(componentDescription, MXMLDocumentConstants.HTML_AFTER, value);
 					}
 					else {
-						Radiate.clearProperty(componentDescription, MXMLDocumentConstants.HTML_AFTER);
+						ComponentManager.clearProperty(componentDescription, MXMLDocumentConstants.HTML_AFTER);
 					}
 					
 					Radiate.setTarget(prevTarget, true, "", true);
@@ -317,7 +318,7 @@
 			}
 			
 			protected function attributes_changeHandler(event:Event):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var prevTarget:Object = radiate.target;
 				
 				if (componentDescription==null && radiate.target) {
@@ -326,7 +327,7 @@
 				
 				settingTarget = true;
 				if (componentDescription) {
-					Radiate.setProperty(componentDescription, MXMLDocumentConstants.HTML_ATTRIBUTES, htmlAttributes.text);
+					ComponentManager.setProperty(componentDescription, MXMLDocumentConstants.HTML_ATTRIBUTES, htmlAttributes.text);
 					Radiate.setTarget(prevTarget, true, "", true);
 				}
 				settingTarget = false;

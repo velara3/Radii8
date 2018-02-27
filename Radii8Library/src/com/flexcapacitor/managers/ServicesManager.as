@@ -30,6 +30,8 @@ package com.flexcapacitor.managers {
 	import flash.net.navigateToURL;
 	import flash.utils.ByteArray;
 	
+	import mx.collections.ArrayCollection;
+	
 	import spark.collections.Sort;
 	import spark.collections.SortField;
 	import spark.components.Image;
@@ -432,17 +434,17 @@ package com.flexcapacitor.managers {
 			var data:Object = event.data;
 			
 			if (event.hasError) {
-				radiate.isUserConnected = false;
+				ProfileManager.isUserConnected = false;
 			}
 			else {
-				radiate.isUserConnected = true;
+				ProfileManager.isUserConnected = true;
 			}
 			
-			radiate.updateUserInfo(data);
+			ProfileManager.updateUserInfo(data);
 			
 			getLoggedInStatusInProgress = false;
 			
-			dispatchLoginStatusEvent(radiate.isUserLoggedIn, data, event);
+			dispatchLoginStatusEvent(ProfileManager.isUserLoggedIn, data, event);
 		}
 		
 		/**
@@ -450,12 +452,12 @@ package com.flexcapacitor.managers {
 		 * */
 		protected function getLoggedInStatusFault(event:WPServiceEvent):void {
 			var data:Object = event.data;
-			radiate.isUserConnected = false;
+			ProfileManager.isUserConnected = false;
 			//isUserLoggedIn = false;
 			
 			getLoggedInStatusInProgress = false;
 			
-			dispatchLoginStatusEvent(radiate.isUserLoggedIn, data, event);
+			dispatchLoginStatusEvent(ProfileManager.isUserLoggedIn, data, event);
 		}
 		
 		/**
@@ -927,12 +929,13 @@ package com.flexcapacitor.managers {
 		 * Add an asset
 		 * */
 		public function addAsset(data:DocumentData, dispatchEvent:Boolean = true):void {
-			var length:int = radiate.assets.length;
+			var assets:ArrayCollection = LibraryManager.assets;
+			var numberOfAssets:int = assets.length;
 			var found:Boolean;
 			var item:DocumentData;
 			
-			for (var i:int;i<length;i++) {
-				item = radiate.assets.getItemAt(i) as DocumentData;
+			for (var i:int;i<numberOfAssets;i++) {
+				item = assets.getItemAt(i) as DocumentData;
 				
 				if (item.id==data.id && item.id!=null) {
 					found = true;
@@ -941,7 +944,7 @@ package com.flexcapacitor.managers {
 			}
 			
 			if (!found) {
-				radiate.assets.addItem(data);
+				assets.addItem(data);
 			}
 			
 			if (!found && dispatchEvent) {
@@ -955,11 +958,12 @@ package com.flexcapacitor.managers {
 		public function removeAsset(iDocumentData:IDocumentData, locations:String = null, dispatchEvents:Boolean = true):Boolean {
 			if (locations==null) locations = DocumentData.REMOTE_LOCATION;
 			var remote:Boolean = getIsRemoteLocation(locations);
-			var index:int = radiate.assets.getItemIndex(iDocumentData);
+			var assets:ArrayCollection = LibraryManager.assets;
+			var index:int = assets.getItemIndex(iDocumentData);
 			var removedInternally:Boolean;
 			
 			if (index!=-1) {
-				radiate.assets.removeItemAt(index);
+				assets.removeItemAt(index);
 				removedInternally = true;
 			}
 			
@@ -977,21 +981,6 @@ package com.flexcapacitor.managers {
 				
 				deleteAttachmentService.deleteAttachment(int(iDocumentData.id), true);
 			}
-			/*else if (remote) { // document not saved yet because no ID
-				
-				if (dispatchEvents) {
-					dispatchAssetRemovedEvent(iDocumentData, removedInternally);
-					return removedInternally;
-				}
-			}
-			else {
-	
-				if (dispatchEvents) {
-					dispatchAssetRemovedEvent(iDocumentData, removedInternally);
-					return removedInternally;
-				}
-
-			}*/
 			
 			dispatchAssetRemovedEvent(iDocumentData, removedInternally);
 			
@@ -1018,7 +1007,7 @@ package com.flexcapacitor.managers {
 				EventDispatcher(iProject).removeEventListener(Project.PROJECT_OPENED, projectOpenResultHandler);
 			}
 			
-			radiate.dispatchProjectOpenedEvent(iProject);
+			Radiate.dispatchProjectOpenedEvent(iProject);
 		}
 		
 		/**
@@ -1135,9 +1124,9 @@ package com.flexcapacitor.managers {
 			
 			getAttachmentsInProgress = false;
 			
-			radiate.attachments = potentialAttachments;
+			LibraryManager.attachments = potentialAttachments;
 			
-			dispatchAttachmentsResultsEvent(true, radiate.attachments, event);
+			dispatchAttachmentsResultsEvent(true, LibraryManager.attachments, event);
 		}
 		
 		/**
@@ -1159,14 +1148,18 @@ package com.flexcapacitor.managers {
 			//Radiate.info("Upload attachment");
 			var data:Object = event.data;
 			var potentialAttachments:Array = [];
-			var successful:Boolean = data && data.status && data.status=="ok" ? true : false;
+			var successful:Boolean;
 			var length:int;
 			var object:Object;
 			var attachment:AttachmentData;
 			var asset:AttachmentData;
-			var remoteAttachments:Array = data && data.post && data.post.attachments ? data.post.attachments : []; 
+			var remoteAttachments:Array;
 			var containsName:Boolean;
-			var assetsLength:int;
+			var numberOfAssets:int;
+			var assetsCollection:ArrayCollection;
+			
+			successful = data && data.status && data.status=="ok" ? true : false;
+			remoteAttachments = data && data.post && data.post.attachments ? data.post.attachments : []; 
 			
 			if (remoteAttachments.length>0) {
 				length = remoteAttachments.length;
@@ -1186,11 +1179,13 @@ package com.flexcapacitor.managers {
 					potentialAttachments.push(attachment);
 					
 					//attachments = potentialAttachments;
-					assetsLength = radiate.assets.length;
+					assetsCollection = LibraryManager.assets;
+					numberOfAssets = assetsCollection.length;
+					
 					j = 0;
 					
-					for (var j:int;j<assetsLength;j++) {
-						asset = radiate.assets.getItemAt(j) as AttachmentData;
+					for (var j:int;j<numberOfAssets;j++) {
+						asset = assetsCollection.getItemAt(j) as AttachmentData;
 						containsName = asset ? asset.name.indexOf(attachment.name)==0 : false;
 						
 						// this is not very robust but since uploading only supports one at a time 
@@ -1199,11 +1194,11 @@ package com.flexcapacitor.managers {
 						if (containsName && asset.id==null) {
 							asset.unmarshall(attachment);
 							
-							var numberOfDocuments:int = radiate.documents.length;
+							var numberOfDocuments:int = DocumentManager.documents.length;
 							k = 0;
 							
 							for (var k:int;k<numberOfDocuments;k++) {
-								var iDocument:IDocument = radiate.documents[k] as IDocument;
+								var iDocument:IDocument = DocumentManager.documents[k] as IDocument;
 								
 								if (iDocument) {
 									DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, replaceBitmapData, [asset]);
@@ -1235,7 +1230,7 @@ package com.flexcapacitor.managers {
 				
 				if (instance is Image || instance is BitmapImage) {
 					if (instance.source == imageData.bitmapData) {
-						Radiate.setProperty(instance, "source", imageData.url);
+						ComponentManager.setProperty(instance, "source", imageData.url);
 					}
 				}
 			}
@@ -1291,7 +1286,7 @@ package com.flexcapacitor.managers {
 				
 				loggedIn = data.loggedIn==true;
 				
-				radiate.updateUserInfo(data);
+				ProfileManager.updateUserInfo(data);
 			}
 			
 			loginInProgress = false;
@@ -1324,7 +1319,7 @@ package com.flexcapacitor.managers {
 				
 				loggedOut = data.loggedIn==false;
 				
-				radiate.updateUserInfo(data);
+				ProfileManager.updateUserInfo(data);
 			}
 			
 			logoutInProgress = false;

@@ -86,7 +86,7 @@ public class MacMouseWheelHandler implements IMXMLObject
 	}
 	
 	// javascript mouse handling code
-	static private const 	c_jscode : XML =
+	static private const c_jscode : XML =
  	<script><![CDATA[
 		function()
 		{

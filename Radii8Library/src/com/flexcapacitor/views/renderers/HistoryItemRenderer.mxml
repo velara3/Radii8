@@ -8,7 +8,6 @@
 				typographicCase="capsToSmallCaps"
 				useHandCursor="true"
 				buttonMode="true"
-				toolTip=" "
 				toolTipShow="itemrenderer1_toolTipShowHandler(event)"
 				>
 	
@@ -16,7 +15,6 @@
 		<![CDATA[
 			import com.flexcapacitor.model.HistoryEventData;
 			import com.flexcapacitor.model.HistoryEventItem;
-			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.core.IToolTip;
 			import mx.effects.effectClasses.PropertyChanges;
@@ -43,7 +41,11 @@
 				}
 			}
 			
-			
+			/**
+			 * Show before and after values in a tool tip.
+			 * Disabling for now because of some issues with large values
+			 * Set toolTip to " " to enable
+			 **/
 			protected function itemrenderer1_toolTipShowHandler(event:ToolTipEvent):void {
 				var historyEventItems:Array;
 				var message:String = "";

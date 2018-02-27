@@ -22,7 +22,7 @@
 			public var targets:Array = ["", "_blank", "new", "_parent", "_self", "_top"];
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);

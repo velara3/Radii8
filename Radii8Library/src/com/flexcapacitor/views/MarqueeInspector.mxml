@@ -40,9 +40,9 @@
 			private var _target:Object;
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
-				tool = radiate.selectedTool;
+				tool = Radiate.selectedTool;
 				
 				selectionTool = tool as Marquee;
 				
@@ -50,12 +50,12 @@
 			}
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				addListeners();
 				
 				if (selectionTool==null) {
-					selectionTool = radiate.selectedTool as Marquee;
+					selectionTool = Radiate.selectedTool as Marquee;
 				}
 				
 				if (radiate.target) {
@@ -170,7 +170,7 @@
 				var warningMessage:String = "";
 				var warningNeeded:Boolean;
 				
-				if (radiate.selectedDocument && radiate.selectedDocument.scale!=1) {
+				if (Radiate.selectedDocument && Radiate.selectedDocument.scale!=1) {
 					if (warningMessage!="") warningMessage += "\n";
 					warningMessage += "Marquee is not supported when the document is scaled at this time.";
 					warningMessage += "\n";

@@ -10,6 +10,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.views.panels.GradientCallout;
 			
 			import mx.graphics.GradientBase;
@@ -86,7 +87,7 @@
 					}
 					
 					//entries = copyGradientEntries(entries);
-					Radiate.setProperty(currentGradient, "entries", entries);
+					ComponentManager.setProperty(currentGradient, "entries", entries);
 				}
 				else {
 					if (originalEntries && currentGradient) {
@@ -137,7 +138,7 @@
 					currentGradient = filledElement.fill as GradientBase;
 					
 					if (currentGradient) {
-						Radiate.setProperty(currentGradient, "entries", []);
+						ComponentManager.setProperty(currentGradient, "entries", []);
 					}
 				}
 				

@@ -4,6 +4,7 @@ package com.flexcapacitor.model {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.managers.CodeManager;
 	import com.flexcapacitor.managers.HistoryManager;
+	import com.flexcapacitor.managers.ImportManager;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	
@@ -529,8 +530,8 @@ package com.flexcapacitor.model {
 			
 			if (isOpen) {
 				// we need to move away from this
-				// use Radiate.saveDocument() 
-				// and Radiate.saveDocumentHook() instead 
+				// use DocumentManager.saveDocument() 
+				// and DocumentManager.saveDocumentHook() instead 
 				if (false) {
 					object["custom[html]"] = getHTMLSource();
 				}
@@ -743,7 +744,7 @@ public function mySaveFunction(document:IDocument, data:Object):Object {
 		 * */
 		public function revert(parent:IVisualElement = null):void {
 			HistoryManager.revert(this);
-			Radiate.parseSource(this, originalSource, parent);
+			ImportManager.parseSource(this, originalSource, parent);
 		}
 		
 		/**

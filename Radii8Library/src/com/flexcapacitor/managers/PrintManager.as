@@ -14,10 +14,13 @@ package com.flexcapacitor.managers
 	
 	import spark.primitives.BitmapImage;
 
-	public class PrintManager
-	{
-		public function PrintManager()
-		{
+	/**
+	 * For printing
+	 **/
+	public class PrintManager {
+		
+		public function PrintManager() {
+			
 		}
 		
 		/**
@@ -66,7 +69,7 @@ package com.flexcapacitor.managers
 			// so, scaleX and scaleY are set to NaN on the object when we try to print and it fails
 			if (!printJobStarted) {
 				Radiate.error("Print job was not started");
-				radiate.dispatchPrintCancelledEvent(data, flexPrintJob);
+				Radiate.dispatchPrintCancelledEvent(data, flexPrintJob);
 				return false;
 			}
 			
@@ -74,7 +77,7 @@ package com.flexcapacitor.managers
 				//info("Print width and height: " + flexPrintJob.pageWidth + "x" + flexPrintJob.pageHeight);
 				flexPrintJob.addObject(printableObject, scaleType);
 				flexPrintJob.send();
-				radiate.dispatchPrintCompleteEvent(data, flexPrintJob);
+				Radiate.dispatchPrintCompleteEvent(data, flexPrintJob);
 			}
 			catch(e:Error) {
 				// CHECK scale X and scale Y to see if they are null - see above
@@ -87,7 +90,7 @@ package com.flexcapacitor.managers
 				Radiate.error("Printing failed: " + e.message);
 				
 				// TODO this should be print error event
-				radiate.dispatchPrintCancelledEvent(data, flexPrintJob);
+				Radiate.dispatchPrintCancelledEvent(data, flexPrintJob);
 				return false;
 			} 
 			

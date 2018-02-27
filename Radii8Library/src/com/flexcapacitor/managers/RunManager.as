@@ -6,7 +6,6 @@ package com.flexcapacitor.managers {
 	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.HTMLExportOptions;
 	import com.flexcapacitor.model.IDocument;
-	import com.flexcapacitor.model.IDocumentData;
 	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.model.MetaData;
 	import com.flexcapacitor.model.SourceData;
@@ -49,12 +48,12 @@ package com.flexcapacitor.managers {
 		 * */
 		public static function openHomePageInBrowserButton():void {
 			
-			if (Radiate.instance.projectHomePageID<1) {
+			if (ProfileManager.projectHomePageID<1) {
 				Radiate.warn("A home page has not been set. Showing the default theme home page");
-				Radiate.callAfter(2500, Radiate.openUsersWebsite);
+				DeferManager.callAfter(2500, ProfileManager.openUsersWebsite);
 			}
 			else {
-				Radiate.openUsersWebsite();
+				ProfileManager.openUsersWebsite();
 			}
 		}
 		
@@ -62,22 +61,22 @@ package com.flexcapacitor.managers {
 		 * Opens the document in a browser window
 		 * */
 		public static function openDocumentInBrowser(windowName:String=null):void {
-			var iDocument:IDocument = Radiate.instance.selectedDocument;
+			var iDocument:IDocument = Radiate.selectedDocument;
 			
 			if (iDocument) {
 				
 				if (iDocument.status!=WPService.STATUS_PUBLISH) {
 					if (documentNotPublishedWarning) {
-						Radiate.openInBrowser(iDocument, windowName);
+						DocumentManager.openInBrowser(iDocument, windowName);
 					}
 					else {
 						documentNotPublishedWarning = true;
 						Radiate.warn("The document is not published. Publish and save first or login into your browser to see it.");
-						Radiate.callAfter(2500, Radiate.openInBrowser, iDocument, windowName);
+						DeferManager.callAfter(2500, DocumentManager.openInBrowser, iDocument, windowName);
 					}
 				}
 				else {
-					Radiate.openInBrowser(iDocument);
+					DocumentManager.openInBrowser(iDocument);
 				}
 			}
 		}
@@ -86,24 +85,15 @@ package com.flexcapacitor.managers {
 		 * Opens the document in a browser screenshot website
 		 * */
 		public static function openDocumentInBrowserScreenshot(windowName:String=null):void {
-			var iDocument:IDocument = Radiate.instance.selectedDocument;
+			var iDocument:IDocument = Radiate.selectedDocument;
 			
 			if (iDocument) {
-				
 				if (iDocument.status!=WPService.STATUS_PUBLISH) {
-					
-					/*if (documentNotPublishedWarning) {
-						Radiate.openInBrowserScreenshot(iDocument, windowName);
-					}
-					else {*/
-						//documentNotPublishedWarning = true;
-						// always warn
-						Radiate.warn("The document is not published. Publish and save the document first.");
-						Radiate.callAfter(2500, Radiate.openInBrowserScreenshot, iDocument, windowName);
-					//}
+					Radiate.warn("The document is not published. Publish and save the document first.");
+					DeferManager.callAfter(2500, DocumentManager.openInBrowserScreenshot, iDocument, windowName);
 				}
 				else {
-					Radiate.openInBrowserScreenshot(iDocument, windowName);
+					DocumentManager.openInBrowserScreenshot(iDocument, windowName);
 				}
 			}
 		}
@@ -112,24 +102,16 @@ package com.flexcapacitor.managers {
 		 * Opens the document in a browser site scanner website
 		 * */
 		public static function openDocumentInBrowserSiteScanner(windowName:String=null):void {
-			var iDocument:IDocument = Radiate.instance.selectedDocument;
+			var iDocument:IDocument = Radiate.selectedDocument;
 			
 			if (iDocument) {
 				
 				if (iDocument.status!=WPService.STATUS_PUBLISH) {
-					
-					/*if (documentNotPublishedWarning) {
-						Radiate.openInBrowserScreenshot(iDocument, windowName);
-					}
-					else {*/
-						//documentNotPublishedWarning = true;
-						// always warn
-						Radiate.warn("The document is not published. Publish and save the document first.");
-						Radiate.callAfter(2500, Radiate.openInBrowserSiteScanner, iDocument, windowName);
-					//}
+					Radiate.warn("The document is not published. Publish and save the document first.");
+					DeferManager.callAfter(2500, DocumentManager.openInBrowserSiteScanner, iDocument, windowName);
 				}
 				else {
-					Radiate.openInBrowserSiteScanner(iDocument, windowName);
+					DocumentManager.openInBrowserSiteScanner(iDocument, windowName);
 				}
 			}
 		}
@@ -170,7 +152,7 @@ package com.flexcapacitor.managers {
 			}
 			// take snapshot of document
 			else if (documentData is IDocument) {
-				bitmapData = RadiateUtilities.getDocumentSnapshot(IDocument(documentData), 1, quality);
+				bitmapData = DocumentManager.getDocumentSnapshot(IDocument(documentData), 1, quality);
 				openPopUp.data = bitmapData;
 			}
 			
@@ -198,7 +180,7 @@ package com.flexcapacitor.managers {
 		 * */
 		public static function openDocumentInInternalWeb(iDocument:IDocument):void {
 			var previewDocument:Object;
-			var radiate:Radiate = Radiate.getInstance();
+			var radiate:Radiate = Radiate.instance;
 			var sourceData:SourceData;
 			var htmlOptions:HTMLExportOptions;
 			
@@ -241,12 +223,11 @@ package com.flexcapacitor.managers {
 			iDocument.warnings = sourceData.warnings;
 			
 			if (Radiate.isDesktop) {
-				if (!radiate.isPreviewDocumentVisible()) {
-					radiate.openDocumentPreview(iDocument, true);
+				if (!DocumentManager.isPreviewDocumentVisible()) {
+					DocumentManager.openDocumentPreview(iDocument, true);
 				}
 				
-				previewDocument = radiate.getDocumentPreview(iDocument);
-				
+				previewDocument = DocumentManager.getDocumentPreview(iDocument);
 				
 				if (previewDocument is UIComponent && sourceData) {
 					previewDocument.htmlText = sourceData.source;
@@ -268,20 +249,18 @@ package com.flexcapacitor.managers {
 			}
 			else {
 				// allow to swap between preview and non preview
-				if (!radiate.isPreviewDocumentVisible()) {
-					radiate.openDocumentPreview(radiate.selectedDocument, true, false);
-					previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+				if (!DocumentManager.isPreviewDocumentVisible()) {
+					DocumentManager.openDocumentPreview(Radiate.selectedDocument, true, false);
+					previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 					
 					if (previewDocument is IFrame) {
 						previewDocument.content = sourceData.source;
 						//IFrame(previewDocument).visible = true;
 					}
 					
-					//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 				}
 				else {
-					radiate.openDocument(radiate.selectedDocument);
-					//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+					DocumentManager.openDocument(Radiate.selectedDocument);
 				}
 			}
 		}
@@ -300,34 +279,8 @@ package com.flexcapacitor.managers {
 			var formatURL:String = ClipboardFormats.URL_FORMAT;
 			var serializable:Boolean;
 			var url:String;
-			/*
-			if (documentData==null) {
-				Radiate.warn("No document was selected.");
-				return;
-			}
-			
-			if (documentData.id==null) {
-				Radiate.warn("The document is not saved. It will not have a URL until has been saved.");
-				return;
-			}
-			*/
+
 			url = Radiate.getWPURL();
-			
-			if (documentData) {
-				
-				/*
-				if (documentData is ImageData) {
-					url = ImageData(documentData).url;
-				}
-				else {
-					url = documentData.uri;
-				}
-				
-				if (documentData.status!=WPService.STATUS_PUBLISH) {
-					Radiate.warn("The document is not published. Until it is published it will only be visible when logged in with edit priviledges.");
-					//return;
-				}*/
-			}
 			
 			// it's recommended to clear the clipboard before setting new content
 			clipboard.clear();
@@ -344,7 +297,6 @@ package com.flexcapacitor.managers {
 			catch (error:ErrorEvent) {
 				Radiate.error("Couldn't copy link to the home page");
 			}
-			
 		}
 		
 		/**
@@ -378,11 +330,9 @@ package com.flexcapacitor.managers {
 				
 				if (!(documentData is ImageData) && documentData.status!=WPService.STATUS_PUBLISH) {
 					Radiate.warn("The " + name + " is not published. Until it is published it will only be visible when logged in with edit priviledges.");
-					//return;
 				}
 			}
 			
-			// it's recommended to clear the clipboard before setting new content
 			clipboard.clear();
 			
 			try {
@@ -409,7 +359,6 @@ package com.flexcapacitor.managers {
 			
 			if (url) {
 				
-				// it's recommended to clear the clipboard before setting new content
 				clipboard.clear();
 				
 				try {
@@ -437,7 +386,6 @@ package com.flexcapacitor.managers {
 			
 			if (code) {
 				
-				// it's recommended to clear the clipboard before setting new content
 				clipboard.clear();
 				
 				try {
@@ -464,7 +412,7 @@ package com.flexcapacitor.managers {
 			
 			if (object is MetaData) {
 				metadata = MetaData(object);
-				url = Radiate.getURLToHelp(metadata);
+				url = DocumentationManager.getURLToHelp(metadata);
 			}
 			else if (object) {
 				className = ClassUtils.getQualifiedClassName(object);
@@ -475,9 +423,8 @@ package com.flexcapacitor.managers {
 					className = ClassUtils.getSuperClass(object);
 				}
 				
-				url = Radiate.getURLToHelp(className);
+				url = DocumentationManager.getURLToHelp(className);
 			}
-			
 			
 			if (url) {
 				
@@ -504,7 +451,6 @@ package com.flexcapacitor.managers {
 			var request:URLRequest;
 			
 			if (URL==null || URL=="") {
-				//warn("Please select a document.");
 				return;
 			}
 			
@@ -513,7 +459,6 @@ package com.flexcapacitor.managers {
 			if (windowName==null || windowName=="") {
 				windowName = "preview";
 			}
-			
 			
 			request.url = URL;
 			navigateToURL(request, windowName);

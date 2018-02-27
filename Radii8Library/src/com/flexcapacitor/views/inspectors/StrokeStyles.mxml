@@ -14,6 +14,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.utils.ArrayUtils;
 			import com.flexcapacitor.utils.ClassUtils;
@@ -45,7 +46,7 @@
 											{name:MXMLDocumentConstants.SOLID_COLOR_STROKE, label:"Solid Color"}];
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
@@ -175,14 +176,14 @@
 				
 				if (strokeType==null || strokeType.name == MXMLDocumentConstants.NONE) {
 					if (stroke!=null) {
-						Radiate.clearProperty(strokedElement, MXMLDocumentConstants.STROKE, null, "Removed fill");
+						ComponentManager.clearProperty(strokedElement, MXMLDocumentConstants.STROKE, null, "Removed fill");
 					}
 				}
 				else if (strokeType.name == MXMLDocumentConstants.SOLID_COLOR_STROKE) {
 					
 					if (!(stroke is SolidColorStroke)) {
 						stroke = new SolidColorStroke();
-						Radiate.setProperty(strokedElement, MXMLDocumentConstants.STROKE, stroke, "Set fill");
+						ComponentManager.setProperty(strokedElement, MXMLDocumentConstants.STROKE, stroke, "Set fill");
 					}
 				}
 				

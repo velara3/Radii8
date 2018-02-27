@@ -5,6 +5,9 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.managers.ClipboardManager;
+	import com.flexcapacitor.managers.ComponentManager;
+	import com.flexcapacitor.managers.DeferManager;
+	import com.flexcapacitor.managers.DocumentManager;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
@@ -14,7 +17,6 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.utils.DragManagerUtil;
 	import com.flexcapacitor.utils.LayoutDebugHelper;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
-	import com.flexcapacitor.utils.MoveUtils;
 	import com.flexcapacitor.utils.NumberUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
@@ -156,7 +158,7 @@ package com.flexcapacitor.tools {
 	public class Selection extends FlexSprite implements ITool {
 		
 		
-		public function Selection() {
+		public function Selection(s:SINGLEDOUBLE) {
 			
 		}
 		
@@ -265,6 +267,12 @@ package com.flexcapacitor.tools {
 		public var alternateMoveIncrement:int = 10;
 		
 		/**
+		 * Some graphics like lines are difficult to select. 
+		 * Changes the cursor when over a graphic
+		 **/
+		public var showHandCursorOverGraphics:Boolean = true;
+		
+		/**
 		 * Helps highlights items that are locked
 		 * */
 		public var layoutDebugHelper:LayoutDebugHelper;
@@ -331,7 +339,9 @@ package com.flexcapacitor.tools {
 			
 			_showSelectionLabel = value;
 			
-			updateSelectionAroundTarget(lastTarget);
+			if (lastTarget) {
+				updateSelectionAroundTarget(lastTarget);
+			}
 		}
 		
 		private var _selectionBorderColor:uint = 0x2da6e9;
@@ -406,22 +416,84 @@ package com.flexcapacitor.tools {
 		 * Enable this tool. 
 		 * */
 		public function enable():void {
-			radiate = Radiate.getInstance();
+			radiate = Radiate.instance;
 			clipboardManager = ClipboardManager.getInstance();
 			
 			removeAllListeners();
 			
-			if (radiate.selectedDocument) {
-				updateDocument(radiate.selectedDocument);
+			if (Radiate.selectedDocument) {
+				updateDocument(Radiate.selectedDocument);
 			}
 			
 			addRadiateListeners();
 			
 			setupObjectHandles();
 			
+			showCursorForGraphics();
+			
 			Mouse.cursor = MouseCursor.AUTO;
 			
 			updateSelectionLater();
+		}
+		
+		/**
+		 * Disable this tool.
+		 * */
+		public function disable():void {
+			
+			removeAllListeners();
+			removeRadiateListeners();
+			clearSelection();
+			
+			hideCursorForGraphics();
+		}
+		
+		/**
+		 * Shows cursor over graphics
+		 **/
+		private function showCursorForGraphics():void {
+			var iDocument:IDocument = Radiate.selectedDocument;
+			
+			if (iDocument && showHandCursorOverGraphics) {
+				DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, showCursorHandler);
+			}
+		}
+		
+		/**
+		 * Hides cursor over graphics
+		 **/
+		private function hideCursorForGraphics():void {
+			var iDocument:IDocument = Radiate.selectedDocument;
+			
+			if (iDocument && showHandCursorOverGraphics) {
+				DisplayObjectUtils.walkDownComponentTree(iDocument.componentDescription, hideCursorHandler);
+			}
+		}
+		
+		/**
+		 * Enables a cursor over graphics like Lines and Paths
+		 * */
+		public function showCursorHandler(component:ComponentDescription):void {
+			var instance:Object;
+			
+			if (component && component.instance && component.isGraphicElement) {
+				instance = component.instance;
+				
+				ComponentManager.makeRuntimeInteractive(instance, !showHandCursorOverGraphics, false);
+			}
+		}
+		
+		/**
+		 * Enables a cursor over graphics like Lines and Paths
+		 * */
+		public function hideCursorHandler(component:ComponentDescription):void {
+			var instance:Object;
+			
+			if (component && component.instance && component.isGraphicElement) {
+				instance = component.instance;
+				
+				ComponentManager.makeRuntimeInteractive(instance, true, false);
+			}
 		}
 		
 		/**
@@ -449,7 +521,7 @@ package com.flexcapacitor.tools {
 			}
 			
 			
-			if (objectHandles==null && radiate.canvasBorder) {
+			if (objectHandles==null && DocumentManager.canvasBorder) {
 				manager = new Flex4ChildManager();
 				handleFactory = new Flex4HandleFactory();
 				selectionManager = new ObjectHandlesSelectionManager();
@@ -460,7 +532,7 @@ package com.flexcapacitor.tools {
 				//selectionManager.unselectedModelState();
 				
 				// CREATE OBJECT HANDLES
-				//objectHandles = new ObjectHandles(radiate.canvasBorder as Sprite, null, handleFactory, manager);
+				//objectHandles = new ObjectHandles(DocumentManager.canvasBorder as Sprite, null, handleFactory, manager);
 				
 				
 				ObjectHandles.defaultHandleClass = VisualElementHandle;
@@ -487,7 +559,7 @@ package com.flexcapacitor.tools {
 				objectHandles.addEventListener(ObjectChangedEvent.OBJECT_ROTATED, rotatedHandler);
 				
 				
-				//decoratorManager = new DecoratorManager(objectHandles, radiate.toolLayer as Sprite);
+				//decoratorManager = new DecoratorManager(objectHandles, DocumentManager.toolLayer as Sprite);
 				aspectRatioConstraint = new MaintainProportionConstraint();
 				aspectRatioConstraint.shiftKeyRequired = true;
 				objectHandles.addDefaultConstraint(aspectRatioConstraint);
@@ -501,16 +573,6 @@ package com.flexcapacitor.tools {
 			if (objectHandles) {
 				objectHandles.container = container;
 			}
-		}
-		
-		/**
-		 * Disable this tool.
-		 * */
-		public function disable():void {
-			
-			removeAllListeners();
-			removeRadiateListeners();
-			clearSelection();
 		}
 		
 		/**
@@ -541,7 +603,7 @@ package com.flexcapacitor.tools {
 		 * Adds listeners to radiate instance
 		 * */
 		public function addRadiateListeners():void {
-			radiate = Radiate.getInstance();
+			radiate = Radiate.instance;
 			
 			// handle events last so that we get correct size
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
@@ -560,7 +622,7 @@ package com.flexcapacitor.tools {
 		
 		protected function beginningOfUndoHistoryHandler(event:Event):void
 		{
-			updateSelectionLater(radiate.selectedDocument);
+			updateSelectionLater(Radiate.selectedDocument);
 		}
 		
 		protected function endOfUndoHistoryHandler(event:Event):void
@@ -572,7 +634,7 @@ package com.flexcapacitor.tools {
 		 * Removes listeners from radiate instance
 		 * */
 		public function removeRadiateListeners():void {
-			radiate = Radiate.getInstance();
+			radiate = Radiate.instance;
 			
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler);
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_CLOSE, 		documentCloseHandler);
@@ -760,21 +822,21 @@ package com.flexcapacitor.tools {
 		public function addCanvasListeners():void {
 			removeCanvasListeners();
 			
-			if (radiate && radiate.toolLayer) {
-				toolLayer = radiate.toolLayer;
+			if (radiate && DocumentManager.toolLayer) {
+				toolLayer = DocumentManager.toolLayer;
 			}
 			
-			if (radiate && radiate.canvasBackground) {
-				canvasBackground = radiate.canvasBackground;
+			if (radiate && DocumentManager.canvasBackground) {
+				canvasBackground = DocumentManager.canvasBackground;
 			}
 			
-			if (radiate && radiate.canvasBackground && radiate.canvasBackground.parent) {
-				canvasBackgroundParent = radiate.canvasBackground.parent;
+			if (radiate && DocumentManager.canvasBackground && DocumentManager.canvasBackground.parent) {
+				canvasBackgroundParent = DocumentManager.canvasBackground.parent;
 				canvasBackgroundParent.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges, false, 1000, true);
 			}
 			
-			if (radiate && radiate.canvasScroller) {
-				canvasScroller = radiate.canvasScroller;
+			if (radiate && DocumentManager.canvasScroller) {
+				canvasScroller = DocumentManager.canvasScroller;
 				canvasScroller.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, handleScrollChanges, false, 1000, true);
 			}
 		}
@@ -871,12 +933,12 @@ package com.flexcapacitor.tools {
 				//updateSelectionAroundTarget(event.targets[0]);
 				//updateTransformRectangle(event.targets[0]);
 				
-				Radiate.callLater(updateSelectionAroundTarget, null);
-				Radiate.callLater(updateTransformRectangle, null);
+				DeferManager.callLater(updateSelectionAroundTarget, null);
+				DeferManager.callLater(updateTransformRectangle, null);
 			}
 			
 			if (event.newIndex<0) {
-				updateSelectionLater(radiate.selectedDocument);
+				updateSelectionLater(Radiate.selectedDocument);
 			}
 		}
 		
@@ -1028,7 +1090,7 @@ package com.flexcapacitor.tools {
 			isDragging = false;
 			
 			
-			/*radiate = Radiate.getInstance();
+			/*radiate = Radiate.instance;
 			targetApplication = radiate.document;*/
 			
 			// test url for remote image: 
@@ -1074,7 +1136,7 @@ package com.flexcapacitor.tools {
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
 			// loop through items under point until we find one on the *component* tree
-			componentTree = radiate.selectedDocument.componentDescription;
+			componentTree = Radiate.selectedDocument.componentDescription;
 			
 			
 			componentTreeLoop:
@@ -1110,7 +1172,7 @@ package com.flexcapacitor.tools {
 							
 							if (highlightLockedItems) {
 								//layoutDebugHelper.enable();
-								//Radiate.callLater(layoutDebugHelper.addElement, componentDescription.instance);
+								//DeferManager.callLater(layoutDebugHelper.addElement, componentDescription.instance);
 								var rectangle:Rectangle = DisplayObjectUtils.getBounds(componentDescription.instance, toolLayer);
 								layoutDebugHelper.addElement(componentDescription.instance as ILayoutElement, rectangle);
 								//layoutDebugHelper.addElement(ILayoutElement(target));
@@ -1146,7 +1208,7 @@ package com.flexcapacitor.tools {
 					
 					if (highlightWhenSelectingOnlyGroups) {
 						//layoutDebugHelper.enable();
-						Radiate.callLater(layoutDebugHelper.addElement, componentDescription.instance);
+						DeferManager.callLater(layoutDebugHelper.addElement, componentDescription.instance);
 						//layoutDebugHelper.addElement(ILayoutElement(target));
 						//layoutDebugHelper.render();
 					}
@@ -1257,7 +1319,7 @@ package com.flexcapacitor.tools {
 				}
 				
 				if (startValuesDictionary[component]==null) {
-					startValues = Radiate.captureSizingPropertyValues([component]);
+					startValues = ComponentManager.captureSizingPropertyValues([component]);
 					startValuesDictionary[component] = startValues;
 				}
 				
@@ -1338,11 +1400,11 @@ package com.flexcapacitor.tools {
 				
 				// restore original values so we can use undo history
 				// start values are removed by this call so may need to change this
-				Radiate.restoreCapturedValues(startValues, MXMLDocumentConstants.sizeAndPositionProperties);
+				ComponentManager.restoreCapturedValues(startValues, MXMLDocumentConstants.SIZE_AND_POSITION_PROPERTIES);
 				delete startValuesDictionary[component];
 				
 				
-				propertiesObject = Radiate.getPropertiesObjectFromBounds(component, model, roundToIntegers);
+				propertiesObject = ComponentManager.getPropertiesObjectFromBounds(component, model, roundToIntegers);
 				properties = ClassUtils.getPropertyNames(propertiesObject);
 				
 				// set font size if alt + shift key down
@@ -1442,15 +1504,15 @@ package com.flexcapacitor.tools {
 				}
 				
 				if (component is GraphicElement) {
-					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
+					ComponentManager.setProperties(component, properties, propertiesObject, "Resized", true);
 				}
 				else {
-					Radiate.setProperties(component, properties, propertiesObject, "Resized", true);
+					ComponentManager.setProperties(component, properties, propertiesObject, "Resized", true);
 				}
 				
 				if (setFontStyle) {
-					Radiate.setStyle(component, "fontSize", fontSize);
-					HistoryManager.mergeLastHistoryEvent(radiate.selectedDocument);
+					ComponentManager.setStyle(component, "fontSize", fontSize);
+					HistoryManager.mergeLastHistoryEvent(Radiate.selectedDocument);
 				}
 			}
 			
@@ -1481,7 +1543,7 @@ package com.flexcapacitor.tools {
 				}
 				
 				if (startValuesDictionary[component]==null) {
-					startValues = Radiate.captureSizingPropertyValues([component]);
+					startValues = ComponentManager.captureSizingPropertyValues([component]);
 					startValuesDictionary[component] = startValues;
 				}
 				
@@ -1528,7 +1590,7 @@ package com.flexcapacitor.tools {
 				// we should use captureStartValues of effect class in Radiate
 				// and then create restoreStartValues or get the change object
 				
-				Radiate.restoreCapturedValues(startValues, [MXMLDocumentConstants.ROTATION]);
+				ComponentManager.restoreCapturedValues(startValues, [MXMLDocumentConstants.ROTATION]);
 				delete startValuesDictionary[component];
 				
 				propertiesObject = {};
@@ -1536,10 +1598,10 @@ package com.flexcapacitor.tools {
 				properties = [MXMLDocumentConstants.ROTATION];
 				
 				if (component is GraphicElement) {
-					Radiate.setProperties(component, properties, propertiesObject, "Rotated", true);
+					ComponentManager.setProperties(component, properties, propertiesObject, "Rotated", true);
 				}
 				else {
-					Radiate.setProperties(component, properties, propertiesObject, "Rotated", true);
+					ComponentManager.setProperties(component, properties, propertiesObject, "Rotated", true);
 				}
 			}
 		}
@@ -1671,7 +1733,7 @@ package com.flexcapacitor.tools {
 			var firstUnlockedComponentDescription:ComponentDescription;
 			var actualTarget:GraphicElement;
 			
-			componentTree = radiate.selectedDocument.componentDescription;
+			componentTree = Radiate.selectedDocument.componentDescription;
 			componentDescription = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
 			//Radiate.info("Selection Mouse up");
 			
@@ -1798,7 +1860,7 @@ package com.flexcapacitor.tools {
 			var focusedObject:Object = topLevelApplication.focusManager.getFocus();
 			var eventTarget:Object = event.target;
 			var eventCurrentTarget:Object = event.currentTarget;
-			var tabNav:TabNavigator = radiate.documentsTabNavigator;
+			var tabNav:TabNavigator = DocumentManager.documentsTabNavigator;
 			var isGraphicElement:Boolean;
 			
 			// still working on this
@@ -1887,7 +1949,7 @@ package com.flexcapacitor.tools {
 			}
 			
 			keyCode = event.keyCode;
-			tabNav = radiate.documentsTabNavigator;
+			tabNav = DocumentManager.documentsTabNavigator;
 			
 			//Radiate.info("Key down: " + event.keyCode);
             switch (event.keyCode)
@@ -1971,7 +2033,7 @@ package com.flexcapacitor.tools {
 			
 			eventTarget = event.target;
 			eventCurrentTarget = event.currentTarget;
-			tabNav = radiate.documentsTabNavigator;
+			tabNav = DocumentManager.documentsTabNavigator;
 			topApplication = FlexGlobals.topLevelApplication;
 			focusedObject = topApplication.focusManager.getFocus();
 			constant = event.shiftKey ? alternateMoveIncrement : moveIncrement;
@@ -2029,8 +2091,7 @@ package com.flexcapacitor.tools {
 						continue;
 					}
 					
-					MoveUtils.moveLeft(element, constant);
-					
+					ComponentManager.moveLeft(element, constant);
 				}
 				
 				actionOccurred = true;
@@ -2044,7 +2105,7 @@ package com.flexcapacitor.tools {
 						continue;
 					}
 					
-					MoveUtils.moveRight(element, constant);
+					ComponentManager.moveRight(element, constant);
 				}
 				
 				actionOccurred = true;
@@ -2058,7 +2119,7 @@ package com.flexcapacitor.tools {
 						continue;
 					}
 					
-					MoveUtils.moveUp(element, constant);
+					ComponentManager.moveUp(element, constant);
 				}
 				
 				actionOccurred = true;
@@ -2072,7 +2133,7 @@ package com.flexcapacitor.tools {
 						continue;
 					}
 					
-					MoveUtils.moveDown(element, constant);
+					ComponentManager.moveDown(element, constant);
 				}
 				
 				actionOccurred = true;
@@ -2936,8 +2997,8 @@ package com.flexcapacitor.tools {
 				target = radiate.target;
 			}
 			
-			Radiate.callAfter(5, updateSelectionAroundTarget, target);
-			Radiate.callAfter(5, updateTransformRectangle, target);
+			DeferManager.callAfter(5, updateSelectionAroundTarget, target);
+			DeferManager.callAfter(5, updateTransformRectangle, target);
 		}
 		
 		public function updateSelection(target:Object = null):void {
@@ -2948,6 +3009,25 @@ package com.flexcapacitor.tools {
 			updateSelectionAroundTarget(target);
 			updateTransformRectangle(target);
 		}
+		
+		//----------------------------------
+		//  instance
+		//----------------------------------
+		
+		public static function get instance():Selection
+		{
+			if (!_instance) {
+				_instance = new Selection(new SINGLEDOUBLE());
+			}
+			return _instance;
+		}
+		
+		public static function getInstance():Selection {
+			return instance;
+		}
+		
+		private static var _instance:Selection;
 	}
 }
 
+class SINGLEDOUBLE{}

@@ -3,6 +3,7 @@
 package com.flexcapacitor.utils {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
+	import com.flexcapacitor.managers.ComponentManager;
 	import com.flexcapacitor.managers.HistoryManager;
 	import com.flexcapacitor.managers.ToolManager;
 	import com.flexcapacitor.model.IDocument;
@@ -1573,11 +1574,11 @@ package com.flexcapacitor.utils {
 					//imageTarget.source = null;
 				}
 				
-				Radiate.setProperties(imageTarget, properties, propertiesObject, eventDescription, true);
+				ComponentManager.setProperties(imageTarget, properties, propertiesObject, eventDescription, true);
 				
 				if (targetApplication.contains(imageSource)) {
-					Radiate.removeElement(imageSource);
-					HistoryManager.mergeLastHistoryEvent(Radiate.instance.selectedDocument, eventDescription);
+					ComponentManager.removeElement(imageSource);
+					HistoryManager.mergeLastHistoryEvent(Radiate.selectedDocument, eventDescription);
 				}
 				
 				dragCompleteEvent 						= new DragDropEvent(DragDropEvent.DRAG_DROP_COMPLETE, false, true);
@@ -1949,10 +1950,10 @@ package com.flexcapacitor.utils {
 				styles 					= ClassUtils.getStylesFromObject(draggedItem, values);
 				
 				if (draggedItem.parent==null) {
-					addResult = Radiate.addElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
+					addResult = ComponentManager.addElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
 				}
 				else {
-					moveResult = Radiate.moveElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
+					moveResult = ComponentManager.moveElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
 				}
 				
 				if (animateSnapToEdge && !(draggedItem is Line) && 
@@ -1982,10 +1983,10 @@ package com.flexcapacitor.utils {
 			else {
 				
 				if (draggedItem.parent==null) {
-					addResult = Radiate.addElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
+					addResult = ComponentManager.addElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
 				}
 				else {
-					moveResult = Radiate.moveElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
+					moveResult = ComponentManager.moveElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
 				}
 				
 				destroyDropIndicator();
@@ -2042,7 +2043,7 @@ package com.flexcapacitor.utils {
 			
 			dragging = false;
 			dispatchEvent(new DragDropEvent(DragDropEvent.DRAG_END));
-			Radiate.instance.dispatchDocumentUpdatedEvent(Radiate.instance.selectedDocument);
+			Radiate.dispatchDocumentUpdatedEvent(Radiate.selectedDocument);
 		}
 		
 		public function restoreHiddenItems():void {

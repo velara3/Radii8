@@ -13,19 +13,12 @@
 			   creationComplete="panel1_creationCompleteHandler(event)" 
 			   >
 	
-	<fx:Style>
-		@namespace s "library://ns.adobe.com/flex/spark";
-		@namespace c "com.flexcapacitor.controls.*";
-		@namespace mx "library://ns.adobe.com/flex/mx";
-		@namespace handlers "com.flexcapacitor.handlers.*";
-		@namespace fc "com.flexcapacitor.effects.popup.*";
-		
-	</fx:Style>
-	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.DocumentManager;
+			import com.flexcapacitor.managers.ProjectManager;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.IDocumentData;
 			import com.flexcapacitor.model.IProject;
@@ -47,26 +40,26 @@
 			protected function saveResource():void {
 				var canBeSaved:Boolean;
 				saveWarningsLabel.text = "";
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				if (currentState==DOCUMENT) {
 					if (documentData==null) {
-						documentData = radiate.selectedDocument;
+						documentData = Radiate.selectedDocument;
 					}
 					if (documentData) {
 						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, saveResultsHandler, false, 0, true);
 						radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_FAULT, saveResultsHandler, false, 0, true);
-						canBeSaved = radiate.saveDocument(IDocument(documentData));
+						canBeSaved = DocumentManager.saveDocument(IDocument(documentData));
 					}
 				}
 				else if (currentState==PROJECT) {
 					if (documentData==null) {
-						documentData = radiate.selectedProject;
+						documentData = Radiate.selectedProject;
 					}
 					
 					if (documentData) {
 						radiate.addEventListener(RadiateEvent.PROJECT_SAVED, saveResultsHandler, false, 0, true);
-						canBeSaved = radiate.saveProject(IProject(documentData));
+						canBeSaved = ProjectManager.saveProject(IProject(documentData));
 					}
 				}
 				
@@ -135,7 +128,7 @@
 				saveWarningsLabel.text = message;
 				
 				if (successful) {
-					radiate.closeVisibleDocument();
+					DocumentManager.closeVisibleDocument();
 					infoLabel.text = "Saved";
 					closePopUp.startDelay = 500;
 					closePopUp.play();
@@ -150,16 +143,16 @@
 			}
 			
 			protected function panel1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				if (currentState==DOCUMENT) {
 					if (documentData==null) {
-						documentData = radiate.selectedDocument;
+						documentData = Radiate.selectedDocument;
 					}
 				}
 				else if (currentState==PROJECT) {
 					if (documentData==null) {
-						documentData = radiate.selectedProject;
+						documentData = Radiate.selectedProject;
 					}
 					
 				}
@@ -170,19 +163,19 @@
 			}
 			
 			private function closeWithoutSaving():void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				if (currentState==DOCUMENT) {
-					if (radiate.selectedDocument) {
-						radiate.closeDocument(radiate.selectedDocument, false, true);
-						if (radiate.documents.length) {
+					if (Radiate.selectedDocument) {
+						DocumentManager.closeDocument(Radiate.selectedDocument, false, true);
+						if (DocumentManager.documents.length) {
 							
 						}
 					}
 				}
 				else if (currentState==PROJECT) {
-					if (radiate.selectedProject) {
-						radiate.closeProject(radiate.selectedProject);
+					if (Radiate.selectedProject) {
+						ProjectManager.closeProject(Radiate.selectedProject);
 					}
 				}
 				

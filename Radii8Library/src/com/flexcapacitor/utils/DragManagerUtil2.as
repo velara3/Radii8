@@ -3,6 +3,7 @@
 package com.flexcapacitor.utils {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.DragDropEvent;
+	import com.flexcapacitor.managers.ComponentManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 	import com.flexcapacitor.utils.supportClasses.DragData;
@@ -1056,10 +1057,10 @@ package com.flexcapacitor.utils {
 				var moveResult:String;
 				
 				if (draggedItem.parent==null) {
-					addResult = Radiate.addElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
+					addResult = ComponentManager.addElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
 				}
 				else {
-					moveResult = Radiate.moveElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
+					moveResult = ComponentManager.moveElement(draggedItem, dropTarget, properties, styles, null, values, eventDescription);
 				}
 				
 			}
@@ -1068,10 +1069,10 @@ package com.flexcapacitor.utils {
 			else {
 				
 				if (draggedItem.parent==null) {
-					addResult = Radiate.addElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
+					addResult = ComponentManager.addElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
 				}
 				else {
-					moveResult = Radiate.moveElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
+					moveResult = ComponentManager.moveElement(draggedItem, dropTarget, null, null, null, null, eventDescription, null, null, index);
 				}
 			}
 			

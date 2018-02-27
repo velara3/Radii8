@@ -18,7 +18,7 @@
 			public var data:Object;
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
@@ -48,8 +48,8 @@
 			}
 			
 			public function update():void {
-				data = ClassUtils.getMetaDataOfProperty(target, "id");
-				textRenderer.data = data;
+				
+				textRenderer.data = ClassUtils.getMetaDataOfProperty(target, "id");
 			}
 			
 			protected function propertyChangeHandler(event:RadiateEvent):void {

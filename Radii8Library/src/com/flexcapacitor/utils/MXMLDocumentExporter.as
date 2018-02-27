@@ -1,6 +1,7 @@
 
 package com.flexcapacitor.utils {
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.managers.LibraryManager;
 	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.ExportOptions;
 	import com.flexcapacitor.model.FileInfo;
@@ -583,7 +584,7 @@ package com.flexcapacitor.utils {
 				var documentBitmapData:BitmapData;
 				
 				if (componentDescription.instance.source is BitmapData) {
-					imageData = Radiate.getImageDataFromBitmapData(componentDescription.instance.source);
+					imageData = LibraryManager.getImageDataFromBitmapData(componentDescription.instance.source);
 					
 					if (imageData && imageData.uid) {
 						output = StringUtils.ensureSpaceExists(output);

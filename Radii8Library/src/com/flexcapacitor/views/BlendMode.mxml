@@ -12,6 +12,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.utils.ArrayUtils;
 			
 			import mx.core.IVisualElementContainer;
@@ -21,7 +22,7 @@
 			import spark.events.IndexChangeEvent;
 			import spark.primitives.supportClasses.GraphicElement;
 			
-			private var radiate:Radiate = Radiate.getInstance();
+			private var radiate:Radiate = Radiate.instance;
 			private var _target:Object;
 			private static const BLEND_MODE:String = "blendMode";
 			
@@ -44,9 +45,6 @@
 
 			protected function applyPropertiesToTargetHandler(event:IndexChangeEvent = null):void {
 				
-				// added new blend mode methods in 
-				// DisplayObjectUtils
-				
 				if (target) {
 					var value:String = blendModeCombo.selectedItem.value;
 					if (value=="auto" && !(target is IVisualElementContainer)) {
@@ -55,7 +53,7 @@
 						// group and graphic element allows "auto", display object does not
 					}
 					
-					Radiate.setProperty(target, BLEND_MODE, value);
+					ComponentManager.setProperty(target, BLEND_MODE, value);
 				}
 			}
 			

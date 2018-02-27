@@ -7,12 +7,7 @@
 		 creationComplete="creationCompleteHandler(event)"
 		 implements="com.flexcapacitor.tools.IToolInspector"
 		 >
-	
-	
 	<!-- 
-	TODO: PUT THESE RUN COMMANDS IN A SEPARATE CLASS 
-	- OK I did
-	
 	NOTE THIS Class has a habit of hanging the whole application 
 	when the Images used below do not have width or height. 
 	Clicking pause in Flash Builder does not pause the app
@@ -26,6 +21,10 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.CreationManager;
+			import com.flexcapacitor.managers.DeferManager;
+			import com.flexcapacitor.managers.DocumentManager;
+			import com.flexcapacitor.managers.LibraryManager;
+			import com.flexcapacitor.managers.ProfileManager;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.model.Document;
 			import com.flexcapacitor.model.DocumentData;
@@ -41,7 +40,7 @@
 			public var OPEN_DOCUMENT_IN_BROWSER_SITE_SCANNER:String = "openDocumentInBrowserSiteScanner";
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				// preview image inline, preview image in browser preview
 				// preview document inline, preview document in browser,
@@ -51,25 +50,25 @@
 			}
 			
 			protected function openHomePageInBrowserButton_clickHandler():void {
-				var iDocument:IDocument = Radiate.instance.selectedDocument;
-				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
+				var iDocument:IDocument = Radiate.selectedDocument;
+				var usersSignedIn:Boolean = ProfileManager.isUserLoggedIn;
 				
 				if (!usersSignedIn) {
 					Radiate.warn("You must be signed into your account to visit your homepage");
 					return;
 				}
 				
-				if (Radiate.instance.projectHomePageID<1) {
+				if (ProfileManager.projectHomePageID<1) {
 					Radiate.warn("A home page has not been set. Showing the default theme home page");
-					Radiate.callAfter(2500, Radiate.openUsersWebsite);
+					DeferManager.callAfter(2500, ProfileManager.openUsersWebsite);
 				}
 				else {
-					Radiate.openUsersWebsite();
+					ProfileManager.openUsersWebsite();
 				}
 			}
 			
 			protected function openImagePopUpButton_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				
 				if (iDocument) {
 					RunManager.openDocumentAsImageInPopUp(iDocument as DocumentData);
@@ -80,18 +79,18 @@
 			}
 			
 			protected function openDocumentInBrowserButton_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = Radiate.instance.selectedDocument;
-				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
+				var iDocument:IDocument = Radiate.selectedDocument;
+				var userIsSignedIn:Boolean = ProfileManager.isUserLoggedIn;
 				
-				if (!usersSignedIn) {
+				if (!userIsSignedIn) {
 					Radiate.warn("You must be signed into your account before previewing in the system browser");
 					return;
 				}
 				
 				if (iDocument) {
 					if (iDocument.isChanged && iDocument is Document) {
-						Radiate.instance.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, documentSavedHandler, false, 0, true);
-						Radiate.instance.saveDocument(iDocument);
+						Radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, documentSavedHandler, false, 0, true);
+						DocumentManager.saveDocument(iDocument);
 						lastAction = OPEN_DOCUMENT_IN_BROWSER;
 						return;
 					}
@@ -103,10 +102,10 @@
 			}
 			
 			protected function openDocumentInInternalWebIcon_clickHandler(event:MouseEvent):void{
-				var iDocument:IDocument = Radiate.instance.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				
 				if (iDocument) {
-					RunManager.openDocumentInInternalWeb(radiate.selectedDocument);
+					RunManager.openDocumentInInternalWeb(Radiate.selectedDocument);
 				}
 				else {
 					Radiate.info("Please select a document before previewing in the internal browser");
@@ -114,18 +113,18 @@
 			}
 			
 			protected function openDocumentInBrowserScreenshotButton_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = Radiate.instance.selectedDocument;
-				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
+				var iDocument:IDocument = Radiate.selectedDocument;
+				var userIsSignedIn:Boolean = ProfileManager.isUserLoggedIn;
 				
-				if (!usersSignedIn) {
+				if (!userIsSignedIn) {
 					Radiate.warn("You must be signed into your account before previewing in the browser screenshots");
 					return;
 				}
 				
 				if (iDocument) {
 					if (iDocument.isChanged && iDocument is Document) {
-						Radiate.instance.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, documentSavedHandler, false, 0, true);
-						Radiate.instance.saveDocument(iDocument);
+						Radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, documentSavedHandler, false, 0, true);
+						DocumentManager.saveDocument(iDocument);
 						lastAction = OPEN_DOCUMENT_IN_BROWSER_SCREENSHOT;
 						return;
 					}
@@ -137,8 +136,8 @@
 			}
 			
 			protected function openDocumentInBrowserSiteScannerButton_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = Radiate.instance.selectedDocument;
-				var usersSignedIn:Boolean = Radiate.instance.isUserLoggedIn;
+				var iDocument:IDocument = Radiate.selectedDocument;
+				var usersSignedIn:Boolean = ProfileManager.isUserLoggedIn;
 				
 				if (!usersSignedIn) {
 					Radiate.warn("You must be signed into your account before previewing in the browser site scanner");
@@ -147,8 +146,8 @@
 				
 				if (iDocument) {
 					if (iDocument.isChanged && iDocument is Document) {
-						Radiate.instance.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, documentSavedHandler, false, 0, true);
-						Radiate.instance.saveDocument(iDocument);
+						Radiate.addEventListener(RadiateEvent.DOCUMENT_SAVE_COMPLETE, documentSavedHandler, false, 0, true);
+						DocumentManager.saveDocument(iDocument);
 						lastAction = OPEN_DOCUMENT_IN_BROWSER_SITE_SCANNER;
 						return;
 					}

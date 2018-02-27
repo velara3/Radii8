@@ -2,8 +2,10 @@
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.managers.ToolManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
+	import com.flexcapacitor.views.Tools;
 	
 	import flash.events.EventDispatcher;
 	import flash.events.MouseEvent;
@@ -46,15 +48,15 @@ package com.flexcapacitor.tools {
 		 * Enable
 		 * */
 		public function enable():void {
-			radiate = Radiate.getInstance();
+			radiate = Radiate.instance;
 			
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
 			
-			if (radiate.selectedDocument) {
-				updateDocument(radiate.selectedDocument);
+			if (Radiate.selectedDocument) {
+				updateDocument(Radiate.selectedDocument);
 			}
 			
-			defaultCursorID = radiate.getMouseCursorID(this);
+			defaultCursorID = ToolManager.getMouseCursorID(this);
 			
 			Mouse.cursor = defaultCursorID;
 		}
@@ -170,26 +172,22 @@ package com.flexcapacitor.tools {
 				couldNotGetColor = true;
 				
 				if (isPreview) {
-					radiate.dispatchColorPreviewEvent(0, couldNotGetColor);
+					Radiate.dispatchColorPreviewEvent(0, couldNotGetColor);
 				}
 				else {
-					radiate.dispatchColorSelectedEvent(0, couldNotGetColor);
+					Radiate.dispatchColorSelectedEvent(0, couldNotGetColor);
 				}
 			}
 			else {
 				if (isPreview) {
-					radiate.dispatchColorPreviewEvent(uint(color));
+					Radiate.dispatchColorPreviewEvent(uint(color));
 				}
 				else {
-					radiate.dispatchColorSelectedEvent(uint(color));
+					Radiate.dispatchColorSelectedEvent(uint(color));
 					
 				}
 			}
-			
-			
 		}
-		
-		
 	}
 }
 

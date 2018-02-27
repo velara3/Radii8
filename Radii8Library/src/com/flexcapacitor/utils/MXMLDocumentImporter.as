@@ -6,6 +6,7 @@ package com.flexcapacitor.utils {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.ImportEvent;
 	import com.flexcapacitor.managers.ComponentManager;
+	import com.flexcapacitor.managers.LibraryManager;
 	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImageData;
@@ -423,7 +424,7 @@ package com.flexcapacitor.utils {
 				// calling add before setting properties because some 
 				// properties such as borderVisible and trackingLeft/trackingRight need to be set after 
 				// the component is added (maybe)
-				valuesObject = Radiate.getPropertiesStylesEventsFromNode(componentInstance, node, componentDefinition);
+				valuesObject = ComponentManager.getPropertiesStylesEventsFromNode(componentInstance, node, componentDefinition);
 				attributes = valuesObject.attributes;
 				
 				// remove attributes with namespaces for now but warn about attributes that are not found
@@ -434,7 +435,7 @@ package com.flexcapacitor.utils {
 				
 				// skip child nodes that are part of the component but defined as child nodes
 				handledChildNodes = handledChildNodes.concat(handledChildNodeNames);
-				//var typedValueObject:Object = Radiate.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
+				//var typedValueObject:Object = ComponentManager.getTypedValueFromStyles(instance, valuesObject.values, valuesObject.styles);
 				
 
 				// when copying images that do not have a URL then we use a internal reference id
@@ -539,7 +540,7 @@ package com.flexcapacitor.utils {
 					// also parser.
 					if (componentInstance is Label) {
 						try {
-							Radiate.addElement(componentInstance, parent, valuesObject.properties.concat(valuesObject.childProperties), valuesObject.styles.concat(valuesObject.childStyles), valuesObject.events.concat(valuesObject.childEvents), valuesObject.values, null, AddItems.LAST, null, parentPosition);
+							ComponentManager.addElement(componentInstance, parent, valuesObject.properties.concat(valuesObject.childProperties), valuesObject.styles.concat(valuesObject.childStyles), valuesObject.events.concat(valuesObject.childEvents), valuesObject.values, null, AddItems.LAST, null, parentPosition);
 							//LayoutManager.getInstance().validateClient(componentInstance as ILayoutManagerClient, true);
 							
 							//ArgumentError: Error #2008: Parameter fontWeight must be one of the accepted values.
@@ -561,7 +562,7 @@ package com.flexcapacitor.utils {
 						}
 					}
 					else {
-						Radiate.addElement(componentInstance, 
+						ComponentManager.addElement(componentInstance, 
 											parent, 
 											valuesObject.properties.concat(valuesObject.childProperties), 
 											valuesObject.styles.concat(valuesObject.childStyles), 
@@ -580,18 +581,18 @@ package com.flexcapacitor.utils {
 					}
 				}
 				else if (valuesObject.propertiesStylesEvents && valuesObject.propertiesStylesEvents.length) {
-					Radiate.setPropertiesStylesEvents(componentInstance, valuesObject.propertiesStylesEvents, valuesObject.values, null, false, dispatchEvents);
+					ComponentManager.setPropertiesStylesEvents(componentInstance, valuesObject.propertiesStylesEvents, valuesObject.values, null, false, dispatchEvents);
 				}
 				
-				Radiate.removeExplictSizeOnComponent(componentInstance, node, componentDefinition, false);
+				ComponentManager.removeExplictSizeOnComponent(componentInstance, node, componentDefinition, false);
 				
-				Radiate.updateComponentAfterAdd(iDocument, componentInstance, false, makeInteractive, setPrimitivesDefaults);
+				ComponentManager.updateComponentAfterAdd(iDocument, componentInstance, false, makeInteractive, setPrimitivesDefaults);
 				
 				//Radiate.makeInteractive(componentInstance, makeInteractive);
 				
 				// in case width or height or relevant was changed
 				if (componentInstance is Application && dispatchEvents) {
-					Radiate.instance.dispatchDocumentSizeChangeEvent(componentInstance);
+					Radiate.dispatchDocumentSizeChangeEvent(componentInstance);
 				}
 				
 				componentDescription = iDocument.getItemDescription(componentInstance);
@@ -777,7 +778,7 @@ package com.flexcapacitor.utils {
 			var successful:Boolean;
 			
 			bitmapDataId = valuesObject.values[attributeName];
-			bitmapData = Radiate.getBitmapDataFromImageDataID(bitmapDataId);
+			bitmapData = LibraryManager.getBitmapDataFromImageDataID(bitmapDataId);
 			
 			if (bitmapData) {
 				valuesObject.values["source"] = bitmapData;
@@ -856,7 +857,7 @@ package com.flexcapacitor.utils {
 			
 			//originalBitmapData = componentInstance.bitmapData; returns a clone use image.source 
 			originalBitmapData = componentInstance.source;
-			imageData = Radiate.getImageDataFromBitmapData(originalBitmapData);
+			imageData = LibraryManager.getImageDataFromBitmapData(originalBitmapData);
 			
 			if (contentLoaderInfo.loader.content) {
 				bitmap = contentLoaderInfo.loader.content as Bitmap;
@@ -865,8 +866,8 @@ package com.flexcapacitor.utils {
 			
 			if (newBitmapData && componentInstance) {
 				
-				Radiate.instance.addBitmapDataToDocument(Radiate.instance.selectedDocument, newBitmapData, null);
-				Radiate.setProperty(componentInstance, "source", newBitmapData, "Source loaded");
+				LibraryManager.addBitmapDataToDocument(Radiate.selectedDocument, newBitmapData, null);
+				ComponentManager.setProperty(componentInstance, "source", newBitmapData, "Source loaded");
 				
 				
 				if (imageData) {
@@ -1458,7 +1459,7 @@ public static function myErrorHandler(p:Property, value:Object):void
 									value = DisplayObjectUtils.getColorAsUInt(value as String);
 								}
 								
-								classInstance[attributeName] = Radiate.getTypedPropertyValue(classInstance, attributeName, value);
+								classInstance[attributeName] = ComponentManager.getTypedPropertyValue(classInstance, attributeName, value);
 							}
 						}
 						

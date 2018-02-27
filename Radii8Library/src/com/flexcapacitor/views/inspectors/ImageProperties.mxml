@@ -14,6 +14,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
@@ -30,7 +31,7 @@
 			
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
@@ -63,7 +64,7 @@
 			}
 			
 			public function update():void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 				var sourceData:MetaData;
 				
@@ -121,12 +122,12 @@
 				var iDocument:IDocument;
 				var componentDescription:ComponentDescription;
 				
-				iDocument = radiate.selectedDocument;
+				iDocument = Radiate.selectedDocument;
 				componentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 				
 				if (componentDescription && componentDescription.embedBitmapData != embedImageData.selected) {
 					settingTarget = true;
-					Radiate.setProperty(componentDescription, "embedBitmapData", embedImageData.selected);
+					ComponentManager.setProperty(componentDescription, "embedBitmapData", embedImageData.selected);
 					Radiate.setTarget(target, true, "", true);
 					settingTarget = false;
 				}

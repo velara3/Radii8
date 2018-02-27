@@ -1,6 +1,9 @@
 
 package com.flexcapacitor.model {
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.managers.DocumentManager;
+	import com.flexcapacitor.managers.LibraryManager;
+	import com.flexcapacitor.managers.ProfileManager;
 	import com.flexcapacitor.managers.ServicesManager;
 	import com.flexcapacitor.services.IServiceEvent;
 	import com.flexcapacitor.services.IWPServiceEvent;
@@ -219,8 +222,8 @@ package com.flexcapacitor.model {
 							iDocument = currentDocumentData.createInstance(currentDocumentData);
 						}*/
 						
-						//Radiate.instance.addDocument(iDocument, this);
-						//Radiate.instance.openDocument(iDocument);
+						//LibraryManager.addDocument(iDocument, this);
+						//DocumentManager.openDocument(iDocument);
 						
 						addDocument(iDocument);//changed to document from documentdata
 						//log.info("  document added: " + iDocumentData.name);
@@ -237,7 +240,7 @@ package com.flexcapacitor.model {
 		 * */
 		public function openDocument(document:IDocument, overwrite:Boolean = false):void {
 			//document.open();
-			//Radiate.instance.openDocument(document);
+			//DocumentManager.openDocument(document);
 		}
 		
 		/**
@@ -516,7 +519,7 @@ package com.flexcapacitor.model {
 					documentsMetaData.push(documentData);
 					//dateSaved = documentData.dateSaved;
 					//Radiate.instance.createDocumentFromData(documentData);
-					//Radiate.instance.addDocument(documentData.document);
+					//LibraryManager.addDocument(documentData.document);
 				}
 			}
 		}*/
@@ -581,16 +584,16 @@ package com.flexcapacitor.model {
 						//else {
 							//iDocument = getDocumentByID(documentMetaData.uid);
 							//iDocument.open();
-							//Radiate.instance.openDocumentByData(iDocument, true);
+							//DocumentManager.openDocumentByData(iDocument, true);
 						//}
 					}
 					else if (isLocal) {
 						iDocument.open(DocumentData.LOCAL_LOCATION);
-						Radiate.instance.openDocumentByData(iDocument, true, true);
+						DocumentManager.openDocumentByData(iDocument, true, true);
 					}
 					else if (isInternal) {
 						iDocument.open();
-						Radiate.instance.openDocument(iDocument, location, true);
+						DocumentManager.openDocument(iDocument, location, true);
 					}
 				}
 			}
@@ -608,7 +611,7 @@ package com.flexcapacitor.model {
 			var iDocument:IDocument;
 			var iDocumentData:IDocumentData;
 			var documentCreated:Boolean;
-			var radiate:Radiate = Radiate.getInstance();
+			var radiate:Radiate = Radiate.instance;
 			
 			// do documents have remote ID? if so we have to open from the server
 			var needToWaitForDocumentsOpenResults:Boolean;
@@ -623,7 +626,7 @@ package com.flexcapacitor.model {
 				documentCreated = getDocumentExists(documentMetaData);
 				
 				if (!documentCreated) {
-					iDocument = radiate.createDocumentFromMetaData(documentMetaData);
+					iDocument = DocumentManager.createDocumentFromMetaData(documentMetaData);
 					
 					if (iDocument.id==null || iDocument.id=="") {
 						Radiate.error("The document, \"" + iDocument.name + "\" was never saved. You have to remember to save new documents. Please save the project to prevent seeing this error again.");
@@ -640,7 +643,7 @@ package com.flexcapacitor.model {
 				else {
 					iDocumentData = getDocumentByUID(documentMetaData.uid);
 					iDocumentData.open(location);
-					Radiate.instance.openDocumentByData(iDocumentData, true, true);
+					DocumentManager.openDocumentByData(iDocumentData, true, true);
 				}
 			}
 			
@@ -708,11 +711,11 @@ package com.flexcapacitor.model {
 				}
 				else if (isLocal) {
 					iDocument.open(DocumentData.LOCAL_LOCATION);
-					Radiate.instance.openDocumentByData(iDocument, true, true);
+					DocumentManager.openDocumentByData(iDocument, true, true);
 				}
 				else if (isInternal) {
 					iDocument.open();
-					Radiate.instance.openDocument(iDocument, location, true);
+					DocumentManager.openDocument(iDocument, location, true);
 				}
 			}
 			
@@ -739,7 +742,7 @@ package com.flexcapacitor.model {
 					else {
 						iDocument = getDocumentByID(documentMetaData.uid);
 						iDocument.open();
-						Radiate.instance.openDocumentByData(iDocument, true);
+						DocumentManager.openDocumentByData(iDocument, true);
 					}
 				}
 			}*/
@@ -834,7 +837,7 @@ package com.flexcapacitor.model {
 						needToWaitForDocumentsSaveResults = true;
 					}
 					
-					Radiate.instance.saveDocument(documentData as IDocument, locations);
+					DocumentManager.saveDocument(documentData as IDocument, locations);
 				//}
 			}
 		
@@ -1030,11 +1033,11 @@ package com.flexcapacitor.model {
 				
 				// we are over writing the previous instance - 
 				// but should we unmarshall it? 
-				Radiate.instance.addDocument(iDocument, this, true);
+				DocumentManager.addDocument(iDocument, this, true);
 				currentDocumentData.isOpen = false;
 				
 				if (openDocumentOnResults) {
-					Radiate.instance.openDocument(iDocument);
+					DocumentManager.openDocument(iDocument);
 				}
 			}
 			
@@ -1050,7 +1053,7 @@ package com.flexcapacitor.model {
 				
 				// open the last document if valid
 				if (iDocument) {
-					Radiate.instance.openDocument(iDocument);
+					DocumentManager.openDocument(iDocument);
 				}
 				
 				
@@ -1110,7 +1113,7 @@ package com.flexcapacitor.model {
 			
 			if (!currentDocument.saveSuccessful) {
 				
-				if (!Radiate.getInstance().isUserLoggedIn) {
+				if (!ProfileManager.isUserLoggedIn) {
 					Radiate.info("The document, '" + currentDocument.name + "' was not saved because the user is not logged in.");
 				}
 				else {

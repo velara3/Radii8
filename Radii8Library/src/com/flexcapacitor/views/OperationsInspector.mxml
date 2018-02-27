@@ -31,11 +31,11 @@
 			public var showDropLocation:Boolean;
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, handleToolChange, false, 0, true);
 				
-				tool = radiate.selectedTool;
+				tool = Radiate.selectedTool;
 				
 				updateTool(tool);
 				

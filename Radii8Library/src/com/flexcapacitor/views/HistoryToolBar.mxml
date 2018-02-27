@@ -39,7 +39,7 @@
 			 * 
 			 * */
 			public function redo():void {
-				var historyIndex:int = HistoryManager.redo(radiate.selectedDocument, true);
+				var historyIndex:int = HistoryManager.redo(Radiate.selectedDocument, true);
 				
 				
 				//Radiate.history.refresh();
@@ -54,7 +54,7 @@
 			 * 
 			 * */
 			public function undo():void {
-				var historyIndex:int = HistoryManager.undo(radiate.selectedDocument, true);
+				var historyIndex:int = HistoryManager.undo(Radiate.selectedDocument, true);
 				
 				//Radiate.history.refresh();
 				
@@ -98,6 +98,7 @@
 			  alpha=".8"
 			  width="20"
 			  height="18"
+			  buttonMode="true"
 			  buttonDown="undo()" 
 			  toolTip="Undo"
 			  autoRepeat="true"
@@ -109,23 +110,11 @@
 			  alpha=".8"
 			  width="20"
 			  height="18"
+			  buttonMode="true"
 			  buttonDown="redo()" 
 			  toolTip="Redo"
 			  autoRepeat="true"
 			  repeatInterval="100"
 			  skinClass="com.flexcapacitor.skins.TransparentFillButtonSkin"
 			  />
-	<!--
-	<c:BeveledImageButton id="backButton" source="{Radii8LibraryAssets.undo}" 
-						  height="15"
-						  alpha=".8"
-						  click="undo()" 
-						  toolTip="Undo"
-						  />
-	<c:BeveledImageButton id="forwardButton" source="{Radii8LibraryAssets.redo}"
-						  height="15"
-						  alpha=".8"
-						  click="redo()" 
-						  toolTip="Redo"
-						  />-->
 </s:Group>

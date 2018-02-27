@@ -16,6 +16,8 @@
 	<fx:Script>
 	<![CDATA[
 		import com.flexcapacitor.controller.Radiate;
+		import com.flexcapacitor.managers.DeferManager;
+		import com.flexcapacitor.managers.ProjectManager;
 		import com.flexcapacitor.model.IProject;
 		
 		import spark.components.List;
@@ -42,7 +44,7 @@
 				
 				Radiate.info("Opening project '" + project.name + "'");
 				
-				Radiate.callAfter(250, Radiate.instance.openProjectFromMainView, project);
+				DeferManager.callAfter(250, ProjectManager.openProjectFromMainView, project);
 				//openProject(project);
 			}
 			

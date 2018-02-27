@@ -26,12 +26,9 @@
 			
 			public var radiate:Radiate;
 			public var target:Object;
-			public var data:Object;
-			
-			public var fonts:Array;
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
@@ -68,8 +65,6 @@
 						return;
 					}
 				}
-				
-				callLater(update);
 			}
 			
 			public function update():void {

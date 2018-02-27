@@ -177,7 +177,7 @@
 			protected function cancelButtonHandler(event:MouseEvent):void {
 				removeMouseHandlers();
 				clearSelection(target, true);
-				radiate.dispatchTargetClearEvent();
+				Radiate.dispatchTargetClearEvent();
 				target = null;
 				label.text = "";
 			}
@@ -268,7 +268,7 @@
 
 				InteractiveObject(event.target).addEventListener(MouseEvent.CLICK, findClickHandler, false, 1000, true);
 				
-				radiate.dispatchTargetChangeEvent(event.target);
+				Radiate.dispatchTargetChangeEvent(event.target);
 
 				removeMouseHandlers();
 				

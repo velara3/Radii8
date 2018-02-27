@@ -101,10 +101,30 @@ package com.flexcapacitor.utils {
 		public static const BASELINE:String 		= "baseline";
 		
 		public static const ROTATION:String			= "rotation";
+		
+		public static const UP:String 				= "top";
+		public static const DOWN:String 			= "bottom";
 				
-		public static var sizeAndPositionProperties:Array = [X, Y, WIDTH, HEIGHT, PERCENT_WIDTH, PERCENT_HEIGHT, VERTICAL_CENTER, HORIZONTAL_CENTER, TOP, LEFT, BOTTOM, RIGHT, BASELINE];
-		public static var explicitSizeAndPositionProperties:Array = sizeAndPositionProperties.concat([EXPLICIT_HEIGHT, EXPLICIT_WIDTH]);
-		public static var explicitSizeAndPositionRotationProperties:Array = explicitSizeAndPositionProperties.concat([ROTATION]);
+		public static const HORIZONTAL_PROPERTIES:Array = [X, LEFT, RIGHT, HORIZONTAL_CENTER];
+		public static const HORIZONTAL_PROPERTIES_NO_X:Array = [LEFT, RIGHT, HORIZONTAL_CENTER];
+		
+		public static const VERTICAL_PROPERTIES_NO_Y:Array = [TOP, BOTTOM, VERTICAL_CENTER, BASELINE];
+		public static const VERTICAL_PROPERTIES_NO_BASELINE:Array = [Y, TOP, BOTTOM, VERTICAL_CENTER];
+		public static const VERTICAL_PROPERTIES_NO_Y_BASELINE:Array = [TOP, BOTTOM, VERTICAL_CENTER];
+		
+		public static const WIDTH_PROPERTIES:Array = [WIDTH, PERCENT_WIDTH];
+		public static const HEIGHT_PROPERTIES:Array = [HEIGHT, PERCENT_HEIGHT];
+		
+		public static const SIZE_PROPERTIES:Array = [WIDTH, HEIGHT, PERCENT_WIDTH, PERCENT_HEIGHT];
+		public static const SIZE_PROPERTIES_NO_PERCENT:Array = [WIDTH, HEIGHT];
+		public static const POSITION_PROPERTIES:Array = [X, Y, VERTICAL_CENTER, HORIZONTAL_CENTER, TOP, LEFT, BOTTOM, RIGHT, BASELINE];
+		public static const POSITION_PROPERTIES_NO_BASELINE:Array = [X, Y, VERTICAL_CENTER, HORIZONTAL_CENTER, TOP, LEFT, BOTTOM, RIGHT];
+		public static const SIZE_AND_POSITION_PROPERTIES:Array = [X, Y, WIDTH, HEIGHT, PERCENT_WIDTH, PERCENT_HEIGHT, VERTICAL_CENTER, HORIZONTAL_CENTER, TOP, LEFT, BOTTOM, RIGHT, BASELINE];
+		public static const EXPLICIT_SIZE_AND_POSITION_PROPERTIES:Array = SIZE_AND_POSITION_PROPERTIES.concat([EXPLICIT_HEIGHT, EXPLICIT_WIDTH]);
+		public static const EXPLICIT_SIZE_AND_POSITION_PROPERTIES_ROTATION:Array = EXPLICIT_SIZE_AND_POSITION_PROPERTIES.concat([ROTATION]);
+		
+		public static const HORIZONTAL_SCROLL_POSITION:String = "horizontalScrollPosition";
+		public static const VERTICAL_SCROLL_POSITION:String = "verticalScrollPosition";
 		
 		public static var tlfNamespace:Namespace 	= new Namespace(tlfNamespacePrefix, tlfNamespaceURI);
 		public static var sparkNamespace:Namespace 	= new Namespace(sparkNamespacePrefix, sparkNamespaceURI);

@@ -106,7 +106,7 @@
 				xml = <root><items/></root>;
 				
 				// get document tree for getting path names later
-				documentTree = radiate.selectedDocument.componentDescription;
+				documentTree = Radiate.selectedDocument.componentDescription;
 				
 				return "Not supported at this time";
 				// THIS IS OLDER CODE IT NEEDS TO BE REFACTORED

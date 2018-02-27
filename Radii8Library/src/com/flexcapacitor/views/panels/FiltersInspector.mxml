@@ -44,7 +44,7 @@
 			public var FILTERS:String = "filters";
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
@@ -119,7 +119,7 @@
 				if (target && FILTERS in target) {
 					newSortedFilters = appliedFiltersCollection.source.slice();
 					//target.filters = newSortedFilters;
-					Radiate.setProperty(target, FILTERS, newSortedFilters);
+					ComponentManager.setProperty(target, FILTERS, newSortedFilters);
 					//updateFiltersCollection(true);
 					//radiate.setSubTarget(target, filter);
 				}
@@ -145,10 +145,10 @@
 					
 					if (existingFilters.length==0) {
 						// we need an empty array for graphic elements
-						Radiate.clearProperty(target, FILTERS, []);
+						ComponentManager.clearProperty(target, FILTERS, []);
 					}
 					else {
-						Radiate.setProperty(target, FILTERS, existingFilters);
+						ComponentManager.setProperty(target, FILTERS, existingFilters);
 					}
 					
 					updateFiltersCollection(true);
@@ -202,7 +202,7 @@
 						
 						existingFilters.push(filter);
 						existingFilters = existingFilters.slice();
-						Radiate.setProperty(target, FILTERS, existingFilters);
+						ComponentManager.setProperty(target, FILTERS, existingFilters);
 						updateFiltersCollection(true);
 						radiate.setSubTarget(target, filter);
 					}

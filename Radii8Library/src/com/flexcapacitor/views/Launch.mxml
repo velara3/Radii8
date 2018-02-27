@@ -2,16 +2,20 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
-		 width="35" height="24"
+		 xmlns:ns="http://www.flexcapacitor.com/flex/2015" 
+		 xmlns:controls="com.flexcapacitor.controls.*"
 		 
+		 width="35" 
+		 height="24"
 		 creationComplete="group1_creationCompleteHandler(event)" 
-		 xmlns:ns="http://www.flexcapacitor.com/flex/2015" xmlns:controls="com.flexcapacitor.controls.*">
+		 >
 	
 
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.DocumentManager;
 			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -38,14 +42,11 @@
 			 * 
 			 * */
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler);
 				radiate.addEventListener(RadiateEvent.TOOLS_UPDATED, toolsUpdatedHandler);
 				
-				//tools.dataProvider = Radiate.toolsDescriptions;
-				
-				if (radiate.selectedTool==null) {
-					//tools.selectedIndex = 0;
+				if (Radiate.selectedTool==null) {
 					updateTool();
 				}
 			}
@@ -86,7 +87,7 @@
 			public function updateTool():void {
 				var item:ComponentDescription;
 				
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				//item = tools.selectedItem as ComponentDescription;
 				
@@ -109,7 +110,7 @@
 			protected function previewButton_clickHandler(event:MouseEvent):void {
 				var previewDocument:Object;
 				
-				if (!radiate.selectedDocument) return;
+				if (!Radiate.selectedDocument) return;
 				
 				/*if (!isCodeModifiedByUser) {
 					var code:String = getDocumentCode(); // puts document code into text area
@@ -118,49 +119,49 @@
 				
 				if (Radiate.isDesktop) {
 					// allow to swap between preview and non preview
-					if (!radiate.isPreviewDocumentVisible()) {
-						radiate.openDocumentPreview(radiate.selectedDocument, true);
-						previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+					if (!DocumentManager.isPreviewDocumentVisible()) {
+						DocumentManager.openDocumentPreview(Radiate.selectedDocument, true);
+						previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 						
 						if (previewDocument is UIComponent) {
 							previewDocument.htmlText = radiate.editorSource.source;
 						}
 						
-						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+						//Radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 					}
 					else {
-						radiate.openDocument(radiate.selectedDocument);
-						//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+						DocumentManager.openDocument(Radiate.selectedDocument);
+						//Radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
 					}
 				}
 				else {
 					// allow to swap between preview and non preview
-					if (!radiate.isPreviewDocumentVisible()) {
-						radiate.openDocumentPreview(radiate.selectedDocument, true);
-						previewDocument = radiate.getDocumentPreview(radiate.selectedDocument);
+					if (!DocumentManager.isPreviewDocumentVisible()) {
+						DocumentManager.openDocumentPreview(Radiate.selectedDocument, true);
+						previewDocument = DocumentManager.getDocumentPreview(Radiate.selectedDocument);
 						
 						if (previewDocument is IFrame) {
 							previewDocument.content = radiate.editorSource.source;
 						}
 						
-						//radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
+						//Radiate.dispatchPreviewEvent(codeModelTextArea.text, String(codeType.selectedItem));
 					}
 					else {
-						radiate.openDocument(radiate.selectedDocument);
-						//radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
+						DocumentManager.openDocument(Radiate.selectedDocument);
+						//Radiate.dispatchPreviewEvent(codeModelTextArea.text, "");
 					}
 				}
 			}
 			
 			private function wrapInPreview(source:String):String {
-				var componentTree:ComponentDescription = radiate.selectedDocument.componentDescription;
+				var componentTree:ComponentDescription = Radiate.selectedDocument.componentDescription;
 				var targetDescription:ComponentDescription;
 				
 				/*if (showSelection.selected) {
 					targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(radiate.target, componentTree);
 				}
 				else {*/
-					targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(radiate.selectedDocument.instance, componentTree);
+					targetDescription = DisplayObjectUtils.getTargetInComponentDisplayList(Radiate.selectedDocument.instance, componentTree);
 				/*}*/
 				
 				if (targetDescription==null || radiate.target == componentTree.instance) {

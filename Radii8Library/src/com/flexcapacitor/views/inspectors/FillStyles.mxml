@@ -14,6 +14,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.utils.ArrayUtils;
 			import com.flexcapacitor.utils.ClassUtils;
@@ -46,7 +47,7 @@
 										];
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
@@ -271,23 +272,23 @@
 				savePreviousFill(fill);
 				
 				if (fillType.name == MXMLDocumentConstants.NONE && fill!=null) {
-					Radiate.clearProperty(filledElement, MXMLDocumentConstants.FILL, null, "Removed fill"); 
+					ComponentManager.clearProperty(filledElement, MXMLDocumentConstants.FILL, null, "Removed fill"); 
 				}
 				else if (fillType.name == MXMLDocumentConstants.SOLID_COLOR && !(fill is SolidColor)) {
 					fill = getPreviousOrNewFill(SolidColor);
-					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
+					ComponentManager.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
 				}
 				else if (fillType.name == MXMLDocumentConstants.LINEAR_GRADIENT && !(fill is LinearGradient)) {
 					fill = getPreviousOrNewFill(LinearGradient);
-					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
+					ComponentManager.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
 				}
 				else if (fillType.name == MXMLDocumentConstants.RADIAL_GRADIENT && !(fill is RadialGradient)) {
 					fill = getPreviousOrNewFill(RadialGradient);
-					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
+					ComponentManager.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
 				}
 				else if (fillType.name == MXMLDocumentConstants.BITMAP_FILL && !(fill is BitmapFill)) {
 					fill = getPreviousOrNewFill(BitmapFill);
-					Radiate.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
+					ComponentManager.setProperty(filledElement, MXMLDocumentConstants.FILL, fill, "Set fill"); 
 				}
 				
 				update();

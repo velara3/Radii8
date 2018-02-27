@@ -19,6 +19,7 @@ package com.flexcapacitor.managers
 	import flash.utils.Dictionary;
 	
 	import mx.collections.ArrayList;
+	import mx.core.IVisualElementContainer;
 	import mx.core.UIComponent;
 	import mx.events.FlexEvent;
 	import mx.managers.ISystemManager;
@@ -63,6 +64,13 @@ package com.flexcapacitor.managers
 		public static var editors:Dictionary = new Dictionary(true);
 		
 		/**
+		 * Get the current document.
+		 * */
+		public static function get selectedDocument():IDocument {
+			return Radiate.selectedDocument;
+		}
+		
+		/**
 		 * Handles double click on text to show text editor. 
 		 * To support more components add the elements in the addElement method
 		 * */
@@ -74,7 +82,7 @@ package com.flexcapacitor.managers
 			var showTextEditorInCallOut:Boolean;
 			var componentDescription:ComponentDescription;
 			
-			componentDescription = radiate.selectedDocument.getItemDescription(currentTarget);
+			componentDescription = selectedDocument.getItemDescription(currentTarget);
 			showTextEditorInCallOut = Text.showTextEditorInCallOut;
 			
 			// todo add and remove listeners when locked and unlocked
@@ -110,7 +118,7 @@ package com.flexcapacitor.managers
 			var offsetCalloutY:int;
 			var showSpriteFillArea:Boolean = false;
 			var basicFonts:Boolean = false;
-			var radiate:Radiate = Radiate.instance;
+			var toolLayer:IVisualElementContainer;
 			
 			const MIN_WIDTH:int = 22;
 			
@@ -118,7 +126,7 @@ package com.flexcapacitor.managers
 				log("Show Text Editor");
 			}
 			
-			if (!(radiate.selectedTool is Selection) && !(radiate.selectedTool is com.flexcapacitor.tools.Text)) {
+			if (!(Radiate.selectedTool is Selection) && !(Radiate.selectedTool is com.flexcapacitor.tools.Text)) {
 				return;
 			}
 			
@@ -145,8 +153,9 @@ package com.flexcapacitor.managers
 			// get position of label or richtext
 			// and get size and position for temporary rich text field
 			if (originalTextField) {
-				iDocument = radiate.selectedDocument;
-				editorComponent = radiate.editorComponent;
+				iDocument = selectedDocument;
+				editorComponent = DocumentManager.editorComponent;
+				toolLayer = DocumentManager.toolLayer;
 				targetComponentDescription = DisplayObjectUtils.getTargetInComponentDisplayList(textTarget, iDocument.componentDescription);
 				parentComponentDescription = targetComponentDescription.parent;
 				
@@ -164,10 +173,10 @@ package com.flexcapacitor.managers
 					rectangle = DisplayObjectUtils.getRectangleBounds(textTarget, iDocument.instance);
 				}
 				
-				//rectangleBounds = DisplayObjectUtils.getBounds(currentEditableComponent, radiate.toolLayer);
+				//rectangleBounds = DisplayObjectUtils.getBounds(currentEditableComponent, DocumentManager.toolLayer);
 				
 				position = DisplayObjectUtils.getDisplayObjectPosition(originalTextField as DisplayObject, null, true);
-				distancePoint = DisplayObjectUtils.getDistanceBetweenDisplayObjects(originalTextField, radiate.toolLayer);
+				distancePoint = DisplayObjectUtils.getDistanceBetweenDisplayObjects(originalTextField, toolLayer);
 				
 				valuesObject.x = rectangle.x;
 				valuesObject.y = rectangle.y;
@@ -200,7 +209,7 @@ package com.flexcapacitor.managers
 					editableRichTextEditorBarCallout.showEditorOnFocusIn = true;
 				}
 				else {
-					editorBar = radiate.editorComponent;
+					editorBar = DocumentManager.editorComponent;
 				}
 				
 				editorBar.focusOnTextAfterFontChange = false;
@@ -223,20 +232,10 @@ package com.flexcapacitor.managers
 					// TODO: test performance of below if deep copy is faster and works the same 
 					textFlowString = TextConverter.export(originalTextField.textFlow, TextConverter.TEXT_LAYOUT_FORMAT, ConversionType.STRING_TYPE) as String;
 					textFlow = TextConverter.importToFlow(textFlowString, TextConverter.TEXT_LAYOUT_FORMAT);
-					//textFlow = TextFlow(currentEditableComponent.textFlow).deepCopy();
-					
-					
-					//editableRichTextEditorBar.textFlow = textFlow;
-					
-					//isEditableRichTextEditorBarVisible = true;
-					//editableRichTextEditorBarCallout.textFlow = textFlow;
-					// not sure why the next line is commented out
-					//editableRichTextEditor.styleName = currentEditableComponent;
 					editableRichTextField.styleName = originalTextField;
 					editableRichTextField.validateNow();
 				}
 				else {
-					//editableRichTextField.text = currentEditableComponent.text;
 					valuesObject.text = originalTextField.text;
 					
 					editableRichTextField.styleName = originalTextField;
@@ -245,23 +244,8 @@ package com.flexcapacitor.managers
 				
 				
 				if (isRichEditor) {
-					//editableRichTextEditorBarCallout.includeInLayout = false;
 					valuesObject.textFlow = textFlow;
 					propertyNames.push("textFlow");
-					/*
-					testRichEditableText.clearStyle("horizontalCenter");
-					testRichEditableText.clearStyle("verticalCenter");
-					testRichEditableText.x = rectangle.x-2;
-					testRichEditableText.y = rectangle.y-2;
-					trace(testRichEditableText.x);
-					trace(testRichEditableText.y);
-					*/
-					/*
-					editableRichTextEditor.clearStyle("horizontalCenter");
-					editableRichTextEditor.clearStyle("verticalCenter");
-					editableRichTextEditor.x = rectangle.x-2;
-					editableRichTextEditor.y = rectangle.y-2;
-					*/
 				}
 				else {
 					valuesObject.text = originalTextField.text;
@@ -272,18 +256,18 @@ package com.flexcapacitor.managers
 				HistoryManager.doNotAddEventsToHistory = true;
 				if (isBasicLayout) {
 					if (isRichEditor) {
-						Radiate.addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
+						ComponentManager.addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
 					}
 					else {
-						Radiate.addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
+						ComponentManager.addElement(editableRichTextField, parentComponentDescription.instance, propertyNames, null, null, valuesObject);
 					}
 				}
 				else {
 					if (isRichEditor) {
-						Radiate.addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
+						ComponentManager.addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
 					}
 					else {
-						Radiate.addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
+						ComponentManager.addElement(editableRichTextField, iDocument.instance, propertyNames, null, null, valuesObject);
 					}
 				}
 				HistoryManager.doNotAddEventsToHistory = false;
@@ -297,8 +281,8 @@ package com.flexcapacitor.managers
 					editableRichTextFieldSprite.width = rectangle.width;
 					editableRichTextFieldSprite.height = rectangle.height;
 					
-					if (editableRichTextFieldSprite.owner!=radiate.toolLayer) {
-						radiate.toolLayer.addElement(editableRichTextFieldSprite);
+					if (editableRichTextFieldSprite.owner!=toolLayer) {
+						toolLayer.addElement(editableRichTextFieldSprite);
 					}
 					
 					if (showSpriteFillArea) {
@@ -308,13 +292,12 @@ package com.flexcapacitor.managers
 						editableRichTextFieldSprite.graphics.endFill();
 					}
 					
-					distancePoint = DisplayObjectUtils.getDisplayObjectPosition(originalTextField as DisplayObject, radiate.toolLayer, true);
+					distancePoint = DisplayObjectUtils.getDisplayObjectPosition(originalTextField as DisplayObject, toolLayer, true);
 					
 					editableRichTextFieldSprite.x = distancePoint.x;
 					editableRichTextFieldSprite.y = distancePoint.y + offsetCalloutY;
 					editableRichTextFieldSprite.validateNow();
 					
-					//editableRichTextField.setFocus();
 					if (useCallOut) {
 						editableRichTextEditorBarCallout.richEditableText = editableRichTextField;
 						if (editableRichTextEditorBarCallout.isOpen) {
@@ -341,11 +324,11 @@ package com.flexcapacitor.managers
 					editorBar.addEventListener(RichTextEditorBar.APPLY, richTextEditor_applyHandler, false, 0, true);
 					
 					if (setFocus) {
-						Radiate.callAfter(1, editableRichTextField.setFocus);
+						DeferManager.callAfter(1, editableRichTextField.setFocus);
 					}
 					
 					if (selectText) {
-						Radiate.callAfter(1, editableRichTextField.selectAll);
+						DeferManager.callAfter(1, editableRichTextField.selectAll);
 					}
 					
 				}
@@ -354,11 +337,11 @@ package com.flexcapacitor.managers
 					editableRichTextField.setFocus();
 					
 					if (setFocus) {
-						Radiate.callAfter(1, editableRichTextField.setFocus);
+						DeferManager.callAfter(1, editableRichTextField.setFocus);
 					}
 					
 					if (selectText) {
-						Radiate.callAfter(1, editableRichTextField.selectAll);
+						DeferManager.callAfter(1, editableRichTextField.selectAll);
 					}
 					
 					editableRichTextField.addEventListener(FocusEvent.FOCUS_OUT, handleEditorEvents, false, 0, true);
@@ -367,7 +350,7 @@ package com.flexcapacitor.managers
 					editableRichTextField.addEventListener(MouseEvent.CLICK, handleEditorEvents, false, 0, true);
 				}
 				
-				if (!(radiate.selectedTool is com.flexcapacitor.tools.Text)) {
+				if (!(Radiate.selectedTool is com.flexcapacitor.tools.Text)) {
 					ToolManager.disableTool();
 				}
 				
@@ -605,13 +588,13 @@ package com.flexcapacitor.managers
 					if (setValues) {
 						textFlow = TextConverter.importToFlow(newValue, TextConverter.TEXT_LAYOUT_FORMAT);
 						textFlow.addEventListener(StatusChangeEvent.INLINE_GRAPHIC_STATUS_CHANGE, inlineGraphicStatusChange, false, 0, true);
-						Radiate.setProperty(originalTextField, "textFlow", textFlow);
+						ComponentManager.setProperty(originalTextField, "textFlow", textFlow);
 					}
 						
 				}
 				else {
 					if (setValues) {
-						Radiate.setProperty(originalTextField, "text", newValue);
+						ComponentManager.setProperty(originalTextField, "text", newValue);
 					}
 				}
 				
@@ -620,9 +603,9 @@ package com.flexcapacitor.managers
 			showOriginalTextField();
 			
 			if (isRichEditor) {
-				editor = radiate.editorComponent;
+				editor = DocumentManager.editorComponent;
 				
-				if (!(radiate.selectedTool is com.flexcapacitor.tools.Text)) {
+				if (!(Radiate.selectedTool is com.flexcapacitor.tools.Text)) {
 					Text.hideEditor();
 				}
 				
@@ -653,10 +636,10 @@ package com.flexcapacitor.managers
 			HistoryManager.doNotAddEventsToHistory = true;
 			if (isRichEditor) {
 				//removeElement(editableRichTextEditorBarCallout);
-				Radiate.removeElement(editableRichTextField);
+				ComponentManager.removeElement(editableRichTextField);
 			}
 			else if (editableRichTextField.parent) {
-				Radiate.removeElement(editableRichTextField);
+				ComponentManager.removeElement(editableRichTextField);
 			}
 			HistoryManager.doNotAddEventsToHistory = false;
 			
@@ -667,8 +650,8 @@ package com.flexcapacitor.managers
 			
 			originalTextField = null;
 			
-			if (editableRichTextFieldSprite.owner==radiate.toolLayer) {
-				radiate.toolLayer.removeElement(editableRichTextFieldSprite);
+			if (editableRichTextFieldSprite.owner==DocumentManager.toolLayer) {
+				DocumentManager.toolLayer.removeElement(editableRichTextFieldSprite);
 			}
 			
 		}

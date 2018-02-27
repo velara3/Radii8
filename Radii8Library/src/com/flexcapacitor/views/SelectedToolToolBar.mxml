@@ -49,11 +49,11 @@
 			}
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, handleToolChange);
 				
-				if (radiate.selectedTool) {
-					updateTool(radiate.selectedTool);
+				if (Radiate.selectedTool) {
+					updateTool(Radiate.selectedTool);
 				}
 			}
 			

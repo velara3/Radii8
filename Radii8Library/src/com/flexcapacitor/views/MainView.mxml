@@ -30,12 +30,21 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.effects.popup.OpenPopUp;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ArrangeLayers;
 			import com.flexcapacitor.managers.ClipboardManager;
+			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DateManager;
+			import com.flexcapacitor.managers.DeferManager;
+			import com.flexcapacitor.managers.DocumentManager;
+			import com.flexcapacitor.managers.FileManager;
 			import com.flexcapacitor.managers.HistoryManager;
+			import com.flexcapacitor.managers.ImageManager;
+			import com.flexcapacitor.managers.LibraryManager;
+			import com.flexcapacitor.managers.MenuManager;
+			import com.flexcapacitor.managers.ProfileManager;
+			import com.flexcapacitor.managers.ProjectManager;
 			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.managers.ViewManager;
@@ -49,16 +58,13 @@
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.utils.supportClasses.log;
 			import com.flexcapacitor.views.windows.ContactWindow;
-			import com.flexcapacitor.views.windows.CopyImageToClipboardWindow;
 			import com.flexcapacitor.views.windows.CreditsWindow;
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			import com.flexcapacitor.views.windows.ExportDocumentWindow;
 			import com.flexcapacitor.views.windows.ExportSnippetWindow;
-			import com.flexcapacitor.views.windows.GalleryWindow;
 			import com.flexcapacitor.views.windows.HelpWindow;
 			import com.flexcapacitor.views.windows.LoginWindow;
 			import com.flexcapacitor.views.windows.NewDocumentWindow;
-			import com.flexcapacitor.views.windows.PasteImageFromClipboardWindow;
 			import com.flexcapacitor.views.windows.PrintWindow;
 			import com.flexcapacitor.views.windows.SettingsWindow;
 			
@@ -80,41 +86,7 @@
 			import spark.components.Application;
 			import spark.effects.easing.Linear;
 			import spark.events.IndexChangeEvent;
-	/**
-	 * the library would not compile and had random errors that were not errors. 
-		I couldn't figure out what it was. it looks like it's fixed. 
-		what i did was change -swf-version=18 from -swf-version=19 and 
-		also went into properties then classes and instead of include all i selected
-		the files to include. which were not the assets directory but the com.flexcapacitor directory
-		let's hope it stays fixed
-		 
-		 * it did not stay fixed. it complained about PNGEncoderOptions which isn't available below 
-		 * swf version 18 or 19. so i tried cleaning, changing swf version up and down 
-		 * and many other things and nothing worked still errors. so i switched sdk and that 
-		 * removed the errors. 
-		 * 
-		 * UPDATE: THE PREVIOUS ISSUE WAS POSSIBLY BECAUSE THE playerglobal.swc in the 11.2 or 11.5 was not correct
-		 * check date of both they are the same. 
-		 * download the playerglobal again. OR its because the playerglobal is not there. add 11.2,11.3,11.5 etc
-		
-		 * Update 8/28/15 : had to add swf-version=16 and it now works. using sdk 4.6 and air 3.6
-		 * 12/18/15 - changed to swf-version=19 or AIR 19 and it works
-		 * 
-		i still get this warning: 
-		The swc '/Users/monkeypunch/Documents/ProjectsGithub/flexcapacitor/MainLibrary/bin/FCLibrary.swc' 
-		has style defaults and is in the library-path, which means dependencies will be linked in without the styles.  
-		This can cause applications, which use the output swc, to have missing skins.  
-		The swc should be put in the external-library-path.
-		
-		i think i fixed the above warning by putting adding the FCLibrary.swc as a swc rather than a project
-		 * 
-		 * UPDATE: NEED TO SELECT THE SWC AND CHOOSE EXTERNAL PATH
-		
-		i added all other projects except the radiate projects as swc instead of as projects
-		
-		i also added reference to PNGEncoderOptions encoder to RadiateReferences.as
-		 * 
-		 */
+			
 			[Bindable]
 			public var fileTransferWindowClass:String = "com.flexcapacitor.views.FileTransferWindow";
 			private var remoteTestURL:String = "";
@@ -139,7 +111,7 @@
 			public var serviceManager:ServicesManager;
 			
 			public function startup():void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				clipboardManager= ClipboardManager.getInstance();
 				serviceManager = ServicesManager.getInstance();
 				
@@ -157,8 +129,8 @@
 				serviceManager.getNewsPosts();
 				serviceManager.getExampleProjects();
 				
-				if (radiate.userID!=-1) {
-					serviceManager.getProjectsByUser(radiate.userID);
+				if (ProfileManager.userID!=-1) {
+					serviceManager.getProjectsByUser(ProfileManager.userID);
 				}
 				else {
 					updateCheckProjects(0);
@@ -181,12 +153,12 @@
 				}
 				
 				if (Radiate.startInDesignView) {
-					radiate.createNewDocumentAndSwitchToDesignView();
+					DocumentManager.createNewDocumentAndSwitchToDesignView();
 					radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
 					isCreatingDocument = true;
 				}
 				//PerformanceManager.start();
-				//trace(radiate.isUserLoggedIn);
+				//trace(ProfileManager.isUserLoggedIn);
 			}
 			
 			/**
@@ -214,7 +186,7 @@
 			protected function projectsLabel_clickHandler(event:MouseEvent):void {
 				updateCheckProjects(-1);
 				
-				serviceManager.getProjectsByUser(radiate.userID);
+				serviceManager.getProjectsByUser(ProfileManager.userID);
 			}
 			
 			/**
@@ -251,7 +223,7 @@
 					//ripple.useLocalCoordinates = true;
 					ripple.target = targetEffect;
 					//backgroundLogoImage.source = "background01.jpg";
-					//e.target = radiate.canvasBackground; 
+					//e.target = DocumentManager.canvasBackground; 
 					//e.target = FlexGlobals.topLevelApplication; 
 					ee = true;
 				}
@@ -275,7 +247,7 @@
 				
 				if (currentState==HOME_STATE) {
 					if (ripple) ripple.destroy();
-					if (radiate.projects.length!=0) {
+					if (ProjectManager.projects.length!=0) {
 						currentState = DESIGN_STATE;
 					}
 				}
@@ -289,7 +261,7 @@
 			 * Open project
 			 * */
 			protected function openProject_itemClickHandler(event:Event):void {
-				radiate.openProject(radiate.selectedProject);
+				ProjectManager.openProject(Radiate.selectedProject);
 			}
 			
 			/**
@@ -377,12 +349,12 @@
 					
 					// we need to deselect other windows in the menu 
 					if (iDocument.isOpen) {
-						radiate.showDocument(iDocument);
-						//radiate.selectDocument(iDocument);
+						DocumentManager.showDocument(iDocument);
+						//Radiate.selectDocument(iDocument);
 					}
 					
 					if (!iDocument.isOpen) {
-						radiate.openDocumentByData(iDocument, true);
+						DocumentManager.openDocumentByData(iDocument, true);
 					}
 					
 					if (flexNativeMenu) {
@@ -398,18 +370,18 @@
 			 * */
 			protected function loggedInStatusHandler(event:RadiateEvent):void {
 				
-				if (radiate.isUserLoggedIn) {
+				if (ProfileManager.isUserLoggedIn) {
 					updateCheckLoginStatus(1);
 					updateCheckProjects(-1);
-					serviceManager.getProjectsByUser(radiate.userID);
-					userIcon.source = radiate.userAvatar;
+					serviceManager.getProjectsByUser(ProfileManager.userID);
+					userIcon.source = ProfileManager.userAvatar;
 				}
 				else {
 					updateCheckLoginStatus(0);
-					userIcon.source = radiate.defaultUserAvatarPath;
+					userIcon.source = ProfileManager.defaultUserAvatarPath;
 				}
 				
-				isConnectedCheckbox.selected = radiate.isUserConnected;
+				isConnectedCheckbox.selected = ProfileManager.isUserConnected;
 			}
 			
 			/**
@@ -425,15 +397,14 @@
 				dateSortField = new SortField("dateSaved", descending);
 				sortFields.push(dateSortField);
 				
-				projects = radiate.parseProjectsData(event.data);
+				projects = ProjectManager.parseProjectsData(event.data);
 				projectsCollection.sort = new Sort(sortFields);
 				projectsCollection.source = projects;
 				documentsCollection.source = [];
 				
-				for (var i:int = 0; i < projects.length; i++) 
-				{
+				for (var i:int = 0; i < projects.length; i++) {
 					iProject = projects[i];
-					radiate.addProject(iProject);
+					ProjectManager.addProject(iProject);
 				}
 				
 				
@@ -462,7 +433,7 @@
 			 * Handle when getting result of example list of projects
 			 * */
 			protected function receivedExampleProjectsHandler(event:RadiateEvent):void {
-				var projects:Array = radiate.parseProjectsData(event.data);
+				var projects:Array = ProjectManager.parseProjectsData(event.data);
 				examplesCollection.source = projects;
 				
 				if (examplesCollection.length==0 && checkingForExampleProjectsLabel) {
@@ -497,10 +468,10 @@
 				if (project && project is IProject) {
 					currentState = DESIGN_STATE;
 					validateNow();
-					radiate.addProject(project, false);
-					//radiate.openProject(project, DocumentData.REMOTE_LOCATION, true);
-					radiate.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
-					radiate.setProject(project, true);
+					ProjectManager.addProject(project, false);
+					//ProjectManager.openProject(project, DocumentData.REMOTE_LOCATION, true);
+					ProjectManager.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
+					Radiate.setProject(project, true);
 					//projectsList.selectedIndex = -1;
 				}
 			}
@@ -528,19 +499,17 @@
 					return;
 				}
 				
-				if (radiate.isUserLoggedIn) {
+				if (ProfileManager.isUserLoggedIn) {
 					updateCheckProjects(-1);
 					checkForProjects();
 					updateCheckLoginStatus(1);
-					radiate.saveExampleProjects();
+					ProjectManager.saveExampleProjects();
 				}
 				else {
 					serviceManager.getLoggedInStatus();
 					updateCheckProjects(0);
 				}
 				
-				//radiate.addEventListener(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED, receivedExampleProjectsHandler, false, 0, true);
-				//checkForExampleProjects();
 			}
 			
 			/**
@@ -557,7 +526,6 @@
 				setTimeout(Radiate.info, 1000, ["Logout successful"]);
 				
 				updateCheckProjects(0);
-				//checkForProjects();
 				projectsCollection.removeAll();
 				projectsCollection.refresh();
 				checkOnline();
@@ -598,10 +566,10 @@
 				if (popUp.action==NewDocumentWindow.FINISH) {
 					currentState = DESIGN_STATE;
 					validateNow();
-					radiate.createBlankDemoDocument(projectName, documentName);
+					DocumentManager.createBlankDemoDocument(projectName, documentName);
 					
-					if (radiate.isUserLoggedIn) {
-						radiate.saveProject(radiate.selectedProject);
+					if (ProfileManager.isUserLoggedIn) {
+						ProjectManager.saveProject(Radiate.selectedProject);
 					}
 					else {
 						//Radiate.info("The project will not be saved");
@@ -639,7 +607,7 @@
 			protected function checkForProjects():void {
 				projectsList.selectedItem = null;
 				
-				serviceManager.getProjectsByUser(radiate.userID);
+				serviceManager.getProjectsByUser(ProfileManager.userID);
 				
 				if (checkingForProjectsLabel) {
 					updateCheckProjects(-1);
@@ -670,14 +638,14 @@
 			 * Undo last action
 			 * */
 			protected function undo_itemClickHandler(event:Event):void {
-				HistoryManager.undo(radiate.selectedDocument, true);
+				HistoryManager.undo(Radiate.selectedDocument, true);
 			}
 			
 			/**
 			 * Redo last action
 			 * */
 			protected function redo_itemClickHandler(event:Event):void {
-				HistoryManager.redo(radiate.selectedDocument, true);
+				HistoryManager.redo(Radiate.selectedDocument, true);
 			}
 			
 			/**
@@ -685,7 +653,7 @@
 			 * */
 			protected function isConnectedCheckbox_clickHandler(event:MouseEvent):void {
 				
-				isConnectedCheckbox.selected = radiate.isUserConnected;
+				isConnectedCheckbox.selected = ProfileManager.isUserConnected;
 				
 				
 				checkOnline();
@@ -695,7 +663,7 @@
 			 * Show project string for debugging purposes
 			 * */
 			protected function showProjectSource_itemClickHandler(event:Event):void {
-				var iProject:IProject = radiate.selectedProject;
+				var iProject:IProject = Radiate.selectedProject;
 				var output:String;
 				
 				if (iProject) {
@@ -714,7 +682,7 @@
 			 * Show document string for debugging purposes
 			 * */
 			protected function showDocumentSource_itemClickHandler(event:Event):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var output:String;
 				
 				if (iDocument) {
@@ -749,8 +717,8 @@
 				}
 				
 				// keeps looping when icon can't be found
-				if (userIcon.source!=radiate.defaultUserAvatarPath) {
-					userIcon.source = radiate.defaultUserAvatarPath;
+				if (userIcon.source!=ProfileManager.defaultUserAvatarPath) {
+					userIcon.source = ProfileManager.defaultUserAvatarPath;
 				}
 				else {
 					userIcon.source = null;
@@ -767,7 +735,7 @@
 				if (project) {
 					Radiate.info("Opening example project '" + project.name + "'");
 					
-					Radiate.callAfter(250, openExampleProject, project);
+					DeferManager.callAfter(250, openExampleProject, project);
 				}
 				
 			}
@@ -783,24 +751,24 @@
 					currentState = DESIGN_STATE;
 					validateNow();
 					exampleProject = project;
-					radiate.addProject(project, false);
-					//radiate.openProject(project, DocumentData.REMOTE_LOCATION, true);
-					radiate.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
-					radiate.addEventListener(RadiateEvent.PROJECT_OPENED, exampleProjectOpened, false, 0, true);
-					radiate.setProject(project, true);
+					ProjectManager.addProject(project, false);
+					//ProjectManager.openProject(project, DocumentData.REMOTE_LOCATION, true);
+					ProjectManager.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
+					Radiate.addEventListener(RadiateEvent.PROJECT_OPENED, exampleProjectOpened, false, 0, true);
+					Radiate.setProject(project, true);
 					//projectsList.selectedIndex = -1;
 				}
 			}
 			
 			protected function exampleProjectOpened(event:Event):void {
 				if (exampleProject) {
-					radiate.clearExampleProjectData(exampleProject);
-					radiate.saveExampleProject(exampleProject);
+					ProjectManager.clearExampleProjectData(exampleProject);
+					ProjectManager.saveExampleProject(exampleProject);
 					updateCheckExamples(-1);
 					serviceManager.getExampleProjects();
 					updateCheckProjects(-1);
-					setTimeout(serviceManager.getProjectsByUser, 6000, radiate.userID);
-					setTimeout(serviceManager.getProjectsByUser, 12000, radiate.userID);
+					setTimeout(serviceManager.getProjectsByUser, 6000, ProfileManager.userID);
+					setTimeout(serviceManager.getProjectsByUser, 12000, ProfileManager.userID);
 					exampleProject = null;
 				}
 			}
@@ -813,7 +781,7 @@
 				if (project) {
 					Radiate.info("Opening project '" + project.name + "'");
 					
-					Radiate.callAfter(250, radiate.openProjectFromMainView, project);
+					DeferManager.callAfter(250, ProjectManager.openProjectFromMainView, project);
 				}
 			}
 			
@@ -954,7 +922,8 @@
 			
 			
 			private function revertDocument():void {
-				var success:Boolean = radiate.revertDocument(radiate.selectedDocument);
+				var success:Boolean = DocumentManager.revertDocument(Radiate.selectedDocument);
+				
 				if (success) {
 					Radiate.info("Document reverted");
 				}
@@ -977,44 +946,33 @@
 				}
 			}
 			
-			protected function sizeDocumentToImage_itemClickHandler(event:MenuEvent):void
+			protected function sizeDocumentToOriginalImage_itemClickHandler(event:MenuEvent):void
 			{
-				var iDocument:IDocument = radiate.selectedDocument;
-				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(radiate.target) : null;
-				var image:Image = componentDescription ? componentDescription.instance as Image : null;
-				var bitmapData:BitmapData = image ? image.bitmapData : null;
-				
-				if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
-					RadiateUtilities.restoreImageToOriginalSize(image);
-					RadiateUtilities.sizeDocumentToBitmapData(iDocument, image.bitmapData);
-					
-					//radiate.scaleToFit(false);
-					//radiate.centerApplication();
-				}
+				DocumentManager.sizeDocumentToOriginalImageSize();
 			}
 			
 			protected function sizeDocumentToSelection_itemClickHandler(event:MenuEvent):void
 			{
-				RadiateUtilities.sizeDocumentToSelection();
+				DocumentManager.sizeDocumentToSelection();
 			}
 			
 			protected function sizeSelectionToDocument_itemClickHandler(event:MenuEvent):void
 			{
-				RadiateUtilities.sizeSelectionToDocument();
+				ComponentManager.sizeSelectionToDocument();
 			}
 			
 			protected function resizeDocumentToContent_itemClickHandler(event:MenuEvent):void
 			{
-				RadiateUtilities.expandDocumentToContents();
+				DocumentManager.expandDocumentToContents();
 			}
 			
 			protected function copyDocumentImageToClipboard_itemClickHandler(event:MenuEvent):void
 			{
 				if (Platform.isBrowser) {
-					openImageToClipboardWindow.play();
+					ViewManager.showCopyImageToClipboardPanel();
 				}
 				else {
-					RadiateUtilities.copyDocumentImageToClipboard(Radiate.instance.selectedDocument);
+					DocumentManager.copyDocumentImageToClipboard(Radiate.selectedDocument);
 				}
 			}
 			
@@ -1029,8 +987,8 @@
 				var imageDataOrError:Object;
 				
 				// drag manager creates a raster snapshot when on desktop so don't use that
-				if (radiate.selectedDocument) {
-					imageDataOrError = RadiateUtilities.saveToLibrary(radiate.selectedDocument.instance, false);
+				if (Radiate.selectedDocument) {
+					imageDataOrError = LibraryManager.saveToLibrary(Radiate.selectedDocument.instance, false);
 				}
 				
 				if (imageDataOrError is Error) {
@@ -1046,40 +1004,40 @@
 			
 			protected function restoreImageToOriginalSize_itemClickHandler(event:MenuEvent):void
 			{
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(radiate.target) : null;
 				var image:Image = componentDescription ? componentDescription.instance as Image : null;
 				var bitmapData:BitmapData = image ? image.bitmapData : null;
 				
 				if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
-					RadiateUtilities.restoreImageToOriginalSize(image);
+					ImageManager.restoreImageToOriginalSize(image);
 				}
 			}
 			
 			protected function removeExplicitPosition_itemClickHandler(event:MenuEvent):void {
 				
-				RadiateUtilities.removeExplicitPositionFromSelection(radiate.target);
+				ComponentManager.removeExplicitPositionFromSelection(radiate.target);
 			}
 			
 			protected function removeExplicitSize_itemClickHandler(event:MenuEvent):void {
 				
-				RadiateUtilities.removeExplicitSizingFromSelection(radiate.target);
+				ComponentManager.removeExplicitSizingFromSelection(radiate.target);
 			}
 			
 			protected function removeExplicitHeight_itemClickHandler(event:MenuEvent):void {
 				
-				RadiateUtilities.removeExplicitHeightFromSelection(radiate.target);
+				ComponentManager.removeExplicitHeightFromSelection(radiate.target);
 			}
 			
 			protected function removeExplicitWidth_itemClickHandler(event:MenuEvent):void {
 				
-				RadiateUtilities.removeExplicitWidthFromSelection(radiate.target);
+				ComponentManager.removeExplicitWidthFromSelection(radiate.target);
 			}
 			
 			protected function refreshView_itemClickHandler(event:MenuEvent):void {
 				
-				if (radiate.selectedDocument) {
-					Radiate.refreshDocument(radiate.selectedDocument);
+				if (Radiate.selectedDocument) {
+					DocumentManager.refreshDocument(Radiate.selectedDocument);
 				}
 				else {
 					Radiate.info("There is no document selected.");
@@ -1088,7 +1046,7 @@
 			
 			protected function copySelectionIntoLibrary_itemClickHandler(event:MenuEvent):void
 			{
-				var result:Object = RadiateUtilities.saveToLibrary(radiate.target);
+				var result:Object = LibraryManager.saveToLibrary(radiate.target);
 				
 				if (result is Error) {
 					Radiate.error("Could not create a snapshot of the selected item. " + result); 
@@ -1100,13 +1058,13 @@
 			
 			protected function userLabel_clickHandler(event:MouseEvent):void
 			{
-				Radiate.openUsersLoginPage();
+				ProfileManager.openUsersLoginPage();
 			}
 			
 			protected function userIcon_clickHandler(event:MouseEvent):void
 			{
-				if (radiate.isUserLoggedIn) {
-					Radiate.openUsersProfile();
+				if (ProfileManager.isUserLoggedIn) {
+					ProfileManager.openUsersProfile();
 				}
 				else {
 					Radiate.info("You must be logged into to view your profile website");
@@ -1115,7 +1073,7 @@
 			
 			protected function visitSiteLabel_clickHandler(event:MouseEvent):void
 			{
-				Radiate.openUsersWebsite();
+				ProfileManager.openUsersWebsite();
 			}
 			
 			private var isWin:Boolean; 
@@ -1182,20 +1140,20 @@
 			protected function saveMenuItem_itemClickHandler(event:MenuEvent):void {
 				//Radiate.info("Saved");
 				
-				if (radiate.isUserLoggedIn==false) {
+				if (ProfileManager.isUserLoggedIn==false) {
 					Radiate.info("You must be logged in to save");
 					return;
 				}
 				
-				if (radiate.selectedDocument) {
-					radiate.saveDocument(radiate.selectedDocument);
+				if (Radiate.selectedDocument) {
+					DocumentManager.saveDocument(Radiate.selectedDocument);
 				}
 			}
 			
 			protected function saveAsImageMenuItem_itemClickHandler(event:MenuEvent):void {
 				
-				if (radiate.selectedDocument) {
-					radiate.saveAsImage(radiate.selectedDocument);
+				if (Radiate.selectedDocument) {
+					FileManager.saveAsImage(Radiate.selectedDocument);
 				}
 				else {
 					Radiate.info("No document is open");
@@ -1204,9 +1162,9 @@
 			
 			protected function saveSelectionAsImageMenuItem_itemClickHandler(event:MenuEvent):void {
 				
-				if (radiate.selectedDocument) {
+				if (Radiate.selectedDocument) {
 					if (radiate.target) {
-						radiate.saveAsImage(radiate.target);
+						FileManager.saveAsImage(radiate.target);
 					}
 					else {
 						Radiate.info("Nothing is selected");
@@ -1220,7 +1178,7 @@
 			protected function clearProjectHomePage_itemClickHandler(event:MenuEvent):void {
 				var project:IProject = projectsList.selectedItem;
 				
-				if (radiate.isUserLoggedIn==false) {
+				if (ProfileManager.isUserLoggedIn==false) {
 					Radiate.info("You must be logged in");
 					return;
 				}
@@ -1231,7 +1189,7 @@
 				
 				Radiate.info("Clearing home page for '" + project.name + "'");
 				
-				Radiate.callAfter(250, serviceManager.setProjectHomePage, 0);
+				DeferManager.callAfter(250, serviceManager.setProjectHomePage, 0);
 				//serviceManager.setProjectHomePage(0);
 			}
 			
@@ -1253,7 +1211,7 @@
 					
 					Radiate.info("Opening project '" + project.name + "'");
 					
-					Radiate.callAfter(250, radiate.openProjectFromMainView, project);
+					DeferManager.callAfter(250, ProjectManager.openProjectFromMainView, project);
 					//openProject(project);
 				}
 				
@@ -1277,7 +1235,7 @@
 				
 				// if drag initiator is null it means it was 
 				// dragged in from outside of the application
-				if (event.dragInitiator==null && Radiate.isAcceptableDragAndDropFormat(event.dragSource)) {
+				if (event.dragInitiator==null && LibraryManager.isAcceptableDragAndDropFormat(event.dragSource)) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 					dropImagesLocation.visible = true;
 				}
@@ -1286,7 +1244,7 @@
 			protected function mainView_dragOverHandler(event:DragEvent):void {
 				
 				// todo check if html element is visible in browser to ignore accidental drag of elements
-				if (event.dragInitiator==null && Radiate.isAcceptableDragAndDropFormat(event.dragSource)) {
+				if (event.dragInitiator==null && LibraryManager.isAcceptableDragAndDropFormat(event.dragSource)) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 					dropImagesLocation.visible = true;
 				}
@@ -1301,7 +1259,6 @@
 				
 				dropImagesLocation.visible = false;
 				
-				
 				if (event.dragInitiator) {
 					isSelf = this.contains(event.dragInitiator as DisplayObject);
 					return;
@@ -1309,36 +1266,30 @@
 				
 				// TODO: Add option to not resize by holding down the shift key 
 				if (currentState==DESIGN_STATE) {
-					radiate.dropItem(event);
+					LibraryManager.dropItem(event);
 				}
 				else {
-					radiate.dropItem(event, true);
+					LibraryManager.dropItem(event, true);
 				}
 			}
 			
-			protected function mainView_dragExitHandler(event:DragEvent):void
-			{
+			protected function mainView_dragExitHandler(event:DragEvent):void {
 				dropImagesLocation.visible = false;
-				
-				
 			}
 			
-			protected function openDeleteDocumentPopUp_closeHandler(event:Event):void
-			{
-				if (radiate.selectedProject) {
-					radiate.selectedProject.save();
+			protected function openDeleteDocumentPopUp_closeHandler(event:Event):void {
+				if (Radiate.selectedProject) {
+					Radiate.selectedProject.save();
 				}
 			}
 			
-			protected function loginThroughWebsite_itemClickHandler(event:MenuEvent):void
-			{
-				if (radiate.isUserLoggedIn) {
-					Radiate.loginThroughBrowser();
+			protected function loginThroughWebsite_itemClickHandler(event:MenuEvent):void {
+				if (ProfileManager.isUserLoggedIn) {
+					ProfileManager.loginThroughBrowser();
 				}
 			}
 			
-			protected function miniinspector1_changeHandler(event:MouseEvent):void
-			{
+			protected function miniinspector1_changeHandler(event:MouseEvent):void {
 				if (event.relatedObject as DisplayObject) {
 					targetEffect = event.relatedObject;
 					if (ee) {
@@ -1348,14 +1299,12 @@
 				}
 			}
 			
-			protected function documentChangeEventHandler(event:Event):void
-			{
-				radiate.updateWindowMenu(windowMenu);
+			protected function documentChangeEventHandler(event:Event):void {
+				MenuManager.updateWindowMenu(windowMenu);
 			}
 			
-			protected function importPSDMenuItem_itemClickHandler(event:MenuEvent):void
-			{
-				if (!radiate.selectedDocument) {
+			protected function importPSDMenuItem_itemClickHandler(event:MenuEvent):void {
+				if (!Radiate.selectedDocument) {
 					Radiate.info("Please open a document or project first");
 					return;
 				}
@@ -1363,24 +1312,27 @@
 				browseForPSD.play();
 			}
 			
+			/**
+			 * Handle file selected
+			 **/
 			protected function browseForFile_selectHandler(event:Event):void {
 				
 				if (browseForImage) {
-					radiate.selectItem(browseForImage);
+					LibraryManager.loadSelectedFile(browseForImage);
 				}
 				
 			}
 			
 			protected function psdLoadedHandler(event:Event):void {
-				if (radiate.selectedDocument) {
+				if (Radiate.selectedDocument) {
 					Radiate.info("Importing PSD");
-					Radiate.callAfter(250, radiate.addPSDToDocument, loadPSDFile.data, radiate.selectedDocument);
+					DeferManager.callAfter(250, LibraryManager.addPSDToDocument, loadPSDFile.data, Radiate.selectedDocument);
 				}
 			}
 			
 			protected function mxmlLoadedHandler(event:Event):void {
-				if (radiate.selectedDocument) {
-					radiate.openMXMLDocument(loadMXMLFile.fileName, loadMXMLFile.dataAsString);
+				if (Radiate.selectedDocument) {
+					DocumentManager.openMXMLDocument(loadMXMLFile.fileName, loadMXMLFile.dataAsString);
 				}
 			}
 			
@@ -1393,13 +1345,11 @@
 				}
 			}
 			
-			protected function getRevisions_itemClickHandler(event:MenuEvent):void
-			{
-				//var data:Object = radiate.getSavedData();
-				var selectedDocument:IDocument = radiate.selectedDocument;
+			protected function getRevisions_itemClickHandler(event:MenuEvent):void {
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				
 				if (selectedDocument) {
-					radiate.openImportMXMLWindow("Import MXML", selectedDocument.originalSource, true);
+					ViewManager.openImportMXMLWindow("Import MXML", selectedDocument.originalSource, true);
 				}
 				else {
 					Radiate.info("You need to open a document before you can show revisions");
@@ -1408,27 +1358,27 @@
 			
 			protected function importMXMLMenuItem_itemClickHandler(event:MenuEvent):void
 			{
-				radiate.openImportMXMLWindow("Import MXML");
+				ViewManager.openImportMXMLWindow("Import MXML");
 			}
 			
 			protected function importSnippetMenuItem_itemClickHandler(event:MenuEvent):void
 			{
-				radiate.openImportMXMLWindow("Import Snippet");
+				ViewManager.openImportMXMLWindow("Import Snippet");
 			}
 			
 			protected function viewInBrowserScreenshot_itemClickHandler(event:MenuEvent):void
 			{
-				Radiate.openInBrowserScreenshot(radiate.selectedDocument);
+				DocumentManager.openInBrowserScreenshot(Radiate.selectedDocument);
 			}
 			
 			protected function viewInSiteScanner_itemClickHandler(event:MenuEvent):void
 			{
-				Radiate.openInBrowserSiteScanner(radiate.selectedDocument);
+				DocumentManager.openInBrowserSiteScanner(Radiate.selectedDocument);
 			}
 			
 			protected function menuNewDocument_itemClickHandler(event:MenuEvent):void
 			{
-				radiate.createNewDocument();
+				DocumentManager.createNewDocument();
 			}
 			
 			public var isCreatingDocument:Boolean;
@@ -1440,7 +1390,7 @@
 				
 				if (!isCreatingDocument) {
 					Radiate.info("Creating a new document");
-					Radiate.callAfter(250, radiate.createNewDocumentAndSwitchToDesignView);
+					DeferManager.callAfter(250, DocumentManager.createNewDocumentAndSwitchToDesignView);
 					radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
 					isCreatingDocument = true;
 				}
@@ -1500,11 +1450,11 @@
 					angle = 270;
 				}
 				
-				RadiateUtilities.rotateImage(image, angle);
+				ImageManager.rotateImage(image, angle);
 			}
 			
 			protected function lockLayer_itemClickHandler(event:MenuEvent):void {
-				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription;
 				var collection:ArrayCollection;
 				
@@ -1521,7 +1471,7 @@
 			}
 			
 			protected function unlockLayer_itemClickHandler(event:MenuEvent):void {
-				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription;
 				var collection:ArrayCollection;
 				
@@ -1536,7 +1486,7 @@
 			}
 			
 			protected function lockDescendantLayers_itemClickHandler(event:MenuEvent):void {
-				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription;
 				var collection:ArrayCollection;
 				
@@ -1551,7 +1501,7 @@
 			}
 			
 			protected function unlockDescendantLayers_itemClickHandler(event:MenuEvent):void {
-				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription;
 				var collection:ArrayCollection;
 				
@@ -1569,23 +1519,23 @@
 				var image:Image;
 				image = radiate.target as Image;
 				
-				RadiateUtilities.trimImage(image);
+				ImageManager.trimImage(image);
 			}
 			
 			protected function bringForwardLayer_itemClickHandler(event:MenuEvent):void {
-				ArrangeLayers.bringForwards(radiate.target, radiate.selectedDocument);
+				ArrangeLayers.bringForwards(radiate.target, Radiate.selectedDocument);
 			}
 			
 			protected function sendBackwardLayer_itemClickHandler(event:MenuEvent):void {
-				ArrangeLayers.sendBackwards(radiate.target, radiate.selectedDocument);
+				ArrangeLayers.sendBackwards(radiate.target, Radiate.selectedDocument);
 			}
 			
 			protected function bringToFront_itemClickHandler(event:MenuEvent):void {
-				ArrangeLayers.bringToFront(radiate.target, radiate.selectedDocument);
+				ArrangeLayers.bringToFront(radiate.target, Radiate.selectedDocument);
 			}
 			
 			protected function sendToBack_itemClickHandler(event:MenuEvent):void {
-				ArrangeLayers.sendToBack(radiate.target, radiate.selectedDocument);
+				ArrangeLayers.sendToBack(radiate.target, Radiate.selectedDocument);
 			}
 			
 			protected function documentOpenedHandler(event:Event):void {
@@ -1602,31 +1552,31 @@
 			
 			protected function cut_itemClickHandler(event:MenuEvent):void {
 				if (radiate.target) {
-					clipboardManager.cutItem(radiate.target, radiate.selectedDocument);
+					clipboardManager.cutItem(radiate.target, Radiate.selectedDocument);
 				}
 			}
 			
 			protected function copy_itemClickHandler(event:MenuEvent):void {
 				if (radiate.target) {
-					clipboardManager.copyItem(radiate.target, radiate.selectedDocument);
+					clipboardManager.copyItem(radiate.target, Radiate.selectedDocument);
 				}				
 			}
 			
 			protected function duplicate_itemClickHandler(event:MenuEvent):void {
 				if (radiate.target) {
-					clipboardManager.duplicateItem(radiate.target, radiate.selectedDocument);
+					clipboardManager.duplicateItem(radiate.target, Radiate.selectedDocument);
 				}				
 			}
 			
 			protected function paste_itemClickHandler(event:MenuEvent):void {
 				if (radiate.target) {
-					clipboardManager.pasteItem(radiate.target, radiate.selectedDocument);
+					clipboardManager.pasteItem(radiate.target, Radiate.selectedDocument);
 				}
 			}
 			
 			protected function delete_itemClickHandler(event:MenuEvent):void {
 				if (radiate.target) {
-					Radiate.removeElement(radiate.target);
+					ComponentManager.removeElement(radiate.target);
 				}
 			}
 			
@@ -1761,13 +1711,6 @@
 						  />
 		</handlers:EventHandler>
 		
-		<fc:OpenPopUp id="openImageToClipboardWindow" 
-					  popUpType="{CopyImageToClipboardWindow}" 
-					  modalDuration="100" 
-					  backgroundAlpha=".5"
-					  autoCenter="false"
-					  parent="{parentApplication}"/>
-		
 		<file:BrowseForFile id="browseForPSD" 
 							targetAncestor="{this}"
 							fileTypes="psd">
@@ -1900,8 +1843,8 @@
 				<model:MenuItem label="Open Document" itemClick="openDocument_itemClickHandler(event)"/>
 				<model:MenuItem label="Open Project" itemClick="openProject_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem label="Close Document" itemClick="radiate.closeDocument(radiate.selectedDocument)"/>
-				<!--<model:MenuItem label="Close Project" itemClick="{radiate.closeProject(radiate.selectedProject)}"/>-->
+				<model:MenuItem label="Close Document" itemClick="DocumentManager.closeDocument(Radiate.selectedDocument)"/>
+				<!--<model:MenuItem label="Close Project" itemClick="{ProjectManager.closeProject(Radiate.selectedProject)}"/>-->
 				<model:MenuItem type="separator"/>
 				<!-- keyEquivalent="s" seemed to be catching the s key everywhere. needs cmd for mac and ctrl for win-->
 				<model:MenuItem id="saveDocumentMenuItem" label="Save as..." itemClick="saveDocumentMenuItem_itemClickHandler(event)"/>
@@ -1910,8 +1853,8 @@
 				<model:MenuItem id="saveSnippetMenuItem" label="Save snippet online" />
 				<model:MenuItem id="saveAsImageMenuItem" label="Save as image" itemClick="saveAsImageMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="saveSelectionAsImageMenuItem" label="Save Selection as Image" itemClick="saveSelectionAsImageMenuItem_itemClickHandler(event)"/>
-				<model:MenuItem label="Save Project" itemClick="{radiate.saveProject(radiate.selectedProject)}"/>
-				<model:MenuItem label="Save All Documents" itemClick="{radiate.saveAllDocuments()}"/>
+				<model:MenuItem label="Save Project" itemClick="{ProjectManager.saveProject(Radiate.selectedProject)}"/>
+				<model:MenuItem label="Save All Documents" itemClick="{DocumentManager.saveAllDocuments()}"/>
 				<model:MenuItem id="saveDocumentAs" label="Export release..." />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="revertDocumentMenuItem" label="Revert..." />
@@ -1974,7 +1917,7 @@
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
 				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
-				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToImage_itemClickHandler(event)" />
+				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToOriginalImage_itemClickHandler(event)" />
 				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to show all content" itemClick="resizeDocumentToContent_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="copySelectionIntoLibrary" label="Save selection snapshot to library" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
@@ -2250,8 +2193,8 @@
 				autoDrawBackground="true"/>
 				<renderers:ProjectRenderer label="Get My Projects" width="100%"
 				click="getProjectsByUser_clickHandler(event)"
-				visible="{radiate.isUserLoggedIn}"
-				includeInLayout="{radiate.isUserLoggedIn}"
+				visible="{ProfileManager.isUserLoggedIn}"
+				includeInLayout="{ProfileManager.isUserLoggedIn}"
 				/>
 				<renderers:ProjectRenderer label="Get All Projects" width="100%"
 				useHandCursor="true" buttonMode="true"
@@ -2274,8 +2217,8 @@
 					 verticalAlign="middle" 
 					 textAlign="center"
 					 styleName="loginLabel"
-					 visible="{radiate.isUserLoggedIn}"
-					 includeInLayout="{radiate.isUserLoggedIn}"
+					 visible="{ProfileManager.isUserLoggedIn}"
+					 includeInLayout="{ProfileManager.isUserLoggedIn}"
 					 />
 			
 			<c:LabelButton id="loginLabel2" 
@@ -2283,32 +2226,32 @@
 					 verticalAlign="middle" 
 					 textAlign="center"
 					 styleName="loginLabel"
-					 visible="{!radiate.isUserLoggedIn}"
-					 includeInLayout="{!radiate.isUserLoggedIn}"
+					 visible="{!ProfileManager.isUserLoggedIn}"
+					 includeInLayout="{!ProfileManager.isUserLoggedIn}"
 					 />
 			
-			<c:VerticalLine visible="{!radiate.isUserLoggedIn}"
-							includeInLayout="{!radiate.isUserLoggedIn}"/>
+			<c:VerticalLine visible="{!ProfileManager.isUserLoggedIn}"
+							includeInLayout="{!ProfileManager.isUserLoggedIn}"/>
 			
 			<c:LabelButton id="registerLabel2" 
 						   text="Register" 
 						   verticalAlign="middle" 
 						   textAlign="center"
 						   styleName="loginLabel"
-						   visible="{!radiate.isUserLoggedIn}"
-						   includeInLayout="{!radiate.isUserLoggedIn}"
+						   visible="{!ProfileManager.isUserLoggedIn}"
+						   includeInLayout="{!ProfileManager.isUserLoggedIn}"
 						   />
 			
-			<c:VerticalLine visible="{!radiate.isUserLoggedIn}"
-							includeInLayout="{!radiate.isUserLoggedIn}"/>
+			<c:VerticalLine visible="{!ProfileManager.isUserLoggedIn}"
+							includeInLayout="{!ProfileManager.isUserLoggedIn}"/>
 			
 			<c:LabelButton id="lostPasswordLabel2" 
 						   text="Lost Password" 
 						   verticalAlign="middle" 
 						   textAlign="center"
 						   styleName="loginLabel"
-						   visible="{!radiate.isUserLoggedIn}"
-						   includeInLayout="{!radiate.isUserLoggedIn}"
+						   visible="{!ProfileManager.isUserLoggedIn}"
+						   includeInLayout="{!ProfileManager.isUserLoggedIn}"
 						   />
 			
 			<s:Spacer width="100%" />
@@ -2510,16 +2453,16 @@
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
-				 visible="{!radiate.isUserLoggedIn}"
-				 includeInLayout="{!radiate.isUserLoggedIn}"
+				 visible="{!ProfileManager.isUserLoggedIn}"
+				 includeInLayout="{!ProfileManager.isUserLoggedIn}"
 				 />
 		
 		<s:Label text="|" 
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
-				 visible="{!radiate.isUserLoggedIn}"
-				 includeInLayout="{!radiate.isUserLoggedIn}"
+				 visible="{!ProfileManager.isUserLoggedIn}"
+				 includeInLayout="{!ProfileManager.isUserLoggedIn}"
 				 />
 		
 		
@@ -2528,22 +2471,22 @@
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
-				 visible="{!radiate.isUserLoggedIn}"
-				 includeInLayout="{!radiate.isUserLoggedIn}"
+				 visible="{!ProfileManager.isUserLoggedIn}"
+				 includeInLayout="{!ProfileManager.isUserLoggedIn}"
 				 />
 		
-		<c:VerticalLine visible="{!radiate.isUserLoggedIn}"
-						includeInLayout="{!radiate.isUserLoggedIn}"
+		<c:VerticalLine visible="{!ProfileManager.isUserLoggedIn}"
+						includeInLayout="{!ProfileManager.isUserLoggedIn}"
 						/>
 		
 		<c:LabelButton id="userLabel" 
-				 text="Hello, {radiate.userDisplayName}" 
+				 text="Hello, {ProfileManager.userDisplayName}" 
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
 				 toolTip="Open website dashboard"
-				 visible="{radiate.isUserLoggedIn}"
-				 includeInLayout="{radiate.isUserLoggedIn}"
+				 visible="{ProfileManager.isUserLoggedIn}"
+				 includeInLayout="{ProfileManager.isUserLoggedIn}"
 				 click="userLabel_clickHandler(event)"
 				 />
 		
@@ -2552,7 +2495,7 @@
 				 top="3"
 				 useHandCursor="true"
 				 buttonMode="true"
-				 source="{radiate.defaultUserAvatarPath}"
+				 source="{ProfileManager.defaultUserAvatarPath}"
 				 showErrorSkin="false"
 				 smooth="true"
 				 clearOnLoad="false"
@@ -2569,15 +2512,15 @@
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
-				 visible="{radiate.isUserLoggedIn}"
-				 includeInLayout="{radiate.isUserLoggedIn}"
+				 visible="{ProfileManager.isUserLoggedIn}"
+				 includeInLayout="{ProfileManager.isUserLoggedIn}"
 				 click="visitSiteLabel_clickHandler(event)"
 				 />
 		
 		
 		<c:VerticalLine 
-			visible="{radiate.isUserLoggedIn}"
-			includeInLayout="{radiate.isUserLoggedIn}"/>
+			visible="{ProfileManager.isUserLoggedIn}"
+			includeInLayout="{ProfileManager.isUserLoggedIn}"/>
 		
 		
 		<c:LabelButton id="logoutLabel" 
@@ -2585,12 +2528,12 @@
 				 verticalAlign="middle" 
 				 textAlign="center"
 				 color="#DDDDDD"
-				 visible="{radiate.isUserLoggedIn}"
-				 includeInLayout="{radiate.isUserLoggedIn}"
+				 visible="{ProfileManager.isUserLoggedIn}"
+				 includeInLayout="{ProfileManager.isUserLoggedIn}"
 				 />
 		
 		<s:ToggleButton id="isConnectedCheckbox" 
-						selected="{radiate.isUserConnected}"
+						selected="{ProfileManager.isUserConnected}"
 						skinClass="com.flexcapacitor.views.skins.OnlineToggleButton"
 						useHandCursor="true"
 						buttonMode="true"
@@ -2626,19 +2569,19 @@
 		<s:Spacer width="100%"/>
 		<mx:ProgressBar id="savingLogo" x="0" y="0" width="100" height="12" 
 						indeterminate="true" label=""
-				 visible="{radiate.saveDocumentInProgress}"
-				 includeInLayout="{radiate.saveDocumentInProgress}"/>
+				 visible="{DocumentManager.saveDocumentInProgress}"
+				 includeInLayout="{DocumentManager.saveDocumentInProgress}"/>
 		<s:Label text="Last saved:" 
-				 includeInLayout="{radiate.lastSaveDateFormatted!=null}" 
-				 visible="{radiate.lastSaveDateFormatted!=null}"/>
+				 includeInLayout="{DateManager.lastSaveDateFormatted!=null}" 
+				 visible="{DateManager.lastSaveDateFormatted!=null}"/>
 		<s:Label id="lastSavedDate" 
-				 text="{radiate.lastSaveDateFormatted}" 
-				 includeInLayout="{radiate.lastSaveDateFormatted!=null}" 
-				 visible="{radiate.lastSaveDateFormatted!=null}"/>
+				 text="{DateManager.lastSaveDateFormatted}" 
+				 includeInLayout="{DateManager.lastSaveDateFormatted!=null}" 
+				 visible="{DateManager.lastSaveDateFormatted!=null}"/>
 		<s:Spacer width="1"/>
 		<c:VerticalLine height="16" 
-						includeInLayout="{radiate.lastSaveDateFormatted!=null}" 
-						visible="{radiate.lastSaveDateFormatted!=null}"/>
+						includeInLayout="{DateManager.lastSaveDateFormatted!=null}" 
+						visible="{DateManager.lastSaveDateFormatted!=null}"/>
 		<!--<s:Label text="Build Date:"  />
 		<s:Label id="buildDate" text="{radiate.buildDate}" />
 		<s:Label text="Build Time:" /> 
@@ -2666,7 +2609,7 @@
 				 right="10" 
 				 bottom="6"
 				 textAlign="right" 
-				 text="{radiate.lastSaveDateDifference}"
+				 text="{DateManager.lastSaveDateDifference}"
 				 />
 		
 		<s:Label id="performanceLabel" 

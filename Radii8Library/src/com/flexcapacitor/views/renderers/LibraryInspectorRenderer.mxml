@@ -7,18 +7,25 @@
 				width="100%" 
 				height="100%" 
 				minHeight="36" 
-				mouseEnabledWhereTransparent="true"
-				mouseDown="groupMouseDownHandler(event)"
 				autoDrawBackground="false"
+				mouseEnabledWhereTransparent="true"
+				doubleClickEnabled="true"
+				doubleClick="itemrenderer1_doubleClickHandler(event)"
+				mouseDown="groupMouseDownHandler(event)"
 				resize="itemrenderer1_resizeHandler(event)"
 				>
 	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DeferManager;
+			import com.flexcapacitor.managers.LibraryManager;
 			import com.flexcapacitor.model.AttachmentData;
+			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.events.ResizeEvent;
 			import mx.graphics.BitmapFill;
@@ -122,22 +129,20 @@
 			
 			protected function uploadFileIcon_clickHandler(event:MouseEvent):void {
 				
-				if (Radiate.instance.selectedDocument && Radiate.instance.selectedDocument.id) {
+				if (Radiate.selectedDocument && Radiate.selectedDocument.id) {
 					Radiate.info("Uploading item");
-					Radiate.callAfter(250, Radiate.instance.uploadAttachmentData, attachmentData, Radiate.instance.selectedDocument.id);
+					DeferManager.callAfter(250, LibraryManager.uploadAttachmentData, attachmentData, Radiate.selectedDocument.id);
 				}
 				else {
 					Radiate.warn("Save the document before uploading");
 				}
 			}
 			
-			protected function showPreview(event:MouseEvent):void
-			{
+			protected function showPreview(event:MouseEvent):void {
 				Object(owner).document.showSelectedItemInPopUp();
 			}
 			
-			protected function itemrenderer1_resizeHandler(event:ResizeEvent):void
-			{
+			protected function itemrenderer1_resizeHandler(event:ResizeEvent):void {
 				var verticalLayout:Boolean = owner ? ListBase(owner).layout is VerticalLayout : true;
 				if (!verticalLayout) {
 					preview.visible = false;
@@ -171,6 +176,93 @@
 				}
 			}
 			
+			/**
+			 * When editing turn off drag and drop and keyboard events
+			 **/
+			private var previousDragEnabled:Boolean;
+			private var previousKeyboardHandlingEnabled:Boolean;
+			
+			protected function textInputChangeHandler():void {
+				var componentOwner:Object = owner && "dataProvider" in owner ? owner : null;
+				var documentData:AttachmentData = data as AttachmentData;
+				
+				if (documentData && componentOwner) {
+					var oldName:String = documentData.name;
+					var newName:String = textInput.text;
+					
+					if (newName!=null && 
+						newName!="" && 
+						newName!=oldName) {
+						ComponentManager.setProperty(documentData, "name", newName);
+						componentOwner.dataProvider.itemUpdated(documentData, "name", oldName, newName); 
+					}
+					
+					if (owner && "dragEnabled" in owner) {
+						Object(owner).dragEnabled = previousDragEnabled;
+					}
+					
+					if (owner && "enableKeyboardHandling" in owner) {
+						Object(owner).enableKeyboardHandling = previousKeyboardHandlingEnabled;
+					}
+					
+					currentState = "normal";
+				}
+			}
+			
+			protected function textInput_focusOutHandler(event:FocusEvent):void {
+				textInputChangeHandler();
+				
+				if (owner && "dragEnabled" in owner) {
+					Object(owner).dragEnabled = previousDragEnabled;
+				}
+				
+				if (owner && "enableKeyBoardHandling" in owner) {
+					Object(owner).enableKeyboardHandling = previousKeyboardHandlingEnabled;
+				}
+				
+				currentState = "normal";
+			}
+			
+			protected function itemrenderer1_doubleClickHandler(event:MouseEvent):void {
+				var iDocument:IDocument = Radiate.selectedDocument;
+				
+				if (iDocument==null || !iDocument.isOpen) {
+					return;
+				}
+				
+				if (owner && "dragEnabled" in owner) {
+					previousDragEnabled = Object(owner).dragEnabled;
+					Object(owner).dragEnabled = false;
+				}
+				
+				if (owner && "enableKeyboardHandling" in owner) {
+					previousKeyboardHandlingEnabled = Object(owner).enableKeyboardHandling;
+					Object(owner).enableKeyboardHandling = false;
+				}
+				
+				currentState = "edit";
+				
+				textInput.text = labelDisplay.text;
+				textInput.setFocus();
+				textInput.selectAll();
+			}
+			
+			
+			override protected function getCurrentRendererState():String {
+				// if in edit state don't change unless 
+				if (currentState=="edit") return "edit";
+				
+				return super.getCurrentRendererState();
+			}
+			
+			protected function textInput_keyUpHandler(event:KeyboardEvent):void
+			{
+				if (currentState=="edit") {
+					event.stopImmediatePropagation();
+					event.stopPropagation();
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	
@@ -182,13 +274,12 @@
 		<s:State name="hoveredAndShowsCaret"/>
 		<s:State name="selectedAndShowsCaret"/>
 		<s:State name="dragging"/>
+		<s:State name="edit"/>
 	</s:states>
 	
 	<s:Rect id="backgroundIconImageFill" width="40" height="100%" bottom="1" >
 		
 	</s:Rect>
-	
-	
 	
 	<s:HGroup id="rowGroup" 
 			  width="100%" 
@@ -212,7 +303,20 @@
 				 fontSize="11" 
 				 width="100%" 
 				 maxDisplayedLines="1"
+				 itemCreationPolicy="immediate"
+				 excludeFrom="edit"
 				 />
+		<s:TextInput id="textInput" 
+					 fontSize="10"
+					 focusAlpha="0"
+					 borderVisible="false"
+					 keyUp="textInput_keyUpHandler(event)"
+					 enter="textInputChangeHandler()" 
+					 focusOut="textInput_focusOutHandler(event)"
+					 includeIn="edit"
+					 itemCreationPolicy="immediate"
+					 width="100%" height="100%"/>
+		
 		<s:Spacer width="100%"/>
 		<controls:BeveledImageButton id="uploadFileErrorIcon" 
 									 source="{Radii8LibraryAssets.error}" 
@@ -235,31 +339,6 @@
 		<s:Spacer width="1"/>
 	</s:HGroup>
 	
-	
-	<!--
-	<s:Rect id="selectedTopIcon" width="40" height="2" top="0" includeIn="selected,selectedAndShowsCaret">
-		<s:fill>
-			<s:SolidColor color="#989898"/>
-		</s:fill>
-	</s:Rect>
-	
-	<s:Rect id="selectedBottomIcon" width="40" height="2" bottom="1" includeIn="selected,selectedAndShowsCaret">
-		<s:fill>
-			<s:SolidColor color="#989898"/>
-		</s:fill>
-	</s:Rect>
-	
-	<s:Rect id="selectedLeftIcon" width="2" height="100%" bottom="1" left="1" includeIn="selected,selectedAndShowsCaret">
-		<s:fill>
-			<s:SolidColor color="#989898"/>
-		</s:fill>
-	</s:Rect>
-	
-	<s:Rect id="selectedRightIcon" width="2" height="100%" bottom="1" right="40" includeIn="selected,selectedAndShowsCaret">
-		<s:fill>
-			<s:SolidColor color="#989898"/>
-		</s:fill>
-	</s:Rect>-->
 	
 	<s:Rect id="selectedBox" width="40" height="100%" bottom="1" x="1"
 			includeIn="selected,selectedAndShowsCaret">

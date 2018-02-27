@@ -24,6 +24,8 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.DeferManager;
+			import com.flexcapacitor.managers.LibraryManager;
 			import com.flexcapacitor.services.WPService;
 			import com.flexcapacitor.services.WPServiceEvent;
 			import com.flexcapacitor.utils.ArrayUtils;
@@ -597,8 +599,8 @@
 				
 				if (bitmapData) {
 					radiate = Radiate.instance;
-					radiate.dropInBitmapData(bitmapData, false, true);
-					Radiate.callAfter(closeDelay, closeGallery);
+					LibraryManager.dropInBitmapData(bitmapData, false, true);
+					DeferManager.callAfter(closeDelay, closeGallery);
 				}
 				
 				hideBusyIndicator();

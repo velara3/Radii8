@@ -13,16 +13,6 @@
 		 implements="com.flexcapacitor.components.IDocumentContainer" 
 		 >
 
-	<!-- 
-		WE SHOULD REFACTOR THIS
-		
-		Sometimes the generated MXML document is blank. I think it's because if we open
-	multiple documents the application never gets completely loaded or rendered in it's tab and the
-	user closes the document and reopens it. I think it has to do with the activate event in Flex
-	So we need to wait before opening new documents until application complete on the current document.
-	We might need to add an event listener in the Document or Project class to make sure each application
-	completely loads before opening the next. 
-	-->
 	
 	<fx:Script>
 		<![CDATA[
@@ -30,6 +20,8 @@
 			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DocumentManager;
+			import com.flexcapacitor.managers.ImportManager;
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.SourceData;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -77,11 +69,10 @@
 			 * that the MXML markup can use.  
 			 * 
 			 * Note: We could also embed the blank application
-			 * Blank application is now embedded
-			 * 
+			 * Update: Blank application is now embedded
 			 * */
 			private function creationComplete():void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				toolLayer = toolLayerInstance;
 				canvasBorder = canvasBorderInstance;
 				canvasBackground = canvasBackgroundInstance;
@@ -166,9 +157,6 @@
 				}
 				
 				hideBusyIndicators();
-				
-				
-				//Radiate.info("SWF Loaded");
 			}
 			
 			/**
@@ -191,18 +179,13 @@
 				if (targetSystemManager) {
 					targetSystemManager.removeEventListener(FlexEvent.APPLICATION_COMPLETE, applicationComplete);
 				}
-				//parentAllowsChild.selected = b.parentAllowsChild;
-				//childAllowsParent.selected = b.childAllowsParent;
-				
 				
 				targetSystemManager = loader as SystemManager;
 				targetApplication = loader.application;
 				
-				
 				// 8.5 x 11 at 72dpi is 612x792
-				targetApplication.width = Radiate.DEFAULT_DOCUMENT_WIDTH;
-				targetApplication.height = Radiate.DEFAULT_DOCUMENT_HEIGHT;
-				
+				targetApplication.width = DocumentManager.DEFAULT_DOCUMENT_WIDTH;
+				targetApplication.height = DocumentManager.DEFAULT_DOCUMENT_HEIGHT;
 				
 				drawBackgroundGrid();
 				updateBackgroundSize();
@@ -210,48 +193,31 @@
 				iDocument.instance = targetApplication;
 				ComponentManager.createComponentToAdd(iDocument, null, false, targetApplication);
 				iDocument.addComponentDescription(targetApplication);
-				
-				//radiate.setDocument(iDocument);
-				//radiate.setTarget(targetApplication);
-				
-				//codeAvailable = true;
-				//Radiate.info("Document container app complete");
+
 				if (iDocument.source) {
 					parsingSourceCode = true;
 					validateNow();
-					sourceData = Radiate.parseSource(iDocument, null, null, containerIndex, null, false);
+					sourceData = ImportManager.parseSource(iDocument, null, null, containerIndex, null, false);
 					parsingSourceCode = false;
 					iDocument.sourceData = sourceData;
 					iDocument.resetSaveStatus();
 					updateBackgroundSize();
-					//parseDocument(codeToLoad);
-					//codeAvailable = false;
-					
-					// we should dispatch an event when parsing is complete
 				}
 				
+				Radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
+				Radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, sizeChange, false, 0, true);
+				Radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChange, false, 0, true);
 				
-				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
-				radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, sizeChange, false, 0, true);
-				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChange, false, 0, true);
-				
-				radiate.selectDocument(iDocument);
-				radiate.setTarget(targetApplication);
-				//updateAppScrollPosition();
-				
-				//setTimeout(updateAppScrollPosition, 10);
-				//setTimeout(updateAppScrollPosition, 100);
-				//setTimeout(updateAppScrollPosition, 500);
+				Radiate.selectDocument(iDocument);
+				Radiate.setTarget(targetApplication);
 				
 				hideBusyIndicators();
 				
 				applicationReady = true;
 				
-				RadiateUtilities.centerApplication(true, true, true);
+				DocumentManager.centerDocumentInViewport(true, true, true);
 				
-				radiate.dispatchDocumentOpenEvent(iDocument);
-				//Radiate.info("Application Complete");
-				
+				Radiate.dispatchDocumentOpenEvent(iDocument);
 			}
 			
 			protected function applicationLoader_applicationCompleteHandler(event:FlexEvent):void {
@@ -269,11 +235,9 @@
 				targetSystemManager = applicationLoader.targetSystemManager;
 				targetApplication = applicationLoader.targetApplication;
 				
-				
 				// 8.5 x 11 at 72dpi is 612x792
-				targetApplication.width = Radiate.DEFAULT_DOCUMENT_WIDTH;
-				targetApplication.height = Radiate.DEFAULT_DOCUMENT_HEIGHT;
-				
+				targetApplication.width = DocumentManager.DEFAULT_DOCUMENT_WIDTH;
+				targetApplication.height = DocumentManager.DEFAULT_DOCUMENT_HEIGHT;
 				
 				drawBackgroundGrid();
 				updateBackgroundSize();
@@ -282,45 +246,30 @@
 				ComponentManager.createComponentToAdd(iDocument, null, false, targetApplication);
 				iDocument.addComponentDescription(targetApplication);
 				
-				//radiate.setDocument(iDocument);
-				//radiate.setTarget(targetApplication);
-				
-				//codeAvailable = true;
-				//Radiate.info("Document container app complete");
 				if (iDocument.source) {
 					parsingSourceCode = true;
 					validateNow();
-					sourceData = Radiate.parseSource(iDocument, null, null, containerIndex, null, false);
+					sourceData = ImportManager.parseSource(iDocument, null, null, containerIndex, null, false);
 					parsingSourceCode = false;
 					iDocument.sourceData = sourceData;
 					iDocument.resetSaveStatus();
 					updateBackgroundSize();
-					//parseDocument(codeToLoad);
-					//codeAvailable = false;
-					
-					// we should dispatch an event when parsing is complete
 				}
-				
 				
 				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_SIZE_CHANGE, sizeChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChange, false, 0, true);
 				
-				radiate.selectDocument(iDocument);
-				radiate.setTarget(targetApplication);
-				//updateAppScrollPosition();
-				
-				//setTimeout(updateAppScrollPosition, 10);
-				//setTimeout(updateAppScrollPosition, 100);
-				//setTimeout(updateAppScrollPosition, 500);
+				Radiate.selectDocument(iDocument);
+				Radiate.setTarget(targetApplication);
 				
 				hideBusyIndicators();
 				
 				applicationReady = true;
 				
-				RadiateUtilities.centerApplication(true, true, true);
+				DocumentManager.centerDocumentInViewport(true, true, true);
 				
-				radiate.dispatchDocumentOpenEvent(iDocument);
+				Radiate.dispatchDocumentOpenEvent(iDocument);
 			}
 			
 			
@@ -330,9 +279,6 @@
 			 * The document / application
 			 * */
 			public var targetApplication:Object;
-			
-			/*[Embed(source="assets/460/application.swf")]
-			public var embeddedApplication:Class*/
 			
 			private var _url:String = "application.swf";
 			
@@ -699,11 +645,13 @@
 			 * Make sure we are showing the correct document
 			 * */
 			protected function group1_showHandler(event:FlexEvent):void {
-				if (radiate.selectedDocument!=iDocument) {
-					radiate.selectDocument(radiate.selectedDocument, true);// maybe call update document here???
+				if (Radiate.selectedDocument!=iDocument) {
+					Radiate.selectDocument(Radiate.selectedDocument, true);// maybe call update document here???
 				}
 				
-				Radiate.info("Document SHOW event");
+				if (debug) {
+					Radiate.info("Document Show event");
+				}
 			}
 			
 			/**
@@ -746,7 +694,7 @@
 			private function updateAppScrollPosition():void {
 				
 				if (targetApplication is DisplayObject) {
-					RadiateUtilities.centerApplication();
+					DocumentManager.centerDocumentInViewport();
 				}
 			}
 			
@@ -947,11 +895,7 @@
 			 * 
 			 * */
 			protected function scrollerCornerButton_clickHandler(event:MouseEvent):void {
-				//showBorders = !showBorders;
-				
-				//if (!inUpdateBackgroundSize) { 
-				RadiateUtilities.centerApplication();
-				//}
+				DocumentManager.centerDocumentInViewport();
 			}
 			
 			/**
@@ -960,9 +904,7 @@
 			protected function scroller_resizeHandler(event:ResizeEvent):void {
 				if (!targetApplication) return;
 				
-				//if (!inUpdateBackgroundSize) {
-					updateBackgroundSize();
-				//}
+				updateBackgroundSize();
 			}
 			
 			
@@ -1052,13 +994,6 @@
 				effectStart="busyIndicator.visible=true"
 				effectEnd="busyIndicator.visible=false"/>-->
 		
-		<fx:XML id="testModel" xmlns="">
-			<mx:MXML >
-				<s:Group x="15" y="50">
-				<s:Button label="Hello World" x="20" y="20" color="#ff0000"/>
-				</s:Group >
-			</mx:MXML>
-		</fx:XML>
 	</fx:Declarations>
 	
 	
@@ -1141,21 +1076,6 @@
 									  skinClass="com.flexcapacitor.skins.DeviceSkin"
 									  >-->
 					
-				
-					<!--- 
-					This group contains the system manager and the blank application
-					-->
-					<!--<s:SWFLoader id="projectLoader" visible="false" includeInLayout="false"
-								 resize="projectLoader_resizeHandler(event)"
-								 complete="project_completeHandler(event)"
-								 httpStatus="project_httpStatusHandler(event)"
-								 init="project_initHandler(event)"
-								 ioError="project_ioErrorHandler(event)"
-								 open="project_openHandler(event)"
-								 progress="project_progressHandler(event)"
-								 securityError="project_securityErrorHandler(event)"
-								 unload="project_unloadHandler(event)"/>-->
-				
 					
 					<!--- 
 					This is a new class to handle loading an application as an embedded byte array.
@@ -1177,8 +1097,8 @@
 						
 					</s:Group>
 				
-				</s:BorderContainer>
 				<!--</s:SkinnableContainer>-->
+				</s:BorderContainer>
 			</s:BorderContainer>
 		</s:Group>
 	</s:Scroller>

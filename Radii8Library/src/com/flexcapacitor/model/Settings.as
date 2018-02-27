@@ -57,6 +57,11 @@ package com.flexcapacitor.model {
 		public var embedImages:Boolean = false;
 		public var startInDesignView:Boolean = false;
 		public var useCallOutForEditing:Boolean = true;
+		public var showSelectionLabel:Boolean = true;
+		public var snapToNearbyElements:Boolean = true;
+		
+		public static const SHOW_SELECTION_LABEL:String = "showSelectionLabel";
+		public static const SNAP_TO_NEARBY_ELEMENTS:String = "snapToNearbyElements";
 		
 		public function unmarshall(data:Object):void {
 			

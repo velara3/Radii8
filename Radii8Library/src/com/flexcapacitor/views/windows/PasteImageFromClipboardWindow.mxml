@@ -30,6 +30,8 @@
 			import com.flexcapacitor.controller.Console;
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.HTMLClipboardEvent;
+			import com.flexcapacitor.managers.DeferManager;
+			import com.flexcapacitor.managers.LibraryManager;
 			import com.flexcapacitor.model.HTMLClipboardData;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
@@ -63,11 +65,11 @@
 			protected function animatedpanelwindow1_openAnimationEndHandler(event:Event):void {
 				radiate = Radiate.instance;
 				
-				if (radiate.selectedDocument) {
+				if (Radiate.selectedDocument) {
 					createPasteZone();
 					// occasionally element is created with odd position values
 					// check for page zoom level and wait until animation is complete
-					Radiate.callAfter(updateElementDelay, updatePosition);
+					DeferManager.callAfter(updateElementDelay, updatePosition);
 				}
 				
 			}
@@ -94,8 +96,8 @@
 				
 				if (htmlData && bitmapData) {
 					radiate = Radiate.instance;
-					radiate.dropInBitmapData(bitmapData, false, true);
-					Radiate.callAfter(closeDelay, close);
+					LibraryManager.dropInBitmapData(bitmapData, false, true);
+					DeferManager.callAfter(closeDelay, close);
 				}
 			}
 			

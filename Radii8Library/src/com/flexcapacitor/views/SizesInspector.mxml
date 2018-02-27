@@ -13,6 +13,8 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DocumentManager;
 			import com.flexcapacitor.managers.ScaleManager;
 			import com.flexcapacitor.model.Device;
 			import com.flexcapacitor.model.IDocument;
@@ -50,7 +52,7 @@
 			public var showFitSize:Boolean = true;
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				//radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChangedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
@@ -82,7 +84,6 @@
 			 * */
 			protected function sizeComboBox_changeHandler(event:IndexChangeEvent):void {
 				updateDocumentSize();
-				//zoomTool.setScale(parseInt(sizesComboBox.selectedItem)/100);
 			}
 			
 			/**
@@ -178,7 +179,7 @@
 			 * Update portrait setting
 			 * */
 			public function updatePortraitCheckbox():void {
-				var document:IDocument = radiate.selectedDocument;
+				var document:IDocument = Radiate.selectedDocument;
 				var documentInstance:DisplayObject = document ? document.instance as DisplayObject : null;
 				var portrait:Boolean;
 				
@@ -201,7 +202,7 @@
 			 * 
 			 * */
 			public function updateDocumentSize():void {
-				var document:IDocument = radiate.selectedDocument;
+				var document:IDocument = Radiate.selectedDocument;
 				var device:Device = sizesComboBox.selectedItem as Device;
 				var object:Object = {};
 				var applied:Boolean;
@@ -210,42 +211,39 @@
 				
 				if (!showDevicesList) {
 					var values:Object = {width:displayObject.height, height:displayObject.width};
-					Radiate.setProperties(displayObject, properties, values);
+					ComponentManager.setProperties(displayObject, properties, values);
 					return;
 				}
-				
-				
-				
 				
 				if (device.type=="screen") {
 					object.width = device.resolutionWidth;
 					object.height = device.resolutionHeight;
 					
-					applied = Radiate.setProperties(displayObject, properties, object);
+					applied = ComponentManager.setProperties(displayObject, properties, object);
 				}
 				else {
 					if (portraitEnabledCheckbox.selected) {
 						object.width = device.usableWidthPortrait;
 						object.height = device.usableHeightPortrait;
 						
-						applied = Radiate.setProperties(displayObject, properties, object, device.name);
+						applied = ComponentManager.setProperties(displayObject, properties, object, device.name);
 					}
 					else {
 						object.width = device.usableWidthLandscape;
 						object.height = device.usableHeightLandscape;
 						
-						applied = Radiate.setProperties(displayObject, properties, object, device.name);
+						applied = ComponentManager.setProperties(displayObject, properties, object, device.name);
 					}
 				}
 			}
 			
 			protected function fitSizeButton_clickHandler(event:MouseEvent):void {
 				ScaleManager.scaleToFit(true);
-				RadiateUtilities.centerApplication(true, true);
+				DocumentManager.centerDocumentInViewport(true, true);
 			}
 			
 			protected function centerButton_clickHandler(event:MouseEvent):void {
-				RadiateUtilities.centerApplication(true, true);
+				DocumentManager.centerDocumentInViewport(true, true);
 			}
 			
 			protected function documentSizeChangeHandler(event:RadiateEvent):void {

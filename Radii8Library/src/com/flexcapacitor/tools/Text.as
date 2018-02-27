@@ -2,109 +2,51 @@
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.components.DocumentContainer;
 	import com.flexcapacitor.controller.Radiate;
-	import com.flexcapacitor.managers.TextEditorManager;
 	import com.flexcapacitor.controls.RichTextEditorBar;
 	import com.flexcapacitor.events.DragDropEvent;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.managers.ComponentManager;
-	import com.flexcapacitor.managers.HistoryManager;
+	import com.flexcapacitor.managers.DocumentManager;
+	import com.flexcapacitor.managers.TextEditorManager;
 	import com.flexcapacitor.model.IDocument;
-	import com.flexcapacitor.tools.supportClasses.VisualElementHandle;
-	import com.flexcapacitor.tools.supportClasses.VisualElementRotationHandle;
-	import com.flexcapacitor.utils.ClassUtils;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	import com.flexcapacitor.utils.DragManagerUtil;
 	import com.flexcapacitor.utils.MXMLDocumentConstants;
-	import com.flexcapacitor.utils.TextFlowUtils;
 	import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
-	import com.flexcapacitor.utils.supportClasses.ISelectionGroup;
-	import com.flexcapacitor.utils.supportClasses.TargetSelectionGroup;
 	import com.flexcapacitor.utils.supportClasses.log;
 	import com.flexcapacitor.utils.supportClasses.logTarget;
-	import com.roguedevelopment.DisplayModel;
-	import com.roguedevelopment.DragGeometry;
-	import com.roguedevelopment.Flex4ChildManager;
-	import com.roguedevelopment.Flex4HandleFactory;
 	import com.roguedevelopment.IHandle;
-	import com.roguedevelopment.ObjectChangedEvent;
-	import com.roguedevelopment.ObjectHandles;
-	import com.roguedevelopment.ObjectHandlesSelectionManager;
-	import com.roguedevelopment.constraints.MaintainProportionConstraint;
-	import com.roguedevelopment.constraints.SizeConstraint;
-	import com.roguedevelopment.constraints.SnapToGridConstraint;
-	import com.roguedevelopment.decorators.AlignmentDecorator;
-	import com.roguedevelopment.decorators.DecoratorManager;
-	import com.roguedevelopment.decorators.ObjectLinesDecorator;
-	import com.roguedevelopment.decorators.OutlineDecorator;
-	import com.roguedevelopment.decorators.WebDecorator;
 	
 	import flash.display.DisplayObject;
-	import flash.display.DisplayObjectContainer;
 	import flash.display.Loader;
-	import flash.display.Sprite;
 	import flash.display.Stage;
 	import flash.events.Event;
-	import flash.events.IEventDispatcher;
-	import flash.events.IOErrorEvent;
-	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
-	import flash.events.SecurityErrorEvent;
 	import flash.geom.Point;
-	import flash.geom.Rectangle;
-	import flash.text.TextField;
-	import flash.ui.Keyboard;
 	import flash.ui.Mouse;
 	import flash.ui.MouseCursor;
-	import flash.utils.Dictionary;
 	
-	import mx.containers.TabNavigator;
 	import mx.core.EventPriority;
-	import mx.core.FTETextField;
 	import mx.core.FlexGlobals;
-	import mx.core.FlexHTMLLoader;
 	import mx.core.FlexSprite;
-	import mx.core.IFlexDisplayObject;
-	import mx.core.ILayoutElement;
-	import mx.core.IUIComponent;
-	import mx.core.IVisualElement;
 	import mx.core.IVisualElementContainer;
-	import mx.core.UIComponent;
-	import mx.events.DragEvent;
-	import mx.events.FlexEvent;
-	import mx.events.PropertyChangeEvent;
 	import mx.managers.ILayoutManagerClient;
-	import mx.managers.ISystemManager;
 	import mx.managers.LayoutManager;
-	import mx.managers.PopUpManager;
 	import mx.managers.SystemManager;
 	import mx.managers.SystemManagerGlobals;
 	
-	import spark.components.Application;
-	import spark.components.ComboBox;
-	import spark.components.DataGrid;
-	import spark.components.Image;
 	import spark.components.List;
 	import spark.components.RichEditableText;
 	import spark.components.Scroller;
-	import spark.components.TextArea;
-	import spark.components.VideoPlayer;
-	import spark.components.supportClasses.GroupBase;
 	import spark.components.supportClasses.InvalidatingSprite;
-	import spark.components.supportClasses.ItemRenderer;
-	import spark.components.supportClasses.ListBase;
 	import spark.components.supportClasses.SkinnableTextBase;
 	import spark.components.supportClasses.TextBase;
 	import spark.core.IEditableText;
-	import spark.core.IGraphicElement;
 	import spark.layouts.BasicLayout;
-	import spark.layouts.supportClasses.LayoutBase;
 	import spark.primitives.supportClasses.GraphicElement;
-	import spark.skins.spark.ListDropIndicator;
 	
-	import flashx.textLayout.conversion.PlainTextExporter;
 	import flashx.textLayout.conversion.TextConverter;
-	import flashx.textLayout.elements.TextFlow;
 		
 	/**
 		 Alex Harui Tue, 04 Mar 2008 21:03:35 -0800
@@ -246,11 +188,11 @@ package com.flexcapacitor.tools {
 			if (debug) {
 				log();
 			}
-			radiate = Radiate.getInstance();
+			radiate = Radiate.instance;
 			removeRadiateListeners();
 			
-			if (radiate.selectedDocument) {
-				updateDocument(radiate.selectedDocument);
+			if (Radiate.selectedDocument) {
+				updateDocument(Radiate.selectedDocument);
 			}
 			
 			if (!dragManagerInstance) {
@@ -289,7 +231,7 @@ package com.flexcapacitor.tools {
 			if (debug) {
 				log();
 			}
-			radiate = Radiate.getInstance();
+			radiate = Radiate.instance;
 			
 			// handle events last so that we get correct size
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler, 	false, EventPriority.DEFAULT_HANDLER, true);
@@ -326,7 +268,7 @@ package com.flexcapacitor.tools {
 			if (debug) {
 				log();
 			}
-			radiate = Radiate.getInstance();
+			radiate = Radiate.instance;
 			
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_CHANGE, 		documentChangeHandler);
 			radiate.removeEventListener(RadiateEvent.DOCUMENT_CLOSE, 		documentCloseHandler);
@@ -512,7 +454,7 @@ package com.flexcapacitor.tools {
 				return;
 			}
 			
-			/*radiate = Radiate.getInstance();
+			/*radiate = Radiate.instance;
 			targetApplication = radiate.document;*/
 			
 			// test url for remote image: 
@@ -555,7 +497,7 @@ package com.flexcapacitor.tools {
 			targetsUnderPoint = targetsUnderPoint.reverse();
 			
 			// loop through items under point until we find one on the *component* tree
-			componentTree = radiate.selectedDocument.componentDescription;
+			componentTree = Radiate.selectedDocument.componentDescription;
 			
 			componentTreeLoop:
 			for (var i:int;i<numberOfTargets;i++) {
@@ -677,7 +619,7 @@ package com.flexcapacitor.tools {
 				values.textFlow = TextConverter.importToFlow(newTextFieldText, TextConverter.PLAIN_TEXT_FORMAT);
 				properties.push("textFlow");
 				
-				Radiate.addElement(component, target, properties, null, null, values, null);
+				ComponentManager.addElement(component, target, properties, null, null, values, null);
 				
 				updateTextAfterDragOrAdd(component, false);
 				
@@ -703,10 +645,10 @@ package com.flexcapacitor.tools {
 			
 			// if new component then need to add defaults
 			if (setDefaults) {
-				Radiate.setDefaultProperties(currentComponentDescription);
+				ComponentManager.setDefaultProperties(currentComponentDescription);
 			}
 			
-			Radiate.updateComponentAfterAdd(document, component);
+			ComponentManager.updateComponentAfterAdd(document, component);
 			
 			//o.addElement(component as ILayoutElement);
 			dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
@@ -732,7 +674,7 @@ package com.flexcapacitor.tools {
 			var componentTree:ComponentDescription;
 			var componentDescription:ComponentDescription;
 			
-			componentTree = radiate.selectedDocument.componentDescription;
+			componentTree = Radiate.selectedDocument.componentDescription;
 			componentDescription = DisplayObjectUtils.getComponentFromDisplayObject(DisplayObject(target), componentTree);
 			//Radiate.info("Selection Mouse up");
 			
@@ -807,9 +749,8 @@ package com.flexcapacitor.tools {
 		/**
 		 * Hides text editor bar if visible
 		 **/
-		public static function hideEditor():void
-		{
-			var editor:RichTextEditorBar = Radiate.instance.editorComponent;
+		public static function hideEditor():void {
+			var editor:RichTextEditorBar = DocumentManager.editorComponent;
 			
 			if (editor) {
 				editor.visible = false;
@@ -820,9 +761,8 @@ package com.flexcapacitor.tools {
 		/**
 		 * Shows text editor bar if visible
 		 **/
-		public static function showEditor():void
-		{
-			var editor:RichTextEditorBar = Radiate.instance.editorComponent;
+		public static function showEditor():void {
+			var editor:RichTextEditorBar = DocumentManager.editorComponent;
 			
 			if (editor && !showTextEditorInCallOut) {
 				editor.visible = true;

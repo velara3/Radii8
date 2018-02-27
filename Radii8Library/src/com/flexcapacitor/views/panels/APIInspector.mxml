@@ -15,6 +15,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.DocumentationManager;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.utils.ClassUtils;
@@ -38,7 +39,7 @@
 			public var documentationViewer:IUIComponent;
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.PROPERTY_SELECTED, propertySelectedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
@@ -49,7 +50,7 @@
 					currentState = "desktop";
 					
 					if (documentationViewer==null) {
-						var htmlClass:Object = ApplicationDomain.currentDomain.getDefinition(radiate.desktopHTMLClassName);
+						var htmlClass:Object = ApplicationDomain.currentDomain.getDefinition(Radiate.desktopHTMLClassName);
 						documentationViewer = new htmlClass();
 						UIComponent(documentationViewer).percentWidth = 100;
 						UIComponent(documentationViewer).percentHeight = 100;
@@ -95,7 +96,7 @@
 				var prefix:String = "";
 				var url:String;
 				
-				url = Radiate.getURLToHelp(metadata);
+				url = DocumentationManager.getURLToHelp(metadata);
 				
 				// don't keep loading pages if you already loaded them
 				if (url==lastURL) {
@@ -127,7 +128,7 @@
 					
 					if (className) {
 						
-						url = Radiate.getURLToHelp(className);
+						url = DocumentationManager.getURLToHelp(className);
 						
 						// don't keep loading pages if you already loaded them
 						if (url==lastURL) {

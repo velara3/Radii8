@@ -1,7 +1,10 @@
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.managers.ComponentManager;
+	import com.flexcapacitor.managers.DocumentManager;
 	import com.flexcapacitor.managers.HistoryManager;
+	import com.flexcapacitor.managers.LibraryManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -82,10 +85,10 @@ package com.flexcapacitor.tools {
 			systemManager.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
 			systemManager.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler, false, 0, true);
 			
-			radiate = Radiate.getInstance();
+			radiate = Radiate.instance;
 			
-			if (radiate.selectedDocument) {
-				updateDocument(radiate.selectedDocument);
+			if (Radiate.selectedDocument) {
+				updateDocument(Radiate.selectedDocument);
 			}
 			
 			
@@ -120,12 +123,12 @@ package com.flexcapacitor.tools {
 		public function addCanvasListeners():void {
 			removeCanvasListeners();
 			
-			if (radiate && radiate.toolLayer) {
-				toolLayer = radiate.toolLayer;
+			if (radiate && DocumentManager.toolLayer) {
+				toolLayer = DocumentManager.toolLayer;
 			}
 			
-			if (radiate && radiate.canvasBackground) {
-				canvasBackground = radiate.canvasBackground;
+			if (radiate && DocumentManager.canvasBackground) {
+				canvasBackground = DocumentManager.canvasBackground;
 			}
 		}
 		
@@ -467,7 +470,7 @@ package com.flexcapacitor.tools {
 			focusedObject 		= topApplication.focusManager.getFocus();
 			eventTarget 		= event.target;
 			eventCurrentTarget 	= event.currentTarget;
-			tabNav 				= radiate.documentsTabNavigator;
+			tabNav 				= DocumentManager.documentsTabNavigator;
 			
 			// Z = 90
 			// C = 67
@@ -517,6 +520,7 @@ package com.flexcapacitor.tools {
 				return;
 			}
 			
+			// TODO use new move methods in ComponentManager
 			if (event.keyCode==Keyboard.LEFT) {
 				if (event.altKey) {
 					propertiesObject.width = marqueeGroup.width - constant;
@@ -526,7 +530,7 @@ package com.flexcapacitor.tools {
 					propertiesObject.x = marqueeGroup.x - constant;
 					properties.push(MXMLDocumentConstants.X);
 				}
-				Radiate.moveElement2(marqueeGroup, null, properties, propertiesObject);
+				ComponentManager.moveElement2(marqueeGroup, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.RIGHT) {
@@ -538,7 +542,7 @@ package com.flexcapacitor.tools {
 					propertiesObject.x = marqueeGroup.x + constant;
 					properties.push(MXMLDocumentConstants.X);
 				}
-				Radiate.moveElement2(marqueeGroup, null, properties, propertiesObject);
+				ComponentManager.moveElement2(marqueeGroup, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.UP) {
@@ -550,7 +554,7 @@ package com.flexcapacitor.tools {
 					propertiesObject.y = marqueeGroup.y - constant;
 					properties.push(MXMLDocumentConstants.Y);
 				}
-				Radiate.moveElement2(marqueeGroup, null, properties, propertiesObject);
+				ComponentManager.moveElement2(marqueeGroup, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.DOWN) {
@@ -562,19 +566,19 @@ package com.flexcapacitor.tools {
 					propertiesObject.y = marqueeGroup.y + constant;
 					properties.push(MXMLDocumentConstants.Y);
 				}
-				Radiate.moveElement2(marqueeGroup, null, properties, propertiesObject);
+				ComponentManager.moveElement2(marqueeGroup, null, properties, propertiesObject);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.Z && event.ctrlKey && !event.shiftKey) {
-				HistoryManager.undo(radiate.selectedDocument, true);
+				HistoryManager.undo(Radiate.selectedDocument, true);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.Z && event.ctrlKey && event.shiftKey) {
-				HistoryManager.redo(radiate.selectedDocument, true);
+				HistoryManager.redo(Radiate.selectedDocument, true);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.Y && event.ctrlKey) {
-				HistoryManager.redo(radiate.selectedDocument, true);
+				HistoryManager.redo(Radiate.selectedDocument, true);
 				actionOccured = true;
 			}
 			else if (event.keyCode==Keyboard.ENTER) {
@@ -807,14 +811,14 @@ package com.flexcapacitor.tools {
 				var imageName:String = "Cropped"; // should get name from component description
 				
 				if (image.source is BitmapData) {
-					imageData = Radiate.getImageDataFromBitmapData(image.source as BitmapData);
+					imageData = LibraryManager.getImageDataFromBitmapData(image.source as BitmapData);
 				}
 				
 				propertiesObject.x = imageLocalPoint.x + clipIntersectionRectangle.x;
 				propertiesObject.y = imageLocalPoint.y + clipIntersectionRectangle.y;
 				propertiesObject.source = croppedBitmapData;
 				
-				Radiate.setProperties(image, properties, propertiesObject, "Crop", true);
+				ComponentManager.setProperties(image, properties, propertiesObject, "Crop", true);
 				
 				// force redraw
 				updateScreenEvent = new MouseEvent(MouseEvent.MOUSE_UP);
@@ -824,7 +828,7 @@ package com.flexcapacitor.tools {
 					imageName = imageData.name;
 				}
 				
-				radiate.addBitmapDataToDocument(radiate.selectedDocument, croppedBitmapData, null, imageName, false);
+				LibraryManager.addBitmapDataToDocument(Radiate.selectedDocument, croppedBitmapData, null, imageName, false);
 			}
 			else {
 				Radiate.warn("The selection does not intersect any images. Make sure to select an unscaled image."); 

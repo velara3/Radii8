@@ -17,6 +17,11 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.AutoSaveManager;
+			import com.flexcapacitor.managers.DeferManager;
+			import com.flexcapacitor.managers.DocumentManager;
+			import com.flexcapacitor.managers.ProfileManager;
+			import com.flexcapacitor.managers.ProjectManager;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.managers.SettingsManager;
@@ -26,9 +31,9 @@
 			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
 			import com.flexcapacitor.views.windows.PublishWindow;
 			
-			import spark.collections.Sort;
 			import spark.collections.SortField;
 			import spark.events.IndexChangeEvent;
+			
 			
 			[Bindable]
 			private var radiate:Radiate;
@@ -80,8 +85,8 @@
 			
 			protected function update():void {
 
-				if (radiate.selectedProject) {
-					updateSelectedItem(radiate.selectedProject);
+				if (Radiate.selectedProject) {
+					updateSelectedItem(Radiate.selectedProject);
 				}				
 			}
 			
@@ -116,8 +121,8 @@
 				dateSortField = new SortField("dateSaved", descending);
 				sortFields.push(dateSortField);
 				
-				remoteProjects = radiate.parseProjectsData(event.data);
-				localProjects = radiate.projects;
+				remoteProjects = ProjectManager.parseProjectsData(event.data);
+				localProjects = ProjectManager.projects;
 				
 				// add projects we don't have yet
 				for (var i:int = 0; i < remoteProjects.length; i++)  {
@@ -125,7 +130,7 @@
 					projectExistsLocally = ArrayUtils.hasItem(localProjects, remoteProject, "id");
 					
 					//if (!projectExistsLocally) {
-						radiate.addProject(remoteProject);
+						ProjectManager.addProject(remoteProject);
 					//}
 				}
 				
@@ -151,7 +156,7 @@
 				var project:IProject = list.selectedItem ? IProject(list.selectedItem) : null;
 				
 				if (project && project.isOpen) {
-					radiate.setProject(project);
+					Radiate.setProject(project);
 				}
 			}
 			
@@ -160,13 +165,13 @@
 			}
 			
 			protected function saveProjectOnlyIcon_clickHandler(event:MouseEvent):void {
-				radiate.saveProjectOnly(radiate.selectedProject);
+				ProjectManager.saveProjectOnly(Radiate.selectedProject);
 				//radiate.save();
 				SettingsManager.saveSettings();
 			}
 			
 			protected function saveProjectIcon_clickHandler(event:MouseEvent):void {
-				radiate.saveProject(radiate.selectedProject);
+				ProjectManager.saveProject(Radiate.selectedProject);
 				//radiate.save();
 				SettingsManager.saveSettings();
 			}
@@ -180,7 +185,7 @@
 				var selectedProject:IProject = list.selectedItem as IProject;
 				
 				if (selectedProject) {
-					radiate.removeProject(selectedProject);
+					ProjectManager.removeProject(selectedProject);
 				}
 				else {
 					Radiate.info("Please select a project");
@@ -189,8 +194,8 @@
 			
 			protected function newProjectIcon_clickHandler(event:MouseEvent):void {
 				//radiate.createProject();
-				//radiate.addProject(radiate.createProject(), true, true, true);
-				radiate.createBlankDemoDocument();
+				//ProjectManager.addProject(radiate.createProject(), true, true, true);
+				DocumentManager.createBlankDemoDocument();
 			}
 			
 			protected function removeSavedDataIcon_clickHandler(event:MouseEvent):void {
@@ -204,8 +209,8 @@
 			protected function projectRemovedHandler(event:Event):void {
 				updateProjects();
 				
-				if (radiate.projects.length>0) {
-					radiate.setProject(radiate.projects[0], true);
+				if (ProjectManager.projects.length>0) {
+					Radiate.setProject(ProjectManager.projects[0], true);
 				}
 			}
 			
@@ -213,7 +218,7 @@
 				var project:IProject = list.selectedItem ? IProject(list.selectedItem) : null;
 				
 				if (project) {
-					radiate.closeProject(project);
+					ProjectManager.closeProject(project);
 				}
 			}
 			
@@ -221,55 +226,54 @@
 				var project:IProject = list.selectedItem ? IProject(list.selectedItem) : null;
 				
 				if (project) {
-					radiate.openProject(project, DocumentData.INTERNAL_LOCATION);
+					ProjectManager.openProject(project, DocumentData.INTERNAL_LOCATION);
 				}
 			}
 			
 			// HACK TO Mark project needs saved
 			protected function documentChangedHandler(event:RadiateEvent):void {
 				
-				if (radiate.selectedProject) {
-					radiate.selectedProject.checkProjectHasChanged();
+				if (Radiate.selectedProject) {
+					Radiate.selectedProject.checkProjectHasChanged();
 				}
 			}
-			
 			
 			// HACK TO Mark project needs saved
 			protected function projectSavedHandler(event:Event):void {
 				
-				if (radiate.selectedProject) {
-					radiate.selectedProject.checkProjectHasChanged();
+				if (Radiate.selectedProject) {
+					Radiate.selectedProject.checkProjectHasChanged();
 				}
 			}
 			
 			protected function autoSaveToggle_clickHandler(event:MouseEvent):void {
-				radiate.enableAutoSave = autoSaveToggle.selected;
+				AutoSaveManager.enableAutoSave = autoSaveToggle.selected;
 				SettingsManager.saveSettings();
 			}
 			
 			protected function openHomePageInBrowserButton_clickHandler():void {
 				
-				if (Radiate.instance.projectHomePageID<1) {
+				if (ProfileManager.projectHomePageID<1) {
 					Radiate.warn("A home page has not been set. Showing the default theme home page");
-					Radiate.callAfter(2000, Radiate.openUsersWebsite);
+					DeferManager.callAfter(2000, ProfileManager.openUsersWebsite);
 				}
 				else {
-					Radiate.openUsersWebsite();
+					ProfileManager.openUsersWebsite();
 				}
 			}
 			
 			protected function shareIcon_clickHandler(event:MouseEvent):void {
 				var usersSignedIn:Boolean;
 				
-				usersSignedIn = Radiate.instance.isUserLoggedIn;
+				usersSignedIn = ProfileManager.isUserLoggedIn;
 				
 				if (!usersSignedIn) {
 					Radiate.info("You must be logged in to perform this action.");
 					return;
 				}
 				
-				if (radiate.selectedDocument) {
-					RunManager.copyURLToHomePage(radiate.selectedDocument as DocumentData);
+				if (Radiate.selectedDocument) {
+					RunManager.copyURLToHomePage(Radiate.selectedDocument as DocumentData);
 				}
 				else {
 					Radiate.warn("No project is open");
@@ -279,8 +283,8 @@
 			protected function refreshIcon_clickHandler(event:MouseEvent):void {
 				updateProjects();
 				
-				if (radiate.userID!=-1) {
-					serviceManager.getProjectsByUser(radiate.userID);
+				if (ProfileManager.userID!=-1) {
+					serviceManager.getProjectsByUser(ProfileManager.userID);
 				}
 				else {
 					Radiate.warn("No user is logged in");
@@ -293,12 +297,12 @@
 				if (project && !project.isOpen) {
 					
 					if (!project.openedFromMetaData) {
-						radiate.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
+						ProjectManager.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
 					}
 					else {
-						radiate.openProject(project, DocumentData.INTERNAL_LOCATION, true);
+						ProjectManager.openProject(project, DocumentData.INTERNAL_LOCATION, true);
 					}
-					radiate.setProject(project, true);
+					Radiate.setProject(project, true);
 					event.stopImmediatePropagation();
 				}
 			}
@@ -307,7 +311,7 @@
 	</fx:Script>
 	
 	<fx:Declarations>
-		<s:ArrayCollection id="projects" source="{radiate.projects}"/>
+		<s:ArrayCollection id="projects" source="{ProjectManager.projects}"/>
 		<s:ArrayCollection id="projectsFiltersTypes">
 			<fx:Array>
 				<fx:String>All Projects</fx:String>
@@ -404,7 +408,7 @@
 							  />-->
 		
 		<s:CheckBox id="autoSaveToggle" 
-					selected="{radiate.enableAutoSave}"
+					selected="{AutoSaveManager.enableAutoSave}"
 					useHandCursor="true"
 					buttonMode="true"
 					enabled="true"

@@ -46,7 +46,7 @@
 			public var perspectivesArrayList:ArrayList;
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				perspectivesArray.push({label:"", value: DESIGN, 	toolTip:"Show left panel", icon:Radii8LibraryAssets.leftView});
 				perspectivesArray.push({label:"", value: DEVELOP, 	toolTip:"Show left and bottom panels", icon:Radii8LibraryAssets.leftBottomView});

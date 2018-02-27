@@ -9,6 +9,7 @@
 		<![CDATA[
 			import com.flexcapacitor.components.ColorChooser;
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.model.StyleMetaData;
@@ -395,7 +396,7 @@
 					}
 				}
 				else {
-					actualValue = Radiate.getTypedValue(targetValueText.text, type);
+					actualValue = ComponentManager.getTypedValue(targetValueText.text, type);
 				}
 				
 				// do not auto update if setting properties
@@ -413,18 +414,18 @@
 				
 				if (isStyle) {
 					if (clearStyle) {
-						valueSuccessfullyApplied = Radiate.clearStyle(settableObject, property);
+						valueSuccessfullyApplied = ComponentManager.clearStyle(settableObject, property);
 					}
 					else {
-						valueSuccessfullyApplied = Radiate.setStyle(settableObject, property, actualValue);
+						valueSuccessfullyApplied = ComponentManager.setStyle(settableObject, property, actualValue);
 					}
 				}
 				else {
 					if (clearStyle) {
-						valueSuccessfullyApplied = Radiate.clearProperty(settableObject, property, defaultValue);
+						valueSuccessfullyApplied = ComponentManager.clearProperty(settableObject, property, defaultValue);
 					}
 					else {
-						valueSuccessfullyApplied = Radiate.setProperty(settableObject, property, actualValue);
+						valueSuccessfullyApplied = ComponentManager.setProperty(settableObject, property, actualValue);
 					}
 				}
 				
@@ -547,7 +548,7 @@
 						
 					}
 					else {
-						actualValue = Radiate.getTypedValue(targetValueText.text, type);
+						actualValue = ComponentManager.getTypedValue(targetValueText.text, type);
 						targetValueText.text= propertyObject.value;
 					}
 					
@@ -559,7 +560,7 @@
 					}
 					
 					if (dispatchProperySelectedEvents) {
-						Radiate.getInstance().dispatchPropertySelectedEvent(property, propertyObject);
+						Radiate.dispatchPropertySelectedEvent(property, propertyObject);
 					}
 				}
 				
@@ -720,13 +721,13 @@
 						targetValueText.text = "";
 					}
 					else if (targetValueText) {
-						actualValue = Radiate.getTypedValue(targetValueText.text, type);
+						actualValue = ComponentManager.getTypedValue(targetValueText.text, type);
 						targetValueText.text = propertyObject.value;
 					}
 				
 					
 					if (dispatchProperySelectedEvents) {
-						Radiate.getInstance().dispatchPropertySelectedEvent(property, propertyObject);
+						Radiate.dispatchPropertySelectedEvent(property, propertyObject);
 					}
 				}
 				

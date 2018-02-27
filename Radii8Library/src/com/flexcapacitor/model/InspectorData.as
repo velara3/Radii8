@@ -69,7 +69,8 @@ package com.flexcapacitor.model {
 		}
 		
 		/**
-		 * Gets an instance of the inspector class or null if the definition is not found.
+		 * Gets an new or existing instance of the inspector class or null if the definition is not found.
+		 * Should only be created once
 		 * */
 		public function getInstance(domain:ApplicationDomain = null):IInspector {
 			var classFactory:ClassFactory;
@@ -94,6 +95,33 @@ package com.flexcapacitor.model {
 
 			return instance;
 			
+		}
+		
+		
+		/**
+		 * Gets a new instance of the inspector class or null if the definition is not found.
+		 * Should only be created once
+		 * */
+		public function getNewInstance(domain:ApplicationDomain = null):IInspector {
+			var classFactory:ClassFactory;
+			var hasDefinition:Boolean;
+			var newInstance:IInspector;
+			
+			domain = !domain ? ApplicationDomain.currentDomain : domain;
+			hasDefinition = domain.hasDefinition(className);
+			
+			if (hasDefinition) {
+				classType = domain.getDefinition(className);
+				
+				classFactory = new ClassFactory(classType as Class);
+				//classFactory.properties = defaultProperties;
+				newInstance = classFactory.newInstance();
+			}
+			else {
+				return null;
+			}
+			
+			return newInstance;
 		}
 	}
 }

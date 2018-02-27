@@ -12,6 +12,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.managers.ClipboardManager;
+			import com.flexcapacitor.managers.FileManager;
 			import com.flexcapacitor.model.FileInfo;
 			
 			import spark.core.ContentCache;
@@ -47,10 +48,10 @@
 			public static var contentCache:ContentCache = new ContentCache();
 			
 			protected function saveIcon_clickHandler(event:MouseEvent):void {
-				var radiate:Radiate = Radiate.getInstance();
+				var radiate:Radiate = Radiate.instance;
 				
 				if (fileInfo) {
-					radiate.saveFileAs(fileInfo, fileInfo.fileName);
+					FileManager.saveFileAs(fileInfo, fileInfo.fileName);
 				}
 			}
 			

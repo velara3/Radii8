@@ -48,7 +48,7 @@ package com.flexcapacitor.managers
 						dropIndex = currentIndex + 2;
 					}
 					
-					Radiate.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
+					ComponentManager.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
 						null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 					//radiate.setTarget(componentDescription.instance);
 					//componentListTree.selectedItem = componentDescription;
@@ -90,7 +90,7 @@ package com.flexcapacitor.managers
 						dropIndex = numberOfItems;
 					}
 					
-					Radiate.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
+					ComponentManager.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
 						null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 					//radiate.setTarget(componentDescription.instance);
 					//componentListTree.selectedItem = componentDescription;
@@ -117,7 +117,7 @@ package com.flexcapacitor.managers
 				
 				if (currentIndex>0) {
 					dropIndex = currentIndex - 1;
-					Radiate.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
+					ComponentManager.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
 						null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 					//radiate.setTarget(componentDescription.instance);
 					//componentListTree.selectedItem = componentDescription;
@@ -144,7 +144,7 @@ package com.flexcapacitor.managers
 				if (currentIndex!=0) {
 					//dropIndex = currentIndex - 1;
 					dropIndex = 0;
-					Radiate.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
+					ComponentManager.moveElement2(componentDescription.instance, componentDescription.parent.instance, null, 
 						null, RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 					//radiate.setTarget(componentDescription.instance);
 					//componentListTree.selectedItem = componentDescription;

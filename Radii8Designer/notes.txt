@@ -1,0 +1,91 @@
+Errors and preloader setup
+
+	preloader="RadiatePreloader"
+	preloader="com.flexcapacitor.preloaders.RegisteringPreloader"
+	preloader="mx.preloaders.SparkDownloadProgressBar"
+	
+	
+	Description	Resource	Path	Location	Type
+	unable to open '/Applications/Adobe Flash Builder 4.7/sdks/4.15 AIR 23/frameworks/libs/player/15.0/playerglobal.swc'	Radii8		Unknown	Flex Problem
+	
+	fix: 
+	removed references in compiler build path to old libraries and applied the properties. 
+
+	
+	ArgumentError: Error #2004: One of the parameters is invalid.
+	at flash.display::Graphics/drawRect()
+	at spark.components.supportClasses::TextBase/updateDisplayList()[/Users/aharui/release4.13.0/frameworks/projects/spark/src/spark/components/supportClasses/TextBase.as:734]
+	at mx.core::UIComponent/validateDisplayList()[/Users/aharui/release4.13.0/frameworks/projects/framework/src/mx/core/UIComponent.as:9531]
+	
+	
+	When testing locally I'm getting this error: 
+	
+	
+	Warning: Domain www.radii8.com does not specify a meta-policy.  
+	Applying default meta-policy 'master-only'.  This configuration is deprecated.  
+	See http://www.adobe.com/go/strict_policy_files to fix this problem.
+	
+	Error: Request for resource at https://www.radii8.com/r8m/?json=user/get_logged_in_user 
+	by requestor from http://localhost:8888/Radii8-debug/RadiateBrowser.swf is denied due 
+	to lack of policy file permissions.
+	
+	*** Security Sandbox Violation ***
+	Connection to https://www.radii8.com/r8m/?json=user/get_logged_in_user halted - not permitted from http://localhost:8888/Radii8-debug/RadiateBrowser.swf
+	Error: Request for resource at https://www.radii8.com/r8m/?json=core/get_category_posts&count=100&slug=Tutorial by requestor from http://localhost:8888/Radii8-debug/RadiateBrowser.swf is denied due to lack of policy file permissions.
+
+	
+	Changed to https and now got this error in the browser: 
+	
+	Secure Connection Failed
+	
+	An error occurred during a connection to localhost:8888. SSL received a record that exceeded the maximum permissible length. Error code: SSL_ERROR_RX_RECORD_TOO_LONG
+	
+	The page you are trying to view cannot be shown because the authenticity of the received data could not be verified.
+	Please contact the website owners to inform them of this problem.
+
+	-- 
+	Sometimes the generated MXML document is blank. I think it's because if we open
+	multiple documents the application never gets completely loaded or rendered in it's tab and the
+	user closes the document and reopens it. I think it has to do with the activate event in Flex
+	So we need to wait before opening new documents until application complete on the current document.
+	We might need to add an event listener in the Document or Project class to make sure each application
+	completely loads before opening the next. 
+	
+	Update 2017 - Added manual call to activate. Haven't had it happen in a while so it might be fixed. 
+	
+	
+	/** MainView.mxml
+	 * the library would not compile and had random errors that were not errors. 
+		I couldn't figure out what it was. it looks like it's fixed. 
+		what i did was change -swf-version=18 from -swf-version=19 and 
+		also went into properties then classes and instead of include all i selected
+		the files to include. which were not the assets directory but the com.flexcapacitor directory
+		let's hope it stays fixed
+		 
+		 * it did not stay fixed. it complained about PNGEncoderOptions which isn't available below 
+		 * swf version 18 or 19. so i tried cleaning, changing swf version up and down 
+		 * and many other things and nothing worked still errors. so i switched sdk and that 
+		 * removed the errors. 
+		 * 
+		 * UPDATE: THE PREVIOUS ISSUE WAS POSSIBLY BECAUSE THE playerglobal.swc in the 11.2 or 11.5 was not correct
+		 * check date of both they are the same. 
+		 * download the playerglobal again. OR its because the playerglobal is not there. add 11.2,11.3,11.5 etc
+		
+		 * Update 8/28/15 : had to add swf-version=16 and it now works. using sdk 4.6 and air 3.6
+		 * 12/18/15 - changed to swf-version=19 or AIR 19 and it works
+		 * 
+		i still get this warning: 
+		The swc '/Users/Documents/ProjectsGithub/flexcapacitor/MainLibrary/bin/FCLibrary.swc' 
+		has style defaults and is in the library-path, which means dependencies will be linked in without the styles.  
+		This can cause applications, which use the output swc, to have missing skins.  
+		The swc should be put in the external-library-path.
+		
+		i think i fixed the above warning by putting adding the FCLibrary.swc as a swc rather than a project
+		 * 
+		 * UPDATE: NEED TO SELECT THE SWC AND CHOOSE EXTERNAL PATH
+		
+		i added all other projects except the radiate projects as swc instead of as projects
+		
+		i also added reference to PNGEncoderOptions encoder to RadiateReferences.as
+		 * 
+		 */

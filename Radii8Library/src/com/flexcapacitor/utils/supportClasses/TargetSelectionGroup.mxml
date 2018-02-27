@@ -37,7 +37,7 @@
 				componentDescription = value as ComponentDescription;
 				
 				if (componentDescription==null) {
-					componentDescription = Radiate.instance.selectedDocument.getItemDescription(value);
+					componentDescription = Radiate.selectedDocument.getItemDescription(value);
 				}
 				
 				if (componentDescription) {
@@ -157,8 +157,8 @@
 			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
 			{
 				super.updateDisplayList(unscaledWidth, unscaledHeight);
-				var radiate:Radiate = Radiate.getInstance();
-				var documentDescription:IDocument = radiate.selectedDocument;
+				var radiate:Radiate = Radiate.instance;
+				var documentDescription:IDocument = Radiate.selectedDocument;
 				//graphics.clear();
 				/*
 				was showing previous selection like the graphics weren't cleared

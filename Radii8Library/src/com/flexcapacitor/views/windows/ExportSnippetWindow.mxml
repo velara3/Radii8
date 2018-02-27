@@ -54,8 +54,8 @@
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
 				var exporters:Array = CodeManager.getAllExporters();
-				radiate = Radiate.getInstance();
-				iDocument = radiate.selectedDocument;
+				radiate = Radiate.instance;
+				iDocument = Radiate.selectedDocument;
 				languageTypes.source = exporters;
 				isHTML = TranscoderDescription(exporters[0]).type==CodeManager.HTML.toLowerCase();
 				

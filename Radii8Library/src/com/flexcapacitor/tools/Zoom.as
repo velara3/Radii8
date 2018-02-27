@@ -3,7 +3,9 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.controller.RadiateUtilities;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.managers.DocumentManager;
 	import com.flexcapacitor.managers.ScaleManager;
+	import com.flexcapacitor.managers.ToolManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
 	
@@ -43,7 +45,7 @@ package com.flexcapacitor.tools {
 		
 		public function Zoom()
 		{
-			//radiate = Radiate.getInstance();
+			//radiate = Radiate.instance;
 		}
 		
 		private var _icon:Class = Radii8LibraryToolAssets.Zoom;
@@ -56,16 +58,6 @@ package com.flexcapacitor.tools {
 		
 		public static const ZoomOutCursor:Class = Radii8LibraryToolAssets.ZoomOut;
 		
-		/**
-		 *  The name of the viewport's horizontal scroll position property
-		 */
-		private static const HORIZONTAL_SCROLL_POSITION:String = "horizontalScrollPosition";
-		
-		/**
-		 *  The name of the viewport's vertical scroll position property
-		 */
-		private static const VERTICAL_SCROLL_POSITION:String = "verticalScrollPosition";
-		
 		public var cursors:Array;
 		
 		
@@ -74,7 +66,7 @@ package com.flexcapacitor.tools {
 		 * */
 		public function get radiate():Radiate {
 			if (_radiate==null) {
-				_radiate = Radiate.getInstance();
+				_radiate = Radiate.instance;
 			}
 			return _radiate;
 		}
@@ -159,14 +151,14 @@ package com.flexcapacitor.tools {
 			
 			//radiate.document.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
 			
-			if (radiate.selectedDocument) {
-				updateDocument(radiate.selectedDocument);
+			if (Radiate.selectedDocument) {
+				updateDocument(Radiate.selectedDocument);
 			}
 			
-			zoomInCursorID = radiate.getMouseCursorID(this, "ZoomInCursor");
-			zoomOutCursorID = radiate.getMouseCursorID(this, "ZoomOutCursor");
+			zoomInCursorID = ToolManager.getMouseCursorID(this, "ZoomInCursor");
+			zoomOutCursorID = ToolManager.getMouseCursorID(this, "ZoomOutCursor");
 			
-			canvasScroller = radiate.canvasScroller;
+			canvasScroller = DocumentManager.canvasScroller;
 			
 			radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
 		}
@@ -243,7 +235,7 @@ package com.flexcapacitor.tools {
 				//stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler, true, EventPriority.CURSOR_MANAGEMENT, true);
 			}
 			
-			canvasScroller = radiate.canvasScroller;
+			canvasScroller = DocumentManager.canvasScroller;
 		}
 		
 		/**
@@ -263,7 +255,7 @@ package com.flexcapacitor.tools {
 				startingApplicationPoint = DisplayObjectUtils.getDisplayObjectPosition(targetApplication as DisplayObject, event, true);
 				startingScale = ScaleManager.getScale();
 				
-				localPositionPoint = DisplayObjectUtils.getDisplayObjectPosition(targetApplication as DisplayObject, event, true);;
+				localPositionPoint = DisplayObjectUtils.getDisplayObjectPosition(targetApplication as DisplayObject, event, true);
 				//localPositionPoint.x /= startingScale;
 				//localPositionPoint.y /= startingScale;
 				//trace("starting1: " + startingApplicationPoint);
@@ -387,7 +379,7 @@ package com.flexcapacitor.tools {
 			//trace("sc: " + newScale + " local=" + newPoint);
 			
 			if (newPoint!=null) {
-				centerViewOnPoint(radiate.canvasScroller, newPoint);
+				DocumentManager.centerViewOnPoint(DocumentManager.canvasScroller, newPoint);
 			}
 		}
 		
@@ -416,7 +408,7 @@ package com.flexcapacitor.tools {
 				var point:Point;
 				var localMousePoint:Point;
 				var pointRectangle:Rectangle;
-				var canvasScroller:Scroller = radiate.canvasScroller;
+				var canvasScroller:Scroller = DocumentManager.canvasScroller;
 				var vPosition:int = canvasScroller.verticalScrollBar.value;
 				var hPosition:int = canvasScroller.horizontalScrollBar.value;
 				var viewportComponent:IViewport = canvasScroller.viewport;
@@ -482,7 +474,7 @@ package com.flexcapacitor.tools {
 					offsetX = (point.x * scaleChange);
 					offsetY = (point.y * scaleChange);
 					
-					RadiateUtilities.setScrollPosition(offsetX+hPosition, offsetY+vPosition);
+					DocumentManager.setDocumentScrollPosition(offsetX+hPosition, offsetY+vPosition);
 					ScaleManager.setScale(currentScale-scaleAmount);
 					//radiate.decreaseScale();
 				}
@@ -503,12 +495,12 @@ package com.flexcapacitor.tools {
 					
 					ScaleManager.setScale(currentScale+scaleAmount);
 					
-					point = getScrollPositionDeltaToPoint(radiate.canvasScroller, localDistancePoint2);
+					point = getScrollPositionDeltaToPoint(DocumentManager.canvasScroller, localDistancePoint2);
 					
 					if (point!=null) {
 						//radiate.setScrollPosition(offsetX+hPosition, offsetY+vPosition);
 						//radiate.setScrollPosition(point.x + hPosition, point.y + vPosition);
-						centerViewOnPoint(radiate.canvasScroller, point);
+						DocumentManager.centerViewOnPoint(DocumentManager.canvasScroller, point);
 					}
 					//radiate.setScrollPosition(scrollerXPosition, scrollerYPosition);
 					//radiate.increaseScale();
@@ -516,17 +508,6 @@ package com.flexcapacitor.tools {
 				
 			}
 		}
-		
-		/**
-		 *  Animation to scrollbars clicked area into view
-		 */
-		public var scrollBarAnimation:Animate;
-		public var scrollBarAnimationDuration:int = 250;
-		public var scrollBarAnimationStartDelay:int = 0;
-		
-		public var scaleAnimation:Animate;
-		public var scaleAnimationDuration:int = 250;
-		public var scaleAnimationStartDelay:int = 0;
 		
 		/**
 		 * Click handler added 
@@ -559,8 +540,8 @@ package com.flexcapacitor.tools {
 			
 			if (targetApplication is DisplayObject) {
 				currentScale = ScaleManager.getScale();
-				currentScrollRect = getScrollRect(canvasScroller.viewport as GroupBase);
-				currentScrollPoint = getScrollPoint(canvasScroller.viewport as GroupBase);
+				currentScrollRect = DocumentManager.getScrollRectangle(canvasScroller.viewport as GroupBase);
+				currentScrollPoint = DocumentManager.getScrollPoint(canvasScroller.viewport as GroupBase);
 				
 				// zoom out
 				if (event.shiftKey) {
@@ -574,8 +555,8 @@ package com.flexcapacitor.tools {
 				else if (event.altKey) {
 					// center on point
 					localScrollerPoint = DisplayObjectUtils.getDisplayObjectPosition(canvasScroller.viewport as DisplayObject, event, true);
-					newPoint = centerViewOnPoint(canvasScroller, localScrollerPoint);
-					animateScrollPointIntoView(newPoint, currentScrollPoint);
+					newPoint = DocumentManager.centerViewOnPoint(canvasScroller, localScrollerPoint);
+					DocumentManager.animateScrollPointIntoView(newPoint, currentScrollPoint);
 					return;
 				}
 				else {
@@ -596,7 +577,7 @@ package com.flexcapacitor.tools {
 				scrollerDistancePoint = DisplayObjectUtils.getDistanceBetweenDisplayObjects(canvasScroller.viewport, targetApplication);
 				localScrollerPoint.x += scrollerDistancePoint.x/2;
 				localScrollerPoint.y += scrollerDistancePoint.y/2;
-				newPoint = centerViewOnPoint(canvasScroller, localScrollerPoint, false);
+				newPoint = DocumentManager.centerViewOnPoint(canvasScroller, localScrollerPoint, false);
 				
 				//addButton(canvasScroller.viewport as Group, localScrollerPoint.x, localScrollerPoint.y, "3");
 				
@@ -608,64 +589,16 @@ package com.flexcapacitor.tools {
 					currentScrollPoint.x = Math.min(maxPoint.x, currentScrollPoint.x);
 					currentScrollPoint.y = Math.min(maxPoint.y, currentScrollPoint.y);
 					
-					animateScrollPointIntoView(newPoint, currentScrollPoint);
-					animateScalePointIntoView(new Point(newScale, newScale), new Point(currentScale, currentScale));
+					DocumentManager.animateScrollPointIntoView(newPoint, currentScrollPoint);
+					ScaleManager.animateScalePointIntoView(new Point(newScale, newScale), new Point(currentScale, currentScale));
 					
-					newScrollPoint = getScrollPoint(canvasScroller.viewport as GroupBase);
-					newScrollRect = getScrollRect(canvasScroller.viewport as GroupBase);
+					newScrollPoint = DocumentManager.getScrollPoint(canvasScroller.viewport as GroupBase);
+					newScrollRect = DocumentManager.getScrollRectangle(canvasScroller.viewport as GroupBase);
 				}
 				else {
 					//trace("can't scroll");
 				}
 			}
-		}
-		
-		public function animateScrollPointIntoView(newPoint:Point, oldPoint:Point = null):void {
-			var scrollMotionPaths:Vector.<MotionPath>;
-			var scrollHorizontalPath:SimpleMotionPath;
-			var scrollVerticalPath:SimpleMotionPath;
-			
-			scrollBarAnimation = new Animate();
-			//scrollBarAnimation.addEventListener(EffectEvent.EFFECT_END, hideScrollBarAnimation_effectEndHandler);
-			scrollBarAnimation.duration = scrollBarAnimationDuration;
-			scrollBarAnimation.startDelay = scrollBarAnimationStartDelay;
-			
-			if (oldPoint) {
-				scrollHorizontalPath = new SimpleMotionPath(HORIZONTAL_SCROLL_POSITION, oldPoint.x, newPoint.x);
-				scrollVerticalPath = new SimpleMotionPath(VERTICAL_SCROLL_POSITION, oldPoint.y, newPoint.y);
-			}
-			else {
-				scrollHorizontalPath = new SimpleMotionPath(HORIZONTAL_SCROLL_POSITION, null, newPoint.x);
-				scrollVerticalPath = new SimpleMotionPath(VERTICAL_SCROLL_POSITION, null, newPoint.y);
-			}
-			
-			scrollMotionPaths = Vector.<MotionPath>([scrollHorizontalPath, scrollVerticalPath]);
-			scrollBarAnimation.motionPaths = scrollMotionPaths;
-			scrollBarAnimation.play([canvasScroller.viewport]);
-		}
-		
-		public function animateScalePointIntoView(newScale:Point, oldScale:Point = null):void {
-			var scaleMotionPaths:Vector.<MotionPath>;
-			var scaleXPath:SimpleMotionPath;
-			var scaleYPath:SimpleMotionPath;
-			
-			scaleAnimation = new Animate();
-			//scrollBarAnimation.addEventListener(EffectEvent.EFFECT_END, hideScrollBarAnimation_effectEndHandler);
-			scaleAnimation.duration = scrollBarAnimationDuration;
-			scaleAnimation.startDelay = scrollBarAnimationStartDelay;
-			
-			if (newScale) {
-				scaleXPath = new SimpleMotionPath("scaleX", oldScale.x, newScale.x);
-				scaleYPath = new SimpleMotionPath("scaleY", oldScale.y, newScale.y);
-			}
-			else {
-				scaleXPath = new SimpleMotionPath("scaleX", null, newScale.x);
-				scaleYPath = new SimpleMotionPath("scaleY", null, newScale.y);
-			}
-			
-			scaleMotionPaths = Vector.<MotionPath>([scaleXPath, scaleYPath]);
-			scaleAnimation.motionPaths = scaleMotionPaths;
-			scaleAnimation.play([targetApplication]);
 		}
 		
 		public function getCanScrollVertically():Boolean {
@@ -823,7 +756,7 @@ package com.flexcapacitor.tools {
 				return null;
 			
 			var target:GroupBase = scroller.viewport as GroupBase;
-			var scrollRectangle:Rectangle = getScrollRect(target);
+			var scrollRectangle:Rectangle = DocumentManager.getScrollRectangle(target);
 			
 			if (!scrollRectangle || !target.clipAndEnableScrolling)
 				return null;
@@ -879,77 +812,6 @@ package com.flexcapacitor.tools {
 			
 			return new Point(dx, dy);
 		}
-
-		
-		public function centerViewOnPoint(scroller:Scroller, point:Point, animate:Boolean = false):Point {
-			
-			if (!point) {
-				return null;
-			}
-			
-			var target:GroupBase = scroller.viewport as GroupBase;
-			var scrollRectangle:Rectangle = getScrollRect(target);
-			
-			if (!scrollRectangle || !target.clipAndEnableScrolling) {
-				return null;
-			}
-			
-			var newX:Number = 0;
-			var newY:Number = 0;
-			
-			var left:Number;
-			var top:Number;
-			var horizontalCenter:Number;
-			var verticalCenter:Number;
-			var maxVerticalScrollPosition:int;
-			var maxHorizontalScrollPosition:int;
-			var currentHorizontalPosition:int;
-			var currentVerticalPosition:int;
-			
-			left = point.x;
-			top = point.y;
-			
-			horizontalCenter = left - (scrollRectangle.width/2);
-			verticalCenter = top - (scrollRectangle.height/2);
-			
-			currentHorizontalPosition = scroller.viewport.horizontalScrollPosition;
-			currentVerticalPosition = scroller.viewport.verticalScrollPosition;
-			
-			maxHorizontalScrollPosition = scroller.horizontalScrollBar.maximum;
-			maxVerticalScrollPosition = scroller.verticalScrollBar.maximum;
-			
-			newX = horizontalCenter;
-			
-			if (horizontalCenter<0) {
-				newX = 0;
-			}
-			else if (horizontalCenter > maxHorizontalScrollPosition) {
-				newX = maxHorizontalScrollPosition;
-			}
-			
-			newY = verticalCenter;
-			
-			if (verticalCenter<0) {
-				newY = 0;
-			}
-			else if (verticalCenter > maxVerticalScrollPosition) {
-				newY = maxVerticalScrollPosition;
-			}
-			
-			newX = Math.floor(newX);
-			newY = Math.floor(newY);
-			
-			if (!animate) {
-				scroller.viewport.horizontalScrollPosition = newX;
-				scroller.viewport.verticalScrollPosition = newY;
-			}
-			else {
-				animateScrollPointIntoView(new Point(newX, newY), new Point(currentHorizontalPosition, currentVerticalPosition));
-			}
-			
-			return new Point(newX, newY);
-			
-		}
 		
 		/**
 		 *  @private 
@@ -967,19 +829,17 @@ package com.flexcapacitor.tools {
 		 *  @param leftOffset Number of pixels to position the element to the right of the left edge.
 		 *  @param rightOffset Number of pixels to position the element to the left of the right edge.
 		 */ 
-		protected function getScrollPositionDeltaToElementHelperHelper(target:GroupBase,
-			elementRectangle:Rectangle,
-			elementLocalBounds:Rectangle = null,
-			entireElementVisible:Boolean = true,
-			topOffset:Number = NaN, 
-			bottomOffset:Number = NaN, 
-			leftOffset:Number = NaN,
-			rightOffset:Number = NaN):Point {
+		protected function getScrollPositionDeltaToElementHelperHelper(target:GroupBase, 
+																	   elementRectangle:Rectangle,
+								elementLocalBounds:Rectangle = null, 
+								entireElementVisible:Boolean = true,
+								topOffset:Number = NaN, bottomOffset:Number = NaN, 
+								leftOffset:Number = NaN, rightOffset:Number = NaN):Point {
 			
 			if (!elementRectangle)
 				return null;
 			
-			var scrollR:Rectangle = getScrollRect(target);
+			var scrollR:Rectangle = DocumentManager.getScrollRectangle(target);
 			if (!scrollR || !target.clipAndEnableScrolling)
 				return null;
 			
@@ -1045,38 +905,6 @@ package com.flexcapacitor.tools {
 			}
 			
 			return new Point(dx, dy);
-		}
-		
-		/**
-		 *  Returns the bounds of the target's scroll rectangle in layout coordinates.
-		 * 
-		 *  Layout methods should not get the target's scroll rectangle directly.
-		 * 
-		 *  @return The bounds of the target's scrollRect in layout coordinates, null
-		 *      if target or clipAndEnableScrolling is false. 
-		 *  
-		 *  @langversion 3.0
-		 *  @playerversion Flash 10
-		 *  @playerversion AIR 1.5
-		 *  @productversion Flex 4
-		 */
-		protected function getScrollRect(target:GroupBase):Rectangle
-		{
-			var g:GroupBase = target;
-			if (!g || !g.clipAndEnableScrolling)
-				return null;
-			var vsp:Number = g.verticalScrollPosition;
-			var hsp:Number = g.horizontalScrollPosition;
-			return new Rectangle(hsp, vsp, g.width, g.height);
-		}
-		
-		protected function getScrollPoint(target:GroupBase):Point {
-			var g:GroupBase = target;
-			if (!g || !g.clipAndEnableScrolling)
-				return null;
-			var vsp:Number = g.verticalScrollPosition;
-			var hsp:Number = g.horizontalScrollPosition;
-			return new Point(hsp, vsp);
 		}
 		
 		protected function getMaxScrollPoint(scroller:Scroller):Point {

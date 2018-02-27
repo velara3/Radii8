@@ -17,6 +17,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
 			
@@ -47,7 +48,7 @@
 			
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				
@@ -169,14 +170,14 @@
 				
 				if (usingSkinStates) {
 					if ("hasState" in target.skin && target.skin.hasState(state.name)) {
-						Radiate.setProperty(target.skin, "currentState", state.name);
+						ComponentManager.setProperty(target.skin, "currentState", state.name);
 						//target.skin.currentState = state.name;
 					}
 				}
 				else {
 					// ArgumentError: Undefined state 'normal'.
 					if ("hasState" in target && target.hasState(state.name)) {
-						Radiate.setProperty(target, "currentState", state.name);
+						ComponentManager.setProperty(target, "currentState", state.name);
 						//target.currentState = state.name;
 					}
 				}

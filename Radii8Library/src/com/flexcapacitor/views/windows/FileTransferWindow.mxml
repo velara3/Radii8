@@ -93,7 +93,7 @@
 				var input:String;
 				var jsonObject:Object;
 				
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				sslCheckbox.enabled = SecureSocket.isSupported;
 				

@@ -1,8 +1,7 @@
-package com.flexcapacitor.controller {
+package com.flexcapacitor.managers {
 	import com.durej.PSDParser.PSDLayer;
 	import com.durej.PSDParser.PSDParser;
 	import com.flexcapacitor.effects.file.LoadFile;
-	import com.flexcapacitor.managers.ComponentManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.model.ImageData;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -13,6 +12,9 @@ package com.flexcapacitor.controller {
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
 	import flash.utils.getTimer;
+	import com.flexcapacitor.controller.Console;
+	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.controller.RadiateUtilities;
 	
 	public class PSDImporter extends Console {
 		
@@ -151,9 +153,9 @@ package com.flexcapacitor.controller {
 				properties.push("source");
 				properties.push("visible");
 				
-				Radiate.addElement(componentInstance, application, properties, null, null, propertiesObject);
+				ComponentManager.addElement(componentInstance, application, properties, null, null, propertiesObject);
 				
-				Radiate.updateComponentAfterAdd(iDocument, componentInstance, setDefaultsPost);
+				ComponentManager.updateComponentAfterAdd(iDocument, componentInstance, setDefaultsPost);
 				
 				componentDescription = iDocument.getItemDescription(componentInstance);
 				
@@ -169,7 +171,7 @@ package com.flexcapacitor.controller {
 					imageData.name = "Composite Layer";
 					imageData.layerInfo = psdLayer;
 					
-					radiate.addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured, false);
+					LibraryManager.addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured, false);
 				}
 			}
 			
@@ -179,10 +181,10 @@ package com.flexcapacitor.controller {
 				dropFileLoader ? dropFileLoader.removeReferences(true) : -1;
 				
 				if (addToAssets && imageData) {
-					radiate.dispatchAssetAddedEvent(imageData);
+					Radiate.dispatchAssetAddedEvent(imageData);
 				}
 				
-				radiate.dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, false, false);
+				Radiate.dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, false, false);
 				
 				return;
 			}
@@ -464,9 +466,9 @@ package com.flexcapacitor.controller {
 					trace("Adding layer " + layerName + " to group " + parentLayerID);
 				}
 				
-				Radiate.addElement(componentInstance, parentInstance, parentGroup.properties, null, null, parentGroup.propertiesObject);
+				ComponentManager.addElement(componentInstance, parentInstance, parentGroup.properties, null, null, parentGroup.propertiesObject);
 				
-				Radiate.updateComponentAfterAdd(iDocument, componentInstance, setDefaultsPost);
+				ComponentManager.updateComponentAfterAdd(iDocument, componentInstance, setDefaultsPost);
 				
 				componentDescription = iDocument.getItemDescription(componentInstance);
 				
@@ -483,7 +485,7 @@ package com.flexcapacitor.controller {
 					imageData.name = psdLayer.name;
 					imageData.layerInfo = psdLayer;
 					
-					radiate.addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured, false);
+					LibraryManager.addAssetToDocument(imageData, documentThatPasteOfFilesToBeLoadedOccured, false);
 				}
 			}
 			
@@ -501,12 +503,12 @@ package com.flexcapacitor.controller {
 			const HEIGHT:String = "height";
 			
 			if (matchDocumentSizeToPSD) {
-				resized = RadiateUtilities.sizeDocumentToBitmapData(documentThatPasteOfFilesToBeLoadedOccured, compositeBitmapData);
+				resized = DocumentManager.sizeDocumentToBitmapData(documentThatPasteOfFilesToBeLoadedOccured, compositeBitmapData);
 			}
 			
 			// dispatch event 
 			if (addToAssets && imageData) {
-				radiate.dispatchAssetAddedEvent(imageData);
+				Radiate.dispatchAssetAddedEvent(imageData);
 			}
 			
 			if (hasShapes || hasMasks) {
@@ -518,9 +520,9 @@ package com.flexcapacitor.controller {
 			
 			radiate.setTarget(iDocument.instance);
 			
-			imageData = Radiate.getImageDataFromBitmapData(compositeBitmapData);
+			imageData = LibraryManager.getImageDataFromBitmapData(compositeBitmapData);
 			
-			radiate.dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
+			Radiate.dispatchAssetLoadedEvent(imageData, documentThatPasteOfFilesToBeLoadedOccured, resized, true);
 		}
 	}
 }

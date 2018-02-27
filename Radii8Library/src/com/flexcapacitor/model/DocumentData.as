@@ -1,6 +1,9 @@
 
 package com.flexcapacitor.model {
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.controller.RadiateUtilities;
+	import com.flexcapacitor.managers.DateManager;
+	import com.flexcapacitor.managers.LibraryManager;
 	import com.flexcapacitor.managers.ServicesManager;
 	import com.flexcapacitor.managers.SettingsManager;
 	import com.flexcapacitor.services.IServiceEvent;
@@ -455,7 +458,7 @@ package com.flexcapacitor.model {
 				retrieve();
 			}
 			else if (location==LOCAL_LOCATION) {
-				//var documentData:IDocumentData = Radiate.getInstance().getDocumentLocally(this);
+				//var documentData:IDocumentData = Radiate.instance.getDocumentLocally(this);
 				//Radiate.info("Open Document Local");
 			}
 			else {
@@ -580,7 +583,7 @@ package com.flexcapacitor.model {
 				//Radiate.info("Document saved: "+ name);
 				markClean();
 				
-				Radiate.instance.setLastSaveDate();
+				DateManager.setLastSaveDate();
 			}
 			else {
 				saveSuccessful = false;
@@ -673,7 +676,7 @@ package com.flexcapacitor.model {
 			}
 			
 			// add assets
-			Radiate.instance.addAssetsToDocument(assets, this);
+			LibraryManager.addAssetsToDocument(assets, this);
 			
 			openResultsEvent.hasError = hasError;
 			openResultsEvent.data = data;

@@ -29,7 +29,7 @@
 				var imageType:Boolean = imageTypeGroup.selectedValue ? true : false;
 				
 				if (printableObjectGroup.selectedValue==CURRENT_DOCUMENT) {
-					PrintManager.print(radiate.selectedDocument, scaleType, imageType);
+					PrintManager.print(Radiate.selectedDocument, scaleType, imageType);
 				}
 				else if (printableObjectGroup.selectedValue==CURRENT_SELECTION) {
 					PrintManager.print(radiate.target, scaleType, imageType);
@@ -37,7 +37,7 @@
 			}
 			
 			protected function panel1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				radiate.addEventListener(RadiateEvent.PRINT_CANCELLED, printCanceledHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PRINT_COMPLETE, printCompleteHandler, false, 0, true);
 			}

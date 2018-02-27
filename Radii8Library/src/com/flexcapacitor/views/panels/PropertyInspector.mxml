@@ -14,69 +14,11 @@
 		 fontSize="11"
 		 >
 	
-	
-	<!--
-	This is a standard properties grid that is showing property and value
-	except that the editor (color picker, text input, etc) is 
-	in the footer rather than next to the view. 
-	
-	There is a second view that attempts to put the editor next to the 
-	property. This sort of works but is CPU intensive and causes slow 
-	down. This may be because it has hundreds of properties or 
-	another cause. The idea then would be to specify the properties 
-	in the spark or inspectors manifest file and only show those.
-	Or it would show only the properties defined on it's self. 
-	For example, if it's a Button it will show only the Button 
-	class properties but not ButtonBase, UIComponent and so on. 
-	This has its limitations though. What about size and position?
-	In that case, the common properties from the inherited classes
-	would have to be specified. So Button would show all of it's 
-	properties, then any properties on ButtonBase that were specified
-	as useful would be shown and then add any properties on UIComponent
-	that were specified as useful would be shown. 
-	
-	For Button this would look like this: 
-	-
-	Label - Part of Button base
-	-
-	Width  - Part of UIComponent
-	Height 
-	X
-	Y
-
-	Unfortunately there is the order and grouping to keep in mind. 
-	
-	The third view would be custom property inspectors based on type or class. 
-	This is defined in the inspectors manifest file. It specifies the views to 
-	display by class name or URL. 
-	
-	
-	One of the current problems is that the component or class and it's 
-	description is in XML still in some locations and not stored anywhere else. 
-	We use describeType to get the properties, styles, events and inheritence. 
-	Using XML is relatively heavy, slow and is not typed. We use this 
-	information to dynamically build the inspectors for color, numbers, boolean 
-	and enumerated values. 
-	
-	It should be refactored. For example, class information should be globally accessable, 
-	and return a strong data type. It should have look up for getting the 
-	inspector type (color, boolean, text inspector etc) and for setting it's value. 
-	
-	
-	
-	TODO:
-	- do not update if not visible or is not active tab
-	- add refresh button
-	- display read only property
-	- filter to show only the properties that we specify
-	- show custom views when defined
-	- add better way to switch between views
-	-->
-	
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.model.MetaData;
 			import com.flexcapacitor.model.StyleMetaData;
@@ -177,7 +119,7 @@
 			}
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				if (!showHeader) {
 					//propertiesGrid.columnHeaderGroup.visible = showHeader;
@@ -610,7 +552,7 @@
 					// if object set new target
 					if (!ObjectUtil.isSimple(something)) {
 						target = something;
-						radiate.dispatchTargetChangeEvent(something);
+						Radiate.dispatchTargetChangeEvent(something);
 						//InspectorUtils.dispatchTargetChangeEvent(something, this);
 					}
 				}
@@ -708,7 +650,7 @@
 				var property:String = String(item.@name);
 				
 				//trace("New Value= ", value);
-				Radiate.setProperty(target, property, value);
+				ComponentManager.setProperty(target, property, value);
 			}
 			
 			protected function startSessionHandler(event:GridItemEditorEvent):void {
@@ -929,14 +871,14 @@
 						booleanNumberStyleButton.visible = isStyle;
 					}
 					else {
-						actualValue = Radiate.getTypedValue(targetValueText.text, type);
+						actualValue = ComponentManager.getTypedValue(targetValueText.text, type);
 						currentState = TEXT_STATE;
 						targetValueText.text= propertyObject.value;
 						booleanTextStyleButton.visible = isStyle;
 					}
 				
 					
-					radiate.dispatchPropertySelectedEvent(property, propertyObject);
+					Radiate.dispatchPropertySelectedEvent(property, propertyObject);
 				}
 				else {
 					currentState = NONE_STATE;
@@ -1068,7 +1010,7 @@
 						actualValue = formatCombobox.selectedItem;
 					}
 					else {
-						actualValue = Radiate.getTypedValue(targetValueText.text, type);
+						actualValue = ComponentManager.getTypedValue(targetValueText.text, type);
 					}
 					
 					
@@ -1076,14 +1018,14 @@
 					
 					if (isStyle) {
 						if (clearStyle) {
-							valueSuccessfullyApplied = Radiate.clearStyle(target, property);
+							valueSuccessfullyApplied = ComponentManager.clearStyle(target, property);
 						}
 						else {
-							valueSuccessfullyApplied = Radiate.setStyle(target, property, actualValue);
+							valueSuccessfullyApplied = ComponentManager.setStyle(target, property, actualValue);
 						}
 					}
 					else {
-						valueSuccessfullyApplied = Radiate.setProperty(target, property, actualValue);
+						valueSuccessfullyApplied = ComponentManager.setProperty(target, property, actualValue);
 					}
 				}
 				

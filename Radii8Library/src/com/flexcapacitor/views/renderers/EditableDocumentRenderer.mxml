@@ -14,6 +14,8 @@
 	<fx:Script>
 	<![CDATA[
 		import com.flexcapacitor.controller.Radiate;
+		import com.flexcapacitor.managers.DocumentManager;
+		import com.flexcapacitor.managers.ProfileManager;
 		import com.flexcapacitor.model.DocumentData;
 		import com.flexcapacitor.model.IDocument;
 		import com.flexcapacitor.model.IDocumentData;
@@ -56,7 +58,7 @@
 			
 			// 1176: Comparison between a value with static type int and a possibly unrelated type String.
 			// compiler error - cast to int
-			if (iDocument && Radiate.instance.projectHomePageID==int(iDocument.id) && iDocument.id!=null) {
+			if (iDocument && ProfileManager.projectHomePageID==int(iDocument.id) && iDocument.id!=null) {
 				homePageIcon.visible = true;
 			}
 			else {
@@ -93,7 +95,7 @@
 			if (data && iDocument) {
 				var oldName:String = iDocument.name;
 				var newName:String = textInput.text;
-				Radiate.instance.renameDocument(iDocument, newName);
+				DocumentManager.renameDocument(iDocument, newName);
 			    list.dataProvider.itemUpdated(iDocument, "name", oldName, newName); 
 				currentState = "normal";
 			}
@@ -121,13 +123,13 @@
 		}
 		
 		protected function openIcon_clickHandler(event:MouseEvent):void {
-			Radiate.instance.openDocument(this.data as IDocument);
+			DocumentManager.openDocument(this.data as IDocument);
 		}
 		
 		
 		protected function documentStatusList_changeHandler(event:IndexChangeEvent):void
 		{
-			var iDocument:IDocument = Radiate.instance.selectedDocument;
+			var iDocument:IDocument = Radiate.selectedDocument;
 			var status:String = documentStatusList.selectedItem;
 			
 			if (iDocument && status!=WPService.STATUS_NONE && iDocument.status!=status) {
@@ -217,7 +219,7 @@
 					width="75"
 					visible="false"
 					toolTip="A draft is only viewable to you (when logged in). A published document is viewable to anyone."
-					dataProvider="{Radiate.documentStatuses}" 
+					dataProvider="{DocumentManager.documentStatuses}" 
 					change="documentStatusList_changeHandler(event)">
 	</s:DropDownList>
 	

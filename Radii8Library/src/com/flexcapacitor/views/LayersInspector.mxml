@@ -49,8 +49,6 @@
 
 	drag and drop appears to work but error is thrown. 
 	created bug and patch at apache flex bug base
-	
-	
 	-->
 	
 	<fx:Script>
@@ -58,6 +56,8 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ArrangeLayers;
+			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DeferManager;
 			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.model.Document;
@@ -205,7 +205,7 @@
 				var rootApplicationDescription:ComponentDescription;
 				var targetDescription:ComponentDescription;
 				var parent:ComponentDescription;
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				
 				target = selectedItem;
 				
@@ -329,7 +329,7 @@
 			 * */
 			protected function documentChangeHandler(event:Event):void {
 				// commented out the check because of document reverted event (which creates new instances)
-				//if (designDocument!=radiate.selectedDocument) {
+				//if (designDocument!=Radiate.selectedDocument) {
 					updateComponentDisplayList(false);
 				//}
 				
@@ -371,7 +371,7 @@
 				var selectedItems:Array;
 				var selectedItem:Object;
 				
-				iDocument = radiate.selectedDocument;
+				iDocument = Radiate.selectedDocument;
 				
 				if (iDocument is Document) {
 					Document(iDocument).updateComponentTree();
@@ -675,7 +675,7 @@
 					Radiate.info("row  index:" + rowIndex);
 					Radiate.info("item index:" + droppingIndex);*/
 					
-					Radiate.moveElement2(draggedElement.instance, dropParent.instance, null, null, 
+					ComponentManager.moveElement2(draggedElement.instance, dropParent.instance, null, null, 
 										RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 					
 					radiate.setTarget(draggedElement.instance);
@@ -694,7 +694,7 @@
 							//Radiate.info("Lowering index");
 						}
 						
-						Radiate.moveElement2(draggedElement.instance, dropParent.instance, null, null, 
+						ComponentManager.moveElement2(draggedElement.instance, dropParent.instance, null, null, 
 										RadiateEvent.MOVE_ITEM, AddItems.LAST, null, dropIndex);
 					}
 					else {
@@ -708,7 +708,7 @@
 				var refreshesTreeLater:Boolean;
 				
 				if (refreshesTreeLater) {
-					Radiate.callAfter(30, activate);
+					DeferManager.callAfter(30, activate);
 				}
 				
 			}
@@ -749,7 +749,7 @@
 				
 				if (componentListTree.selectedItem) {
 					var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
-					Radiate.removeElement(componentDescription.instance);
+					ComponentManager.removeElement(componentDescription.instance);
 					
 					if (selectedIndex>0 && componentListTree.dataProvider && componentListTree.dataProvider.length>0) {
 						componentListTree.selectedIndex = selectedIndex-1;
@@ -761,7 +761,7 @@
 			}
 			
 			public function updateAlphaProperty():void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 				if (componentDescription==null) return;
 				
@@ -771,13 +771,13 @@
 			}
 			
 			public function updateLockedProperty():void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 				lockedItem.selected = componentDescription ? componentDescription.locked : false;
 			}
 			
 			public function updateMaskedProperty():void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 				maskItem.selected = componentDescription ? componentDescription.getIsMask() : null;
 			}
@@ -787,7 +787,7 @@
 			}
 			
 			protected function lockItem_clickHandler(event:MouseEvent):void {
-				var result:Boolean = Radiate.lockComponent(target, lockedItem.selected);
+				var result:Boolean = ComponentManager.lockComponent(target, lockedItem.selected);
 				
 				if (!result) {
 					Radiate.info("Unable to lock the selected item");
@@ -798,8 +798,8 @@
 				componentListTree.selectedIndex = -1;
 				componentListTree.validateProperties();
 				documentItemRenderer.selected = true;
-				if (radiate.selectedDocument) {
-					radiate.setTarget(radiate.selectedDocument.instance);
+				if (Radiate.selectedDocument) {
+					radiate.setTarget(Radiate.selectedDocument.instance);
 				}
 			}
 			
@@ -826,7 +826,7 @@
 				
 				if (componentListTree.selectedItem) {
 					var componentDescription:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
-					Radiate.removeElement(componentDescription.instance);
+					ComponentManager.removeElement(componentDescription.instance);
 					
 					if (selectedIndex>0 && componentListTree.dataProvider && componentListTree.dataProvider.length>0) {
 						componentListTree.selectedIndex = selectedIndex-1;
@@ -837,7 +837,7 @@
 				}
 				
 				removeItem.filters = [];
-				//radiate.dropItem(event);
+				//LibraryManager.dropItem(event);
 			}
 			
 			protected function duplicateItem_clickHandler(event:MouseEvent):void {
@@ -845,7 +845,7 @@
 				var newItems:Array;
 				
 				if (selectedTarget) {
-					newItems = radiate.duplicateItem(selectedTarget);
+					newItems = ComponentManager.duplicateItem(selectedTarget);
 				}
 				else {
 					Radiate.info("No layer selected");
@@ -869,7 +869,7 @@
 				var selectedTarget:ComponentDescription = componentListTree.selectedItem as ComponentDescription;
 				
 				if (selectedTarget) {
-					radiate.duplicateItem(selectedTarget);
+					ComponentManager.duplicateItem(selectedTarget);
 				}
 				else {
 					Radiate.info("No layer selected");
@@ -883,7 +883,7 @@
 			}
 			
 			protected function refreshTree_clickHandler(event:MouseEvent):void {
-				var selectedDocument:Document = radiate.selectedDocument as Document;
+				var selectedDocument:Document = Radiate.selectedDocument as Document;
 
 				if (selectedDocument) {
 					selectedDocument.updateComponentTree();
@@ -926,7 +926,7 @@
 			}
 			
 			protected function maskItem_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(target) : null;
 				if (componentDescription==null) return;
 				var parentComponentDescription:ComponentDescription = componentDescription.parent;
@@ -967,7 +967,7 @@
 							//DisplayLayer(parentInstance.overlay).addDisplayObject(mask as DisplayObject);
 						}
 						
-						Radiate.clearProperty(parentInstance, "mask");
+						ComponentManager.clearProperty(parentInstance, "mask");
 						
 						elementContainer.addElementAt(mask as IVisualElement, index);
 						//ArrayCollection(componentListTree.dataProvider).itemUpdated(parentComponentDescription);
@@ -988,7 +988,7 @@
 							target.cacheAsBitmap = false;
 						}
 						
-						Radiate.setProperty(parentInstance, "mask", target);
+						ComponentManager.setProperty(parentInstance, "mask", target);
 					}
 					
 					componentDescription.isMask = componentDescription.getIsMask();
@@ -1014,7 +1014,7 @@
 					currentMaskType = target.maskType;
 					
 					if (currentMaskType!=selectedMaskType) {
-						Radiate.setProperty(target, "maskType", selectedMaskType);
+						ComponentManager.setProperty(target, "maskType", selectedMaskType);
 						
 						componentTreeCollection = componentListTree.dataProvider as ArrayCollection;
 						componentTreeCollection.itemUpdated(selectedItem);

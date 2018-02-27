@@ -22,7 +22,8 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.filters.BorderStrokeFilter;
+			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DocumentManager;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.model.DocumentData;
@@ -73,7 +74,7 @@
 			}
 			
 			protected function closeDocumentIcon_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var documentsOpen:int = documentsTagNavigator.numElements;
 				
 				
@@ -82,11 +83,11 @@
 				}
 				
 				if (iDocument && documentsOpen>0) {
-					if (iDocument && radiate.isDocumentPreviewOpen(iDocument)) {
-						radiate.closeDocument(iDocument, true, true);
+					if (iDocument && DocumentManager.isDocumentPreviewOpen(iDocument)) {
+						DocumentManager.closeDocument(iDocument, true, true);
 					}
 					else if (event.shiftKey) {
-						radiate.closeVisibleDocument();
+						DocumentManager.closeVisibleDocument();
 					}
 					else {
 						openSaveBeforeClosePopUp.play();
@@ -98,14 +99,14 @@
 				var index:int = event.newIndex;
 				var document:IDocument;
 				
-				document = radiate.getDocumentAtIndex(event.newIndex);
+				document = DocumentManager.getDocumentAtNavigatorIndex(event.newIndex);
 				
 				if (document==null || document.instance==null) {
 					return; // not created yet?? 
 				}
 				
-				radiate.setProject(document.project);
-				radiate.selectDocument(document, true);
+				Radiate.setProject(document.project);
+				Radiate.selectDocument(document, true);
 				radiate.setTarget(document.instance, true);
 				return;
 				
@@ -126,10 +127,10 @@
 			}
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				ViewManager.remoteView = this;
-				radiate.documentsTabNavigator = documentsTagNavigator;
+				DocumentManager.documentsTabNavigator = documentsTagNavigator;
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, targetChange, false, 0, true);
 				
@@ -148,7 +149,7 @@
 				var navigatorContent:INavigatorContent = documentsTagNavigator.selectedChild;
 				
 				if (target && "setFocus" in target) {
-					//callLater(target["setFocus"]);&& target!=radiate.editorComponent && !radiate.editorComponent.contains(target)
+					//callLater(target["setFocus"]);&& target!=DocumentManager.editorComponent && !DocumentManager.editorComponent.contains(target)
 				}
 				
 				if (navigatorContent is DisplayObject) {
@@ -314,8 +315,8 @@
 					selectedTargetIcon.contentLoader = Radiate.contentCache;
 				}
 				
-				if (radiate.selectedDocument) {
-					componentDescription = radiate.selectedDocument.getItemDescription(selectedTarget);
+				if (Radiate.selectedDocument) {
+					componentDescription = Radiate.selectedDocument.getItemDescription(selectedTarget);
 					
 					if (componentDescription) {
 						if (selectedTarget is Application) {
@@ -359,8 +360,14 @@
 				RunManager.openDocumentationInBrowserButton(radiate.target, true);
 			}
 			
-			protected function filtersButton_clickHandler(event:MouseEvent):void
-			{
+			protected function filtersButton_clickHandler(event:MouseEvent):void {
+				var filter:Object = ComponentManager.getFirstFilter(Radiate.target);
+				
+				if (filter) {
+					radiate.setSubTarget(Radiate.target, filter);
+					ViewManager.showPropertiesPanel(true);
+				}
+				
 				ViewManager.showFiltersPanel();
 			}
 			

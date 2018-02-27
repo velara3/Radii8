@@ -2,6 +2,7 @@ package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;
 	import com.flexcapacitor.managers.ComponentManager;
+	import com.flexcapacitor.managers.DocumentManager;
 	import com.flexcapacitor.model.Document;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -126,10 +127,10 @@ package com.flexcapacitor.tools {
 			systemManager.addEventListener(MouseEvent.MOUSE_UP, mouseUpHandler, false, 0, true);
 			systemManager.addEventListener(SandboxMouseEvent.MOUSE_UP_SOMEWHERE, mouseUpSomewhereHandler, false, 0, true);
 			
-			radiate = Radiate.getInstance();
+			radiate = Radiate.instance;
 			
-			if (radiate.selectedDocument) {
-				updateDocument(radiate.selectedDocument);
+			if (Radiate.selectedDocument) {
+				updateDocument(Radiate.selectedDocument);
 			}
 			
 			Mouse.cursor = MouseCursor.AUTO;
@@ -162,12 +163,12 @@ package com.flexcapacitor.tools {
 		public function addCanvasListeners():void {
 			removeCanvasListeners();
 			
-			if (radiate && radiate.toolLayer) {
-				toolLayer = radiate.toolLayer;
+			if (radiate && DocumentManager.toolLayer) {
+				toolLayer = DocumentManager.toolLayer;
 			}
 			
-			if (radiate && radiate.canvasBackground) {
-				canvasBackground = radiate.canvasBackground;
+			if (radiate && DocumentManager.canvasBackground) {
+				canvasBackground = DocumentManager.canvasBackground;
 			}
 		}
 		
@@ -384,6 +385,7 @@ package com.flexcapacitor.tools {
 			var tooSmall:Boolean;
 			var stroke:SolidColorStroke;
 			var setPrimitivesDefaults:Boolean;
+			var makeInteractive:Boolean;
 			var setComponentDefaults:Boolean;
 			var pathString:String;
 			var pathDataVector:Vector.<String>;
@@ -400,7 +402,7 @@ package com.flexcapacitor.tools {
 						//updateLinePosition(event);
 						
 						definition = ComponentManager.getComponentType("Path");
-						componentInstance = ComponentManager.createComponentToAdd(radiate.selectedDocument, definition, setComponentDefaults) as Path;
+						componentInstance = ComponentManager.createComponentToAdd(Radiate.selectedDocument, definition, setComponentDefaults) as Path;
 						//pathElement = componentInstance as Path;
 						
 						properties = ["data"];
@@ -431,14 +433,17 @@ package com.flexcapacitor.tools {
 						
 						setPrimitivesDefaults = false;
 						
-						Radiate.addElement(componentInstance, 
-							radiate.selectedDocument.instance, 
+						// make interactive in Selection tool (show hand cursor when over line path)
+						makeInteractive = false;
+						
+						ComponentManager.addElement(componentInstance, 
+							Radiate.selectedDocument.instance, 
 							properties, 
 							null, 
 							null, 
 							propertiesObject);
 						
-						Radiate.updateComponentAfterAdd(radiate.selectedDocument, componentInstance, false, false, setPrimitivesDefaults);
+						ComponentManager.updateComponentAfterAdd(Radiate.selectedDocument, componentInstance, false, makeInteractive, setPrimitivesDefaults);
 						
 						radiate.setTarget(componentInstance);
 						
@@ -451,7 +456,7 @@ package com.flexcapacitor.tools {
 						if (!tooSmall) {
 							
 							definition = ComponentManager.getComponentType("Line");
-							componentInstance = ComponentManager.createComponentToAdd(radiate.selectedDocument, definition, true);
+							componentInstance = ComponentManager.createComponentToAdd(Radiate.selectedDocument, definition, true);
 							
 							properties = ["xFrom","xTo","yFrom","yTo"];
 							propertiesObject = {};
@@ -470,14 +475,14 @@ package com.flexcapacitor.tools {
 							properties.push("stroke");
 							propertiesObject.stroke = stroke;
 							
-							Radiate.addElement(componentInstance, 
-								radiate.selectedDocument.instance, 
+							ComponentManager.addElement(componentInstance, 
+								Radiate.selectedDocument.instance, 
 								properties, 
 								null, 
 								null, 
 								propertiesObject);
 							
-							Radiate.updateComponentAfterAdd(radiate.selectedDocument, componentInstance, false, false, setPrimitivesDefaults);
+							ComponentManager.updateComponentAfterAdd(Radiate.selectedDocument, componentInstance, false, false, setPrimitivesDefaults);
 							
 							radiate.setTarget(componentInstance);
 						}
@@ -858,7 +863,7 @@ package com.flexcapacitor.tools {
 		 * Document close
 		 * */
 		protected function documentCloseHandler(event:RadiateEvent):void {
-			updateDocument(radiate.selectedDocument);
+			updateDocument(Radiate.selectedDocument);
 		}
 		
 		public function getPathData(graphics:Graphics, recursive:Boolean = false, offsetX:int = 0, offsetY:int = 0):Vector.<String> {

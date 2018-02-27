@@ -13,17 +13,13 @@
 		 >
 	
 	<!-- 
-	
 	The list of components to include come from spark-manifest-defaults.xml 
 	in Radii8LibrarySparkAssets. The include attribute must be set to true for them to be visible. 
 	
 	The component classes are included by creating a reference to them in Radii8LibrarySparkAssets.
 	
 	We create an instance of the class in the mouse down handler. 
-	
-	
 	-->
-	
 	
 	<fx:Script>
 		<![CDATA[
@@ -32,7 +28,6 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.IDocument;
-			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.utils.DragManagerUtil;
 			import com.flexcapacitor.utils.supportClasses.ComponentDefinition;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -45,7 +40,6 @@
 			import spark.components.Application;
 			import spark.components.Group;
 			import spark.components.Label;
-			import spark.components.RichText;
 			import spark.components.supportClasses.GroupBase;
 			import spark.primitives.Line;
 			
@@ -55,10 +49,11 @@
 			private var radiate:Radiate;
 			private var dragManagerInstance:DragManagerUtil;
 			public var currentDocument:IDocument;
-
+			
+			public var debug:Boolean;
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				components.source = ComponentManager.componentDefinitions.source;
 			}
@@ -83,7 +78,7 @@
 				var component:Object;
 				var rowGroup:Group;
 				
-				currentDocument = radiate.selectedDocument;
+				currentDocument = Radiate.selectedDocument;
 				
 				currentComponentDescription = null;
 				
@@ -103,7 +98,7 @@
 				component = ComponentManager.createComponentToAdd(currentDocument, componentDefinition, false);
 				
 				if (component is Line) {
-					Radiate.updateComponentAfterAdd(currentDocument, component);
+					ComponentManager.updateComponentAfterAdd(currentDocument, component);
 				}
 				
 				currentComponentDescription = currentDocument.getItemDescription(component);
@@ -139,12 +134,8 @@
 			/**
 			 * Remove mouse handlers from row
 			 * */
-			protected function mouseUpHandler(event:MouseEvent):void
-			{
-				
-				//list.dragEnabled = true;
+			protected function mouseUpHandler(event:MouseEvent):void {
 				event.currentTarget.removeEventListener(MouseEvent.MOUSE_UP, mouseUpHandler);
-				
 			}
 			
 			/**
@@ -152,10 +143,8 @@
 			 * We can prevent automatic adding by calling event.preventDefault().
 			 * If we do not call preventDefault dragDropComplete is the next event to be called. 
 			 * */
-			protected function handleDragDrop(event:DragDropEvent):void
-			{
+			protected function handleDragDrop(event:DragDropEvent):void {
 				var component:Object = event.draggedItem;
-				
 				
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP, handleDragDrop);
 				dropTargetLabel.text = "Drag drop to:" + dragManagerInstance.dropTargetName;
@@ -163,57 +152,40 @@
 				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
 			}
 
-			
-			private function deferredInstanceFromFunction():Array {
-				var label:Label = new Label();
-				return [label];
-			}
-			
 			/**
 			 * Dispatched after drag drop event. Drag drop can be canceled. If it
 			 * is not canceled this event happens. 
 			 * */
-			protected function handleDragDropComplete(event:DragDropEvent):void
-			{
-				//var o:LayoutDebugHelper = debugHelper;
+			protected function handleDragDropComplete(event:DragDropEvent):void {
 				var component:Object = event.draggedItem;
 				
-				// there is a bug where event listener for drag and drop
+				// there is a bug where event listener for drag and drop (fixed?)
 				// is not removed. possibly when switching tools
 				// so until at some point we find it we'll return for now
 				// CHECK OUT LIBRARYINSPECTOR.mxml for comparison and possible answers there
 				if (currentComponentDescription==null) return;
 				
 				// if new component then need to add defaults
-				Radiate.setDefaultProperties(currentComponentDescription);
+				ComponentManager.setDefaultProperties(currentComponentDescription);
 				
-				Radiate.updateComponentAfterAdd(currentDocument, component);
+				ComponentManager.updateComponentAfterAdd(currentDocument, component);
 				
 				if (component is GroupBase) {
 					dragManagerInstance.addGroupListeners(component as IVisualElement);
 				}
 				
-				//o.addElement(component as ILayoutElement);
 				dragManagerInstance.removeEventListener(DragDropEvent.DRAG_DROP_COMPLETE, handleDragDropComplete);
 				dropTargetLabel.text = "Drag Complete to:" + dragManagerInstance.dropTargetName;
-				
 				
 				dragManagerInstance.removeEventListener(DragEvent.DRAG_OVER, handleDragOver);
 				
 				radiate.setTarget(component);
 			}
 			
-			protected function addItemHandler(event:RadiateEvent):void {
-				//trace("item addedd");
-				
-				//radiate.target = event.eventTarget;
-				
-			}
-			
 			protected function handleDragOver(event:Event):void {
-				
-				//Radiate.info("target: " + dragManagerInstance.lastTargetCandidate);
-				dropTargetLabel.text = "Drag over: " + dragManagerInstance.dropTargetName;
+				if (debug) {
+					dropTargetLabel.text = "Drag over: " + dragManagerInstance.dropTargetName;
+				}
 			}
 			
 			protected function list_dragStartHandler(event:DragEvent):void {
@@ -229,7 +201,9 @@
 				return false;
 			}
 			
-			
+			/**
+			 * Filter function the components
+			 **/
 			public function componentsFilterFunction(componentsDefinition:ComponentDefinition):Boolean {
 				var searchText:String;
 				var componentName:String;
@@ -261,36 +235,17 @@
 				return true;
 			}
 			
-			protected function graphicElementClicked(event:Event):void{
-				Radiate.info("Graphic clicked");
-			}
-			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
-	<s:ArrayCollection id="components" filterFunction="filterComponentsFunction"/>
-		
-	<!-- SORT BY NAME -->
-	<handlers:EventHandler eventName="creationComplete" >
-		<collections:SortCollection target="{components}" fields="{['name']}" />
-	</handlers:EventHandler>
-		
-		
-		
-		<!-- FILTER BY NAME -->
-		<!--<handlers:EventHandler eventName="creationComplete" 
-							   target="{this}"
-							   >
-		</handlers:EventHandler>-->
+		<s:ArrayCollection id="components" filterFunction="filterComponentsFunction"/>
+			
+		<handlers:EventHandler eventName="creationComplete" >
+			<collections:SortCollection target="{components}" fields="{['name']}" />
+		</handlers:EventHandler>
+
 	</fx:Declarations>
-	
-	<!--
-	<s:Rect>
-		<s:fill>
-			<s:SolidColor color=""
-		</s:fill>
-	</s:Rect>-->
 	
 	
 	

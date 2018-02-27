@@ -76,10 +76,10 @@
 				var clipboard:Clipboard;
 				var radiate:Radiate;
 				
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
-				if (radiate.selectedDocument) {
-					//RunManager.copyURLToDocument(radiate.selectedDocument as DocumentData);
+				if (Radiate.selectedDocument) {
+					//RunManager.copyURLToDocument(Radiate.selectedDocument as DocumentData);
 					//RunManager.copyURLToDocument(viewerURL);
 					clipboard = Clipboard.generalClipboard;
 					clipboard.clear();

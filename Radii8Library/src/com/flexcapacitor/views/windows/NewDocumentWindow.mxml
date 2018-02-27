@@ -108,7 +108,7 @@
 			}
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 			}
 			

@@ -13,19 +13,23 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DocumentManager;
+			import com.flexcapacitor.managers.KeyboardManager;
 			import com.flexcapacitor.managers.ScaleManager;
 			import com.flexcapacitor.managers.ToolManager;
+			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.tools.ITool;
+			import com.flexcapacitor.tools.Selection;
 			import com.flexcapacitor.tools.Zoom;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
-			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			
 			import spark.components.Application;
 			import spark.components.Scroller;
+			import spark.components.supportClasses.GroupBase;
 			import spark.effects.Animate;
 			import spark.effects.animation.MotionPath;
 			import spark.effects.animation.SimpleMotionPath;
@@ -38,13 +42,18 @@
 			public var toolDescription:ComponentDescription;
 			
 			/**
+			 * Percent to scale. Default is 10 for 10%. 
+			 **/
+			public var scaleDeltaPercent:int = 10;
+			
+			/**
 			 * Shows the show actual size button
 			 * */
 			[Bindable]
 			public var showActualSize:Boolean = true;
 			
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.SCALE_CHANGE, scaleChangedHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.DOCUMENT_CHANGE, documentChangeHandler, false, 0, true);
@@ -101,14 +110,14 @@
 			public var scaleAnimation:Animate;
 			public var scaleAnimationDuration:int = 250;
 			
-			
 			public function animateIntoView(newScale:Number, oldScale:Number = NaN):void {
 				var newPoint:Point;
 				var scrollMotionPaths:Vector.<MotionPath>;
 				var horizontalScale:SimpleMotionPath;
 				var verticalScale:SimpleMotionPath;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				
-				if (!radiate.selectedDocument) {
+				if (!selectedDocument) {
 					return;
 				}
 				
@@ -119,7 +128,7 @@
 				verticalScale = new SimpleMotionPath("scaleY", oldScale, newScale);
 				scrollMotionPaths = Vector.<MotionPath>([horizontalScale, verticalScale]);
 				scaleAnimation.motionPaths = scrollMotionPaths;
-				scaleAnimation.play([radiate.selectedDocument.instance]);
+				scaleAnimation.play([selectedDocument.instance]);
 			}
 			
 			/**
@@ -181,26 +190,19 @@
 				}
 			}
 			
-			protected function zoomOutButton_clickHandler(event:FlexEvent):void {
-				ScaleManager.decreaseScale();
-			}
-			
-			protected function zoomInButton_clickHandler(event:FlexEvent):void {
-				ScaleManager.increaseScale();
-			}
-			
 			protected function fitInButton_clickHandler(event:MouseEvent):void {
 				var scroller:Scroller;
 				var target:Application;
 				var ws:Number;
 				var hs:Number;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				
 				// disabled animation until bugs can be worked out
-				if (animate && radiate.selectedDocument) {
-					scroller = radiate.canvasScroller;
-					target = radiate.selectedDocument.instance as Application;
+				if (animate && selectedDocument) {
+					scroller = DocumentManager.canvasScroller;
+					target = selectedDocument.instance as Application;
 					
-					if (target && radiate.selectedDocument) {
+					if (target && selectedDocument) {
 						//ws = scroller.width/scroller.viewport.contentWidth;
 						//hs = scroller.height/scroller.viewport.contentHeight;
 						ws = target.width/target.contentGroup.contentWidth;
@@ -209,19 +211,90 @@
 						fitToScale.scaleXTo = ws;
 						fitToScale.scaleYTo = hs;
 						fitToScale.duration = 250;
-						fitToScale.play([radiate.selectedDocument.instance]);
+						fitToScale.play([selectedDocument.instance]);
 					}
 				}
 				else {
 					ScaleManager.scaleToFit(true);
-					RadiateUtilities.centerApplication(true, true);
+					DocumentManager.centerDocumentInViewport(true, true);
 				}
 			}
 			
 			protected function scrollToTopButton_clickHandler(event:MouseEvent):void {
-				RadiateUtilities.centerApplication(true, true, true);
+				DocumentManager.centerDocumentInViewport(true, true, true);
 			}
 			
+			protected function button_mouseUpHandler(event:MouseEvent):void {
+				if (Radiate.target) {
+					Selection.instance.updateSelection(Radiate.target);
+				}
+
+				currentScrollPoint = null;
+			}
+			
+			protected function zoomOutButton_buttonDownHandler(event:FlexEvent):void {
+				var point:Point;
+				
+				if (Radiate.selectedDocument==null) return;
+				
+				if (KeyboardManager.shiftKeyDown && Radiate.target) {
+					point = ComponentManager.getPositionPoint(Radiate.target, true, true);
+					ScaleManager.decreaseScaleBy(scaleDeltaPercent, point);
+				}
+				else if (centerOnCurrentPoint && currentScrollPoint) {
+					ScaleManager.decreaseScaleBy(scaleDeltaPercent, currentScrollPoint);
+				}
+				else if (offsetOnZoomIn) {
+					ScaleManager.decreaseScaleBy(scaleDeltaPercent);
+				}
+				else {
+					ScaleManager.decreaseScaleBy(scaleDeltaPercent);
+				}
+			}
+			
+			protected function zoomInButton_buttonDownHandler(event:FlexEvent):void {
+				var point:Point;
+				var scrollPoint:Point;
+				var newScrollPoint:Point;
+				var horizontalOffset:Point;
+				var iDocument:IDocument = Radiate.selectedDocument;
+				var currentScrollRectangle:Rectangle;
+				
+				if (iDocument==null) return;
+				
+				if (KeyboardManager.shiftKeyDown && Radiate.target) {
+					point = ComponentManager.getPositionPoint(Radiate.target, true, true);
+					ScaleManager.increaseScaleBy(scaleDeltaPercent, point);
+				}
+				else if (centerOnCurrentPoint && currentScrollPoint) {
+					ScaleManager.increaseScaleBy(scaleDeltaPercent, currentScrollPoint);
+				}
+				else if (offsetOnZoomIn) {
+					scrollPoint = DocumentManager.getMaxScrollPoint();
+					ScaleManager.increaseScaleBy(scaleDeltaPercent);
+					
+					newScrollPoint = DocumentManager.getMaxScrollPoint();
+					horizontalOffset = newScrollPoint.subtract(scrollPoint);
+					currentScrollRectangle = DocumentManager.getScrollRectangle(DocumentManager.getDocumentScroller(iDocument).viewport as GroupBase);
+					horizontalOffset.setTo(currentScrollRectangle.x+horizontalOffset.x/2, currentScrollRectangle.y+horizontalOffset.y/2);
+					
+					DocumentManager.setDocumentScrollPosition(horizontalOffset.x, horizontalOffset.y);
+				}
+				else {
+					ScaleManager.increaseScaleBy(scaleDeltaPercent);
+				}
+				
+			}
+			
+			public var offsetOnZoomIn:Boolean = false;
+			public var centerOnCurrentPoint:Boolean = false;
+			public var currentScrollPoint:Point;
+			
+			protected function button_mouseDownHandler(event:MouseEvent):void {
+				if (Radiate.selectedDocument && currentScrollPoint==null && centerOnCurrentPoint) {
+					currentScrollPoint = DocumentManager.getCurrentScrollPoint(Radiate.selectedDocument);
+				}
+			}
 			
 		]]>
 	</fx:Script>
@@ -230,15 +303,6 @@
 		<s:Scale id="fitToScale"  /> 
 	</fx:Declarations>
 	
-	<!--<s:CheckBox label="Scrub Zoom" />-->
-	<!--<c:BeveledImageButton id="actualSizeButton" 
-						  visible="{showActualSize}"
-						  includeInLayout="{showActualSize}"
-						  source="{Radii8LibraryAssets.actualSize}" 
-						  toolTip="Actual"
-						  click="actualSize_clickHandler(event)"
-						  height="100%"
-						  />-->
 	
 	<c:SolidFillButton id="fitButton" 
 					   width="30"
@@ -265,22 +329,32 @@
 	<c:SolidFillButton id="zoomOutButton" 
 					   width="30"
 					   toolTip="Zoom out"
-					   buttonDown="zoomOutButton_clickHandler(event)"
+					   buttonDown="zoomOutButton_buttonDownHandler(event)"
+					   mouseUp="button_mouseUpHandler(event)"
 					   autoRepeat="true"
 					   repeatInterval="100"
 					   label="-"/>
 	<c:SolidFillButton id="zoomInButton" 
 					   width="30"
 					   toolTip="Zoom in"
-					   buttonDown="zoomInButton_clickHandler(event)"
+					   buttonDown="zoomInButton_buttonDownHandler(event)"
+					   mouseDown="button_mouseDownHandler(event)"
+					   mouseUp="button_mouseUpHandler(event)"
 					   autoRepeat="true"
 					   repeatInterval="100"
 					   label="+"/>
-	<!--<s:Button id="fitSize" label="Fit Size"
-	visible="{showActualSize}"
-	includeInLayout="{showActualSize}"
-	click="actualSize_clickHandler(event)"/>-->
 	
+	<!--
+	Pressing ESC key in combox results in the error below when using a custom layout: 
+	
+	TypeError: Error #1009: Cannot access a property or method of a null object reference. 
+	at spark.components.supportClasses::DropDownListBase/http://www.adobe.com/2006/flex/mx/internal::positionIndexInView()
+	[E:\dev\4.y\frameworks\projects\spark\src\spark\components\supportClasses\DropDownListBase.as:659]
+	
+	<s:layout>
+		<s:VerticalLayout gap="0" horizontalAlign="contentJustify" requestedRowCount="10" />
+	</s:layout>
+	-->
 	<s:ComboBox id="zoomComboBox" 
 				width="58" 
 				height="21"
@@ -292,18 +366,30 @@
 				doubleClickEnabled="true"
 				doubleClick="zoomComboBox_doubleClickHandler(event)"
 				>
-		<!--
-		Pressing ESC key in combox results in the error below when using a custom layout: 
-		
-	TypeError: Error #1009: Cannot access a property or method of a null object reference. at spark.components.supportClasses::DropDownListBase/http://www.adobe.com/2006/flex/mx/internal::positionIndexInView()[E:\dev\4.y\frameworks\projects\spark\src\spark\components\supportClasses\DropDownListBase.as:659]
-		-->
-<!--		<s:layout>
-			<s:VerticalLayout gap="0"
-							  horizontalAlign="contentJustify"
-							  requestedRowCount="10" />
-		</s:layout>-->
 		<s:dataProvider>
 			<s:ArrayList>
+				<fx:String>3000%</fx:String>
+				<fx:String>2800%</fx:String>
+				<fx:String>2600%</fx:String>
+				<fx:String>2500%</fx:String>
+				<fx:String>2400%</fx:String>
+				<fx:String>2300%</fx:String>
+				<fx:String>2200%</fx:String>
+				<fx:String>2175%</fx:String>
+				<fx:String>2150%</fx:String>
+				<fx:String>2125%</fx:String>
+				<fx:String>2100%</fx:String>
+				<fx:String>2000%</fx:String>
+				<fx:String>1800%</fx:String>
+				<fx:String>1600%</fx:String>
+				<fx:String>1500%</fx:String>
+				<fx:String>1400%</fx:String>
+				<fx:String>1300%</fx:String>
+				<fx:String>1200%</fx:String>
+				<fx:String>1175%</fx:String>
+				<fx:String>1150%</fx:String>
+				<fx:String>1125%</fx:String>
+				<fx:String>1100%</fx:String>
 				<fx:String>1000%</fx:String>
 				<fx:String>800%</fx:String>
 				<fx:String>600%</fx:String>

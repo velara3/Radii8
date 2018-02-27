@@ -30,7 +30,7 @@
 			public var fonts:Array;
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
@@ -69,7 +69,6 @@
 				}
 			}
 			
-			
 			public var relevantProperties:Array = ["lineHeight", "fontFamily", "fontSize", "fontWeight", "fontStyle", 
 				"trackingLeft", "trackingRight", "textDecoration", "color", "textAlign", "alignmentBaseline"];
 			
@@ -85,6 +84,7 @@
 				var colorStyle:StyleMetaData 			= ClassUtils.getMetaDataOfStyle(target, "color"); // color
 				var textAlignStyle:StyleMetaData 		= ClassUtils.getMetaDataOfStyle(target, "textAlign"); // textAlign
 				var alignmentBaselineStyle:StyleMetaData = ClassUtils.getMetaDataOfStyle(target, "alignmentBaseline");
+				
 				
 				if (fonts==null) {
 					fonts = FontUtils.getFontInformationDetails(target);
@@ -111,17 +111,17 @@
 			protected function group1_showHandler(event:FlexEvent):void {
 				var labels:Array = DisplayObjectUtils.getElementsByType(this, Label);
 				var hgroups:Array = DisplayObjectUtils.getElementsByType(this, HGroup);
-				var length:int = labels.length;
+				var numberOfLabels:int = labels.length;
 				var gap:int = getStyle("gap");
 				var labelWidth:int = getStyle("labelWidth");
 				
-				for (var i:int;i<length;i++) {
+				for (var i:int;i<numberOfLabels;i++) {
 					labels[i].minWidth = labelWidth;
 				}
 				
-				length = hgroups.length;
+				numberOfLabels = hgroups.length;
 				
-				for (var j:int;j<length;j++) {
+				for (var j:int;j<numberOfLabels;j++) {
 					hgroups[j].gap = gap;
 				}
 			}

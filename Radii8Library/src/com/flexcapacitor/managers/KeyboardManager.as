@@ -1,5 +1,6 @@
 package com.flexcapacitor.managers {
 	import com.flexcapacitor.controller.Radiate;
+	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.tools.Hand;
 	import com.flexcapacitor.tools.ITool;
 	import com.flexcapacitor.utils.supportClasses.ComponentDescription;
@@ -26,29 +27,14 @@ package com.flexcapacitor.managers {
 	import spark.components.supportClasses.SkinnableTextBase;
 	import spark.core.IEditableText;
 	
+	/**
+	 * Listens for key events for clipboard operations
+	 **/
 	public class KeyboardManager {
 		
 		public function KeyboardManager(s:SINGLEDOUBLE) {
 			
 		}
-		
-		//----------------------------------
-		//  instance
-		//----------------------------------
-		
-		public static function get instance():KeyboardManager
-		{
-			if (!_instance) {
-				_instance = new KeyboardManager(new SINGLEDOUBLE());
-			}
-			return _instance;
-		}
-		
-		public static function getInstance():KeyboardManager {
-			return instance;
-		}
-		
-		private static var _instance:KeyboardManager;
 		
 		public var radiate:Radiate;
 		public var clipboardManager:ClipboardManager;
@@ -58,6 +44,21 @@ package com.flexcapacitor.managers {
 		public var debug:Boolean;
 		public var stage:Stage;
 		
+		public static var altKeyDown:Boolean;
+		public static var shiftKeyDown:Boolean;
+		public static var ctrlKeyDown:Boolean;
+		public static var controlKeyDown:Boolean;
+		public static var keyCodeDown:int;
+		public static var keyLocation:int;
+		public static var charCode:int;
+		
+		/**
+		 * Get the current document.
+		 * */
+		public static function get selectedDocument():IDocument {
+			return Radiate.selectedDocument;
+		}
+
 		public function initialize(application:Application, HTMLClass:* = null):void {
 			this.application = application;
 			var useCapture:Boolean = true;
@@ -91,11 +92,13 @@ package com.flexcapacitor.managers {
 				log("Key: " + event.keyCode);
 			}
 			
-			ctrlKey = event.ctrlKey || ("commandKey" in event && event.commandKey);
+			updateGlobalKeys(event);
+			
+			ctrlKey = controlKeyDown;
 			keyCode = event.keyCode;
 			
 			if (radiate==null) {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 			}
 			
 			if (clipboardManager==null) {
@@ -240,35 +243,35 @@ package com.flexcapacitor.managers {
 				
 				// copy cut paste
 				if (keyCode==Keyboard.C && ctrlKey) {
-					//clipboardManager.copyItem(radiate.target, radiate.selectedDocument);
+					//clipboardManager.copyItem(radiate.target, Radiate.selectedDocument);
 				}
 				else if (keyCode==Keyboard.X && ctrlKey) {
-					//clipboardManager.cutItem(radiate.target, radiate.selectedDocument);
+					//clipboardManager.cutItem(radiate.target, Radiate.selectedDocument);
 				}
 				else if (keyCode==Keyboard.V && ctrlKey) {
-					//clipboardManager.pasteItem(radiate.target, radiate.selectedDocument);
+					//clipboardManager.pasteItem(radiate.target, Radiate.selectedDocument);
 				}
 				
 				
 				// undo 
 				if (keyCode==Keyboard.Z && !event.shiftKey && ctrlKey) {
-					HistoryManager.undo(radiate.selectedDocument, true);
+					HistoryManager.undo(selectedDocument, true);
 					actionOccurred = true;
 				}
 				// redo
 				else if (keyCode==Keyboard.Z && event.shiftKey && ctrlKey) {
-					HistoryManager.redo(radiate.selectedDocument, true);
+					HistoryManager.redo(selectedDocument, true);
 					actionOccurred = true;
 				}
 				// legacy redo
 				else if (keyCode==Keyboard.Y && ctrlKey) {
-					HistoryManager.redo(radiate.selectedDocument, true);
+					HistoryManager.redo(selectedDocument, true);
 					actionOccurred = true;
 				}
 				// delete selected element
 				else if (keyCode==Keyboard.BACKSPACE || keyCode==Keyboard.DELETE) {
-					Radiate.removeElement(radiate.targets);
-					Radiate.callLater(Radiate.updateSelection, [radiate.selectedDocument]);
+					ComponentManager.removeElement(radiate.targets);
+					DeferManager.callLater(Radiate.updateSelection, [selectedDocument]);
 					actionOccurred = true;
 				}
 				// zoom in or out
@@ -361,6 +364,8 @@ package com.flexcapacitor.managers {
 			var isApplication:Boolean;
 			var target:Object = event.target;
 			
+			updateGlobalKeys();
+			
 			// prevent repeat key events in key down
 			spaceBarDown = false;
 			
@@ -396,6 +401,40 @@ package com.flexcapacitor.managers {
 			
 		}
 		
+		/**
+		 * Used to keep track of key events on key down and up
+		 **/
+		public function updateGlobalKeys(event:KeyboardEvent = null):void {
+			
+			if (event) {
+				altKeyDown = event.altKey;
+				shiftKeyDown = event.shiftKey;
+				ctrlKeyDown = event.ctrlKey;
+				keyCodeDown = event.keyCode;
+				
+				// sometimes event doesn't contain controlKey property
+				// ReferenceError: Error #1069: Property controlKey not found on flash.events.KeyboardEvent
+				if ("controlKey" in event) {
+					controlKeyDown = event.controlKey;
+				}
+				else {
+					controlKeyDown = event.ctrlKey || ("commandKey" in event && event.commandKey);
+				}
+				keyLocation = event.keyLocation;
+				charCode = event.charCode;
+			}
+			else {
+				altKeyDown = false;
+				shiftKeyDown = false;
+				ctrlKeyDown = false;
+				controlKeyDown = false;
+				keyCodeDown = -1;
+				keyLocation = -1;
+				charCode = -1;
+			}
+			
+		}
+		
 		public function copyHandler(event:Event):void {
 			var applicable:Boolean;
 			applicable = isEventApplicable(event);
@@ -407,7 +446,7 @@ package com.flexcapacitor.managers {
 			// this is a hack - if graphic element is selected then we say it's applicable
 			// because it does not have focus - need to refactor
 			if (applicable) {
-				clipboardManager.copyItem(radiate.target, radiate.selectedDocument);
+				clipboardManager.copyItem(radiate.target, selectedDocument);
 			}
 			else {
 				//dispatchEditEvent(event, COPY);
@@ -424,7 +463,7 @@ package com.flexcapacitor.managers {
 			// this is a hack - if graphic element is selected then we say it's applicable
 			// because it will not register as having focus - need to refactor
 			if (applicable) {
-				clipboardManager.pasteItem(radiate.target, radiate.selectedDocument);
+				clipboardManager.pasteItem(radiate.target, selectedDocument);
 			}
 			else {
 				//dispatchEditEvent(event, PASTE);
@@ -441,9 +480,9 @@ package com.flexcapacitor.managers {
 			var focusedObject:Object = topLevelApplication.focusManager.getFocus();
 			var eventTarget:Object = event.target;
 			var eventCurrentTarget:Object = event.currentTarget;
-			var tabNav:TabNavigator = radiate.documentsTabNavigator;
+			var tabNav:TabNavigator = DocumentManager.documentsTabNavigator;
 			var isGraphicElement:Boolean;
-			var targetApplication:Object = radiate.selectedDocument ? radiate.selectedDocument.instance : null;
+			var targetApplication:Object = selectedDocument ? selectedDocument.instance : null;
 			
 			// still working on this
 			
@@ -486,6 +525,24 @@ package com.flexcapacitor.managers {
 			// get system manager from top level system managers
 			return SystemManagerGlobals.topLevelSystemManagers[0];
 		}
+		
+		//----------------------------------
+		//  instance
+		//----------------------------------
+		
+		public static function get instance():KeyboardManager
+		{
+			if (!_instance) {
+				_instance = new KeyboardManager(new SINGLEDOUBLE());
+			}
+			return _instance;
+		}
+		
+		public static function getInstance():KeyboardManager {
+			return instance;
+		}
+		
+		private static var _instance:KeyboardManager;
 	}
 }
 

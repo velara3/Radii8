@@ -77,12 +77,12 @@
 			  paddingTop="8">
 		<controls:Gradient id="gradient" height="100%" width="100%" />
 		<s:HGroup width="100%">
-			<controls:BeveledImageButton source="{Radii8LibraryAssets.swap}" 
-										 click="swapDirection_clickHandler(event)"
-										 toolTip="Reverse the gradient"/>
 			<controls:BeveledImageButton source="{Radii8LibraryAssets.refresh}" 
 										 toolTip="Revert to default"
 										 click="resetGradient_clickHandler(event)"/>
+			<controls:BeveledImageButton source="{Radii8LibraryAssets.swap}" 
+										 click="swapDirection_clickHandler(event)"
+										 toolTip="Reverse the gradient"/>
 			<s:CheckBox id="preview" label="Preview" selected="true" 
 						change="preview_changeHandler(event)"
 						toolTip="Show a preview"/>

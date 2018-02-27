@@ -16,6 +16,8 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.DeferManager;
+			import com.flexcapacitor.managers.DocumentManager;
 			import com.flexcapacitor.managers.HistoryManager;
 			import com.flexcapacitor.model.HistoryEventData;
 			import com.flexcapacitor.model.HistoryEventItem;
@@ -50,7 +52,7 @@
 				
 				if (value==null) {
 					if (clearOnTargetChange) {
-						HistoryManager.removeAllHistory(radiate.selectedDocument);
+						HistoryManager.removeAllHistory(Radiate.selectedDocument);
 					}
 				}
 			}
@@ -71,7 +73,7 @@
 			}
 			
 			protected function addListeners():void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.HISTORY_CHANGE, historyChangeHandler, false, 0, true);
@@ -98,7 +100,7 @@
 			 * 
 			 * */
 			public function redo():void {
-				var historyIndex:int = HistoryManager.redo(radiate.selectedDocument, true);
+				var historyIndex:int = HistoryManager.redo(Radiate.selectedDocument, true);
 				
 				if (historyIndex>-1) {
 					list.ensureIndexIsVisible(historyIndex);
@@ -121,7 +123,7 @@
 			 * 
 			 * */
 			public function undo():void {
-				var historyIndex:int = HistoryManager.undo(radiate.selectedDocument, true);
+				var historyIndex:int = HistoryManager.undo(Radiate.selectedDocument, true);
 				
 				//Radiate.history.refresh();
 				
@@ -231,7 +233,7 @@
 				
 				if (debug) Radiate.info("goToHistoryIndex: " + newIndex);
 				
-				HistoryManager.goToHistoryIndex(radiate.selectedDocument, newIndex);
+				HistoryManager.goToHistoryIndex(Radiate.selectedDocument, newIndex);
 				//trace("changes:"+(getTimer()-time));
 				
 				//list.selectedIndex = Radiate.historyIndex;
@@ -321,7 +323,7 @@
 				var time:int;
 				var i:int;
 				
-				if (radiate.selectedDocument==null) {
+				if (Radiate.selectedDocument==null) {
 					return;
 				}
 				
@@ -334,7 +336,7 @@
 				// each change takes 85ms per change with dispatch events 
 				// and 2.58ms without
 				
-				HistoryManager.goToHistoryIndex(radiate.selectedDocument, -1);
+				HistoryManager.goToHistoryIndex(Radiate.selectedDocument, -1);
 				
 				//ensureIndexIsVisible(0);
 				
@@ -392,37 +394,37 @@
 			protected function list_clickHandler(event:MouseEvent):void
 			{
 				var selectedItem:Object = list.selectedItem;
-				var currentEvent:Object = HistoryManager.getCurrentHistoryEvent(radiate.selectedDocument);
-				var current:int = HistoryManager.getHistoryPosition(radiate.selectedDocument);
+				var currentEvent:Object = HistoryManager.getCurrentHistoryEvent(Radiate.selectedDocument);
+				var current:int = HistoryManager.getHistoryPosition(Radiate.selectedDocument);
 				
 				// if we are at the current selected row then the second
 				// time the row is clicked select the targets
 				if (selectedItem==currentEvent) {
-					HistoryManager.selectCurrentEventTargets(radiate.selectedDocument);
+					HistoryManager.selectCurrentEventTargets(Radiate.selectedDocument);
 				}
 			}
 			
 			private function clearHistory():void {
-				if (radiate.selectedDocument) {
-					HistoryManager.removeAllHistory(radiate.selectedDocument);
+				if (Radiate.selectedDocument) {
+					HistoryManager.removeAllHistory(Radiate.selectedDocument);
 				}
 			}
 			
 			protected function revertIcon_clickHandler(event:MouseEvent):void
 			{
-				var success:Boolean = radiate.revertDocument(radiate.selectedDocument);
+				var success:Boolean = DocumentManager.revertDocument(Radiate.selectedDocument);
 				if (success) {
 					Radiate.info("Document reverted");
 				}
 			}
 			
 			protected function refreshIcon_clickHandler(event:MouseEvent):void {
-				//var success:Boolean = HistoryManager.rebuild(radiate.selectedDocument);
+				//var success:Boolean = HistoryManager.rebuild(Radiate.selectedDocument);
 				
-				if (radiate.selectedDocument) {
+				if (Radiate.selectedDocument) {
 					Radiate.info("Rebuilding document");
-					Radiate.callAfter(250, HistoryManager.rebuild, radiate.selectedDocument);
-					Radiate.callAfter(500, Radiate.info, "Document rebuilt");
+					DeferManager.callAfter(250, HistoryManager.rebuild, Radiate.selectedDocument);
+					DeferManager.callAfter(500, Radiate.info, "Document rebuilt");
 				}
 			}
 			

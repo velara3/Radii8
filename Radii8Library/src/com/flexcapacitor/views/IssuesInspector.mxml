@@ -74,7 +74,7 @@
 			 * Update problems and warnings tree
 			 * */
 			public function updateIssuesTree(selectedItem:Object = null):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				
 				if (iDocument) {
 					errorsCollection.source = iDocument.errors;

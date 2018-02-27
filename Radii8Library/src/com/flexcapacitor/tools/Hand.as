@@ -3,6 +3,8 @@
 package com.flexcapacitor.tools {
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.managers.DocumentManager;
+	import com.flexcapacitor.managers.ToolManager;
 	import com.flexcapacitor.model.IDocument;
 	import com.flexcapacitor.skins.MinimalScrollerSkin;
 	
@@ -31,7 +33,7 @@ package com.flexcapacitor.tools {
 		
 		public function Hand()
 		{
-			//radiate = Radiate.getInstance();
+			//radiate = Radiate.instance;
 		}
 		
 		private var _icon:Class = Radii8LibraryToolAssets.Hand;
@@ -53,7 +55,7 @@ package com.flexcapacitor.tools {
 		 * The radiate instance.
 		 * */
 		public function get radiate():Radiate {
-			return Radiate.getInstance();
+			return Radiate.instance;
 		}
 
 
@@ -100,13 +102,13 @@ package com.flexcapacitor.tools {
 			
 			//radiate.document.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler, false, 0, true);
 			
-			if (radiate.selectedDocument) {
-				updateDocument(radiate.selectedDocument);
+			if (Radiate.selectedDocument) {
+				updateDocument(Radiate.selectedDocument);
 			}
 			
 			// we made cursors when we imported the tool - these were defined in our tool.xml node we get their reference here. these are the paths to the classes which are embedded icons. we could add these on import at startup??  
-			handOverCursorID = radiate.getMouseCursorID(this, "HandOverCursor");
-			handGrabCursorID = radiate.getMouseCursorID(this, "HandGrabCursor");
+			handOverCursorID = ToolManager.getMouseCursorID(this, "HandOverCursor");
+			handGrabCursorID = ToolManager.getMouseCursorID(this, "HandGrabCursor");
 			
 			
 			if (canvasScroller) {
@@ -176,8 +178,8 @@ package com.flexcapacitor.tools {
 				targetApplication.addEventListener(MouseEvent.ROLL_OVER, rollOverHandler, false, EventPriority.CURSOR_MANAGEMENT, true);
 				targetApplication.addEventListener(MouseEvent.ROLL_OUT, rollOutHandler, false, EventPriority.CURSOR_MANAGEMENT, true);
 				
-				if (radiate && radiate.canvasScroller) {
-					canvasScroller = radiate.canvasScroller;
+				if (radiate && DocumentManager.canvasScroller) {
+					canvasScroller = DocumentManager.canvasScroller;
 				}
 			}
 			

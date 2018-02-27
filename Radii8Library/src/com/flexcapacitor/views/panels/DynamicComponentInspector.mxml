@@ -13,11 +13,14 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.InspectorManager;
 			import com.flexcapacitor.model.InspectorData;
 			import com.flexcapacitor.performance.PerformanceMeter;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			import com.flexcapacitor.views.IInspector;
 			
+			import mx.core.IVisualElement;
+			import mx.core.IVisualElementContainer;
 			import mx.core.UIComponent;
 			
 			/**
@@ -44,6 +47,8 @@
 			public var property:String;
 			public var propertyIndex:int;
 			
+			public var removeInspectors:Boolean = false;
+			
 			private var _inspectors:Array;
 			
 			public function get inspectors():Array {
@@ -64,7 +69,7 @@
 			}
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				// listen at a higher priority so we can deactivate before child inspectors hear event 
 				// before they have to since the views are specific to the class they are used for
@@ -81,9 +86,16 @@
 					target = radiate.subTarget;
 				}
 				
-				inspectors = radiate.getInspectors(target);
+				inspectors = InspectorManager.getInspectors(target);
 				
-				updateInspectors(inspectors, target);
+				PerformanceMeter.start("Updating inspectors");
+				if (removeInspectors) {
+					updateInspectors2(inspectors, target);
+				}
+				else {
+					updateInspectors(inspectors, target);// 498,527,414
+				}
+				PerformanceMeter.stop("Updating inspectors", true);
 			}
 			
 			public function deactivate():void {
@@ -107,17 +119,125 @@
 					return;
 				}
 				
-				PerformanceMeter.start("Getting inspectors");
-				inspectors = radiate.getInspectors(target);
-				PerformanceMeter.stop("Getting inspectors");
+				inspectors = InspectorManager.getInspectors(target);
 				
 				PerformanceMeter.start("Updating inspectors");
-				updateInspectors(inspectors, target, property, propertyIndex);
-				PerformanceMeter.stop("Updating inspectors");
+				if (removeInspectors) {
+					updateInspectors2(inspectors, target, property, propertyIndex);
+				}
+				else {
+					updateInspectors(inspectors, target, property, propertyIndex);
+				}
+				PerformanceMeter.stop("Updating inspectors", true);
 			}
 			
-			
+			/**
+			 * Gets a group of inspectors and shows it, hiding old inspectors
+			 *           app, button, combobox 
+			 * First run 481ms, 273ms, 242ms
+			 * Second run 190ms, 129ms, 130ms
+			 **/
 			public function updateInspectors(inspectors:Array, selectedTarget:Object = null, property:String = null, index:int = -1):void {
+				var inspectorInstance:UIComponent;
+				var inspectorData:InspectorData;
+				var numberOfDynamicInspectors:int;
+				var targetInspectorGroup:IVisualElementContainer;
+				var inspector:IInspector;
+				var currentInspectorGroup:IVisualElement;
+				var numberOfInspectors:int = contentGroup.numElements;
+				var removeGroups:Boolean;
+				
+				if (contentGroup.numElements) {
+					
+					if (removeGroups) {
+						currentInspectorGroup = contentGroup.getElementAt(0);
+					}
+					
+					for (var k:int = 0; k < numberOfInspectors; k++)  {
+						currentInspectorGroup = contentGroup.getElementAt(k);
+						if (currentInspectorGroup.visible) {
+							break;
+						}
+					}
+					
+					numberOfDynamicInspectors = IVisualElementContainer(currentInspectorGroup).numElements;
+				}
+				
+				// deactivate previous inspectors 0ms
+				for (var j:int;j<numberOfDynamicInspectors;j++) {
+					inspector = IVisualElementContainer(currentInspectorGroup).getElementAt(j) as IInspector;
+					
+					// if inspector components have focus out handlers they may 
+					// set a value to the new component instead of the old one
+					if (inspector) {
+						inspector.deactivate();
+					}
+				}
+				
+				targetInspectorGroup = InspectorManager.getInspectorContainer(selectedTarget);
+				
+				// if not the same type we need to get the type we need
+				if (targetInspectorGroup!=currentInspectorGroup) {
+					
+					if (currentInspectorGroup) {
+						// remove or hide previous inspector group 0ms
+						if (removeGroups) {
+							contentGroup.removeElement(currentInspectorGroup);
+						}
+						else {
+							currentInspectorGroup.visible = false;
+							currentInspectorGroup.includeInLayout = false;
+						}
+					}
+				}
+				
+				// adding target inspector group 40ms-100ms
+				if (targetInspectorGroup) {
+					if (!contentGroup.containsElement(targetInspectorGroup as IVisualElement)) {
+						contentGroup.addElement(targetInspectorGroup as IVisualElement);
+					}
+				}
+				
+				numberOfDynamicInspectors = targetInspectorGroup.numElements;
+				
+				// activate inspectors
+				PerformanceMeter.start("Activating inspectors");
+				for (var i:int;i<numberOfDynamicInspectors;i++) {
+					inspectorInstance = targetInspectorGroup.getElementAt(i) as UIComponent;
+					
+					if (inspectorInstance) {
+						//PerformanceMeter.start("Activating inspector");
+						inspectorInstance.includeInLayout = false;
+						IInspector(inspectorInstance).activate(selectedTarget);
+						inspectorInstance.includeInLayout = true;
+						//PerformanceMeter.stop("Activating inspector", true);
+						//trace(" " + ClassUtils.getClassName(inspectorInstance));
+					}
+				}
+				PerformanceMeter.stop("Activating inspectors", true);
+				
+				// show target inspector group
+				IVisualElement(targetInspectorGroup).visible = true;
+				IVisualElement(targetInspectorGroup).includeInLayout = true;
+				
+				if (numberOfDynamicInspectors==0) {
+					noInspectorsLabel.visible = true;
+					noInspectorsLabel.includeInLayout = true;
+				}
+				else {
+					noInspectorsLabel.visible = false;
+					noInspectorsLabel.includeInLayout = false;
+				}
+				
+			}
+			
+			/**
+			 * Removes old inspectors and adds target specific ones
+			 *           app, button, combobox 
+			 * First run 768ms, 273ms, 443ms
+			 * Second run 190ms, 129ms, 130ms
+			 **/
+			public function updateInspectors2(inspectors:Array, selectedTarget:Object = null, property:String = null, index:int = -1):void {
 				var inspectorInstance:UIComponent;
 				var inspectorData:InspectorData;
 				var numberOfDynamicInspectors:int = contentGroup.numElements;
@@ -160,7 +280,7 @@
 	
 	
 	<s:Scroller id="scroller" top="0" left="8" right="8" bottom="4">
-		<s:VGroup id="contentGroup" width="100%" paddingRight="12" paddingBottom="12" />
+		<s:Group id="contentGroup" width="100%" right="12" bottom="12" />
 	</s:Scroller>
 	
 	

@@ -5,6 +5,7 @@ package com.flexcapacitor.managers {
 	import com.flexcapacitor.model.IProject;
 	import com.flexcapacitor.model.SavedData;
 	import com.flexcapacitor.model.Settings;
+	import com.flexcapacitor.tools.Selection;
 	import com.flexcapacitor.tools.Text;
 	import com.flexcapacitor.utils.SharedObjectUtils;
 	
@@ -12,6 +13,9 @@ package com.flexcapacitor.managers {
 	
 	import mx.utils.ObjectUtil;
 
+	/**
+	 * Manages storing and restoring settings
+	 **/
 	public class SettingsManager {
 		
 		public function SettingsManager() {
@@ -36,14 +40,14 @@ package com.flexcapacitor.managers {
 		 * */
 		public static function createSettingsData():Boolean {
 			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
-			var so:SharedObject;
+			var sharedObject:SharedObject;
 			
 			if (result is SharedObject) {
-				so = SharedObject(result);
+				sharedObject = SharedObject(result);
 				
-				if (so.data) {
-					if (SETTINGS_DATA_NAME in so.data && so.data[SETTINGS_DATA_NAME]!=null) {
-						settings = Settings(so.data[SETTINGS_DATA_NAME]);
+				if (sharedObject.data) {
+					if (SETTINGS_DATA_NAME in sharedObject.data && sharedObject.data[SETTINGS_DATA_NAME]!=null) {
+						settings = Settings(sharedObject.data[SETTINGS_DATA_NAME]);
 					}
 						// does not contain settings property
 					else {
@@ -67,14 +71,14 @@ package com.flexcapacitor.managers {
 		 * */
 		public static function createSavedData():Boolean {
 			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
-			var so:SharedObject;
+			var sharedObject:SharedObject;
 			
 			if (result is SharedObject) {
-				so = SharedObject(result);
+				sharedObject = SharedObject(result);
 				
-				if (so.data) {
-					if (SAVED_DATA_NAME in so.data && so.data[SAVED_DATA_NAME]!=null) {
-						savedData = SavedData(so.data[SAVED_DATA_NAME]);
+				if (sharedObject.data) {
+					if (SAVED_DATA_NAME in sharedObject.data && sharedObject.data[SAVED_DATA_NAME]!=null) {
+						savedData = SavedData(sharedObject.data[SAVED_DATA_NAME]);
 						//log.info("createSavedData:"+ObjectUtil.toString(savedData));
 					}
 						// does not contain property
@@ -99,16 +103,16 @@ package com.flexcapacitor.managers {
 		 * */
 		public static function getSavedData():Object {
 			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
-			var so:SharedObject;
+			var sharedObject:SharedObject;
 			
 			var data:SavedData;
 			
 			if (result is SharedObject) {
-				so = SharedObject(result);
+				sharedObject = SharedObject(result);
 				
-				if (so.data) {
-					if (SAVED_DATA_NAME in so.data) {
-						data = SavedData(so.data[SAVED_DATA_NAME]);
+				if (sharedObject.data) {
+					if (SAVED_DATA_NAME in sharedObject.data) {
+						data = SavedData(sharedObject.data[SAVED_DATA_NAME]);
 						
 						//openLocalProjects(data);
 					}
@@ -127,14 +131,14 @@ package com.flexcapacitor.managers {
 		 * */
 		public static function getSettingsData():Boolean {
 			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
-			var so:SharedObject;
+			var sharedOoject:SharedObject;
 			
 			if (result is SharedObject) {
-				so = SharedObject(result);
+				sharedOoject = SharedObject(result);
 				
-				if (so.data) {
-					if (SETTINGS_DATA_NAME in so.data) {
-						settings = Settings(so.data[SETTINGS_DATA_NAME]);
+				if (sharedOoject.data) {
+					if (SETTINGS_DATA_NAME in sharedOoject.data) {
+						settings = Settings(sharedOoject.data[SETTINGS_DATA_NAME]);
 					}
 				}
 			}
@@ -150,14 +154,14 @@ package com.flexcapacitor.managers {
 		 * */
 		public static function removeSavedData():Boolean {
 			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
-			var so:SharedObject;
+			var sharedObject:SharedObject;
 			
 			if (result is SharedObject) {
-				so = SharedObject(result);
+				sharedObject = SharedObject(result);
 				
-				if (so.data) {
-					if (SAVED_DATA_NAME in so.data) {
-						so.clear();
+				if (sharedObject.data) {
+					if (SAVED_DATA_NAME in sharedObject.data) {
+						sharedObject.clear();
 						Radiate.log.info("Cleared saved data");
 					}
 				}
@@ -174,14 +178,14 @@ package com.flexcapacitor.managers {
 		 * */
 		public static function removeSavedSettings():Boolean {
 			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
-			var so:SharedObject;
+			var sharedObject:SharedObject;
 			
 			if (result is SharedObject) {
-				so = SharedObject(result);
+				sharedObject = SharedObject(result);
 				
-				if (so.data) {
-					if (SETTINGS_DATA_NAME in so.data) {
-						so.clear(); // this clears the whole thing
+				if (sharedObject.data) {
+					if (SETTINGS_DATA_NAME in sharedObject.data) {
+						sharedObject.clear(); // this clears the whole thing
 						Radiate.log.info("Cleared settings data");
 					}
 				}
@@ -199,13 +203,13 @@ package com.flexcapacitor.managers {
 		 * */
 		public static function saveSettings():Boolean {
 			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
-			var so:SharedObject;
+			var sharedObject:SharedObject;
 			
 			if (result is SharedObject) {
 				updateSettingsBeforeSave();
-				so = SharedObject(result);
-				so.setProperty(SETTINGS_DATA_NAME, settings);
-				so.flush();
+				sharedObject = SharedObject(result);
+				sharedObject.setProperty(SETTINGS_DATA_NAME, settings);
+				sharedObject.flush();
 				
 				//log.info("Saved Serrinfo: "+ ObjectUtil.toString(so.data));
 			}
@@ -218,15 +222,54 @@ package com.flexcapacitor.managers {
 		}
 		
 		/**
-		 * Get settings
+		 * Get setting
 		 * */
-		public static function getSettings():Boolean {
+		public static function getSetting(name:String):Object {
+			var result:Object = SharedObjectUtils.getSharedObject(SETTINGS_DATA_NAME);
+			var sharedObject:SharedObject;
 			
-			return true;
+			if (result is SharedObject) {
+				sharedObject = SharedObject(result);
+				
+				if (sharedObject.data) {
+					if (SETTINGS_DATA_NAME in sharedObject.data) {
+						settings = Settings(sharedObject.data[SETTINGS_DATA_NAME]);
+						if (name in settings) {
+							return settings[name];
+						}
+					}
+				}
+				
+				//log.info("Saved Serrinfo: "+ ObjectUtil.toString(so.data));
+			}
+			else {
+				Radiate.error("Could not get setting \"" + name + "\"");
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Save setting. Name must already exist on Settings class
+		 * */
+		public static function saveSetting(name:String, value:Object):void {
+			
+			if (settings==null) {
+				getSettingsData();
+			}
+			
+			if (name in settings) {
+				settings[name] = value;
+				saveSettings();
+			}
+			else {
+				Radiate.error("Could not save setting \"" + name + "\"");
+			}
 		}
 		
 		/**
 		 * Apply the settings
+		 * TODO refactor
 		 * */
 		public static function applySettings():Settings {
 			var radiate:Radiate = Radiate.instance;
@@ -235,11 +278,13 @@ package com.flexcapacitor.managers {
 				getSettingsData();
 			}
 			
-			radiate.enableAutoSave = settings.enableAutoSave;
+			AutoSaveManager.enableAutoSave = settings.enableAutoSave;
 			
 			//enableWordWrap = settings.enableWordWrap;
 			//embedImages = settings.embedImages;
 			Radiate.startInDesignView = settings.startInDesignView;
+			Selection.instance.showSelectionLabel = settings.showSelectionLabel;
+			Selection.instance.snapToNearbyElements = settings.snapToNearbyElements;
 			
 			Text.showTextEditorInCallOut = settings.useCallOutForEditing;
 			
@@ -268,7 +313,7 @@ package com.flexcapacitor.managers {
 			//settings.selectedProject 	= instance.selectedProject ? instance.selectedProject.toMetaData() : null;
 			//settings.selectedDocument 	= instance.selectedDocument ? instance.selectedDocument.toMetaData() : null;
 			
-			settings.enableAutoSave = Radiate.instance.enableAutoSave;
+			settings.enableAutoSave = AutoSaveManager.enableAutoSave;
 			
 			settings.saveCount++;
 			
@@ -290,7 +335,7 @@ package com.flexcapacitor.managers {
 			
 			
 			savedData.modified 		= new Date().time;
-			//settings.modified 		= new Date().time;
+			//settings.modified 	= new Date().time;
 			savedData.documents 	= getSaveDataForAllDocuments();
 			savedData.projects 		= getSaveDataForAllProjects();
 			savedData.saveCount++;
@@ -337,7 +382,7 @@ package com.flexcapacitor.managers {
 			var so:SharedObject;
 			
 			if (result is SharedObject) {
-				radiate.updateSaveDataForDocument(document);
+				DocumentManager.updateSaveDataForDocument(document);
 				so = SharedObject(result);
 				so.setProperty(SAVED_DATA_NAME, savedData);
 				so.flush();
@@ -357,13 +402,13 @@ package com.flexcapacitor.managers {
 		 * true then only returns open documents.
 		 * */
 		public static function getSaveDataForAllDocuments(open:Boolean = false, metaData:Boolean = false):Array {
-			var radiate:Radiate = Radiate.instance;
-			var numberOfProjects:int = radiate.projects.length;
+			var projects:Array = ProjectManager.projects;
+			var numberOfProjects:int = projects.length;
 			var documentsArray:Array = [];
 			var iProject:IProject;
 			
 			for (var i:int;i<numberOfProjects;i++) {
-				iProject = radiate.projects[i];
+				iProject = projects[i];
 				documentsArray = documentsArray.concat(iProject.getSavableDocumentsData(open, metaData));
 			}
 			
@@ -376,13 +421,13 @@ package com.flexcapacitor.managers {
 		 * If meta data is true then only returns meta data. 
 		 * */
 		public static function getSaveDataForAllProjects(open:Boolean = false, metaData:Boolean = false):Array {
-			var radiate:Radiate = Radiate.instance;
 			var projectsArray:Array = [];
-			var numberOfProjects:int = radiate.projects.length;
+			var projects:Array = ProjectManager.projects;
+			var numberOfProjects:int = projects.length;
 			var iProject:IProject;
 			
 			for (var i:int; i < numberOfProjects; i++) {
-				iProject = IProject(radiate.projects[i]);
+				iProject = IProject(projects[i]);
 				
 				if (open) {
 					if (iProject.isOpen) {
@@ -404,7 +449,6 @@ package com.flexcapacitor.managers {
 				}
 			}
 			
-			
 			return projectsArray;
 		}
 		
@@ -412,13 +456,12 @@ package com.flexcapacitor.managers {
 		 * Save project locally
 		 * */
 		public static function saveProjectLocally(project:IProject, saveProjectDocuments:Boolean = true):Boolean {
-			var radiate:Radiate = Radiate.instance;
 			var result:Object = SharedObjectUtils.getSharedObject(SAVED_DATA_NAME);
 			var so:SharedObject;
 			
 			if (result is SharedObject) {
 				// todo - implement saveProjectDocuments
-				radiate.updateSaveDataForProject(project);
+				ProjectManager.updateSaveDataForProject(project);
 				
 				so = SharedObject(result);
 				so.setProperty(SAVED_DATA_NAME, savedData);
@@ -427,7 +470,6 @@ package com.flexcapacitor.managers {
 			}
 			else {
 				Radiate.error("Could not save data. " + ObjectUtil.toString(result));
-				//return false;
 			}
 			
 			return true;

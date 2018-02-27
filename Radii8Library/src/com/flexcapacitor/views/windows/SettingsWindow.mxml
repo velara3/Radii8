@@ -16,6 +16,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ProfileManager;
 			import com.flexcapacitor.managers.ServicesManager;
 			import com.flexcapacitor.managers.SettingsManager;
 			import com.flexcapacitor.model.Settings;
@@ -79,8 +80,6 @@
 				else {
 					saveLoginCheckbox.selected = false;
 				}
-				
-				
 			}
 			
 			public var savePassword:StoreLogin;
@@ -179,7 +178,7 @@
 			 * */
 			protected function loggedInStatusHandler(event:RadiateEvent):void {
 				
-				if (Radiate.instance.isUserConnected) {
+				if (ProfileManager.isUserConnected) {
 					currentState = CONNECTED;
 				}
 				else {

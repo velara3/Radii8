@@ -28,6 +28,9 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.DocumentManager;
+			import com.flexcapacitor.managers.LibraryManager;
+			import com.flexcapacitor.managers.ProjectManager;
 			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.model.AttachmentData;
 			import com.flexcapacitor.model.DocumentData;
@@ -67,11 +70,11 @@
 				var isRemote:Boolean;
 				
 				deleteWarningsLabel.text = "";
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				if (currentState==DOCUMENT) {
 					if (documentData==null) {
-						documentData = radiate.selectedDocument;
+						documentData = Radiate.selectedDocument;
 					}
 					
 					if (documentData) {
@@ -82,12 +85,12 @@
 						}
 						
 						//radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, deleteResultsHandler, false, 0, true);
-						localRemoveSuccessful = radiate.removeDocument(IDocument(documentData));
+						localRemoveSuccessful = DocumentManager.removeDocument(IDocument(documentData));
 					}
 				}
 				else if (currentState==PROJECT) {
 					if (documentData==null) {
-						documentData = radiate.selectedProject;
+						documentData = Radiate.selectedProject;
 					}
 					
 					if (documentData) {
@@ -98,12 +101,12 @@
 							isRemote = true;
 						}
 						
-						localRemoveSuccessful = radiate.removeProject(IProject(documentData));
+						localRemoveSuccessful = ProjectManager.removeProject(IProject(documentData));
 					}
 				}
 				else if (currentState==RESOURCE) {
 					if (documentData==null) {
-						//documentData = radiate.selectedDocument;
+						//documentData = Radiate.selectedDocument;
 					}
 					if (documentData) {
 						
@@ -112,8 +115,7 @@
 							isRemote = true;
 						}
 						
-						//radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, deleteResultsHandler, false, 0, true);
-						localRemoveSuccessful = radiate.removeAssetFromDocument(IDocumentData(documentData), null);
+						localRemoveSuccessful = LibraryManager.removeAssetFromDocument(IDocumentData(documentData), null);
 					}
 				}
 				else if (currentState==RESOURCES) {
@@ -133,11 +135,11 @@
 						
 						if (attachmentIDs.length) {
 							//radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, deleteResultsHandler, false, 0, true);
-							localRemoveSuccessful = radiate.removeAssetsFromDocument(attachments);
+							localRemoveSuccessful = LibraryManager.removeAssetsFromDocument(attachments);
 						}
 						else {
 							isRemote = false;
-							localRemoveSuccessful = radiate.removeAssetsFromDocument(attachments, DocumentData.LOCAL_LOCATION);
+							localRemoveSuccessful = LibraryManager.removeAssetsFromDocument(attachments, DocumentData.LOCAL_LOCATION);
 						}
 					}
 					else {
@@ -201,9 +203,9 @@
 					radiate.removeEventListener(RadiateEvent.DOCUMENT_DELETED, deleteResultsHandler);
 					
 					// we need to save the project to update the number of documents it saves
-					if (radiate.selectedProject) {
+					if (Radiate.selectedProject) {
 						
-						radiate.saveProjectOnly(radiate.selectedProject);
+						ProjectManager.saveProjectOnly(Radiate.selectedProject);
 					}
 				}
 				else if (eventType==RadiateEvent.ATTACHMENTS_DELETED) {
@@ -214,7 +216,7 @@
 				}
 				
 				if (eventType==RadiateEvent.PROJECT_DELETED) {
-					numberOfProjects = radiate.projects ? radiate.projects.length : 0;
+					numberOfProjects = ProjectManager.projects ? ProjectManager.projects.length : 0;
 					
 					if (numberOfProjects==0) {
 						ViewManager.goToHomeScreen();
@@ -232,7 +234,7 @@
 				// TODO Loop through and replace with missing images
 				
 				// loop through documents and replace bitmap data with url to source
-				numberOfDocuments = radiate.documents.length;
+				numberOfDocuments = DocumentManager.documents.length;
 				k = 0;
 				
 				for (var k:int;k<numberOfDocuments;k++) {
@@ -294,26 +296,26 @@
 			}
 			
 			protected function panel1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				if (currentState==DOCUMENT) {
 					if (documentData==null) {
-						documentData = radiate.selectedDocument;
+						documentData = Radiate.selectedDocument;
 					}
 				}
 				else if (currentState==PROJECT) {
 					if (documentData==null) {
-						documentData = radiate.selectedProject;
+						documentData = Radiate.selectedProject;
 					}
 				}
 				else if (currentState==RESOURCE) {
 					if (documentData==null) {
-						//documentData = radiate.selectedProject;
+						//documentData = Radiate.selectedProject;
 					}
 				}
 				else if (currentState==RESOURCES) {
 					if (documentData==null) {
-						//documentData = radiate.selectedProject;
+						//documentData = Radiate.selectedProject;
 					}
 				}
 			

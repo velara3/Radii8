@@ -14,12 +14,15 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DeferManager;
 			import com.flexcapacitor.managers.ScaleManager;
+			import com.flexcapacitor.managers.SettingsManager;
 			import com.flexcapacitor.managers.ToolManager;
 			import com.flexcapacitor.managers.ViewManager;
+			import com.flexcapacitor.model.Settings;
 			import com.flexcapacitor.tools.ITool;
 			import com.flexcapacitor.tools.Selection;
-			import com.flexcapacitor.utils.MoveUtils;
 			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.events.FlexEvent;
@@ -69,23 +72,21 @@
 			public var dropLocationToolTip:String;
 			
 			protected function creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				
-				tool = radiate.selectedTool;
+				tool = Radiate.selectedTool;
 				
 				updateTool(tool);
-				
 				
 				dropLocationToolTip = "The X and Y position of the selected element.&#10;";
 				dropLocationToolTip += "Click to round between whole numbers and fractions.&#10;";
 				dropLocationToolTip += "Press shift and set the position to zero.&#10;";
 				dropLocationToolTip += "Double click to open the layout panel.";
-				
 			}
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				addListeners();
 				
@@ -189,6 +190,7 @@
 				if (toolDescription.instance) {
 					selectionTool = Selection(toolDescription.instance);
 					selectionTool.showSelectionLabel = showLabel.selected;
+					SettingsManager.saveSetting(com.flexcapacitor.model.Settings.SHOW_SELECTION_LABEL, showLabel.selected);
 				}
 				
 			}
@@ -256,7 +258,7 @@
 				var rectangle:Rectangle;
 				
 				if (target) {
-					rectangle = Radiate.getPosition(target);
+					rectangle = ComponentManager.getPosition(target);
 				}
 				
 				if (rectangle) {
@@ -316,7 +318,7 @@
 					warningNeeded = true;
 				}
 				
-				if (radiate.selectedDocument && radiate.selectedDocument.scale!=1) {
+				if (Radiate.selectedDocument && Radiate.selectedDocument.scale!=1) {
 					if (warningMessage!="") warningMessage += "\n";
 					//warningMessage += "When the document is scaled drag and drop inside of a basic layout doesn't work. ";
 					//warningMessage += "Use the arrow keys or use the Layout Panel to size and position.";
@@ -370,8 +372,8 @@
 				var array:Array;
 				
 				if (event.shiftKey && target) {
-					MoveUtils.resetPosition(target);
-					Radiate.callAfter(1, updateTarget);
+					ComponentManager.resetPosition(target);
+					DeferManager.callAfter(1, updateTarget);
 					return;
 				}
 				
@@ -384,8 +386,8 @@
 						if (selectionTool.roundToIntegers) {
 							left = String(Math.round(array[0]));
 							top = String(Math.round(array[1]));
-							MoveUtils.roundPositionToIntegers(target);
-							Radiate.callAfter(1, updateTarget);
+							ComponentManager.roundPositionToIntegers(target);
+							DeferManager.callAfter(1, updateTarget);
 						}
 						else {
 							left = Number(array[0]).toFixed(1);
@@ -406,6 +408,7 @@
 				if (toolDescription.instance) {
 					selectionTool = Selection(toolDescription.instance);
 					selectionTool.snapToNearbyElements = snapToElement.selected;
+					SettingsManager.saveSetting(com.flexcapacitor.model.Settings.SNAP_TO_NEARBY_ELEMENTS, snapToElement.selected);
 				}
 			}
 			

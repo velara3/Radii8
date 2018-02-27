@@ -125,6 +125,8 @@ mx|MenuBar#mainMenuBar {
     contentBackgroundAlpha: 0.8;
     rollOverColor: #AAAAAA;
     itemRollOverColor: #FF0000;*/
+	menuStyleName:menuStyles;
+	textFieldClass: ClassReference("mx.core.UIFTETextField");
    	/* changes background color at top level*/
 	backgroundSkin: ClassReference("com.flexcapacitor.skins.MenuBarButtonSkin");
    	/* changes background HOVER color at top level of menu bar */
@@ -134,7 +136,11 @@ mx|MenuBar#mainMenuBar {
     itemRollOverColor: #FF0000;
 }
 
- mx|MenuItemRenderer{
+.menuStyles {
+	separatorSkin:ClassReference("com.flexcapacitor.skins.MenuSeparatorSkin");
+}
+
+mx|MenuItemRenderer{
   color:#585858;
 }
 

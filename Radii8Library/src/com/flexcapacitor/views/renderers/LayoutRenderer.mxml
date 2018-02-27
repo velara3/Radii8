@@ -11,6 +11,7 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.skins.ClearButtonSkin;
 			
 			import mx.collections.ArrayCollection;
@@ -27,32 +28,32 @@
 			override public function setTargetValue(clearStyle:Boolean = false):void {
 				var layoutFormat:String = formatDropDownList.selectedItem ? formatDropDownList.selectedItem.name : "basic";
 				var layout:LayoutBase;
-				var target:Object = Radiate.getInstance().target;
+				var target:Object = Radiate.instance.target;
 				var property:String = "layout";
 				var valueSuccessfullyApplied:Boolean;
 				
 				if (layoutFormat=="horizontal" && !(layout is HorizontalLayout)) {
 					layout = new HorizontalLayout();
-					valueSuccessfullyApplied = Radiate.setProperty(target, property, layout);
+					valueSuccessfullyApplied = ComponentManager.setProperty(target, property, layout);
 				}
 				else if (layoutFormat=="vertical" && !(layout is VerticalLayout)) {
 					layout = new VerticalLayout();
-					valueSuccessfullyApplied = Radiate.setProperty(target, property, layout);
+					valueSuccessfullyApplied = ComponentManager.setProperty(target, property, layout);
 				}
 				else if (layoutFormat=="tile" && !(layout is TileLayout)) {
 					layout = new TileLayout();
-					valueSuccessfullyApplied = Radiate.setProperty(target, property, layout);
+					valueSuccessfullyApplied = ComponentManager.setProperty(target, property, layout);
 				}
 				else if (layoutFormat=="basic" && !(layout is BasicLayout)) {
 					layout = new BasicLayout();
-					valueSuccessfullyApplied = Radiate.setProperty(target, property, layout);
+					valueSuccessfullyApplied = ComponentManager.setProperty(target, property, layout);
 				}
 				
 			}
 			
 			
 			override public function updateSubComponentsValue():void {
-				var target:Object = Radiate.getInstance().target;
+				var target:Object = Radiate.instance.target;
 				var layout:LayoutBase = target && "layout" in target ? target.layout : null;
 				var property:String = "layout";
 				var layoutFormat:String;

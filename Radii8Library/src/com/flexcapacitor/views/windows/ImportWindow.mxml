@@ -21,6 +21,7 @@
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.CodeManager;
+			import com.flexcapacitor.managers.ImportManager;
 			import com.flexcapacitor.managers.SnippetManager;
 			import com.flexcapacitor.model.DocumentRevision;
 			import com.flexcapacitor.model.IDocument;
@@ -216,15 +217,15 @@
 			 * Import 
 			 * */
 			public function importPopUp_closeHandler(event:Event):void {
-				var radiate:Radiate = Radiate.getInstance();
-				var selectedDocument:IDocument = radiate.selectedDocument;
-				var selectedProject:IProject = radiate.selectedProject;
+				var radiate:Radiate = Radiate.instance;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
+				var selectedProject:IProject = Radiate.selectedProject;
 				var type:String = importLocation.selectedValue as String;
 				var target:IVisualElement = radiate.target as IVisualElement;
 				var result:SourceData;
 				
 				if (type==ImportWindow.NEW_DOCUMENT) {
-					result = radiate.importMXMLDocument(selectedProject, null, code);
+					result = ImportManager.importMXMLDocument(selectedProject, null, code);
 					
 					if (result) {
 						showImportedMessage();
@@ -238,7 +239,7 @@
 					}
 				}
 				else if (type==ImportWindow.CURRENT_DOCUMENT && selectedDocument) {
-					result = radiate.importMXMLDocument(selectedProject, selectedDocument, code);
+					result = ImportManager.importMXMLDocument(selectedProject, selectedDocument, code);
 					
 					if (result) {
 						showImportedMessage();
@@ -248,7 +249,7 @@
 				}
 				else if (type==ImportWindow.CURRENT_SELECTION) {
 					if (target is IVisualElement) {
-						result = radiate.importMXMLDocument(selectedProject, selectedDocument, code, target);
+						result = ImportManager.importMXMLDocument(selectedProject, selectedDocument, code, target);
 						
 						if (result) {
 							showImportedMessage();
@@ -284,9 +285,9 @@
 			
 			protected function animatedpanelwindow1_creationCompleteHandler(event:FlexEvent):void {
 				radiate = Radiate.instance;
-				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				
-				//Radiate.callAfter(200, afterCompleteTasks);
+				//DeferManager.callAfter(200, afterCompleteTasks);
 				
 				if (showRevisions) {
 					currentState = REVISIONS;
@@ -340,7 +341,7 @@
 			}
 			
 			protected function showRevisionsButton_clickHandler(event:MouseEvent):void {
-				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				
 				if (currentState == REVISIONS) {
 					currentState = NORMAL;
@@ -358,7 +359,7 @@
 			}
 			
 			protected function showOriginalSourceButton_clickHandler(event:MouseEvent):void {
-				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				
 				if (selectedDocument) {
 					if (selectedDocument.originalSource) {
@@ -374,7 +375,7 @@
 			}
 			
 			protected function showCurrentSourceButton_clickHandler(event:MouseEvent):void {
-				var selectedDocument:IDocument = radiate.selectedDocument;
+				var selectedDocument:IDocument = Radiate.selectedDocument;
 				
 				if (selectedDocument) {
 					var source:String =  selectedDocument.getSource();

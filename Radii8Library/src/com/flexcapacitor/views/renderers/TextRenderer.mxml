@@ -11,6 +11,7 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.skins.ClearButtonSkin;
 			
 			import spark.events.TextOperationEvent;
@@ -48,9 +49,18 @@
 				}
 			}
 			
+			private var focusInObject:Object;
+			
 			protected function targetValueText_focusOutHandler(event:FocusEvent):void {
-				setTargetValue();
-				//event.preventDefault();
+				if (focusInObject==null || Radiate.instance.target==focusInObject) {
+					setTargetValue();
+				}
+				focusInObject = null;
+			}
+			
+			protected function targetValueText_focusInHandler(event:FocusEvent):void
+			{
+				focusInObject = Radiate.instance.target;;
 			}
 			
 		]]>
@@ -66,6 +76,7 @@
 				borderAlpha="0.2" 
 				skinClass="spark.skins.spark.TextAreaSkin"
 				keyUp="targetValueText_keyUpHandler(event)"
+				focusIn="targetValueText_focusInHandler(event)"
 				focusOut="targetValueText_focusOutHandler(event)"
 				changing="targetValueText_changingHandler(event)"
 				>

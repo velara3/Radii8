@@ -2,9 +2,11 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:controls="com.flexcapacitor.controls.*"
 		 height="24"
 		 
-		 creationComplete="group1_creationCompleteHandler(event)" xmlns:controls="com.flexcapacitor.controls.*">
+		 creationComplete="group1_creationCompleteHandler(event)" 
+		 >
 	
 	
 	<!-- 
@@ -37,13 +39,13 @@
 			 * 
 			 * */
 			protected function group1_creationCompleteHandler(event:FlexEvent):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				radiate.addEventListener(RadiateEvent.TOOL_CHANGE, toolChangeHandler);
 				radiate.addEventListener(RadiateEvent.TOOLS_UPDATED, toolsUpdatedHandler);
 				
 				tools.dataProvider = Radiate.toolsDescriptions;
 				
-				if (radiate.selectedTool==null) {
+				if (Radiate.selectedTool==null) {
 					tools.selectedIndex = 0;
 					updateTool();
 				}
@@ -94,7 +96,7 @@
 				
 				componentDescription = tools.selectedItem as ComponentDescription;
 				
-				if (componentDescription && componentDescription.instance != radiate.selectedTool) {
+				if (componentDescription && componentDescription.instance != Radiate.selectedTool) {
 					ToolManager.setTool(componentDescription.instance as ITool);
 				}
 			}
@@ -113,6 +115,7 @@
 			selectionColor="#C9C9C9"
 			rollOverColor="#D9D9D9"
 			contentBackgroundAlpha="0"
+			focusAlpha="0"
 			updateComplete="tools_updateCompleteHandler(event)"
 			change="tools_changeHandler(event)"
 			verticalScrollPolicy="off"

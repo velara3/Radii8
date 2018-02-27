@@ -41,9 +41,11 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.managers.CreationManager;
 			import com.flexcapacitor.utils.ArrayUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
+			import com.flexcapacitor.utils.MXMLDocumentConstants;
 			
 			import mx.collections.ArrayList;
 			import mx.core.IVisualElement;
@@ -143,7 +145,7 @@
 			}
 			
 			protected function addListeners():void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, targetChangeHandler, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
@@ -436,7 +438,7 @@
 						property = "width";
 						
 						if (widthAutoSizeCheckbox.selected) {
-							Radiate.clearProperty(target, property);
+							ComponentManager.clearProperty(target, property);
 							widthText.enabled = false;
 						}
 						else {
@@ -450,7 +452,7 @@
 						
 						// clear out height values if auto size is selected otherwise restore size and set focus
 						if (heightAutoSizeCheckbox.selected) {
-							Radiate.clearProperty(target, property);
+							ComponentManager.clearProperty(target, property);
 							heightText.enabled = false;
 						}
 						else {
@@ -480,14 +482,14 @@
 							// only apply constraints on checkbox change if we have some values to apply
 							if (property==WIDTH || property==HEIGHT) {
 								settingProperties = true;
-								Radiate.setProperties(target, [WIDTH, HEIGHT], constrainedValueObject, null, true);
+								ComponentManager.setProperties(target, [WIDTH, HEIGHT], constrainedValueObject, null, true);
 								settingProperties = false;
 							}
 						}
 					}
 					else {
 						settingProperties = true;
-						Radiate.setProperty(target, property, value, null, true);
+						ComponentManager.setProperty(target, property, value, null, true);
 						settingProperties = false;
 					}
 				}
@@ -508,12 +510,12 @@
 						settingProperties = true;
 						if (isStyle(property)) {
 							settingProperties = true;
-							Radiate.clearStyle(target, property);
+							ComponentManager.clearStyle(target, property);
 							settingProperties = false;
 						}
 						else {
 							settingProperties = true;
-							Radiate.clearProperty(target, property);
+							ComponentManager.clearProperty(target, property);
 							settingProperties = false;
 						}
 						settingProperties = false;
@@ -531,16 +533,16 @@
 							}
 							
 							settingProperties = true;
-							Radiate.setProperties(target, [WIDTH, HEIGHT], constrainedValueObject, null, true);
+							ComponentManager.setProperties(target, [WIDTH, HEIGHT], constrainedValueObject, null, true);
 							settingProperties = false;
 						}
 						else {
 							settingProperties = true;
 							if (isStyle(property)) {
-								Radiate.setStyle(target, property, textInput.text, null, true);
+								ComponentManager.setStyle(target, property, textInput.text, null, true);
 							}
 							else {
-								Radiate.setProperty(target, property, textInput.text, null, true);
+								ComponentManager.setProperty(target, property, textInput.text, null, true);
 							}
 							settingProperties = false;
 						}
@@ -656,18 +658,18 @@
 				}
 
 
-				//Radiate.setProperty(target, constraint, value);
-				//Radiate.setStyle(target, constraint, value);
+				//ComponentManager.setProperty(target, constraint, value);
+				//ComponentManager.setStyle(target, constraint, value);
 				settingProperties = true;
-				Radiate.clearStyle(target, constraint);
+				ComponentManager.clearStyle(target, constraint);
 				if (setX) {
 					if (target.left==null && target.right==null && target.horizontalCenter==null) {
-						Radiate.setProperty(target, "x", target.x);
+						ComponentManager.setProperty(target, "x", target.x);
 					}
 				}
 				else if (setY) {
 					if (target.top==null && target.bottom==null && target.verticalCenter==null) {
-						Radiate.setProperty(target, "y", target.y);
+						ComponentManager.setProperty(target, "y", target.y);
 					}
 				}
 				
@@ -744,15 +746,15 @@
 				
 				settingProperties = true;
 				//target[constraint] = value;
-				//Radiate.setProperty(target, constraint, value);
-				Radiate.setStyle(target, constraint, value);
+				//ComponentManager.setProperty(target, constraint, value);
+				ComponentManager.setStyle(target, constraint, value);
 				if (clearXValue) {
-					Radiate.clearProperty(target, "x");
+					ComponentManager.clearProperty(target, "x");
 				}
 				else if (clearYValue) {
-					Radiate.clearProperty(target, "y");
+					ComponentManager.clearProperty(target, "y");
 				}
-				//Radiate.setPropertiesStyles(); todo: this
+				//ComponentManager.setPropertiesStyles(); todo: this
 				settingProperties = false;
 				
 				updateTargetDimensionsLayout();
@@ -1358,24 +1360,24 @@
 			
 			public function clearWidth():void {
 				settingProperties = true;
-				Radiate.clearProperties(target, ["width", "percentWidth"]);
+				ComponentManager.clearProperties(target, MXMLDocumentConstants.WIDTH_PROPERTIES);
 				settingProperties = false;
 				updateView();
 			}
 			
 			public function clearHeight():void {
 				settingProperties = true;
-				Radiate.clearProperties(target, ["height", "percentHeight"]);
+				ComponentManager.clearProperties(target, MXMLDocumentConstants.HEIGHT_PROPERTIES);
 				settingProperties = false;
 				updateView();
 			}
 			
 			public function clearX():void {
 				settingProperties = true;
-				Radiate.clearProperties(target, ["x"]);
-				Radiate.clearStyles(target, ["left", "right", "horizontalCenter"]);
+				ComponentManager.clearProperties(target, ["x"]);
+				ComponentManager.clearStyles(target, MXMLDocumentConstants.HORIZONTAL_PROPERTIES_NO_X);
 				if (target is GraphicElement) {
-					Radiate.setProperty(target, "x", 0);
+					ComponentManager.setProperty(target, "x", 0);
 				}
 				settingProperties = false;
 				updateView();
@@ -1383,10 +1385,10 @@
 			
 			public function clearY():void {
 				settingProperties = true;
-				Radiate.clearProperties(target, ["y"]);
-				Radiate.clearStyles(target, ["top", "bottom", "verticalCenter"]);
+				ComponentManager.clearProperties(target, ["y"]);
+				ComponentManager.clearStyles(target, MXMLDocumentConstants.VERTICAL_PROPERTIES_NO_Y_BASELINE);
 				if (target is GraphicElement) {
-					Radiate.setProperty(target, "y", 0);
+					ComponentManager.setProperty(target, "y", 0);
 				}
 				settingProperties = false;
 				updateView();

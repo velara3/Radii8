@@ -20,6 +20,7 @@
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
 			import com.flexcapacitor.events.RadiateEvent;
+			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.model.AccessorMetaData;
 			import com.flexcapacitor.utils.ClassUtils;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
@@ -35,7 +36,7 @@
 			public var data:Object;
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.TARGET_CHANGE, handleTargetChange, false, 0, true);
 				radiate.addEventListener(RadiateEvent.PROPERTY_CHANGED, propertyChangeHandler, false, 0, true);
@@ -175,7 +176,7 @@
 					propertyObject[property] = radiusRenderer.numericStepper.value
 				}
 				
-				valueSuccessfullyApplied = Radiate.setProperties(target, properties, propertyObject);
+				valueSuccessfullyApplied = ComponentManager.setProperties(target, properties, propertyObject);
 			}
 			
 			protected function edgeRenderer_changeHandler(event:Event):void {
@@ -210,7 +211,7 @@
 					propertyObject[property] = NumberRenderer(eventTarget).numericStepper.value;
 				}
 				
-				valueSuccessfullyApplied = Radiate.setProperties(target, properties, propertyObject);
+				valueSuccessfullyApplied = ComponentManager.setProperties(target, properties, propertyObject);
 			}
 			
 			private function getRadiusLocked():Boolean {
@@ -266,7 +267,7 @@
 					properties.push(RADIUS_X);
 					properties.push(RADIUS_Y);
 					
-					valueSuccessfullyApplied = Radiate.clearProperties(target, properties, 0);
+					valueSuccessfullyApplied = ComponentManager.clearProperties(target, properties, 0);
 					return;
 				}
 				
@@ -287,7 +288,7 @@
 					properties.push(BOTTOM_RIGHT_RADIUS_Y);
 				}
 				
-				valueSuccessfullyApplied = Radiate.clearProperties(target, properties);
+				valueSuccessfullyApplied = ComponentManager.clearProperties(target, properties);
 				
 			}
 			

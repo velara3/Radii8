@@ -32,11 +32,14 @@
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.controller.RadiateUtilities;
 			import com.flexcapacitor.events.DragDropEvent;
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.ClipboardManager;
 			import com.flexcapacitor.managers.ComponentManager;
+			import com.flexcapacitor.managers.DeferManager;
+			import com.flexcapacitor.managers.DocumentManager;
+			import com.flexcapacitor.managers.LibraryManager;
+			import com.flexcapacitor.managers.ProfileManager;
 			import com.flexcapacitor.managers.RunManager;
 			import com.flexcapacitor.model.AttachmentData;
 			import com.flexcapacitor.model.DocumentData;
@@ -66,6 +69,8 @@
 			import spark.events.IndexChangeEvent;
 			import spark.primitives.supportClasses.GraphicElement;
 			
+			
+			
 			[Bindable]
 			private var radiate:Radiate;
 			
@@ -92,7 +97,7 @@
 			private var projectID:int;
 			
 			public function activate(selectedTarget:Object = null):void {
-				radiate = Radiate.getInstance();
+				radiate = Radiate.instance;
 				
 				radiate.addEventListener(RadiateEvent.ATTACHMENT_UPLOADED, uploadAttachmentResult, false, 0, true);
 				radiate.addEventListener(RadiateEvent.ATTACHMENTS_RECEIVED, attachmentsReceived, false, 0, true);
@@ -131,7 +136,7 @@
 				var item:ComponentDefinition;
 				var application:Application;
 				var component:Object;
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var rowGroup:Group;
 				var image:Image;
 				var attachmentData:AttachmentData = selectedItem as AttachmentData;
@@ -300,7 +305,7 @@
 				}
 				
 				//trace(event.type);
-				Radiate.updateComponentAfterAdd(radiate.selectedDocument, image, true);
+				ComponentManager.updateComponentAfterAdd(Radiate.selectedDocument, image, true);
 				
 				if (image) {
 					//image.source = event.draggedItem;
@@ -312,10 +317,10 @@
 							image.width = undefined;
 							image.height = undefined;
 							//image.source = null;//force it to show up in change history
-							Radiate.setProperty(image, "source", path);
+							ComponentManager.setProperty(image, "source", path);
 						}
 						else if (imageData.bitmapData) {
-							Radiate.setProperty(image, "source", imageData.bitmapData);
+							ComponentManager.setProperty(image, "source", imageData.bitmapData);
 						}
 					}
 					else {
@@ -326,15 +331,13 @@
 			}
 			
 			protected function handleDragOver(event:Event):void {
-				
 				//Radiate.info("target: " + dragManagerInstance.lastTargetCandidate);
 				//dropTargetLabel.text = "Drag over: " + dragManagerInstance.dropTargetName;
 			}
 			
 			protected function attachmentsReceived(event:RadiateEvent):void {
 				var attachments:Array = event.targets as Array;
-				radiate.addAssetsToDocument(attachments, radiate.selectedDocument as DocumentData);
-				//libraryCollection.source = attachments;
+				LibraryManager.addAssetsToDocument(attachments, Radiate.selectedDocument as DocumentData);
 			}
 			
 			
@@ -356,7 +359,6 @@
 			}
 
 			protected function mediumImage_clickHandler(event:MouseEvent):void {
-				
 				setTextInputImageURL(MEDIUM);
 			}
 			
@@ -396,7 +398,7 @@
 				}
 				
 				if (selectedItem) {
-					radiate.dispatchObjectSelectedEvent(selectedItem);
+					Radiate.dispatchObjectSelectedEvent(selectedItem);
 				}
 				
 				
@@ -447,13 +449,13 @@
 				
 				// try to upload to an account not document
 				// upload attachment to project
-				postID = radiate.selectedDocument ? radiate.selectedDocument.id : null;
+				postID = Radiate.selectedDocument ? Radiate.selectedDocument.id : null;
 				
 				// this should be user choice
 				// if project is not available for some reason upload to document
 				// if document is not available for some reason upload to project
 				if (postID==null) {
-					postID = radiate.selectedProject ? radiate.selectedProject.id : null;
+					postID = Radiate.selectedProject ? Radiate.selectedProject.id : null;
 				}
 				
 				if (postID==null) {
@@ -464,13 +466,13 @@
 				if (fileReference) {
 					
 					Radiate.info("Importing PSD");
-					Radiate.callAfter(250, radiate.uploadAttachment, fileReference, postID);
+					DeferManager.callAfter(250, LibraryManager.uploadAttachment, fileReference, postID);
 				}
 				else if (attachmentData) {
 					currentUpload = attachmentData;
 					
 					Radiate.info("Importing PSD");
-					Radiate.callAfter(250, radiate.uploadAttachmentData, attachmentData, postID);
+					DeferManager.callAfter(250, LibraryManager.uploadAttachmentData, attachmentData, postID);
 				}
 			}
 			
@@ -480,7 +482,7 @@
 				var attachment:AttachmentData;
 				var containsName:Boolean;
 				var length:int = attachments.length;
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				
 				if (event.successful) {
 					
@@ -499,18 +501,18 @@
 			}
 			
 			protected function refreshIcon_clickHandler(event:MouseEvent):void {
-				//var projectOrDocumentID:String = radiate.selectedProject ? radiate.selectedProject.id : null;
-				var projectOrDocumentID:String = radiate.selectedDocument ? radiate.selectedDocument.id : null;
+				//var projectOrDocumentID:String = Radiate.selectedProject ? Radiate.selectedProject.id : null;
+				var projectOrDocumentID:String = Radiate.selectedDocument ? Radiate.selectedDocument.id : null;
 				var searchID:int;
 				
-				if (radiate.isUserLoggedIn==false) {
+				if (ProfileManager.isUserLoggedIn==false) {
 					Radiate.info("You must be logged in");
 					return;
 				}
 				
 				// if not project id then get document id
 				if (projectOrDocumentID==null) {
-					projectOrDocumentID = radiate.selectedProject ? radiate.selectedProject.id : null;
+					projectOrDocumentID = Radiate.selectedProject ? Radiate.selectedProject.id : null;
 				}
 				
 				if (projectOrDocumentID==null) {
@@ -520,7 +522,7 @@
 					searchID = int(projectOrDocumentID);
 				}
 				
-				radiate.getAttachments(searchID);
+				LibraryManager.getAttachments(searchID);
 			}
 			
 			protected function assetAdded(event:RadiateEvent):void {
@@ -547,7 +549,7 @@
 				}
 				
 				// not sure why it's not deleting the last item
-				if (radiate.assets.length==0) {
+				if (LibraryManager.assets.length==0) {
 					// RangeError: Index '-1' specified is out of bounds. 
 					// - when setting source to empty array before hand 
 					// - assets.source may be bound so when that array item is 
@@ -557,8 +559,8 @@
 					libraryCollection.removeAll();
 				}
 				else {
-					if (libraryCollection.source != radiate.assets.source) {
-						libraryCollection.source = radiate.assets.source;
+					if (libraryCollection.source != LibraryManager.assets.source) {
+						libraryCollection.source = LibraryManager.assets.source;
 						libraryCollection.refresh();
 					}
 					else {
@@ -581,7 +583,7 @@
 			protected function library_dragEnterHandler(event:DragEvent):void {
 				var containsDraggedItem:Boolean = libraryList.contains(event.dragInitiator as DisplayObject);
 				
-				if (Radiate.isAcceptableDragAndDropFormat(event.dragSource, true) && !containsDraggedItem) {
+				if (LibraryManager.isAcceptableDragAndDropFormat(event.dragSource, true) && !containsDraggedItem) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 				}
 			}
@@ -589,7 +591,7 @@
 			protected function library_dragOverHandler(event:DragEvent):void {
 				var containsDraggedItem:Boolean = libraryList.contains(event.dragInitiator as DisplayObject);
 				
-				if (Radiate.isAcceptableDragAndDropFormat(event.dragSource, true) && !containsDraggedItem) {
+				if (LibraryManager.isAcceptableDragAndDropFormat(event.dragSource, true) && !containsDraggedItem) {
 					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
 				}
 			}
@@ -629,10 +631,10 @@
 						
 						// drag manager creates a raster snapshot when on desktop so don't use that
 						if (radiate.target is GraphicElement) {
-							imageDataOrError = RadiateUtilities.saveToLibrary(radiate.target, event.shiftKey);
+							imageDataOrError = LibraryManager.saveToLibrary(radiate.target, event.shiftKey);
 						}
 						else {
-							imageDataOrError = RadiateUtilities.saveToLibrary(initiator, event.shiftKey);
+							imageDataOrError = LibraryManager.saveToLibrary(initiator, event.shiftKey);
 						}
 						
 						if (imageDataOrError is Error) {
@@ -666,7 +668,7 @@
 							imageData.contentType = DisplayObjectUtils.PNG_MIME_TYPE;
 							imageData.file = null;
 							
-							radiate.addAssetToDocument(imageData, radiate.selectedDocument);
+							radiate.addAssetToDocument(imageData, Radiate.selectedDocument);
 							
 							libraryList.selectedItem = imageData;
 							
@@ -752,7 +754,7 @@
 				var imageData:ImageData = libraryList.selectedItem as ImageData;
 				
 				if (imageData && imageData.url) {
-					Radiate.openInBrowser(imageData);
+					DocumentManager.openInBrowser(imageData);
 				}
 				else {
 					Radiate.warn("You must upload the file before being able to view it online.");
@@ -815,7 +817,7 @@
 			
 			
 			public function updateDocuments():void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				
 				documentID = iDocument && iDocument.id!=null ? int(iDocument.id) : 0;
 				
@@ -845,11 +847,11 @@
 			}
 			
 			protected function multipleUploadIcon_clickHandler(event:MouseEvent):void {
-				var iDocument:IDocument = radiate.selectedDocument;
+				var iDocument:IDocument = Radiate.selectedDocument;
 				var attachmentData:AttachmentData;
-				var attachmentsToUpload:Array = radiate.getAssetsAvailableToUpload();
+				var attachmentsToUpload:Array = LibraryManager.getAssetsAvailableToUpload();
 				
-				if (radiate.isUserLoggedIn==false) {
+				if (ProfileManager.isUserLoggedIn==false) {
 					Radiate.info("You must be logged in.");
 					return;
 				}
@@ -862,7 +864,7 @@
 				}
 				else {
 					Radiate.info("Uploading items from the library...");
-					Radiate.callAfter(250, radiate.saveAllAttachments, iDocument);
+					DeferManager.callAfter(250, LibraryManager.saveAllAttachments, iDocument);
 				}
 			}
 			
@@ -889,7 +891,7 @@
 					selectedItems = ArrayUtils.getArrayFromVector(libraryList.selectedItems);
 				}
 				
-				iDocument = radiate.selectedDocument;
+				iDocument = Radiate.selectedDocument;
 				
 				if (iDocument==null) {
 					Radiate.info("No document selected.");
@@ -919,11 +921,11 @@
 							
 							if (attachmentIDs.length) {
 								//radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, deleteResultsHandler, false, 0, true);
-								localRemoveSuccessful = radiate.removeAssetsFromDocument(attachments);
+								localRemoveSuccessful = LibraryManager.removeAssetsFromDocument(attachments);
 							}
 							else {
 								isRemote = false;
-								localRemoveSuccessful = radiate.removeAssetsFromDocument(attachments, DocumentData.LOCAL_LOCATION);
+								localRemoveSuccessful = LibraryManager.removeAssetsFromDocument(attachments, DocumentData.LOCAL_LOCATION);
 							}
 						}
 						else {
@@ -1049,7 +1051,7 @@
 				var files:Array = browseForFile.fileList ? browseForFile.fileList : [];
 				
 				if (files.length) {
-					radiate.selectItem(files);
+					LibraryManager.loadSelectedFile(files);
 				}
 			
 			}
@@ -1198,7 +1200,7 @@
 		</s:Group>
 		
 		
-		<s:List id="libraryList" 
+		<c:ListNoKeyboardHandling id="libraryList" 
 				width="100%" 
 				height="100%"
 				labelField="name" 
@@ -1217,16 +1219,16 @@
 				dragOver="library_dragOverHandler(event)"
 				>
 			
-			<s:layout.grid>
+			<c:layout.grid>
 				<s:TileLayout useVirtualLayout="true" 
 							  horizontalGap="10" 
 							  verticalGap="10" 
 							  paddingLeft="10" 
 							  paddingTop="10"
 							  columnWidth="50"/>
-			</s:layout.grid>
+			</c:layout.grid>
 			
-			<s:layout.list>
+			<c:layout.list>
 				<s:VerticalLayout clipAndEnableScrolling="true"
 								  gap="0"
 								  horizontalAlign="contentJustify"
@@ -1237,8 +1239,8 @@
 								  variableRowHeight="true"
 								  verticalAlign="top"
 								  useVirtualLayout="true"/>
-			</s:layout.list>
-		</s:List>
+			</c:layout.list>
+		</c:ListNoKeyboardHandling>
 	
 		
 	</mx:VDividedBox>
