@@ -1434,7 +1434,6 @@
 				}
 			}
 			
-			
 			protected function rotateImage_itemClickHandler(event:MenuEvent):void{
 				var angle:Number = 0;
 				var eventTarget:Object = event.currentTarget;
@@ -1451,6 +1450,24 @@
 				}
 				
 				ImageManager.rotateImage(image, angle);
+			}
+			
+			protected function flipImage_itemClickHandler(event:MenuEvent):void{
+				var eventTarget:Object = event.currentTarget;
+				var image:Image = radiate.target as Image;
+				
+				if (image==null) {
+					Radiate.info("You must select an image");
+					return;
+				}
+				
+				if (eventTarget==flipImageHorizontally) {
+					ImageManager.flipImageHorizontally(image);
+				}
+				else if (eventTarget==flipImageVertically) {
+					ImageManager.flipImageVertically(image);
+				}
+				
 			}
 			
 			protected function lockLayer_itemClickHandler(event:MenuEvent):void {
@@ -1910,6 +1927,11 @@
 					<model:MenuItem id="rotateImage270" label="Rotate 270" itemClick="rotateImage_itemClickHandler(event)"/>
 				</model:MenuItem>
 				<model:MenuItem type="separator"/>
+				<model:MenuItem id="flipImage" label="Flip Image" >
+					<model:MenuItem id="flipImageHorizontally" label="Flip Horizontally" itemClick="flipImage_itemClickHandler(event)"/>
+					<model:MenuItem id="flipImageVertically" label="Flip Vertically" itemClick="flipImage_itemClickHandler(event)"/>
+				</model:MenuItem>
+				<model:MenuItem type="separator"/>
 				<model:MenuItem id="removeExplicitPosition" label="Remove explicit position" itemClick="removeExplicitPosition_itemClickHandler(event)" />
 				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="removeExplicitSize_itemClickHandler(event)" />
 				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />
@@ -1931,11 +1953,11 @@
 				<model:MenuItem type="separator"/>-->
 			</model:MenuItem>
 			<model:MenuItem label="Commands" >
-				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="clearProjectHomePage_itemClickHandler(event)" />
-				<model:MenuItem type="separator"/>
 				<model:MenuItem id="openGallery" label="Open Gallery" itemClick="openGallery_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="refreshView" label="Refresh View" itemClick="refreshView_itemClickHandler(event)" />
+				<model:MenuItem type="separator"/>
+				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="clearProjectHomePage_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="showProjectSource_itemClickHandler(event)" />
 				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="showDocumentSource_itemClickHandler(event)"/>

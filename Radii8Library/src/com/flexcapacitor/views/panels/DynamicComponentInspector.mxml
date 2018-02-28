@@ -88,14 +88,14 @@
 				
 				inspectors = InspectorManager.getInspectors(target);
 				
-				PerformanceMeter.start("Updating inspectors");
+				//PerformanceMeter.start("Updating inspectors");
 				if (removeInspectors) {
 					updateInspectors2(inspectors, target);
 				}
 				else {
 					updateInspectors(inspectors, target);// 498,527,414
 				}
-				PerformanceMeter.stop("Updating inspectors", true);
+				//PerformanceMeter.stop("Updating inspectors", true);
 			}
 			
 			public function deactivate():void {
@@ -121,14 +121,14 @@
 				
 				inspectors = InspectorManager.getInspectors(target);
 				
-				PerformanceMeter.start("Updating inspectors");
+				//PerformanceMeter.start("Updating inspectors");
 				if (removeInspectors) {
 					updateInspectors2(inspectors, target, property, propertyIndex);
 				}
 				else {
 					updateInspectors(inspectors, target, property, propertyIndex);
 				}
-				PerformanceMeter.stop("Updating inspectors", true);
+				//PerformanceMeter.stop("Updating inspectors", true);
 			}
 			
 			/**
@@ -201,7 +201,7 @@
 				numberOfDynamicInspectors = targetInspectorGroup.numElements;
 				
 				// activate inspectors
-				PerformanceMeter.start("Activating inspectors");
+				//PerformanceMeter.start("Activating inspectors");
 				for (var i:int;i<numberOfDynamicInspectors;i++) {
 					inspectorInstance = targetInspectorGroup.getElementAt(i) as UIComponent;
 					
@@ -214,7 +214,7 @@
 						//trace(" " + ClassUtils.getClassName(inspectorInstance));
 					}
 				}
-				PerformanceMeter.stop("Activating inspectors", true);
+				//PerformanceMeter.stop("Activating inspectors", true);
 				
 				// show target inspector group
 				IVisualElement(targetInspectorGroup).visible = true;

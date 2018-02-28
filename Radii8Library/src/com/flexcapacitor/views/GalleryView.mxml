@@ -599,7 +599,7 @@
 				
 				if (bitmapData) {
 					radiate = Radiate.instance;
-					LibraryManager.dropInBitmapData(bitmapData, false, true);
+					LibraryManager.dropInBitmapData(bitmapData, false, true, searchInput.text);
 					DeferManager.callAfter(closeDelay, closeGallery);
 				}
 				

@@ -6,6 +6,7 @@ package com.flexcapacitor.managers
 	import com.flexcapacitor.controller.Radiate;
 	import com.flexcapacitor.controls.RichTextEditorBar;
 	import com.flexcapacitor.events.RadiateEvent;
+	import com.flexcapacitor.model.AttachmentData;
 	import com.flexcapacitor.model.Document;
 	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.ExportOptions;
@@ -146,17 +147,22 @@ package com.flexcapacitor.managers
 		/**
 		 * Storage when dropping file onto window before document is created 
 		 **/
-		public static var fileToBeLoaded:Object;
+		public static var fileToBeLoaded1:Object;
+		
+		/**
+		 * Name of file to be loaded
+		 **/
+		public static var fileToBeLoadedName1:String;
 		
 		/**
 		 * Storage for option to resize dropped file to fit document 
 		 **/
-		public static var resizeNewFileIfNeeded:Boolean;
+		public static var resizeNewFileIfNeeded1:Boolean;
 		
 		/**
 		 * Storage for option to resize document to fit dropped file 
 		 **/
-		public static var resizeDocumentToNewFileIfNeeded:Boolean;
+		public static var resizeDocumentToNewFileIfNeeded1:Boolean;
 		
 		/**
 		 * When deleting a document 
@@ -423,23 +429,29 @@ package com.flexcapacitor.managers
 		 * This is to support drag and drop of file onto application icon
 		 * and open with methods. 
 		 * */
-		public static function createNewDocumentAndSwitchToDesignView(file:Object = null, iProject:Object = null, resizeIfNeeded:Boolean = true, resizeDocumentToContent:Boolean = false):IDocument {
+		public static function createNewDocumentAndSwitchToDesignView(file:Object = null, iProject:Object = null, resizeIfNeeded:Boolean = true, resizeDocumentToContent:Boolean = false, name:String = null):IDocument {
 			var documentName:String = "Document";
 			var iDocument:IDocument;
 			var radiate:Radiate = Radiate.instance;
-			
-			fileToBeLoaded = file;
-			resizeNewFileIfNeeded = resizeIfNeeded;
-			resizeDocumentToNewFileIfNeeded = resizeDocumentToContent;
+			var newDeferredData:AttachmentData;
 			
 			ViewManager.goToDesignScreen();
 			
-			if (fileToBeLoaded) {
-				radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
-			}
-			
 			iDocument = createBlankDemoDocument(iProject, documentName);
 			
+			//if (fileToBeLoaded) {
+			if (file) {
+				newDeferredData = new AttachmentData();
+				newDeferredData.file = file as FileReference;
+				newDeferredData.data = file;
+				newDeferredData.name = name;
+				newDeferredData.resizeToFitDocument = resizeIfNeeded;
+				newDeferredData.resizeDocumentToFit = resizeDocumentToContent;
+				
+				iDocument.deferredData = newDeferredData;
+				
+				radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
+			}
 			
 			if (ProfileManager.isUserLoggedIn && iDocument) {
 				ProjectManager.saveProjectOnly(iDocument.project);
@@ -468,11 +480,25 @@ package com.flexcapacitor.managers
 			return true;
 		}
 		
+		/**
+		 * Handles when new document has been created after dropping or importing a file  
+		 **/
 		public static function documentOpenedHandler(event:RadiateEvent):void {
 			var iDocument:IDocument = event.selectedItem as IDocument;
-			var newFileData:Object = fileToBeLoaded;
+			var deferredData:AttachmentData = iDocument.deferredData;
+			var newFileData:Object;
+			var fileName:String;
 			var fileData:FileData;
 			var destination:Object;
+			var resizeNewFileIfNeeded:Boolean;
+			var resizeDocumentToNewFileIfNeeded:Boolean;
+			
+			if (deferredData && deferredData.isLoaded==false) {
+				newFileData = deferredData.data;
+				fileName = deferredData.name;
+				resizeNewFileIfNeeded = deferredData.resizeToFitDocument;
+				resizeDocumentToNewFileIfNeeded = deferredData.resizeDocumentToFit;
+			}
 			
 			if (newFileData is FileReference) {
 				if (newFileData.exists && newFileData.isDirectory==false) {
@@ -492,17 +518,22 @@ package com.flexcapacitor.managers
 			}
 			else if (newFileData is Array && newFileData.length) {
 				//destination = getDestinationForExternalFileDrop();
-				LibraryManager.addFileListDataToDocument(selectedDocument, fileToBeLoaded as Array);
+				LibraryManager.addFileListDataToDocument(selectedDocument, newFileData as Array);
 			}
 			else if (newFileData is BitmapData) {
-				LibraryManager.addBitmapDataToDocument(selectedDocument, newFileData as BitmapData, null, null, true, resizeNewFileIfNeeded, resizeDocumentToNewFileIfNeeded);
+				LibraryManager.addBitmapDataToDocument(selectedDocument, newFileData as BitmapData, null, fileName, true, resizeNewFileIfNeeded, resizeDocumentToNewFileIfNeeded);
 			}
 			
 			Radiate.instance.removeEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler);
 			
-			resizeNewFileIfNeeded = false;
+			if (deferredData) {
+				deferredData.isLoaded = true;
+			}
 		}
 		
+		/**
+		 * Handles when loading a file opened from dialog or dropped on the application
+		 **/
 		protected static function fileLoadedHandler(event:RadiateEvent):void {
 			var successful:Boolean = event.successful;
 			var imageData:ImageData = event.data as ImageData;

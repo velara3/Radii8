@@ -1,7 +1,6 @@
 
 package com.flexcapacitor.model {
 	import com.flexcapacitor.controller.Radiate;
-	import com.flexcapacitor.controller.RadiateUtilities;
 	import com.flexcapacitor.managers.DateManager;
 	import com.flexcapacitor.managers.LibraryManager;
 	import com.flexcapacitor.managers.ServicesManager;
@@ -181,6 +180,24 @@ package com.flexcapacitor.model {
 			_post = value;
 		}
 
+		private var _deferredData:AttachmentData;
+
+		/**
+		 * Deferred data used to store data before document is created
+		 * */
+		public function get deferredData():AttachmentData
+		{
+			return _deferredData;
+		}
+
+		/**
+		 * @private
+		 */
+		public function set deferredData(value:AttachmentData):void
+		{
+			_deferredData = value;
+		}
+
 		
 		private var _file:FileReference;
 
@@ -294,6 +311,22 @@ package com.flexcapacitor.model {
 		[Bindable]
 		public function set isChanged(value:Boolean):void {
 			_isChanged = value;
+		}
+		
+		private var _isLoaded:Boolean;
+		
+		/**
+		 * Indicates if the data is loaded
+		 * */
+		public function get isLoaded():Boolean {
+			return _isLoaded;
+		}
+		
+		/**
+		 * @private
+		 **/
+		public function set isLoaded(value:Boolean):void {
+			_isLoaded = value;
 		}
 		
 		/**

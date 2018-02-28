@@ -63,16 +63,6 @@ package com.flexcapacitor.model {
 		public var layerInfo:Object;
 		
 		/**
-		 * On import should resize to fit document if image is larger than document
-		 **/
-		public var resizeToFitDocument:Boolean;
-		
-		/**
-		 * On import should resize document to fit the image original size
-		 **/
-		public var resizeDocumentToFit:Boolean;
-		
-		/**
 		 * 
 		 * */
 		override public function unmarshall(data:Object):void {

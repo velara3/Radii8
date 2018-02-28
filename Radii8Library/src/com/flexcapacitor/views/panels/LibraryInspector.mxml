@@ -1214,6 +1214,7 @@
 				change="list_changeHandler(event)"
 				keyUp="list_keyUpHandler(event)"
 				horizontalScrollPolicy="off"
+				enableKeyboardHandling="true"
 				dragEnter="library_dragEnterHandler(event)"
 				dragDrop="library_dragDropHandler(event)"
 				dragOver="library_dragOverHandler(event)"

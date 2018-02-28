@@ -1357,12 +1357,7 @@ package com.flexcapacitor.managers
 			imageData.byteArray = DisplayObjectUtils.getByteArrayFromBitmapData(bitmapData);
 			
 			if (name==null) {
-				if (destination) {
-					name = ClassUtils.getIdentifierNameOrClass(destination) + ".png";
-				}
-				else {
-					name = ClassUtils.getIdentifierNameOrClass(bitmapData) + ".png";
-				}
+				name = "Image";
 			}
 			
 			imageData.name = name;
@@ -1779,19 +1774,19 @@ package com.flexcapacitor.managers
 		}
 		
 		/**
-		 * 
+		 * Adds image to document from bitmap data
 		 **/
-		public static function dropInBitmapData(bitmapData:BitmapData, createNewDocument:Boolean = false, createDocumentIfNeeded:Boolean = true):void {
+		public static function dropInBitmapData(bitmapData:BitmapData, createNewDocument:Boolean = false, createDocumentIfNeeded:Boolean = true, name:String = null):void {
 			var fileData:FileData;
 			var destination:Object;
 			var imageData:ImageData;
 			
 			if (createNewDocument || (createDocumentIfNeeded && selectedDocument==null)) {
-				DocumentManager.createNewDocumentAndSwitchToDesignView(bitmapData, selectedProject);
+				DocumentManager.createNewDocumentAndSwitchToDesignView(bitmapData, selectedProject, true, false, name);
 			}
 			else {
 				destination = getDestinationForExternalFileDrop();
-				imageData = addBitmapDataToDocument(selectedDocument, bitmapData, destination, null, true);
+				imageData = addBitmapDataToDocument(selectedDocument, bitmapData, destination, name, true);
 			}
 		}
 		

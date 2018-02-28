@@ -2718,7 +2718,12 @@ package com.flexcapacitor.managers
 			items = ArrayUtil.toArray(items);
 			
 			item = items ? items[0] : null;
-			itemOwner = item ? item.owner : null;
+			itemOwner = item && "owner" in item ? item.owner : null;
+			
+			if (item==null || itemOwner==null) {
+				Radiate.info("Cannot delete item:"+ item);
+				return REMOVE_ERROR;
+			}
 			
 			visualElement = item as IVisualElement;
 			visualElementParent = visualElement ? visualElement.parent : null;

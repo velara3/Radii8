@@ -33,7 +33,17 @@ package com.flexcapacitor.model {
 		public var base64Encoding:String;
 		
 		/**
-		 * 
+		 * On import should resize to fit document if image is larger than document
+		 **/
+		public var resizeToFitDocument:Boolean;
+		
+		/**
+		 * On import should resize document to fit the image original size
+		 **/
+		public var resizeDocumentToFit:Boolean;
+		
+		/**
+		 * Caption for image
 		 * */
 		public var caption:String;
 		
@@ -41,6 +51,11 @@ package com.flexcapacitor.model {
 		 * Full URL to image
 		 * */
 		public var url:String;
+		
+		/**
+		 * Used for deferred data
+		 **/
+		public var data:Object;
 		
 		/**
 		 * Is set to true when upload failed

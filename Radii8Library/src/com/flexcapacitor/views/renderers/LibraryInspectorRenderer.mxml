@@ -25,7 +25,6 @@
 			import com.flexcapacitor.model.IDocument;
 			import com.flexcapacitor.model.ImageData;
 			import com.flexcapacitor.utils.DisplayObjectUtils;
-			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
 			
 			import mx.events.ResizeEvent;
 			import mx.graphics.BitmapFill;
@@ -317,7 +316,6 @@
 					 itemCreationPolicy="immediate"
 					 width="100%" height="100%"/>
 		
-		<s:Spacer width="100%"/>
 		<controls:BeveledImageButton id="uploadFileErrorIcon" 
 									 source="{Radii8LibraryAssets.error}" 
 									 toolTip="Upload failed. Try again"

@@ -128,6 +128,87 @@ package com.flexcapacitor.managers
 				Radiate.info("You must select an image to apply rotation"); 
 			}
 		}
+
+		/**
+		 * Flips an image horizontally
+		 **/
+		public static function flipImageHorizontally(image:Image):void {
+			flipImage(image, true);
+		}
+		
+		/**
+		 * Flips an image vertically 
+		 **/
+		public static function flipImageVertically(image:Image, horizontal:Boolean = false):void {
+			flipImage(image, false);
+		}
+		
+		/**
+		 * Flips an image
+		 **/
+		public static function flipImage(image:Image, horizontal:Boolean = false):void {
+			var matrix:Matrix;
+			var newBitmapData:BitmapData;
+			var bitmapData:BitmapData;
+			var bitmapWidth:int;
+			var bitmapHeight:int;
+			var propertiesObject:Object;
+			var properties:Array;
+			var imageData:ImageData;
+			var imageName:String;
+			var transparent:Boolean = true;
+			var smoothing:Boolean = false;
+			var quality:String = StageQuality.HIGH_16X16_LINEAR;
+			var bitmapColor:Number = 0;
+			var direction:String;
+			
+			bitmapData = image && image.source ? image.source as BitmapData : null;
+			
+			if (image && bitmapData) {
+				bitmapWidth = bitmapData.width;
+				bitmapHeight = bitmapData.height;
+				
+				if (horizontal) {
+					matrix = new Matrix(-1, 0, 0, 1, bitmapWidth, 0);
+					direction = "horizontally";
+				}
+				else {
+					matrix = new Matrix(1, 0, 0, -1, 0, bitmapHeight);
+					direction = "vertically";
+				}
+				
+				propertiesObject = {};
+				properties = ["source"];
+				newBitmapData = new BitmapData(bitmapWidth, bitmapHeight, transparent, bitmapColor);
+				
+				newBitmapData.drawWithQuality(bitmapData, matrix, null, null, null, smoothing, quality);
+				
+				propertiesObject.source = newBitmapData;
+				
+				ComponentManager.setProperties(image, properties, propertiesObject, "Flipped image " + direction, true);
+				
+				// force redraw
+				updateScreenEvent = new MouseEvent(MouseEvent.MOUSE_UP);
+				updateScreenEvent.updateAfterEvent();
+				updateScreenEvent = null;
+				
+				// add image data to our library
+				if (image.source is BitmapData) {
+					imageData = LibraryManager.getImageDataFromBitmapData(image.source as BitmapData);
+				}
+				
+				imageName = "Flipped image"; // should get name from component description
+				
+				if (imageData) {
+					imageName = imageData.name;
+				}
+				
+				LibraryManager.addBitmapDataToDocument(Radiate.selectedDocument, newBitmapData, null, imageName, false);
+			}
+			else {
+				Radiate.info("You must select an image to apply rotation"); 
+			}
+		}
 		
 		/**
 		 * Removes transparent pixels from edges of image
