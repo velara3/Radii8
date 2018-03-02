@@ -235,6 +235,29 @@ package com.flexcapacitor.managers {
 			openGalleryPopUp.play();
 		}
 		
+		/**
+		 * Returns true if paste image from the clipboard panel is open
+		 * */
+		public static function isPasteImageFromClipboardOpen():Boolean {
+			
+			if (pasteImageFromClipboard && pasteImageFromClipboard.isOpen) {
+				return true;
+			}
+			
+			return false;
+		}
+		
+		/**
+		 * Returns true if copy image to the clipboard panel is open
+		 * */
+		public static function isCopyImageToClipboardPanelOpen():Boolean {
+			
+			if (copyImageToClipboard && copyImageToClipboard.isOpen) {
+				return true;
+			}
+			
+			return false;
+		}
 		
 		/**
 		 * Show copy image to the clipboard panel
@@ -247,6 +270,7 @@ package com.flexcapacitor.managers {
 				copyImageToClipboard.modalDuration = 100;
 				copyImageToClipboard.backgroundAlpha = .5;
 			}
+			
 			copyImageToClipboard.data = {bitmapData:bitmapData};
 			
 			copyImageToClipboard.play();

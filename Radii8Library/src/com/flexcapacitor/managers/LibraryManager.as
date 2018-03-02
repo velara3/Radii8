@@ -1190,8 +1190,7 @@ package com.flexcapacitor.managers
 		/**
 		 * Add file list data to a document
 		 * */
-		public static function addFileListDataToDocument(iDocument:IDocument, fileList:Array, destination:Object = null, operation:String = "drop"):void {
-			var createDocument:Boolean = false;
+		public static function addFileListDataToDocument(iDocument:IDocument, fileList:Array, destination:Object = null, operation:String = "drop", createDocument:Boolean = false):void {
 			
 			if (fileList==null) {
 				error("Not a valid file list");

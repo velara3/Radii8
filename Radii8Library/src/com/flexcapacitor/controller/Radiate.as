@@ -41,6 +41,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.managers.ToolManager;
 	import com.flexcapacitor.managers.TranscodersManager;
 	import com.flexcapacitor.managers.ViewManager;
+	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.DocumentDescription;
 	import com.flexcapacitor.model.ErrorData;
 	import com.flexcapacitor.model.HTMLExportOptions;
@@ -846,6 +847,18 @@ package com.flexcapacitor.controller {
 			if (value==_selectedDocument) return;
 			_selectedDocument = value;
 		}
+		
+		/**
+		 * Returns true if there is no document open and shows a message if no document open
+		 **/
+		public static function checkForDocument():Boolean {
+			if (selectedDocument==null) {
+				info("No document open");
+				return true;
+			}
+			
+			return false;
+		}
 
 		
 		/**
@@ -1166,7 +1179,7 @@ package com.flexcapacitor.controller {
 		 * */
 		public function setTarget(value:*, dispatchEvent:Boolean = true, cause:String = "", reselect:Boolean = false):void {
 			var _tempTarget:* = value && value is Array && value.length ? value[0] : value;
-			
+			var documentData:Class = DocumentData;
 			if (target is IDocument) {
 				//enterDebugger();
 			}
@@ -1702,7 +1715,7 @@ package com.flexcapacitor.controller {
 				targetChangeEvent.propertyIndex = propertyIndex;
 				PerformanceMeter.start(SET_TARGET_TEST, true, false);
 				dispatchEvent(targetChangeEvent);
-				PerformanceMeter.stop(SET_TARGET_TEST, true);
+				PerformanceMeter.stop(SET_TARGET_TEST, false);
 			}
 		}
 		

@@ -283,7 +283,7 @@ package com.flexcapacitor.managers
 			contentGroup.percentWidth = 100;
 			
 			// add and activate inspectors
-			PerformanceMeter.start("Add inspectors");
+			//PerformanceMeter.start("Add inspectors");
 			for (var i:int;i<numberOfDynamicInspectors;i++) {
 				inspectorData = InspectorData(inspectors[i]);
 				inspectorInstance = inspectorData.getNewInstance() as UIComponent;
@@ -296,12 +296,12 @@ package com.flexcapacitor.managers
 					//PerformanceMeter.stop("Adding inspector", true);
 				}
 			}
-			PerformanceMeter.stop("Add inspectors", true);
+			//PerformanceMeter.stop("Add inspectors", true);
 			
-			PerformanceMeter.start("Including layout");
+			//PerformanceMeter.start("Including layout");
 			//UIComponent(contentGroup).includeInLayout = true;
 			//LayoutManager.getInstance().validateClient(contentGroup, true);
-			PerformanceMeter.stop("Including layout", true);
+			//PerformanceMeter.stop("Including layout", true);
 			
 			inspectorContainerDictionary[className] = contentGroup;
 			

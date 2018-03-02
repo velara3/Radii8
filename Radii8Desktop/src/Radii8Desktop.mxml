@@ -97,7 +97,10 @@
 			<![CDATA[
 				import com.flexcapacitor.controller.Radiate;
 				import com.flexcapacitor.events.RadiateEvent;
+				import com.flexcapacitor.managers.DocumentManager;
 				import com.flexcapacitor.managers.HistoryManager;
+				import com.flexcapacitor.managers.MenuManager;
+				import com.flexcapacitor.managers.ProfileManager;
 				import com.flexcapacitor.model.MenuItem;
 				import com.flexcapacitor.utils.NativeMenuManager;
 				
@@ -321,10 +324,10 @@
 				private function announceStatus(event:StatusEvent):void {
 					
 					if (monitor.available) {
-						radiate.isUserOnline = true;
+						ProfileManager.isUserOnline = true;
 					}
 					else {
-						radiate.isUserOnline= false;
+						ProfileManager.isUserOnline= false;
 					}
 				}
 				
@@ -358,7 +361,7 @@
 				private var isLinux:Boolean;
 				
 				/**
-				 * We have to convert the menus used in the browser into 
+				 * We have to convert the menus used in the browser MenuBar into 
 				 * native menu items in the desktop application
 				 * 
 				 * @param showInlineMenus set this to true to add our menu to the existing AIR application menu
@@ -366,18 +369,20 @@
 				 * */
 				private function setupNativeMenus(showInlineMenus:Boolean = false):void {
 					// setup menus
-					var defaultMenu:NativeMenu;
-					var defaultMenuItems:Array;
+					var defaultNativeMenu:NativeMenu;
+					var defaultNativeMenuItems:Array;
 					
 					var nativeAboutMenu:NativeMenuItem;
 					var nativeEditMenu:NativeMenuItem;
 					var nativeFileMenu:NativeMenuItem;
+					var nativeLayersMenu:NativeMenuItem;
+					var nativeCommandMenu:NativeMenuItem;
 					var nativeWindowMenu:NativeMenuItem;
 					var nativeHelpMenu:NativeMenuItem;
-					var nativeCommandMenu:NativeMenuItem;
 					
 					var customEditMenu:MenuItem;
 					var customFileMenu:MenuItem;
+					var customLayersMenu:MenuItem;
 					var customCommandMenu:MenuItem;
 					var customWindowMenu:MenuItem;
 					var customHelpMenu:MenuItem;
@@ -390,38 +395,42 @@
 					
 					var supportsMenu:Boolean;
 					
-					// docs incorrectly say there is a nativeApplication.menu.supportsMenu flag 
+					// docs incorrectly? says there is a nativeApplication.menu.supportsMenu flag 
 					// but compiler disagrees
 					// actual API is NativeApplication.supportsMenu
 					supportsMenu = NativeApplication.supportsMenu;
 					
-					
 					// native menu has About, File, Edit, Window
-					defaultMenu = nativeApplication.menu;
-					defaultMenuItems = defaultMenu ? defaultMenu.items : [];
+					defaultNativeMenu = nativeApplication.menu;
+					defaultNativeMenuItems = defaultNativeMenu ? defaultNativeMenu.items : [];
 					
 					// our custom menu items File, Command, Settings
 					customMenuItemsCollection 	= mainViewMenu.dataProvider as ArrayCollection;
 					customMenu 					= customMenuItemsCollection.getItemAt(0) as MenuItem;
 					customMenuItems 			= customMenu.children;
+					
 					// get native menu items
-					if (defaultMenuItems.length) {
-						nativeAboutMenu 	= defaultMenuItems[0];
-						nativeFileMenu 		= defaultMenuItems[1];
-						nativeEditMenu 		= defaultMenuItems[2];
-						nativeWindowMenu 	= defaultMenuItems[3];
+					if (defaultNativeMenuItems.length) {
+						nativeAboutMenu 	= defaultNativeMenuItems[0];
+						nativeFileMenu 		= defaultNativeMenuItems[1];
+						nativeEditMenu 		= defaultNativeMenuItems[2];
+						nativeWindowMenu 	= defaultNativeMenuItems[3];
 					}
+					
 					// get custom menu items from main view menu bar
 					if (customMenu.children && customMenu.children.length) {
 						customFileMenu 			= customMenuItems[0];
 						customEditMenu 			= customMenuItems[1];
-						customCommandMenu 		= customMenuItems[2];
-						customWindowMenu 		= customMenuItems[3];
-						customHelpMenu 			= customMenuItems[4];
+						customLayersMenu 		= customMenuItems[2];
+						customCommandMenu 		= customMenuItems[3];
+						customWindowMenu 		= customMenuItems[4];
+						customHelpMenu 			= customMenuItems[5];
 						
+						nativeLayersMenu 		= new NativeMenuItem();
 						nativeCommandMenu 		= new NativeMenuItem();
 						nativeHelpMenu 			= new NativeMenuItem();
 						
+						nativeLayersMenu.label 	= "Layers";
 						nativeCommandMenu.label = "Commands";
 						nativeHelpMenu.label 	= "Help";
 					}
@@ -431,8 +440,9 @@
 					if (!showInlineMenus && supportsMenu) {
 						nativeMenuManager = new NativeMenuManager();
 						
-						// File menu
+						// File menu - add menu bar items to Native File Menu
 						for (var i:int=customFileMenu.children.length-1;i>-1; i--) {
+							// create a native menu from the menu bar item
 							nativeMenuItem = nativeMenuManager.getNativeMenuItem(customFileMenu.children[i]);
 							if (nativeMenuItem.label=="Quit") continue;
 							nativeFileMenu.submenu.addItemAt(nativeMenuItem, 0);
@@ -444,22 +454,40 @@
 						nativeMenuItem = nativeMenuManager.getNativeMenuItem(customEditMenu.children[2]);
 						nativeEditMenu.submenu.addItemAt(nativeMenuItem, 0);
 						
-						// update: made some mistakes with undo and redo so we could probably reuse nativeMenuItem
+						// add redo
 						nativeMenuItem = nativeMenuManager.getNativeMenuItem(customEditMenu.children[1]);
 						nativeEditMenu.submenu.addItemAt(nativeMenuItem, 0);
 						historyMenuStrongReference.redoMenu = nativeMenuItem;
 						
+						// add undo
 						nativeMenuItem = nativeMenuManager.getNativeMenuItem(customEditMenu.children[0]);
 						nativeEditMenu.submenu.addItemAt(nativeMenuItem, 0);
 						historyMenuStrongReference.undoMenu = nativeMenuItem;
 						
+						
+						// Layers menu
+						for (i=0;i<customLayersMenu.children.length; i++) {
+							nativeMenuItem = nativeMenuManager.getNativeMenuItem(customLayersMenu.children[i]);
+							
+							// add layers to the default native menu bar
+							if (nativeLayersMenu.menu==null) {
+								defaultNativeMenu.addItem(nativeLayersMenu);
+							}
+							
+							// create a new native menu to add our items to
+							if (nativeLayersMenu.submenu==null) {
+								nativeLayersMenu.submenu = new NativeMenu();
+							}
+							
+							nativeLayersMenu.submenu.addItem(nativeMenuItem);
+						}
 						
 						// Commands menu
 						for (i=0;i<customCommandMenu.children.length; i++) {
 							nativeMenuItem = nativeMenuManager.getNativeMenuItem(customCommandMenu.children[i]);
 							
 							if (nativeCommandMenu.menu==null) {
-								defaultMenu.addItem(nativeCommandMenu);
+								defaultNativeMenu.addItem(nativeCommandMenu);
 							}
 							if (nativeCommandMenu.submenu==null) {
 								nativeCommandMenu.submenu = new NativeMenu();
@@ -468,29 +496,32 @@
 							nativeCommandMenu.submenu.addItem(nativeMenuItem);
 						}
 						
+						// remove window and add it before help menu
+						nativeWindowMenu.menu.removeItem(nativeWindowMenu);
+						defaultNativeMenu.addItem(nativeWindowMenu);
+						
 						// Help menu
 						for (i=0;i<customHelpMenu.children.length; i++) {
 							nativeMenuItem = nativeMenuManager.getNativeMenuItem(customHelpMenu.children[i]);
 							
 							if (nativeHelpMenu.submenu==null) {
-								defaultMenu.addItem(nativeHelpMenu);
+								defaultNativeMenu.addItem(nativeHelpMenu);
 							}
+							
 							if (nativeHelpMenu.submenu==null) {
 								nativeHelpMenu.submenu = new NativeMenu();
 							}
 							
 							nativeHelpMenu.submenu.addItem(nativeMenuItem);
-							//aboutMenu.menu.addItem(nativeMenuItem, nativeMenuItem.label);
-							//nativeMenuItem.menu = windowMenu;
 						}
 						
 						// reassign the default menu 
 						// this causes it to rebuild the menu with our new additions
-						nativeApplication.menu = defaultMenu;
-						defaultMenu.addEventListener(Event.SELECT, nativeMenuHandler, false, 0, true);
+						nativeApplication.menu = defaultNativeMenu;
+						defaultNativeMenu.addEventListener(Event.SELECT, nativeMenuHandler, false, 0, true);
 						
-						radiate.applicationMenu = defaultMenu;
-						radiate.applicationWindowMenu = nativeWindowMenu;
+						MenuManager.applicationMenu = defaultNativeMenu;
+						MenuManager.applicationWindowMenu = nativeWindowMenu;
 						
 						mainView.showMenuBar(false);
 					}
@@ -516,20 +547,20 @@
 						
 						// clear out default menu items
 						if (supportsMenu) {
-							for (var j:int = defaultMenuItems.length; j > 0; j--) 
+							for (var j:int = defaultNativeMenuItems.length; j > 0; j--) 
 							{
-								defaultMenuItems.pop();
+								defaultNativeMenuItems.pop();
 							}
 							
 							//defaultMenu.items = defaultMenuItems;
-							nativeApplication.menu = defaultMenu;
+							nativeApplication.menu = defaultNativeMenu;
 						}
 						
 						// assign our custom menu to the application menu
 						//menu = mainViewMenu;
 
-						radiate.applicationMenu = mainViewMenu;
-						radiate.applicationWindowMenu = customWindowMenu;
+						MenuManager.applicationMenu = mainViewMenu;
+						MenuManager.applicationWindowMenu = customWindowMenu;
 						
 					}
 				}
@@ -658,7 +689,7 @@
 						file = new File(filePath);
 						
 						if (file.exists && file.isDirectory==false) {
-							radiate.createNewDocumentAndSwitchToDesignView(file, radiate.selectedProject);
+							DocumentManager.createNewDocumentAndSwitchToDesignView(file, Radiate.selectedProject);
 						}
 						else {
 							Radiate.error("The file you are attempting to open does not exist or is a directory");

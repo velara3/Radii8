@@ -319,22 +319,27 @@ package com.flexcapacitor.managers
 			destinationIndex = -1;
 			
 			// get destination of clipboard contents
+			if (destination && destination==selectedDocument) {
+				destination = selectedDocument.instance;
+			}
+			
+			// get destination of clipboard contents
 			if (destination && !(destination is IVisualElementContainer)) {
-				destination = destination.owner;
+				destination = "owner" in destination ? destination.owner : null;
 			}
 			
 			// prevent containers from being pasted into themselves
 			if (cutData==destination || copiedData==destination) {
-				if (destination && selectedDocument.instance.contains(destination.owner)) {
+				if (destination && selectedDocument.instance && selectedDocument.instance.contains(destination.owner)) {
 					destination = destination.owner;
 				}
 			}
 			
-			if (!destination) {
+			if (!destination && selectedDocument) {
 				destination = selectedDocument.instance;
 			}
 			
-			if (descriptor==null) {
+			if (descriptor==null && selectedDocument) {
 				descriptor = selectedDocument.getItemDescription(component);
 			}
 			
@@ -403,7 +408,7 @@ package com.flexcapacitor.managers
 					
 					data = component;
 					
-					LibraryManager.addFileListDataToDocument(selectedDocument, data as Array, destination);
+					LibraryManager.addFileListDataToDocument(selectedDocument, data as Array, destination, "paste", true);
 					actionPerformed = true;
 				}
 				else if (format==ClipboardFormats.BITMAP_FORMAT) {
@@ -421,16 +426,18 @@ package com.flexcapacitor.managers
 					bitmapData = data as BitmapData;
 					
 					if (Radiate.isDesktop) {
-						// we can't get bitmap image data from the clipboard in the browser
-						// might try overlaying an html element and capture via JS 
-						LibraryManager.addBitmapDataToDocument(selectedDocument, bitmapData, destination, null, true);
+						
+						if (selectedDocument) {
+							LibraryManager.addBitmapDataToDocument(selectedDocument, bitmapData, destination, null, true);
+						}
+						else {
+							DocumentManager.createNewDocumentAndSwitchToDesignView(bitmapData);
+							return;
+						}
 						actionPerformed = true;
 					}
 					else if (Platform.isBrowser) {
 						ViewManager.showPasteImagePanel();
-					}
-					else {
-						Radiate.warn("You cannot paste image data from the clipboard at this time. Please import the image file.");
 					}
 				}
 				else if (format==ClipboardFormats.TEXT_FORMAT) {
@@ -556,14 +563,16 @@ package com.flexcapacitor.managers
 		 * Copy bitmap data to clipboard
 		 **/
 		public function copyBitmapDataToClipboard(bitmapData:BitmapData):void {
+			if (Radiate.selectedDocument==null) {
+				Radiate.info("No document is open");
+				return;
+			}
+			
 			if (Radiate.isDesktop) {
 				copyToClipboard(bitmapData, ClipboardFormats.BITMAP_FORMAT);
 			}
 			else if (Platform.isBrowser) {
 				ViewManager.showCopyImageToClipboardPanel(bitmapData);
-			}
-			else {
-				Radiate.warn("You cannot copy image data to the clipboard in the browser at this time. Please export the image file.");
 			}
 		}
 		
