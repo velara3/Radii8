@@ -16,1626 +16,29 @@
 		 xmlns:filters="com.flexcapacitor.filters.*"
 		 xmlns:application="com.flexcapacitor.effects.application.*"
 		 xmlns:file="com.flexcapacitor.effects.file.*" 
+		 xmlns:ns="http://flex.apache.org/experimental/ns"
 		 xmlns:local="*" 
-
-		 dragEnter="mainView_dragEnterHandler(event)"
-		 dragExit="mainView_dragExitHandler(event)"
-		 dragOver="mainView_dragOverHandler(event)"
-		 dragDrop="mainView_dragDropHandler(event)"
 		 
-		 creationComplete="group1_creationCompleteHandler(event)"
-		 width="400" height="300" xmlns:ns="http://flex.apache.org/experimental/ns"
+		 width="400" height="300" 
 		 >
-
 	<fx:Script>
 		<![CDATA[
 			import com.flexcapacitor.controller.Radiate;
-			import com.flexcapacitor.effects.popup.OpenPopUp;
-			import com.flexcapacitor.events.RadiateEvent;
-			import com.flexcapacitor.managers.ArrangeLayers;
-			import com.flexcapacitor.managers.ClipboardManager;
-			import com.flexcapacitor.managers.ComponentManager;
 			import com.flexcapacitor.managers.DateManager;
-			import com.flexcapacitor.managers.DeferManager;
 			import com.flexcapacitor.managers.DocumentManager;
-			import com.flexcapacitor.managers.FileManager;
 			import com.flexcapacitor.managers.HistoryManager;
-			import com.flexcapacitor.managers.ImageManager;
-			import com.flexcapacitor.managers.LibraryManager;
 			import com.flexcapacitor.managers.MenuManager;
 			import com.flexcapacitor.managers.ProfileManager;
 			import com.flexcapacitor.managers.ProjectManager;
-			import com.flexcapacitor.managers.ServicesManager;
-			import com.flexcapacitor.managers.ToolManager;
-			import com.flexcapacitor.managers.ViewManager;
-			import com.flexcapacitor.model.DocumentData;
-			import com.flexcapacitor.model.DocumentMetaData;
-			import com.flexcapacitor.model.IDocument;
-			import com.flexcapacitor.model.IProject;
-			import com.flexcapacitor.model.MenuItem;
 			import com.flexcapacitor.model.MenuItemDataDescriptor;
-			import com.flexcapacitor.tools.ITool;
-			import com.flexcapacitor.utils.supportClasses.ComponentDescription;
-			import com.flexcapacitor.utils.supportClasses.log;
-			import com.flexcapacitor.views.windows.ContactWindow;
-			import com.flexcapacitor.views.windows.CreditsWindow;
-			import com.flexcapacitor.views.windows.DeleteDocumentWindow;
-			import com.flexcapacitor.views.windows.ExportDocumentWindow;
-			import com.flexcapacitor.views.windows.ExportSnippetWindow;
-			import com.flexcapacitor.views.windows.HelpWindow;
-			import com.flexcapacitor.views.windows.LoginWindow;
-			import com.flexcapacitor.views.windows.NewDocumentWindow;
-			import com.flexcapacitor.views.windows.PrintWindow;
-			import com.flexcapacitor.views.windows.SettingsWindow;
 			
-			import flash.net.navigateToURL;
-			import flash.utils.setTimeout;
-			
-			import mx.controls.Menu;
-			import mx.core.DragSource;
-			import mx.core.IUIComponent;
-			import mx.events.DragEvent;
-			import mx.events.EffectEvent;
-			import mx.events.FlexEvent;
-			import mx.events.MenuEvent;
-			import mx.managers.DragManager;
-			import mx.utils.Platform;
-			
-			import spark.collections.Sort;
-			import spark.collections.SortField;
-			import spark.components.Application;
 			import spark.effects.easing.Linear;
-			import spark.events.IndexChangeEvent;
-			
-			[Bindable]
-			public var fileTransferWindowClass:String = "com.flexcapacitor.views.FileTransferWindow";
-			private var remoteTestURL:String = "";
-			private var testURL:String = "";
-			
-			//include "build.as";
-			
-			public static const HOME_STATE:String = "home";
-			public static const DESIGN_STATE:String = "design";
-			public static const DESCRIPTION_STATE:String = "description";
-			
-			public static var debug:Boolean;
-			
-			/**
-			 * 
-			 * */
-			[Bindable]
-			public var radiate:Radiate;
-			public var clipboardManager:ClipboardManager;
-			
-			[Bindable]
-			public var serviceManager:ServicesManager;
-			
-			public function startup():void {
-				radiate = Radiate.instance;
-				clipboardManager= ClipboardManager.getInstance();
-				serviceManager = ServicesManager.getInstance();
-				
-				Radiate.showMessageLabel = instantMessageLabel;
-				Radiate.showMessageAnimation = notificationMessenger;
-				
-				//PerformanceManager.addItem(Radiate.SET_TARGET_TEST, performanceLabel, "text", 500);
-				
-				updateCheckExamples();
-				updateCheckProjects();
-				updateCheckNews();
-				updateCheckLoginStatus();
-				
-				serviceManager.getLoggedInStatus();
-				serviceManager.getNewsPosts();
-				serviceManager.getExampleProjects();
-				
-				if (ProfileManager.userID!=-1) {
-					serviceManager.getProjectsByUser(ProfileManager.userID);
-				}
-				else {
-					updateCheckProjects(0);
-				}
-				
-				serviceManager.addEventListener(RadiateEvent.BLOG_POSTS_RECEIVED, blogPostsReceivedHandler, false, 0, true);
-				serviceManager.addEventListener(RadiateEvent.LOGGED_IN_STATUS, loggedInStatusHandler, false, 0, true);
-				serviceManager.addEventListener(RadiateEvent.LOGIN_RESULTS, loggedInStatusHandler, false, 0, true);
-				serviceManager.addEventListener(RadiateEvent.EXAMPLE_PROJECTS_LIST_RECEIVED, receivedExampleProjectsHandler, false, 0, true);
-				serviceManager.addEventListener(RadiateEvent.PROJECTS_LIST_RECEIVED, receivedProjectsHandler, false, 0, true);
-				serviceManager.addEventListener(RadiateEvent.PROJECT_SET_HOME_PAGE, clearHomePageHandler, false, 0, true);
-				
-				radiate.addEventListener(RadiateEvent.DOCUMENT_ADDED, documentChangeEventHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.DOCUMENT_REMOVED, documentChangeEventHandler, false, 0, true);
-				radiate.addEventListener(RadiateEvent.DOCUMENT_RENAME, documentChangeEventHandler, false, 0, true);
-				
-				
-				if (Capabilities.touchscreenType==TouchscreenType.FINGER) {
-					cornerLogo_clickHandler(null);
-				}
-				
-				if (Radiate.startInDesignView) {
-					DocumentManager.createNewDocumentAndSwitchToDesignView();
-					radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
-					isCreatingDocument = true;
-				}
-				//PerformanceManager.start();
-				//trace(ProfileManager.isUserLoggedIn);
-			}
-			
-			/**
-			 * On desktop on Mac hide the menu bar since we use the native menu bar
-			 * */
-			public function showMenuBar(value:Boolean):void {
-				mainMenuBar.visible = value;
-				mainMenuBar.includeInLayout = value;
-				mainMenuBar.visible = value;
-				mainMenuBar.includeInLayout = value;
-			}
-			
-			/**
-			 * Check for news items
-			 * */
-			protected function news_clickHandler(event:MouseEvent):void {
-				updateCheckNews(-1);
-				
-				serviceManager.getNewsPosts();
-			}
-			
-			/**
-			 * Check for projects
-			 * */
-			protected function projectsLabel_clickHandler(event:MouseEvent):void {
-				updateCheckProjects(-1);
-				
-				serviceManager.getProjectsByUser(ProfileManager.userID);
-			}
-			
-			/**
-			 * Check for examples
-			 * */
-			protected function examplesLabel_clickHandler(event:MouseEvent):void
-			{
-				updateCheckExamples(-1);
-				
-				serviceManager.getExampleProjects();
-			}
-			
-			protected function cornerLogo_clickHandler(event:MouseEvent):void {
-				
-				openSettingsWindow.play();
-				
-				// was trying to add fancy special effects to home screen
-				// but disabling for now
-				return;
-				
-				if (!ee) {
-					if (!ripple) {
-						ripple = ApplicationDomain.currentDomain.getDefinition(String.fromCharCode(99,111,109,46,102,108,101,120,99,97,112,97,99,105,116,111,114,46,103,114,97,112,104,105,99,115,46,82,105,112,112,108,101,114));
-						
-						if (ripple) {
-							ripple = new ripple;
-						}
-					}
-					//e.event = MouseEvent.CLICK;
-					//e.target = backgroundLogoImage;
-					ripple.event = MouseEvent.MOUSE_MOVE;
-					
-					if (targetEffect==null) targetEffect = backgroundLogoImage;
-					//ripple.useLocalCoordinates = true;
-					ripple.target = targetEffect;
-					//backgroundLogoImage.source = "background01.jpg";
-					//e.target = DocumentManager.canvasBackground; 
-					//e.target = FlexGlobals.topLevelApplication; 
-					ee = true;
-				}
-				else {
-					ee = false;
-					//removeEventListener(MouseEvent.CLICK, stageHandler);
-					if (ripple) {
-						ripple.destroy();
-					}
-				}
-			}
-			
-			public var ee:Boolean;
-			public var ripple:Object;
-			public var targetEffect:Object;
-			
-			/**
-			 * Switch views on logo click
-			 * */
-			protected function logo_clickHandler(event:MouseEvent):void {
-				
-				if (currentState==HOME_STATE) {
-					if (ripple) ripple.destroy();
-					if (ProjectManager.projects.length!=0) {
-						currentState = DESIGN_STATE;
-					}
-				}
-				else {
-					currentState = HOME_STATE;
-				}
-				
-			}
-			
-			/**
-			 * Open project
-			 * */
-			protected function openProject_itemClickHandler(event:Event):void {
-				ProjectManager.openProject(Radiate.selectedProject);
-			}
-			
-			/**
-			 * Open document
-			 * */
-			private function openDocument_itemClickHandler(event:Event):void {
-				browseForMXML.play();
-			}
-
-			/**
-			 * Redispatches on our custom menu items to our menu item models
-			 * The models have event listeners that handle the events 
-			 * The models expect mx.events.MenuEvent but in a desktop application
-			 * we get FlexNativeMenuEvent. So we get an error if we don't use generic events
-			 * in the model menu event handlers
-			 * 
-			 * In this function we are responding to 
-			 * - rollover
-			 * - rollout
-			 * - show
-			 * - hide
-			 * - click
-			 * 
-			 * We really only need to handle click. 
-			 * so someday we may only respond to that one event 
-			 * */
-			public function menuItemEventHandler(event:Event, menuItem:MenuItem = null):void {
-				var iDocument:IDocument;
-				var item:MenuItem;
-				var menu:Object;
-				var menuList:Menu;
-				var label:String;
-				var index:int = -1;
-				var flexNativeMenu:Object;
-				var menuEvent:MenuEvent;
-				var applicableEvent:Boolean;
-				
-				if (event.type == MenuEvent.MENU_SHOW) {
-					menuList = MenuEvent(event).menu as Menu;
-					if (menuList.variableRowHeight != true) {
-						menuList.rowHeight = 22;
-						//menuList.variableRowHeight = true;
-					}
-				}
-				
-				if (event) {
-					if (event.type==MenuEvent.ITEM_CLICK || event.type=="select") {
-						applicableEvent = true;
-					}
-				}
-				
-				if (menuItem) {
-					item = menuItem;
-					label = menuItem.label;
-					//index = menuItem.index;
-				}
-				else {
-					menu = "menu" in event ? Object(event).menu : null;
-					label = "label" in event ? Object(event).label : null;
-					index = "index" in event ? Object(event).index : -1;
-					flexNativeMenu = "nativeMenuItem" in event ? Object(event).nativeMenuItem : null;
-					item = "item" in event ? Object(event).item : null;
-				}
-				
-				
-				if (label && item && applicableEvent) {
-					menuEvent = new MenuEvent(MenuEvent.ITEM_CLICK, event.bubbles, event.cancelable);
-					menuEvent.index = index;
-					menuEvent.item = item;
-					menuEvent.label = label;
-				}
-				
-				if (item && menuEvent) {
-					EventDispatcher(item).dispatchEvent(menuEvent);
-				}
-				else if (menu && menu.dataProvider && 
-					menu.dataProvider[0] is MenuItem && 
-					menu.dataProvider[0].parent is MenuItem) {
-					menuEvent = new MenuEvent(event.type, event.bubbles, event.cancelable);
-					EventDispatcher(menu.dataProvider[0].parent).dispatchEvent(menuEvent);
-				}
-				
-				if (item && item.data is IDocument && applicableEvent) {
-					iDocument = item.data as IDocument;
-					
-					// we need to deselect other windows in the menu 
-					if (iDocument.isOpen) {
-						DocumentManager.showDocument(iDocument);
-						//Radiate.selectDocument(iDocument);
-					}
-					
-					if (!iDocument.isOpen) {
-						DocumentManager.openDocumentByData(iDocument, true);
-					}
-					
-					if (flexNativeMenu) {
-						flexNativeMenu.checked = true;
-						//radiate.updateWindowMenu(item, nativeMenuItem);
-					}
-				}
-				
-			}
-			
-			/**
-			 * Handle when getting result of call that checks if user is logged in
-			 * */
-			protected function loggedInStatusHandler(event:RadiateEvent):void {
-				
-				if (ProfileManager.isUserLoggedIn) {
-					updateCheckLoginStatus(1);
-					updateCheckProjects(-1);
-					serviceManager.getProjectsByUser(ProfileManager.userID);
-					userIcon.source = ProfileManager.userAvatar;
-				}
-				else {
-					updateCheckLoginStatus(0);
-					userIcon.source = ProfileManager.defaultUserAvatarPath;
-				}
-				
-				isConnectedCheckbox.selected = ProfileManager.isUserConnected;
-			}
-			
-			/**
-			 * Handle when getting result of list of projects
-			 * */
-			protected function receivedProjectsHandler(event:RadiateEvent):void {
-				var iProject:IProject;
-				var projects:Array;
-				var sortFields:Array = [];
-				var dateSortField:SortField;
-				var descending:Boolean = true;
-				
-				dateSortField = new SortField("dateSaved", descending);
-				sortFields.push(dateSortField);
-				
-				projects = ProjectManager.parseProjectsData(event.data);
-				projectsCollection.sort = new Sort(sortFields);
-				projectsCollection.source = projects;
-				documentsCollection.source = [];
-				
-				for (var i:int = 0; i < projects.length; i++) {
-					iProject = projects[i];
-					ProjectManager.addProject(iProject);
-				}
-				
-				
-				if (projectsCollection.length==0 && checkingForProjectsLabel) {
-					updateCheckProjects(0);
-					openPreviousProject.enabled = false;
-				}
-				else if (checkingForProjectsLabel) {
-					updateCheckProjects(1);
-					openPreviousProject.enabled = true;
-					iProject = projectsCollection.getItemAt(0) as IProject;
-					openPreviousProject.label = "Open " + iProject.name;
-				}
-				
-			}
-			
-			protected function examplesList_changeHandler(event:IndexChangeEvent):void {
-				var selectedItem:Object = examplesList.selectedItem;
-				
-				//examplesList.selectedItem = null;
-				projectsList.selectedItem = null;
-			}
-			
-			
-			/**
-			 * Handle when getting result of example list of projects
-			 * */
-			protected function receivedExampleProjectsHandler(event:RadiateEvent):void {
-				var projects:Array = ProjectManager.parseProjectsData(event.data);
-				examplesCollection.source = projects;
-				
-				if (examplesCollection.length==0 && checkingForExampleProjectsLabel) {
-					updateCheckExamples(0);
-				}
-				else if (checkingForExampleProjectsLabel) {
-					updateCheckExamples(1);
-				}
-				
-			}
-			
-			
-			/**
-			 * Show project info and show documents in the project
-			 * */
-			protected function projectsList_changeHandler(event:IndexChangeEvent = null):void {
-				var project:IProject = projectsList.selectedItem;
-				examplesList.selectedItem = null;
-				
-				if (project && project is IProject) {
-					projectLastSavedLabel.text = "" + project.dateSaved;
-					documentsCollection.source = project.documentsMetaData;
-				}
-			}
-			
-			/**
-			 * Open last project selected in project list
-			 * */
-			protected function openLastProject():void {
-				var project:IProject = projectsCollection.length ? projectsCollection.getItemAt(0) as IProject : null;
-				
-				if (project && project is IProject) {
-					currentState = DESIGN_STATE;
-					validateNow();
-					ProjectManager.addProject(project, false);
-					//ProjectManager.openProject(project, DocumentData.REMOTE_LOCATION, true);
-					ProjectManager.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
-					Radiate.setProject(project, true);
-					//projectsList.selectedIndex = -1;
-				}
-			}
-			
-			/**
-			 * Handle login result
-			 * */
-			protected function loginPopUp_closeHandler(eventName:String):void {
-				var loginWindow:LoginWindow;
-				var action:String;
-				
-				if (LoginWindow.LOGIN==eventName) {
-					loginWindow = LoginWindow(openLoginPopUp.popUp);
-				}
-				else if (LoginWindow.LOST_PASSWORD==eventName) {
-					loginWindow = LoginWindow(openLostPasswordPopUp.popUp);
-				}
-				else if (LoginWindow.REGISTRATION_WITH_SITE==eventName) {
-					loginWindow = LoginWindow(registrationWithSitePopUp.popUp);
-				}
-				
-				action = loginWindow ? loginWindow.action : null;
-				
-				if (action==LoginWindow.CANCEL) {
-					return;
-				}
-				
-				if (ProfileManager.isUserLoggedIn) {
-					updateCheckProjects(-1);
-					checkForProjects();
-					updateCheckLoginStatus(1);
-					ProjectManager.saveExampleProjects();
-				}
-				else {
-					serviceManager.getLoggedInStatus();
-					updateCheckProjects(0);
-				}
-				
-			}
-			
-			/**
-			 * Check online status after logout
-			 * */
-			protected function logoutPopUp_closeHandler(event:Event):void {
-				var loginWindow:LoginWindow = LoginWindow(openLogoutPopUp.popUp);
-				var action:String = loginWindow ? loginWindow.action : null;
-				
-				if (action==LoginWindow.CANCEL || action==null) {
-					return;
-				}
-				
-				setTimeout(Radiate.info, 1000, ["Logout successful"]);
-				
-				updateCheckProjects(0);
-				projectsCollection.removeAll();
-				projectsCollection.refresh();
-				checkOnline();
-			}
-			
-			/**
-			 * Check if the user is online
-			 * */
-			protected function checkOnline():void {
-				//trace("checking online status");
-				serviceManager.getLoggedInStatus();
-				updateCheckLoginStatus(-1);
-			}
-			
-			/**
-			 * Work offline clicked. May not be functioning at this time? 
-			 * */
-			protected function workOfflineMenuItem_itemClickHandler(event:Event):void {
-				if (workOfflineMenuItem.toggled) {
-					checkOnlineEffect.stop();
-				}
-				else {
-					if (!checkOnlineEffect.isPlaying) {
-						checkOnlineEffect.play();
-					}
-				}
-			}
-			
-			/**
-			 * Create a new project
-			 * */
-			protected function createNewProjectLabel_clickHandler(event:Event):void {
-				var openNewProject:OpenPopUp = event.currentTarget as OpenPopUp;
-				var popUp:NewDocumentWindow = openNewProject.popUp as NewDocumentWindow;
-				var projectName:String = popUp.projectName;
-				var documentName:String = popUp.documentName;
-				
-				if (popUp.action==NewDocumentWindow.FINISH) {
-					currentState = DESIGN_STATE;
-					validateNow();
-					DocumentManager.createBlankDemoDocument(projectName, documentName);
-					
-					if (ProfileManager.isUserLoggedIn) {
-						ProjectManager.saveProject(Radiate.selectedProject);
-					}
-					else {
-						//Radiate.info("The project will not be saved");
-					}
-				}
-			}
-			
-			/**
-			 * Get projects by user that is logged in. 
-			 * Right now this is checking a remote WP server. We could have it point 
-			 * to a local directory of projects or workspace. 
-			 * */
-			protected function getProjectsByUser_clickHandler(event:MouseEvent):void {
-				getProjectsByUser();
-			}
-			
-			/**
-			 * Get public projects / examples. There are no public or shared examples yet. 
-			 * */
-			protected function getPublicProjects_clickHandler(event:MouseEvent):void {
-				checkForExampleProjects();
-			}
-			
-			/**
-			 * Get projects by current user
-			 * */
-			public function getProjectsByUser():void {
-				checkForProjects();
-			}
-			
-			/**
-			 * Get a list of projects by user or that are shared by the public or are examples. 
-			 * Shared public projects and example projects should be in their own category. 
-			 * */
-			protected function checkForProjects():void {
-				projectsList.selectedItem = null;
-				
-				serviceManager.getProjectsByUser(ProfileManager.userID);
-				
-				if (checkingForProjectsLabel) {
-					updateCheckProjects(-1);
-				}
-			}
-			
-			/**
-			 * Get a list of example projects 
-			 * Shared public projects and example projects should be in their own category. 
-			 * */
-			protected function checkForExampleProjects(byUser:Boolean = false):void {
-				//projectsList.dataProvider = null;
-				examplesList.selectedItem = null;
-				
-				serviceManager.getExampleProjects();
-				
-				updateCheckExamples(-1);
-			}
-			
-			/**
-			 * Check for projects 
-			 * */
-			protected function removeProject_itemClickHandler(event:Event):void {
-				checkForProjects();
-			}
-			
-			/**
-			 * Undo last action
-			 * */
-			protected function undo_itemClickHandler(event:Event):void {
-				HistoryManager.undo(Radiate.selectedDocument, true);
-			}
-			
-			/**
-			 * Redo last action
-			 * */
-			protected function redo_itemClickHandler(event:Event):void {
-				HistoryManager.redo(Radiate.selectedDocument, true);
-			}
-			
-			/**
-			 * Check if connected to remote WP server and update checkbox
-			 * */
-			protected function isConnectedCheckbox_clickHandler(event:MouseEvent):void {
-				
-				isConnectedCheckbox.selected = ProfileManager.isUserConnected;
-				
-				
-				checkOnline();
-			}
-			
-			/**
-			 * Show project string for debugging purposes
-			 * */
-			protected function showProjectSource_itemClickHandler(event:Event):void {
-				var iProject:IProject = Radiate.selectedProject;
-				var output:String;
-				
-				if (iProject) {
-					output = "\nSource for project, '" + iProject.name + "':\n";
-					output += iProject.post ? JSON.stringify(iProject.post) + "\n" : "";
-					output += iProject.toString();
-					ViewManager.showConsolePanel(output);
-					//Radiate.info();
-				}
-				else {
-					Radiate.warn("No project selected");
-				}
-			}
-			
-			/**
-			 * Show document string for debugging purposes
-			 * */
-			protected function showDocumentSource_itemClickHandler(event:Event):void {
-				var iDocument:IDocument = Radiate.selectedDocument;
-				var output:String;
-				
-				if (iDocument) {
-					output = "\nSource for document, '" + iDocument.name + "':\n";
-					output += iDocument.post ? JSON.stringify(iDocument.post) + "\n" : "";
-					output += iDocument.marshall(DocumentMetaData.STRING_TYPE, true) as String;
-					
-					ViewManager.showConsolePanel(output);
-				}
-				else {
-					Radiate.warn("No document selected");
-				}
-				
-			}
-			
-			/**
-			 * Handle if user icon is not available
-			 * */
-			protected function userIcon_securityErrorHandler(event:SecurityErrorEvent):void {
-				if (debug) {
-					log("User icon security error: ", event);
-				}
-				//trace("security error ");
-			}
-			
-			/**
-			 * Handle if user icon is not available
-			 * */
-			protected function userIcon_ioErrorHandler(event:IOErrorEvent):void {
-				if (debug) {
-					log("User icon io error: ", event);
-				}
-				
-				// keeps looping when icon can't be found
-				if (userIcon.source!=ProfileManager.defaultUserAvatarPath) {
-					userIcon.source = ProfileManager.defaultUserAvatarPath;
-				}
-				else {
-					userIcon.source = null;
-				}
-			}
-			
-			protected function fadeOutStatus_effectEndHandler(event:EffectEvent):void {
-				updateCheckLoginStatus(1);
-			}
-			
-			protected function examplesList_doubleClickHandler(event:MouseEvent):void {
-				var project:IProject = examplesList.selectedItem;
-				
-				if (project) {
-					Radiate.info("Opening example project '" + project.name + "'");
-					
-					DeferManager.callAfter(250, openExampleProject, project);
-				}
-				
-			}
-			
-			/**
-			 * Makes a duplicate of the example project
-			 * Once it's loaded we need to clear the fields out and
-			 * then save the project
-			 * */
-			protected function openExampleProject(project:IProject):void {
-				
-				if (project && project is IProject) {
-					currentState = DESIGN_STATE;
-					validateNow();
-					exampleProject = project;
-					ProjectManager.addProject(project, false);
-					//ProjectManager.openProject(project, DocumentData.REMOTE_LOCATION, true);
-					ProjectManager.openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
-					Radiate.addEventListener(RadiateEvent.PROJECT_OPENED, exampleProjectOpened, false, 0, true);
-					Radiate.setProject(project, true);
-					//projectsList.selectedIndex = -1;
-				}
-			}
-			
-			protected function exampleProjectOpened(event:Event):void {
-				if (exampleProject) {
-					ProjectManager.clearExampleProjectData(exampleProject);
-					ProjectManager.saveExampleProject(exampleProject);
-					updateCheckExamples(-1);
-					serviceManager.getExampleProjects();
-					updateCheckProjects(-1);
-					setTimeout(serviceManager.getProjectsByUser, 6000, ProfileManager.userID);
-					setTimeout(serviceManager.getProjectsByUser, 12000, ProfileManager.userID);
-					exampleProject = null;
-				}
-			}
-			
-			public var exampleProject:IProject;
-			
-			protected function projectsList_doubleClickHandler(event:MouseEvent):void {
-				var project:IProject = projectsList.selectedItem;
-				
-				if (project) {
-					Radiate.info("Opening project '" + project.name + "'");
-					
-					DeferManager.callAfter(250, ProjectManager.openProjectFromMainView, project);
-				}
-			}
-			
-			
-			protected function newsList_doubleClickHandler(event:MouseEvent):void {
-				var request:URLRequest;
-				
-				if (newsList.selectedItem) {
-					request = new URLRequest();
-					request.url = newsList.selectedItem.url;
-					navigateToURL(request, "previewInBrowser");
-				}
-				
-			}
-			
-			protected function newsList_changeHandler(event:IndexChangeEvent):void
-			{
-				
-				
-			}
-			
-			protected function blogPostsReceivedHandler(event:RadiateEvent):void
-			{
-				var posts:Array = serviceManager.parsePostsData(event.data);
-				newsCollection.source = posts;
-				
-				if (newsCollection.length==0) {
-					updateCheckNews(0);
-					//openPreviousProject.enabled = false;
-				}
-				else {
-					updateCheckNews(1);
-				}
-			}
-			
-			/**
-			 * Updates the label checking for examples
-			 * -1 = checking
-			 * 0 = no examples available
-			 * 1 = examples found
-			 * */
-			private function updateCheckExamples(param0:int = -1):void
-			{
-				
-				if (param0==-1) {
-					checkingForExampleProjectsLabel.text = "Checking for examples...";
-					checkingForExampleProjectsLabel.includeInLayout = true;
-					checkingForExampleProjectsLabel.visible = true;
-				}
-				else if (param0==0) {
-					checkingForExampleProjectsLabel.text = "No examples available";
-					checkingForExampleProjectsLabel.includeInLayout = true;
-					checkingForExampleProjectsLabel.visible = true;
-				}
-				else if (param0==1) {
-					checkingForExampleProjectsLabel.text = "";
-					checkingForExampleProjectsLabel.includeInLayout = false;
-					checkingForExampleProjectsLabel.visible = false;
-				}
-			}
-			
-			/**
-			 * Updates the label checking for projects
-			 * -1 = checking
-			 * 0 = no projects available
-			 * 1 = projects found
-			 * */
-			private function updateCheckProjects(param0:int = -1):void
-			{
-				
-				if (param0==-1) {
-					checkingForProjectsLabel.text = "Checking for projects...";
-					checkingForProjectsLabel.includeInLayout = true;
-					checkingForProjectsLabel.visible = true;
-				}
-				else if (param0==0) {
-					checkingForProjectsLabel.text = "No projects available";
-					checkingForProjectsLabel.includeInLayout = true;
-					checkingForProjectsLabel.visible = true;
-				}
-				else if (param0==1) {
-					checkingForProjectsLabel.text = "";
-					checkingForProjectsLabel.includeInLayout = false;
-					checkingForProjectsLabel.visible = false;
-				}
-			}
-			
-			/**
-			 * Updates the label checking for news
-			 * -1 = checking
-			 * 0 = no news available
-			 * 1 = projects found
-			 * */
-			private function updateCheckNews(param0:int = -1):void
-			{
-				
-				if (param0==-1) {
-					checkingForNewsLabel.text = "Checking for news...";
-					checkingForNewsLabel.includeInLayout = true;
-					checkingForNewsLabel.visible = true;
-				}
-				else if (param0==0) {
-					checkingForNewsLabel.text = "No tutorials available";
-					checkingForNewsLabel.includeInLayout = true;
-					checkingForNewsLabel.visible = true;
-				}
-				else if (param0==1) {
-					checkingForNewsLabel.text = "";
-					checkingForNewsLabel.includeInLayout = false;
-					checkingForNewsLabel.visible = false;
-				}
-			}
-			
-			/**
-			 * Updates the label checking for login status
-			 * -1 = checking if logged in
-			 * 0 = not logged in
-			 * 1 = hidden
-			 * */
-			private function updateCheckLoginStatus(param0:int = -1):void {
-				
-				if (param0==-1) {
-					statusLabel.text = "Checking to see if you're logged in... one second.";
-					statusLabel.includeInLayout = true;
-					statusLabel.visible = true;
-				}
-				else if (param0==0) {
-					statusLabel.text = "You are not logged in. You must be logged in to save projects";
-					statusLabel.includeInLayout = true;
-					statusLabel.visible = true;
-				}
-				else if (param0==1) {
-					statusLabel.text = "";
-					statusLabel.includeInLayout = false;
-					statusLabel.visible = false;
-				}
-			}
-			
-			
-			private function revertDocument():void {
-				var success:Boolean = DocumentManager.revertDocument(Radiate.selectedDocument);
-				
-				if (success) {
-					Radiate.info("Document reverted");
-				}
-				else {
-					// revertDocument will display any errors
-					//Radiate.info("Document was not reverted");
-				}
-			}
-			
-			protected function instantMessengerContainer_clickHandler(event:MouseEvent):void
-			{
-				if (notificationMessenger.isPlaying) {
-					notificationMessenger.end();
-					notificationMessenger.stop();
-					notificationMessenger.play(null, true);
-				}
-				else {
-					//notificationMessenger.play();
-					notificationMessenger.end();
-				}
-			}
-			
-			protected function sizeDocumentToOriginalImage_itemClickHandler(event:MenuEvent):void
-			{
-				DocumentManager.sizeDocumentToOriginalImageSize();
-			}
-			
-			protected function sizeDocumentToSelection_itemClickHandler(event:MenuEvent):void
-			{
-				DocumentManager.sizeDocumentToSelection();
-			}
-			
-			protected function sizeSelectionToDocument_itemClickHandler(event:MenuEvent):void
-			{
-				ComponentManager.sizeSelectionToDocument();
-			}
-			
-			protected function resizeDocumentToContent_itemClickHandler(event:MenuEvent):void
-			{
-				DocumentManager.expandDocumentToContents();
-			}
-			
-			protected function copyDocumentImageToClipboard_itemClickHandler(event:MenuEvent):void
-			{
-				if (Platform.isBrowser) {
-					ViewManager.showCopyImageToClipboardPanel();
-				}
-				else {
-					DocumentManager.copyDocumentImageToClipboard(Radiate.selectedDocument);
-				}
-			}
-			
-			protected function pasteClipboardToDocument_itemClickHandler(event:MenuEvent):void
-			{
-				if (Platform.isBrowser) {
-					ViewManager.showPasteImagePanel();
-				}
-			}
-			
-			protected function saveSnapshotToLibrary_itemClickHandler(event:MenuEvent):void {
-				var imageDataOrError:Object;
-				
-				// drag manager creates a raster snapshot when on desktop so don't use that
-				if (Radiate.selectedDocument) {
-					imageDataOrError = LibraryManager.saveToLibrary(Radiate.selectedDocument.instance, false);
-				}
-				
-				if (imageDataOrError is Error) {
-					Radiate.error("Could not create a snapshot of the selected item. " + imageDataOrError); 
-				}
-				else if (imageDataOrError) {
-					
-					ViewManager.showLibraryPanel(imageDataOrError as DocumentData, true);
-					
-					Radiate.info("Selection was saved as an image into the library.");
-				}
-			}
-			
-			protected function restoreImageToOriginalSize_itemClickHandler(event:MenuEvent):void
-			{
-				var iDocument:IDocument = Radiate.selectedDocument;
-				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(radiate.target) : null;
-				var image:Image = componentDescription ? componentDescription.instance as Image : null;
-				var bitmapData:BitmapData = image ? image.bitmapData : null;
-				
-				if (bitmapData && bitmapData.width>0 && bitmapData.height>0) {
-					ImageManager.restoreImageToOriginalSize(image);
-				}
-			}
-			
-			protected function removeExplicitPosition_itemClickHandler(event:MenuEvent):void {
-				
-				ComponentManager.removeExplicitPositionFromSelection(radiate.target);
-			}
-			
-			protected function removeExplicitSize_itemClickHandler(event:MenuEvent):void {
-				
-				ComponentManager.removeExplicitSizingFromSelection(radiate.target);
-			}
-			
-			protected function removeExplicitHeight_itemClickHandler(event:MenuEvent):void {
-				
-				ComponentManager.removeExplicitHeightFromSelection(radiate.target);
-			}
-			
-			protected function removeExplicitWidth_itemClickHandler(event:MenuEvent):void {
-				
-				ComponentManager.removeExplicitWidthFromSelection(radiate.target);
-			}
-			
-			protected function refreshView_itemClickHandler(event:MenuEvent):void {
-				
-				if (Radiate.selectedDocument) {
-					DocumentManager.refreshDocument(Radiate.selectedDocument);
-				}
-				else {
-					Radiate.info("There is no document selected.");
-				}
-			}
-			
-			protected function copySelectionIntoLibrary_itemClickHandler(event:MenuEvent):void
-			{
-				var result:Object = LibraryManager.saveToLibrary(radiate.target);
-				
-				if (result is Error) {
-					Radiate.error("Could not create a snapshot of the selected item. " + result); 
-				}
-				else if (result) {
-					Radiate.info("Selection was saved as an image into the library.");
-				}
-			}
-			
-			protected function userLabel_clickHandler(event:MouseEvent):void
-			{
-				ProfileManager.openUsersLoginPage();
-			}
-			
-			protected function userIcon_clickHandler(event:MouseEvent):void
-			{
-				if (ProfileManager.isUserLoggedIn) {
-					ProfileManager.openUsersProfile();
-				}
-				else {
-					Radiate.info("You must be logged into to view your profile website");
-				}
-			}
-			
-			protected function visitSiteLabel_clickHandler(event:MouseEvent):void
-			{
-				ProfileManager.openUsersWebsite();
-			}
-			
-			private var isWin:Boolean; 
-			private var isMac:Boolean; 
-			
-			private function init():void { 
-				isWin = Platform.isWindows; 
-				isMac = Platform.isMac; 
-			} 
-			
-			private function keyEquivalentModifiers(item:Object):Array { 
-				var result:Array = new Array();
-				var menu:Object;
-				
-				//var keyEquivField:String = menu.keyEquivalentField;
-				var keyEquivField:String = menu.keyEquivalentField;
-				var altKeyField:String;
-				var controlKeyField:String;
-				var shiftKeyField:String;
-				
-				if (item is XML) { 
-					altKeyField = "@altKey";
-					controlKeyField = "@controlKey";
-					shiftKeyField = "@shiftKey";
-				}
-				else if (item is Object) { 
-					altKeyField = "altKey";
-					controlKeyField = "controlKey";
-					shiftKeyField = "shiftKey";
-				}
-				
-				if (item[keyEquivField] == null || item[keyEquivField].length == 0) { 
-					return result;
-				}
-				
-				if (item[altKeyField] != null && item[altKeyField] == true) 
-				{
-					if (isWin)
-					{
-						result.push(Keyboard.ALTERNATE); 
-					}
-				}
-				
-				if (item[controlKeyField] != null && item[controlKeyField] == true) 
-				{
-					if (isWin)
-					{
-						result.push(Keyboard.CONTROL);
-					}
-					else if (isMac) 
-					{
-						result.push(Keyboard.COMMAND);
-					}
-				}
-				
-				if (item[shiftKeyField] != null && item[shiftKeyField] == true) 
-				{
-					result.push(Keyboard.SHIFT);
-				}
-				
-				return result;
-			}
-			
-			protected function saveMenuItem_itemClickHandler(event:MenuEvent):void {
-				//Radiate.info("Saved");
-				
-				if (ProfileManager.isUserLoggedIn==false) {
-					Radiate.info("You must be logged in to save");
-					return;
-				}
-				
-				if (Radiate.selectedDocument) {
-					DocumentManager.saveDocument(Radiate.selectedDocument);
-				}
-			}
-			
-			protected function saveAsImageMenuItem_itemClickHandler(event:MenuEvent):void {
-				
-				if (Radiate.selectedDocument) {
-					FileManager.saveAsImage(Radiate.selectedDocument);
-				}
-				else {
-					Radiate.info("No document is open");
-				}
-			}
-			
-			protected function saveSelectionAsImageMenuItem_itemClickHandler(event:MenuEvent):void {
-				
-				if (Radiate.selectedDocument) {
-					if (radiate.target) {
-						FileManager.saveAsImage(radiate.target);
-					}
-					else {
-						Radiate.info("Nothing is selected");
-					}
-				}
-				else {
-					Radiate.info("No document is open");
-				}
-			}
-			
-			protected function clearProjectHomePage_itemClickHandler(event:MenuEvent):void {
-				var project:IProject = projectsList.selectedItem;
-				
-				if (ProfileManager.isUserLoggedIn==false) {
-					Radiate.info("You must be logged in");
-					return;
-				}
-				
-				if (project==null) {
-					project = examplesList.selectedItem;
-				}
-				
-				Radiate.info("Clearing home page for '" + project.name + "'");
-				
-				DeferManager.callAfter(250, serviceManager.setProjectHomePage, 0);
-				//serviceManager.setProjectHomePage(0);
-			}
-			
-			protected function clearHomePageHandler(event:RadiateEvent):void
-			{
-				if (event.successful) {
-					Radiate.info("Home page cleared");
-				}
-			}
-			
-			protected function openProjectButton_clickHandler(event:MouseEvent):void {
-				var project:IProject = projectsList.selectedItem;
-				
-				if (project==null) {
-					project = examplesList.selectedItem;
-				}
-
-				if (project) {
-					
-					Radiate.info("Opening project '" + project.name + "'");
-					
-					DeferManager.callAfter(250, ProjectManager.openProjectFromMainView, project);
-					//openProject(project);
-				}
-				
-			}
-			
-			/**
-			 * Returns true if it's a type of content we can accept to be dragged and dropped
-			 * */
-			public function acceptableFileFormat(dragSource:DragSource):Boolean {
-				if (dragSource==null) return false;
-				
-				if (dragSource.hasFormat("air:file list") || 
-					dragSource.hasFormat("air:url")) {
-					return true;
-				}
-				
-				return false;
-			}
-			
-			protected function mainView_dragEnterHandler(event:DragEvent):void {
-				
-				// if drag initiator is null it means it was 
-				// dragged in from outside of the application
-				if (event.dragInitiator==null && LibraryManager.isAcceptableDragAndDropFormat(event.dragSource)) {
-					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
-					dropImagesLocation.visible = true;
-				}
-			}
-			
-			protected function mainView_dragOverHandler(event:DragEvent):void {
-				
-				// todo check if html element is visible in browser to ignore accidental drag of elements
-				if (event.dragInitiator==null && LibraryManager.isAcceptableDragAndDropFormat(event.dragSource)) {
-					DragManager.acceptDragDrop(IUIComponent(event.currentTarget));
-					dropImagesLocation.visible = true;
-				}
-				
-			}
-			
-			public function mainView_dragDropHandler(event:DragEvent):void {
-				var dragSource:DragSource;
-				var hasFileListFormat:Boolean;
-				var hasFilePromiseListFormat:Boolean;
-				var isSelf:Boolean;
-				
-				dropImagesLocation.visible = false;
-				
-				if (event.dragInitiator) {
-					isSelf = this.contains(event.dragInitiator as DisplayObject);
-					return;
-				}
-				
-				// TODO: Add option to not resize by holding down the shift key 
-				if (currentState==DESIGN_STATE) {
-					LibraryManager.dropItem(event);
-				}
-				else {
-					LibraryManager.dropItem(event, true);
-				}
-			}
-			
-			protected function mainView_dragExitHandler(event:DragEvent):void {
-				dropImagesLocation.visible = false;
-			}
-			
-			protected function openDeleteDocumentPopUp_closeHandler(event:Event):void {
-				if (Radiate.selectedProject) {
-					Radiate.selectedProject.save();
-				}
-			}
-			
-			protected function loginThroughWebsite_itemClickHandler(event:MenuEvent):void {
-				if (ProfileManager.isUserLoggedIn) {
-					ProfileManager.loginThroughBrowser();
-				}
-			}
-			
-			protected function miniinspector1_changeHandler(event:MouseEvent):void {
-				if (event.relatedObject as DisplayObject) {
-					targetEffect = event.relatedObject;
-					if (ee) {
-						ripple.destroy();
-						ripple.target = targetEffect;
-					}
-				}
-			}
-			
-			protected function documentChangeEventHandler(event:Event):void {
-				MenuManager.updateWindowMenu(windowMenu);
-			}
-			
-			protected function importPSDMenuItem_itemClickHandler(event:MenuEvent):void {
-				if (!Radiate.selectedDocument) {
-					Radiate.info("Please open a document or project first");
-					return;
-				}
-				
-				browseForPSD.play();
-			}
-			
-			/**
-			 * Handle file selected
-			 **/
-			protected function browseForFile_selectHandler(event:Event):void {
-				
-				if (browseForImage) {
-					LibraryManager.loadSelectedFile(browseForImage);
-				}
-				
-			}
-			
-			protected function psdLoadedHandler(event:Event):void {
-				if (Radiate.selectedDocument) {
-					Radiate.info("Importing PSD");
-					DeferManager.callAfter(250, LibraryManager.addPSDToDocument, loadPSDFile.data, Radiate.selectedDocument);
-				}
-			}
-			
-			protected function mxmlLoadedHandler(event:Event):void {
-				if (Radiate.selectedDocument) {
-					DocumentManager.openMXMLDocument(loadMXMLFile.fileName, loadMXMLFile.dataAsString);
-				}
-			}
-			
-			protected function selectSelectionTool_itemClickHandler(event:MenuEvent):void {
-				var componentDescription:ComponentDescription;
-				componentDescription = ToolManager.getToolByName("Selection");
-				
-				if (componentDescription) {
-					ToolManager.setTool(componentDescription.instance as ITool);
-				}
-			}
-			
-			protected function getRevisions_itemClickHandler(event:MenuEvent):void {
-				var selectedDocument:IDocument = Radiate.selectedDocument;
-				
-				if (selectedDocument) {
-					ViewManager.openImportMXMLWindow("Import MXML", selectedDocument.originalSource, true);
-				}
-				else {
-					Radiate.info("You need to open a document before you can show revisions");
-				}
-			}
-			
-			protected function importMXMLMenuItem_itemClickHandler(event:MenuEvent):void
-			{
-				ViewManager.openImportMXMLWindow("Import MXML");
-			}
-			
-			protected function importSnippetMenuItem_itemClickHandler(event:MenuEvent):void
-			{
-				ViewManager.openImportMXMLWindow("Import Snippet");
-			}
-			
-			protected function viewInBrowserScreenshot_itemClickHandler(event:MenuEvent):void
-			{
-				DocumentManager.openInBrowserScreenshot(Radiate.selectedDocument);
-			}
-			
-			protected function viewInSiteScanner_itemClickHandler(event:MenuEvent):void
-			{
-				DocumentManager.openInBrowserSiteScanner(Radiate.selectedDocument);
-			}
-			
-			protected function menuNewDocument_itemClickHandler(event:MenuEvent):void
-			{
-				DocumentManager.createNewDocument();
-			}
-			
-			public var isCreatingDocument:Boolean;
-			
-			/**
-			 * Create a new document with default project for quick mockups
-			 * */
-			protected function newDocumentAndProjectButton_clickHandler(event:MouseEvent):void {
-				
-				if (!isCreatingDocument) {
-					Radiate.info("Creating a new document");
-					DeferManager.callAfter(250, DocumentManager.createNewDocumentAndSwitchToDesignView);
-					radiate.addEventListener(RadiateEvent.DOCUMENT_OPEN, documentOpenedHandler, false, 0, true);
-					isCreatingDocument = true;
-				}
-				
-			}
-			
-			public function goToDesignState(validate:Boolean = true):void {
-				ViewManager.goToDesignScreen(validate);
-			}
-			
-			
-			protected function checkForUpdateMenuItem_itemClickHandler(event:MenuEvent):void
-			{
-				radiate.checkForUpdate();
-			}
-			
-			protected function group1_creationCompleteHandler(event:FlexEvent):void
-			{
-				
-			}
-			
-			protected function uploadToServer_eventStartHandler(event:Event):void
-			{
-				if (Platform.isBrowser==true) {
-					event.preventDefault();
-					Radiate.info("This feature is only available in the desktop version");
-				}
-			}
-			
-			protected function dropImagesLocation_clickHandler(event:MouseEvent):void
-			{
-				dropImagesLocation.visible = false;
-				Radiate.info("Drag and drop did not finish apparently.");
-			}
-			
-			protected function closeApplication_eventStartHandler(event:Event):void
-			{
-				if (Platform.isBrowser) {
-					event.preventDefault();
-					Radiate.info("The feature is only available in the desktop version");
-				}
-			}
-			
-			protected function rotateImage_itemClickHandler(event:MenuEvent):void{
-				var angle:Number = 0;
-				var eventTarget:Object = event.currentTarget;
-				var image:Image = radiate.target as Image;
-					
-				if (eventTarget==rotateImage90) {
-					angle = 90;
-				}
-				else if (eventTarget==rotateImage180) {
-					angle = 180;
-				}
-				else if (eventTarget==rotateImage270) {
-					angle = 270;
-				}
-				
-				ImageManager.rotateImage(image, angle);
-			}
-			
-			protected function flipImage_itemClickHandler(event:MenuEvent):void{
-				var eventTarget:Object = event.currentTarget;
-				var image:Image = radiate.target as Image;
-				
-				if (image==null) {
-					Radiate.info("You must select an image");
-					return;
-				}
-				
-				if (eventTarget==flipImageHorizontally) {
-					ImageManager.flipImageHorizontally(image);
-				}
-				else if (eventTarget==flipImageVertically) {
-					ImageManager.flipImageVertically(image);
-				}
-				
-			}
-			
-			protected function lockLayer_itemClickHandler(event:MenuEvent):void {
-				var selectedDocument:IDocument = Radiate.selectedDocument;
-				var componentDescription:ComponentDescription;
-				var collection:ArrayCollection;
-				
-				if (selectedDocument) {
-					componentDescription = selectedDocument.getItemDescription(radiate.target);
-					
-					if (radiate.target is Application) return;
-					
-					if (componentDescription) {
-						componentDescription.locked = true;
-					}
-				}
-				
-			}
-			
-			protected function unlockLayer_itemClickHandler(event:MenuEvent):void {
-				var selectedDocument:IDocument = Radiate.selectedDocument;
-				var componentDescription:ComponentDescription;
-				var collection:ArrayCollection;
-				
-				if (selectedDocument) {
-					componentDescription = selectedDocument.getItemDescription(radiate.target);
-					
-					if (componentDescription) {
-						componentDescription.locked = false;
-					}
-				}
-				
-			}
-			
-			protected function lockDescendantLayers_itemClickHandler(event:MenuEvent):void {
-				var selectedDocument:IDocument = Radiate.selectedDocument;
-				var componentDescription:ComponentDescription;
-				var collection:ArrayCollection;
-				
-				if (selectedDocument) {
-					componentDescription = selectedDocument.getItemDescription(radiate.target);
-					
-					if (componentDescription) {
-						componentDescription.lockChildDescriptors();
-					}
-				}
-				
-			}
-			
-			protected function unlockDescendantLayers_itemClickHandler(event:MenuEvent):void {
-				var selectedDocument:IDocument = Radiate.selectedDocument;
-				var componentDescription:ComponentDescription;
-				var collection:ArrayCollection;
-				
-				if (selectedDocument) {
-					componentDescription = selectedDocument.getItemDescription(radiate.target);
-					
-					if (componentDescription) {
-						componentDescription.lockChildDescriptors(false);
-					}
-				}
-				
-			}
-			
-			protected function trimImage_itemClickHandler(event:MenuEvent):void {
-				var image:Image;
-				image = radiate.target as Image;
-				
-				ImageManager.trimImage(image);
-			}
-			
-			protected function bringForwardLayer_itemClickHandler(event:MenuEvent):void {
-				ArrangeLayers.bringForwards(radiate.target, Radiate.selectedDocument);
-			}
-			
-			protected function sendBackwardLayer_itemClickHandler(event:MenuEvent):void {
-				ArrangeLayers.sendBackwards(radiate.target, Radiate.selectedDocument);
-			}
-			
-			protected function bringToFront_itemClickHandler(event:MenuEvent):void {
-				ArrangeLayers.bringToFront(radiate.target, Radiate.selectedDocument);
-			}
-			
-			protected function sendToBack_itemClickHandler(event:MenuEvent):void {
-				ArrangeLayers.sendToBack(radiate.target, Radiate.selectedDocument);
-			}
-			
-			protected function documentOpenedHandler(event:Event):void {
-				isCreatingDocument = false;
-			}
-			
-			protected function openGallery_itemClickHandler(event:MenuEvent):void {
-				ViewManager.showGalleryPanel();
-			}
-			
-			protected function saveDocumentMenuItem_itemClickHandler(event:MenuEvent):void {
-				openExportPopUp.play();				
-			}
-			
-			protected function cut_itemClickHandler(event:MenuEvent):void {
-				if (radiate.target) {
-					clipboardManager.cutItem(radiate.target, Radiate.selectedDocument);
-				}
-			}
-			
-			protected function copy_itemClickHandler(event:MenuEvent):void {
-				if (radiate.target) {
-					clipboardManager.copyItem(radiate.target, Radiate.selectedDocument);
-				}				
-			}
-			
-			protected function duplicate_itemClickHandler(event:MenuEvent):void {
-				if (radiate.target) {
-					clipboardManager.duplicateItem(radiate.target, Radiate.selectedDocument);
-				}				
-			}
-			
-			protected function paste_itemClickHandler(event:MenuEvent):void {
-				if (radiate.target) {
-					clipboardManager.pasteItem(radiate.target, Radiate.selectedDocument);
-				}
-			}
-			
-			protected function delete_itemClickHandler(event:MenuEvent):void {
-				if (radiate.target) {
-					ComponentManager.removeElement(radiate.target);
-				}
-			}
-			
-			public var browseForImage:FileReference;
-			
-			protected function importImageMenuItem_itemClickHandler(event:MenuEvent):void {
-				var fileFilter:FileFilter;
-				var filtersString:String;
-				var acceptedFileTypes:Array;
-				var fileFilterDescription:String;
-				var fileFilters:Array;
-				
-				fileFilters = [];
-				fileFilterDescription = "Images";
-				acceptedFileTypes = ["png", "jpg", "jpeg", "gif", "psd"];
-				
-				filtersString = "*." + acceptedFileTypes.join(";*.");
-				
-				fileFilter = new FileFilter(fileFilterDescription, filtersString);
-				fileFilters.push(fileFilter);
-				
-				try {
-					browseForImage = new FileReference();
-					browseForImage.browse(fileFilters);
-					browseForImage.addEventListener(Event.SELECT, browseForFile_selectHandler, false, 0, true);
-				}
-				catch (error:Error) {
-					
-				}
-			}
-			
-			protected function openGalleryButton_clickHandler(event:MouseEvent):void
-			{
-				ViewManager.showGalleryPanel();
-			}
-			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
 		
-		<handlers:EventHandler eventName="itemClick" target="{saveSnippetMenuItem}">
+		<!--<handlers:EventHandler eventName="itemClick" target="{saveSnippetMenuItem}">
 			<fc:OpenPopUp id="openExportSnippetPopUp" 
 						  popUpType="{ExportSnippetWindow}" 
 						  modalDuration="150" 
@@ -1645,18 +48,6 @@
 						  parent="{parentApplication}"/>
 		</handlers:EventHandler>
 		
-		<!--- show about popup
-		<handlers:EventHandler target="{cornerLogo}" eventName="click">
-			<popup:ShowPopupAnchor target="{aboutPopUp}" closeOnMouseOut="true" displayObjectExceptions="{[cornerLogo]}"/>
-		</handlers:EventHandler>
-		
-		 hide about popup 
-		<handlers:EventHandler target="{popUpGroup}" eventName="mouseDownOutside">
-			<popup:HidePopupAnchor target="{aboutPopUp}" />
-		</handlers:EventHandler>
-		
-		show contact popup 
-		-->
 		<handlers:EventHandler target="{contactLabel}" eventName="click" 
 							   traceHandler="false">
 			<fc:OpenPopUp id="openContactPopUp" 
@@ -1706,15 +97,6 @@
 						  />
 		</handlers:EventHandler>
 		
-		<handlers:EventHandler target="{logoPopUpGroup}" eventName="mouseDownOutside">
-			<popup:HidePopupAnchor target="{logoPopUp}" />
-		</handlers:EventHandler>
-		
-		<!--<handlers:EventHandler target="{moreInfoLabel}" eventName="click">
-			<popup:HidePopupAnchor target="{aboutPopUp}" />
-			<navigation:OpenURL URL="http://www.radii8.com/blog/?page_id=2" window="_blank" />
-		</handlers:EventHandler>-->
-		
 		<handlers:EventHandler targets="{[deleteProjectIcon,removeProject]}" eventNames="{['click','itemClick']}" >
 			<fc:OpenPopUp id="openDeleteProjectPopUp" 
 						  popUpType="{DeleteDocumentWindow}" 
@@ -1728,31 +110,7 @@
 						  />
 		</handlers:EventHandler>
 		
-		<file:BrowseForFile id="browseForPSD" 
-							targetAncestor="{this}"
-							fileTypes="psd">
-			<file:selectionEffect>
-				<file:LoadFile id="loadPSDFile" 
-							   fileReference="{browseForPSD.fileReference}"
-							   complete="psdLoadedHandler(event)"/>
-			</file:selectionEffect>
-		</file:BrowseForFile>
-		
-		<file:BrowseForFile id="browseForMXML" 
-							targetAncestor="{this}"
-							fileTypes="mxml">
-			<file:selectionEffect>
-				<file:LoadFile id="loadMXMLFile" 
-							   fileReference="{browseForMXML.fileReference}"
-							   complete="mxmlLoadedHandler(event)"/>
-			</file:selectionEffect>
-		</file:BrowseForFile>
-		
-		<handlers:EventHandler eventName="itemClick" target="{revertDocumentMenuItem}">
-			<core:CallMethod method="revertDocument"/> 
-		</handlers:EventHandler>
-		
-		<handlers:EventHandler eventName="itemClick" target="{saveDocumentAs}">
+		<handlers:EventHandler eventName="itemClick" target="{exportDocumentAs}">
 			<fc:OpenPopUp id="openExportPopUp" 
 						  popUpType="{ExportDocumentWindow}" 
 						  modalDuration="150" 
@@ -1808,7 +166,8 @@
 		</handlers:EventHandler>
 		
 		<handlers:EventHandler eventName="click" targets="{[registerLabel,registerLabel2]}">
-			<fc:OpenPopUp id="registrationWithSitePopUp" popUpType="{LoginWindow}" 
+			<fc:OpenPopUp id="registrationWithSitePopUp" 
+						  popUpType="{LoginWindow}" 
 						  modalDuration="150" 
 						  percentWidth="75"
 						  percentHeight="90"
@@ -1837,165 +196,161 @@
 		</handlers:EventHandler>
 		
 		<handlers:EventHandler eventName="itemClick" target="{settingsMenuItem}">
-			<fc:OpenPopUp id="openSettingsWindow" popUpType="{SettingsWindow}" 
+			<fc:OpenPopUp id="openSettingsWindow" 
+						  popUpType="{SettingsWindow}" 
 						  modalDuration="150" 
 						  percentWidth="75"
 						  percentHeight="90"
 						  width="720"
 						  parent="{parentApplication}"/>
-		</handlers:EventHandler>
+		</handlers:EventHandler>-->
 		
-		<handlers:EventHandler eventName="itemClick" target="{quitApplication}" eventStart="closeApplication_eventStartHandler(event)">
+		<handlers:EventHandler eventName="itemClick" target="{quitApplication}" eventStart="MenuManager.closeApplication_eventStartHandler(event)">
 			<application:CloseApplication />
 		</handlers:EventHandler>
 		
-		<model:MenuItem id="workOfflineMenuItem" label="Work Offline" type="check" itemClick="workOfflineMenuItem_itemClickHandler(event)"/>
+		<file:BrowseForFile id="browseForPSD" 
+							targetAncestor="{this}"
+							fileTypes="psd">
+			<file:selectionEffect>
+				<file:LoadFile id="loadPSDFile" 
+							   fileReference="{browseForPSD.fileReference}"
+							   complete="MenuManager.psdLoadedHandler(event)"/>
+			</file:selectionEffect>
+		</file:BrowseForFile>
+		
+		<file:BrowseForFile id="browseForMXML" 
+							targetAncestor="{this}"
+							fileTypes="mxml">
+			<file:selectionEffect>
+				<file:LoadFile id="loadMXMLFile" 
+							   fileReference="{browseForMXML.fileReference}"
+							   complete="MenuManager.mxmlLoadedHandler(event)"/>
+			</file:selectionEffect>
+		</file:BrowseForFile>
+		
+		<handlers:EventHandler target="{logoPopUpGroup}" eventName="mouseDownOutside">
+			<popup:HidePopupAnchor target="{logoPopUp}" />
+		</handlers:EventHandler>
+		
+		<model:MenuItem id="workOfflineMenuItem" label="Work Offline" />
 		
 		<model:MenuItem id="rootMenu">
 			<model:MenuItem label="File">
-				<!--<model:MenuItem type="separator" isSpacer="true" spacerHeight="6"/>-->
-				<model:MenuItem id="menuNewDocument" label="New Document" itemClick="menuNewDocument_itemClickHandler(event)"/>
-				<model:MenuItem id="menuNewProject" label="New Project" />
+				<model:MenuItem id="menuNewDocument" label="New Document" itemClick="MenuManager.menuNewDocument_itemClickHandler(event)"/>
+				<model:MenuItem id="menuNewProject" label="New Project" itemClick="MenuManager.newProjectButton_clickHandler()" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem label="Open Document" itemClick="openDocument_itemClickHandler(event)"/>
-				<model:MenuItem label="Open Project" itemClick="openProject_itemClickHandler(event)"/>
+				<model:MenuItem label="Open Document" itemClick="MenuManager.openDocument_itemClickHandler(event)"/>
+				<model:MenuItem label="Open Project" itemClick="MenuManager.openProject_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem label="Close Document" itemClick="DocumentManager.closeDocument(Radiate.selectedDocument)"/>
-				<!--<model:MenuItem label="Close Project" itemClick="{ProjectManager.closeProject(Radiate.selectedProject)}"/>-->
 				<model:MenuItem type="separator"/>
-				<!-- keyEquivalent="s" seemed to be catching the s key everywhere. needs cmd for mac and ctrl for win-->
-				<model:MenuItem id="saveDocumentMenuItem" label="Save as..." itemClick="saveDocumentMenuItem_itemClickHandler(event)"/>
-				<model:MenuItem id="saveMenuItem" label="Save online" itemClick="saveMenuItem_itemClickHandler(event)"
+				<model:MenuItem id="saveDocumentMenuItem" label="Save as..." itemClick="MenuManager.saveDocumentMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveMenuItem" label="Save online" itemClick="MenuManager.saveMenuItem_itemClickHandler(event)"
 								keyEquivalent="s" commandKey="true"/>
-				<model:MenuItem id="saveSnippetMenuItem" label="Save snippet online" />
-				<model:MenuItem id="saveAsImageMenuItem" label="Save as image" itemClick="saveAsImageMenuItem_itemClickHandler(event)"/>
-				<model:MenuItem id="saveSelectionAsImageMenuItem" label="Save Selection as Image" itemClick="saveSelectionAsImageMenuItem_itemClickHandler(event)"/>
-				<model:MenuItem label="Save Project" itemClick="{ProjectManager.saveProject(Radiate.selectedProject)}"/>
-				<model:MenuItem label="Save All Documents" itemClick="{DocumentManager.saveAllDocuments()}"/>
-				<model:MenuItem id="saveDocumentAs" label="Export release..." />
+				<model:MenuItem id="saveSnippetMenuItem" label="Save snippet online" itemClick="MenuManager.saveSnippetMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveAsImageMenuItem" label="Save as image" itemClick="MenuManager.saveAsImageMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="saveSelectionAsImageMenuItem" label="Save Selection as Image" itemClick="MenuManager.saveSelectionAsImageMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem label="Save Project" itemClick="ProjectManager.saveProject(Radiate.selectedProject)"/>
+				<model:MenuItem label="Save All Documents" itemClick="DocumentManager.saveAllDocuments()"/>
+				<model:MenuItem id="exportDocument" label="Export release..." itemClick="MenuManager.exportDocument_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="revertDocumentMenuItem" label="Revert..." />
+				<model:MenuItem id="revertDocumentMenuItem" label="Revert..." itemClick="MenuManager.revertDocument()"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="uploadMenuItem" label="Upload to server..." />
+				<model:MenuItem id="uploadMenuItem" label="Upload to server..." itemClick="MenuManager.uploadToServer_eventStartHandler(event)"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="removeDocument" label="Remove Document" />
-				<model:MenuItem id="removeProject" label="Remove Project" itemClick="removeProject_itemClickHandler(event)"/>
+				<model:MenuItem id="removeDocument" label="Remove Document" itemClick="MenuManager.deleteDocument_itemClickHandler(event)"/>
+				<model:MenuItem id="removeProject" label="Remove Project" itemClick="MenuManager.deleteProjectIcon_clickHandler(event)"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="printItem" label="Print" />
+				<model:MenuItem id="printItem" label="Print" itemClick="MenuManager.printItem_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="importSnippetMenuItem" label="Import Snippet..." itemClick="importSnippetMenuItem_itemClickHandler(event)"/>
-				<model:MenuItem id="importMXMLMenuItem" label="Import MXML..." itemClick="importMXMLMenuItem_itemClickHandler(event)"/>
-				<model:MenuItem id="importImageMenuItem" label="Import Image..." itemClick="importImageMenuItem_itemClickHandler(event)"/>
-				<model:MenuItem id="importPSDMenuItem" label="Import PSD..." itemClick="importPSDMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="importSnippetMenuItem" label="Import Snippet..." itemClick="MenuManager.importSnippetMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="importMXMLMenuItem" label="Import MXML..." itemClick="MenuManager.importMXMLMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="importImageMenuItem" label="Import Image..." itemClick="MenuManager.importImageMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="importPSDMenuItem" label="Import PSD..." itemClick="MenuManager.importPSDMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="quitApplication" label="Quit" />
 			</model:MenuItem>
 			<model:MenuItem label="Edit" >
-				<model:MenuItem id="undo" label="Undo" itemClick="undo_itemClickHandler(event)" 
+				<model:MenuItem id="undo" label="Undo" itemClick="MenuManager.undo_itemClickHandler(event)" 
 								enabled="{HistoryManager.canUndo}"/>
-				<model:MenuItem id="redo" label="Redo" itemClick="redo_itemClickHandler(event)"
+				<model:MenuItem id="redo" label="Redo" itemClick="MenuManager.redo_itemClickHandler(event)"
 								enabled="{HistoryManager.canRedo}"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="cut" label="Cut" name="cut" enabled="true" keyEquivalent="x" controlKey="true" itemClick="cut_itemClickHandler(event)"/>
-				<model:MenuItem id="copy" label="Copy" name="copy" enabled="true" keyEquivalent="c" controlKey="true" itemClick="copy_itemClickHandler(event)"/>
-				<model:MenuItem id="paste" label="Paste" name="paste" enabled="true" keyEquivalent="v" controlKey="true" itemClick="paste_itemClickHandler(event)"/>
-				<model:MenuItem id="delete" label="Delete" name="delete" enabled="true" itemClick="delete_itemClickHandler(event)"/>
+				<model:MenuItem id="cut" label="Cut" name="cut" enabled="true" keyEquivalent="x" controlKey="true" itemClick="MenuManager.cut_itemClickHandler(event)"/>
+				<model:MenuItem id="copy" label="Copy" name="copy" enabled="true" keyEquivalent="c" controlKey="true" itemClick="MenuManager.copy_itemClickHandler(event)"/>
+				<model:MenuItem id="paste" label="Paste" name="paste" enabled="true" keyEquivalent="v" controlKey="true" itemClick="MenuManager.paste_itemClickHandler(event)"/>
+				<model:MenuItem id="delete" label="Delete" name="delete" enabled="true" itemClick="MenuManager.delete_itemClickHandler(event)"/>
 				<model:MenuItem id="selectAll" label="Select All" name="selectAll" enabled="true" keyEquivalent="a" controlKey="true"/>
-				<model:MenuItem id="duplicate" label="Duplicate" name="Duplicate" enabled="true" keyEquivalent="d" controlKey="true" itemClick="duplicate_itemClickHandler(event)"/>
+				<model:MenuItem id="duplicate" label="Duplicate" name="Duplicate" enabled="true" keyEquivalent="d" controlKey="true" itemClick="MenuManager.duplicate_itemClickHandler(event)"/>
 			</model:MenuItem>
-			<!--<model:MenuItem label="Tools" >
-				<model:MenuItem id="selectSelectionTool" label="Selection" itemClick="selectSelectionTool_itemClickHandler(event)" />
-			</model:MenuItem>-->
 			<model:MenuItem label="Layers" >
 				<model:MenuItem id="arrangeLayers" label="Arrange Layer" >
-					<model:MenuItem id="bringForwardLayer" label="Bring Forward" itemClick="bringForwardLayer_itemClickHandler(event)" />
-					<model:MenuItem id="bringToFront" label="Bring to Front" itemClick="bringToFront_itemClickHandler(event)" />
-					<model:MenuItem id="sendBackwardLayer" label="Send Backward" itemClick="sendBackwardLayer_itemClickHandler(event)" />
-					<model:MenuItem id="sendToBack" label="Send to Back" itemClick="sendToBack_itemClickHandler(event)" />
+					<model:MenuItem id="bringForwardLayer" label="Bring Forward" itemClick="MenuManager.bringForwardLayer_itemClickHandler(event)" />
+					<model:MenuItem id="bringToFront" label="Bring to Front" itemClick="MenuManager.bringToFront_itemClickHandler(event)" />
+					<model:MenuItem id="sendBackwardLayer" label="Send Backward" itemClick="MenuManager.sendBackwardLayer_itemClickHandler(event)" />
+					<model:MenuItem id="sendToBack" label="Send to Back" itemClick="MenuManager.sendToBack_itemClickHandler(event)" />
 				</model:MenuItem>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="lockLayerGroup" label="Lock Layer" >
-					<model:MenuItem id="lockLayer" label="Lock layer" itemClick="lockLayer_itemClickHandler(event)" />
-					<model:MenuItem id="unlockLayer" label="Unlock layer" itemClick="unlockLayer_itemClickHandler(event)" />
-					<model:MenuItem id="lockDescendantLayers" label="Lock descendant layers" itemClick="lockDescendantLayers_itemClickHandler(event)" />
-					<model:MenuItem id="unlockDescendantLayers" label="Unlock descendant layers" itemClick="unlockDescendantLayers_itemClickHandler(event)" />
+					<model:MenuItem id="lockLayer" label="Lock layer" itemClick="MenuManager.lockLayer_itemClickHandler(event)" />
+					<model:MenuItem id="unlockLayer" label="Unlock layer" itemClick="MenuManager.unlockLayer_itemClickHandler(event)" />
+					<model:MenuItem id="lockDescendantLayers" label="Lock descendant layers" itemClick="MenuManager.lockDescendantLayers_itemClickHandler(event)" />
+					<model:MenuItem id="unlockDescendantLayers" label="Unlock descendant layers" itemClick="MenuManager.unlockDescendantLayers_itemClickHandler(event)" />
 				</model:MenuItem>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="rotateImage" label="Rotate Image" >
-					<model:MenuItem id="rotateImage90" label="Rotate 90" itemClick="rotateImage_itemClickHandler(event)"/>
-					<model:MenuItem id="rotateImage180" label="Rotate 180" itemClick="rotateImage_itemClickHandler(event)"/>
-					<model:MenuItem id="rotateImage270" label="Rotate 270" itemClick="rotateImage_itemClickHandler(event)"/>
+					<model:MenuItem id="rotateImage90" label="Rotate 90" itemClick="MenuManager.rotateImage_itemClickHandler(event)"/>
+					<model:MenuItem id="rotateImage180" label="Rotate 180" itemClick="MenuManager.rotateImage_itemClickHandler(event)"/>
+					<model:MenuItem id="rotateImage270" label="Rotate 270" itemClick="MenuManager.rotateImage_itemClickHandler(event)"/>
 				</model:MenuItem>
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="flipImage" label="Flip Image" >
-					<model:MenuItem id="flipImageHorizontally" label="Flip Horizontally" itemClick="flipImage_itemClickHandler(event)"/>
-					<model:MenuItem id="flipImageVertically" label="Flip Vertically" itemClick="flipImage_itemClickHandler(event)"/>
+					<model:MenuItem id="flipImageHorizontally" label="Flip Horizontally" itemClick="MenuManager.flipImage_itemClickHandler(event)"/>
+					<model:MenuItem id="flipImageVertically" label="Flip Vertically" itemClick="MenuManager.flipImage_itemClickHandler(event)"/>
 				</model:MenuItem>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="removeExplicitPosition" label="Remove explicit position" itemClick="removeExplicitPosition_itemClickHandler(event)" />
-				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="removeExplicitSize_itemClickHandler(event)" />
-				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="removeExplicitHeight_itemClickHandler(event)" />
-				<model:MenuItem id="removeExplicitWidth" label="Remove explicit width" itemClick="removeExplicitWidth_itemClickHandler(event)" />
+				<model:MenuItem id="removeExplicitPosition" label="Remove explicit position" itemClick="MenuManager.removeExplicitPosition_itemClickHandler(event)" />
+				<model:MenuItem id="sizeSelectionToContent" label="Remove explicit size" itemClick="MenuManager.removeExplicitSize_itemClickHandler(event)" />
+				<model:MenuItem id="removeExplicitHeight" label="Remove explicit height" itemClick="MenuManager.removeExplicitHeight_itemClickHandler(event)" />
+				<model:MenuItem id="removeExplicitWidth" label="Remove explicit width" itemClick="MenuManager.removeExplicitWidth_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="sizeDocumentToSelection_itemClickHandler(event)" />
-				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="sizeSelectionToDocument_itemClickHandler(event)" />
-				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="sizeDocumentToOriginalImage_itemClickHandler(event)" />
-				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to show all content" itemClick="resizeDocumentToContent_itemClickHandler(event)" />
+				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="MenuManager.sizeDocumentToSelection_itemClickHandler(event)" />
+				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="MenuManager.sizeSelectionToDocument_itemClickHandler(event)" />
+				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="MenuManager.sizeDocumentToOriginalImage_itemClickHandler(event)" />
+				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to show all content" itemClick="MenuManager.resizeDocumentToContent_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="copySelectionIntoLibrary" label="Save selection snapshot to library" itemClick="copySelectionIntoLibrary_itemClickHandler(event)" />
-				<model:MenuItem id="saveSnapshotToLibrary" label="Save document snapshot to library" itemClick="saveSnapshotToLibrary_itemClickHandler(event)" />
-				<model:MenuItem id="copyDocumentToClipboard" label="Copy document snapshot to clipboard" itemClick="copyDocumentImageToClipboard_itemClickHandler(event)" />
-				<model:MenuItem id="pasteImageFromClipboard" label="Paste image from clipboard" itemClick="pasteClipboardToDocument_itemClickHandler(event)" />
-				<model:MenuItem id="trimImage" label="Trim transparent edges of image" itemClick="trimImage_itemClickHandler(event)" />
-				<!--<model:MenuItem id="restoreImageToOriginalSize" label="Restore image to original size" itemClick="restoreImageToOriginalSize_itemClickHandler(event)" />-->
-				<!--<model:MenuItem id="cropSelection" label="Crop Selection" itemClick="cropSelection_itemClickHandler(event)" />
-				<model:MenuItem id="cropDocument" label="Crop Document" itemClick="cropDocument_itemClickHandler(event)" />
-				<model:MenuItem type="separator"/>-->
+				<model:MenuItem id="copySelectionIntoLibrary" label="Save selection snapshot to library" itemClick="MenuManager.copySelectionIntoLibrary_itemClickHandler(event)" />
+				<model:MenuItem id="saveSnapshotToLibrary" label="Save document snapshot to library" itemClick="MenuManager.saveSnapshotToLibrary_itemClickHandler(event)" />
+				<model:MenuItem id="copyDocumentToClipboard" label="Copy document snapshot to clipboard" itemClick="MenuManager.copyDocumentImageToClipboard_itemClickHandler(event)" />
+				<model:MenuItem id="pasteImageFromClipboard" label="Paste image from clipboard" itemClick="MenuManager.pasteImageFromClipboardToDocument_itemClickHandler(event)" />
+				<model:MenuItem id="trimImage" label="Trim transparent edges of image" itemClick="MenuManager.trimImage_itemClickHandler(event)" />
 			</model:MenuItem>
 			<model:MenuItem label="Commands" >
-				<model:MenuItem id="openGallery" label="Open Gallery" itemClick="openGallery_itemClickHandler(event)" />
+				<model:MenuItem id="openGallery" label="Open Gallery" itemClick="MenuManager.openGallery_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="refreshView" label="Refresh View" itemClick="refreshView_itemClickHandler(event)" />
+				<model:MenuItem id="refreshView" label="Refresh View" itemClick="MenuManager.refreshView_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="clearProjectHomePage_itemClickHandler(event)" />
+				<model:MenuItem id="clearProjectHomePage" label="Clear home page" itemClick="MenuManager.clearProjectHomePage_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="showProjectSource_itemClickHandler(event)" />
-				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="showDocumentSource_itemClickHandler(event)"/>
+				<model:MenuItem id="showProjectSource" label="Show Project Source" itemClick="MenuManager.showProjectSource_itemClickHandler(event)" />
+				<model:MenuItem id="showDocumentSource" label="Show Document Source" itemClick="MenuManager.showDocumentSource_itemClickHandler(event)"/>
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="getRevisions" label="Show Revisions" itemClick="getRevisions_itemClickHandler(event)" />
+				<model:MenuItem id="getRevisions" label="Show Revisions" itemClick="MenuManager.getRevisions_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
-				<model:MenuItem id="viewInBrowserShots" label="View in Browser Shots" itemClick="viewInBrowserScreenshot_itemClickHandler(event)" />
-				<model:MenuItem id="viewInSiteScanner" label="View in Site Scanner" itemClick="viewInSiteScanner_itemClickHandler(event)" />
-				<!--<model:MenuItem id="loginThroughWebsite" label="Login to your website" itemClick="loginThroughWebsite_itemClickHandler(event)"/>-->
+				<model:MenuItem id="viewInBrowserShots" label="View in Browser Shots" itemClick="MenuManager.viewInBrowserScreenshot_itemClickHandler(event)" />
+				<model:MenuItem id="viewInSiteScanner" label="View in Site Scanner" itemClick="MenuManager.viewInSiteScanner_itemClickHandler(event)" />
 			</model:MenuItem>
-			<!--			<model:MenuItem label="Edit" menuShow="editHandler(event)">
-			<model:MenuItem id="cut" label="Cut" itemClick="cutHandler(event)"/>
-			<model:MenuItem id="copy" label="Copy" itemClick="copyHandler(event)"/>
-			<model:MenuItem id="paste" label="Paste" enabled="false" name="paste"/>
-			<model:MenuItem type="separator"/>
-			<model:MenuItem label="Other menu item"/>
-			</model:MenuItem>-->
 			<model:MenuItem id="windowMenu" label="Window">
-				<!--<model:MenuItem id="d1" label="Document 1" group="docs" toggled="false" type="radio"/>
-				<model:MenuItem label="Document 2" group="docs" toggled="true" type="radio"/>
-				<model:MenuItem id="d3" label="Document 3" group="docs" name="d3" toggled="false"
-				type="radio"/>
-				<model:MenuItem label="Document 4" group="docs" toggled="false" type="radio"/>-->
 				<model:MenuItem label="No documents" />
 			</model:MenuItem>
 			<model:MenuItem id="helpMenu" label="Help">
-				<model:MenuItem id="helpMenuItem" label="Online Documentation" />
-				<model:MenuItem id="creditsMenuItem" label="Notices and Credits"/>
-				<model:MenuItem id="checkForUpdateMenuItem" label="Check for update" itemClick="checkForUpdateMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="helpMenuItem" label="Online Documentation" itemClick="MenuManager.helpMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="creditsMenuItem" label="Notices and Credits" itemClick="MenuManager.creditsMenuItem_itemClickHandler(event)"/>
+				<model:MenuItem id="checkForUpdateMenuItem" label="Check for update" itemClick="MenuManager.checkForUpdateMenuItem_itemClickHandler(event)"/>
 				<model:MenuItem id="settingsMenuItem" label="Settings" />
 			</model:MenuItem>
 		</model:MenuItem>
-		
-		<mx:ArrayCollection id="projectsCollection" />
-		<mx:ArrayCollection id="newsCollection" />
-		<mx:ArrayCollection id="documentsCollection" />
-		<mx:ArrayCollection id="examplesCollection" />
-		<mx:ArrayCollection id="templatesCollection" />
 		
 		<s:Parallel id="fadeInLogo">
 			<s:Rotate3D angleZFrom="0" 
@@ -2006,13 +361,6 @@
 						target="{mainLogo}" />
 			<s:Fade alphaFrom="0" alphaTo="1" target="{mainLogo}" duration="250" />
 		</s:Parallel>
-		<!--
-		<s:Rotate3D id="rotateTargetEffect" angleZFrom="0" 
-					angleZTo="90" 
-					autoCenterProjection="true" 
-					autoCenterTransform="true" 
-					duration="250"
-					target="{savingLogo}"/>-->
 		
 		<s:Parallel id="requestAnimation" >
 			<s:Fade alphaFrom="0" alphaTo="1" target="{busyLogo}" duration="500" />
@@ -2032,19 +380,12 @@
 		</s:Sequence>
 		
 		<s:Fade id="fadeOutStatus" target="{statusLabel}" alphaFrom="1" alphaTo="0" 
-				effectEnd="fadeOutStatus_effectEndHandler(event)"/>
-		
-		<core:CallMethod id="checkOnlineEffect" 
-						 repeatCount="0" 
-						 method="checkOnline" 
-						 repeatDelay="60000"/>
+				effectEnd="MenuManager.fadeOutStatus_effectEndHandler(event)"/>
 		
 		<s:Sequence id="notificationMessenger" target="{instantMessengerContainer}" >
 			<mx:AnimateProperty duration="250" fromValue="-2" toValue="28" property="top"/>
 			<mx:AnimateProperty startDelay="4000" duration="250" toValue="-2" fromValue="28" property="top"/>
 		</s:Sequence>
-		
-
 		
 	</fx:Declarations>
 	
@@ -2100,8 +441,6 @@
 			</s:fill>
 		</s:Rect>
 		
-		<!--<s:BorderContainer left="0" x="81" top="0" y="82" height="120" 
-						   right="0" borderVisible="false" backgroundColor="#CCCCCC"/>-->
 		<s:Image id="mainLogo" x="0" y="0" width="128" height="128" 
 				 source="{Radii8LibraryAssets.logo256}"
 				 smooth="true"
@@ -2127,16 +466,17 @@
 				 buttonMode="true"
 				 right="40"
 				 y="10"
-				   includeInLayout="false"
-				   visible="false"
+				 includeInLayout="false"
+				 visible="false"
 				 >
 		</s:Image>
 		
 		<s:HGroup left="20" top="160" bottom="60" width="100%" height="100%" right="20">
-			
-			
 			<s:VGroup width="100%" height="100%">
-				<c:LabelButton id="examplesLabel" text="Starter Projects" fontWeight="bold" click="examplesLabel_clickHandler(event)"/>
+				<c:LabelButton id="examplesLabel" 
+							   text="Starter Projects" 
+							   fontWeight="bold" 
+							   click="MenuManager.examplesLabel_clickHandler(event)"/>
 				<s:Label id="checkingForExampleProjectsLabel" 
 						 text="" 
 						 fontStyle="italic"
@@ -2146,14 +486,14 @@
 				<s:List id="examplesList"
 						width="100%" 
 						borderVisible="false"
-						dataProvider="{examplesCollection}"
+						dataProvider="{MenuManager.examplesCollection}"
 						labelField="name"
 						minHeight="110"
 						height="100%"
 						doubleClickEnabled="true"
-						doubleClick="examplesList_doubleClickHandler(event)"
-						change="examplesList_changeHandler(event)"
 						itemRenderer="com.flexcapacitor.views.renderers.ProjectRenderer"
+						change="MenuManager.examplesList_changeHandler(event)"
+						doubleClick="MenuManager.examplesList_doubleClickHandler(event)"
 						/>
 			</s:VGroup>
 			
@@ -2161,7 +501,7 @@
 				<c:LabelButton id="projectsLabel" 
 						 text="Projects" 
 						 fontWeight="bold"
-						 click="projectsLabel_clickHandler(event)"/>
+						 click="MenuManager.projectsLabel_clickHandler(event)"/>
 				<s:Label id="checkingForProjectsLabel" 
 						 text="Checking for projects..." 
 						 fontStyle="italic"
@@ -2173,27 +513,32 @@
 						minHeight="110"
 						height="100%"
 						borderVisible="false"
-						dataProvider="{projectsCollection}"
+						dataProvider="{MenuManager.projectsCollection}"
 						labelField="name"
 						doubleClickEnabled="true"
-						doubleClick="projectsList_doubleClickHandler(event)"
-						change="projectsList_changeHandler(event)"
 						itemRenderer="com.flexcapacitor.views.renderers.ProjectRenderer"
+						doubleClick="MenuManager.projectsList_doubleClickHandler(event)"
+						change="MenuManager.projectsList_changeHandler(event)"
 						/>
-				<s:Label id="projectLastSavedLabel" text="" 
-						 visible="false" includeInLayout="false"/>
+				<s:Label id="projectLastSavedLabel" 
+						 text="" 
+						 visible="false" 
+						 includeInLayout="false"/>
 			</s:VGroup>
 			
 			<s:VGroup width="100%" includeInLayout="false" visible="false">
-				<c:LabelButton text="Templates" fontWeight="bold"/>
+				<c:LabelButton text="Templates" 
+							   fontWeight="bold"/>
 				<s:List width="100%" 
-						dataProvider="{templatesCollection}"
+						dataProvider="{MenuManager.templatesCollection}"
 						/>
 			</s:VGroup>
 			
 			<s:VGroup width="100%" height="100%">
 				
-				<c:LabelButton text="News and Tutorials" fontWeight="bold" click="news_clickHandler(event)"/>
+				<c:LabelButton text="News and Tutorials" 
+							   fontWeight="bold" 
+							   click="MenuManager.news_clickHandler(event)"/>
 				<s:Label id="checkingForNewsLabel" 
 						 text="Checking for news..." 
 						 fontStyle="italic"
@@ -2205,29 +550,14 @@
 						minHeight="110"
 						height="100%"
 						borderVisible="false"
-						dataProvider="{newsCollection}"
+						dataProvider="{MenuManager.newsCollection}"
 						labelField="title"
 						doubleClickEnabled="true"
-						click="newsList_doubleClickHandler(event)"
-						change="newsList_changeHandler(event)"
+						click="MenuManager.newsList_doubleClickHandler(event)"
+						change="MenuManager.newsList_changeHandler(event)"
 						/>
-				<!--<renderers:ProjectRenderer id="newDocumentButton" label="New Document" width="100%"
-				autoDrawBackground="true"/>
-				<renderers:ProjectRenderer label="Get My Projects" width="100%"
-				click="getProjectsByUser_clickHandler(event)"
-				visible="{ProfileManager.isUserLoggedIn}"
-				includeInLayout="{ProfileManager.isUserLoggedIn}"
-				/>
-				<renderers:ProjectRenderer label="Get All Projects" width="100%"
-				useHandCursor="true" buttonMode="true"
-				click="getPublicProjects_clickHandler(event)"
-				
-				visible="false"
-				includeInLayout="false"/>-->
 			</s:VGroup>
-			
 		</s:HGroup>
-		
 		
 		<s:Label id="statusLabel" bottom="50" left="20" textAlign="left" fontStyle="italic"/>
 		
@@ -2241,6 +571,7 @@
 					 styleName="loginLabel"
 					 visible="{ProfileManager.isUserLoggedIn}"
 					 includeInLayout="{ProfileManager.isUserLoggedIn}"
+					 click="MenuManager.logoutLabel_clickHandler(event)"
 					 />
 			
 			<c:LabelButton id="loginLabel2" 
@@ -2250,6 +581,7 @@
 					 styleName="loginLabel"
 					 visible="{!ProfileManager.isUserLoggedIn}"
 					 includeInLayout="{!ProfileManager.isUserLoggedIn}"
+					 click="MenuManager.loginLabel_clickHandler(event)"
 					 />
 			
 			<c:VerticalLine visible="{!ProfileManager.isUserLoggedIn}"
@@ -2262,6 +594,7 @@
 						   styleName="loginLabel"
 						   visible="{!ProfileManager.isUserLoggedIn}"
 						   includeInLayout="{!ProfileManager.isUserLoggedIn}"
+						   click="MenuManager.registerLabel_clickHandler(event)"
 						   />
 			
 			<c:VerticalLine visible="{!ProfileManager.isUserLoggedIn}"
@@ -2274,6 +607,7 @@
 						   styleName="loginLabel"
 						   visible="{!ProfileManager.isUserLoggedIn}"
 						   includeInLayout="{!ProfileManager.isUserLoggedIn}"
+						   click="MenuManager.lostPasswordLabel_clickHandler(event)"
 						   />
 			
 			<s:Spacer width="100%" />
@@ -2285,15 +619,16 @@
 					  >
 				
 				
-				<renderers:ItemRendererButton id="openProjectButton" iconSource="{Radii8LibraryAssets.openFolder}"
+				<renderers:ItemRendererButton id="openProjectButton" 
+											  iconSource="{Radii8LibraryAssets.openFolder}"
 											  label="Open Project"
-											  click="openProjectButton_clickHandler(event)"
+											  click="MenuManager.openProjectButton_clickHandler(event)"
 											  enabled="{projectsList.selectedItem!=null || examplesList.selectedItem!=null}"
 											  />
 				<renderers:ItemRendererButton id="openPreviousProject" 
 											  iconSource="{Radii8LibraryAssets.openFolder}"
 											  label="Open Previous Project"
-											  click="openLastProject()"
+											  click="MenuManager.openLastProject()"
 											  enabled="false"
 											  visible="false"
 											  includeInLayout="false"
@@ -2303,6 +638,7 @@
 											  iconSource="{Radii8LibraryAssets.trashCan}"
 											  label="Remove"
 											  enabled="{projectsList.selectedItem!=null}"
+											  click="MenuManager.deleteProjectIcon_clickHandler(event)"
 											  />
 				
 				<renderers:ItemRendererButton id="newProjectButton" 
@@ -2310,7 +646,8 @@
 										   bottom="20" 
 										   horizontalCenter="0" 
 										   label="New Project" 
-										   autoDrawBackground="true"/>
+										   autoDrawBackground="true"
+										   click="MenuManager.newProjectButton_clickHandler(event)"/>
 				
 				<renderers:ItemRendererButton id="newDocumentButton" 
 										   iconSource="{Radii8LibraryAssets.document}"
@@ -2318,7 +655,7 @@
 										   horizontalCenter="0" 
 										   label="New Document" 
 										   autoDrawBackground="true"
-										   click="newDocumentAndProjectButton_clickHandler(event)"/>
+										   click="MenuManager.newDocumentAndProjectButton_clickHandler(event)"/>
 				
 				
 				<renderers:ItemRendererButton id="openGalleryButton" 
@@ -2327,7 +664,7 @@
 											  horizontalCenter="0" 
 											  label="Open Gallery" 
 											  autoDrawBackground="true"
-											  click="openGalleryButton_clickHandler(event)"/>
+											  click="MenuManager.openGalleryButton_clickHandler(event)"/>
 			</s:HGroup>
 		</s:HGroup>
 		
@@ -2386,7 +723,7 @@
 					   borderWeight="0"
 					   borderVisible="false"
 					   backgroundAlpha=".8"
-					   click="instantMessengerContainer_clickHandler(event)">
+					   click="MenuManager.instantMessengerContainer_clickHandler(event)">
 		<s:Label id="instantMessageLabel" width="100%" height="100%"
 				 verticalAlign="middle" textAlign="center"/>
 	</c:BorderContainer>
@@ -2416,7 +753,7 @@
 					 includeInLayout="true"
 					 useHandCursor="true"
 					 buttonMode="true"
-					 click="cornerLogo_clickHandler(event)"
+					 click="MenuManager.cornerLogo_clickHandler(event)"
 					 >
 			</s:Image>
 		</s:Group>
@@ -2430,7 +767,7 @@
 				 paddingTop="2"
 				 top="10"
 				 left="10"
-				 click="logo_clickHandler(event)">
+				 click="MenuManager.logo_clickHandler(event)">
 			<c:filters> 
 				<filters:BorderStrokeFilter color="#585858" weight=".5"/>
 				<filters:BorderStrokeFilter color="#EEEEEE" weight=".5"/>
@@ -2459,12 +796,12 @@
 					includeIn="design"
 					
 					itemCreationPolicy="immediate"
-					menuShow="menuItemEventHandler(event)" 
-					menuHide="menuItemEventHandler(event)"
-					itemClick="menuItemEventHandler(event)" 
-					itemRollOut="menuItemEventHandler(event)"
-					itemRollOver="menuItemEventHandler(event)" 
-					change="menuItemEventHandler(event)"
+					menuShow="MenuManager.menuItemEventHandler(event)" 
+					menuHide="MenuManager.menuItemEventHandler(event)"
+					itemClick="MenuManager.menuItemEventHandler(event)" 
+					itemRollOut="MenuManager.menuItemEventHandler(event)"
+					itemRollOver="MenuManager.menuItemEventHandler(event)" 
+					change="MenuManager.menuItemEventHandler(event)"
 					>
 		</mx:MenuBar>
 		
@@ -2477,6 +814,7 @@
 				 color="#DDDDDD"
 				 visible="{!ProfileManager.isUserLoggedIn}"
 				 includeInLayout="{!ProfileManager.isUserLoggedIn}"
+				 click="MenuManager.loginLabel_clickHandler(event)"
 				 />
 		
 		<s:Label text="|" 
@@ -2495,6 +833,7 @@
 				 color="#DDDDDD"
 				 visible="{!ProfileManager.isUserLoggedIn}"
 				 includeInLayout="{!ProfileManager.isUserLoggedIn}"
+				 click="MenuManager.registerLabel_clickHandler(event)"
 				 />
 		
 		<c:VerticalLine visible="{!ProfileManager.isUserLoggedIn}"
@@ -2509,7 +848,7 @@
 				 toolTip="Open website dashboard"
 				 visible="{ProfileManager.isUserLoggedIn}"
 				 includeInLayout="{ProfileManager.isUserLoggedIn}"
-				 click="userLabel_clickHandler(event)"
+				 click="MenuManager.userLabel_clickHandler(event)"
 				 />
 		
 		<s:Image id="userIcon" 
@@ -2522,9 +861,9 @@
 				 smooth="true"
 				 clearOnLoad="false"
 				 toolTip="Open website profile"
-				 securityError="userIcon_securityErrorHandler(event)"
-				 ioError="userIcon_ioErrorHandler(event)"
-				 click="userIcon_clickHandler(event)"
+				 securityError="MenuManager.userIcon_securityErrorHandler(event)"
+				 ioError="MenuManager.userIcon_ioErrorHandler(event)"
+				 click="MenuManager.userIcon_clickHandler(event)"
 				 />
 		
 		<c:VerticalLine />
@@ -2536,7 +875,7 @@
 				 color="#DDDDDD"
 				 visible="{ProfileManager.isUserLoggedIn}"
 				 includeInLayout="{ProfileManager.isUserLoggedIn}"
-				 click="visitSiteLabel_clickHandler(event)"
+				 click="MenuManager.visitSiteLabel_clickHandler(event)"
 				 />
 		
 		
@@ -2552,6 +891,7 @@
 				 color="#DDDDDD"
 				 visible="{ProfileManager.isUserLoggedIn}"
 				 includeInLayout="{ProfileManager.isUserLoggedIn}"
+				 click="MenuManager.logoutLabel_clickHandler(event)"
 				 />
 		
 		<s:ToggleButton id="isConnectedCheckbox" 
@@ -2561,11 +901,8 @@
 						buttonMode="true"
 						enabled="true"
 						toolTip="Indicates if Radii8 service is reachable. Click to refresh."
-						click="isConnectedCheckbox_clickHandler(event)"
+						click="MenuManager.isConnectedCheckbox_clickHandler(event)"
 						/>
-		
-		
-		<!---http://0.gravatar.com/avatar/ad516503a11cd5ca435acc9bb6523536?s=96 // assets/avatar/gravar-default-96.png -->
 	</s:BorderContainer>
 	
 	
@@ -2604,17 +941,9 @@
 		<c:VerticalLine height="16" 
 						includeInLayout="{DateManager.lastSaveDateFormatted!=null}" 
 						visible="{DateManager.lastSaveDateFormatted!=null}"/>
-		<!--<s:Label text="Build Date:"  />
-		<s:Label id="buildDate" text="{radiate.buildDate}" />
-		<s:Label text="Build Time:" /> 
-		<s:Label id="buildTime" text="{radiate.buildTime}" />
-		<s:Label text="Build Number:" />
-		<s:Label id="buildNumber" text="{radiate.buildNumber}" />
-		<s:Label text="Version:" />-->
-		
 		
 		<s:Spacer width="1"/>
-		<s:Label id="versionNumber" text="{radiate.versionNumber}" />
+		<s:Label id="versionNumber" text="{Radiate.versionNumber}" />
 		<s:Spacer width="1"/>
 		<c:VerticalLine height="16" />
 		<s:Spacer width="1"/>
@@ -2624,6 +953,7 @@
 					   text="Contact" 
 					   color="#888888" 
 					   typographicCase="capsToSmallCaps"
+					   click="MenuManager.contactLabel_clickHandler(event)"
 					   />
 		<c:VerticalLine height="100%" includeInLayout="{false}" visible="{false}"/>
 		
@@ -2645,7 +975,7 @@
 					   backgroundColor="#757575" 
 					   backgroundAlpha=".75" 
 					   visible="false" 
-					   click="dropImagesLocation_clickHandler(event)">
+					   click="MenuManager.dropImagesLocation_clickHandler(event)">
 		<s:VGroup verticalCenter="0" horizontalCenter="0" horizontalAlign="center"
 				  fontWeight="bold"
 				  color="#ffffff">
@@ -2653,7 +983,6 @@
 					 fontSize="28"/>
 			<s:Label text="Hold SHIFT to preserve content original size" />
 			<s:Label text="Hold CMD or CTRL to size document to content" />
-			
 		</s:VGroup>
 	</s:BorderContainer>
 </s:Group>

@@ -986,14 +986,14 @@ package com.flexcapacitor.managers
 		public static function openProjectFromMainView(project:IProject):void {
 			
 			if (project && project is IProject && !project.isOpen) {
-				ViewManager.mainView.currentState = MainView.DESIGN_STATE;
+				ViewManager.mainView.currentState = MenuManager.DESIGN_STATE;
 				ViewManager.mainView.validateNow();
 				addProject(project, false);
 				openProjectFromMetaData(project, DocumentData.REMOTE_LOCATION, true);
 				Radiate.setProject(project, true);
 			}
 			else if (project && project is IProject && project.isOpen) {
-				ViewManager.mainView.currentState = MainView.DESIGN_STATE;
+				ViewManager.mainView.currentState = MenuManager.DESIGN_STATE;
 				ViewManager.mainView.validateNow();
 				Radiate.setProject(project, true);
 			}

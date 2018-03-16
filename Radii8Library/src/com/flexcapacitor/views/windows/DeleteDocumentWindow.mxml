@@ -30,6 +30,7 @@
 			import com.flexcapacitor.events.RadiateEvent;
 			import com.flexcapacitor.managers.DocumentManager;
 			import com.flexcapacitor.managers.LibraryManager;
+			import com.flexcapacitor.managers.MenuManager;
 			import com.flexcapacitor.managers.ProjectManager;
 			import com.flexcapacitor.managers.ViewManager;
 			import com.flexcapacitor.model.AttachmentData;
@@ -220,7 +221,7 @@
 					
 					if (numberOfProjects==0) {
 						ViewManager.goToHomeScreen();
-						ViewManager.mainView.getProjectsByUser();
+						MenuManager.getProjectsByUser();
 					}
 				}
 				

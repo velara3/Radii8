@@ -437,7 +437,7 @@ package com.flexcapacitor.managers
 						actionPerformed = true;
 					}
 					else if (Platform.isBrowser) {
-						ViewManager.showPasteImagePanel();
+						ViewManager.openPasteImageWindow();
 					}
 				}
 				else if (format==ClipboardFormats.TEXT_FORMAT) {

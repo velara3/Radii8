@@ -32,6 +32,7 @@ package com.flexcapacitor.controller {
 	import com.flexcapacitor.managers.ImportManager;
 	import com.flexcapacitor.managers.InspectorManager;
 	import com.flexcapacitor.managers.KeyboardManager;
+	import com.flexcapacitor.managers.MenuManager;
 	import com.flexcapacitor.managers.ProfileManager;
 	import com.flexcapacitor.managers.ProjectManager;
 	import com.flexcapacitor.managers.ServicesManager;
@@ -455,25 +456,25 @@ package com.flexcapacitor.controller {
 		 * Build number
 		 * */
 		[Bindable]
-		public var buildNumber:String;
+		public static var buildNumber:String;
 		
 		/**
 		 * Build date
 		 * */
 		[Bindable]
-		public var buildDate:String;
+		public static var buildDate:String;
 		
 		/**
 		 * Build time
 		 * */
 		[Bindable]
-		public var buildTime:String;
+		public static var buildTime:String;
 		
 		/**
 		 * Version number
 		 * */
 		[Bindable]
-		public var versionNumber:String;
+		public static var versionNumber:String;
 		
 		//----------------------------------
 		//
@@ -593,7 +594,7 @@ package com.flexcapacitor.controller {
 			Text.debug 				= false;
 			Selection.debug			= false;
 			LayoutDebugHelper.debug	= false;
-			MainView.debug 			= false;
+			MenuManager.debug 		= false;
 			ClassLoader.debug 		= false;
 			TextEditorManager.debug = false;
 			
@@ -645,7 +646,7 @@ package com.flexcapacitor.controller {
 			// todo check how many we use
 			contentCache.maxCacheEntries = 300;
 			
-			CodeManager.setTranscodersVersion(instance.versionNumber);
+			CodeManager.setTranscodersVersion(Radiate.versionNumber);
 			CodeManager.setComponentDefinitions(ComponentManager.componentDefinitions.source);
 			
 			ImportManager.setUpdatedHTMLImporterAndExporter();
@@ -657,7 +658,7 @@ package com.flexcapacitor.controller {
 			
 			ViewManager.createOpenImportPopUp();
 			
-			ViewManager.mainView.startup();
+			MenuManager.startup();
 			
 			TextEditorManager.createCallOut();
 			
