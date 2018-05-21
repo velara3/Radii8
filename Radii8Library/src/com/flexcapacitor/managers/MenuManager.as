@@ -1443,10 +1443,16 @@ package com.flexcapacitor.managers
 			ComponentManager.sizeSelectionToDocument();
 		}
 		
-		public static function resizeDocumentToContent_itemClickHandler(event:MenuEvent):void {
+		public static function resizeDocumentToShowAllContent_itemClickHandler(event:MenuEvent):void {
 			if (Radiate.checkForDocument()) return;
 			
-			DocumentManager.expandDocumentToContents();
+			DocumentManager.sizeDocumentToShowAllContents();
+		}
+		
+		public static function resizeDocumentToFitContent_itemClickHandler(event:MenuEvent):void {
+			if (Radiate.checkForDocument()) return;
+			
+			DocumentManager.sizeDocumentToFitContents();
 		}
 		
 		public static function copyDocumentImageToClipboard_itemClickHandler(event:MenuEvent):void {

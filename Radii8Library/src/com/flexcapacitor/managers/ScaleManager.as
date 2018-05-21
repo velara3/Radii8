@@ -10,6 +10,7 @@ package com.flexcapacitor.managers
 	
 	import spark.components.Scroller;
 	import spark.effects.Animate;
+	import spark.effects.Scale;
 	import spark.effects.animation.MotionPath;
 	import spark.effects.animation.SimpleMotionPath;
 
@@ -268,12 +269,13 @@ package com.flexcapacitor.managers
 				availableWidth = canvasScroller.width - vsbWidth * padding;
 				availableHeight = canvasScroller.height - hsbHeight * padding;
 				
-				// if the visible area is less than our content then scale down
+				// scale down
 				if (height > availableHeight || width > availableWidth) {
-					newScale = availableHeight/height;
+					newScale = Math.min(availableHeight/height, availableWidth/width);
 					width = newScale * width;
 					height = newScale * height;
 				}
+				// scale up
 				else if (height < availableHeight && width < availableWidth) {
 					newScale = Math.min(availableHeight/height, availableWidth/width);
 					width = newScale * width;

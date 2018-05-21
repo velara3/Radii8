@@ -318,7 +318,8 @@
 				<model:MenuItem id="sizeDocumentToSelection" label="Size document to selection" itemClick="MenuManager.sizeDocumentToSelection_itemClickHandler(event)" />
 				<model:MenuItem id="sizeSelectionToDocument" label="Size selection to document" itemClick="MenuManager.sizeSelectionToDocument_itemClickHandler(event)" />
 				<model:MenuItem id="sizeDocumentToSelectionOriginalSize" label="Size document to original sized image" itemClick="MenuManager.sizeDocumentToOriginalImage_itemClickHandler(event)" />
-				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to show all content" itemClick="MenuManager.resizeDocumentToContent_itemClickHandler(event)" />
+				<model:MenuItem id="resizeDocumentToShowAllContent" label="Size document to show all content" itemClick="MenuManager.resizeDocumentToShowAllContent_itemClickHandler(event)" />
+				<model:MenuItem id="resizeDocumentToFitContent" label="Size document to fit content" itemClick="MenuManager.resizeDocumentToFitContent_itemClickHandler(event)" />
 				<model:MenuItem type="separator"/>
 				<model:MenuItem id="copySelectionIntoLibrary" label="Save selection snapshot to library" itemClick="MenuManager.copySelectionIntoLibrary_itemClickHandler(event)" />
 				<model:MenuItem id="saveSnapshotToLibrary" label="Save document snapshot to library" itemClick="MenuManager.saveSnapshotToLibrary_itemClickHandler(event)" />

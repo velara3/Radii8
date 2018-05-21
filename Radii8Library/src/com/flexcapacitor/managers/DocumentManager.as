@@ -600,7 +600,7 @@ package com.flexcapacitor.managers
 		/**
 		 * Resizes the current document to show all of it's content
 		 * */
-		public static function expandDocumentToContents():Boolean {
+		public static function sizeDocumentToShowAllContents():Boolean {
 			var radiate:Radiate = Radiate.instance;
 			var iDocument:IDocument = selectedDocument;
 			var targetObject:Object = iDocument.instance;
@@ -625,7 +625,42 @@ package com.flexcapacitor.managers
 			if (contentRectangle.width>documentRectangle.width || contentRectangle.height>documentRectangle.height) {
 				contentRectangle.width = Math.max(contentRectangle.width, documentRectangle.width);
 				contentRectangle.height = Math.max(contentRectangle.height, documentRectangle.height);
-				ComponentManager.setProperties(targetObject, ["width","height"], contentRectangle, "Expand document");
+				ComponentManager.setProperties(targetObject, ["width","height"], contentRectangle, "Expand document to show all");
+				resized = true;
+			}
+			
+			return resized;
+		}
+		
+		/**
+		 * Resizes the current document to fit it's content
+		 * */
+		public static function sizeDocumentToFitContents():Boolean {
+			var radiate:Radiate = Radiate.instance;
+			var iDocument:IDocument = selectedDocument;
+			var documentInstance:Object = iDocument.instance;
+			var documentRectangle:Rectangle;
+			var contentRectangle:Rectangle;
+			var resized:Boolean;
+			var width:Number;
+			var height:Number;
+			
+			contentRectangle = new Rectangle();
+			documentRectangle = new Rectangle();
+			
+			width = documentInstance.contentGroup.contentWidth;
+			height = documentInstance.contentGroup.contentHeight;
+			
+			contentRectangle.width = width;
+			contentRectangle.height = height;
+			
+			documentRectangle.width = documentInstance.width;
+			documentRectangle.height = documentInstance.height;
+			
+			if (contentRectangle.width!=documentRectangle.width || contentRectangle.height!=documentRectangle.height) {
+				contentRectangle.width = contentRectangle.width;
+				contentRectangle.height = contentRectangle.height;
+				ComponentManager.setProperties(documentInstance, ["width","height"], contentRectangle, "Fit document to content");
 				resized = true;
 			}
 			
@@ -779,7 +814,7 @@ package com.flexcapacitor.managers
 			var iDocument:IDocument = Radiate.selectedDocument;
 			
 			if (Radiate.target && iDocument) {
-				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(Radiate.target.target) : null;
+				var componentDescription:ComponentDescription = iDocument ? iDocument.getItemDescription(Radiate.target) : null;
 				var image:Image = componentDescription ? componentDescription.instance as Image : null;
 				var bitmapData:BitmapData = image ? image.bitmapData : null;
 				
