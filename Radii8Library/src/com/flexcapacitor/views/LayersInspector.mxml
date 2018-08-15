@@ -38,14 +38,14 @@
 	When dragging and dropping using Flex 4.15 getting error: 
 	
 	TypeError: Error #1010: A term is undefined and has no properties.
-	at mx.controls::Tree/updateDropData()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/mx/src/mx/controls/Tree.as:2785]
-	at mx.controls::Tree/calculateDropIndex()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/mx/src/mx/controls/Tree.as:1276]
-	at mx.controls::Tree/dragDropHandler()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/mx/src/mx/controls/Tree.as:3352]
+	at mx.controls::Tree/updateDropData()[/Users//Documents/ApacheFlex4.15/frameworks/projects/mx/src/mx/controls/Tree.as:2785]
+	at mx.controls::Tree/calculateDropIndex()[/Users//Documents/ApacheFlex4.15/frameworks/projects/mx/src/mx/controls/Tree.as:1276]
+	at mx.controls::Tree/dragDropHandler()[/Users//Documents/ApacheFlex4.15/frameworks/projects/mx/src/mx/controls/Tree.as:3352]
 	at flash.events::EventDispatcher/dispatchEventFunction()
 	at flash.events::EventDispatcher/dispatchEvent()
-	at mx.core::UIComponent/dispatchEvent()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/framework/src/mx/core/UIComponent.as:13688]
-	at mx.managers::NativeDragManagerImpl/_dispatchDragEvent()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/airframework/src/mx/managers/NativeDragManagerImpl.as:766]
-	at mx.managers::NativeDragManagerImpl/nativeDragEventHandler()[/Users/justinmclean/Documents/ApacheFlex4.15/frameworks/projects/airframework/src/mx/managers/NativeDragManagerImpl.as:739]
+	at mx.core::UIComponent/dispatchEvent()[/Users//Documents/ApacheFlex4.15/frameworks/projects/framework/src/mx/core/UIComponent.as:13688]
+	at mx.managers::NativeDragManagerImpl/_dispatchDragEvent()[/Users//Documents/ApacheFlex4.15/frameworks/projects/airframework/src/mx/managers/NativeDragManagerImpl.as:766]
+	at mx.managers::NativeDragManagerImpl/nativeDragEventHandler()[/Users//Documents/ApacheFlex4.15/frameworks/projects/airframework/src/mx/managers/NativeDragManagerImpl.as:739]
 
 	drag and drop appears to work but error is thrown. 
 	created bug and patch at apache flex bug base

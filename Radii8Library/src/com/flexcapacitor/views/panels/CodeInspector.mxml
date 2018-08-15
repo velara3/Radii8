@@ -1748,11 +1748,16 @@
 				
 			}
 			
+			protected function exportButton_clickHandler(event:MouseEvent):void {
+
+				RunManager.openInCodePen(sourceData);
+			}
+			
 		]]>
 	</fx:Script>
 	
 	<fx:Declarations>
-		
+
 		<fx:String id="borderString">
 		<![CDATA[
 		function (id, rule, enabled) {
@@ -1891,8 +1896,8 @@ IFRAME_ID {
 					 find="editorFindHandler(event)"
 					 scrollSpeed=".5"
 					 useWordWrap="{enableWordWrap}"
-					 visible="false"
-					 includeInLayout="false"
+					 visible="true"
+					 includeInLayout="true"
 					 />
 		
 		<c:AceEditor id="templateEditor" 
@@ -2080,7 +2085,6 @@ IFRAME_ID {
 					visible="{isHTML}"
 					includeInLayout="{isHTML}"
 					click="showBorders_clickHandler(event)"/>
-		
 		<s:Label id="renderTime" paddingTop="4" />
 		
 		<!--
@@ -2117,6 +2121,15 @@ IFRAME_ID {
 					   useHandCursor="true"
 					   click="copyIcon_clickHandler(event)"
 					   />
+		<c:BeveledImageButton id="exportButton" 
+							  source="{Radii8LibraryAssets.export}" 
+							  toolTip="Export"
+							  verticalAlign="middle"
+							  useHandCursor="true"
+							  visible="{isHTML}"
+							  includeInLayout="{isHTML}"
+							  click="exportButton_clickHandler(event)"/>
+		
 	</s:HGroup>
 	
 	

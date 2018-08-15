@@ -109,7 +109,7 @@
 				if (ExternalInterface.available) {
 					var string:String;
 					var results:String;
-					var testURL:Boolean;
+					var testURL:Boolean = false;
 					var selectedDocument:IDocument;
 					
 					string = "function(id) { return document.location.hash; }";

@@ -1,7 +1,6 @@
 package com.flexcapacitor.managers {
 	
 	import com.flexcapacitor.controller.Radiate;
-	import com.flexcapacitor.controller.RadiateUtilities;
 	import com.flexcapacitor.effects.popup.OpenPopUp;
 	import com.flexcapacitor.model.DocumentData;
 	import com.flexcapacitor.model.HTMLExportOptions;
@@ -21,7 +20,10 @@ package com.flexcapacitor.managers {
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
+	import flash.external.ExternalInterface;
 	import flash.net.URLRequest;
+	import flash.net.URLRequestMethod;
+	import flash.net.URLVariables;
 	import flash.net.navigateToURL;
 	
 	import mx.core.UIComponent;
@@ -463,6 +465,74 @@ package com.flexcapacitor.managers {
 			request.url = URL;
 			navigateToURL(request, windowName);
 			
+		}
+		
+		
+		/**
+		 * Opens the document export web code in a code pen 
+		 * */
+		public static function openInCodePen(sourceData:SourceData, showInternally:Boolean = false):void {
+			var markup:String = sourceData.markup;
+			var css:String = sourceData.styles;
+			var url:String = "https://codepen.io/pen/define";
+			var title:String = "New pen";//Radiate.selectedDocument.title;
+			var data:Object = {};
+			var value:String;
+			var request:URLRequest;
+			var parameters:URLVariables;
+			var target:String = "_blank";
+			
+			data.title = title;
+			data.html = markup;
+			data.css = css;
+			data.js = "";
+			
+			value = JSON.stringify(data);
+			value = value.replace(/"/g, "&​quot;");
+			value = value.replace(/'/g, "&apos;");
+			
+			
+			if (ExternalInterface.available) {
+				var string:String = <xml><![CDATA[
+					function(url, json, target) {
+					    var form = document.createElement("form");
+					    form.setAttribute("target", target);
+					    form.setAttribute("method", "POST");
+					    form.setAttribute("action", url);
+						
+			            var hiddenField = document.createElement("input");
+			            hiddenField.setAttribute("type", "hidden");
+			            hiddenField.setAttribute("name", "data");
+			            hiddenField.setAttribute("value", json);
+						
+			            form.appendChild(hiddenField);
+						
+					    document.body.appendChild(form);
+
+					    form.submit();
+
+						document.body.removeChild(form);
+
+						return true;
+					}
+				]]></xml>
+				var success:Boolean = ExternalInterface.call(string, url, value, target);
+			}
+			else {
+				
+				request = new URLRequest();
+				request.url = url;
+				
+				parameters = new URLVariables();
+				parameters.data = value;
+				
+				request.data = parameters;
+				
+				// in testing post doesn't work in the browser
+				request.method = URLRequestMethod.POST;
+				
+				navigateToURL(request, "_blank");
+			}
 		}
 	}
 }

@@ -45,9 +45,10 @@ package com.flexcapacitor.utils {
 		public static const ANCHOR_TARGET:String 		= "anchorTarget";
 		public static const LAYER_NAME:String 			= "name";
 		public static const HTML_TAG_NAME:String 		= "htmlTagName";
-		public static const HTML_STYLES:String 			= "styles";
+		public static const HTML_STYLE:String 			= "style";
 		public static const BITMAP_DATA_ID:String 		= "bitmapDataId";
 		public static const THUMBNAIL_DATA:String		= "thumbnailData";
+		public static const NAME:String 				= "name";
 		public static const LOCKED:String 				= "locked";
 		public static const CONVERT_TO_IMAGE:String 	= "convertToImage";
 		public static const CREATE_BACKGROUND_SNAPSHOT:String = "createBackgroundSnapshot";
@@ -64,7 +65,7 @@ package com.flexcapacitor.utils {
 		public static var HTML_ATTRIBUTES_NS:String 	= htmlNamespaceURI + "::" + HTML_ATTRIBUTES;
 		public static var HTML_BEFORE_NS:String 		= htmlNamespaceURI + "::" + HTML_BEFORE;
 		public static var HTML_AFTER_NS:String 			= htmlNamespaceURI + "::" + HTML_AFTER;
-		public static var HTML_STYLES_NS:String 		= htmlNamespaceURI + "::" + HTML_STYLES;
+		public static var HTML_STYLES_NS:String 		= htmlNamespaceURI + "::" + HTML_STYLE;
 		
 		public static var WRAP_WITH_ANCHOR_NS:String 	= fcNamespaceURI + "::" + WRAP_WITH_ANCHOR;
 		public static var ANCHOR_URL_NS:String 			= fcNamespaceURI + "::" + ANCHOR_URL;

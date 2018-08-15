@@ -526,18 +526,18 @@ package com.flexcapacitor.utils {
 			
 			if (componentDescription.locked) {
 				output = StringUtils.ensureSpaceExists(output);
-				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "locked=\"true\"";
+				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + MXMLDocumentConstants.LOCKED + "=\"true\"";
 			}
 			
 			if (componentDescription.name!=componentDescription.className) {
 				output = StringUtils.ensureSpaceExists(output);
-				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "name=\"" + componentDescription.name + "\"";
+				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + MXMLDocumentConstants.NAME + "=\"" + XMLUtils.getAttributeSafeString(componentDescription.name) + "\"";
 			}
 			
 			// maybe change this to htmlUserStyles and use fcNamespace
 			if (componentDescription.userStyles) {
 				output = StringUtils.ensureSpaceExists(output);
-				output += MXMLDocumentConstants.htmlNamespacePrefix + ":" + "style=\"" + XMLUtils.getAttributeSafeString(componentDescription.userStyles) + "\"";
+				output += MXMLDocumentConstants.htmlNamespacePrefix + ":" + MXMLDocumentConstants.HTML_STYLE + "=\"" + XMLUtils.getAttributeSafeString(componentDescription.userStyles) + "\"";
 			}
 			
 			/*
@@ -548,7 +548,7 @@ package com.flexcapacitor.utils {
 			
 			if (componentDescription.convertElementToImage) {
 				output = StringUtils.ensureSpaceExists(output);
-				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "convertToImage=\"" + componentDescription.convertElementToImage + "\"";
+				output += MXMLDocumentConstants.fcNamespacePrefix + ":" + MXMLDocumentConstants.CONVERT_TO_IMAGE + "=\"" + componentDescription.convertElementToImage + "\"";
 			}
 			
 			if (componentDescription.createBackgroundSnapshot) {
@@ -562,12 +562,12 @@ package com.flexcapacitor.utils {
 				
 				if (componentDescription.anchorURL) {
 					output = StringUtils.ensureSpaceExists(output);
-					output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "anchorURL=\"" + componentDescription.anchorURL + "\"";
+					output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "anchorURL=\"" + XMLUtils.getAttributeSafeString(componentDescription.anchorURL) + "\"";
 				}
 				
 				if (componentDescription.anchorTarget) {
 					output = StringUtils.ensureSpaceExists(output);
-					output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "anchorTarget=\"" + componentDescription.anchorTarget + "\"";
+					output += MXMLDocumentConstants.fcNamespacePrefix + ":" + "anchorTarget=\"" + XMLUtils.getAttributeSafeString(componentDescription.anchorTarget) + "\"";
 				}
 			}
 			

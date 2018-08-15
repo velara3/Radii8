@@ -655,8 +655,6 @@ package com.flexcapacitor.managers {
 			
 		}
 		
-		
-		
 		/**
 		 * Login user through browser. Doesn't work. 
 		 * */

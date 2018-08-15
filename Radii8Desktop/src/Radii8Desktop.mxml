@@ -269,7 +269,7 @@
 						
 						default:
 							
-							mainView.menuItemEventHandler(event, menuItem);
+							MenuManager.menuItemEventHandler(event, menuItem);
 							
 							dispatchEvent(event);
 							
@@ -523,7 +523,7 @@
 						MenuManager.applicationMenu = defaultNativeMenu;
 						MenuManager.applicationWindowMenu = nativeWindowMenu;
 						
-						mainView.showMenuBar(false);
+						MenuManager.showMenuBar(false);
 					}
 					else {
 						
@@ -713,7 +713,7 @@
 					version 				= applicationDescriptor.versionNumber;
 					version 				= applicationDescriptor.appNamespace::versionNumber;
 					
-					radiate.versionNumber 	= version;
+					Radiate.versionNumber 	= version;
 					radiate.updater			= updateApplication;
 					
 					setupNativeMenus();
